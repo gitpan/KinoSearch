@@ -6,10 +6,10 @@ INSTALLATION
 
 To install this module, run the following commands:
 
-    perl Makefile.PL
-    make
-    make test
-    make install
+    perl Build.PL
+    perl Build
+    perl Build test
+    perl Build install
 
 XS CODE
 
@@ -18,7 +18,7 @@ KinoSearch.xs gets written on the fly when 'perl Makefile.PL' is invoked.
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2005 Marvin Humphrey
+Copyright (C) 2005-2006 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
