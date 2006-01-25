@@ -205,6 +205,7 @@ my $builder = Module::Build->new(
         'Lingua::Stem::Snowball' => 0.93,
         'ToolSet'                => 0.11,
     },
+    create_makefile_pl => 'passthrough',
     xs_files => { $ks_xs_filepath => 'lib/KinoSearch.xs' },
     c_source => 'src',
     add_to_cleanup => [

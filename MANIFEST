@@ -177,3 +177,4 @@ t/us_constitution/art7.html
 t/us_constitution/index.html
 t/us_constitution/preamble.html
 t/us_constitution/uscon.css
+Makefile.PL
