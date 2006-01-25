@@ -1,0 +1,8 @@
+--- #YAML:1.0
+name: KinoSearch
+version: 0.05_03
+author:
+  - Marvin Humphrey <marvin at rectangular dot com>
+abstract: search engine library
+license: perl
+generated_by: Module::Build version 0.2611, without YAML.pm
