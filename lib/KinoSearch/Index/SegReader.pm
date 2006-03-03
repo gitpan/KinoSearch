@@ -1,4 +1,6 @@
 package KinoSearch::Index::SegReader;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::IndexReader );
 
@@ -91,11 +93,10 @@ sub _open_norms {
     my $max_doc = $self->max_doc;
 
     # create a NormsReader for each indexed field.
-    for my $orig_num ( 0 .. $finfos->size - 1 ) {
-        my $finfo = $finfos->info_by_orig_num($orig_num);
+    for my $finfo ( $finfos->get_infos ) {
         next unless $finfo->get_indexed;
-        my $instream
-            = $comp_file_reader->open_instream("$seg_name.f$orig_num");
+        my $filename = "$seg_name.f" . $finfo->get_field_num;
+        my $instream = $comp_file_reader->open_instream($filename);
         $self->{norms_readers}{ $finfo->get_name }
             = KinoSearch::Index::NormsReader->new(
             instream => $instream,
@@ -165,7 +166,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

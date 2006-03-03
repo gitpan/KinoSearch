@@ -1,30 +1,36 @@
-package KinoSearch::Search::HitDoc;
+package KinoSearch::Index::TermVector;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
-    doc_num => undef,
-    score   => undef,
-    doc     => undef,
+    # params / members
+    field         => undef,
+    text          => undef,
+    positions     => [],
+    start_offsets => [],
+    end_offsets   => [],
 );
 
-__PACKAGE__->ready_get_set(qw( doc_num score doc ));
+__PACKAGE__->ready_get_set(
+    qw( field text positions start_offsets end_offsets ));
 
 1;
 
 __END__
 
+__POD__
+
 =begin devdocs
 
 =head1 NAME
 
-KinoSearch::Search::HitDoc - successful match for a Query
+KinoSearch::Index::TermVector 
 
-=head1 DESCRIPTION 
+=head1 DESCRIPTION
 
-Storage vessel which holds a Doc, a score, and a doc number.
+=head1 METHODS
 
 =head1 COPYRIGHT
 
@@ -35,6 +41,6 @@ Copyright 2005-2006 Marvin Humphrey
 See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
-
 =cut
+
 

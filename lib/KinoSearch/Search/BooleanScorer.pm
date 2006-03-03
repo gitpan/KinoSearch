@@ -1,4 +1,6 @@
 package KinoSearch::Search::BooleanScorer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Scorer );
 
@@ -6,13 +8,12 @@ our %instance_vars = __PACKAGE__->init_instance_vars();
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args(\%instance_vars, @_);
-    my %args = (%instance_vars, @_);
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
     $self->set_similarity( $args{similarity} );
     $self->_init_child;
     return $self;
 }
-
 
 # Add a scorer for a sub-query of the BooleanQuery.
 sub add_subscorer {
@@ -357,8 +358,7 @@ Kino_BoolScorer_destroy(Scorer * scorer) {
         /* individual scorers will be GC'd on their own by Perl */
     }
 
-    if (child->coord_factors != NULL)
-        Kino_Safefree(child->coord_factors);
+    Kino_Safefree(child->coord_factors);
 
     SvREFCNT_dec((SV*)child->subscorers_av);
 
@@ -384,7 +384,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

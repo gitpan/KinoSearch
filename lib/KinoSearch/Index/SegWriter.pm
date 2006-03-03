@@ -1,7 +1,10 @@
 package KinoSearch::Index::SegWriter;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+use KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Index::FieldsWriter;
 use KinoSearch::Index::PostingsWriter;
 use KinoSearch::Index::CompoundFileWriter;
@@ -56,22 +59,40 @@ sub add_doc {
     my $norm_outstreams = $self->{norm_outstreams};
     my $postings_cache  = $self->{postings_cache};
     my $similarity      = $self->{similarity};
+    my $doc_boost       = $doc->get_boost;
+
+    for my $indexed_field ( grep { $_->get_indexed } $doc->get_fields ) {
+        my $token_batch = KinoSearch::Analysis::TokenBatch->new;
+
+        if ( $indexed_field->get_value_len ) {
+            $token_batch->add_token( $indexed_field->get_value, 0,
+                $indexed_field->get_value_len );
+        }
+        if ( $indexed_field->get_analyzed ) {
+            $token_batch
+                = $indexed_field->get_analyzer()->analyze($token_batch);
+        }
+
+        $token_batch->build_posting_list( $self->{doc_count},
+            $indexed_field->get_field_num );
+
+        if ( $indexed_field->get_vectorized and $indexed_field->get_stored ) {
+            $indexed_field->set_tv_string( $token_batch->get_tv_string );
+        }
+
+        # encode a norm into a byte, write it to an outstream
+        my $norm_val = $doc_boost * $indexed_field->get_boost
+            * $similarity->lengthnorm( $token_batch->get_size );
+        my $outstream = $norm_outstreams->[ $indexed_field->get_field_num ];
+        $outstream->lu_write( 'a', $similarity->encode_norm($norm_val) );
+
+        # feed PostingsWriter
+        $self->{postings_writer}->add_postings( $token_batch->get_postings );
+    }
 
     # store fields
     $self->{fields_writer}->add_doc($doc);
 
-    for my $indexed_field ( grep { $_->get_indexed } $doc->get_fields ) {
-        # encode a norm into a byte, write it to an outstream
-        my $normval = $similarity->encode_lengthnorm(
-            scalar @{ $indexed_field->get_terms } );
-        my $outstream = $norm_outstreams->[ $indexed_field->get_field_num ];
-        $outstream->lu_write( 'a', $normval );
-
-        # feed PostingsWriter;
-        $self->{postings_writer}
-            ->add_postings( $self->{doc_count}, $indexed_field->get_field_num,
-            $indexed_field->get_terms );
-    }
     $self->{doc_count}++;
 }
 
@@ -133,7 +154,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

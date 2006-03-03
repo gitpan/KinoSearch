@@ -1,4 +1,6 @@
 package KinoSearch::Index::CompoundFileWriter;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -79,7 +81,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

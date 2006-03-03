@@ -1,4 +1,6 @@
 package KinoSearch::Search::Similarity;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -8,17 +10,9 @@ sub new {
     return _new();
 }
 
-# Provide a normalization factor for a field based on the square-root of the
-# number of terms in it, encoded into a single-byte.
-sub encode_lengthnorm {
-    my ( $self, $start ) = @_;
-    # a 0 is meaningless, but we have to prevent an illegal div by 0
-    return $start == 0 ? "\0" : $self->_float_to_byte( 1 / sqrt($start) );
-}
-
 # See _float_to_byte.
-sub encode_norm { $_[0]->_float_to_byte( $_[1] ) }
-sub decode_norm { $_[0]->_byte_to_float( $_[1] ) }
+*encode_norm = *_float_to_byte;
+*decode_norm = *_byte_to_float;
 
 # Calculate the Inverse Document Frequecy for one or more Term in a given
 # collection (the Searcher represents the collection).
@@ -41,8 +35,7 @@ sub idf {
     return $idf;
 }
 
-# Normalize a Query's weight so that it is comparable to other Queries.  Does
-# not affect ranking.
+# Normalize a Query's weight so that it is comparable to other Queries.
 sub query_norm {
     my ( $self, $sum_of_squared_weights ) = @_;
     return 0 if ( $sum_of_squared_weights == 0 );  # guard against div by zero
@@ -55,12 +48,28 @@ __END__
 
 __XS__
 
-MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Similarity		
+MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Similarity     
 
 Similarity*
 _new()
 CODE:
     RETVAL = Kino_Sim_new();
+OUTPUT: RETVAL
+
+=for comment
+
+Provide a normalization factor for a field based on the square-root of the
+number of terms in it.
+
+=cut
+
+float
+lengthnorm(obj, num_terms)
+    Similarity *obj;
+    U32         num_terms;
+CODE:
+    num_terms = num_terms < 100 ? 100 : num_terms;
+    RETVAL = (float)1 / sqrt(num_terms);
 OUTPUT: RETVAL
 
 =for comment
@@ -289,7 +298,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

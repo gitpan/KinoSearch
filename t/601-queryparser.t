@@ -11,11 +11,17 @@ BEGIN { use_ok('KinoSearch::QueryParser::QueryParser') }
 
 use KinoSearchTestInvIndex qw( create_invindex );
 use KinoSearch::Searcher;
+use KinoSearch::Analysis::Tokenizer;
 
-my $OR_parser
-    = KinoSearch::QueryParser::QueryParser->new( default_field => 'content',
-    );
+my $whitespace_tokenizer
+    = KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ );
+
+my $OR_parser = KinoSearch::QueryParser::QueryParser->new(
+    analyzer      => $whitespace_tokenizer,
+    default_field => 'content',
+);
 my $AND_parser = KinoSearch::QueryParser::QueryParser->new(
+    analyzer       => $whitespace_tokenizer,
     default_field  => 'content',
     default_boolop => 'AND',
 );
@@ -110,5 +116,5 @@ do {
             # exit;
     }
 
-}
+    }
 

@@ -1,10 +1,13 @@
 package KinoSearch::Analysis::Analyzer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
 our %instance_vars = __PACKAGE__->init_instance_vars( language => '', );
 
-sub analyze { }
+# usage: $token_batch = $analyzer->analyze($token_batch);
+sub analyze { return $_[1] }
 
 1;
 
@@ -27,7 +30,7 @@ text into an array of tokens, or it might convert text to lowercase.
 =head1 TODO
 
 At this time, public subclassing of Analyzer is not supported.  If that is to
-happen, the problem of how to store a collection of tokens both effieciently
+happen, the problem of how to store a collection of tokens both efficiently
 and elegantly must be solved.  An array of tokens, each of which is a
 hash-based object, is elegant but not efficient.  The current scheme is
 efficient but not elegant.
@@ -38,6 +41,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut

@@ -1,6 +1,10 @@
 package KinoSearch::Search::Hits;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
+
+use KinoSearch::Highlight::Highlighter;
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # params/members
@@ -8,15 +12,16 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     query     => undef,
     filter    => undef,
     sort_spec => undef,
+    num_docs  => undef,
 
     # members
-    weight    => undef,
-    hit_queue => undef,
+    weight      => undef,
+    hit_queue   => undef,
+    highlighter => undef,
 
     hit_docs   => undef,
     pointer    => undef,
     total_hits => undef,
-    score_norm => 1,
 
 );
 
@@ -42,15 +47,16 @@ sub seek {
     $num_wanted += $start_offset;
 
     # execute the search!
-    @{$self}{qw( hit_queue total_hits )} = $self->{searcher}->search_hit_queue(
+    @{$self}{qw( hit_queue total_hits )}
+        = $self->{searcher}->search_hit_queue(
         num_wanted => $num_wanted,
         weight     => $self->{weight},
         filter     => $self->{filter},
         sort_spec  => $self->{sort_spec},
-    );
+        );
 
     # turn the HitQueue into HitDocs
-    $self->{hit_docs}   = $self->{hit_queue}->hit_docs;
+    $self->{hit_docs} = $self->{hit_queue}->hit_docs;
 }
 
 sub total_hits {
@@ -74,9 +80,26 @@ sub fetch_hit_hashref {
         unless defined $hit_doc->get_doc;
     my $hashref = $hit_doc->get_doc()->to_hashref;
 
-    return wantarray
-        ? ( $hashref, $hit_doc->get_score )
-        : $hashref;
+    if ( !exists $hashref->{score} ) {
+        $hashref->{score} = $hit_doc->get_score;
+    }
+    if ( defined $self->{highlighter} and !exists $hashref->{excerpt} ) {
+        $hashref->{excerpt}
+            = $self->{highlighter}->generate_excerpt( $hit_doc->get_doc );
+    }
+
+    return $hashref;
+}
+
+my %create_excerpts_defaults = ( highlighter => undef, );
+
+sub create_excerpts {
+    my $self = shift;
+    verify_args( \%create_excerpts_defaults, @_ );
+    my %args = ( %create_excerpts_defaults, @_ );
+
+    $self->{highlighter} = $args{highlighter};
+    $self->{highlighter}->set_terms( [ $self->{query}->extract_terms ] );
 }
 
 1;
@@ -87,11 +110,10 @@ KinoSearch::Search::Hits - access search results
 
 =head1 SYNOPSIS
 
-    my $hits = $searcher->search($query);
-    $hits->seek(0, 10);
-    my $total_hits = $hits->total_hits;
+    my $hits = $searcher->search( query => $query );
+    $hits->seek( 0, 10 );
     while ( my $hit = $hits->fetch_hit_hashref ) {
-        print "$hit->{title}\n";
+        print "<p>$hit->{title} <em>$hit->{score}</em></p>\n";
     }
 
 =head1 DESCRIPTION
@@ -111,9 +133,9 @@ more documents.  And so on.
 
 Position the Hits iterator at START, and capture NUM_TO_RETRIEVE docs.
 
-seek I<must> be called before anything else.
-
 =head2 total_hits
+
+    my $num_that_matched = $hits->total_hits;
 
 Return the total number of documents which matched the query used to produce
 the Hits object.  (This number is unlikely to match NUM_TO_RETRIEVE.)
@@ -123,15 +145,22 @@ the Hits object.  (This number is unlikely to match NUM_TO_RETRIEVE.)
     while ( my $hit = $hits->fetch_hit_hashref ) {
         # ...
     }
-    
-    # or...
-    while ( my ( $hit, $score ) = $hits->fetch_hit_hashref ) {
-        # ...
-    }
 
-Return the next hit or hit/score pairing.  The hit is retrieved as a hashref,
-with the field names as keys and the field values as values.  In list context,
-fetch_hit_hashref returns the hashref and a floating point score.
+Return the next hit as a hashref, with the field names as keys and the field
+values as values.  An entry for C<score> will also be present, as will an
+entry for C<excerpt> if create_excerpts() was called earlier.  However, if the
+document contains stored fields named "score" or "excerpt", they will not be
+clobbered.
+
+=head2 create_excerpts
+
+    my $highlighter = KinoSearch::Highlight::Highlighter->new(
+        excerpt_field => 'bodytext',    
+    );
+    $hits->create_excerpts( highlighter => $highlighter );
+
+Use the supplied highlighter to generate excerpts.  See
+L<KinoSearch::Highlight::Highlighter|KinoSearch::Highlight::Highlighter>.
 
 =head1 COPYRIGHT
 
@@ -139,7 +168,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

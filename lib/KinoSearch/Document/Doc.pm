@@ -1,10 +1,10 @@
 package KinoSearch::Document::Doc;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars();
-
-my %data;
+our %instance_vars = __PACKAGE__->init_instance_vars( _kino_boost => 1, );
 
 sub set_value {
     $_[0]->{ $_[1] }->set_value( $_[2] );
@@ -14,17 +14,14 @@ sub get_value {
     return $_[0]->{ $_[1] }->get_value;
 }
 
-# TODO rework this interface before it goes live
-sub set_boost {
-    if ( @_ == 3 ) {
-        $_[0]->{ $_[1] }->set_boost( $_[2] );
-    }
-    else {
-        $data{ $_[0] }{boost} = $_[1];
-    }
+sub get_field { $_[0]->{ $_[1] } }
+
+sub boost_field {
+    $_[0]->{ $_[1] }->set_boost( $_[2] );
 }
 
-sub get_boost { $data{ $_[0] }{boost} }
+sub set_boost { $_[0]->{_kino_boost} = $_[1] }
+sub get_boost { $_[0]->{_kino_boost} }
 
 # set the analyzer for a field
 sub set_analyzer {
@@ -40,18 +37,16 @@ sub add_field {
 
 # retrieve all fields
 sub get_fields {
-    values %{ $_[0] };
+    return grep {ref} values %{ $_[0] };
 }
 
+# Return the doc as a hashref, with the field names as hash keys and the
+# field # values as values.
 sub to_hashref {
     my $self = shift;
     my %hash;
-    $hash{ $_->get_name } = $_->get_value for values %$self;
+    $hash{ $_->get_name } = $_->get_value for grep {ref} values %$self;
     return \%hash;
-}
-
-sub DESTROY {
-    delete $data{ $_[0] };
 }
 
 1;
@@ -65,7 +60,8 @@ KinoSearch::Document::Doc - a document
 =head1 SYNOPSIS
 
     my $doc = $invindexer->new_doc;
-    $doc->set_value( 'title' => $title_text );
+    $doc->set_value( title    => $title );
+    $doc->set_value( bodytext => $bodytext );
     $invindexer->add($doc);
 
 =head1 DESCRIPTION
@@ -85,12 +81,13 @@ Doc objects are only created via factory methods of other classes.
 C<set_value> and C<get_value> are used to modify and access the values of the
 fields within a Doc object.
 
-=head2 to_hashref
+=head2 set_boost get_boost
 
-    my $hashref = $doc->to_hashref;
+    $doc->set_boost(2.5);
 
-Return the doc as a hashref, with the field names as hash keys and the field
-values as values.
+C<boost> is a scoring multiplier.  Setting boost to something other than 1
+causes a document to score better or worse against a given query relative to
+other documents.
 
 =head1 COPYRIGHT
 
@@ -98,6 +95,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut

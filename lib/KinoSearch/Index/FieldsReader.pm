@@ -1,4 +1,6 @@
 package KinoSearch::Index::FieldsReader;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class Exporter );
 
@@ -48,7 +50,7 @@ sub fetch_raw {
     # retrieve one doc's worth of field data
     $fdata_stream->seek($start);
     my $num_fields = $fdata_stream->lu_read('V');
-    my $template   = 'VaT' x $num_fields;
+    my $template   = 'VaTT' x $num_fields;
     my @raw        = ( $num_fields, $fdata_stream->lu_read($template) );
     return \@raw;
 }
@@ -66,7 +68,8 @@ sub fetch_doc {
     # docode stored data and build up the Doc object Field by Field.
     my $num_fields = shift @$data;
     for ( 1 .. $num_fields ) {
-        my ( $orig_field_num, $bits, $string ) = splice( @$data, 0, 3 );
+        my ( $field_num, $bits, $string, $tv_string )
+            = splice( @$data, 0, 4 );
 
         # decode fnm bits
         my $analyzed   = ( $bits & ANALYZED )   eq ANALYZED   ? 1 : 0;
@@ -74,14 +77,16 @@ sub fetch_doc {
         my $compressed = ( $bits & COMPRESSED ) eq COMPRESSED ? 1 : 0;
 
         # create a field object, merging in the FieldInfo data, and add it
-        my $finfo = $finfos->info_by_orig_num($orig_field_num);
+        my $finfo = $finfos->info_by_num($field_num);
         my $field = KinoSearch::Document::Field->new(
-            %$finfo,    # field_num from finfo, not $orig_field_num
+            %$finfo,
+            field_num  => $field_num,
             analyzed   => $analyzed,
             binary     => $binary,
             compressed => $compressed,
             fdt_bits   => $bits,
             value      => $compressed ? uncompress($string) : $string,
+            tv_string  => $tv_string,
         );
         $doc->add_field($field);
     }
@@ -136,7 +141,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

@@ -16,7 +16,6 @@ use KinoSearch::Index::Term;
 use KinoSearch::Searcher;
 use KinoSearch::Analysis::Tokenizer;
 
-
 my @docs = ( 'a' .. 'h', 'c c', 'c d e' );
 push @docs, ('x') x 90;
 push @docs, ('c d x');

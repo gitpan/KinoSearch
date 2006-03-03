@@ -1,11 +1,12 @@
 package KinoSearch::InvIndexer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
 use Clone qw( clone );
 use File::Spec::Functions qw( catfile tmpdir );
 use File::Temp qw();
-use Math::BaseCalc;
 use Sort::External;
 
 use KinoSearch::Document::Doc;
@@ -51,7 +52,7 @@ sub init_instance {
         and $self->{invindex}->isa('KinoSearch::Store::InvIndex') )
     {
         $invindex = $self->{invindex};
-        $self->{create} = $invindex->get_create 
+        $self->{create} = $invindex->get_create
             unless defined $self->{create};
     }
     elsif ( defined $self->{invindex} ) {
@@ -158,14 +159,12 @@ sub new_doc {
 sub add_doc {
     my ( $self, $doc ) = @_;
 
-    # perform analysis
+    # assign analyzers
     for my $field ( $doc->get_fields ) {
-        next unless $field->get_value_len;
-        my $fieldname = $field->get_name;
         if ( $field->get_analyzed ) {
-            my $analyzer
-                = ( $field->get_analyzer || $self->{analyzers}{$fieldname} );
-            $analyzer->analyze($field);
+            next if $field->get_analyzer;
+            my $fieldname = $field->get_name;
+            $field->set_analyzer( $self->{analyzers}{$fieldname} );
         }
     }
 
@@ -176,6 +175,9 @@ sub add_doc {
 sub finish {
     my $self     = shift;
     my $invindex = $self->{invindex};
+
+    # init, just in case no docs were ever added
+    $self->_delayed_init unless $self->{initialized};
 
     # finish the segment
     $self->{seg_writer}->finish;
@@ -206,16 +208,14 @@ sub _release_locks {
     }
 }
 
-my $base_calc_36 = Math::BaseCalc->new( digits => [ 0 .. 9, 'a' .. 'z' ] );
-
-# Generate Lucene-compatible segment names.
+# Generate segment names (no longer Lucene compatible, as of 0.06).
 sub _new_seg_name {
     my $self = shift;
 
     my $counter = $self->{sinfos}->get_counter;
     $self->{sinfos}->set_counter( ++$counter );
 
-    return '_' . $base_calc_36->to_base($counter);
+    return "_$counter";
 }
 
 sub DESTROY { shift->_release_locks }
@@ -247,7 +247,10 @@ change.
         analyzer => $analyzer,
     );
 
-    $invindexer->spec_field( name => 'title' );
+    $invindexer->spec_field( 
+        name  => 'title' 
+        boost => 3,
+    );
     $invindexer->spec_field( name => 'bodytext' );
 
     while ( my ( $title, $bodytext ) = each %source_documents ) {
@@ -302,11 +305,13 @@ such as a L<PolyAnalyzer|KinoSearch::Analysis::PolyAnalyzer>.
 
     $invindexer->spec_field(
         name       => 'url',      # required
+        boost      => 1,          # default: 1,
         analyzer   => undef,      # default: analyzer spec'd in new()
         indexed    => 1,          # default: 1
         analyzed   => 0,          # default: 1
         stored     => 0,          # default: 1
         compressed => 0,          # default: 0
+        vectorized => 0,          # default: see below
     );
 
 Define a field.  This is analogous to defining a field in a database.
@@ -316,6 +321,11 @@ Define a field.  This is analogous to defining a field in a database.
 =item *
 
 B<name> - the field's name.
+
+=item *
+
+B<boost> - A multiplier which determines how much a field contributes
+to a document's score.  
 
 =item *
 
@@ -340,6 +350,13 @@ turns up in a search.
 =item *
 
 B<compressed> - compress the stored field, using the zlib compression algorithm.
+
+=item *
+
+B<vectorized> - store the fields "term vectors", which are required by
+L<KinoSearch::Highlight::Highlighter|KinoSearch::Highlight::Highlighter> for
+excerpt selection and search term highlighting.  By default, if a field is
+marked as C<stored>, it will be vectorized as well.
 
 =back
 
@@ -368,7 +385,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

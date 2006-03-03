@@ -1,4 +1,6 @@
 package KinoSearch::Index::Term;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -61,16 +63,13 @@ KinoSearch::Index::Term - string of text associated with a field
 
 =head1 SYNOPSIS
 
-    my $foo_term = KinoSearch::Index::Term->new( 'content', 'foo' );
-    my $term_query = KinoSearch::Search::TermQuery($foo_term);
+    my $foo_term   = KinoSearch::Index::Term->new( 'content', 'foo' );
+    my $term_query = KinoSearch::Search::TermQuery( term => $foo_term );
 
 =head1 DESCRIPTION
 
 The Term is the unit of search.  It has two characteristics: a field name, and
 term text.  
-
-An index cannot be searched for plain term text that is not associated with a
-field; if all fields must be searched, they must be searched one by one.
 
 =head1 METHODS
 
@@ -90,7 +89,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

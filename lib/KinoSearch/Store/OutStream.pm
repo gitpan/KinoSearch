@@ -1,4 +1,6 @@
 package KinoSearch::Store::OutStream;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 
 # Constructor - takes one arg: a filehandle.
@@ -217,6 +219,7 @@ void Kino_IO_write_byte   (PerlIO*, char);
 void Kino_IO_write_int    (PerlIO*, U32);
 void Kino_IO_write_long   (PerlIO*, double);
 void Kino_IO_write_vint   (PerlIO*, U32);
+int  Kino_IO_encode_vint  (U32, char*);
 void Kino_IO_write_vlong  (PerlIO*, double);
 void Kino_IO_write_string (PerlIO*, char*, STRLEN);
 void Kino_IO_write_bytes  (PerlIO*, char*, STRLEN);
@@ -270,8 +273,20 @@ Kino_IO_write_long(PerlIO *fh, double aDouble) {
 
 void
 Kino_IO_write_vint(PerlIO *fh, U32 aU32) {
-    unsigned char buf[5];
+    char buf[5];
     int check_val;
+    int num_bytes;
+
+    num_bytes = Kino_IO_encode_vint(aU32, buf);
+    
+    /* print encoded VInt to the output handle */
+    check_val = PerlIO_write(fh, buf, num_bytes);
+    if (check_val != num_bytes)
+        Kino_confess("Kino_IO_write_vint error: %d %d", check_val, num_bytes);
+}
+
+int
+Kino_IO_encode_vint(U32 aU32, char *buf) {
     int num_bytes = 0;
 
     while ((aU32 & ~0x7f) != 0) {
@@ -279,11 +294,8 @@ Kino_IO_write_vint(PerlIO *fh, U32 aU32) {
         aU32 >>= 7;
     }
     buf[num_bytes++] = aU32 & 0x7f;
-    
-    /* print encoded VInt to the output handle */
-    check_val = PerlIO_write(fh, buf, num_bytes);
-    if (check_val != num_bytes)
-        Kino_confess("Kino_IO_write_vint error: %d %d", check_val, num_bytes);
+
+    return num_bytes;
 }
 
 void
@@ -403,7 +415,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

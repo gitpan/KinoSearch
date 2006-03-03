@@ -1,16 +1,18 @@
 package KinoSearch::Index::SegTermDocs;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::TermDocs );
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # constructor params
-    reader       => undef,
+    reader => undef,
 );
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args(\%instance_vars, @_);
-    my %args = (%instance_vars, @_);
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
 
     _init_child($self);
 
@@ -67,7 +69,7 @@ sub _derive_term_info {
     return $tinfo;
 }
 
-sub close { 
+sub close {
     my $self = shift;
     $self->_get_freq_fh()->close;
     $self->_get_prox_fh()->close;
@@ -239,11 +241,11 @@ U32
 Kino_SegTermDocs_read(TermDocs *term_docs, SV* doc_nums_sv, SV* freqs_sv, 
                       U32 num_wanted) {
     SegTermDocsChild *child;
-	U32               doc_code;
-	U32              *doc_nums;
-	U32              *freqs;
-	STRLEN            len;
-	U32               num_got = 0;
+    U32               doc_code;
+    U32              *doc_nums;
+    U32              *freqs;
+    STRLEN            len;
+    U32               num_got = 0;
 
     child = (SegTermDocsChild*)term_docs->child;
 
@@ -388,7 +390,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

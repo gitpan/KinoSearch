@@ -1,4 +1,6 @@
 package KinoSearch::Search::Scorer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -40,12 +42,11 @@ sub score_batch {
     confess("param 'hit_collector' isn't a KinoSearch::Search::HitCollector")
         unless a_isa_b( $args{hit_collector},
         'KinoSearch::Search::HitCollector' );
-    
 
     $self->do_score_batch(%args);
 }
 
-sub do_score_batch { 
+sub do_score_batch {
     my ( $self, %args ) = @_;
     _do_score_batch( $self, @args{qw( start end hit_collector )} );
     # TODO in Lucene, this method returns true if any docs are processed
@@ -137,7 +138,7 @@ PREINIT:
     U32           doc;
 PPCODE:
     while (obj->next(obj)) {
-        hc->collect( hc, obj->score(obj), obj->doc(obj) );
+        hc->collect( hc, obj->doc(obj), obj->score(obj) );
     }
 
 =begin comment
@@ -255,7 +256,7 @@ void
 Kino_Scorer_destroy(Scorer* scorer) {
     if (scorer->similarity_sv != NULL)
         SvREFCNT_dec(scorer->similarity_sv);
-        Kino_Safefree(scorer);
+    Kino_Safefree(scorer);
 }
 
 
@@ -280,7 +281,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

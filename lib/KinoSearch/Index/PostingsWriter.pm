@@ -1,4 +1,6 @@
 package KinoSearch::Index::PostingsWriter;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -43,25 +45,9 @@ sub init_instance {
     );
 }
 
-# Add the postings to the segment.  Postings are serialized and dumped into a
-# Sort::External sort pool.  The actual writing takes place later.
 sub add_postings {
-    my ( $self, $doc_num, $field_num, $tokens ) = @_;
-
-    # associate each term text with an array of U32 representing its positions
-    my $pos = 0;
-    my %positions;
-    {
-        no warnings 'uninitialized';
-        for (@$tokens) {
-            next if $_ eq '';
-            $positions{$_} .= pack( 'I', $pos++ );
-        }
-    }
-
-    # dump serialized postings into the Sort::External pool.
-    my $serialized = _serialize_postings( \%positions, $doc_num, $field_num );
-    $self->{postings_cache}->feed(@$serialized);
+    my ( $self, $postings_array ) = @_;
+    $self->{postings_cache}->feed(@$postings_array);
 }
 
 =for comment
@@ -230,12 +216,13 @@ sub finish { }
 __END__
 __XS__
 
-MODULE = KinoSearch    PACKAGE = KinoSearch::Index::PostingsWriter		
+MODULE = KinoSearch    PACKAGE = KinoSearch::Index::PostingsWriter      
 
 
 =begin comment
 
-Pack all the information about a posting into a scalar.
+Add the postings to the segment.  Postings are serialized and dumped into a
+Sort::External sort pool.  The actual writing takes place later.
 
 The serialization algo is designed so that postings emerge from the sort
 pool in the order ideal for writing an index after a  simple lexical sort.
@@ -244,58 +231,11 @@ The concatenated components are:
     field number
     term text 
     document number
-    positions (C array)
+    positions (C array of U32)
     term length
-
-All integers use big-endian format.
 
 =end comment
 =cut
-
-void 
-_serialize_postings(pos_hash, doc_num, field_num)
-    HV      *pos_hash;
-    U32      doc_num;
-    U16      field_num;
-PREINIT:
-    char     doc_num_buf[4];
-    char     field_num_buf[2];
-    U16      term_len_U16;
-    char     term_len_buf[4];
-    HE      *he;
-    char    *term_str;
-    STRLEN   term_len;
-    SV      *pos_string_sv;
-    char    *pos_string;
-    STRLEN   pos_string_len;
-    AV      *out_av;
-    SV      *serialized_sv;
-PPCODE:
-{
-    /* prepare doc num and field num in anticipation of upcoming loop */
-    Kino_encode_bigend_U32(doc_num, doc_num_buf);
-    Kino_encode_bigend_U16(field_num, field_num_buf);
-
-    /* retrieve %positions hash,  create output array */
-    out_av = newAV();
-    
-    /* pack a scalar */
-    while (he = hv_iternext(pos_hash)) {
-        term_str     = HePV(he, term_len);
-        term_len_U16 = term_len;
-        Kino_encode_bigend_U16(term_len_U16, term_len_buf);
-
-        pos_string_sv = HeVAL(he);
-        serialized_sv = newSVpvn(field_num_buf, KINO_FIELD_NUM_LEN);
-        sv_catpvn(serialized_sv, term_str, term_len);
-        sv_catpvn(serialized_sv, doc_num_buf, 4);
-        sv_catsv(serialized_sv, pos_string_sv);
-        sv_catpvn(serialized_sv, term_len_buf, 2);
-        av_push(out_av, serialized_sv);
-    }
-
-    XPUSHs(sv_2mortal(newRV_noinc( (SV*)out_av )) );
-}
 
 =begin comment
 
@@ -319,7 +259,7 @@ PREINIT:
     char    *termstring_len_ptr;
     STRLEN   termstring_len;     /* length of the term, with field num */
     IV       doc_num;
-    IV       freq;	             /* freq of term in field */
+    IV       freq;               /* freq of term in field */
 PPCODE:
 {
     /* extract pointer from serialized posting */
@@ -409,7 +349,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

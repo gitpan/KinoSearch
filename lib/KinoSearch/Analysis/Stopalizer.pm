@@ -1,6 +1,9 @@
 package KinoSearch::Analysis::Stopalizer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
+use KinoSearch::Analysis::Stemmer qw( %supported_languages );
 
 use Lingua::StopWords;
 
@@ -17,7 +20,7 @@ sub init_instance {
     }
     else {
         # create a stoplist if language was supplied
-        if ( $language =~ /\A(?:da|de|dk|en|es|fi|fr|it|no|pt|ru|sv)\z/xms ) {
+        if ( exists $supported_languages{$language} ) {
             $self->{stoplist} = Lingua::StopWords::getStopWords($language);
         }
         # if no language supplied, create an empty stoplist
@@ -28,15 +31,17 @@ sub init_instance {
 }
 
 sub analyze {
-    my ( $self, $field ) = @_;
-    my $terms    = $field->get_terms;
+    my ( $self, $token_batch ) = @_;
     my $stoplist = $self->{stoplist};
+    my @out;
 
     # convert stopwords into empty strings
-    for (@$terms) {
-        $_ = ''
-            if $stoplist->{$_};
+    while ( $token_batch->next ) {
+        $token_batch->set_text('')
+            if $stoplist->{ $token_batch->get_text };
     }
+
+    return $token_batch;
 }
 
 1;
@@ -64,10 +69,10 @@ documents in English contain "the", "if", and "maybe" that it may improve both
 performance and relevance to block them.
 
     # before
-    @tokens = ('i', 'am', 'the', 'walrus');
+    @token_texts = ('i', 'am', 'the', 'walrus');
     
     # after
-    @tokens = ('',  '',   '',    'walrus');
+    @token_texts = ('',  '',   '',    'walrus');
 
 =head1 CONSTRUCTOR
 
@@ -111,7 +116,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

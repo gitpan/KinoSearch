@@ -1,4 +1,6 @@
 package KinoSearch::Search::TermQuery;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
@@ -22,7 +24,7 @@ sub create_weight {
     );
 }
 
-sub extract_terms { shift->todo_death }
+sub extract_terms { shift->{term} }
 
 sub to_string {
     my ( $self, $proposed_field ) = @_;
@@ -36,6 +38,8 @@ sub to_string {
 sub equals { shift->todo_death }
 
 package KinoSearch::Search::TermWeight;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
@@ -77,15 +81,42 @@ sub to_string {
 
 __END__
 
-=begin devdocs
-
 =head1 NAME
 
 KinoSearch::Search::TermQuery - match individual Terms
 
+=head1 SYNOPSIS
+
+    my $term = KinoSearch::Index::Term->new( $field, $term_text );
+    my $term_query = KinoSearch::Search::TermQuery->new(
+        term => $term,
+    );
+    my $hits = $searcher->search( query => $term_query );
+
 =head1 DESCRIPTION 
 
-Subclass of Query for matching individual Terms.
+TermQuery is a subclass of
+L<KinoSearch::Search::Query|KinoSearch::Search::Query> for matching individual
+L<Terms|KinoSearch::Index::Term>.  Note that since Term objects are associated
+with one and only one field, so are TermQueries.
+
+=head1 METHODS
+
+=head2 new
+
+    my $term_query = KinoSearch::Search::TermQuery->new(
+        term => $term,
+    );
+
+Constructor.  Takes hash-style parameters:
+
+=over
+
+=item *
+
+B<term> - a L<KinoSearch::Index::Term>.
+
+=back
 
 =head1 COPYRIGHT
 
@@ -93,8 +124,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
-=end devdocs
 =cut
 

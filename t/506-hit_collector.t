@@ -5,7 +5,7 @@ use Test::More tests => 3;
 
 BEGIN { use_ok('KinoSearch::Search::HitCollector') }
 
-my @docs_and_scores = ( [ 2, 0 ], [ 0, 5 ], [ 0, 10 ], [ 1, 1000 ] );
+my @docs_and_scores = ( [ 0, 2 ], [ 5, 0 ], [ 10, 0 ], [ 1000, 1 ] );
 
 my $hc = KinoSearch::Search::HitQueueCollector->new( size => 3, );
 

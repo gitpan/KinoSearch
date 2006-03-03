@@ -1,4 +1,6 @@
 package KinoSearch::Searcher;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Searchable );
 
@@ -19,6 +21,8 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     reader       => undef,
     close_reader => 0,       # not implemented yet
 );
+
+__PACKAGE__->ready_get(qw( reader ));
 
 sub init_instance {
     my $self = shift;
@@ -58,17 +62,15 @@ my %search_args = (
 
 sub search {
     my $self = shift;
-    my @args;
-    if ( @_ == 1 ) {
-        croak("single argument to search should be plain string, not a Query")
-            if a_isa_b( $_[0], 'KinoSearch::Search::Query' );
-        @args = ( query => $self->_prepare_simple_search(@_) );
+    my %args =
+        @_ == 1
+        ? ( %search_args, query => $_[0] )
+        : ( %search_args, @_ );
+    verify_args( \%search_args, %args );
+    if ( !a_isa_b( $args{query}, 'KinoSearch::Search::Query' ) ) {
+        $args{query} = $self->_prepare_simple_search( $args{query} );
     }
-    else {
-        verify_args( \%search_args, @_ );
-        @args = @_;
-    }
-    return KinoSearch::Search::Hits->new( searcher => $self, @args );
+    return KinoSearch::Search::Hits->new( searcher => $self, %args );
 }
 
 sub _prepare_simple_search {
@@ -113,12 +115,12 @@ sub search_hit_queue {
     if ( defined $scorer ) {
         $scorer->score_batch(
             hit_collector => $hc,
-            end => $self->{reader}->max_doc,
+            end           => $self->{reader}->max_doc,
         );
     }
 
     # return the HitQueue and the number of hits
-    return ($hc->get_storage, $hc->get_i);
+    return ( $hc->get_storage, $hc->get_i );
 }
 
 sub fetch_doc { $_[0]->{reader}->fetch_doc( $_[1] ) }
@@ -168,7 +170,7 @@ KinoSearch::Searcher - execute searches
         invindex => $invindex,
         analyzer => $analyzer,
     );
-    my $hits = $searcher->search('foo bar');
+    my $hits = $searcher->search( query => 'foo bar' );
 
 
 =head1 DESCRIPTION
@@ -197,32 +199,29 @@ L<KinoSearch::Store::InvIndex|KinoSearch::Store::InvIndex> object.
 
 B<analyzer> - An object which subclasses
 L<KinoSearch::Analysis::Analyer|KinoSearch::Analysis::Analyzer>, such as a
-L<PolyAnalyzer|KinoSearch::Analysis::PolyAnalyzer>.
+L<PolyAnalyzer|KinoSearch::Analysis::PolyAnalyzer>.  This B<must> be identical
+to the Analyzer used at index-time, or the results won't match up.
 
 =back
 
 =head2 search
 
-    my $hits = $searcher->search("foo bar");
-
-    # or...
     my $hits = $searcher->search( query => $query );
         
 Process a search and return a L<Hits|KinoSearch::Search::Hits> object.
 
-If only a single argument is supplied to search, the Searcher will feed the
-text to L<QueryParser|KinoSearch::QueryParser::QueryParser>, and search
-against all of the invindex's indexed fields.
-
-If multiple arguments are fed to search, the searcher will treat them as
-labeled hash-style parameters.
+search() expects labeled hash-style parameters.  At present, there is only
+one: query.  It is likely that others will be added later.
 
 =over
 
 =item *
 
-B<query> - An object which subclasses
-L<KinoSearch::Search::Query|KinoSearch::Search::Query>.
+B<query> - Can be either an object which subclasses
+L<KinoSearch::Search::Query|KinoSearch::Search::Query>, or a query string.  If
+it's a query string, it will be parsed using a QueryParser and a search will
+be performed against all indexed fields in the invindex.  For more sophisticated
+searching, supply Query objects, such as TermQuery and BooleanQuery.
 
 =back
 
@@ -232,4 +231,4 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.

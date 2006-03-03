@@ -1,4 +1,6 @@
 package KinoSearch::Index::TermInfosWriter;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -121,41 +123,29 @@ PREINIT:
     STRLEN    last_tstring_len;
     char     *last_tstring_str;
     IV        field_num;
-    IV        max_overlap;
     IV        overlap;
     char     *diff_start_str;
     STRLEN    diff_len;
 PPCODE:
 {
     /* extract string pointers and string lengths */
-    termstring_len   = SvCUR(termstring_sv);
     termstring_str   = SvPV( termstring_sv, termstring_len );
-    last_tstring_len = SvCUR(last_termstring_sv);
     last_tstring_str = SvPV( last_termstring_sv, last_tstring_len );
 
     /* to obtain field number, decode packed 'n' at top of termstring */
     field_num = (I16)Kino_decode_bigend_U16(termstring_str);
 
-    /* maximum overlap is length of shorter termstring w/o the field_num */
-    max_overlap = last_tstring_len <= termstring_len ? 
-                  last_tstring_len : termstring_len;
-    max_overlap -= KINO_FIELD_NUM_LEN; 
-    
     /* move past field_num */
     termstring_str   += KINO_FIELD_NUM_LEN;
     last_tstring_str += KINO_FIELD_NUM_LEN;
+    termstring_len   -= KINO_FIELD_NUM_LEN;
+    last_tstring_len -= KINO_FIELD_NUM_LEN;
 
     /* count how many bytes the strings share at the top */ 
-    overlap = 0;
-    while (overlap < max_overlap) {
-        if (*last_tstring_str != *termstring_str) 
-            break;
-        last_tstring_str++;
-        termstring_str++;
-        overlap++;
-    }
-    diff_start_str = termstring_str;
-    diff_len = termstring_len - overlap - KINO_FIELD_NUM_LEN;
+    overlap = Kino_StrHelp_string_diff(last_tstring_str, termstring_str,
+        last_tstring_len, termstring_len);
+    diff_start_str = termstring_str + overlap;
+    diff_len       = termstring_len - overlap;
 
     /* write number of common bytes */
     Kino_IO_write_vint(fh, overlap);
@@ -200,7 +190,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

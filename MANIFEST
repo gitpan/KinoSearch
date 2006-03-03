@@ -4,7 +4,7 @@ bin/valgrind_test.plx
 Build.PL
 Changes
 devel/kinotidyrc
-devel/recursive_edit.plx
+devel/predit
 devel/scan_enum.plx
 lib/KinoSearch.pm
 lib/KinoSearch/Analysis/Analyzer.pm
@@ -12,12 +12,14 @@ lib/KinoSearch/Analysis/LCNormalizer.pm
 lib/KinoSearch/Analysis/PolyAnalyzer.pm
 lib/KinoSearch/Analysis/Stemmer.pm
 lib/KinoSearch/Analysis/Stopalizer.pm
+lib/KinoSearch/Analysis/TokenBatch.pm
 lib/KinoSearch/Analysis/Tokenizer.pm
 lib/KinoSearch/Docs/DevGuide.pod
 lib/KinoSearch/Docs/FileFormat.pod
 lib/KinoSearch/Docs/Tutorial.pod
 lib/KinoSearch/Document/Doc.pm
 lib/KinoSearch/Document/Field.pm
+lib/KinoSearch/Highlight/Highlighter.pm
 lib/KinoSearch/Index/CompoundFileReader.pm
 lib/KinoSearch/Index/CompoundFileWriter.pm
 lib/KinoSearch/Index/DelDocs.pm
@@ -43,6 +45,7 @@ lib/KinoSearch/Index/TermEnum.pm
 lib/KinoSearch/Index/TermInfo.pm
 lib/KinoSearch/Index/TermInfosReader.pm
 lib/KinoSearch/Index/TermInfosWriter.pm
+lib/KinoSearch/Index/TermVector.pm
 lib/KinoSearch/InvIndexer.pm
 lib/KinoSearch/QueryParser/QueryParser.pm
 lib/KinoSearch/Search/BooleanClause.pm
@@ -76,9 +79,11 @@ lib/KinoSearch/Util/Class.pm
 lib/KinoSearch/Util/EndianUtils.pm
 lib/KinoSearch/Util/MemManager.pm
 lib/KinoSearch/Util/PriorityQueue.pm
+lib/KinoSearch/Util/StringHelper.pm
 lib/KinoSearch/Util/ToolSet.pm
 lib/KinoSearch/Util/ToStringUtils.pm
 lib/KinoSearch/Util/VerifyArgs.pm
+Makefile.PL
 MANIFEST			copy
 META.yml
 README
@@ -106,7 +111,8 @@ t/208-terminfo.t
 t/209-term_infos_reader.t
 t/210-deldocs.t
 t/211-seg_term_docs.t
-t/301-dupe_index.t
+t/302-many_fields.t
+t/303-highlighter.t
 t/501-termquery.t
 t/502-phrasequery.t
 t/503-booleanquery.t
@@ -114,13 +120,12 @@ t/504-similarity.t
 t/505-hit_queue.t
 t/506-hit_collector.t
 t/601-queryparser.t
+t/602-boosts.t
+t/603-query_boosts.t
 t/701-uscon.t
 t/999-remove_invindexes.t
 t/CompatTestIndexer.java
 t/KinoSearchTestInvIndex.pm
-t/lucene_index/_1g.cfs
-t/lucene_index/deletable
-t/lucene_index/segments
 t/LuceneIndexer.java
 t/pod.t
 t/us_constitution/amend1.html
@@ -177,4 +182,3 @@ t/us_constitution/art7.html
 t/us_constitution/index.html
 t/us_constitution/preamble.html
 t/us_constitution/uscon.css
-Makefile.PL

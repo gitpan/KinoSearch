@@ -1,4 +1,6 @@
 package KinoSearch::Search::HitCollector;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -21,6 +23,8 @@ sub new {
 sub define_collect { shift->abstract_death }
 
 package KinoSearch::Search::HitQueueCollector;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::HitCollector );
 
@@ -64,9 +68,9 @@ PPCODE:
 
 =begin comment
 
-    $hit_collector->collect( $score, $doc_num );
+    $hit_collector->collect( $doc_num, $score );
 
-Process a score/doc_num combination.  In production, this method should not be
+Process a doc_num/score combination.  In production, this method should not be
 called, as collecting hits is an extremely data-intensive operation.  Instead,
 the underlying C pointer-to-function should be called from within a Scorer's C
 loop.
@@ -75,12 +79,12 @@ loop.
 =cut
 
 void
-collect(obj, score, doc_num)
+collect(obj, doc_num, score)
     HitCollector *obj;
-    float         score;
     U32           doc_num;
+    float         score;
 PPCODE:
-    obj->collect(obj, score, doc_num);
+    obj->collect(obj, doc_num, score);
 
 SV* 
 _set_or_get(obj, ...)
@@ -134,7 +138,7 @@ __H__
 #include "KinoSearchUtilMemManager.h"
 
 typedef struct hitcollector {
-    void  (*collect)(struct hitcollector*, float, U32);
+    void  (*collect)(struct hitcollector*, U32, float);
     float   f;
     U32     i;
     void   *storage;
@@ -146,10 +150,10 @@ typedef struct hitcollector {
 HitCollector* Kino_HC_new(SV*);
 
 /* A placeholder which throws an error. */
-void Kino_HC_collect_death(HitCollector*, float, U32);
+void Kino_HC_collect_death(HitCollector*, U32, float);
     
 /* Collect hits into a HitQueue. */
-void Kino_HC_collect_HitQueue(HitCollector*, float, U32);
+void Kino_HC_collect_HitQueue(HitCollector*, U32, float);
 
 #endif /* include guard */
 
@@ -181,13 +185,13 @@ Kino_HC_new (SV* storage_ref) {
 }
 
 void
-Kino_HC_collect_death(HitCollector *hc, float score, U32 doc_num) {
+Kino_HC_collect_death(HitCollector *hc, U32 doc_num, float score) {
     Kino_confess("Must assign new C pointer-to-function to 'collect'");
 }
 
 
 void
-Kino_HC_collect_HitQueue(HitCollector *hc, float score, U32 doc_num) {
+Kino_HC_collect_HitQueue(HitCollector *hc, U32 doc_num, float score) {
     /* add to the total number of hits */
     hc->i++;
     
@@ -246,7 +250,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

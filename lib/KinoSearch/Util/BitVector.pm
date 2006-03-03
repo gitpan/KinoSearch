@@ -1,4 +1,6 @@
 package KinoSearch::Util::BitVector;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -52,11 +54,15 @@ Set the bit at $num to 1.
 =cut
 
 void
-set(obj, num)
+set(obj, ...)
     BitVector *obj;
-    U32        num;
+PREINIT:
+    U32 i, num;
 PPCODE:
-    Kino_BitVec_set(obj, num);
+    for (i = 1; i < items; i++) {
+        num = (U32)( SvUV( ST(i) ) );
+        Kino_BitVec_set(obj, num);
+    }
 
 =for comment
 Clear the bit at $num (i.e. set it to 0).
@@ -127,12 +133,41 @@ CODE:
 OUTPUT: RETVAL
 
 =for comment
+Modify the BitVector so that only bits which remain set are those which 1)
+were already set in this BitVector, and 2) were also set in the other
+BitVector.
+
+=cut
+
+void
+logical_and(obj, other)
+    BitVector *obj;
+    BitVector *other;
+PPCODE:
+    Kino_BitVec_logical_and(obj, other);
+
+=for comment
+Return an arrayref of the with each element the number of a set bit.
+
+=cut
+
+void
+to_arrayref(obj)
+    BitVector *obj;
+PREINIT:
+    AV *out_av;
+PPCODE:
+    out_av = Kino_BitVec_to_array(obj);
+    XPUSHs(newRV_noinc( (SV*)out_av ));
+    XSRETURN(1);
+    
+
+=for comment
 Setters and getters.  Two quirks: set_capacity can't adjust capacity
 downwards, and set_bits automatically adjusts capacity to the appropriate
 multiple of 8.
 
 =cut
-
 
 SV* 
 _set_or_get(obj, ...)
@@ -164,9 +199,7 @@ CODE:
     case 2:  RETVAL = newSVuv(obj->capacity);
              break;
 
-    case 3:  if (obj->bits != NULL) {
-                Kino_Safefree(obj->bits);
-             }
+    case 3:  Kino_Safefree(obj->bits);
              new_bits      = SvPV(ST(1), len);
              obj->bits     = (unsigned char*)Kino_savepvn(new_bits, len);
              obj->capacity = len << 3;
@@ -218,6 +251,8 @@ void Kino_BitVec_bulk_clear(BitVector*, U32, U32);
 bool Kino_BitVec_get(BitVector*, U32);
 U32  Kino_BitVec_next_set_bit(BitVector*, U32);
 U32  Kino_BitVec_next_clear_bit(BitVector*, U32);
+void Kino_BitVec_logical_and(BitVector*, BitVector*);
+AV*  Kino_BitVec_to_array(BitVector*);
 void Kino_BitVec_destroy(BitVector*);
 
 #endif /* include guard */
@@ -263,11 +298,20 @@ Kino_BitVec_grow(BitVector *obj, U32 capacity) {
     byte_size = ceil(capacity / 8.0);
 
     if (capacity > obj->capacity && obj->bits != NULL) {
+        U32 old_byte_size;
+        old_byte_size = ceil(obj->capacity / 8.0);
+
         Kino_Renew(obj->bits, byte_size, unsigned char);
         /* zero out all new bits, since Renew doesn't guarantee they're 0 */
         old_capacity = obj->capacity;
         obj->capacity = capacity;
         Kino_BitVec_bulk_clear(obj, old_capacity, capacity - 1);
+
+        /* shouldn't be necessary, but Valgrind reports an error without it */
+        if (byte_size > old_byte_size) {
+            memset( (obj->bits + old_byte_size), 0x00, 
+                (byte_size - old_byte_size) );
+        }
     }
     else if (obj->bits == NULL) {
         Kino_Newz(0, obj->bits, byte_size, unsigned char);
@@ -442,10 +486,40 @@ Kino_BitVec_next_clear_bit(BitVector *obj, U32 num) {
 }
 
 void
+Kino_BitVec_logical_and(BitVector *obj, BitVector *other) {
+    U32 num = 0;
+    while (1) {  
+        num = Kino_BitVec_next_set_bit(obj, num);
+        if (num == KINO_BITVEC_SENTINEL)
+            break;
+        if ( !Kino_BitVec_get(other, num) ) 
+            Kino_BitVec_clear(obj, num);
+        num++;
+    }
+}
+
+AV*  
+Kino_BitVec_to_array(BitVector* obj) {
+    U32  num = 0;
+    AV  *out_av;
+
+    out_av = newAV();
+    while (1) {  
+        num = Kino_BitVec_next_set_bit(obj, num);
+        if (num == KINO_BITVEC_SENTINEL)
+            break;
+        av_push( out_av, newSViv(num) );
+        num++;
+    }
+    return out_av;
+}
+
+void
 Kino_BitVec_destroy(BitVector* obj) {
     Kino_Safefree(obj->bits);
     Kino_Safefree(obj);
 }
+
 
 __POD__
 
@@ -467,7 +541,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

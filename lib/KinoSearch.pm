@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use constant K_DEBUG => 0;
 
@@ -80,7 +80,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.05
+0.06
 
 =head1 WARNING
 
@@ -104,7 +104,10 @@ your document collection.
         analyzer => $analyzer,
     );
     
-    $invindexer->spec_field( name => 'title' );
+    $invindexer->spec_field( 
+        name  => 'title' 
+        boost => 3,
+    );
     $invindexer->spec_field( name => 'bodytext' );
     
     while ( my ( $title, $bodytext ) = each %source_documents ) {
@@ -116,7 +119,7 @@ your document collection.
         $invindexer->add_doc($doc);
     }
     
-    $invindexer->close;
+    $invindexer->finish;
 
 Then, write a second application to search the invindex:
 
@@ -131,7 +134,7 @@ Then, write a second application to search the invindex:
         analyzer => $analyzer,
     );
     
-    my $hits = $searcher->search("foo bar");
+    my $hits = $searcher->search( query => "foo bar" );
     $hits->seek( 0, 20 );
     
     while ( my $hit = $hits->fetch_hit_hashref ) {
@@ -140,9 +143,49 @@ Then, write a second application to search the invindex:
 
 =head1 DESCRIPTION
 
-KinoSearch is a loose port of the Java search engine library Lucene, written
-in Perl and C.  The archetypal application is website search, but it can be
-put to many different uses.
+KinoSearch is a loose port of the Java search engine library Apache Lucene,
+written in Perl and C. The archetypal application is website search, but it
+can be put to many different uses.
+
+=head2 Features
+
+=over
+
+=item *
+
+Extremely fast and scalable - can handle millions of documents
+
+=item *
+
+Full support for 12 Indo-European languages.
+
+=item *
+
+Support for boolean operators AND, OR, and AND NOT; parenthetical groupings,
+and prepended +plus and -minus
+
+=item *
+
+Algorithmic selection of relevant excerpts and highlighting of search terms
+within excerpts
+
+=item *
+
+Highly customizable query and indexing APIs
+
+=item *
+
+Phrase matching
+
+=item *
+
+Stemming
+
+=item *
+
+Stoplists
+
+=back
 
 =head2 Getting Started
 
@@ -172,22 +215,22 @@ your purposes.
 
 =head1 SEE ALSO 
 
-L<KinoSearch::Docs::FileFormat|KinoSearch::Docs::FileFormat>, for a description
-of KinoSearch's file format and a discussion of Lucene compatibility issues.
-
-L<KinoSearch::Docs::DevGuide|KinoSearch::Docs::DevGuide>, if you want to hack
-or debug KinoSearch's internals.
-
 The KinoSearch homepage, where you'll find links to the mailing list and so
 on, is L<http://www.rectangular.com/kinosearch>.
 
 The Lucene homepage is L<http://lucene.apache.org>.
 
+L<KinoSearch::Docs::FileFormat|KinoSearch::Docs::FileFormat>, for an overview
+of the invindex file format.
+
+L<KinoSearch::Docs::DevGuide|KinoSearch::Docs::DevGuide>, if you want to hack
+or debug KinoSearch's internals.
+
 =head1 History 
 
-Search::Kinosearch, now deprecated, is this suite's immediate predecessor.
-L<Plucene|Plucene> is a pure-Perl port of Lucene 1.3.  KinoSearch is a
-from-scratch project which attempts to draws on the lessons of both.  The API
+Search::Kinosearch 0.02x, now deprecated, is this suite's forerunner.
+L<Plucene|Plucene> is a pure-Perl port of Lucene 1.3. KinoSearch is a
+from-scratch project which attempts to draws on the lessons of both. The API
 is not compatible with either.
 
 KinoSearch is named for Kino, the main character in John Steinbeck's novella,

@@ -112,6 +112,7 @@ L<HTML::Parser|HTML::Parser>.
     use POSIX qw( ceil );
     use KinoSearch::Searcher;
     use KinoSearch::Analysis::PolyAnalyzer;
+    use KinoSearch::Highlight::Highlighter;
     
     my $cgi           = CGI->new;
     my $q             = $cgi->param('q');
@@ -141,25 +142,26 @@ L<HTML::Parser|HTML::Parser>.
     ### STEP 3: Feed a query to the Search object.
     my $hits = $searcher->search($q);
     
-    ### STEP 4: Process the search.
+    ### STEP 4: Arrange for highlighted excerpts to be created.
+    my $highlighter = KinoSearch::Highlight::Highlighter->new( 
+        excerpt_field => 'bodytext' );
+    $hits->create_excerpts( highlighter => $highlighter );
+    
+    ### STEP 5: Process the search.
     $hits->seek( $offset, $hits_per_page );
     
-    ### STEP 5: Format the results however you like.
+    ### STEP 6: Format the results however you like.
     
     # create result list
     my $report = '';
-    while ( my ( $hit, $score ) = $hits->fetch_hit_hashref ) {
-        $score = sprintf( "%0.3f", $score );
-        my $excerpt = '';
-        if ( $hit->{bodytext} =~ /^(.{60,80}\w\b)/xsm ) {
-            $excerpt = "$1...";
-        }
+    while ( my $hit = $hits->fetch_hit_hashref ) {
+        my $score = sprintf( "%0.3f", $hit->{score} );
         $report .= qq|
             <p>
                 <a href="$hit->{url}"><strong>$hit->{title}</strong></a>
                 <em>$score</em>
                 <br>
-                $excerpt
+                $hit->{excerpt}
             </p>
             |;
     }
@@ -286,5 +288,5 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 

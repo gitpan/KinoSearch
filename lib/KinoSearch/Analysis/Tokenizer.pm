@@ -1,6 +1,10 @@
 package KinoSearch::Analysis::Tokenizer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
+
+use KinoSearch::Analysis::TokenBatch;
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
 
@@ -17,7 +21,7 @@ sub init_instance {
 
     # supply defaults if token_re wasn't specified
     if ( !defined $self->{token_re} ) {
-        $self->{token_re}     = qr/\w+(?:'\w+)?/;
+        $self->{token_re}     = qr/\b\w+(?:'\w+)?\b/;
         $self->{separator_re} = qr/\W*/;
     }
 
@@ -52,38 +56,31 @@ sub init_instance {
 }
 
 sub analyze {
-    my ( $self, $field ) = @_;
+    my ( $self, $token_batch ) = @_;
     my $tokenizing_re = $self->{tokenizing_re};
-    my ( @tokens, @start_offsets, @end_offsets );
 
-    # use the first element in the terms array as input
-    my $terms = $field->get_terms;
+    my $new_token_batch = KinoSearch::Analysis::TokenBatch->new;
+    my @raw_elems;
 
     # alias input to $_
-    for ( $terms->[0] ) {
-
-        # if the field content is an empty string, bail out
-        return unless bytes::length($_);
+    while ( $token_batch->next ) {
+        local $_ = $token_batch->get_text;
 
         # set the pos for input to the start of the first token
         pos = 0;
         m/$self->{separator_re}/g;
 
         my $last_pos = 0;
-        push @start_offsets, pos;
-
         # lex through input, capturing tokens and recording positional data
         while (m/$tokenizing_re/g) {
-            push @tokens,        $1;
-            push @start_offsets, pos;
-            push @end_offsets,   pos() - bytes::length($2);
+            my $pos = pos;
+            push @raw_elems, ( $1, $last_pos, $pos - bytes::length($2) );
+            $last_pos = $pos;
         }
-
-        # the last loop will always record 1 extra start, so truncate
-        $#start_offsets = $#tokens;
     }
+    $new_token_batch->add_many_tokens( \@raw_elems );
 
-    $field->set_tokenbatch( \@tokens, \@start_offsets, \@end_offsets );
+    return $new_token_batch;
 }
 
 1;
@@ -149,10 +146,12 @@ fine:
 
     # match "O'Henry" as well as "Henry" and "it's" as well as "it"
     my $token_re = qr/
+            \b        # start with a word boundary
             \w+       # Match word chars.
             (?:       # Group, but don't capture...
                '\w+   # ... an apostrophe plus word chars.
             )?        # Matching the apostrophe group is optional.
+            \b        # end with a word boundary
         /xsm;
     my $apostrophizing_tokenizer
         = KinoSearch::Analysis::Tokenizer->new( token_re => $token_re, );
@@ -165,6 +164,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut

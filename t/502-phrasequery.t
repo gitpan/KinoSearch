@@ -32,9 +32,10 @@ for (qw( a b c d )) {
 my $hits = $searcher->search( query => $phrase_query );
 $hits->seek( 0, 50 );
 is( $hits->total_hits, 3, "correct number of hits" );
-my ( $hashref, $first_score ) = $hits->fetch_hit_hashref;
-is( $hashref->{content}, $best_match, 'best match appears first' );
+my $first_hit = $hits->fetch_hit_hashref;
+is( $first_hit->{content}, $best_match, 'best match appears first' );
 
-my ( undef, $second_score ) = $hits->fetch_hit_hashref;
-ok( $first_score > $second_score, "best match scores higher" );
+my $second_hit = $hits->fetch_hit_hashref;
+ok( $first_hit->{score} > $second_hit->{score},
+    "best match scores higher: $first_hit->{score} > $second_hit->{score}" );
 

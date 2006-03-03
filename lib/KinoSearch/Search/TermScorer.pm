@@ -1,4 +1,6 @@
 package KinoSearch::Search::TermScorer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Scorer );
 
@@ -11,11 +13,11 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args(\%instance_vars, @_);
-    my %args = (%instance_vars, @_);
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
 
     $self->_init_child;
-    
+
     $self->_set_term_docs( $args{term_docs} );
     $self->_set_norms( $args{norms_reader}->get_bytes );
     $self->set_similarity( $args{similarity} );
@@ -63,8 +65,7 @@ PREINIT:
 PPCODE:
 {
     child = (TermScorerChild*)obj->child;
-    if (child->score_cache != NULL)
-        Kino_Safefree(child->score_cache);
+    Kino_Safefree(child->score_cache);
     Kino_New(0, child->score_cache, KINO_SCORE_CACHE_SIZE, float);
 
     cache_ptr     = child->score_cache;
@@ -105,7 +106,7 @@ PPCODE:
         norm = child->norms[child->doc];
         score *= obj->sim->norm_decoder[norm];
 
-        hc->collect(hc, score, child->doc);
+        hc->collect(hc, child->doc, score);
         
         /* time for a refill? */
         if (++child->pointer >= child->pointer_max) {
@@ -280,8 +281,7 @@ Kino_TermScorer_destroy(Scorer *scorer) {
     TermScorerChild *child;
     child = (TermScorerChild*)scorer->child;
 
-    if (child->score_cache != NULL)
-        Kino_Safefree(child->score_cache);
+    Kino_Safefree(child->score_cache);
 
     if (child->term_docs_sv != NULL) 
         SvREFCNT_dec(child->term_docs_sv);
@@ -370,7 +370,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

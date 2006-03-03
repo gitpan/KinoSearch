@@ -1,4 +1,6 @@
 package KinoSearch::Index::TermBuffer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -12,7 +14,7 @@ sub new {
     $class = ref($class) || $class;
     my %args = ( %instance_vars, @_ );
     verify_args( \%instance_vars, %args );
-    my $self = _new( $class, $args{finfos}, $args{finfos}->get_fnum_map );
+    my $self = _new( $class, $args{finfos}->size );
     return $self;
 }
 
@@ -25,10 +27,9 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::TermBuffer
 
 void
-_new(class, finfos_sv, fnum_map_sv) 
+_new(class, finfos_size) 
     char       *class;
-    SV         *finfos_sv;
-    SV         *fnum_map_sv;
+    I32         finfos_size;
 PREINIT:
     TermBuffer *term_buf;
     char       *ptr;
@@ -36,17 +37,13 @@ PREINIT:
 PPCODE:
 {
     Kino_New(0, term_buf, 1, TermBuffer);
-    SvREFCNT_inc(finfos_sv);
-    term_buf->finfos = finfos_sv;
 
     /* reset the TermBuffer */
     term_buf->termstring = NULL;
     Kino_TermBuf_reset(term_buf);
 
-    /* copy the fnum_map, derive max_field_num */
-    ptr                     = SvPV(fnum_map_sv, len);
-    term_buf->fnum_map      = Kino_savepvn(ptr, len);
-    term_buf->max_field_num = (len / KINO_FIELD_NUM_LEN) - 1;
+    /* derive max_field_num */
+    term_buf->max_field_num = finfos_size - 1;
     
     ST(0) = sv_newmortal();
     sv_setref_pv(ST(0), class, (void*)term_buf);
@@ -81,12 +78,11 @@ __H__
 #include "KinoSearchIndexTerm.h"
 
 typedef struct termbuffer {
-    SV      *finfos;
     char    *termstring;
     STRLEN   text_len;
     STRLEN   capacity;
     char    *fnum_map;
-    U32      max_field_num;
+    I32      max_field_num;
 } TermBuffer;
 
 void Kino_TermBuf_read(TermBuffer*, PerlIO*);
@@ -118,31 +114,20 @@ Kino_TermBuf_read(TermBuffer *term_buf, PerlIO *fh) {
         (text_overlap + KINO_FIELD_NUM_LEN),
         finish_chars_len);
 
-    /* read orig field num -- not the same as the final; see FieldInfos */
+    /* read field num */
     field_num = Kino_IO_read_vint(fh);
     if (field_num > term_buf->max_field_num && field_num != -1)
         Kino_confess("Internal error: field_num %d > max_field_num %d",
             field_num, term_buf->max_field_num);
 
-    if (field_num == -1) {
-        term_buf->termstring[0] = 0xff;     
-        term_buf->termstring[1] = 0xff;
-    }
-    /* assign the KinoSearch-compatible field num from the map */
-    else {
-        Copy( (term_buf->fnum_map + 2*field_num), 
-               term_buf->termstring, 2, char);
-    }
-
+    Kino_encode_bigend_U16( (U16)field_num, term_buf->termstring);
 }
 
 /* Set the TermBuffer object to a sentinel state, indicating that it does not
  * hold a valid Term */
 void
 Kino_TermBuf_reset(TermBuffer *term_buf) {
-    if (term_buf->termstring != NULL) {
-        Kino_Safefree(term_buf->termstring);
-    }
+    Kino_Safefree(term_buf->termstring);
     term_buf->termstring = NULL;
     term_buf->text_len   = 0;
     term_buf->capacity   = 0;
@@ -177,8 +162,6 @@ Kino_TermBuf_set_text_len(TermBuffer *term_buf, STRLEN new_len) {
 void 
 Kino_TermBuf_destroy(TermBuffer *term_buf) {
     Kino_TermBuf_reset(term_buf);
-    Kino_Safefree(term_buf->fnum_map);
-    SvREFCNT_dec(term_buf->finfos);
     Kino_Safefree(term_buf);
 }
 
@@ -202,7 +185,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

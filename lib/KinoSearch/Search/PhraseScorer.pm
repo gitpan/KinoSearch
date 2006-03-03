@@ -1,20 +1,22 @@
 package KinoSearch::Search::PhraseScorer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Scorer );
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # constructor params
-    weight          => undef,
-    term_docs       => [],
-    phrase_offsets  => [],
-    norms_reader    => undef,
-    slop            => 0,
+    weight         => undef,
+    term_docs      => [],
+    phrase_offsets => [],
+    norms_reader   => undef,
+    slop           => 0,
 );
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args(\%instance_vars, @_);
-    my %args = (%instance_vars, @_);
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
 
     $self->_init_child;
 
@@ -22,18 +24,18 @@ sub new {
     $self->set_similarity( $args{similarity} );
     $self->_set_weight_value( $args{weight}->get_value );
     confess("Sloppy phrase matching not yet implemented")
-        unless $args{slop} == 0; # TODO -- enable slop.
+        unless $args{slop} == 0;    # TODO -- enable slop.
     $self->_set_slop( $args{slop} );
 
     # sort terms by ascending frequency
-    confess("positions count doesn't match term count") 
+    confess("positions count doesn't match term count")
         unless $#{ $args{term_docs} } == $#{ $args{phrase_offsets} };
     my @by_size = sort { $a->[0]->get_doc_freq <=> $b->[0]->get_doc_freq }
         map { [ $args{term_docs}[$_], $args{phrase_offsets}[$_] ] }
         0 .. $#{ $args{term_docs} };
-    my @term_docs = map { $_->[0] } @by_size;
+    my @term_docs      = map { $_->[0] } @by_size;
     my @phrase_offsets = map { $_->[1] } @by_size;
-    $self->_init_elements(\@term_docs, \@phrase_offsets);
+    $self->_init_elements( \@term_docs, \@phrase_offsets );
 
     return $self;
 }
@@ -371,10 +373,8 @@ Kino_PhraseScorer_destroy(Scorer *scorer) {
     
     child = (PhraseScorerChild*)scorer->child;
 
-    if (child->term_docs != NULL)
-        Kino_Safefree(child->term_docs);
-    if (child->phrase_offsets != NULL)
-        Kino_Safefree(child->phrase_offsets);
+    Kino_Safefree(child->term_docs);
+    Kino_Safefree(child->phrase_offsets);
     if (child->norms_sv != NULL)
         SvREFCNT_dec(child->norms_sv);
     if (child->term_docs_av != NULL)
@@ -404,7 +404,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

@@ -23,20 +23,15 @@ __C__
 #include "KinoSearchUtilCarp.h"
 
 void Kino_confess (char* pat, ...) {
-    char *error_str;
-    int message_len;
-    va_list args_ptr;
-    SV* error_sv;
+    va_list args;
+    SV      *error_sv;
 
-    Kino_New(0, error_str, 256, char);
-
-    va_start(args_ptr, pat);
-    message_len = vsnprintf(error_str, 256, pat, args_ptr);
-    va_end(args_ptr);
-
-    error_sv = newSVpv(error_str, message_len);
-    Kino_Safefree(error_str);
+    error_sv = newSV(0);
     
+    va_start(args, pat);
+    sv_vsetpvf(error_sv, pat, &args);
+    va_end(args);
+
     dSP;
     ENTER;
     SAVETMPS;
@@ -61,13 +56,8 @@ KinoSearch::Util::Carp - stack traces from C
 =head1 DESCRIPTION
 
 This module makes it possible to invoke Carp::confess() from C.  Modules that
-use it will need to "use Carp;".
-
-=head1 TODO
-
-At present, this module won't compile on systems where vsnprintf isn't
-available.  This needs to be addressed without creating the buffer overflow
-security problem that vsnprintf is designed to avoid.
+use it will need to "use Carp;" -- which is usually taken care of by "use
+KinoSearch::Util::ToolSet;".
 
 =head1 COPYRIGHT
 
@@ -75,7 +65,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

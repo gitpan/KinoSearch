@@ -4,47 +4,47 @@ use warnings;
 use bytes;
 no bytes;
 
-use base qw( ToolSet );
+use base qw( Exporter );
 
-ToolSet->set_strict(1);
-ToolSet->set_warnings(1);
+use Carp qw( carp croak cluck confess );
+# everything except readonly and set_prototype
+use Scalar::Util qw(
+    refaddr
+    blessed
+    dualvar
+    isweak
+    refaddr
+    reftype
+    tainted
+    weaken
+    isvstring
+    looks_like_number
+);
+use KinoSearch qw( K_DEBUG kdump );
+use KinoSearch::Util::VerifyArgs qw( verify_args a_isa_b );
 
-ToolSet->export(
-    'KinoSearch' => [
-        qw(
-            K_DEBUG
-            kdump
-            )
-    ],
-    'KinoSearch::Util::VerifyArgs' => [
-        qw(
-            verify_args
-            a_isa_b
-            )
-    ],
-    'Carp' => [
-        qw(
-            carp
-            croak
-            confess
-            cluck
-            )
-    ],
-    # everything except readonly and set_prototype
-    'Scalar::Util' => [
-        qw(
-            refaddr
-            blessed
-            dualvar
-            isweak
-            refaddr
-            reftype
-            tainted
-            weaken
-            isvstring
-            looks_like_number
-            )
-    ],
+our @EXPORT = qw(
+    carp
+    croak
+    cluck
+    confess
+
+    refaddr
+    blessed
+    dualvar
+    isweak
+    refaddr
+    reftype
+    tainted
+    weaken
+    isvstring
+    looks_like_number
+
+    K_DEBUG
+    kdump
+
+    verify_args
+    a_isa_b
 );
 
 1;
@@ -53,7 +53,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Util::ToolSet - strict, warnings, and more
+KinoSearch::Util::ToolSet - namespace pollution
 
 =head1 PRIVATE CLASS
 
@@ -66,16 +66,16 @@ warning.  Do not use it on its own.
 
 =head1 DESCRIPTION
 
-KinoSearch::Util::ToolSet uses David Golden's L<ToolSet|ToolSet> module to
-create a default environment and replace several lines of code at the top of
-each module with one.  The line...
+KinoSearch::Util::ToolSet makes a slew of commonly needed symbols available to
+other modules in the KinoSearch suite.  At one time it was implemented using
+David Golden's L<ToolSet|ToolSet> module, but in keeping with the philosophy
+of minimizing non-core dependencies, a 90% solution based on Exporter has been
+substituted.
 
     use KinoSearch::Util::ToolSet;
 
 ... is effectively an alias for...
 
-    use strict;   # strict and warnings really are turned on!
-    use warnings;
     use bytes; no bytes;
     use Carp qw( carp croak cluck confess );
     use Scalar::Util qw( 
@@ -111,6 +111,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut

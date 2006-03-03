@@ -1,5 +1,7 @@
 package KinoSearch::Store::InStream;
 use base qw( KinoSearch::Util::Class );
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 
 # members (InStream is an inside-out class)
@@ -36,7 +38,7 @@ sub new {
 
     # store information that will be needed when cloning
     $filenames{"$self"} = $filename;
-    $parents{"$self"} = $invindex;
+    $parents{"$self"}   = $invindex;
 
     # confirm/derive start_offset and set it
     $offset ||= 0;
@@ -79,11 +81,12 @@ sub get_offset { $start_offsets{"$_[0]"} }
 # Dupe the filehandle and create a new object around the dupe.  Seek the dupe
 # to the same spot as the original.
 sub clone_stream {
-    my $self = shift;
-    my $evil_twin = $parents{"$self"}->open_instream(
-        $filenames{"$self"}, $start_offsets{"$self"}, $lengths{"$self"} );
+    my $self      = shift;
+    my $evil_twin = $parents{"$self"}
+        ->open_instream( $filenames{"$self"}, $start_offsets{"$self"},
+        $lengths{"$self"} );
     my $bookmark = CORE::tell($self);
-    CORE::seek($evil_twin, $bookmark, 0);
+    CORE::seek( $evil_twin, $bookmark, 0 );
     return $evil_twin;
 }
 
@@ -185,8 +188,8 @@ PPCODE:
         switch(sym) {
 
         case 'a': /* arbitrary binary data */
-			len = repeat_count;
-			repeat_count = 1;
+            len = repeat_count;
+            repeat_count = 1;
             aSV = newSV(len + 1);
             SvCUR_set(aSV, len);
             SvPOK_on(aSV);
@@ -217,7 +220,7 @@ PPCODE:
             break;
 
         case 'T': /* string */
-			len = Kino_IO_read_vint(fh);
+            len = Kino_IO_read_vint(fh);
             aSV = newSV(len + 1);
             SvCUR_set(aSV, len);
             SvPOK_on(aSV);
@@ -265,6 +268,7 @@ __H__
 char   Kino_IO_read_byte  (PerlIO*);
 U32    Kino_IO_read_int   (PerlIO*);
 double Kino_IO_read_long  (PerlIO*);
+U32    Kino_IO_decode_vint(char**);
 U32    Kino_IO_read_vint  (PerlIO*);
 double Kino_IO_read_vlong (PerlIO*);
 void   Kino_IO_read_chars (PerlIO*, char*, STRLEN, STRLEN);
@@ -343,6 +347,23 @@ Kino_IO_read_vint (PerlIO *fh) {
     return aU32;
 }
 
+U32
+Kino_IO_decode_vint(char **source_ptr) {
+    char *source;
+    int   bitshift;
+    U32   aU32;
+    
+    source = *source_ptr;
+    aU32 = (unsigned char)*source & 0x7f;
+    for (bitshift = 7; (*source & 0x80) != 0; bitshift += 7) {
+        source++;
+         aU32 |= ((unsigned char)*source & 0x7f) << bitshift;
+    }
+    source++;
+    *source_ptr = source;
+    return aU32;
+}
+
 double
 Kino_IO_read_vlong (PerlIO *fh) {
     unsigned char aUChar;
@@ -371,8 +392,8 @@ Kino_IO_read_vlong (PerlIO *fh) {
 void
 Kino_IO_read_chars (PerlIO *fh, char *buf, STRLEN start, STRLEN len) {
     int check_val;
-	
-	buf += start;
+    
+    buf += start;
     check_val = PerlIO_read(fh, buf, len);
     if (check_val < len)
         Kino_confess("Kino_IO_read_bytes error: %d", check_val);
@@ -431,7 +452,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

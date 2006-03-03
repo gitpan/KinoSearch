@@ -31,7 +31,7 @@ is_deeply( \@freq_nums, [ 1, 2 ], "correct freqs" );
 $term_docs->set_read_positions(1);
 $term_docs->seek($term);
 $prox = '';
-$prox.= $term_docs->get_positions while $term_docs->next;
+$prox .= $term_docs->get_positions while $term_docs->next;
 my @prox_nums = unpack( 'I*', $prox );
 is_deeply( \@prox_nums, [ 0, 0, 1 ], "correct positions" );
 

@@ -1,6 +1,15 @@
 Revision history for KinoSearch
 
-0.05    2005-01-24
-        KinoSearch, a complete rewrite, supersedes Search::Kinosearch.
-        
+0.06  2006-03-02
+  * opened up APIs for Query subclasses and QueryParser
+  * added KinoSearch::Highlight::Highlighter
+  * document, field, and query boosting enabled
+  * behavior of KinoSearch::Search::Hits::fetch_hit_hashref modified
+  * KinoSearch::Document::Doc::to_hashref privatized
+  * dependencies pared down
+  * fixed bug affecting invindexes with 10 or more fields
+
+0.05  2006-01-24
+  * KinoSearch, a complete rewrite, supersedes Search::Kinosearch.
+       
 

@@ -192,8 +192,15 @@ write indexes by-the-segment rather than by-the document -- slashing
 the OO requirements and largely offsetting the extra overhead.
 
 Similar architectural differences exist throughout KinoSearch.  While the
-file-format dictates how things are to be done in many cases, when idiomatic
-alternatives presented themselves or were already known, they were adopted.
+file-format dictates certain algorithms, when idiomatic alternatives presented
+themselves or were already known, they were adopted.
+
+=head2 Search Logic
+
+KinoSearch's search logic differs from Lucene's.  In particular,
+very short fields do not contribute as much to a score, making it essential to
+assign a <boost> of greater than 1 to short but important fields, e.g.
+"title".  
 
 =head2 File Format
 
@@ -203,24 +210,46 @@ It's somewhat hard to work with, and impossible to work with efficiently using
 only native Perl, but it has both data-compression and
 search-time-execution-speed nailed.
 
-Unfortunately, it has a Java-specific quirk that deep-sixes prospects for
-100% index compatibility.
+Unfortunately, the way Lucene defines a String has a Java-centric quirk that
+deep-sixes prospects for 100% index compatibility, and the only realistic
+solutions involve changes to Lucene.  In theory, these changes (moving to
+bytecount-based Strings) should actually improve Lucene's performance, and the
+Lucene development community has expressed openness to them.  At some point,
+time may be found to write these win-win patches, but at present working on
+KinoSearch itself takes higher priority.
 
-=head2 Strings
+Here's a list of the ways in which KinoSearch's file format differ's from
+Lucene's:
 
-Lucene's file format specifies that a String is a VInt count of the number of
-java chars a string occupies, followed by the character data encoded in Sun's
-"modified UTF-8" format (a misnamed, illegal variant, unsanctioned by the
-Unicode Consortium).  Dealing with this format in Perl has proven to be so
-fiddly and performance-killing as to be not worth the effort.  At present,
-KinoSearch's String format is: a byte count, followed by arbitrary data.  
+=over
 
-KinoSearch maintains the goal of Lucene file-format compatibility; however,
-the easiest way to achieve this goal is likely to be a change to Lucene.  The
-Lucene development community has expressed openness to bytecount-based
-strings; in theory, their deployment should actually improve Lucene's
-performance.  It is simply a matter of finding the time to write these win-win
-patches.
+=item *
+
+B<Strings> - Lucene's file format specifies that a String is a VInt count of
+the number of java chars a string occupies, followed by the character data
+encoded in Sun's "modified UTF-8" format (a misnamed, illegal variant,
+unsanctioned by the Unicode Consortium).  Dealing with this format in Perl has
+proven to be so fiddly and performance-killing as to be not worth the effort.
+At present, KinoSearch's String format is: a byte count, followed by arbitrary
+data.  
+
+=item *
+
+B<Field Numbers> - KinoSearch requires that field numbers correspond to
+lexically sorted order of field names; Lucene indexes are unlikely to have
+this property.  KinoSearch 0.05 had compatibility code which dealt with
+unordered field numbers, but that code was removed in 0.06.  It can be
+restored if need be.
+
+=item *
+
+B<Term Vectors> - KinoSearch groups term vector data with stored field data;
+Lucene uses separate files.  Keeping term vector data and field data together
+minimizes disk activity for common usage patterns.  It's also a little simpler
+to maintain.  However, if the String issue is resolved in a future version of
+Lucene, KinoSearch will likely switch to Lucene's format.
+
+=back
 
 =head1 Coding style
 
@@ -250,7 +279,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

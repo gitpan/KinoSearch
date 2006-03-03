@@ -1,4 +1,6 @@
 package KinoSearch::Index::FieldInfos;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class Exporter );
 
@@ -9,31 +11,25 @@ our @EXPORT_OK;
 BEGIN {
     @EXPORT_OK = qw(
         INDEXED
-        STORE_TV
-        STORE_POS_WITH_TV
-        STORE_OFFSET_WITH_TV
+        VECTORIZED
         OMIT_NORMS
     );
 }
 
-use constant INDEXED              => "\x01";
-use constant STORE_TV             => "\x02";
-use constant STORE_POS_WITH_TV    => "\x04";
-use constant STORE_OFFSET_WITH_TV => "\x08";
-use constant OMIT_NORMS           => "\x10";
+use constant INDEXED    => "\x01";
+use constant VECTORIZED => "\x02";
+use constant OMIT_NORMS => "\x10";
 
 use Clone qw( clone );
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # members
-    infos        => {},
-    orig_order   => undef,
-    sorted_names => [],
-    from_file    => 0,
+    by_name   => {},
+    by_num    => [],
+    from_file => 0,
 );
 
-# Create a FieldInfo from from a user-supplied Field object and add it to the
-# FieldInfos collection.
+# Add a user-supplied Field object to the collection.
 sub add_field {
     my ( $self, $field ) = @_;
 
@@ -43,78 +39,62 @@ sub add_field {
 
     # misc verifications
     croak("Not a KinoSearch::Document::Field")
-        unless ( blessed($field)
-        and ( $field->isa('KinoSearch::Document::Field') ) );
+        unless a_isa_b( $field, 'KinoSearch::Document::Field' );
     my $fieldname = $field->get_name;
     croak("Field '$fieldname' already defined")
-        if exists $self->{infos}{$fieldname};
+        if exists $self->{by_name}{$fieldname};
 
     # add the field
-    $self->{infos}{$fieldname} = $field;
+    $self->{by_name}{$fieldname} = $field;
     $self->_assign_field_nums;
 }
 
 # Return the number of fields in the segment.
-sub size { scalar @{ $_[0]->{sorted_names} } }
+sub size { scalar @{ $_[0]->{by_num} } }
 
-# Return an unordered list of the FieldInfo objects.
-sub get_infos {
-    values %{ $_[0]->{infos} };
-}
+# Return a list of the Field objects.
+sub get_infos { @{ $_[0]->{by_num} } }
 
 # Given a fieldname, return its number.
 sub get_field_num {
     my ( $self, $name ) = @_;
-    my $num = $self->{infos}{$name}{field_num};
     confess("don't have a field_num for field named '$name'")
-        unless defined $num;
+        unless exists $self->{by_name}{$name};
+    my $num = $self->{by_name}{$name}->get_field_num;
     return $num;
 }
 
 # Given a fieldname, return its FieldInfo.
-sub info_by_name { $_[0]->{infos}{ $_[1] } }
+sub info_by_name { $_[0]->{by_name}{ $_[1] } }
 
-# Given the *original* field number return a fieldInfo.
-sub info_by_orig_num { $_[0]->{orig_order}[ $_[1] ] }
+# Given a field number, return its fieldInfo.
+sub info_by_num { $_[0]->{by_num}[ $_[1] ] }
 
 # Given the field number (new, not original), return the name of the field.
 sub field_name {
     my ( $self, $num ) = @_;
-    my $name = $self->{sorted_names}[$num];
+    my $name = $self->{by_num}[$num]->get_name;
     croak("Don't know about field number $num")
         unless defined $name;
     return $name;
 }
 
-# Return a mapping of original field numbers to new.
-sub get_fnum_map {
-    my $self     = shift;
-    my $fnum_map = '';
-    $fnum_map .= pack( 'n', $_->{field_num} ) for @{ $self->{orig_order} };
-    return $fnum_map;
-}
-
 # Sort all the fields lexically by name and assign ascending numbers.
 sub _assign_field_nums {
-    my $self  = shift;
-    my $infos = $self->{infos};
+    my $self = shift;
+    confess("Can't _assign_field_nums when from_file") if $self->{from_file};
 
     # assign field nums according to lexical order of field names
-    my @sorted = sort { $a->{name} cmp $b->{name} } values %$infos;
+    @{ $self->{by_num} }
+        = sort { $a->get_name cmp $b->get_name } values %{ $self->{by_name} };
     my $inc = 0;
-    $_->{field_num} = $inc++ for @sorted;
-    @{ $self->{sorted_names} } = map { $_->{name} } @sorted;
-
-    # preserve original order in orig_order array if read from file
-    $self->{orig_order} = \@sorted
-        unless $self->{from_file};
+    $_->set_field_num( $inc++ ) for @{ $self->{by_num} };
 }
 
 # Decode an existing .fnm file.
 sub read_infos {
-    my ( $self, $instream ) = @_;
-    my %infos;
-    $self->{infos} = \%infos;
+    my ( $self,    $instream ) = @_;
+    my ( $by_name, $by_num )   = @{$self}{qw( by_name by_num )};
 
     # set flag indicating that this FieldInfos object has been read in
     $self->{from_file} = 1;
@@ -122,38 +102,29 @@ sub read_infos {
     # read in infos from stream
     my $num_fields     = $instream->lu_read('V');
     my @names_and_bits = $instream->lu_read( 'Ta' x $num_fields );
-    my @orig;
-    for ( 0 .. $num_fields - 1 ) {
+    my $field_num      = 0;
+    while ( $field_num < $num_fields ) {
         my ( $name, $bits ) = splice( @names_and_bits, 0, 2 );
         my $info = KinoSearch::Document::Field->new(
-            name     => $name,
-            indexed  => ( "$bits" & INDEXED ) eq INDEXED ? 1 : 0,
-            store_tv => ( "$bits" & STORE_TV ) eq STORE_TV ? 1 : 0,
-            store_pos_with_tv => ( "$bits" & STORE_POS_WITH_TV ) eq
-                STORE_POS_WITH_TV ? 1 : 0,
-            store_offset_with_tv => ( "$bits" & STORE_OFFSET_WITH_TV ) eq
-                STORE_OFFSET_WITH_TV ? 1 : 0,
-            fnm_bits => $bits,
+            field_num  => $field_num,
+            name       => $name,
+            indexed    => ( "$bits" & INDEXED ) eq INDEXED ? 1 : 0,
+            vectorized => ( "$bits" & VECTORIZED ) eq VECTORIZED ? 1 : 0,
+            fnm_bits   => $bits,
         );
-        $infos{$name} = $info;
-        push @orig, $info;
+        $by_name->{$name} = $info;
+        # order of storage implies lexical order by name and field number
+        push @$by_num, $info;
+        $field_num++;
     }
-
-    # preserve original field numbers
-    $self->{orig_order} = \@orig;
-
-    # force KinoSearch compatible field numbers
-    $self->_assign_field_nums;
 }
 
 # Write .fnm file.
 sub write_infos {
     my ( $self, $outstream ) = @_;
 
-    my @sorted_infos = sort { $a->get_field_num cmp $b->get_field_num }
-        values %{ $self->{infos} };
-    $outstream->lu_write( 'V', scalar @sorted_infos );
-    for my $finfo (@sorted_infos) {
+    $outstream->lu_write( 'V', scalar @{ $self->{by_num} } );
+    for my $finfo ( @{ $self->{by_num} } ) {
         $outstream->lu_write( 'Ta', $finfo->get_name, $finfo->get_fnm_bits, );
     }
 }
@@ -162,11 +133,11 @@ sub write_infos {
 # new field numbers.
 sub consolidate {
     my ( $self, @others ) = @_;
-    my $infos = $self->{infos};
+    my $infos = $self->{by_name};
 
-    # create a master FieldInfos object
+    # Make *this* finfos the master FieldInfos object
     for my $other (@others) {
-        while ( my ( $name, $other_finfo ) = each %{ $other->{infos} } ) {
+        while ( my ( $name, $other_finfo ) = each %{ $other->{by_name} } ) {
             if ( exists $infos->{$name} ) {
                 $infos->{$name} = $other_finfo->breed_with( $infos->{$name} );
             }
@@ -179,36 +150,29 @@ sub consolidate {
     $self->_assign_field_nums;
 
     # sync field nums in all the others with the master
-    my @fnum_maps;
-    for my $other (@others) {
-        for my $other_finfo ( @{ $other->{orig_order} } ) {
-            $other_finfo->{field_num}
-                = $infos->{"$other_finfo->{name}"}{field_num};
-        }
-    }
+    #    for my $other (@others) {
+    #        for my $other_finfo ( @{ $other->{by_num} } ) {
+    #            $other_finfo->{field_num}
+    #                = $infos->{"$other_finfo->{name}"}{field_num};
+    #        }
+    #    }
 }
 
 sub encode_fnm_bits {
     my ( undef, $field ) = @_;
     my $bits = "\0";
     for ($bits) {
-        $_ |= INDEXED              if $field->get_indexed;
-        $_ |= STORE_TV             if $field->get_store_tv;
-        $_ |= STORE_POS_WITH_TV    if $field->get_store_pos_with_tv;
-        $_ |= STORE_OFFSET_WITH_TV if $field->get_store_offset_with_tv;
-        $_ |= OMIT_NORMS           if $field->get_omit_norms;
+        $_ |= INDEXED    if $field->get_indexed;
+        $_ |= VECTORIZED if $field->get_vectorized;
+        $_ |= OMIT_NORMS if $field->get_omit_norms;
     }
     return $bits;
 }
 
 sub decode_fnm_bits {
     my ( undef, $field, $bits ) = @_;
-    $field->set_indexed(  ( $bits & INDEXED )  eq INDEXED );
-    $field->set_store_tv( ( $bits & STORE_TV ) eq STORE_TV );
-    $field->set_store_pos_with_tv(
-        ( $bits & STORE_POS_WITH_TV ) eq STORE_POS_WITH_TV );
-    $field->set_store_offset_with_tv(
-        ( $bits & STORE_OFFSET_WITH_TV ) eq STORE_OFFSET_WITH_TV );
+    $field->set_indexed(    ( $bits & INDEXED )    eq INDEXED );
+    $field->set_vectorized( ( $bits & VECTORIZED ) eq VECTORIZED );
     $field->set_omit_norms( ( $bits & OMIT_NORMS ) eq OMIT_NORMS );
 }
 
@@ -234,15 +198,7 @@ segment.
 
 KinoSearch counts on having field nums assigned to fields by lexically sorted
 order of field names, but indexes generated by Java Lucene are not likely to
-have this property.  In order to keep this area of KinoSearch
-Lucene-compatible, it is necessary to prepare for unordered field numbers.
-
-When an index is read in, original field numbers are preserved via the
-orig_order array, but then the field numbers visible to the rest of KinoSearch
-are forced into an order corresponding to lexically sorted field name.
-
-The fnum_map, which maps original field numbers to new, is used by various
-classes within KinoSearch to translate.
+have this property. 
 
 =head1 COPYRIGHT
 
@@ -250,7 +206,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

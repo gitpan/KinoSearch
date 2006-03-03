@@ -1,8 +1,173 @@
---- #YAML:1.0
+---
 name: KinoSearch
-version: 0.05
+version: 0.06
 author:
-  - Marvin Humphrey <marvin at rectangular dot com>
+  - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: search engine library
 license: perl
-generated_by: Module::Build version 0.2611, without YAML.pm
+requires:
+  Clone: 0.18
+  Lingua::Stem::Snowball: 0.94
+  Lingua::StopWords: 0.02
+  Sort::External: 0.15
+provides:
+  KinoSearch:
+    file: lib/KinoSearch.pm
+    version: 0.06
+  KinoSearch::Analysis::Analyzer:
+    file: lib/KinoSearch/Analysis/Analyzer.pm
+  KinoSearch::Analysis::LCNormalizer:
+    file: lib/KinoSearch/Analysis/LCNormalizer.pm
+  KinoSearch::Analysis::PolyAnalyzer:
+    file: lib/KinoSearch/Analysis/PolyAnalyzer.pm
+  KinoSearch::Analysis::Stemmer:
+    file: lib/KinoSearch/Analysis/Stemmer.pm
+  KinoSearch::Analysis::Stopalizer:
+    file: lib/KinoSearch/Analysis/Stopalizer.pm
+  KinoSearch::Analysis::TokenBatch:
+    file: lib/KinoSearch/Analysis/TokenBatch.pm
+  KinoSearch::Analysis::Tokenizer:
+    file: lib/KinoSearch/Analysis/Tokenizer.pm
+  KinoSearch::Document::Doc:
+    file: lib/KinoSearch/Document/Doc.pm
+  KinoSearch::Document::Field:
+    file: lib/KinoSearch/Document/Field.pm
+  KinoSearch::Highlight::Highlighter:
+    file: lib/KinoSearch/Highlight/Highlighter.pm
+  KinoSearch::Index::CompoundFileReader:
+    file: lib/KinoSearch/Index/CompoundFileReader.pm
+  KinoSearch::Index::CompoundFileWriter:
+    file: lib/KinoSearch/Index/CompoundFileWriter.pm
+  KinoSearch::Index::DelDocs:
+    file: lib/KinoSearch/Index/DelDocs.pm
+  KinoSearch::Index::FieldInfos:
+    file: lib/KinoSearch/Index/FieldInfos.pm
+  KinoSearch::Index::FieldsReader:
+    file: lib/KinoSearch/Index/FieldsReader.pm
+  KinoSearch::Index::FieldsWriter:
+    file: lib/KinoSearch/Index/FieldsWriter.pm
+  KinoSearch::Index::IndexFileNames:
+    file: lib/KinoSearch/Index/IndexFileNames.pm
+  KinoSearch::Index::IndexReader:
+    file: lib/KinoSearch/Index/IndexReader.pm
+  KinoSearch::Index::MultiReader:
+    file: lib/KinoSearch/Index/MultiReader.pm
+  KinoSearch::Index::MultiTermDocs:
+    file: lib/KinoSearch/Index/MultiTermDocs.pm
+  KinoSearch::Index::NormsReader:
+    file: lib/KinoSearch/Index/NormsReader.pm
+  KinoSearch::Index::PostingsWriter:
+    file: lib/KinoSearch/Index/PostingsWriter.pm
+  KinoSearch::Index::SegInfo:
+    file: lib/KinoSearch/Index/SegInfos.pm
+  KinoSearch::Index::SegInfos:
+    file: lib/KinoSearch/Index/SegInfos.pm
+  KinoSearch::Index::SegMerger:
+    file: lib/KinoSearch/Index/SegMerger.pm
+  KinoSearch::Index::SegReader:
+    file: lib/KinoSearch/Index/SegReader.pm
+  KinoSearch::Index::SegTermDocs:
+    file: lib/KinoSearch/Index/SegTermDocs.pm
+  KinoSearch::Index::SegTermEnum:
+    file: lib/KinoSearch/Index/SegTermEnum.pm
+  KinoSearch::Index::SegWriter:
+    file: lib/KinoSearch/Index/SegWriter.pm
+  KinoSearch::Index::Term:
+    file: lib/KinoSearch/Index/Term.pm
+  KinoSearch::Index::TermBuffer:
+    file: lib/KinoSearch/Index/TermBuffer.pm
+  KinoSearch::Index::TermDocs:
+    file: lib/KinoSearch/Index/TermDocs.pm
+  KinoSearch::Index::TermEnum:
+    file: lib/KinoSearch/Index/TermEnum.pm
+  KinoSearch::Index::TermInfo:
+    file: lib/KinoSearch/Index/TermInfo.pm
+  KinoSearch::Index::TermInfosReader:
+    file: lib/KinoSearch/Index/TermInfosReader.pm
+  KinoSearch::Index::TermInfosWriter:
+    file: lib/KinoSearch/Index/TermInfosWriter.pm
+  KinoSearch::Index::TermVector:
+    file: lib/KinoSearch/Index/TermVector.pm
+  KinoSearch::InvIndexer:
+    file: lib/KinoSearch/InvIndexer.pm
+  KinoSearch::QueryParser::QueryParser:
+    file: lib/KinoSearch/QueryParser/QueryParser.pm
+  KinoSearch::Search::BooleanClause:
+    file: lib/KinoSearch/Search/BooleanClause.pm
+  KinoSearch::Search::BooleanQuery:
+    file: lib/KinoSearch/Search/BooleanQuery.pm
+  KinoSearch::Search::BooleanScorer:
+    file: lib/KinoSearch/Search/BooleanScorer.pm
+  KinoSearch::Search::BooleanWeight:
+    file: lib/KinoSearch/Search/BooleanQuery.pm
+  KinoSearch::Search::HitCollector:
+    file: lib/KinoSearch/Search/HitCollector.pm
+  KinoSearch::Search::HitDoc:
+    file: lib/KinoSearch/Search/HitDoc.pm
+  KinoSearch::Search::HitQueue:
+    file: lib/KinoSearch/Search/HitQueue.pm
+  KinoSearch::Search::HitQueueCollector:
+    file: lib/KinoSearch/Search/HitCollector.pm
+  KinoSearch::Search::Hits:
+    file: lib/KinoSearch/Search/Hits.pm
+  KinoSearch::Search::PhraseQuery:
+    file: lib/KinoSearch/Search/PhraseQuery.pm
+  KinoSearch::Search::PhraseScorer:
+    file: lib/KinoSearch/Search/PhraseScorer.pm
+  KinoSearch::Search::PhraseWeight:
+    file: lib/KinoSearch/Search/PhraseQuery.pm
+  KinoSearch::Search::Query:
+    file: lib/KinoSearch/Search/Query.pm
+  KinoSearch::Search::Scorer:
+    file: lib/KinoSearch/Search/Scorer.pm
+  KinoSearch::Search::Searchable:
+    file: lib/KinoSearch/Search/Searchable.pm
+  KinoSearch::Search::Similarity:
+    file: lib/KinoSearch/Search/Similarity.pm
+  KinoSearch::Search::TermQuery:
+    file: lib/KinoSearch/Search/TermQuery.pm
+  KinoSearch::Search::TermScorer:
+    file: lib/KinoSearch/Search/TermScorer.pm
+  KinoSearch::Search::TermWeight:
+    file: lib/KinoSearch/Search/TermQuery.pm
+  KinoSearch::Search::Weight:
+    file: lib/KinoSearch/Search/Weight.pm
+  KinoSearch::Searcher:
+    file: lib/KinoSearch/Searcher.pm
+  KinoSearch::Store::FSInvIndex:
+    file: lib/KinoSearch/Store/FSInvIndex.pm
+  KinoSearch::Store::FSLock:
+    file: lib/KinoSearch/Store/FSLock.pm
+  KinoSearch::Store::InStream:
+    file: lib/KinoSearch/Store/InStream.pm
+  KinoSearch::Store::InvIndex:
+    file: lib/KinoSearch/Store/InvIndex.pm
+  KinoSearch::Store::Lock:
+    file: lib/KinoSearch/Store/Lock.pm
+  KinoSearch::Store::OutStream:
+    file: lib/KinoSearch/Store/OutStream.pm
+  KinoSearch::Store::RAMInvIndex:
+    file: lib/KinoSearch/Store/RAMInvIndex.pm
+  KinoSearch::Store::RAMLock:
+    file: lib/KinoSearch/Store/RAMLock.pm
+  KinoSearch::Util::BitVector:
+    file: lib/KinoSearch/Util/BitVector.pm
+  KinoSearch::Util::Carp:
+    file: lib/KinoSearch/Util/Carp.pm
+  KinoSearch::Util::Class:
+    file: lib/KinoSearch/Util/Class.pm
+  KinoSearch::Util::EndianUtils:
+    file: lib/KinoSearch/Util/EndianUtils.pm
+  KinoSearch::Util::MemManager:
+    file: lib/KinoSearch/Util/MemManager.pm
+  KinoSearch::Util::PriorityQueue:
+    file: lib/KinoSearch/Util/PriorityQueue.pm
+  KinoSearch::Util::StringHelper:
+    file: lib/KinoSearch/Util/StringHelper.pm
+  KinoSearch::Util::ToStringUtils:
+    file: lib/KinoSearch/Util/ToStringUtils.pm
+  KinoSearch::Util::ToolSet:
+    file: lib/KinoSearch/Util/ToolSet.pm
+  KinoSearch::Util::VerifyArgs:
+    file: lib/KinoSearch/Util/VerifyArgs.pm
+generated_by: Module::Build version 0.2611

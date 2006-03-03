@@ -10,7 +10,7 @@ BEGIN {
     use_ok('KinoSearch::Analysis::PolyAnalyzer');
 }
 my $tokenizer = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
-my $searcher  = KinoSearch::Searcher->new(
+my $searcher = KinoSearch::Searcher->new(
     invindex => 'test_invindex',
     analyzer => $tokenizer,
 );

@@ -1,15 +1,20 @@
 package KinoSearch::Analysis::LCNormalizer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
 our %instance_vars = __PACKAGE__->init_instance_vars();
 
 sub analyze {
-    my ( $self, $field ) = @_;
+    my ( $self, $token_batch ) = @_;
 
     # lc all of the terms, one by one
-    my $terms = $field->get_terms;
-    $_ = lc($_) for @$terms;
+    while ( $token_batch->next ) {
+        $token_batch->set_text( lc( $token_batch->get_text ) );
+    }
+
+    return $token_batch;
 }
 
 1;
@@ -46,7 +51,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

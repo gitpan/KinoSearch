@@ -1,4 +1,6 @@
 package KinoSearch::Search::PhraseQuery;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
@@ -54,7 +56,7 @@ sub create_weight {
     }
 }
 
-sub extract_terms { shift->todo_death }
+sub extract_terms { shift->{terms} }
 
 sub to_string {
     my ( $self, $proposed_field ) = @_;
@@ -70,6 +72,8 @@ sub to_string {
 }
 
 package KinoSearch::Search::PhraseWeight;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
@@ -106,12 +110,12 @@ sub scorer {
     return unless @term_docs;
 
     return KinoSearch::Search::PhraseScorer->new(
-        weight          => $self,
-        slop            => $query->{slop},
-        similarity      => $self->{similarity},
-        norms_reader    => $reader->norms_reader( $query->{field} ),
-        term_docs       => \@term_docs,
-        phrase_offsets  => $query->{positions},
+        weight         => $self,
+        slop           => $query->{slop},
+        similarity     => $self->{similarity},
+        norms_reader   => $reader->norms_reader( $query->{field} ),
+        term_docs      => \@term_docs,
+        phrase_offsets => $query->{positions},
     );
 }
 
@@ -119,15 +123,39 @@ sub scorer {
 
 __END__
 
-=begin devdocs
-
 =head1 NAME
 
 KinoSearch::Search::PhraseQuery - match ordered list of Terms
 
+=head1 SYNOPSIS
+
+    my $phrase_query = KinoSearch::Search::PhraseQuery->new;
+    for ( qw( the who ) ) {
+        my $term = KinoSearch::Index::Term( 'bodytext', $_ );
+        $phrase_query->add_term($term);
+    }
+    my $hits = $searcher->search( query => $phrase_query );
+
 =head1 DESCRIPTION 
 
-Subclass of Query for collections of ordered terms.  
+PhraseQuery is a subclass of
+L<KinoSearch::Search::Query|KinoSearch::Search::Query> for matching against
+ordered collections of terms.  
+
+=head1 METHODS
+
+=head2 new
+
+    my $phrase_query = KinoSearch::Search::PhraseQuery->new;
+
+Constructor.  Takes no arguments.
+
+=head2 add_term
+
+    $phrase_query->add_term($term);
+
+Append a term to the phrase to be matched.  Takes one argument, a
+L<KinoSearch::Index::Term|KinoSearch::Index::Term> object.
 
 =head1 COPYRIGHT
 
@@ -135,8 +163,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
-=end devdocs
 =cut
 

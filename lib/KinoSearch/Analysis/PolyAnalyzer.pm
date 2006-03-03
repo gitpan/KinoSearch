@@ -1,4 +1,6 @@
 package KinoSearch::Analysis::PolyAnalyzer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
@@ -25,10 +27,12 @@ sub init_instance {
 }
 
 sub analyze {
-    my ( $self, $field ) = @_;
+    my ( $self, $token_batch ) = @_;
 
     # iterate through each of the anayzers in order
-    $_->analyze($field) for @{ $self->{analyzers} };
+    $token_batch = $_->analyze($token_batch) for @{ $self->{analyzers} };
+
+    return $token_batch;
 }
 
 1;
@@ -56,10 +60,14 @@ KinoSearch::Analysis::PolyAnalyzer - multiple analyzers in series
 
 =head1 DESCRIPTION
 
-A PolyAnalyzer is a series of Analyzers, each of which will be called upon to
-analyze text in turn.  You can either provide the Analyzers yourself, or you
-can specify a supported language, in which case a PolyAnalyzer consisting of
-an LCNormalizer, a Tokenizer, and a Stemmer will be generated for you.
+A PolyAnalyzer is a series of Analyzers -- objects which inherit from
+L<KinoSearch::Analysis::Analyzer|KinoSearch::Analysis::Analyzer> -- each of
+which will be called upon to "analyze" text in turn.  You can either provide
+the Analyzers yourself, or you can specify a supported language, in which case
+a PolyAnalyzer consisting of an
+L<LCNormalizer|KinoSearch::Analysis::LCNormalizer>, a
+L<Tokenizer|KinoSearch::Analysis::Tokenizer>, and a
+L<Stemmer|KinoSearch::Analysis::Stemmer> will be generated for you.
 
 Supported languages:
 
@@ -111,7 +119,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

@@ -1,4 +1,6 @@
 package KinoSearch::Search::HitQueue;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::PriorityQueue );
 
@@ -11,7 +13,7 @@ our %instance_vars = __PACKAGE__->init_instance_vars();
 sub hit_docs {
     my $self = shift;
 
-    # decode score/doc_num scalars into HitDocs
+    # transform score/doc_num scalars into HitDoc objects
     my @hit_docs = map {
         KinoSearch::Search::HitDoc->new(
             doc_num => unpack( 'N', "$_" ),
@@ -93,7 +95,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

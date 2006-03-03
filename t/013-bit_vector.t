@@ -1,16 +1,14 @@
 use strict;
 use warnings;
 
-use Test::More tests => 13;
+use Test::More tests => 14;
 
 BEGIN { use_ok('KinoSearch::Util::BitVector') }
-
-my @got;
 
 my $bit_vec = KinoSearch::Util::BitVector->new( capacity => 9 );
 
 $bit_vec->set(2);
-@got = map { $bit_vec->get($_) } 0 .. 9;
+my @got = map { $bit_vec->get($_) } 0 .. 9;
 is_deeply(
     \@got,
     [ '', '', 1, '', '', '', '', '', '', '' ],
@@ -34,15 +32,11 @@ is( $bit_vec->next_clear_bit(5),
 $bit_vec = KinoSearch::Util::BitVector->new( capacity => 25 );
 
 $bit_vec->bulk_set( 1, 22 );
-@got = map { $bit_vec->get($_) } 0 .. 24;
-my @wanted = ( '', (1) x 22, '', '' );
-
-is_deeply( \@got, \@wanted, "bulk set" );
+is_deeply( $bit_vec->to_arrayref, [ 1 .. 22 ], "bulk set" );
 
 $bit_vec->bulk_clear( 2, 21 );
 @got = map { $bit_vec->get($_) } 0 .. 24;
-@wanted = ( '', 1, ('') x 20, 1, '', '' );
-is_deeply( \@got, \@wanted, "bulk clear" );
+is_deeply( $bit_vec->to_arrayref, [ 1, 22 ], "bulk clear" );
 
 $bit_vec = KinoSearch::Util::BitVector->new;
 is( $bit_vec->get_capacity, 0, "default capacity of 0" );
@@ -50,18 +44,19 @@ is( $bit_vec->get_capacity, 0, "default capacity of 0" );
 $bit_vec->set_bits("\x02");
 is( $bit_vec->get_capacity, 8, "set_bits has side effect of new capacity" );
 
-@got = map { $bit_vec->get($_) } 0 .. 7;
-is_deeply(
-    \@got,
-    [ '', 1, '', '', '', '', '', '' ],
-    "set_bits was successful"
-);
+is_deeply( $bit_vec->to_arrayref, [1], "set_bits was successful" );
 
 $bit_vec->set(9);
-@got = map { $bit_vec->get($_) } 0 .. 15;
 
 is( $bit_vec->get_capacity, 10, "capacity should grow with above-range set" );
 is( $bit_vec->get_bits, "\x02\x02", "bits have grown with above-range set" );
+
+$bit_vec = KinoSearch::Util::BitVector->new;
+my $other = KinoSearch::Util::BitVector->new;
+$bit_vec->set( 1 .. 3, 10, 20, 30 );
+$other->set( 2 .. 10, 25 .. 35 );
+$bit_vec->logical_and($other);
+is_deeply( $bit_vec->to_arrayref, [ 2, 3, 10, 30 ], "logical_and" );
 
 # valgrind only - detect off-by-one error
 for my $cap ( 5 .. 24 ) {
@@ -71,3 +66,4 @@ for my $cap ( 5 .. 24 ) {
         $bit_vec->next_set_bit($_);
     }
 }
+

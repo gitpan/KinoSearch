@@ -132,6 +132,8 @@ pattern as all the others).
 # write the typemap file.
 if ($needs_rewrite{$ks_xs_filepath}) {
     my @struct_classes = qw(
+        KinoSearch::Analysis::Stemmer::Stemmifier
+        KinoSearch::Analysis::TokenBatch
         KinoSearch::Index::TermBuffer
         KinoSearch::Index::TermDocs
         KinoSearch::Index::TermInfo
@@ -197,13 +199,10 @@ my $builder = Module::Build->new(
     dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',
     dist_version_from => 'lib/KinoSearch.pm',
     requires          => {
-        'Test::More'             => 0,
         'Sort::External'         => 0.15,
-        'Math::BaseCalc'         => 1.011,
+        'Lingua::Stem::Snowball' => 0.94,
         'Lingua::StopWords'      => 0.02,
         'Clone'                  => 0.18,
-        'Lingua::Stem::Snowball' => 0.93,
-        'ToolSet'                => 0.11,
     },
     create_makefile_pl => 'passthrough',
     xs_files => { $ks_xs_filepath => 'lib/KinoSearch.xs' },

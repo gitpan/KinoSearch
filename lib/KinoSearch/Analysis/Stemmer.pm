@@ -1,43 +1,37 @@
 package KinoSearch::Analysis::Stemmer;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Analysis::Analyzer );
+use base qw( KinoSearch::Analysis::Analyzer Exporter );
 
 use Lingua::Stem::Snowball qw( stemmers );
+our @EXPORT_OK = qw( %supported_languages );
 
 our %instance_vars = __PACKAGE__->init_instance_vars( stemmifier => undef, );
 
 # build a list of supported languages.
-my %valid_stemmers;
-$valid_stemmers{$_} = 1 for stemmers();
+my %supported_languages;
+$supported_languages{$_} = 1 for stemmers();
 
 sub init_instance {
     my $self = shift;
 
     # verify language param
     my $language = $self->{language} = lc( $self->{language} );
-    $language = $language eq 'nl' ? 'dk' : $language;
     croak("Unsupported language: '$language'")
-        unless $valid_stemmers{$language};
+        unless $supported_languages{$language};
 
     # create instance of Snowball stemmer
     $self->{stemmifier} = Lingua::Stem::Snowball->new( lang => $language );
-
-    # DISABLED, because of segfault-producing bug in
-    # Lingua::Stem::Snowball 0.93
-    # $self->{stemmifier}->strip_apostrophes(1);
 }
 
 sub analyze {
-    my ( $self, $field ) = @_;
-
-    # retrieve terms and if there aren't any, bail rather than invoke stem
-    my $terms = $field->get_terms;
-    return unless @$terms;
+    my ( $self, $token_batch ) = @_;
 
     # replace terms with stemmed versions.
-    my @stemmed = $self->{stemmifier}->stem($terms);
-    s/'$// for @stemmed;    # TODO get rid of this once Snowball is fixed.
-    $field->set_terms( \@stemmed );
+    $self->{stemmifier}->stem_in_place( $token_batch->get_all_texts );
+
+    return $token_batch;
 }
 
 1;
@@ -60,8 +54,7 @@ KinoSearch::Analysis::Stemmer - reduce related words to a shared root
 
 Stemming reduces words to a root form.  For instance, "horse", "horses",
 and "horsing" all become "hors" -- so that a search for 'horse' will also
-match documents containing 'horses' and 'horsing'.  For more information, see
-the documentation for L<Lingua::Stem|Lingua::Stem>.
+match documents containing 'horses' and 'horsing'.  
 
 This class is a wrapper around
 L<Lingua::Stem::Snowball|Lingua::Stem::Snowball>, so it supports the same
@@ -74,18 +67,13 @@ languages.
 Create a new stemmer.  Takes a single named parameter, C<language>, which must
 be an ISO two-letter code that Lingua::Stem::Snowball understands.
 
-=head1 TODO
-
-Submit patches for Lingua::Stem::Snowball which enhance speed and address
-apostrophe-handling issues.
-
 =head1 COPYRIGHT
 
 Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

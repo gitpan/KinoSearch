@@ -1,4 +1,6 @@
 package KinoSearch::Index::FieldsWriter;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -42,10 +44,11 @@ sub add_doc {
         push @to_write, $_->get_compressed
             ? compress( $_->get_value )
             : $_->get_value;
+        push @to_write, $_->get_tv_string;
     }
 
     # write out data
-    my $lu_template = 'V' . ( 'VaT' x scalar @stored );
+    my $lu_template = 'V' . ( 'VaTT' x scalar @stored );
     $self->{fdata_stream}->lu_write( $lu_template, @to_write );
 }
 
@@ -76,7 +79,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =end devdocs
 =cut

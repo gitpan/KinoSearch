@@ -1,4 +1,6 @@
 package KinoSearch::Search::Query;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -97,6 +99,18 @@ KinoSearch::Search::Query - base class for search queries
 Base class for queries to be performed against an invindex.
 L<TermQuery|KinoSearch::Search::TermQuery> is one example.
 
+=head1 METHODS
+
+=head2 set_boost get_boost
+
+    $term_query_a->set_boost(2);
+    $boolean_query->add_clause( query => $term_query_a, occur => 'SHOULD' );
+    $boolean_query->add_clause( query => $term_query_b, occur => 'SHOULD' );
+
+The boost of any Query is 1.0 by default. Setting boost to a number greater
+than one increases a Query's relative contribution to a score, and setting
+boost to a lower number decreases the contribution.
+
 =begin devdocs
 
 A Query in KinoSearch is a highly abstracted representation.  It must be
@@ -132,7 +146,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 

@@ -1,4 +1,6 @@
 package KinoSearch::Search::BooleanQuery;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
@@ -36,6 +38,15 @@ sub get_similarity {
     return $searcher->get_similarity;
 }
 
+sub extract_terms {
+    my $self = shift;
+    my @terms;
+    for my $clause ( @{ $self->{clauses} } ) {
+        push @terms, $clause->get_query()->extract_terms;
+    }
+    return @terms;
+}
+
 sub create_weight {
     my ( $self, $searcher ) = @_;
     return KinoSearch::Search::BooleanWeight->new(
@@ -61,6 +72,8 @@ sub clone {
 }
 
 package KinoSearch::Search::BooleanWeight;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
@@ -129,16 +142,81 @@ sub scorer {
 
 __END__
 
-=begin devdocs
-
 =head1 NAME
 
 KinoSearch::Search::BooleanQuery - match boolean combinations of Queries
+
+=head1 SYNOPSIS
+
+    my $bool_query = KinoSearch::Search::BooleanQuery->new;
+    $bool_query->add_clause( query => $term_query, occur => 'MUST' );
+    my $hits = $searcher->search( query => $bool_query );
 
 =head1 DESCRIPTION 
 
 BooleanQueries are super-Query objects which match boolean combinations of
 other Queries.
+
+One way of producing a BooleanQuery is to feed a query string along the lines
+of C<this AND NOT that> to a
+L<QueryParser|KinoSearch::QueryParser::QueryParser> object:
+    
+    my $bool_query = $query_parser->parse( 'this AND NOT that' );
+
+It's also possible to achieve the same end by manually constructing the query
+piece by piece:
+
+    my $bool_query = KinoSearch::Search::BooleanQuery->new;
+    
+    my $this_query = KinoSearch::Search::TermQuery->new(
+        term => KinoSearch::Index::Term->new( 'bodytext', 'this' ),
+    );
+    $bool_query->add_clause( query => $this_query, occur => 'MUST' );
+
+    my $that_query = KinoSearch::Search::TermQuery->new(
+        term => KinoSearch::Index::Term->new( 'bodytext', 'that' ),
+    );
+    $bool_query->add_clause( query => $that_query, occur => 'MUST_NOT' );
+
+QueryParser objects and hand-rolled Queries can work together:
+
+    my $general_query = $query_parser->parse( query => $q );
+    my $news_only     = KinoSearch::Search::TermQuery->new(
+        term => KinoSearch::Index::Term->new( 'category', 'news' );
+    );
+    $bool_query->add_clause( query => $general_query, occur => 'SHOULD' );
+    $bool_query->add_clause( query => $news_only,     occur => 'MUST' );
+
+=head1 METHODS
+
+=head2 new
+
+    my $bool_query = KinoSearch::Search::BooleanQuery->new;
+
+Constructor. Takes no arguments.
+
+=head2 add_clause
+
+    $bool_query->add_clause(
+        query => $query, # required
+        occur => 'MUST', # default: 'SHOULD'
+    );
+
+Add a clause to the BooleanQuery.  Takes hash-style parameters:
+
+=over
+
+=item *
+
+B<query> - an object which belongs to a subclass of
+L<KinoSearch::Search::Query|KinoSearch::Search::Query>.
+
+=item *
+
+B<occur> - must be one of three possible values: 'SHOULD', 'MUST', or
+'MUST_NOT'.
+
+=back
 
 =head1 COPYRIGHT
 
@@ -146,8 +224,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
-=end devdocs
 =cut
 

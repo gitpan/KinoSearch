@@ -1,17 +1,19 @@
 package KinoSearch::QueryParser::QueryParser;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-use KinoSearch::Document::Field;
+use KinoSearch::Analysis::TokenBatch;
+use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Search::BooleanQuery;
 use KinoSearch::Search::PhraseQuery;
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Index::Term;
-use KinoSearch::Analysis::Tokenizer;
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # constructor args / members
-    analyzer => KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ ),
+    analyzer       => undef,
     default_boolop => 'OR',
     default_field  => undef,
     # members
@@ -25,7 +27,7 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
 sub init_instance {
     my $self = shift;
 
-    croak ("default_boolop must be either 'AND' or 'OR'")
+    croak("default_boolop must be either 'AND' or 'OR'")
         unless $self->{default_boolop} =~ /^(?:AND|OR)$/;
 
     # create a random string that presumably won't appear in a search string
@@ -127,19 +129,19 @@ sub parse {
 
             # retreive the text and analyze it
             my $orig_phrase_text = delete $self->{phrases}{$1};
-            my $term_texts       = $self->_analyze($orig_phrase_text);
+            my $token_texts      = $self->_analyze($orig_phrase_text);
 
-            # create a TermQuery, a PhraseQuery, or nothing 
-            if ( @$term_texts == 1 ) {
+            # create a TermQuery, a PhraseQuery, or nothing
+            if ( @$token_texts == 1 ) {
                 my $term = KinoSearch::Index::Term->new( $field,
-                    $term_texts->[0] );
+                    $token_texts->[0] );
                 $query = KinoSearch::Search::TermQuery->new( term => $term );
             }
-            elsif ( @$term_texts > 1 ) {
+            elsif ( @$token_texts > 1 ) {
                 $query = KinoSearch::Search::PhraseQuery->new;
-                for my $term_text (@$term_texts) {
+                for my $token_text (@$token_texts) {
                     $query->add_term(
-                        KinoSearch::Index::Term->new( $field, $term_text ),
+                        KinoSearch::Index::Term->new( $field, $token_text ),
                     );
                 }
             }
@@ -151,14 +153,14 @@ sub parse {
         elsif (s/$self->{bool_group_re}//) {
             # parse boolean subqueries recursively
             my $inner_text = delete $self->{bool_groups}{$1};
-            my $query = $self->parse($inner_text);
+            my $query      = $self->parse($inner_text);
             push @clauses, { query => $query, occur => $occur };
         }
         # what's left is probably a term
         elsif (s/([^"(\s]+)//) {
-            my $term_texts = $self->_analyze($1);
+            my $token_texts = $self->_analyze($1);
             my @terms = map { KinoSearch::Index::Term->new( $field, $_ ) }
-                @$term_texts;
+                @$token_texts;
             for my $term (@terms) {
                 my $query
                     = KinoSearch::Search::TermQuery->new( term => $term );
@@ -188,10 +190,14 @@ sub parse {
 sub _analyze {
     my ( $self, $string ) = @_;
 
-    my $field = KinoSearch::Document::Field->new( name => 'not_real' );
-    $field->set_value($string);
-    $self->{analyzer}->analyze($field);
-    return $field->get_terms;
+    my $token_batch = KinoSearch::Analysis::TokenBatch->new;
+    $token_batch->add_token( $string, 0, bytes::length($string) );
+    $token_batch = $self->{analyzer}->analyze($token_batch);
+    my @token_texts;
+    while ( $token_batch->next ) {
+        push @token_texts, $token_batch->get_text;
+    }
+    return \@token_texts;
 }
 
 # replace all phrases with labels
@@ -201,7 +207,7 @@ sub _extract_phrases {
     while ( $qstring =~ $quoted_re ) {
         my $label
             = sprintf( "_phrase$self->{randstring}%d", $self->{label_inc}++ );
-        $qstring =~ s/$quoted_re/$label /; # extra space for safety
+        $qstring =~ s/$quoted_re/$label /;    # extra space for safety
 
         # store the phrase text for later retrieval
         $self->{phrases}{$label} = $1;
@@ -217,7 +223,7 @@ sub _extract_boolgroups {
     while ( $qstring =~ $paren_re ) {
         my $label = sprintf( "_boolgroup$self->{randstring}%d",
             $self->{label_inc}++ );
-        $qstring =~ s/$paren_re/$label /; # extra space for safety
+        $qstring =~ s/$paren_re/$label /;    # extra space for safety
 
         # store the text for later retrieval
         $self->{bool_groups}{$label} = $1;
@@ -236,12 +242,60 @@ KinoSearch::QueryParser::QueryParser - transform a string into a Query object
 
 =head1 SYNOPSIS
 
-    # no official public interface... yet.
+    my $query_parser = KinoSearch::QueryParser::QueryParser->new(
+        analyzer      => $analyzer,
+        default_field => 'bodytext',
+    );
+    my $query = $query_parser->parse( $query_string );
+    my $hits  = $searcher->search( query => $query );
 
 =head1 DESCRIPTION
 
 The QueryParser accepts search strings as input and produces Query objects,
 suitable for feeding into L<KinoSearch::Searcher|KinoSearch::Searcher>.
+
+=head1 METHODS
+
+=head2 new
+
+    my $query_parser = KinoSearch::QueryParser::QueryParser->new(
+        analyzer       => $analyzer,      # required
+        default_field  => 'bodytext',     # required
+        default_boolop => 'AND',          # default: 'OR'
+    );
+
+Constructor.  Takes hash-style parameters:
+
+=over
+
+=item *
+
+B<analyzer> - An object which subclasses
+L<KinoSearch::Analysis::Analyzer|KinoSearch::Analysis::Analyzer>.  This
+B<must> be identical to the Analyzer used at index-time, or the results won't
+match up.
+
+=item *
+
+B<default_field> - the name of the (only) field which will be searched
+against.  If you need to search multiple fields, you need multiple QueryParser
+objects.
+
+=item *
+
+B<default_boolop> - two possible values: 'AND' and 'OR'.  The default is 'OR',
+which means: return documents which match any of the query terms.  If you
+want only documents which match all of the query terms, set this to 'AND'.
+
+=back
+
+=head2 parse
+
+    my $query = $query_parser->parse( $query_string );
+
+Turn a query string into a Query object.  Depending on the contents of the
+query string, the returned object could be any one of several subclasses of
+L<KinoSearch::Search::Query|KinoSearch::Search::Query>.
 
 =head1 COPYRIGHT
 
@@ -249,7 +303,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.05.
+See L<KinoSearch|KinoSearch> version 0.06.
 
 =cut
 
