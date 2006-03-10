@@ -402,7 +402,7 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
     /* start the term vector string */
     tv_string_sv = newSV(20);
     SvPOK_on(tv_string_sv);
-    num_bytes = Kino_IO_encode_vint(num_postings, vint_buf);
+    num_bytes = Kino_OutStream_encode_vint(num_postings, vint_buf);
     sv_catpvn(tv_string_sv, vint_buf, num_bytes);
 
     /* sort the posting lists lexically */
@@ -429,9 +429,10 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
         /* append the string diff to the tv_string */
         overlap = Kino_StrHelp_string_diff(last_text, text, 
             last_len, text_len);
-        num_bytes = Kino_IO_encode_vint(overlap, vint_buf);
+        num_bytes = Kino_OutStream_encode_vint(overlap, vint_buf);
         sv_catpvn( tv_string_sv, vint_buf, num_bytes );
-        num_bytes = Kino_IO_encode_vint((text_len - overlap), vint_buf);
+        num_bytes = Kino_OutStream_encode_vint(
+            (text_len - overlap), vint_buf );
         sv_catpvn( tv_string_sv, vint_buf, num_bytes );
         sv_catpvn( tv_string_sv, (text + overlap), (text_len - overlap) );
 
@@ -442,22 +443,22 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
                         - 4  /* doc num */
                         - 2; /* encoded text len */
         num_positions /= POSDATA_LEN;
-        num_bytes = Kino_IO_encode_vint(num_positions, vint_buf);
+        num_bytes = Kino_OutStream_encode_vint(num_positions, vint_buf);
         sv_catpvn( tv_string_sv, vint_buf, num_bytes );
 
         while (source_u32 < end_u32) {
             /* keep only the positions in the serialized scalars */
-            num_bytes = Kino_IO_encode_vint(*source_u32, vint_buf);
+            num_bytes = Kino_OutStream_encode_vint(*source_u32, vint_buf);
             sv_catpvn( tv_string_sv, vint_buf, num_bytes );
             *dest_u32++ = *source_u32++;
 
             /* add start_offset to tv_string */
-            num_bytes = Kino_IO_encode_vint(*source_u32, vint_buf);
+            num_bytes = Kino_OutStream_encode_vint(*source_u32, vint_buf);
             sv_catpvn( tv_string_sv, vint_buf, num_bytes );
             source_u32++;
 
             /* add end_offset to tv_string */
-            num_bytes = Kino_IO_encode_vint(*source_u32, vint_buf);
+            num_bytes = Kino_OutStream_encode_vint(*source_u32, vint_buf);
             sv_catpvn( tv_string_sv, vint_buf, num_bytes );
             source_u32++;
         }
@@ -501,7 +502,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

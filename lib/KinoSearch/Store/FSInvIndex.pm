@@ -11,6 +11,7 @@ use KinoSearch::Store::InStream;
 use KinoSearch::Store::OutStream;
 use vars qw( $LOCK_DIR );    # used by FSLock
 use KinoSearch::Store::FSLock;
+use KinoSearch::Index::IndexFileNames;
 
 BEGIN {
     # confirm or create a directory to put lockfiles in
@@ -33,35 +34,46 @@ sub init_instance {
         # clear out lockfiles related to this path
         my $lock_prefix = $self->get_lock_prefix;
         opendir LOCKDIR, $LOCK_DIR,
-            or croak("couldn't opendir '$LOCK_DIR': $!");
+            or confess("couldn't opendir '$LOCK_DIR': $!");
         my @lockfiles = grep {/$lock_prefix/} readdir LOCKDIR;
         closedir LOCKDIR;
         for (@lockfiles) {
             $_ = catfile( $LOCK_DIR, $_ );
-            unlink $_ or croak("couldn't unlink '$_': $!");
+            unlink $_ or confess("couldn't unlink '$_': $!");
         }
 
         # blast any existing index files
-        rmtree($path);
-        croak("'rmtree($path) not completely successful - still exists")
-            if ( -e $path );
-        mkdir $path or croak("couldn't mkdir '$path': $!");
+        if ( -e $path ) {
+            opendir INVINDEX_DIR, $path
+                or confess("couldn't opendir '$path': $!");
+            my @to_remove = grep {
+                       /^\w+\.(?:cfs|del)$/
+                    or $_ eq 'segments'
+                    or $_ eq 'deletable'
+            } readdir INVINDEX_DIR;
+            for my $removable (@to_remove) {
+                warn $_;
+                unlink $_ or confess "Couldn't unlink file '$_': $!";
+            }
+        }
+        if ( !-d $path ) {
+            mkdir $path or confess("Couldn't mkdir '$path': $!");
+        }
     }
 
     # by now, we should have a directory, so throw an error if we don't
     if ( !-d $path ) {
-        croak( "invindex location '$path' doesn't exist - are the values for "
-                . "'path' and 'create' correct?" )
+        confess("Can't open invindex location '$path': $! ")
             unless -e $path;
-        croak("invindex location '$path' isn't a directory");
+        confess("invindex location '$path' isn't a directory");
     }
 }
 
 sub open_outstream {
     my ( $self, $filename ) = @_;
     my $filepath = catfile( $self->{path}, $filename );
-    open( my $fh, "+>", $filepath )    # clobbers
-        or croak("Couldn't open file '$filepath': $!");
+    open( my $fh, "+>:unix", $filepath )    # clobbers
+        or confess("Couldn't open file '$filepath': $!");
     binmode($fh);
     return KinoSearch::Store::OutStream->new($fh);
 }
@@ -69,17 +81,17 @@ sub open_outstream {
 sub open_instream {
     my ( $self, $filename, $offset, $len ) = @_;
     my $filepath = catfile( $self->{path}, $filename );
-    open( my $fh, "<", $filepath )
-        or croak("Couldn't open file '$filepath': $!");
+    # must be unbuffered, or PerlIO messes up with the shared handles
+    open( my $fh, "<:unix", $filepath )
+        or confess("Couldn't open file '$filepath': $!");
     binmode($fh);
-    return KinoSearch::Store::InStream->new( $self, $filename, $fh, $offset,
-        $len );
+    return KinoSearch::Store::InStream->new( $fh, $offset, $len );
 }
 
 sub list {
     my $self = shift;
     opendir( my $dir, $self->{path} )
-        or croak("Couldn't opendir '$self->{path}'");
+        or confess("Couldn't opendir '$self->{path}'");
     return no_upwards( readdir $dir );
 }
 
@@ -92,20 +104,20 @@ sub rename_file {
     my ( $self, $from, $to ) = @_;
     $_ = catfile( $self->{path}, $_ ) for ( $from, $to );
     rename( $from, $to )
-        or croak("couldn't rename file '$from' to '$to': $!");
+        or confess("couldn't rename file '$from' to '$to': $!");
 }
 
 sub delete_file {
     my ( $self, $filename ) = @_;
     $filename = catfile( $self->{path}, $filename );
-    unlink $filename or croak("couldn't unlink file '$filename': $!");
+    unlink $filename or confess("couldn't unlink file '$filename': $!");
 }
 
 sub slurp_file {
     my ( $self, $filename ) = @_;
     my $filepath = catfile( $self->{path}, $filename );
     open( my $fh, "<", $filepath )
-        or croak("Couldn't open file '$filepath': $!");
+        or confess("Couldn't open file '$filepath': $!");
     binmode($fh);
     local $/;
     return <$fh>;
@@ -170,6 +182,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =cut

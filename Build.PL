@@ -142,6 +142,8 @@ if ($needs_rewrite{$ks_xs_filepath}) {
         KinoSearch::Search::MatchBatch
         KinoSearch::Search::Scorer
         KinoSearch::Search::Similarity
+        KinoSearch::Store::InStream
+        KinoSearch::Store::OutStream
         KinoSearch::Util::BitVector
         KinoSearch::Util::BoolSet
         KinoSearch::Util::PriorityQueue

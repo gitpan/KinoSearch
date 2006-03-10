@@ -45,8 +45,7 @@ sub finish {
     for my $file (@files_to_merge) {
         push @data_offsets, $outstream->tell;
         my $instream = $invindex->open_instream($file);
-        local $/ = \4096;
-        print $outstream $_ while (<$instream>);
+        $outstream->absorb($instream);
     }
 
     # rewrite number of files, plus real data offsets
@@ -81,7 +80,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

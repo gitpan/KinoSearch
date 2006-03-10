@@ -298,9 +298,9 @@ file format.
 =cut
 
 void
-_write_positions ( prx_fh, positions_sv )
-    PerlIO  *prx_fh;
-    SV      *positions_sv
+_write_positions ( prx_outstream, positions_sv )
+    OutStream *prx_outstream;
+    SV        *positions_sv
 PREINIT:
     STRLEN   positions_len;
     char    *positions;
@@ -322,7 +322,7 @@ PPCODE:
     while (current_pos_ptr < end) {
         /* get delta and write out as VInt */
         pos_delta = *current_pos_ptr - last_pos;
-        Kino_IO_write_vint(prx_fh, pos_delta);
+        prx_outstream->write_vint(prx_outstream, pos_delta);
 
         /* advance pointers */
         last_pos = *current_pos_ptr;
@@ -349,7 +349,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

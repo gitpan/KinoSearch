@@ -15,6 +15,7 @@ sub check_io {
     my ( $filename, $tpt ) = ( shift, shift );
     my $outstream = $invindex->open_outstream($filename);
     $outstream->lu_write( $tpt, @_ );
+    $outstream->close;
     my $instream = $invindex->open_instream($filename);
     my @got      = $instream->lu_read($tpt);
     is_deeply( \@got, \@_, $filename );

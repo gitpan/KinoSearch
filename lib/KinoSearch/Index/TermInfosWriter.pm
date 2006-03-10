@@ -111,12 +111,12 @@ MODULE = KinoSearch    PACKAGE = KinoSearch::Index::TermInfosWriter
 #define SKIP_INTERVAL 16
 
 void
-_add_helper(fh, tinfo, last_tinfo, termstring_sv, last_termstring_sv)
-    PerlIO   *fh;
-    TermInfo *tinfo;
-    TermInfo *last_tinfo;
-    SV       *termstring_sv
-    SV       *last_termstring_sv
+_add_helper(outstream, tinfo, last_tinfo, termstring_sv, last_termstring_sv)
+    OutStream *outstream;
+    TermInfo  *tinfo;
+    TermInfo  *last_tinfo;
+    SV        *termstring_sv
+    SV        *last_termstring_sv
 PREINIT:
     STRLEN    termstring_len;
     char     *termstring_str;
@@ -148,22 +148,24 @@ PPCODE:
     diff_len       = termstring_len - overlap;
 
     /* write number of common bytes */
-    Kino_IO_write_vint(fh, overlap);
+    outstream->write_vint(outstream, overlap);
 
     /* write common bytes */
-    Kino_IO_write_string(fh, diff_start_str, diff_len);
+    outstream->write_string(outstream, diff_start_str, diff_len);
     
     /* write field number and doc_freq */
-    Kino_IO_write_vint(fh, field_num);
-    Kino_IO_write_vint(fh, tinfo->doc_freq);
+    outstream->write_vint(outstream, field_num);
+    outstream->write_vint(outstream, tinfo->doc_freq);
 
     /* delta encode filepointers */
-    Kino_IO_write_vlong(fh, (tinfo->frq_fileptr - last_tinfo->frq_fileptr));
-    Kino_IO_write_vlong(fh, (tinfo->prx_fileptr - last_tinfo->prx_fileptr));
+    outstream->write_vlong(outstream, 
+        (tinfo->frq_fileptr - last_tinfo->frq_fileptr) );
+    outstream->write_vlong(outstream, 
+        (tinfo->prx_fileptr - last_tinfo->prx_fileptr) );
 
     /* write skipdata */
     if (tinfo->doc_freq >= SKIP_INTERVAL)
-        Kino_IO_write_vint(fh, tinfo->skip_offset);
+        outstream->write_vint(outstream, tinfo->skip_offset);
 }
 
 
@@ -190,7 +192,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

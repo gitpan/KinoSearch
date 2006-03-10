@@ -84,14 +84,14 @@ _new() is a helper sub for the Perl method new().
 =cut
 
 SegTermEnum*
-_new(instream, is_index, finfos_sv, term_buffer_sv)
-    SV         *instream;
+_new(instream_sv, is_index, finfos_sv, term_buffer_sv)
+    SV         *instream_sv;
     I32         is_index;
     SV         *finfos_sv
     SV         *term_buffer_sv;
 PREINIT:
     I32           format;
-    PerlIO       *fh;
+    InStream     *instream;
     SegTermEnum  *obj;
     char         *ptr;
     STRLEN        len;
@@ -107,28 +107,27 @@ CODE:
     obj->term_text_len_cache  = NULL;
 
     /* save instream, finfos, and term_buffer, incrementing refcounts */
-    SvREFCNT_inc(instream);
-    SvREFCNT_inc(finfos_sv);
-    SvREFCNT_inc(term_buffer_sv);
-    obj->instream     = instream;
-    obj->finfos       = finfos_sv;
-    obj->term_buf_ref = term_buffer_sv;
-    obj->term_buf 
-        = INT2PTR( TermBuffer*, (SvIV((SV*)SvRV(term_buffer_sv)) ) );
-    fh = IoIFP( sv_2io(instream) );
+    obj->instream_sv  = newSVsv(instream_sv);
+    obj->finfos       = newSVsv(finfos_sv);
+    obj->term_buf_ref = newSVsv(term_buffer_sv);
+    Kino_extract_struct(term_buffer_sv, obj->term_buf, TermBuffer*, 
+        "KinoSearch::Index::TermBuffer");
+    Kino_extract_struct(instream_sv, obj->instream, InStream*, 
+        "KinoSearch::Store::InStream");
+    instream = obj->instream;
 
     /* determine whether this is a primary or index enum */
     obj->is_index = is_index;
 
     /* reject older or newer index formats */
-    format = (I32)Kino_IO_read_int(fh);
+    format = (I32)instream->read_int(instream);
     if (format != -2)
         Kino_confess("Unsupported index format: %d", format);
 
     /* read in some vars */
-    obj->enum_size      = Kino_IO_read_long(fh);
-    obj->index_interval = Kino_IO_read_int(fh);
-    obj->skip_interval  = Kino_IO_read_int(fh);
+    obj->enum_size      = instream->read_long(instream);
+    obj->index_interval = instream->read_int(instream);
+    obj->skip_interval  = instream->read_int(instream);
 
     /* define the position of the Enum as "not yet started" */
     obj->position = -1;
@@ -168,7 +167,7 @@ ALIAS:
     scan_to    = 2
     next       = 3
 PREINIT:
-    PerlIO*      fh;
+    InStream    *instream;
     TermBuffer  *term_buf;
     TermInfo    *tinfo;
     char        *target_termstring_ptr;
@@ -180,8 +179,8 @@ PREINIT:
     STRLEN       len;
 CODE:
 {
-    /* prepare filehandle, make some local copies for clarity of code */
-    fh       = IoIFP( sv_2io(obj->instream) );
+    /* make some local copies for clarity of code */
+    instream = obj->instream;
     tinfo    = obj->tinfo;
     term_buf = obj->term_buf;
 
@@ -206,22 +205,22 @@ CODE:
             break;
         }
 
-        Kino_TermBuf_read(term_buf, fh);
+        Kino_TermBuf_read(term_buf, instream);
 
         /* read doc freq; skip interval doesn't do anything right now */
-        tinfo->doc_freq = Kino_IO_read_vint(fh);
+        tinfo->doc_freq = instream->read_vint(instream);
 
         /* adjust file pointers. */
-        tinfo->frq_fileptr += Kino_IO_read_vlong(fh);
-        tinfo->prx_fileptr += Kino_IO_read_vlong(fh);
+        tinfo->frq_fileptr += instream->read_vlong(instream);
+        tinfo->prx_fileptr += instream->read_vlong(instream);
 
         if (tinfo->doc_freq >= obj->skip_interval)
-            tinfo->skip_offset = Kino_IO_read_vint(fh);
+            tinfo->skip_offset = instream->read_vint(instream);
         else
             tinfo->skip_offset = 0;
 
         if (obj->is_index)
-            tinfo->index_fileptr += Kino_IO_read_vlong(fh);
+            tinfo->index_fileptr += instream->read_vlong(instream);
 
         if (ix == 1) { /* fill_cache */
             /* copy tinfo and termstring into caches, keep looping */
@@ -379,14 +378,14 @@ CODE:
     case 0:  croak("can't call _get_or_set on it's own");
              break; /* probably unreachable */
 
-    case 1:  SvREFCNT_dec(obj->instream);
-             obj->instream = ST(1);
+    case 1:  SvREFCNT_dec(obj->instream_sv);
+             obj->instream_sv = newSVsv( ST(1) );
              /* fall through */
-    case 2:  RETVAL = newSVsv(obj->instream); 
+    case 2:  RETVAL = newSVsv(obj->instream_sv); 
              break;
 
     case 3:  SvREFCNT_dec(obj->finfos);
-             obj->finfos = ST(1);
+             obj->finfos = newSVsv( ST(1) );
              /* fall through */
     case 4:  RETVAL = newSVsv(obj->finfos); 
              break;
@@ -455,7 +454,7 @@ PPCODE:
 {
     /* put out the garbage for collection */
     SvREFCNT_dec(obj->finfos);
-    SvREFCNT_dec(obj->instream);
+    SvREFCNT_dec(obj->instream_sv);
     SvREFCNT_dec(obj->term_buf_ref);
 
     Kino_TInfo_destroy(obj->tinfo);
@@ -486,15 +485,17 @@ __H__
 #include "perl.h"
 #include "KinoSearchIndexTermBuffer.h"
 #include "KinoSearchIndexTermInfo.h"
+#include "KinoSearchStoreInStream.h"
 #include "KinoSearchUtilCarp.h"
 #include "KinoSearchUtilMemManager.h"
 
 typedef struct segtermenumc {
     SV         *finfos;
-    SV         *instream;
+    SV         *instream_sv;
     SV         *term_buf_ref;
     TermBuffer *term_buf;
     TermInfo   *tinfo;
+    InStream   *instream;
     I32         is_index;
     I32         enum_size;
     I32         position;
@@ -564,7 +565,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

@@ -144,25 +144,25 @@ PPCODE:
     SvPOK_on(text_sv);
     *(SvEND(text_sv)) = '\0';
 
-    num_terms = Kino_IO_decode_vint(tv_ptr);
+    num_terms = Kino_InStream_decode_vint(tv_ptr);
     for (i = 0; i < num_terms; i++) {
 
         /* decompress the term text and push it onto the stack */
-        overlap = Kino_IO_decode_vint(tv_ptr);
+        overlap = Kino_InStream_decode_vint(tv_ptr);
         SvCUR_set(text_sv, overlap);
-        len = Kino_IO_decode_vint(tv_ptr);
+        len = Kino_InStream_decode_vint(tv_ptr);
         sv_catpvn(text_sv, *tv_ptr, len);
         *tv_ptr += len;
         XPUSHs(sv_2mortal( newSVsv(text_sv) ));
 
         /* put positions & offsets string on the stack */
-        num_positions = Kino_IO_decode_vint(tv_ptr);
+        num_positions = Kino_InStream_decode_vint(tv_ptr);
         bookmark_ptr = *tv_ptr;
         while(num_positions--) {
             /* leave nums compressed to save a little mem */
-            (void)Kino_IO_decode_vint(tv_ptr);
-            (void)Kino_IO_decode_vint(tv_ptr);
-            (void)Kino_IO_decode_vint(tv_ptr);
+            (void)Kino_InStream_decode_vint(tv_ptr);
+            (void)Kino_InStream_decode_vint(tv_ptr);
+            (void)Kino_InStream_decode_vint(tv_ptr);
         }
         len = *tv_ptr - bookmark_ptr;
         XPUSHs(sv_2mortal( newSVpvn(bookmark_ptr, len) ));
@@ -188,11 +188,11 @@ PPCODE:
     posdata_end  = SvEND(posdata_sv);
 
     while(*posdata_ptr < posdata_end) {
-        num_sv = newSViv( Kino_IO_decode_vint(posdata_ptr) );
+        num_sv = newSViv( Kino_InStream_decode_vint(posdata_ptr) );
         av_push(positions_av, num_sv);
-        num_sv = newSViv( Kino_IO_decode_vint(posdata_ptr) );
+        num_sv = newSViv( Kino_InStream_decode_vint(posdata_ptr) );
         av_push(starts_av,    num_sv);
-        num_sv = newSViv( Kino_IO_decode_vint(posdata_ptr) );
+        num_sv = newSViv( Kino_InStream_decode_vint(posdata_ptr) );
         av_push(ends_av,      num_sv);
     }
 
@@ -224,7 +224,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =cut
 

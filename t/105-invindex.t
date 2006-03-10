@@ -1,9 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 19;
+use Test::More tests => 22;
 
-use File::Spec::Functions qw( tmpdir catdir );
+use File::Spec::Functions qw( tmpdir catdir catfile );
 use File::Path qw( rmtree );
 
 BEGIN {
@@ -11,7 +11,16 @@ BEGIN {
     use_ok('KinoSearch::Store::FSInvIndex');
 }
 
-my $fs_invindex_loc = catdir( tmpdir, 'test_invindex' );
+my $fs_invindex_loc = catdir( tmpdir, 'bogus_invindex' );
+eval {
+    my $fs_invindex
+        = KinoSearch::Store::FSInvIndex->new( path => $fs_invindex_loc, );
+};
+like( $@, qr/invindex/,
+    "opening an invindex that doesn't exist fails without create => 1" );
+
+mkdir $fs_invindex_loc
+    or die "Couldn't create directory '$fs_invindex_loc': $!";
 
 my $fs_invindex = KinoSearch::Store::FSInvIndex->new(
     create => 1,
@@ -76,6 +85,22 @@ for my $invindex ( $fs_invindex, $ram_invindex ) {
     $invindex->delete_file('king_of_lock');
     ok( !$invindex->file_exists('king_of_lock'), "delete_file works" );
 }
+
+my $foo_path = catfile( $fs_invindex_loc, 'foo' );
+{
+    open( my $fh, '>', $foo_path )
+        or die "Couldn't open '$foo_path' for writing: $!";
+    print $fh 'stuff';
+}
+
+$fs_invindex = KinoSearch::Store::FSInvIndex->new(
+    create => 1,
+    path   => $fs_invindex_loc,
+);
+ok( -e $foo_path, "creating an invindex shouldn't wipe an unrelated file" );
+ok( !-e catfile( $fs_invindex_loc, '_1.cfs' ),
+    "... but it should clean the cfs file"
+);
 
 # clean up
 rmtree($fs_invindex_loc);

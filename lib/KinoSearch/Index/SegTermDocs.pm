@@ -18,8 +18,8 @@ sub new {
 
     # dupe some stuff from the parent reader.
     $self->_set_reader( $args{reader} );
-    $self->_set_freq_fh( $args{reader}->get_freq_stream()->clone_stream );
-    $self->_set_prox_fh( $args{reader}->get_prox_stream()->clone_stream );
+    $self->_set_freq_stream( $args{reader}->get_freq_stream()->clone_stream );
+    $self->_set_prox_stream( $args{reader}->get_prox_stream()->clone_stream );
     $self->_set_deldocs( $args{reader}->get_deldocs );
 
     return $self;
@@ -40,8 +40,8 @@ sub seek {
         # yes terminfo means we know the doc_freq and the file pointer
         $self->set_doc(0);
         $self->set_doc_freq( $tinfo->get_doc_freq );
-        $self->_get_freq_fh()->seek( $tinfo->get_frq_fileptr );
-        $self->_get_prox_fh()->seek( $tinfo->get_prx_fileptr );
+        $self->_get_freq_stream()->seek( $tinfo->get_frq_fileptr );
+        $self->_get_prox_stream()->seek( $tinfo->get_prx_fileptr );
     }
 }
 
@@ -71,8 +71,8 @@ sub _derive_term_info {
 
 sub close {
     my $self = shift;
-    $self->_get_freq_fh()->close;
-    $self->_get_prox_fh()->close;
+    $self->_get_freq_stream()->close;
+    $self->_get_prox_stream()->close;
 }
 
 1;
@@ -105,10 +105,10 @@ _set_or_get(obj, ...)
 ALIAS:
     _set_count         = 1
     _get_count         = 2
-    _set_freq_fh       = 3
-    _get_freq_fh       = 4
-    _set_prox_fh       = 5
-    _get_prox_fh       = 6
+    _set_freq_stream   = 3
+    _get_freq_stream   = 4
+    _set_prox_stream   = 5
+    _get_prox_stream   = 6
     _set_deldocs       = 7
     _get_deldocs       = 8 
     _set_reader        = 9 
@@ -132,20 +132,22 @@ CODE:
     case 2:  RETVAL = newSVuv(child->count);
              break;
 
-    case 3:  if (child->freq_fh_sv != NULL)
-                SvREFCNT_dec(child->freq_fh_sv);
-             child->freq_fh    = IoIFP(sv_2io( ST(1) ));
-             child->freq_fh_sv = newSVsv( ST(1) );
+    case 3:  if (child->freq_stream_sv != NULL)
+                SvREFCNT_dec(child->freq_stream_sv);
+             child->freq_stream_sv = newSVsv( ST(1) );
+             Kino_extract_struct( child->freq_stream_sv, child->freq_stream, 
+                InStream*, "KinoSearch::Store::InStream");
              /* fall through */
-    case 4:  RETVAL = newSVsv(child->freq_fh_sv);
+    case 4:  RETVAL = newSVsv(child->freq_stream_sv);
              break;
 
-    case 5:  if (child->prox_fh_sv != NULL)
-                SvREFCNT_dec(child->prox_fh_sv);
-             child->prox_fh    = IoIFP(sv_2io( ST(1) ));
-             child->prox_fh_sv = newSVsv( ST(1) );
+    case 5:  if (child->prox_stream_sv != NULL)
+                SvREFCNT_dec(child->prox_stream_sv);
+             child->prox_stream_sv = newSVsv( ST(1) );
+             Kino_extract_struct( child->prox_stream_sv, child->prox_stream, 
+                InStream*, "KinoSearch::Store::InStream");
              /* fall through */
-    case 6:  RETVAL = newSVsv(child->prox_fh_sv);
+    case 6:  RETVAL = newSVsv(child->prox_stream_sv);
              break;
 
     case 7:  if (child->deldocs_sv != NULL)
@@ -199,11 +201,11 @@ __H__
 
 typedef struct segtermdocschild {
     U32        count;
-    PerlIO    *freq_fh;
-    PerlIO    *prox_fh;
+    InStream  *freq_stream;
+    InStream  *prox_stream;
     BitVector *deldocs;
-    SV        *freq_fh_sv;
-    SV        *prox_fh_sv;
+    SV        *freq_stream_sv;
+    SV        *prox_stream_sv;
     SV        *deldocs_sv;
     SV        *reader_sv;
 } SegTermDocsChild;
@@ -230,8 +232,8 @@ Kino_SegTermDocs_init_child(TermDocs *term_docs) {
     term_docs->read  = Kino_SegTermDocs_read;
     term_docs->next  = Kino_SegTermDocs_next;
 
-    child->freq_fh_sv   = NULL;
-    child->prox_fh_sv   = NULL;
+    child->freq_stream_sv   = NULL;
+    child->prox_stream_sv   = NULL;
     child->deldocs_sv   = NULL;
     child->reader_sv    = NULL;
     child->count        = 0;
@@ -241,13 +243,15 @@ U32
 Kino_SegTermDocs_read(TermDocs *term_docs, SV* doc_nums_sv, SV* freqs_sv, 
                       U32 num_wanted) {
     SegTermDocsChild *child;
+    InStream         *freq_stream;
     U32               doc_code;
     U32              *doc_nums;
     U32              *freqs;
     STRLEN            len;
     U32               num_got = 0;
 
-    child = (SegTermDocsChild*)term_docs->child;
+    child       = (SegTermDocsChild*)term_docs->child;
+    freq_stream = child->freq_stream;
 
     len = num_wanted * sizeof(U32);
     SvUPGRADE(doc_nums_sv, SVt_PV);
@@ -260,12 +264,12 @@ Kino_SegTermDocs_read(TermDocs *term_docs, SV* doc_nums_sv, SV* freqs_sv,
     while (child->count < term_docs->doc_freq && num_got < num_wanted) {
         /* manually inlined call to term_docs->next */ 
         child->count++;
-        doc_code = Kino_IO_read_vint(child->freq_fh);
+        doc_code = freq_stream->read_vint(freq_stream);;
         term_docs->doc  += doc_code >> 1;
         if (doc_code & 1)
             term_docs->freq = 1;
         else
-            term_docs->freq = Kino_IO_read_vint(child->freq_fh);
+            term_docs->freq = freq_stream->read_vint(freq_stream);
 
         /* if the doc isn't deleted... */
         if ( !Kino_BitVec_get(child->deldocs, term_docs->doc) ) {
@@ -291,15 +295,19 @@ Kino_SegTermDocs_next_with_positions(TermDocs *term_docs) {
     U32              *positions_end;
     STRLEN            len;
     SegTermDocsChild *child;
+    InStream         *freq_stream;
+    InStream         *prox_stream;
     
-    child = (SegTermDocsChild*)term_docs->child;
+    child       = (SegTermDocsChild*)term_docs->child;
+    freq_stream = child->freq_stream;
+    prox_stream = child->prox_stream;
     
     while (1) {
         if (child->count == term_docs->doc_freq) {
             return 0;
         }
 
-        doc_code = Kino_IO_read_vint(child->freq_fh);
+        doc_code = freq_stream->read_vint(freq_stream);
         term_docs->doc  += doc_code >> 1;
 
         /* if the stored num was odd, the freq is 1 */ 
@@ -308,7 +316,7 @@ Kino_SegTermDocs_next_with_positions(TermDocs *term_docs) {
         }
         /* otherwise, freq was stored as a VInt. */
         else {
-            term_docs->freq = Kino_IO_read_vint(child->freq_fh);
+            term_docs->freq = freq_stream->read_vint(freq_stream);
         } 
 
         child->count++;
@@ -319,7 +327,7 @@ Kino_SegTermDocs_next_with_positions(TermDocs *term_docs) {
         positions = (U32*)SvPVX(term_docs->positions);
         positions_end = (U32*)SvEND(term_docs->positions);
         while (positions < positions_end) {
-            position += Kino_IO_read_vint(child->prox_fh);
+            position += prox_stream->read_vint(prox_stream);
             *positions++ = position;
         }
 
@@ -332,14 +340,18 @@ Kino_SegTermDocs_next_with_positions(TermDocs *term_docs) {
 bool
 Kino_SegTermDocs_next(TermDocs *term_docs) {
     U32               doc_code;
-    SegTermDocsChild* child = (SegTermDocsChild*)term_docs->child;
+    SegTermDocsChild *child;
+    InStream         *freq_stream;
+    
+    child       = (SegTermDocsChild*)term_docs->child;
+    freq_stream = child->freq_stream;
     
     while (1) {
         if (child->count == term_docs->doc_freq) {
             return 0;
         }
 
-        doc_code = Kino_IO_read_vint(child->freq_fh);
+        doc_code = freq_stream->read_vint(freq_stream);
         term_docs->doc  += doc_code >> 1;
 
         /* if the stored num was odd, the freq is 1 */ 
@@ -348,7 +360,8 @@ Kino_SegTermDocs_next(TermDocs *term_docs) {
         }
         /* otherwise, freq was stored as a VInt. */
         else {
-            term_docs->freq = Kino_IO_read_vint(child->freq_fh);
+            term_docs->freq 
+                = child->freq_stream->read_vint(child->freq_stream);
         } 
 
         child->count++;
@@ -362,8 +375,8 @@ Kino_SegTermDocs_next(TermDocs *term_docs) {
 void 
 Kino_SegTermDocs_destroy(TermDocs *term_docs){
     SegTermDocsChild *child = (SegTermDocsChild*)term_docs->child;
-    SvREFCNT_dec(child->freq_fh_sv);
-    SvREFCNT_dec(child->prox_fh_sv);
+    SvREFCNT_dec(child->freq_stream_sv);
+    SvREFCNT_dec(child->prox_stream_sv);
     SvREFCNT_dec(child->deldocs_sv);
     SvREFCNT_dec(child->reader_sv);
 
@@ -390,7 +403,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

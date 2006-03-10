@@ -33,8 +33,7 @@ sub _read_invindex {
     for my $filename ( $source_invindex->list ) {
         my $source_stream = $source_invindex->open_instream($filename);
         my $outstream     = $self->open_outstream($filename);
-        local $/ = 4096;
-        print $outstream $_ while (<$source_stream>);
+        $outstream->absorb($source_stream);
         $source_stream->close;
         $outstream->close;
     }
@@ -48,19 +47,18 @@ sub open_outstream {
     # use perl scalars as virtual files;
     my $data = '';
     $self->{ramfiles}{$filename} ||= \$data;
-    open( my $fh, '>', $self->{ramfiles}{$filename} ) or die $!;
+    open( my $fh, '>:scalar', $self->{ramfiles}{$filename} ) or die $!;
     binmode($fh);
     return KinoSearch::Store::OutStream->new($fh);
 }
 
 sub open_instream {
     my ( $self, $filename, $offset, $len ) = @_;
-    croak("File '$filename' not loaded into RAM")
+    confess("File '$filename' not loaded into RAM")
         unless exists $self->{ramfiles}{$filename};
-    open( my $fh, '<', $self->{ramfiles}{$filename} ) or die $!;
+    open( my $fh, '<:scalar', $self->{ramfiles}{$filename} ) or die $!;
     binmode($fh);
-    return KinoSearch::Store::InStream->new( $self, $filename, $fh, $offset,
-        $len );
+    return KinoSearch::Store::InStream->new( $$fh, $offset, $len );
 }
 
 sub list {
@@ -74,7 +72,7 @@ sub file_exists {
 
 sub rename_file {
     my ( $self, $from, $to ) = @_;
-    croak("File '$from' not currently in RAM")
+    confess("File '$from' not currently in RAM")
         unless exists $self->{ramfiles}{$from};
     $self->{ramfiles}{$to} = delete $self->{ramfiles}{$from};
 }
@@ -82,14 +80,14 @@ sub rename_file {
 sub delete_file {
     my ( $self, $filename ) = @_;
     my $file = delete $self->{ramfiles}{$filename};
-    croak("File '$filename' not currently in RAM")
+    confess("File '$filename' not currently in RAM")
         unless $file;
 }
 
 sub slurp_file {
     my ( $self, $filename ) = @_;
     my $virtual_file_ref = $self->{ramfiles}{$filename};
-    croak("File '$filename' not currently in RAM")
+    confess("File '$filename' not currently in RAM")
         unless defined $virtual_file_ref;
 
     # return a copy of the virtual file's content
@@ -147,6 +145,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =cut

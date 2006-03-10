@@ -134,7 +134,7 @@ PREINIT:
     STRLEN      len;
 CODE:
     len = 256 * sizeof(float);
-    RETVAL = newSVpv((char*)obj->norm_decoder, len);
+    RETVAL = newSVpv( (char*)obj->norm_decoder, len );
 OUTPUT: RETVAL
 
 void
@@ -167,7 +167,7 @@ __H__
 typedef struct similarity {
     float  (*tf)(struct similarity*, float);
     float  (*coord)(struct similarity*, U32, U32);
-    float*   norm_decoder;
+    float   *norm_decoder;
 } Similarity;
 
 Similarity* Kino_Sim_new();
@@ -185,9 +185,9 @@ __C__
 
 Similarity*
 Kino_Sim_new() {
-    int           i;
-    unsigned char aUChar;
-    Similarity*   sim;
+    int            i;
+    unsigned char  aUChar;
+    Similarity    *sim;
 
     Kino_New(0, sim, 1, Similarity);
 
@@ -195,8 +195,7 @@ Kino_Sim_new() {
     Kino_New(0, sim->norm_decoder, 256, float);
     for (i = 0; i < 256; i++) {
         aUChar = i;
-        *(sim->norm_decoder + i) 
-            = Kino_Sim_byte2float(sim, (char)aUChar);
+        sim->norm_decoder[i] = Kino_Sim_byte2float(sim, (char)aUChar);
     }
 
     sim->tf    = Kino_Sim_default_tf;
@@ -298,7 +297,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

@@ -4,6 +4,8 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::InvIndex );    # !!
 
+use KinoSearch::Store::InStream;
+
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # members / constructor params
     invindex => undef,
@@ -40,9 +42,10 @@ sub open_instream {
     my ( $self, $filename ) = @_;
     my $entry = $self->{entries}{$filename};
     croak("filename '$filename' is not accessible") unless defined $entry;
-    return $self->{invindex}
-        ->open_instream( "$self->{seg_name}.cfs", $entry->{offset},
-        $entry->{len}, );
+    open( my $duped_fh, '<&=', $self->{instream}->get_fh )
+        or confess("Couldn't dupe filehandle: $!");
+    return KinoSearch::Store::InStream->new( $duped_fh, $entry->{offset},
+        $entry->{len} );
 }
 
 sub slurp_file {
@@ -90,7 +93,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =end devdocs
 =cut

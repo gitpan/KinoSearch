@@ -180,11 +180,11 @@ piece by piece:
 
 QueryParser objects and hand-rolled Queries can work together:
 
-    my $general_query = $query_parser->parse( query => $q );
+    my $general_query = $query_parser->parse($q);
     my $news_only     = KinoSearch::Search::TermQuery->new(
         term => KinoSearch::Index::Term->new( 'category', 'news' );
     );
-    $bool_query->add_clause( query => $general_query, occur => 'SHOULD' );
+    $bool_query->add_clause( query => $general_query, occur => 'MUST' );
     $bool_query->add_clause( query => $news_only,     occur => 'MUST' );
 
 =head1 METHODS
@@ -224,7 +224,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.06.
+See L<KinoSearch|KinoSearch> version 0.07.
 
 =cut
 
