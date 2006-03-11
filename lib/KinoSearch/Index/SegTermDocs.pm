@@ -132,8 +132,7 @@ CODE:
     case 2:  RETVAL = newSVuv(child->count);
              break;
 
-    case 3:  if (child->freq_stream_sv != NULL)
-                SvREFCNT_dec(child->freq_stream_sv);
+    case 3:  SvREFCNT_dec(child->freq_stream_sv);
              child->freq_stream_sv = newSVsv( ST(1) );
              Kino_extract_struct( child->freq_stream_sv, child->freq_stream, 
                 InStream*, "KinoSearch::Store::InStream");
@@ -141,8 +140,7 @@ CODE:
     case 4:  RETVAL = newSVsv(child->freq_stream_sv);
              break;
 
-    case 5:  if (child->prox_stream_sv != NULL)
-                SvREFCNT_dec(child->prox_stream_sv);
+    case 5:  SvREFCNT_dec(child->prox_stream_sv);
              child->prox_stream_sv = newSVsv( ST(1) );
              Kino_extract_struct( child->prox_stream_sv, child->prox_stream, 
                 InStream*, "KinoSearch::Store::InStream");
@@ -150,8 +148,7 @@ CODE:
     case 6:  RETVAL = newSVsv(child->prox_stream_sv);
              break;
 
-    case 7:  if (child->deldocs_sv != NULL)
-                SvREFCNT_dec(child->deldocs_sv);
+    case 7:  SvREFCNT_dec(child->deldocs_sv);
              child->deldocs_sv = newSVsv( ST(1) );
              Kino_extract_struct( child->deldocs_sv, child->deldocs, 
                 BitVector*, "KinoSearch::Index::DelDocs" );
@@ -159,8 +156,7 @@ CODE:
     case 8:  RETVAL = newSVsv(child->deldocs_sv);
              break;
 
-    case 9:  if (child->reader_sv != NULL)
-                SvREFCNT_dec(child->reader_sv);
+    case 9:  SvREFCNT_dec(child->reader_sv);
              if (!sv_derived_from( ST(1), "KinoSearch::Index::IndexReader") )
                 Kino_confess("not a KinoSearch::Index::IndexReader");
              child->reader_sv = newSVsv( ST(1) );
@@ -232,11 +228,11 @@ Kino_SegTermDocs_init_child(TermDocs *term_docs) {
     term_docs->read  = Kino_SegTermDocs_read;
     term_docs->next  = Kino_SegTermDocs_next;
 
-    child->freq_stream_sv   = NULL;
-    child->prox_stream_sv   = NULL;
-    child->deldocs_sv   = NULL;
-    child->reader_sv    = NULL;
-    child->count        = 0;
+    child->freq_stream_sv   = &PL_sv_undef;
+    child->prox_stream_sv   = &PL_sv_undef;
+    child->deldocs_sv       = &PL_sv_undef;
+    child->reader_sv        = &PL_sv_undef;
+    child->count            = 0;
 }
 
 U32 
@@ -403,7 +399,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.07.
+See L<KinoSearch|KinoSearch> version 0.08.
 
 =end devdocs
 =cut

@@ -27,6 +27,7 @@ my $fs_invindex = KinoSearch::Store::FSInvIndex->new(
     path   => $fs_invindex_loc,
 );
 
+
 my $king      = "I'm the king of rock.";
 my $outstream = $fs_invindex->open_outstream('king_of_rock');
 $outstream->lu_write( 'a' . bytes::length($king), $king );
@@ -87,9 +88,11 @@ for my $invindex ( $fs_invindex, $ram_invindex ) {
 }
 
 my $foo_path = catfile( $fs_invindex_loc, 'foo' );
-{
-    open( my $fh, '>', $foo_path )
-        or die "Couldn't open '$foo_path' for writing: $!";
+my $cfs_path = catfile( $fs_invindex_loc, '_1.cfs' );
+
+for ( $foo_path, $cfs_path ) {
+    open( my $fh, '>', $_ )
+        or die "Couldn't open '$_' for writing: $!";
     print $fh 'stuff';
 }
 

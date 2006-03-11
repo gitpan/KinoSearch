@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use constant K_DEBUG => 0;
 
@@ -80,7 +80,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.07
+0.08
 
 =head1 WARNING
 

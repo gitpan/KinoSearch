@@ -5,7 +5,6 @@ use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::InvIndex );
 
 use File::Spec::Functions qw( canonpath catfile catdir tmpdir no_upwards );
-use File::Path qw( rmtree );
 use Digest::MD5 qw( md5_hex );
 use KinoSearch::Store::InStream;
 use KinoSearch::Store::OutStream;
@@ -52,8 +51,9 @@ sub init_instance {
                     or $_ eq 'deletable'
             } readdir INVINDEX_DIR;
             for my $removable (@to_remove) {
-                warn $_;
-                unlink $_ or confess "Couldn't unlink file '$_': $!";
+                $removable = catfile( $path, $removable );
+                unlink $removable 
+                    or confess "Couldn't unlink file '$removable': $!";
             }
         }
         if ( !-d $path ) {
@@ -182,6 +182,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.07.
+See L<KinoSearch|KinoSearch> version 0.08.
 
 =cut
