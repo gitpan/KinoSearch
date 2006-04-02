@@ -2,13 +2,9 @@ package KinoSearch::Search::Similarity;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 
 our %instance_vars = __PACKAGE__->init_instance_vars();
-
-sub new {
-    return _new();
-}
 
 # See _float_to_byte.
 *encode_norm = *_float_to_byte;
@@ -51,7 +47,7 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Similarity     
 
 Similarity*
-_new()
+new(...)
 CODE:
     RETVAL = Kino_Sim_new();
 OUTPUT: RETVAL
@@ -64,8 +60,8 @@ number of terms in it.
 =cut
 
 float
-lengthnorm(obj, num_terms)
-    Similarity *obj;
+lengthnorm(sim, num_terms)
+    Similarity *sim;
     U32         num_terms;
 CODE:
     num_terms = num_terms < 100 ? 100 : num_terms;
@@ -82,11 +78,11 @@ matches, the more relevant it is likely to be.
 =cut
 
 float
-tf(obj, freq)
-    Similarity *obj;
+tf(sim, freq)
+    Similarity *sim;
     U32         freq;
 CODE:
-    RETVAL = obj->tf(obj, freq);
+    RETVAL = sim->tf(sim, freq);
 OUTPUT: RETVAL
 
 
@@ -100,22 +96,22 @@ about one significant decimal digit.
 =cut
 
 SV*
-_float_to_byte( obj, f ) 
-    Similarity *obj;
+_float_to_byte(sim, f) 
+    Similarity *sim;
     float       f;
 PREINIT:
-    char        b;
+    char b;
 CODE:
-    b      = Kino_Sim_float2byte(obj, f);
+    b      = Kino_Sim_float2byte(sim, f);
     RETVAL = newSVpv(&b, 1);
 OUTPUT: RETVAL
 
 float
-_byte_to_float( obj, b ) 
-    Similarity *obj;
+_byte_to_float(sim, b) 
+    Similarity *sim;
     char        b;
 CODE:
-    RETVAL = Kino_Sim_byte2float(obj, b);
+    RETVAL = Kino_Sim_byte2float(sim, b);
 OUTPUT: RETVAL
 
 
@@ -128,32 +124,28 @@ knows how to use it.
 =cut
 
 SV*
-get_norm_decoder( obj )
-    Similarity *obj;
-PREINIT:
-    STRLEN      len;
+get_norm_decoder(sim)
+    Similarity *sim;
 CODE:
-    len = 256 * sizeof(float);
-    RETVAL = newSVpv( (char*)obj->norm_decoder, len );
+    RETVAL = newSVpv( (char*)sim->norm_decoder, (256 * sizeof(float)) );
 OUTPUT: RETVAL
 
-void
-DESTROY(obj)
-    Similarity *obj;
-PPCODE:
-    Kino_Sim_destroy(obj);
-
 float
-coord(obj, overlap, max_overlap)
-    Similarity *obj;
+coord(sim, overlap, max_overlap)
+    Similarity *sim;
     U32         overlap;
     U32         max_overlap;
 CODE:
-    RETVAL = obj->coord(obj, overlap, max_overlap);
+    RETVAL = sim->coord(sim, overlap, max_overlap);
 OUTPUT: RETVAL
 
-    
+void
+DESTROY(sim)
+    Similarity *sim;
+PPCODE:
+    Kino_Sim_destroy(sim);
 
+    
 __H__
 
 #ifndef H_KINO_SIMILARITY
@@ -297,7 +289,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

@@ -16,7 +16,7 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     stored     => 1,
     indexed    => 1,
     analyzed   => 1,
-    vectorized => undef,
+    vectorized => 1,
     binary     => 0,
     compressed => 0,
     omit_norms => 0,
@@ -39,10 +39,6 @@ sub init_instance {
     if ( $self->{binary} ) {
         $self->{indexed}  = 0;
         $self->{analyzed} = 0;
-    }
-
-    if ( !defined $self->{vectorized} ) {
-        $self->{vectorized} = $self->{stored};
     }
 }
 
@@ -96,12 +92,12 @@ sub get_fdt_bits {
 
 sub get_value_len { bytes::length( $_[0]->{value} ) }
 
+# Return a TermVector object for a given Term, if it's in this field.
 sub term_vector {
     my ( $self, $term_text ) = @_;
     return unless bytes::length( $self->{tv_string} );
     if ( !defined $self->{tv_cache} ) {
-        ( my %tv_cache ) = _extract_tv_cache( $self->{tv_string} );
-        $self->{tv_cache} = \%tv_cache;
+        $self->{tv_cache} = _extract_tv_cache( $self->{tv_string} );
     }
     if ( exists $self->{tv_cache}{$term_text} ) {
         my ( $positions, $starts, $ends )
@@ -127,35 +123,97 @@ __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Document::Field
 
+=for comment
+
+Return ref to a hash where the keys are term texts and the values are encoded
+positional data.
+
+=cut
+
 void
 _extract_tv_cache(tv_string_sv)
     SV *tv_string_sv;
 PREINIT:
-    char    *tv_string, *bookmark_ptr;
+    HV *tv_cache_hv;
+PPCODE:
+    tv_cache_hv = Kino_Field_extract_tv_cache(tv_string_sv);
+    XPUSHs( sv_2mortal( newRV_noinc( (SV*)tv_cache_hv ) ) );
+    XSRETURN(1);
+
+=for comment
+
+Decompress positional data.
+
+=cut
+
+void
+_unpack_posdata(posdata_sv)
+    SV *posdata_sv;
+PREINIT:
+    AV     *positions_av, *starts_av, *ends_av;
+PPCODE:
+    positions_av = newAV();
+    starts_av    = newAV();
+    ends_av      = newAV();
+    Kino_Field_unpack_posdata(posdata_sv, positions_av, starts_av, ends_av);
+    XPUSHs(sv_2mortal( newRV_noinc((SV*)positions_av) ));
+    XPUSHs(sv_2mortal( newRV_noinc((SV*)starts_av)    ));
+    XPUSHs(sv_2mortal( newRV_noinc((SV*)ends_av)      ));
+    XSRETURN(3);
+
+
+__H__
+
+#ifndef H_KINOSEARCH_FIELD
+#define H_KINOSEARCH_FIELD 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+
+HV*  Kino_Field_extract_tv_cache(SV*);
+void Kino_Field_unpack_posdata(SV*, AV*, AV*, AV*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchDocumentField.h"
+
+HV* 
+Kino_Field_extract_tv_cache(SV *tv_string_sv) {
+    HV *tv_cache_hv;
+    char    *tv_string, *bookmark_ptr, *key;
     char   **tv_ptr;
-    STRLEN   len, tv_len, overlap;
+    STRLEN   len, tv_len, overlap, key_len;
     SV      *text_sv, *nums_sv;
     I32      i, num_terms, num_positions;
-PPCODE:
+
+    /* allocate a new hash */
+    tv_cache_hv = newHV();
+    
+    /* extract pointers */
     tv_string = SvPV(tv_string_sv, tv_len);
     tv_ptr    = &tv_string;
 
+    /* create a base text scalar */
     text_sv = newSV(1);
     SvPOK_on(text_sv);
     *(SvEND(text_sv)) = '\0';
 
+    /* read the number of vectorized terms in the field */
     num_terms = Kino_InStream_decode_vint(tv_ptr);
     for (i = 0; i < num_terms; i++) {
 
-        /* decompress the term text and push it onto the stack */
+        /* decompress the term text */
         overlap = Kino_InStream_decode_vint(tv_ptr);
         SvCUR_set(text_sv, overlap);
         len = Kino_InStream_decode_vint(tv_ptr);
         sv_catpvn(text_sv, *tv_ptr, len);
         *tv_ptr += len;
-        XPUSHs(sv_2mortal( newSVsv(text_sv) ));
+        key = SvPV(text_sv, key_len);
 
-        /* put positions & offsets string on the stack */
+        /* get positions & offsets string */
         num_positions = Kino_InStream_decode_vint(tv_ptr);
         bookmark_ptr = *tv_ptr;
         while(num_positions--) {
@@ -165,28 +223,28 @@ PPCODE:
             (void)Kino_InStream_decode_vint(tv_ptr);
         }
         len = *tv_ptr - bookmark_ptr;
-        XPUSHs(sv_2mortal( newSVpvn(bookmark_ptr, len) ));
+        nums_sv = newSVpvn(bookmark_ptr, len);
+
+        /* store the $text => $posdata pair in the output hash */
+        hv_store(tv_cache_hv, key, key_len, nums_sv, 0);
     }
     SvREFCNT_dec(text_sv);
-    XSRETURN(num_terms * 2);
+
+    return tv_cache_hv;
+}
 
 void
-_unpack_posdata(posdata_sv)
-    SV *posdata_sv;
-PREINIT:
+Kino_Field_unpack_posdata(SV *posdata_sv, AV *positions_av, 
+                          AV *starts_av,  AV *ends_av) {
     STRLEN  len;
     char   *posdata, *posdata_end;
-    AV     *positions_av, *starts_av, *ends_av;
     char  **posdata_ptr;
     SV     *num_sv;
-PPCODE:
-    positions_av = newAV();
-    starts_av    = newAV();
-    ends_av      = newAV();
     posdata      = SvPV(posdata_sv, len);
     posdata_ptr  = &posdata;
     posdata_end  = SvEND(posdata_sv);
 
+    /* translate encoded VInts to Perl scalars */
     while(*posdata_ptr < posdata_end) {
         num_sv = newSViv( Kino_InStream_decode_vint(posdata_ptr) );
         av_push(positions_av, num_sv);
@@ -198,11 +256,7 @@ PPCODE:
 
     if (*posdata_ptr != posdata_end)
         Kino_confess("Bad encoding of posdata");
-    XPUSHs(sv_2mortal( newRV_noinc((SV*)positions_av) ));
-    XPUSHs(sv_2mortal( newRV_noinc((SV*)starts_av)    ));
-    XPUSHs(sv_2mortal( newRV_noinc((SV*)ends_av)      ));
-    XSRETURN(3);
-
+}
 
 __POD__
 
@@ -224,7 +278,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut
 

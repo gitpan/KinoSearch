@@ -1,22 +1,31 @@
 Revision history for KinoSearch
 
+0.09
+  * Incremental indexing enabled 
+      o delete_docs_by_term() added to InvIndexer.
+      o option 'optimize' added to Invindexer::finish.
+  * QueryFilter added.
+  * Hits now returns the top 100 matches by default unless seek() has been
+    called.
+
 0.08  2006-03-10
-  * restore ability to overwrite invindexes
+  * Restore ability to overwrite invindexes.
 
 0.07  2006-03-10
-  * cut down on file descriptor requirements at search-time, eliminating "too
-    many open files" error
-  * make cleaning of invindex dir less aggressive when create => 1 is specified
+  * Cut down on file descriptor requirements at search-time, eliminating "too
+    many open files" error.
+  * Make cleaning of invindex dir less aggressive when create => 1 is
+    specified.
 
 0.06  2006-03-02
-  * backwards incomaptible file format change (another is coming)
-  * opened up APIs for Query subclasses and QueryParser
+  * Backwards incomaptible file format change (another is coming).
+  * Opened up APIs for Query subclasses and QueryParser.
   * added KinoSearch::Highlight::Highlighter
-  * document, field, and query boosting enabled
-  * behavior of KinoSearch::Search::Hits::fetch_hit_hashref modified
-  * KinoSearch::Document::Doc::to_hashref privatized
-  * dependencies pared down
-  * fixed bug affecting invindexes with 10 or more fields
+  * Document, field, and query boosting enabled.
+  * Behavior of KinoSearch::Search::Hits::fetch_hit_hashref modified.
+  * KinoSearch::Document::Doc::to_hashref privatized.
+  * Dependencies pared down.
+  * Fixed bug affecting invindexes with 10 or more fields
 
 0.05  2006-01-24
   * KinoSearch, a complete rewrite, supersedes Search::Kinosearch.

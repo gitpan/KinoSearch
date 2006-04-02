@@ -22,6 +22,7 @@ use Scalar::Util qw(
 );
 use KinoSearch qw( K_DEBUG kdump );
 use KinoSearch::Util::VerifyArgs qw( verify_args a_isa_b );
+use KinoSearch::Util::MathUtils qw( ceil );
 
 our @EXPORT = qw(
     carp
@@ -45,6 +46,8 @@ our @EXPORT = qw(
 
     verify_args
     a_isa_b
+
+    ceil
 );
 
 1;
@@ -92,6 +95,7 @@ substituted.
                          );
     use KinoSearch qw( K_DEBUG kdump );
     use KinoSearch::Util::VerifyArgs qw( verify_args a_isa_b );
+    use KinoSearch::Util::MathUtils qw( ceil );
 
 Two issues deserve special attention.
 
@@ -111,6 +115,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut

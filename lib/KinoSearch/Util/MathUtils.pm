@@ -1,13 +1,29 @@
-package KinoSearch::Util::EndianUtils;
+package KinoSearch::Util::MathUtils;
+use strict;
+use warnings;
+use base qw( Exporter );
+our @EXPORT_OK = qw( ceil );
 
 1;
 
 __END__
 
+
+__XS__
+
+MODULE = KinoSearch    PACKAGE = KinoSearch::Util::MathUtils
+
+double
+ceil(in)
+    double in;
+CODE:
+    RETVAL = ceil(in);
+OUTPUT: RETVAL
+
 __H__
 
-#ifndef H_KINOSEARCH_UTIL_ENDIAN_UTILS
-#define H_KINOSEARCH_UTIL_ENDIAN_UTILS 1
+#ifndef H_KINOSEARCH_UTIL_MATH_UTILS
+#define H_KINOSEARCH_UTIL_MATH_UTILS 1
 
 #include "EXTERN.h"
 #include "perl.h"
@@ -23,7 +39,7 @@ U16 Kino_decode_bigend_U16(void*);
 
 __C__
 
-#include "KinoSearchUtilEndianUtils.h"
+#include "KinoSearchUtilMathUtils.h"
 
 void Kino_encode_bigend_U32(U32 aU32, void *vbuf) {
     unsigned char *buf;
@@ -72,14 +88,12 @@ __POD__
 
 =head1 NAME
 
-KinoSearch::Util::EndianUtils - encode/decode big-endian integers
+KinoSearch::Util::MathUtils - various math utilities
 
 =head1 DESCRIPTION
 
-Provide C libraries for endcoding/decoding integers in guaranteed Big-endian
-byte order.
-
-No Perl interface.
+Provide various math related utilities, including endcoding/decoding integers
+in guaranteed Big-endian byte order.
 
 =head1 COPYRIGHT
 
@@ -87,7 +101,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

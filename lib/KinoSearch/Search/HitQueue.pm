@@ -8,6 +8,15 @@ use KinoSearch::Search::HitDoc;
 
 our %instance_vars = __PACKAGE__->init_instance_vars();
 
+sub new {
+    my $either = shift;
+    my $self   = $either->SUPER::new(@_);
+
+    $self->define_less_than;
+
+    return $self;
+}
+
 # Create an array of "empty" HitDoc objects -- they have scores and doc_nums,
 # but the stored fields have yet to be retrieved.
 sub hit_docs {
@@ -32,10 +41,10 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::HitQueue
 
 void
-define_less_than(obj)
-    PriorityQueue *obj;
+define_less_than(hitq)
+    PriorityQueue *hitq;
 PPCODE:
-    obj->less_than = &Kino_HitQ_less_than;
+    hitq->less_than = &Kino_HitQ_less_than;
 
 __H__
 
@@ -95,7 +104,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

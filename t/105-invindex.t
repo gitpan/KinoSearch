@@ -27,7 +27,6 @@ my $fs_invindex = KinoSearch::Store::FSInvIndex->new(
     path   => $fs_invindex_loc,
 );
 
-
 my $king      = "I'm the king of rock.";
 my $outstream = $fs_invindex->open_outstream('king_of_rock');
 $outstream->lu_write( 'a' . bytes::length($king), $king );

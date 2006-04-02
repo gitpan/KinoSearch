@@ -52,6 +52,37 @@ sub add_doc {
     $self->{fdata_stream}->lu_write( $lu_template, @to_write );
 }
 
+sub add_segment {
+    my ( $self, $seg_reader, $doc_map, $field_num_map ) = @_;
+    my ( $findex_stream, $fdata_stream )
+        = @{$self}{qw( findex_stream fdata_stream )};
+    my $fields_reader = $seg_reader->get_fields_reader;
+
+    my $max = $seg_reader->max_doc;
+    return unless $max;
+    $max -= 1;
+    for my $orig ( 0 .. $max ) {
+        # if the doc isn't deleted, copy it to the new seg
+        next unless defined $doc_map->get($orig);
+
+        # write pointer
+        $findex_stream->lu_write( 'Q', $fdata_stream->tell );
+
+        # retrieve all fields
+        my ( $num_fields, $all_data ) = $fields_reader->fetch_raw($orig);
+
+        # write number of fields
+        $fdata_stream->lu_write( 'V', $num_fields );
+
+        # write data for each field
+        for ( 1 .. $num_fields ) {
+            my ( $field_num, @some_data ) = splice( @$all_data, 0, 4 );
+            $fdata_stream->lu_write( 'VaTT', $field_num_map->get($field_num),
+                @some_data );
+        }
+    }
+}
+
 sub finish {
     my $self = shift;
     $self->{fdata_stream}->close;
@@ -79,7 +110,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

@@ -12,8 +12,7 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     token_re => undef,    # regex for a single token
 
     # members
-    separator_re  => undef,    # regex for separations between tokens
-    tokenizing_re => undef,    # regex optimized for lexing
+    separator_re => undef,    # regex for separations between tokens
 );
 
 sub init_instance {
@@ -35,50 +34,34 @@ sub init_instance {
                 $self->{token_re}  # a token, 
                 |\z                # or the end of the string
             )/xsm;
-        $self->{tokenizing_re} = qr/
-            ($self->{token_re})           # capture token to $1
-            (.*?                          # capture separator to $2
-                (?=
-                    $self->{token_re}
-                    |\z
-                )
-            )/xsm;
-    }
-
-    # if internally defined token_re and separator_re...
-    if ( !defined $self->{tokenizing_re} ) {
-        # use slightly more efficient non-lookahead tokenizing_re scheme
-        $self->{tokenizing_re} = qr/
-            ($self->{token_re})           # capture token to $1
-            ($self->{separator_re})       # capture separator to $2
-            /xsm;
     }
 }
 
 sub analyze {
     my ( $self, $token_batch ) = @_;
-    my $tokenizing_re = $self->{tokenizing_re};
 
     my $new_token_batch = KinoSearch::Analysis::TokenBatch->new;
-    my @raw_elems;
+    my $token_re        = $self->{token_re};
+    my $separator_re    = $self->{separator_re};
 
     # alias input to $_
     while ( $token_batch->next ) {
         local $_ = $token_batch->get_text;
 
-        # set the pos for input to the start of the first token
+        # ensure that pos is set to 0 for this scalar
         pos = 0;
-        m/$self->{separator_re}/g;
 
-        my $last_pos = 0;
-        # lex through input, capturing tokens and recording positional data
-        while (m/$tokenizing_re/g) {
-            my $pos = pos;
-            push @raw_elems, ( $1, $last_pos, $pos - bytes::length($2) );
-            $last_pos = $pos;
-        }
+        # accumulate token start_offsets and end_offsets
+        my ( @starts, @ends );
+        1 while ( m/$separator_re/g and push @starts,
+            pos and m/$token_re/g and push @ends, pos );
+
+        # correct for overshoot
+        $#starts = $#ends;
+
+        # add the new tokens to the batch
+        $new_token_batch->add_many_tokens( $_, \@starts, \@ends );
     }
-    $new_token_batch->add_many_tokens( \@raw_elems );
 
     return $new_token_batch;
 }
@@ -131,19 +114,10 @@ based on the value of C<token_re>.
     # tokenized by $word_char_tokenizer
     @tokens = qw( Eats Shoots and Leaves   );
 
-=head1 CONSTRUCTOR
+=head1 METHODS
 
 =head2 new
-
-    my $tokenizer = KinoSearch::Analysis::Tokenizer->new(
-        token_re => $matches_one_token, );
-
-Construct a Tokenizer object.  
-
-B<token_re> must be a pre-compiled regular expression matching one token.  It
-must not use any capturing parentheses, though non-capturing parentheses are
-fine:
-
+    
     # match "O'Henry" as well as "Henry" and "it's" as well as "it"
     my $token_re = qr/
             \b        # start with a word boundary
@@ -153,10 +127,19 @@ fine:
             )?        # Matching the apostrophe group is optional.
             \b        # end with a word boundary
         /xsm;
-    my $apostrophizing_tokenizer
-        = KinoSearch::Analysis::Tokenizer->new( token_re => $token_re, );
+    my $tokenizer = KinoSearch::Analysis::Tokenizer->new(
+        token_re => $token_re, # default: what you see above
+    );
 
-Incidentally, the above token_re is the default value.
+Constructor.  Takes one hash style parameter.
+
+=over
+
+=item *
+
+B<token_re> - must be a pre-compiled regular expression matching one token.
+
+=back
 
 =head1 COPYRIGHT
 
@@ -164,6 +147,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut

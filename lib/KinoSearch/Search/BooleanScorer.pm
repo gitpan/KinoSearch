@@ -15,13 +15,6 @@ sub new {
     return $self;
 }
 
-# Add a scorer for a sub-query of the BooleanQuery.
-sub add_subscorer {
-    my ( $self, $subscorer, $occur ) = @_;
-    push @{ $self->_get_subscorer_storage }, $subscorer;
-    $self->_add_subscorer( $subscorer, $occur );
-}
-
 1;
 
 __END__
@@ -31,29 +24,43 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::BooleanScorer
 
 void
-_init_child(obj)
-    Scorer *obj;
+_init_child(scorer)
+    Scorer *scorer;
 PPCODE:
-    Kino_BoolScorer_init_child(obj);
+    Kino_BoolScorer_init_child(scorer);
+
+=for comment
+Add a scorer for a sub-query of the BooleanQuery.
+
+=cut
 
 void 
-_add_subscorer(obj, subscorer, occur)
-    Scorer *obj;
-    Scorer *subscorer;
+add_subscorer(scorer, subscorer_sv, occur)
+    Scorer *scorer;
+    SV     *subscorer_sv;
     char   *occur;
+PREINIT:
+    BoolScorerChild* child;
+    Scorer *subscorer;
+    SV     *subscorer_sv_copy;
 PPCODE:
-    Kino_BoolScorer_add_subscorer(obj, subscorer, occur);
+    child = (BoolScorerChild*)scorer->child;
+    Kino_extract_struct(subscorer_sv, subscorer, 
+        Scorer*, "KinoSearch::Search::Scorer");
+    subscorer_sv_copy = newSVsv(subscorer_sv);
+    av_push(child->subscorers_av, subscorer_sv_copy);
+    Kino_BoolScorer_add_subscorer(scorer, subscorer, occur);
 
 SV*
-_boolean_scorer_set_or_get(obj, ...)
-    Scorer* obj;
+_boolean_scorer_set_or_get(scorer, ...)
+    Scorer* scorer;
 ALIAS:
     _get_subscorer_storage = 2
 PREINIT:
     BoolScorerChild* child;
 CODE:
 {
-    child = (BoolScorerChild*)obj->child;
+    child = (BoolScorerChild*)scorer->child;
 
     /* if called as a setter, make sure the extra arg is there */
     if (ix % 2 == 1 && items != 2)
@@ -68,10 +75,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-DESTROY(obj)
-    Scorer *obj;
+DESTROY(scorer)
+    Scorer *scorer;
 PPCODE:
-    Kino_BoolScorer_destroy(obj);
+    Kino_BoolScorer_destroy(scorer);
 
 __H__
 
@@ -384,7 +391,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

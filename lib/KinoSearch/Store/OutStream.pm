@@ -2,6 +2,7 @@ package KinoSearch::Store::OutStream;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Util::CClass );
 
 sub close {
     my $self = shift;
@@ -272,7 +273,7 @@ __H__
 #include "XSUB.h"
 #include "KinoSearchStoreInStream.h"
 #include "KinoSearchUtilCarp.h"
-#include "KinoSearchUtilEndianUtils.h"
+#include "KinoSearchUtilMathUtils.h"
 
 typedef struct outstream {
     PerlIO  *fh;
@@ -593,7 +594,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

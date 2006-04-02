@@ -2,25 +2,9 @@ package KinoSearch::Search::HitCollector;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 
-our %instance_vars = __PACKAGE__->init_instance_vars( storage => undef, );
-
-sub new {
-    my $class = shift;
-    $class = ref($class) || $class;
-    verify_args( \%instance_vars, @_ );
-    my %args = @_;
-    confess "Missing required param 'storage'"
-        unless defined $args{storage};
-    my $self = _new( $class, $args{storage} );
-
-    $self->define_collect;
-    return $self;
-}
-
-# Define the C pointer-to-function hc->collect.
-sub define_collect { shift->abstract_death }
+# all xs, other than the pragmas/includes
 
 package KinoSearch::Search::HitQueueCollector;
 use strict;
@@ -36,14 +20,71 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
 );
 
 sub new {
-    my $class = shift;
+    my $self = shift->SUPER::new;
     verify_args( \%instance_vars, @_ );
     my %args = @_;
     croak("Required parameter: 'size'") unless defined $args{size};
 
     my $hit_queue
         = KinoSearch::Search::HitQueue->new( max_size => $args{size} );
-    return $class->SUPER::new( storage => $hit_queue );
+    $self->_set_storage($hit_queue);
+    $self->_define_collect;
+
+    return $self;
+}
+
+*get_total_hits = *KinoSearch::Search::HitCollector::get_i;
+*get_hit_queue  = *KinoSearch::Search::HitCollector::get_storage;
+
+package KinoSearch::Search::BitCollector;
+use strict;
+use warnings;
+use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Search::HitCollector );
+
+use KinoSearch::Util::BitVector;
+
+our %instance_vars = __PACKAGE__->init_instance_vars( capacity => 0, );
+
+sub new {
+    my $self = shift->SUPER::new;
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
+
+    my $bit_vec
+        = KinoSearch::Util::BitVector->new( capacity => $args{capacity} );
+    $self->_set_storage($bit_vec);
+    $self->_define_collect;
+
+    return $self;
+}
+
+*get_bit_vector = *KinoSearch::Search::HitCollector::get_storage;
+
+package KinoSearch::Search::FilteredCollector;
+use strict;
+use warnings;
+use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Search::HitCollector );
+
+our %instance_vars = __PACKAGE__->init_instance_vars(
+    hit_collector => undef,
+    filter_bits   => undef,
+);
+
+sub new {
+    my $self = shift->SUPER::new;
+    verify_args( \%instance_vars, @_ );
+    my %args = @_;
+    croak("Required parameter: 'hit_collector'")
+        unless a_isa_b( $args{hit_collector},
+        "KinoSearch::Search::HitCollector" );
+
+    $self->_set_filter_bits( $args{filter_bits} );
+    $self->_set_storage( $args{hit_collector} );
+    $self->_define_collect;
+
+    return $self;
 }
 
 1;
@@ -55,15 +96,18 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::HitCollector
 
 void
-_new(class, storage_ref)
-    char  *class;
-    SV    *storage_ref;
+new(either_sv)
+    SV *either_sv;
 PREINIT:
-    HitCollector *obj;
+    char         *class;
+    HitCollector *hc;
 PPCODE:
-    obj   = Kino_HC_new(storage_ref);
+    hc    = Kino_HC_new();
+    class = sv_isobject(either_sv) 
+        ? sv_reftype(either_sv, 0)
+        : SvPV_nolen(either_sv);
     ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)obj);
+    sv_setref_pv(ST(0), class, (void*)hc);
     XSRETURN(1);
 
 =begin comment
@@ -71,35 +115,51 @@ PPCODE:
     $hit_collector->collect( $doc_num, $score );
 
 Process a doc_num/score combination.  In production, this method should not be
-called, as collecting hits is an extremely data-intensive operation.  Instead,
-the underlying C pointer-to-function should be called from within a Scorer's C
-loop.
+called from Perl, as collecting hits is an extremely data-intensive operation.
 
 =end comment
 =cut
 
 void
-collect(obj, doc_num, score)
-    HitCollector *obj;
+collect(hc, doc_num, score)
+    HitCollector *hc;
     U32           doc_num;
     float         score;
 PPCODE:
-    obj->collect(obj, doc_num, score);
+    hc->collect(hc, doc_num, score);
 
 SV* 
-_set_or_get(obj, ...)
-    HitCollector *obj;
+_set_or_get(hc, ...)
+    HitCollector *hc;
 ALIAS:
-    get_storage = 2
-    get_i       = 4
+    _set_storage     = 1
+    get_storage      = 2
+    _set_i           = 3
+    get_i            = 4
+    _set_filter_bits = 5
+    _get_filter_bits = 6
 CODE:
 {
     switch (ix) {
-
-    case 2:  RETVAL = newSVsv(obj->storage_ref);
+    
+    case 1:  SvREFCNT_dec(hc->storage_ref);
+             hc->storage_ref = newSVsv( ST(1) );
+             Kino_extract_anon_struct(hc->storage_ref, hc->storage);
+             /* fall through */
+    case 2:  RETVAL = newSVsv(hc->storage_ref);
              break;
 
-    case 4:  RETVAL = newSVuv(obj->i);
+    case 3:  hc->i = SvUV( ST(1) );
+             /* fall through */
+    case 4:  RETVAL = newSVuv(hc->i);
+             break;
+             
+    case 5:  SvREFCNT_dec(hc->filter_bits_ref);
+             hc->filter_bits_ref = newSVsv( ST(1) );
+             Kino_extract_struct( hc->filter_bits_ref, hc->filter_bits, 
+                BitVector*, "KinoSearch::Util::BitVector" );
+             /* fall through */
+    case 6:  RETVAL = newSVsv(hc->filter_bits_ref);
              break;
 
     default: Kino_confess("Internal error: _set_or_get ix: %d", ix); 
@@ -108,21 +168,35 @@ CODE:
 OUTPUT: RETVAL
 
 void
-DESTROY(obj)
-    HitCollector *obj;
+DESTROY(hc)
+    HitCollector *hc;
 PPCODE:
-    SvREFCNT_dec(obj->storage_ref);
-    Kino_Safefree(obj);
+    Kino_HC_destroy(hc);
 
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::HitQueueCollector
 
 void
-define_collect(obj)
-    HitCollector *obj;
+_define_collect(hc)
+    HitCollector *hc;
 PPCODE:
-    obj->collect = Kino_HC_collect_HitQueue;
+    hc->collect = Kino_HC_collect_HitQueue;
 
+MODULE = KinoSearch    PACKAGE = KinoSearch::Search::BitCollector
+
+void
+_define_collect(hc)
+    HitCollector *hc;
+PPCODE:
+    hc->collect = Kino_HC_collect_BitVec;
+
+MODULE = KinoSearch    PACKAGE = KinoSearch::Search::FilteredCollector
+
+void
+_define_collect(hc);
+    HitCollector *hc;
+PPCODE:
+    hc->collect = Kino_HC_collect_filtered;
 
 __H__
 
@@ -133,27 +207,27 @@ __H__
 #include "perl.h"
 #include "XSUB.h"
 #include "KinoSearchUtilCarp.h"
-#include "KinoSearchUtilEndianUtils.h"
+#include "KinoSearchUtilMathUtils.h"
+#include "KinoSearchUtilBitVector.h"
 #include "KinoSearchUtilPriorityQueue.h"
 #include "KinoSearchUtilMemManager.h"
 
 typedef struct hitcollector {
-    void  (*collect)(struct hitcollector*, U32, float);
-    float   f;
-    U32     i;
-    void   *storage;
-    SV     *storage_ref;
+    void      (*collect)(struct hitcollector*, U32, float);
+    float       f;
+    U32         i;
+    void       *storage;
+    SV         *storage_ref;
+    BitVector  *filter_bits;
+    SV         *filter_bits_ref;
 } HitCollector;
 
-/* Allocate a new HitCollector.  obj->collect will still have to be set, as
- * the default just throws an error. */
-HitCollector* Kino_HC_new(SV*);
-
-/* A placeholder which throws an error. */
+HitCollector* Kino_HC_new();
 void Kino_HC_collect_death(HitCollector*, U32, float);
-    
-/* Collect hits into a HitQueue. */
 void Kino_HC_collect_HitQueue(HitCollector*, U32, float);
+void Kino_HC_collect_BitVec(HitCollector*, U32, float);
+void Kino_HC_collect_filtered(HitCollector*, U32, float);
+void Kino_HC_destroy(HitCollector*);
 
 #endif /* include guard */
 
@@ -163,30 +237,27 @@ __C__
 #include "KinoSearchSearchHitCollector.h"
 
 HitCollector*
-Kino_HC_new (SV* storage_ref) {
-    HitCollector  *obj;
+Kino_HC_new() {
+    HitCollector  *hc;
 
     /* allocate memory and init */
-    Kino_New(0, obj, 1, HitCollector);
-    obj->f = 0;
-    obj->i = 0;
+    Kino_New(0, hc, 1, HitCollector);
+    hc->f               = 0;
+    hc->i               = 0;
+    hc->storage         = NULL;
+    hc->storage_ref     = &PL_sv_undef;
+    hc->filter_bits     = NULL;
+    hc->filter_bits_ref = &PL_sv_undef;
 
-    /* store storage object, so Perl can deal with gc at DESTROY-time */
-    obj->storage_ref = storage_ref;
-    SvREFCNT_inc(storage_ref);
-
-    /* deref the storage object */
-    obj->storage = INT2PTR(void*,( SvIV((SV*)SvRV(storage_ref)) ) );
-    
     /* force the subclass to spec a collect method */
-    obj->collect = Kino_HC_collect_death;
+    hc->collect = Kino_HC_collect_death;
 
-    return obj;
+    return hc;
 }
 
 void
 Kino_HC_collect_death(HitCollector *hc, U32 doc_num, float score) {
-    Kino_confess("Must assign new C pointer-to-function to 'collect'");
+    Kino_confess("hit_collector->collect must be assigned in a subclass");
 }
 
 
@@ -223,6 +294,38 @@ Kino_HC_collect_HitQueue(HitCollector *hc, U32 doc_num, float score) {
     }
 }
 
+void
+Kino_HC_collect_BitVec(HitCollector *hc, U32 doc_num, float score) {
+    BitVector *bit_vec;
+    bit_vec = (BitVector*)hc->storage;
+
+    /* add to the total number of hits */
+    hc->i++;
+
+    /* add the doc_num to the BitVector */
+    Kino_BitVec_set(bit_vec, doc_num);
+}
+
+void
+Kino_HC_collect_filtered(HitCollector *hc, U32 doc_num, float score) {
+    if (hc->filter_bits == NULL) {
+        Kino_confess("filter_bits not set on FilteredCollector");
+    }
+
+    if (Kino_BitVec_get(hc->filter_bits, doc_num)) {
+        HitCollector *inner_collector;
+        inner_collector = (HitCollector*)hc->storage;
+        inner_collector->collect(inner_collector, doc_num, score);
+    }
+}
+
+void
+Kino_HC_destroy(HitCollector *hc) {
+    SvREFCNT_dec(hc->storage_ref);
+    SvREFCNT_dec(hc->filter_bits_ref);
+    Kino_Safefree(hc);
+}
+
 __POD__
 
 =begin devdocs
@@ -234,15 +337,16 @@ KinoSearch::Search::HitCollector - process doc/score pairs
 =head1 DESCRIPTION
 
 A Scorer spits out raw doc_num/score pairs; a HitCollector decides what to do
-with them, based on the C pointer-to-function hc->collect, which is set when
-the constructor calls $self->define_collect.
+with them, based on the hc->collect method.
 
 A HitQueueCollector keeps the highest scoring N documents and their associated
 scores in a HitQueue while iterating through a large list.
 
-=head1 TODO
+A BitCollector builds a BitVector with a set bit for each doc number (scores
+are irrelevant).
 
-Implement BitSetCollector.
+A FilterCollector wraps another HitCollector, only allowing the inner
+collector to "see" doc_num/score pairs which make it through the filter.
 
 =head1 COPYRIGHT
 
@@ -250,7 +354,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

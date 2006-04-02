@@ -8,7 +8,8 @@ use KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Index::FieldsWriter;
 use KinoSearch::Index::PostingsWriter;
 use KinoSearch::Index::CompoundFileWriter;
-use KinoSearch::Index::IndexFileNames qw( @COMPOUND_EXTENSIONS );
+use KinoSearch::Index::IndexFileNames
+    qw( @COMPOUND_EXTENSIONS SORTFILE_EXTENSION );
 use KinoSearch::Search::Similarity;
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
@@ -23,6 +24,8 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     postings_writer => undef,
     doc_count       => 0,
 );
+
+__PACKAGE__->ready_get(qw( seg_name doc_count ));
 
 sub init_instance {
     my $self = shift;
@@ -50,9 +53,6 @@ sub init_instance {
     );
 }
 
-sub get_seg_name  { $_[0]->{seg_name} }
-sub get_doc_count { $_[0]->{doc_count} }
-
 # Add a document to the segment.
 sub add_doc {
     my ( $self, $doc ) = @_;
@@ -64,18 +64,23 @@ sub add_doc {
     for my $indexed_field ( grep { $_->get_indexed } $doc->get_fields ) {
         my $token_batch = KinoSearch::Analysis::TokenBatch->new;
 
+        # if the field has content, put it in the TokenBatch
         if ( $indexed_field->get_value_len ) {
             $token_batch->add_token( $indexed_field->get_value, 0,
                 $indexed_field->get_value_len );
         }
+
+        # analyze the field
         if ( $indexed_field->get_analyzed ) {
             $token_batch
                 = $indexed_field->get_analyzer()->analyze($token_batch);
         }
 
+        # invert the doc
         $token_batch->build_posting_list( $self->{doc_count},
             $indexed_field->get_field_num );
 
+        # prepare to store the term vector, if the field is vectorized
         if ( $indexed_field->get_vectorized and $indexed_field->get_stored ) {
             $indexed_field->set_tv_string( $token_batch->get_tv_string );
         }
@@ -94,6 +99,49 @@ sub add_doc {
     $self->{fields_writer}->add_doc($doc);
 
     $self->{doc_count}++;
+}
+
+sub add_segment {
+    my ( $self, $seg_reader ) = @_;
+
+    # prepare to bulk add
+    my $deldocs = $seg_reader->get_deldocs;
+    my $doc_map = $deldocs->generate_doc_map( $seg_reader->max_doc,
+        $self->{doc_count} );
+    my $field_num_map
+        = $self->{finfos}->generate_field_num_map( $seg_reader->get_finfos );
+
+    # bulk add the slab of documents to the various writers
+    $self->_merge_norms( $seg_reader, $doc_map );
+    $self->{fields_writer}
+        ->add_segment( $seg_reader, $doc_map, $field_num_map );
+    $self->{postings_writer}->add_segment( $seg_reader, $doc_map );
+
+    $self->{doc_count} += $seg_reader->num_docs;
+}
+
+# Bulk write norms.
+sub _merge_norms {
+    my ( $self, $seg_reader, $doc_map ) = @_;
+    my $norm_outstreams = $self->{norm_outstreams};
+    my $similarity      = $self->{similarity};
+    my @indexed_fields  = grep { $_->get_indexed } $self->{finfos}->get_infos;
+
+    for my $field (@indexed_fields) {
+        my $outstream    = $norm_outstreams->[ $field->get_field_num ];
+        my $norms_reader = $seg_reader->norms_reader( $field->get_name );
+        # if the field was indexed before, copy the norms
+        if ( defined $norms_reader ) {
+            _write_remapped_norms( $outstream, $doc_map,
+                $norms_reader->get_bytes );
+        }
+        else {
+            # the field isn't in the input segment, so write a default
+            my $zeronorm = $self->{similarity}->lengthnorm(0);
+            my $num_docs = $seg_reader->num_docs;
+            $outstream->lu_write( "a$num_docs", $zeronorm x $num_docs );
+        }
+    }
 }
 
 # Finish writing the segment.
@@ -116,26 +164,90 @@ sub finish {
         $_->close if defined;
     }
 
-    # consolidate compound file
-    unless ( $self->{_dont_use_comp_file} ) {    # testing hack - always runs
+    # consolidate compound file - if we actually added any docs
+    my @compound_files = map {"$seg_name.$_"} @COMPOUND_EXTENSIONS;
+    if ( $self->{doc_count} ) {
         my $compound_file_writer = KinoSearch::Index::CompoundFileWriter->new(
             invindex => $invindex,
             filename => "$seg_name.tmp",
         );
-        my @compound_files = map {"$seg_name.$_"} @COMPOUND_EXTENSIONS;
         push @compound_files, map { "$seg_name.f" . $_->get_field_num }
             grep { $_->get_indexed } $self->{finfos}->get_infos;
         $compound_file_writer->add_file($_) for @compound_files;
         $compound_file_writer->finish;
         $invindex->rename_file( "$seg_name.tmp", "$seg_name.cfs" );
-        $invindex->delete_file($_) for @compound_files;
     }
 
+    # delete files that are no longer needed;
+    $invindex->delete_file($_) for @compound_files;
+    my $sort_file_name = "$seg_name" . SORTFILE_EXTENSION;
+    $invindex->delete_file($sort_file_name)
+        if $invindex->file_exists($sort_file_name);
 }
 
 1;
 
 __END__
+
+__XS__
+
+MODULE = KinoSearch   PACKAGE = KinoSearch::Index::SegWriter
+
+void
+_write_remapped_norms(outstream, doc_map_ref, norms_ref)
+    OutStream *outstream;
+    SV        *doc_map_ref;
+    SV        *norms_ref;
+PPCODE: 
+    Kino_SegWriter_write_remapped_norms(outstream, doc_map_ref, norms_ref);
+
+__H__
+
+#ifndef H_KINOSEARCH_SEG_WRITER
+#define H_KINOSEARCH_SEG_WRITER 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchStoreOutStream.h"
+#include "KinoSearchUtilCarp.h"
+
+void Kino_SegWriter_write_remapped_norms(OutStream*, SV*, SV*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchIndexSegWriter.h"
+
+void 
+Kino_SegWriter_write_remapped_norms(OutStream *outstream, SV *doc_map_ref,
+                                    SV* norms_ref) {
+    SV     *norms_sv, *doc_map_sv;
+    I32    *doc_map, *doc_map_end;
+    char   *norms;
+    STRLEN  doc_map_len, norms_len;
+    
+    /* extract doc map and norms arrays */
+    doc_map_sv  = SvRV(doc_map_ref);
+    doc_map     = (I32*)SvPV(doc_map_sv, doc_map_len);
+    doc_map_end = (I32*)SvEND(doc_map_sv);
+    norms_sv    = SvRV(norms_ref);
+    norms       = SvPV(norms_sv, norms_len);
+    if (doc_map_len != norms_len * sizeof(I32))
+        Kino_confess("Mismatched doc_map and norms");
+
+    /* write a norm for each non-deleted doc */
+    while (doc_map < doc_map_end) {
+        if (*doc_map != -1) {
+            outstream->write_byte(outstream, *norms);
+        }
+        doc_map++;
+        norms++;
+    }
+}
+
+__POD__
 
 =begin devdocs
 
@@ -154,7 +266,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

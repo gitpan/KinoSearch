@@ -1,91 +1,321 @@
 package KinoSearch::Index::MultiTermDocs;
 use strict;
 use warnings;
-
-=for comment
-
-This module is NOT DONE.
-
-=cut
-
+use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::TermDocs );
-use Scalar::Util qw( blessed );
 
-use Clone qw( clone );
-
-our %instance_vars = (
-    %KinoSearch::Index::TermDocs,
-    readers => [],
-    starts  => [],
-
-    pointer => 0,
-
-    reader_term_docs => [],
-    current          => undef,
+our %instance_vars = __PACKAGE__->init_instance_vars(
+    sub_readers => [],
+    starts      => [],
 );
 
-sub init_instance {
-    my $self = shift;
+sub new {
+    my $self = shift->SUPER::new;
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
 
-    %$self = ( %$self, @_ );
-    for my $i ( 0 .. $#{ $self->{readers} } ) {
-        my $seg_reader   = $self->{readers}[$i];
-        my $start_offset = $self->{starts}[$i];
-        push @{ $self->{reader_term_docs} },
-            KinoSearch::Index::SegmentTermDocs->new(
-            seg_reader   => $seg_reader,
-            start_offset => $start_offset,
-            );
-    }
-    $self->{current} = $self->{seg_term_docs}[0];
+    # get a SegTermDocs for each segment
+    my @sub_term_docs = map { $_->term_docs } @{ $args{sub_readers} };
+    _init_child( $self, \@sub_term_docs, $args{starts} );
+
+    return $self;
 }
 
 sub seek {
-    my ( $self, $thing ) = @_;
-    $self->{termstring} = $thing;
-    if ( blessed($thing) and $thing->isa('KinoSearch::Index::TermEnum') ) {
-        $self->{termstring} = $thing->get_term;
-    }
-    $self->{pointer} = 0;
-    $self->{current} = undef;
+    my ( $self, $term ) = @_;
+    $_->seek($term) for @{ $self->_get_sub_term_docs };
+    $self->_reset_pointer;
 }
 
-sub read {
-    my $self        = $_[0];
-    my $num_to_read = $_[3];
-
-    while (1) {
-        while ( !defined $self->{current} ) {
-            # try next segment
-            if ( $self->{pointer} < @{ $self->{seg_term_docs} } ) {
-                $self->{current} = $self->{seg_term_docs}[ $self->{pointer} ];
-                $self->{pointer}++;
-            }
-            else {
-                return 0;
-            }
-        }
-        my $end = $self->{current}->read( $_[1], $_[2], $num_to_read );
-        if ( $end == 0 ) {
-            $self->{current} = undef;
-        }
-        else {
-            return $end;
-        }
-
-    }
+sub set_read_positions {
+    my ( $self, $val ) = @_;
+    $_->set_read_positions($val) for @{ $self->_get_sub_term_docs };
 }
 
 sub close {
     my $self = shift;
-    for ( @{ $self->{reader_term_docs} } ) {
-        $_->close if defined $_;
-    }
+    $_->close for @{ $self->_get_sub_term_docs };
 }
 
 1;
 
 __END__
+
+__XS__
+
+MODULE = KinoSearch    PACKAGE = KinoSearch::Index::MultiTermDocs
+
+void
+_init_child(term_docs, sub_term_docs_avref, starts_av)
+    TermDocs *term_docs;
+    SV       *sub_term_docs_avref;
+    AV       *starts_av;
+PPCODE:
+    Kino_MultiTermDocs_init_child(term_docs, sub_term_docs_avref, starts_av);
+
+
+=for comment
+Helper for seek().
+
+=cut
+
+void
+_reset_pointer(term_docs)
+    TermDocs *term_docs;
+PREINIT:
+    MultiTermDocsChild *child;
+PPCODE:
+    child = (MultiTermDocsChild*)term_docs->child;
+    child->base    = 0;
+    child->pointer = 0;
+    child->current = NULL;
+    
+
+SV*
+_set_or_get(term_docs, ...)
+    TermDocs *term_docs;
+ALIAS:
+    _set_sub_term_docs = 1
+    _get_sub_term_docs = 2
+PREINIT:
+    MultiTermDocsChild *child;
+CODE:
+{
+    child = (MultiTermDocsChild*)term_docs->child;
+
+    /* if called as a setter, make sure the extra arg is there */
+    if (ix % 2 == 1 && items != 2)
+        Kino_confess("usage: $term_docs->set_xxxxxx($val)");
+
+    switch (ix) {
+        
+    case 1:  Kino_confess("Can't set sub_term_docs");
+             /* fall through */
+    case 2:  RETVAL = newSVsv( child->sub_term_docs_avref );
+             break;
+    }
+}
+OUTPUT: RETVAL
+
+__H__
+
+#ifndef H_KINO_MULTI_TERM_DOCS
+#define H_KINO_MULTI_TERM_DOCS 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchIndexTermDocs.h"
+#include "KinoSearchUtilCClass.h"
+#include "KinoSearchUtilMemManager.h"
+
+typedef struct multitermdocschild {
+    U32        num_subs;
+    I32        base;
+    I32        pointer;
+    SV        *sub_term_docs_avref;
+    U32       *starts;
+    SV        *term_sv;
+    TermDocs **sub_term_docs;
+    TermDocs  *current;
+} MultiTermDocsChild;
+
+void Kino_MultiTermDocs_init_child(TermDocs*, SV*, AV*);
+void Kino_MultiTermDocs_set_doc_freq_death(TermDocs*, U32);
+U32  Kino_MultiTermDocs_get_doc_freq(TermDocs*);
+U32  Kino_MultiTermDocs_get_doc(TermDocs*);
+U32  Kino_MultiTermDocs_get_freq(TermDocs*);
+SV*  Kino_MultiTermDocs_get_positions(TermDocs*);
+U32  Kino_MultiTermDocs_read(TermDocs*, SV*, SV*, U32);
+bool Kino_MultiTermDocs_next(TermDocs*);
+void Kino_MultiTermDocs_destroy(TermDocs*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchIndexMultiTermDocs.h"
+
+void 
+Kino_MultiTermDocs_init_child(TermDocs* term_docs, SV *sub_term_docs_avref, 
+                              AV *starts_av) {
+    MultiTermDocsChild *child;
+    int                 i;
+    SV                **sv_ptr;
+	AV                 *sub_term_docs_av;
+
+    /* allocate */
+    Kino_New(0, child, 1, MultiTermDocsChild);
+    term_docs->child = child;
+
+    /* assign */
+    child->current = NULL;
+    child->base    = 0;
+    child->pointer = 0;
+
+    /* extract AV* and take stock of how many sub-TermDocs we've got */
+    child->sub_term_docs_avref = newSVsv(sub_term_docs_avref);;
+	sub_term_docs_av = (AV*)SvRV(sub_term_docs_avref);
+    child->num_subs = av_len(sub_term_docs_av) + 1;
+
+    /* extract starts from starts array, subTermDocs from the subs array */
+    Kino_New(0, child->starts, child->num_subs, U32);
+    Kino_New(0, child->sub_term_docs, child->num_subs, TermDocs*);
+    for (i = 0; i < child->num_subs; i++) {
+        sv_ptr = av_fetch(starts_av, i, 0);
+        if (sv_ptr == NULL)
+            Kino_confess("starts array doesn't have enough valid members");
+        child->starts[i] = (U32)SvUV(*sv_ptr);
+        sv_ptr = av_fetch(sub_term_docs_av, i, 0);
+        if (sv_ptr == NULL)
+            Kino_confess("TermDocs array doesn't have enough valid members");
+        Kino_extract_struct(*sv_ptr, child->sub_term_docs[i], TermDocs*,
+            "KinoSearch::Index::TermDocs");
+    }
+
+    /* assign method pointers */
+    term_docs->set_doc_freq  = Kino_MultiTermDocs_set_doc_freq_death;
+    term_docs->get_doc_freq  = Kino_MultiTermDocs_get_doc_freq;
+    term_docs->get_doc       = Kino_MultiTermDocs_get_doc;
+    term_docs->get_freq      = Kino_MultiTermDocs_get_freq;
+    term_docs->get_positions = Kino_MultiTermDocs_get_positions;
+    term_docs->read          = Kino_MultiTermDocs_read;
+    term_docs->next          = Kino_MultiTermDocs_next;
+	term_docs->destroy       = Kino_MultiTermDocs_destroy;
+}
+
+void
+Kino_MultiTermDocs_set_doc_freq_death(TermDocs *term_docs, U32 doc_freq) {
+    Kino_confess("can't set doc_freq on a MultiTermDocs");
+}
+
+U32
+Kino_MultiTermDocs_get_doc_freq(TermDocs *term_docs) {
+    MultiTermDocsChild *child;
+    TermDocs           *sub_td;
+    int                 i;
+    U32                 doc_freq = 0;
+
+	/* sum the doc_freqs of all segments */
+    child = (MultiTermDocsChild*)term_docs->child;
+    for (i = 0; i < child->num_subs; i++) {
+        sub_td = child->sub_term_docs[i];
+        doc_freq += sub_td->get_doc_freq(sub_td);
+    }
+    return doc_freq;
+}
+
+U32 
+Kino_MultiTermDocs_get_doc(TermDocs *term_docs) {
+    MultiTermDocsChild *child;
+    child = (MultiTermDocsChild*)term_docs->child;
+    
+    if (child->current == NULL) 
+        return KINO_TERM_DOCS_SENTINEL;
+
+    return child->current->get_doc(child->current) + child->base;
+}
+
+U32
+Kino_MultiTermDocs_get_freq(TermDocs *term_docs) {
+    MultiTermDocsChild *child;
+    child = (MultiTermDocsChild*)term_docs->child;
+
+    if (child->current == NULL) 
+        return KINO_TERM_DOCS_SENTINEL;
+
+    return child->current->get_freq(child->current);
+}
+
+SV*
+Kino_MultiTermDocs_get_positions(TermDocs *term_docs) {
+    MultiTermDocsChild *child;
+    child = (MultiTermDocsChild*)term_docs->child;
+
+    if (child->current == NULL) 
+        return &PL_sv_undef;
+
+    return child->current->get_positions(child->current);
+}
+
+
+U32
+Kino_MultiTermDocs_read(TermDocs *term_docs, SV *doc_nums_sv, SV *freqs_sv,
+                        U32 num_wanted) {
+    MultiTermDocsChild *child;
+    U32                 i, num_got, base;
+    U32                *doc_nums;
+
+    child = (MultiTermDocsChild*)term_docs->child;
+
+    while (1) {
+		/* move to the next SegTermDocs */
+        while (child->current == NULL) {
+            if (child->pointer < child->num_subs) {
+                child->base = child->starts[ child->pointer ];
+                child->current = child->sub_term_docs[ child->pointer ];
+                child->pointer++;
+            }
+            else {
+                return 0;
+            }
+        }
+        
+        num_got = child->current->read(
+            child->current, doc_nums_sv, freqs_sv, num_wanted );
+
+        if (num_got == 0) {
+			/* no more docs left in this segment */
+            child->current = NULL;
+        }
+        else {
+			/* add the start offset for this seg to each doc */
+            base = child->base;
+            doc_nums = (U32*)SvPVX(doc_nums_sv);
+            for (i = 0; i < num_got; i++) {
+                *doc_nums++ += base;
+            }
+
+            return num_got;
+        }
+    }
+}
+
+bool
+Kino_MultiTermDocs_next(TermDocs* term_docs) {
+    MultiTermDocsChild *child;
+    child = (MultiTermDocsChild*)term_docs->child;
+
+    if ( child->current != NULL && child->current->next(child->current) ) {
+        return 1;
+    }
+    else if (child->pointer < child->num_subs) {
+		/* try next segment */
+        child->base    = child->starts[ child->pointer ];
+        child->current = child->sub_term_docs[ child->pointer ];
+        child->pointer++;
+        return term_docs->next(term_docs); /* recurse */
+    }
+    else {
+		/* done with all segments */
+        return 0;
+    }
+}
+
+void
+Kino_MultiTermDocs_destroy(TermDocs* term_docs) {
+    MultiTermDocsChild *child; 
+    child = (MultiTermDocsChild*)term_docs->child;
+
+    SvREFCNT_dec(child->sub_term_docs_avref);
+    Kino_Safefree(child->sub_term_docs);
+    Kino_Safefree(child->starts);
+    Kino_Safefree(child);
+
+    Kino_TermDocs_destroy(term_docs);
+}
+
+__POD__
 
 =begin devdocs
 
@@ -95,7 +325,7 @@ KinoSearch::Index::MultiTermDocs - multi-segment TermDocs
 
 =head1 DESCRIPTION 
 
-This module is NOT DONE.
+Multi-segment implementation of KinoSearch::Index::TermDocs.
 
 =head1 COPYRIGHT
 
@@ -103,7 +333,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

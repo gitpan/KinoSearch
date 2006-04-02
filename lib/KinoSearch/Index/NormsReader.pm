@@ -8,8 +8,7 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     # constructor params / members
     instream => undef,
     max_doc  => undef,
-    # members
-    bytes => undef,
+    bytes    => undef,
 );
 
 sub init_instance {
@@ -63,7 +62,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

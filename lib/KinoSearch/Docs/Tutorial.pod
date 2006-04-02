@@ -63,7 +63,10 @@ L<HTML::Parser|HTML::Parser>.
     
     ### STEP 3: Define fields.
     $invindexer->spec_field( name => 'title' );
-    $invindexer->spec_field( name => 'bodytext' );
+    $invindexer->spec_field( 
+        name       => 'bodytext',
+        vectorized => 1,
+    );
     $invindexer->spec_field(
         name    => 'url',
         indexed => 0,
@@ -290,5 +293,5 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 

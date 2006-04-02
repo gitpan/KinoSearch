@@ -19,11 +19,9 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     seg_infos      => undef,
     close_invindex => 0,
     invindex_owner => 0,
-
-    #    write_lock     => undef,
-    #    stale          => 0,
-    #    has_changes    => 0,
 );
+
+__PACKAGE__->ready_get(qw( invindex ));
 
 sub new {
     my $temp = shift->SUPER::new(@_);
@@ -53,11 +51,10 @@ sub _open_multi_or_segreader {
 
             # create a SegReader for each segment in the invindex
             my @seg_readers;
-            for ( 0 .. $seg_infos->size - 1 ) {
-                my $sinfo = $seg_infos->info($_);
+            for my $sinfo ( $seg_infos->infos ) {
                 push @seg_readers,
                     KinoSearch::Index::SegReader->new(
-                    seg_name => $sinfo->{seg_name},
+                    seg_name => $sinfo->get_seg_name,
                     invindex => $invindex,
                     );
             }
@@ -75,18 +72,27 @@ sub _open_multi_or_segreader {
     return $reader;
 }
 
-sub get_invindex { shift->{invindex} }
-
 =begin comment
 
     my $num = $reader->max_doc;
 
-Return the highest document number available to the reader
+Return the highest document number available to the reader.
 
 =end comment
 =cut
 
 sub max_doc { shift->abstract_death }
+
+=begin comment
+
+    my $num = $reader->num_docs;
+
+Return the number of (non-deleted) documents available to the reader.
+
+=end comment
+=cut
+
+sub num_docs { shift->abstract_death }
 
 =begin comment
 
@@ -109,6 +115,17 @@ Given a field name, return a NormsReader object.
 =cut
 
 sub norms_reader { shift->abstract_death }
+
+=begin comment
+
+    $reader->delete_docs_by_term( $term );
+
+Delete all the documents available to the reader that index the given Term.
+
+=end comment
+=cut
+
+sub delete_docs_by_term { shift->abstract_death }
 
 =begin comment
 
@@ -149,21 +166,30 @@ sub get_field_names { shift->abstract_death }
 
 =begin comment
 
-    $reader->do_close;
+    my $infos = $reader->generate_field_infos;
 
-Release any necessary resources. Called by close().
+Return a new FieldInfos object, describing all the fields held by the reader.
+The FieldInfos object will be consolidated, and thus may not be representative
+of every field in every segment if there are conflicting definitions.
 
 =end comment
 =cut
 
-sub do_close { shift->abstract_death }
+sub generate_field_infos { shift->abstract_death }
 
-sub close {
-    my $self = shift;
-    $self->do_close;
-    $self->{invindex}->close
-        if ( $self->{close_invindex} );
-}
+=begin comment
+
+    my @sparse_segreaders = $reader->segreaders_to_merge;
+    my @all_segreaders    = $reader->segreaders_to_merge('all');
+
+Find segments which are good candidates for merging, as they don't contain
+many valid documents.  Returns an array of SegReaders.  If passed an argument,
+return all SegReaders.
+
+=end comment
+=cut
+
+sub segreaders_to_merge { shift->abstract_death }
 
 1;
 
@@ -196,7 +222,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

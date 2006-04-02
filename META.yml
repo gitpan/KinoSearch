@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.08
+version: 0.09_01
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: search engine library
@@ -9,11 +9,10 @@ requires:
   Clone: 0.18
   Lingua::Stem::Snowball: 0.94
   Lingua::StopWords: 0.02
-  Sort::External: 0.15
 provides:
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.08
+    version: 0.09_01
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:
@@ -62,8 +61,6 @@ provides:
     file: lib/KinoSearch/Index/SegInfos.pm
   KinoSearch::Index::SegInfos:
     file: lib/KinoSearch/Index/SegInfos.pm
-  KinoSearch::Index::SegMerger:
-    file: lib/KinoSearch/Index/SegMerger.pm
   KinoSearch::Index::SegReader:
     file: lib/KinoSearch/Index/SegReader.pm
   KinoSearch::Index::SegTermDocs:
@@ -92,6 +89,8 @@ provides:
     file: lib/KinoSearch/InvIndexer.pm
   KinoSearch::QueryParser::QueryParser:
     file: lib/KinoSearch/QueryParser/QueryParser.pm
+  KinoSearch::Search::BitCollector:
+    file: lib/KinoSearch/Search/HitCollector.pm
   KinoSearch::Search::BooleanClause:
     file: lib/KinoSearch/Search/BooleanClause.pm
   KinoSearch::Search::BooleanQuery:
@@ -100,6 +99,8 @@ provides:
     file: lib/KinoSearch/Search/BooleanScorer.pm
   KinoSearch::Search::BooleanWeight:
     file: lib/KinoSearch/Search/BooleanQuery.pm
+  KinoSearch::Search::FilteredCollector:
+    file: lib/KinoSearch/Search/HitCollector.pm
   KinoSearch::Search::HitCollector:
     file: lib/KinoSearch/Search/HitCollector.pm
   KinoSearch::Search::HitDoc:
@@ -118,6 +119,8 @@ provides:
     file: lib/KinoSearch/Search/PhraseQuery.pm
   KinoSearch::Search::Query:
     file: lib/KinoSearch/Search/Query.pm
+  KinoSearch::Search::QueryFilter:
+    file: lib/KinoSearch/Search/QueryFilter.pm
   KinoSearch::Search::Scorer:
     file: lib/KinoSearch/Search/Scorer.pm
   KinoSearch::Search::Searchable:
@@ -152,16 +155,22 @@ provides:
     file: lib/KinoSearch/Store/RAMLock.pm
   KinoSearch::Util::BitVector:
     file: lib/KinoSearch/Util/BitVector.pm
+  KinoSearch::Util::CClass:
+    file: lib/KinoSearch/Util/CClass.pm
   KinoSearch::Util::Carp:
     file: lib/KinoSearch/Util/Carp.pm
   KinoSearch::Util::Class:
     file: lib/KinoSearch/Util/Class.pm
-  KinoSearch::Util::EndianUtils:
-    file: lib/KinoSearch/Util/EndianUtils.pm
+  KinoSearch::Util::IntMap:
+    file: lib/KinoSearch/Util/IntMap.pm
+  KinoSearch::Util::MathUtils:
+    file: lib/KinoSearch/Util/MathUtils.pm
   KinoSearch::Util::MemManager:
     file: lib/KinoSearch/Util/MemManager.pm
   KinoSearch::Util::PriorityQueue:
     file: lib/KinoSearch/Util/PriorityQueue.pm
+  KinoSearch::Util::SortExternal:
+    file: lib/KinoSearch/Util/SortExternal.pm
   KinoSearch::Util::StringHelper:
     file: lib/KinoSearch/Util/StringHelper.pm
   KinoSearch::Util::ToStringUtils:
@@ -170,4 +179,4 @@ provides:
     file: lib/KinoSearch/Util/ToolSet.pm
   KinoSearch::Util::VerifyArgs:
     file: lib/KinoSearch/Util/VerifyArgs.pm
-generated_by: Module::Build version 0.2611
+generated_by: Module::Build version 0.2612

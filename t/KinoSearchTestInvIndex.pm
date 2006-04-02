@@ -79,28 +79,43 @@ sub get_uscon_docs {
 }
 
 sub create_test_invindex {
+    my $invindexer;
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
         language => 'en' );
-    my $invindexer = KinoSearch::InvIndexer->new(
+
+    $invindexer = KinoSearch::InvIndexer->new(
         invindex => 'test_invindex',
         create => 1,
         analyzer => $polyanalyzer,
     );
     $invindexer->spec_field( name => 'content' );
-
     for (0 .. 10000) {
         my $doc = $invindexer->new_doc;
         $doc->set_value( content => "zz$_" );
         $invindexer->add_doc($doc);
     }
+    $invindexer->finish;
+    undef $invindexer;
 
+    $invindexer = KinoSearch::InvIndexer->new(
+        invindex => 'test_invindex',
+        analyzer => $polyanalyzer,
+    );
+    $invindexer->spec_field( name => 'content' );
     my $source_docs = get_uscon_docs();
     for (values %$source_docs) {
         my $doc = $invindexer->new_doc;
         $doc->set_value( content => $_->{bodytext} );
         $invindexer->add_doc($doc);
     }
+    $invindexer->finish;
+    undef $invindexer;
 
+    $invindexer = KinoSearch::InvIndexer->new(
+        invindex => 'test_invindex',
+        analyzer => $polyanalyzer,
+    );
+    $invindexer->spec_field( name => 'content' );
     my @chars = ( 'a' .. 'z' );
     for ( 0 .. 1000 ) {
         my $content = '';
@@ -114,8 +129,7 @@ sub create_test_invindex {
         $doc->set_value( content => $content );
         $invindexer->add_doc($doc);
     }
-
-    $invindexer->finish;
+    $invindexer->finish( optimize => 1 );
 }
 
 1;

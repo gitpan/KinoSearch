@@ -31,10 +31,9 @@ sub init_instance {
 
 sub generate_excerpt {
     my ( $self, $doc ) = @_;
-    my $excerpt_length    = $self->{excerpt_length};
-    my $limit             = $self->{limit};
-    my $token_re          = $self->{token_re};
-    my $additional_offset = 0;
+    my $excerpt_length = $self->{excerpt_length};
+    my $limit          = $self->{limit};
+    my $token_re       = $self->{token_re};
 
     # retrieve the text from the chosen field
     my $field       = $doc->get_field( $self->{excerpt_field} );
@@ -53,23 +52,26 @@ sub generate_excerpt {
         ? $text_length - $excerpt_length
         : $top;
 
-    # if the best starting point is the very beginning, cool
+    # if the best starting point is the very beginning, cool...
     if ( $top <= 0 ) {
         $top = 0;
     }
+    # ... otherwise ...
     else {
-        # ... otherwise, try to start the excerpt at a sentence boundary
-        if ($text =~ m/
+        # lop off $top bytes
+        $text = bytes::substr( $text, $top );
+
+        # try to start the excerpt at a sentence boundary
+        if ($text =~ s/
                 \A
                 (
-                \C{$top}
                 \C{0,$limit}?
-                \.\s*
+                \.\s+
                 )
-                /xsm
+                //xsm
             )
         {
-            $top = bytes::length($1);
+            $top += bytes::length($1);
         }
         # no sentence boundary, so we'll need an ellipsis
         else {
@@ -77,23 +79,22 @@ sub generate_excerpt {
             if ($text =~ s/
                 \A
                 (
-                \C{$top}       # up to the top
                 \C{0,$limit}?  # don't go outside the window
                 $token_re      # match possible partial token
                 .*?            # ... and any junk following that token
                 )
                 (?=$token_re)  # just before the start of a full token...
-                /$1... /xsm    # ... insert an ellipsis
+                /... /xsm    # ... insert an ellipsis
                 )
             {
-                $top = bytes::length($1);
-                $additional_offset += 4;    # three dots and a space
+                $top += bytes::length($1);
+                $top -= 4    # three dots and a space
             }
         }
     }
 
     # remove possible partial tokens from the end of the excerpt
-    $text = bytes::substr( $text, $top, $excerpt_length + 1 );
+    $text = bytes::substr( $text, 0, $excerpt_length + 1 );
     if ( bytes::length($text) > $excerpt_length ) {
         my $extra_char = chop $text;
         # if the extra char wasn't part of a token, we aren't splitting one
@@ -103,22 +104,22 @@ sub generate_excerpt {
     }
 
     # if the excerpt doesn't end with a full stop, end with an an ellipsis
-    if ( $text !~ /\.\s*$/s ) {
-        $text =~ s/\W+$//;
+    if ( $text !~ /\.\s*\Z/xsm ) {
+        $text =~ s/\W+\Z//xsm;
         while ( bytes::length($text) + 4 > $excerpt_length ) {
             my $extra_char = chop $text;
             if ( $extra_char =~ $token_re ) {
-                $text =~ s/\W+$token_re$//;    # if unsuccessful, that's fine
+                $text =~ s/\W+$token_re\Z//xsm; # if unsuccessful, that's fine
             }
-            $text =~ s/\W+$//;
+            $text =~ s/\W+\Z//xsm;
         }
         $text .= ' ...';
     }
 
     # remap locations now that we know the starting and ending bytes
     $text_length = bytes::length($text);
-    my @relative_starts = map { $_ + $additional_offset - $top } @$starts;
-    my @relative_ends   = map { $_ + $additional_offset - $top } @$ends;
+    my @relative_starts = map { $_ - $top } @$starts;
+    my @relative_ends   = map { $_ - $top } @$ends;
 
     # get rid of pairs with at least one member outside the text
     while ( @relative_starts and $relative_starts[0] < 0 ) {
@@ -305,7 +306,8 @@ Constructor.  Takes hash-style parameters:
 
 =item *
 
-B<excerpt_field> - the name of the field from which to draw the excerpt.
+B<excerpt_field> - the name of the field from which to draw the excerpt.  This
+field B<must> be C<vectorized>.
 
 =item *
 
@@ -332,6 +334,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut

@@ -28,7 +28,16 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     norms_readers    => {},
 );
 
-__PACKAGE__->ready_get(qw( freq_stream prox_stream deldocs ));
+__PACKAGE__->ready_get(
+    qw(
+        finfos
+        fields_reader
+        freq_stream
+        prox_stream
+        deldocs
+        seg_name
+        )
+);
 
 # use KinoSearch::Util::Class's new()
 # Note: can't inherit IndexReader's new() without recursion problems
@@ -44,7 +53,7 @@ sub init_instance {
         seg_name => $seg_name,
     );
     $self->{deldocs}->read_deldocs( $invindex, "$seg_name.del" )
-        if ( $self->has_deletions );
+        if ( $invindex->file_exists("$seg_name.del") );
 
     # initialize a CompoundFileReader
     my $comp_file_reader = $self->{comp_file_reader}
@@ -81,10 +90,26 @@ sub init_instance {
 
 sub max_doc { shift->{fields_reader}->get_size }
 
-sub has_deletions {
+sub num_docs {
     my $self = shift;
-    $self->{invindex}->file_exists("$self->{seg_name}.del");
+    return $self->max_doc - $self->{deldocs}->get_num_deletions;
 }
+
+sub delete_docs_by_term {
+    my ( $self, $term ) = @_;
+    my $term_docs = $self->term_docs($term);
+    $self->{deldocs}->delete_by_term_docs($term_docs);
+}
+
+sub commit_deletions {
+    my $self = shift;
+    return unless $self->{deldocs}->get_num_deletions;
+    my $filename = $self->{seg_name} . ".del";
+    $self->{deldocs}
+        ->write_deldocs( $self->{invindex}, $filename, $self->max_doc );
+}
+
+sub has_deletions { shift->{deldocs}->get_num_deletions }
 
 sub _open_norms {
     my $self = shift;
@@ -130,6 +155,7 @@ sub term_docs {
 
 sub norms_reader {
     my ( $self, $field_name ) = @_;
+    return unless exists $self->{norms_readers}{$field_name};
     return $self->{norms_readers}{$field_name};
 }
 
@@ -142,8 +168,21 @@ sub get_field_names {
     return \@names;
 }
 
+sub generate_field_infos {
+    my $self       = shift;
+    my $new_finfos = $self->{finfos}->clone;
+    $new_finfos->set_from_file(0);
+    return $new_finfos;
+}
+
 sub fetch_doc {
     $_[0]->{fields_reader}->fetch_doc( $_[1] );
+}
+
+sub segreaders_to_merge {
+    my ( $self, $all ) = @_;
+    return $self if $all;
+    return;
 }
 
 1;
@@ -166,7 +205,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

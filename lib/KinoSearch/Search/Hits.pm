@@ -5,6 +5,7 @@ use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
 use KinoSearch::Highlight::Highlighter;
+use KinoSearch::Search::HitCollector;
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # params/members
@@ -44,16 +45,18 @@ sub seek {
     $self->{pointer} = $start_offset;
 
     # collect enough to satisfy both the offset and the num wanted
-    $num_wanted += $start_offset;
+    my $collector = KinoSearch::Search::HitQueueCollector->new(
+        size => $num_wanted + $start_offset, );
 
     # execute the search!
-    @{$self}{qw( hit_queue total_hits )}
-        = $self->{searcher}->search_hit_queue(
-        num_wanted => $num_wanted,
-        weight     => $self->{weight},
-        filter     => $self->{filter},
-        sort_spec  => $self->{sort_spec},
-        );
+    $self->{searcher}->search_hit_collector(
+        hit_collector => $collector,
+        weight        => $self->{weight},
+        filter        => $self->{filter},
+        sort_spec     => $self->{sort_spec},
+    );
+    $self->{total_hits} = $collector->get_total_hits;
+    $self->{hit_queue}  = $collector->get_hit_queue;
 
     # turn the HitQueue into HitDocs
     $self->{hit_docs} = $self->{hit_queue}->hit_docs;
@@ -61,14 +64,14 @@ sub seek {
 
 sub total_hits {
     my $self = shift;
-    croak("must seek before calling total_hits")
+    $self->seek( 0, 100 )
         unless defined $self->{total_hits};
     return $self->{total_hits};
 }
 
 sub fetch_hit_hashref {
     my $self = shift;
-    croak("must seek before calling fetch_hit_hashref")
+    $self->seek( 0, 100 )
         unless defined $self->{total_hits};
 
     # bail if there aren't any more *captured* hits
@@ -118,7 +121,9 @@ KinoSearch::Search::Hits - access search results
 
 =head1 DESCRIPTION
 
-Hits objects are used to access the results of a search.  
+Hits objects are used to access the results of a search.  By default, a hits
+object provides access to the top 100 matches; the seek() method provides
+finer-grained control.
 
 A classic application would be paging through hits.  The first time, seek to a
 START of 0, and retrieve 10 documents.  If the user wants to see more -- and
@@ -168,7 +173,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut
 

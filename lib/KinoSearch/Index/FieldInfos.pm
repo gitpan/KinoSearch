@@ -29,22 +29,20 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     from_file => 0,
 );
 
+__PACKAGE__->ready_get_set(qw( from_file ));
+
 # Add a user-supplied Field object to the collection.
 sub add_field {
     my ( $self, $field ) = @_;
+    croak("Not a KinoSearch::Document::Field")
+        unless a_isa_b( $field, 'KinoSearch::Document::Field' );
 
     # don't mod Field objects for segments that are read back in
     croak("Can't update FieldInfos that were read in from file")
         if $self->{from_file};
 
-    # misc verifications
-    croak("Not a KinoSearch::Document::Field")
-        unless a_isa_b( $field, 'KinoSearch::Document::Field' );
-    my $fieldname = $field->get_name;
-    croak("Field '$fieldname' already defined")
-        if exists $self->{by_name}{$fieldname};
-
     # add the field
+    my $fieldname = $field->get_name;
     $self->{by_name}{$fieldname} = $field;
     $self->_assign_field_nums;
 }
@@ -148,14 +146,18 @@ sub consolidate {
     }
 
     $self->_assign_field_nums;
+}
 
-    # sync field nums in all the others with the master
-    #    for my $other (@others) {
-    #        for my $other_finfo ( @{ $other->{by_num} } ) {
-    #            $other_finfo->{field_num}
-    #                = $infos->{"$other_finfo->{name}"}{field_num};
-    #        }
-    #    }
+# Generate a mapping of field numbers between two FieldInfos objects.  Should
+# be called by the superset.
+sub generate_field_num_map {
+    my ( $self, $other ) = @_;
+    my $map = '';
+    for my $other_finfo ( @{ $other->{by_num} } ) {
+        my $orig_finfo = $self->{by_name}{ $other_finfo->get_name };
+        $map .= pack( 'I', $orig_finfo->get_field_num );
+    }
+    return KinoSearch::Util::IntMap->new( \$map );
 }
 
 sub encode_fnm_bits {
@@ -206,7 +208,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

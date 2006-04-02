@@ -4,6 +4,8 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::BitVector );
 
+use KinoSearch::Util::IntMap;
+
 # instance vars:
 my %num_deletions;
 
@@ -32,11 +34,11 @@ sub write_deldocs {
     my ( $self, $invindex, $filename, $max_doc ) = @_;
     my $outstream = $invindex->open_outstream($filename);
 
-    # pad out obj->bits
+    # pad out deldocs->bits
     $self->set_capacity($max_doc);
 
     # write header followed by deletions data
-    my $byte_size = $max_doc >> 3;
+    my $byte_size = ceil( $max_doc / 8 );
     $outstream->lu_write(
         "iia$byte_size",         $byte_size,
         $num_deletions{"$self"}, $self->get_bits,
@@ -55,6 +57,12 @@ sub set {
     }
 }
 
+# Delete all the docs represented by a TermDocs object.
+sub delete_by_term_docs {
+    my ( $self, $term_docs ) = @_;
+    $num_deletions{"$self"} += _delete_by_term_docs( $self, $term_docs );
+}
+
 # Undelete a doc.
 sub clear {
     my ( $self, $doc_num ) = @_;
@@ -66,6 +74,13 @@ sub clear {
 }
 
 sub get_num_deletions { $num_deletions{"$_[0]"} }
+
+# Map around deleted documents.
+sub generate_doc_map {
+    my ( $self, $max, $offset ) = @_;
+    my $map = $self->_generate_doc_map( $max, $offset );
+    return KinoSearch::Util::IntMap->new($map);
+}
 
 # If these get implemented, we'll need to write a range_count(first, last)
 # method for BitVector.
@@ -86,40 +101,87 @@ __XS__
 
 MODULE = KinoSearch PACKAGE = KinoSearch::Index::DelDocs
 
-=for comment
-
-A doc_map is used when consolidating a segment.  It's a C array of U32
-(stored in a scalar) where the offset from the start represents the original
-doc_num, and the value represents the new doc_num.  _get_doc_map maps around
-deleted docs, hence the name: if doc 2 is deleted, the map will be 0, 1, -1,
-2, 3...
-
-=cut
-
 SV* 
-get_doc_map(obj, max);
-    BitVector *obj;
+_generate_doc_map(deldocs, max, offset);
+    BitVector *deldocs;
     I32        max;
+    I32        offset;
 PREINIT:
-    I32       *doc_map, *doc_map_start, *doc_map_end;
-    I32        new_doc_num;
-    int        i;                   /* iterator */
+    SV *map_sv;
 CODE:
-{
-    RETVAL = newSV(max * sizeof(I32) + 1);
-    SvCUR_set(RETVAL, max * sizeof(I32));
-    SvPOK_on(RETVAL);
-    doc_map = (I32*)SvPVX(RETVAL);
+    map_sv = Kino_DelDocs_generate_doc_map(deldocs, max, offset);
+    RETVAL = newRV_noinc(map_sv);
+OUTPUT: RETVAL
 
+I32
+_delete_by_term_docs(deldocs, term_docs)
+    BitVector *deldocs;
+    TermDocs  *term_docs;
+CODE:
+    RETVAL = Kino_DelDocs_delete_by_term_docs(deldocs, term_docs);
+OUTPUT: RETVAL
+
+__H__
+
+#ifndef H_KINOSEARCH_DELDOCS
+#define H_KINOSEARCH_DELDOCS 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchIndexTermDocs.h"
+#include "KinoSearchUtilBitVector.h"
+
+SV* Kino_DelDocs_generate_doc_map(BitVector*, I32, I32);
+I32 Kino_DelDocs_delete_by_term_docs(BitVector*, TermDocs*);
+
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchIndexDelDocs.h"
+
+SV*
+Kino_DelDocs_generate_doc_map(BitVector *deldocs, I32 max, I32 offset) {
+    SV   *doc_map_sv;
+    I32  *doc_map, *doc_map_start, *doc_map_end;
+    I32   new_doc_num;
+    int   i;
+
+    /* allocate space for the doc map */
+    doc_map_sv = newSV(max * sizeof(I32) + 1);
+    SvCUR_set(doc_map_sv, max * sizeof(I32));
+    SvPOK_on(doc_map_sv);
+    doc_map = (I32*)SvPVX(doc_map_sv);
+
+    /* -1 for a deleted doc, a new number otherwise */
     new_doc_num = 0;
     for (i = 0; i < max; i++) {
-        if (Kino_BitVec_get(obj, i))
+        if (Kino_BitVec_get(deldocs, i))
             *doc_map++ = -1;
         else
-            *doc_map++ = new_doc_num++;
+            *doc_map++ = offset + new_doc_num++;
     }
+    
+    return doc_map_sv;
 }
-OUTPUT: RETVAL
+
+I32  
+Kino_DelDocs_delete_by_term_docs(BitVector* deldocs, TermDocs* term_docs) {
+    I32 doc;
+    I32 num_deleted = 0;
+
+    /* iterate through term docs, marking each doc returned as deleted */
+    while (term_docs->next(term_docs)) {
+        doc = term_docs->get_doc(term_docs);
+        if (Kino_BitVec_get(deldocs, doc))
+            continue;
+        Kino_BitVec_set(deldocs, doc);
+        num_deleted++;
+    }
+    return num_deleted;
+}
 
 __POD__
 
@@ -151,7 +213,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

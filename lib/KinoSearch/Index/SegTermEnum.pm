@@ -25,7 +25,8 @@ sub new {
     my $term_buffer
         = KinoSearch::Index::TermBuffer->new( finfos => $args{finfos}, );
 
-    return _new( @args{ 'instream', 'is_index', 'finfos', }, $term_buffer );
+    return _new_helper( @args{ 'instream', 'is_index', 'finfos', },
+        $term_buffer );
 }
 
 sub clone_enum {
@@ -77,185 +78,78 @@ __XS__
 MODULE = KinoSearch   PACKAGE = KinoSearch::Index::SegTermEnum 
 
 
-=for comment 
-
-_new() is a helper sub for the Perl method new().
-
-=cut
-
 SegTermEnum*
-_new(instream_sv, is_index, finfos_sv, term_buffer_sv)
+_new_helper(instream_sv, is_index, finfos_sv, term_buffer_sv)
     SV         *instream_sv;
     I32         is_index;
     SV         *finfos_sv
     SV         *term_buffer_sv;
-PREINIT:
-    I32           format;
-    InStream     *instream;
-    SegTermEnum  *obj;
-    char         *ptr;
-    STRLEN        len;
 CODE:
-{
-    /* allocate space */
-    Kino_New(0, obj, 1, SegTermEnum);
-    obj->tinfo = Kino_TInfo_new();
-
-    /* flag these so they don't get freed unless they get filled later */
-    obj->tinfos_cache         = NULL;
-    obj->termstring_ptr_cache = NULL;
-    obj->term_text_len_cache  = NULL;
-
-    /* save instream, finfos, and term_buffer, incrementing refcounts */
-    obj->instream_sv  = newSVsv(instream_sv);
-    obj->finfos       = newSVsv(finfos_sv);
-    obj->term_buf_ref = newSVsv(term_buffer_sv);
-    Kino_extract_struct(term_buffer_sv, obj->term_buf, TermBuffer*, 
-        "KinoSearch::Index::TermBuffer");
-    Kino_extract_struct(instream_sv, obj->instream, InStream*, 
-        "KinoSearch::Store::InStream");
-    instream = obj->instream;
-
-    /* determine whether this is a primary or index enum */
-    obj->is_index = is_index;
-
-    /* reject older or newer index formats */
-    format = (I32)instream->read_int(instream);
-    if (format != -2)
-        Kino_confess("Unsupported index format: %d", format);
-
-    /* read in some vars */
-    obj->enum_size      = instream->read_long(instream);
-    obj->index_interval = instream->read_int(instream);
-    obj->skip_interval  = instream->read_int(instream);
-
-    /* define the position of the Enum as "not yet started" */
-    obj->position = -1;
-    
-    RETVAL = obj;
-}
+    RETVAL = Kino_SegTermEnum_new_helper(instream_sv, is_index, finfos_sv,
+        term_buffer_sv);
 OUTPUT: RETVAL
 
 
-=begin comment
-
-_bulk_scan() can be called by three different aliases:
+=for comment
 
 fill_cache() loads the entire Enum into memory.  This should only be called
 for index Enums -- never for primary Enums.
 
-scan_to() expects a single argument: a termstring.  It iterates through the
-Enum until the Enum's state is ge the target.  This is called on the main
-Enum, after seek() has gotten it close.  You don't want to scan through the
-entire main Enum, just through a small part.
+=cut
 
-next() advances the state of the Enum one term.  If the current position of
-the Enum is valid, it returns 1; when the Enum is exhausted, it returns 0.
+void
+fill_cache(obj)
+    SegTermEnum *obj;
+PPCODE:
+    Kino_SegTermEnum_fill_cache(obj);
+
+
+=begin comment
+
+scan_to() iterates through the Enum until the Enum's state is ge the target.
+This is called on the main Enum, after seek() has gotten it close.  You don't
+want to scan through the entire main Enum, just through a small part.
 
 Scanning through an Enum is an involved process, due to the heavy data
-compression that's involved.  See the Java Lucene File Format definition for
-details.
+compression.  See the Java Lucene File Format definition for details.
 
 =end comment
 =cut
 
-SV*
-_bulk_scan(obj, ...)
+void
+scan_to(obj, target_termstring_sv)
     SegTermEnum *obj;
-ALIAS:
-    fill_cache = 1
-    scan_to    = 2
-    next       = 3
-PREINIT:
-    InStream    *instream;
-    TermBuffer  *term_buf;
-    TermInfo    *tinfo;
-    char        *target_termstring_ptr;
-    STRLEN       target_termstring_len;
-    char       **termstring_ptr_cache_ptr;
-    STRLEN      *term_text_len_cache_ptr;
-    TermInfo   **tinfos_cache_ptr;
-    I32          aI32; 
-    STRLEN       len;
+    SV          *target_termstring_sv;
+PPCODE:
+    Kino_SegTermEnum_scan_to(obj, target_termstring_sv);
+
+
+=for comment
+
+Reset the Enum to the top, so that after next() is called, the Enum is located
+at the first term in the segment.
+
+=cut
+
+void
+reset(obj)
+    SegTermEnum *obj;
+PPCODE:
+    Kino_SegTermEnum_reset(obj);
+
+
+=for comment
+
+next() advances the state of the Enum one term.  If the current position of
+the Enum is valid, it returns 1; when the Enum is exhausted, it returns 0.
+
+=cut
+
+IV
+next(obj)
+    SegTermEnum *obj;
 CODE:
-{
-    /* make some local copies for clarity of code */
-    instream = obj->instream;
-    tinfo    = obj->tinfo;
-    term_buf = obj->term_buf;
-
-    /* if called as fill_cache(), allocate space for cache pointers */
-    if (ix == 1) { 
-        Kino_SegTermEnum_init_cache(obj);
-        termstring_ptr_cache_ptr = obj->termstring_ptr_cache;
-        term_text_len_cache_ptr  = obj->term_text_len_cache;
-        tinfos_cache_ptr         = obj->tinfos_cache;
-    }
-    /* if called as scan_to(), prepare the target_termstring vars */
-    else if (ix == 2) {
-        if (items != 2)
-            Kino_confess("usage: $enum->scan_to($termstring)");
-        target_termstring_ptr = SvPV( ST(1), target_termstring_len );
-    }
-
-    while (1) {
-        /* if we've run out of terms, null out the termstring and return */
-        if (++obj->position >= obj->enum_size) {
-            Kino_TermBuf_reset(term_buf);
-            break;
-        }
-
-        Kino_TermBuf_read(term_buf, instream);
-
-        /* read doc freq; skip interval doesn't do anything right now */
-        tinfo->doc_freq = instream->read_vint(instream);
-
-        /* adjust file pointers. */
-        tinfo->frq_fileptr += instream->read_vlong(instream);
-        tinfo->prx_fileptr += instream->read_vlong(instream);
-
-        if (tinfo->doc_freq >= obj->skip_interval)
-            tinfo->skip_offset = instream->read_vint(instream);
-        else
-            tinfo->skip_offset = 0;
-
-        if (obj->is_index)
-            tinfo->index_fileptr += instream->read_vlong(instream);
-
-        if (ix == 1) { /* fill_cache */
-            /* copy tinfo and termstring into caches, keep looping */
-            *tinfos_cache_ptr = Kino_TInfo_dupe(tinfo);
-            *termstring_ptr_cache_ptr = Kino_savepvn(term_buf->termstring, 
-                (term_buf->text_len + KINO_FIELD_NUM_LEN));
-            *term_text_len_cache_ptr = term_buf->text_len;
-            term_text_len_cache_ptr++;
-            termstring_ptr_cache_ptr++;
-            tinfos_cache_ptr++;
-        }
-        else if (ix == 2) { /* scan_to */
-            /* keep looping until the termstring is lexically ge target */
-            aI32 = Kino_SegTermEnum_compare_strings(
-                term_buf->termstring, 
-                target_termstring_ptr, 
-                (term_buf->text_len + KINO_FIELD_NUM_LEN), 
-                target_termstring_len
-            );
-            if (aI32 >= 0)
-                break;
-        }
-        else if (ix == 3) /* next */
-            /* bail out after 1 loop iter */
-            break;
-    }
-
-    /* return 1 if called via next() and Enum is not yet exhausted */
-    if (ix == 3 && term_buf->termstring != NULL) {
-        RETVAL = newSViv(1);
-    }
-    else {
-        RETVAL = newSViv(0);
-    }
-}
+    RETVAL = Kino_SegTermEnum_next(obj);
 OUTPUT: RETVAL
 
 
@@ -270,70 +164,9 @@ I32
 scan_cache(obj, target_termstring_sv)
     SegTermEnum  *obj;
     SV           *target_termstring_sv;
-PREINIT:
-    TermBuffer  *term_buf;
-    I32          lo;
-    I32          mid;
-    I32          hi;
-    I32          result;
-    I32          comparison;
-    char        *target_termstring;
-    STRLEN       target_len;
-    char       **termstrings;
-    STRLEN      *lengths;
-    char        *scratch_ptr;
-    STRLEN       term_text_len;
 CODE:
-{
-    term_buf = obj->term_buf;
-
-    /* prepare to compare strings */
-    target_termstring = SvPV(target_termstring_sv, target_len);
-    termstrings       = obj->termstring_ptr_cache;
-    lengths           = obj->term_text_len_cache;
-    if (obj->tinfos_cache == NULL)
-        Kino_confess("Internal Error: fill_cache hasn't been called yet"); 
-    
-    lo     = 0;
-    hi     = obj->enum_size - 1;
-    result = -100; 
-
-    /* divide and conquer */
-    while (hi >= lo) {
-        mid        = (lo + hi) >> 1;
-        comparison = Kino_SegTermEnum_compare_strings(
-            target_termstring,  
-            termstrings[mid], 
-            target_len,        
-            (lengths[mid] + KINO_FIELD_NUM_LEN)
-        );
-        if (comparison < 0) 
-            hi = mid - 1;
-        else if (comparison > 0)
-            lo = mid + 1;
-        else {
-            result = mid;
-            break;
-        }
-    }
-    result = hi     == -1   ? 0  /* indicating that target lt first entry */
-           : result == -100 ? hi /* if result is still -100, it wasn't set */
-           : result;
-    
-    /* set the state of the Enum/TermBuffer as if we'd called scan_to */
-    obj->position  = result;
-    term_text_len  = lengths[result]; 
-    scratch_ptr    = termstrings[result];
-    Kino_TermBuf_set_text_len(term_buf, term_text_len);
-    Copy(scratch_ptr, term_buf->termstring, term_text_len, char);
-
-    Kino_TInfo_destroy(obj->tinfo);
-    obj->tinfo = Kino_TInfo_dupe( obj->tinfos_cache[result] );
-
-    RETVAL = result;
-}
+    RETVAL = Kino_SegTermEnum_scan_cache(obj, target_termstring_sv);
 OUTPUT: RETVAL
-
 
 
 =for comment
@@ -364,9 +197,7 @@ ALIAS:
         _set_is_index        = 15
     is_index                 = 16
 PREINIT:
-    char      *scratch_ptr;
     TermInfo  *new_tinfo;
-    STRLEN     len;
 CODE:
 {
     /* if called as a setter, make sure the extra arg is there */
@@ -395,23 +226,28 @@ CODE:
     case 6:  RETVAL = newSViv(obj->enum_size); 
              break;
 
-    case 7:  scratch_ptr = SvPV( ST(1), len );
-             if (len < KINO_FIELD_NUM_LEN)
-                Kino_confess("Internal error: termstring too short");
-             Kino_TermBuf_set_text_len(obj->term_buf, 
-                len - KINO_FIELD_NUM_LEN);
-             Copy(scratch_ptr, obj->term_buf->termstring, len, char);
+    case 7:  if ( SvOK( ST(1) ) ) {
+                 char *scratch_ptr;
+                 STRLEN len;
+                 scratch_ptr = SvPV( ST(1), len );
+                 if (len < KINO_FIELD_NUM_LEN)
+                    Kino_confess("Internal error: termstring too short");
+                 Kino_TermBuf_set_text_len(obj->term_buf, 
+                    len - KINO_FIELD_NUM_LEN);
+                 Copy(scratch_ptr, obj->term_buf->termstring, len, char);
+             }
+             else {
+                 Kino_TermBuf_reset(obj->term_buf);
+             }
              /* fall through */
     case 8:  RETVAL = (obj->term_buf->termstring == NULL) 
-                 ? newSV(0)           /* return undef */
+                 ? &PL_sv_undef
                  : newSVpv( obj->term_buf->termstring,
                      (obj->term_buf->text_len + KINO_FIELD_NUM_LEN) ); 
              break;
 
-    case 9:  if (!sv_derived_from(ST(1), "KinoSearch::Index::TermInfo"))
-                 Kino_confess("object isn't a KinoSearch::Index::TermInfo");
-             /* exctract a TermInfo struct from $_[1] */
-             new_tinfo = INT2PTR(TermInfo*,( SvIV( (SV*)SvRV(ST(1)) ) ));
+    case 9:  Kino_extract_struct( ST(1), new_tinfo, TermInfo*, 
+                "KinoSearch::Index::TermInfo");
              Kino_TInfo_destroy(obj->tinfo);
              obj->tinfo = Kino_TInfo_dupe(new_tinfo);
              /* fall through */
@@ -446,12 +282,273 @@ CODE:
 void
 DESTROY(obj)
     SegTermEnum* obj;
-PREINIT:
+PPCODE:
+    Kino_SegTermEnum_destroy(obj);
+
+__H__
+
+#ifndef H_KINOSEARCH_INDEX_SEG_TERM_ENUM
+#define H_KINOSEARCH_INDEX_SEG_TERM_ENUM 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "KinoSearchIndexTermBuffer.h"
+#include "KinoSearchIndexTermInfo.h"
+#include "KinoSearchStoreInStream.h"
+#include "KinoSearchUtilCarp.h"
+#include "KinoSearchUtilCClass.h"
+#include "KinoSearchUtilMemManager.h"
+#include "KinoSearchUtilStringHelper.h"
+
+typedef struct segtermenum {
+    SV         *finfos;
+    SV         *instream_sv;
+    SV         *term_buf_ref;
+    TermBuffer *term_buf;
+    TermInfo   *tinfo;
+    InStream   *instream;
+    I32         is_index;
+    I32         enum_size;
+    I32         position;
+    I32         index_interval;
+    I32         skip_interval;
+    char      **termstring_ptr_cache;
+    STRLEN     *term_text_len_cache;
+    TermInfo  **tinfos_cache;
+} SegTermEnum;
+
+
+SegTermEnum* Kino_SegTermEnum_new_helper(SV*, I32, SV*, SV*);
+void Kino_SegTermEnum_reset(SegTermEnum*);
+I32  Kino_SegTermEnum_next(SegTermEnum*);
+void Kino_SegTermEnum_fill_cache(SegTermEnum*);
+void Kino_SegTermEnum_scan_to(SegTermEnum*, SV*);
+I32  Kino_SegTermEnum_scan_cache(SegTermEnum*, SV*);
+void Kino_SegTermEnum_destroy(SegTermEnum*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchIndexSegTermEnum.h"
+
+SegTermEnum*
+Kino_SegTermEnum_new_helper(SV *instream_sv, I32 is_index, SV *finfos_sv,
+                            SV *term_buffer_sv) {
+    I32           format;
+    InStream     *instream;
+    SegTermEnum  *obj;
+    char         *ptr;
+    STRLEN        len;
+
+    /* allocate */
+    Kino_New(0, obj, 1, SegTermEnum);
+    obj->tinfo = Kino_TInfo_new();
+
+    /* flag these so they don't get freed unless they get filled later */
+    obj->tinfos_cache         = NULL;
+    obj->termstring_ptr_cache = NULL;
+    obj->term_text_len_cache  = NULL;
+
+    /* save instream, finfos, and term_buffer, incrementing refcounts */
+    obj->instream_sv  = newSVsv(instream_sv);
+    obj->finfos       = newSVsv(finfos_sv);
+    obj->term_buf_ref = newSVsv(term_buffer_sv);
+    Kino_extract_struct(term_buffer_sv, obj->term_buf, TermBuffer*, 
+        "KinoSearch::Index::TermBuffer");
+    Kino_extract_struct(instream_sv, obj->instream, InStream*, 
+        "KinoSearch::Store::InStream");
+    instream = obj->instream;
+
+    /* determine whether this is a primary or index enum */
+    obj->is_index = is_index;
+
+    /* reject older or newer index formats */
+    format = (I32)instream->read_int(instream);
+    if (format != -2)
+        Kino_confess("Unsupported index format: %d", format);
+
+    /* read in some vars */
+    obj->enum_size      = instream->read_long(instream);
+    obj->index_interval = instream->read_int(instream);
+    obj->skip_interval  = instream->read_int(instream);
+
+    /* define the position of the Enum as "not yet started" */
+    obj->position = -1;
+    
+    return obj;
+}
+
+#define KINO_SEG_TERM_ENUM_HEADER_LEN 20 
+
+void
+Kino_SegTermEnum_reset(SegTermEnum* obj) {
+    obj->position = -1;
+    obj->instream->seek(obj->instream, KINO_SEG_TERM_ENUM_HEADER_LEN);
+    Kino_TermBuf_reset(obj->term_buf);
+    Kino_TInfo_reset(obj->tinfo);
+}
+
+I32 
+Kino_SegTermEnum_next(SegTermEnum *obj) {
+    InStream *instream;
+    TermInfo *tinfo;
+
+    /* make some local copies for clarity of code */
+    instream = obj->instream;
+    tinfo    = obj->tinfo;
+
+    /* if we've run out of terms, null out the termstring and return */
+    if (++obj->position >= obj->enum_size) {
+        Kino_TermBuf_reset(obj->term_buf);
+        return 0;
+    }
+
+    /* read in the term */
+    Kino_TermBuf_read(obj->term_buf, instream);
+
+    /* read doc freq */
+    tinfo->doc_freq = instream->read_vint(instream);
+
+    /* adjust file pointers. */
+    tinfo->frq_fileptr += instream->read_vlong(instream);
+    tinfo->prx_fileptr += instream->read_vlong(instream);
+
+    /* read skip data (which doesn't do anything right now) */
+    if (tinfo->doc_freq >= obj->skip_interval)
+        tinfo->skip_offset = instream->read_vint(instream);
+    else
+        tinfo->skip_offset = 0;
+
+    /* read filepointer to main enum if this is an index enum */
+    if (obj->is_index)
+        tinfo->index_fileptr += instream->read_vlong(instream);
+
+    return 1;
+}
+
+void
+Kino_SegTermEnum_fill_cache(SegTermEnum* obj) {
+    TermBuffer  *term_buf;
+    TermInfo    *tinfo;
+    TermInfo   **tinfos_cache;
+    STRLEN      *term_text_len_cache;
+    char       **termstring_ptr_cache;
+
+    /* allocate space for cache pointers */
+    if (obj->tinfos_cache != NULL)
+        Kino_confess("Internal error: cache already filled");
+    Kino_New(0, obj->termstring_ptr_cache, obj->enum_size, char*); 
+    Kino_New(0, obj->term_text_len_cache, obj->enum_size, STRLEN);
+    Kino_New(0, obj->tinfos_cache, obj->enum_size, TermInfo*);
+
+    /* make some local copies */
+    tinfo                = obj->tinfo;
+    term_buf             = obj->term_buf;
+    tinfos_cache         = obj->tinfos_cache;
+    term_text_len_cache  = obj->term_text_len_cache;
+    termstring_ptr_cache = obj->termstring_ptr_cache;
+
+    while (Kino_SegTermEnum_next(obj)) {
+        /* copy tinfo and termstring into caches */
+        *tinfos_cache++         = Kino_TInfo_dupe(tinfo);
+        *term_text_len_cache++  = term_buf->text_len;
+        *termstring_ptr_cache++ = Kino_savepvn(term_buf->termstring, 
+            (term_buf->text_len + KINO_FIELD_NUM_LEN));
+    }
+}
+
+void
+Kino_SegTermEnum_scan_to(SegTermEnum *obj, SV *target_termstring_sv) {
+    TermBuffer *term_buf;
+    char       *target_termstring;
+    STRLEN      target_termstring_len;
+    I32         comparison; 
+
+    /* make local copy */
+    term_buf = obj->term_buf;
+
+    target_termstring = SvPV(target_termstring_sv, target_termstring_len);
+
+    /* keep looping until the termstring is lexically ge target */
+    do {
+        comparison = Kino_StrHelp_compare_strings(
+            term_buf->termstring, 
+            target_termstring, 
+            (term_buf->text_len + KINO_FIELD_NUM_LEN), 
+            target_termstring_len
+        );
+        if (comparison >= 0 && obj->position != -1)
+            break;
+    } while (Kino_SegTermEnum_next(obj));
+}
+
+I32
+Kino_SegTermEnum_scan_cache(SegTermEnum *obj, SV *target_termstring_sv) {
+    TermBuffer  *term_buf;
+    I32          lo, mid, hi, result, comparison;
+    char        *target_termstring;
+    STRLEN       target_len;
+    char       **termstrings;
+    STRLEN      *lengths;
+    char        *scratch_ptr;
+    STRLEN       term_text_len;
+
+    term_buf = obj->term_buf;
+
+    /* prepare to compare strings */
+    target_termstring = SvPV(target_termstring_sv, target_len);
+    termstrings       = obj->termstring_ptr_cache;
+    lengths           = obj->term_text_len_cache;
+    if (obj->tinfos_cache == NULL)
+        Kino_confess("Internal Error: fill_cache hasn't been called yet"); 
+    
+    lo     = 0;
+    hi     = obj->enum_size - 1;
+    result = -100; 
+
+    /* divide and conquer */
+    while (hi >= lo) {
+        mid        = (lo + hi) >> 1;
+        comparison = Kino_StrHelp_compare_strings(
+            target_termstring,  
+            termstrings[mid], 
+            target_len,        
+            (lengths[mid] + KINO_FIELD_NUM_LEN)
+        );
+        if (comparison < 0) 
+            hi = mid - 1;
+        else if (comparison > 0)
+            lo = mid + 1;
+        else {
+            result = mid;
+            break;
+        }
+    }
+    result = hi     == -1   ? 0  /* indicating that target lt first entry */
+           : result == -100 ? hi /* if result is still -100, it wasn't set */
+           : result;
+    
+    /* set the state of the Enum/TermBuffer as if we'd called scan_to */
+    obj->position  = result;
+    term_text_len  = lengths[result]; 
+    scratch_ptr    = termstrings[result];
+    Kino_TermBuf_set_text_len(term_buf, term_text_len);
+    Copy(scratch_ptr, term_buf->termstring, 
+        (term_text_len + KINO_FIELD_NUM_LEN), char);
+
+    Kino_TInfo_destroy(obj->tinfo);
+    obj->tinfo = Kino_TInfo_dupe( obj->tinfos_cache[result] );
+
+    return result;
+}
+
+void
+Kino_SegTermEnum_destroy(SegTermEnum *obj) {
     I32         iter;
     char      **termstring_ptr_cache_ptr;
     TermInfo  **tinfos_cache_ptr;
-PPCODE:
-{
+
     /* put out the garbage for collection */
     SvREFCNT_dec(obj->finfos);
     SvREFCNT_dec(obj->instream_sv);
@@ -476,76 +573,6 @@ PPCODE:
     Kino_Safefree(obj);
 }
 
-__H__
-
-#ifndef H_KINOSEARCH_INDEX_SEG_TERM_ENUM
-#define H_KINOSEARCH_INDEX_SEG_TERM_ENUM 1
-
-#include "EXTERN.h"
-#include "perl.h"
-#include "KinoSearchIndexTermBuffer.h"
-#include "KinoSearchIndexTermInfo.h"
-#include "KinoSearchStoreInStream.h"
-#include "KinoSearchUtilCarp.h"
-#include "KinoSearchUtilMemManager.h"
-
-typedef struct segtermenumc {
-    SV         *finfos;
-    SV         *instream_sv;
-    SV         *term_buf_ref;
-    TermBuffer *term_buf;
-    TermInfo   *tinfo;
-    InStream   *instream;
-    I32         is_index;
-    I32         enum_size;
-    I32         position;
-    I32         index_interval;
-    I32         skip_interval;
-    char      **termstring_ptr_cache;
-    STRLEN     *term_text_len_cache;
-    TermInfo  **tinfos_cache;
-} SegTermEnum;
-
-
-I32  Kino_SegTermEnum_compare_strings(char*, char*, STRLEN, STRLEN);
-void Kino_SegTermEnum_init_cache(SegTermEnum*);
-
-#endif /* include guard */
-
-__C__
-
-#include "KinoSearchIndexSegTermEnum.h"
-
-I32 
-Kino_SegTermEnum_compare_strings(char *a,      char *b, 
-                                 STRLEN a_len, STRLEN b_len) {
-    STRLEN len;
-    I32 comparison = 0;
-
-    if (a == NULL  || b == NULL)
-        Kino_confess("Internal error: can't compare unallocated pointers");
-    
-    len = a_len < b_len? a_len : b_len;
-    if (len > 0)
-        comparison = memcmp(a, b, len);
-
-    /* if a is a substring of b, it's less than b, so return a neg num */
-    if (comparison == 0) 
-        comparison = a_len - b_len;
-
-    return comparison;
-}
-
-void
-Kino_SegTermEnum_init_cache(SegTermEnum* obj) {
-    if (obj->tinfos_cache != NULL)
-        Kino_confess("Internal error: cache already filled");
-    Kino_New(0, obj->termstring_ptr_cache, obj->enum_size, char*); 
-    Kino_New(0, obj->term_text_len_cache, obj->enum_size, STRLEN);
-    Kino_New(0, obj->tinfos_cache, obj->enum_size, TermInfo*);
-}
-
-
 
 __POD__
 
@@ -565,7 +592,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

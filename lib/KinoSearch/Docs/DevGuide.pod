@@ -104,6 +104,18 @@ force needless recompilation, and if only a limited number of .pm files
 containing XS/C/H code have been edited, it will recompile as little as it
 can.
 
+=head2 Divison of labor between Perl, XS, and C
+
+Technically, most or all of the C code in KinoSearch could be stuffed into XS
+functions.  However, the mechanics of moving data across the Perl/C boundary
+are complicated, and the added cruft tends to make what's going on in the C
+code more difficult to grok.
+
+To maximize clarity, when possible XS in KinoSearch is limited to "glue"
+code, while Perl and C do the heavy lifting.  Exceptions occur when XS
+functions need to manipulate the Perl stack, for instance when returning more
+than one value.
+
 =head1 Relationship to Lucene
 
 =head2 API Differences, both public and private
@@ -185,9 +197,9 @@ objects -- it can afford to be, because Java objects come cheap.  For example,
 during the indexing phase Lucene creates a mini-inverted-index for each
 document, complete with its own FieldsWriter, DocumentWriter, and so on.
 Having Perl objects do the same thing in the same way yields disappointing
-execution speed.  Therefore, Kinosearch does the same thing, but in a
+execution speed.  Therefore, KinoSearch does the same thing, but in a
 different way: it uses a completely different merge model, based around
-L<Sort::External|Sort::External> and serialization, which makes it possible to
+serialization and external sorting, which makes it possible to
 write indexes by-the-segment rather than by-the document -- slashing 
 the OO requirements and largely offsetting the extra overhead.
 
@@ -279,7 +291,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut
 

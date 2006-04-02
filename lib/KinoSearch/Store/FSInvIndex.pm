@@ -52,7 +52,7 @@ sub init_instance {
             } readdir INVINDEX_DIR;
             for my $removable (@to_remove) {
                 $removable = catfile( $path, $removable );
-                unlink $removable 
+                unlink $removable
                     or confess "Couldn't unlink file '$removable': $!";
             }
         }
@@ -182,6 +182,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut

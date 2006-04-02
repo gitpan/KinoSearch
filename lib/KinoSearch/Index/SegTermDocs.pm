@@ -26,47 +26,12 @@ sub new {
 }
 
 sub seek {
-    my ( $self, $thing ) = @_;
-    # reset count
-    $self->_set_count(0);
-
-    my $tinfo = $self->_derive_term_info($thing);
-
-    if ( !defined($tinfo) ) {
-        # no terminfo means no docs - the term isn't in this segment
-        $self->set_doc_freq(0);
-    }
-    else {
-        # yes terminfo means we know the doc_freq and the file pointer
-        $self->set_doc(0);
-        $self->set_doc_freq( $tinfo->get_doc_freq );
-        $self->_get_freq_stream()->seek( $tinfo->get_frq_fileptr );
-        $self->_get_prox_stream()->seek( $tinfo->get_prx_fileptr );
-    }
-}
-
-sub _derive_term_info {
-    my ( $self, $thing ) = @_;
-    my $tinfo;
-
-    # make every effort to secure a TermInfo
-    if ( !defined $thing ) {
-        # do nothing -- leave $tinfo undef
-    }
-    elsif ( !blessed($thing) ) {
-        confess("Internal error: Don't know how to deal with '$thing'");
-    }
-    elsif ( $thing->isa('KinoSearch::Index::Term') ) {
-        $tinfo = $self->_get_reader()->fetch_term_info($thing);
-    }
-    elsif ( $thing->isa('KinoSearch::Index::TermInfo') ) {
-        $tinfo = $thing;
-    }
-    elsif ( $thing->isa('KinoSearch::Index::TermEnum') ) {
-        $tinfo = $thing->get_term_info;
-    }
-
-    return $tinfo;
+    my ( $self, $term ) = @_;
+    my $tinfo =
+        defined $term
+        ? $self->_get_reader()->fetch_term_info($term)
+        : undef;
+    $self->seek_tinfo($tinfo);
 }
 
 sub close {
@@ -82,26 +47,15 @@ __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::SegTermDocs
 
-
 void
-_init_child(obj)
-    TermDocs  *obj;
+_init_child(term_docs)
+    TermDocs *term_docs;
 PPCODE:
-    Kino_SegTermDocs_init_child(obj);
-
-U32
-read(obj, doc_nums_sv, freqs_sv, num_wanted)
-    TermDocs  *obj
-    SV        *doc_nums_sv;
-    SV        *freqs_sv;
-    U32        num_wanted;
-CODE:
-    RETVAL = Kino_SegTermDocs_read(obj, doc_nums_sv, freqs_sv, num_wanted);
-OUTPUT: RETVAL
+    Kino_SegTermDocs_init_child(term_docs);
 
 SV*
-_set_or_get(obj, ...)
-    TermDocs*obj;
+_set_or_get(term_docs, ...)
+    TermDocs *term_docs;
 ALIAS:
     _set_count         = 1
     _get_count         = 2
@@ -119,7 +73,7 @@ PREINIT:
     SegTermDocsChild *child;
 CODE:
 {
-    child = (SegTermDocsChild*)obj->child;
+    child = (SegTermDocsChild*)term_docs->child;
 
     /* if called as a setter, make sure the extra arg is there */
     if (ix % 2 == 1 && items != 2)
@@ -164,23 +118,16 @@ CODE:
     case 10: RETVAL = newSVsv(child->reader_sv);
              break;
 
-    case 11: obj->next = SvTRUE( ST(1) ) 
+    case 11: term_docs->next = SvTRUE( ST(1) ) 
                 ? Kino_SegTermDocs_next_with_positions
                 : Kino_SegTermDocs_next;
              /* fall through */
-    case 12: RETVAL = obj->next == Kino_SegTermDocs_next_with_positions 
+    case 12: RETVAL = term_docs->next == Kino_SegTermDocs_next_with_positions 
                 ? newSViv(1) : newSViv(0);
              break;
     }
 }
 OUTPUT: RETVAL
-
-
-void 
-DESTROY(obj)
-    TermDocs *obj;
-PPCODE:
-    Kino_SegTermDocs_destroy(obj);
 
 __H__
 
@@ -192,11 +139,16 @@ __H__
 #include "XSUB.h"
 #include "KinoSearchUtilBitVector.h"
 #include "KinoSearchIndexTermDocs.h"
+#include "KinoSearchIndexTermInfo.h"
 #include "KinoSearchStoreInStream.h"
 #include "KinoSearchUtilMemManager.h"
 
 typedef struct segtermdocschild {
     U32        count;
+    U32        doc_freq;
+    U32        doc;
+    U32        freq;
+    SV        *positions;
     InStream  *freq_stream;
     InStream  *prox_stream;
     BitVector *deldocs;
@@ -207,7 +159,13 @@ typedef struct segtermdocschild {
 } SegTermDocsChild;
 
 void Kino_SegTermDocs_init_child(TermDocs*);
+void Kino_SegTermDocs_set_doc_freq(TermDocs*, U32);
+U32  Kino_SegTermDocs_get_doc_freq(TermDocs*);
+U32  Kino_SegTermDocs_get_doc(TermDocs*);
+U32  Kino_SegTermDocs_get_freq(TermDocs*);
+SV*  Kino_SegTermDocs_get_positions(TermDocs*);
 U32  Kino_SegTermDocs_read(TermDocs*, SV*, SV*, U32);
+void Kino_SegTermDocs_seek_tinfo(TermDocs*, TermInfo*);
 bool Kino_SegTermDocs_next(TermDocs*);
 bool Kino_SegTermDocs_next_with_positions(TermDocs*);
 void Kino_SegTermDocs_destroy(TermDocs*);
@@ -225,14 +183,66 @@ Kino_SegTermDocs_init_child(TermDocs *term_docs) {
     Kino_New(1, child, 1, SegTermDocsChild);
     term_docs->child = child;
 
-    term_docs->read  = Kino_SegTermDocs_read;
-    term_docs->next  = Kino_SegTermDocs_next;
+    child->doc_freq = KINO_TERM_DOCS_SENTINEL;
+    child->doc      = KINO_TERM_DOCS_SENTINEL;
+    child->freq     = KINO_TERM_DOCS_SENTINEL;
+
+    /* child->positions starts life as an empty string */
+    child->positions = newSV(1);
+    SvCUR_set(child->positions, 0);
+    SvPOK_on(child->positions);
+
+    term_docs->set_doc_freq  = Kino_SegTermDocs_set_doc_freq;
+    term_docs->get_doc_freq  = Kino_SegTermDocs_get_doc_freq;
+    term_docs->get_doc       = Kino_SegTermDocs_get_doc;
+    term_docs->get_freq      = Kino_SegTermDocs_get_freq;
+    term_docs->get_positions = Kino_SegTermDocs_get_positions;
+    term_docs->read          = Kino_SegTermDocs_read;
+    term_docs->seek_tinfo    = Kino_SegTermDocs_seek_tinfo;
+    term_docs->next          = Kino_SegTermDocs_next;
+    term_docs->destroy       = Kino_SegTermDocs_destroy;
 
     child->freq_stream_sv   = &PL_sv_undef;
     child->prox_stream_sv   = &PL_sv_undef;
     child->deldocs_sv       = &PL_sv_undef;
     child->reader_sv        = &PL_sv_undef;
     child->count            = 0;
+}
+
+void
+Kino_SegTermDocs_set_doc_freq(TermDocs *term_docs, U32 doc_freq) {
+    SegTermDocsChild *child;
+    child = (SegTermDocsChild*)term_docs->child;
+    child->doc_freq = doc_freq;
+}
+
+U32
+Kino_SegTermDocs_get_doc_freq(TermDocs *term_docs) {
+    SegTermDocsChild *child;
+    child = (SegTermDocsChild*)term_docs->child;
+    return child->doc_freq;
+}
+
+U32
+Kino_SegTermDocs_get_doc(TermDocs *term_docs) {
+    SegTermDocsChild *child;
+    child = (SegTermDocsChild*)term_docs->child;
+    return child->doc;
+}
+
+
+U32
+Kino_SegTermDocs_get_freq(TermDocs *term_docs) {
+    SegTermDocsChild *child;
+    child = (SegTermDocsChild*)term_docs->child;
+    return child->freq;
+}
+
+SV*
+Kino_SegTermDocs_get_positions(TermDocs *term_docs) {
+    SegTermDocsChild *child;
+    child = (SegTermDocsChild*)term_docs->child;
+    return child->positions;
 }
 
 U32 
@@ -246,9 +256,11 @@ Kino_SegTermDocs_read(TermDocs *term_docs, SV* doc_nums_sv, SV* freqs_sv,
     STRLEN            len;
     U32               num_got = 0;
 
+    /* local copies */
     child       = (SegTermDocsChild*)term_docs->child;
     freq_stream = child->freq_stream;
 
+    /* allocate space in supplied SVs and make them POK, if necessary */ 
     len = num_wanted * sizeof(U32);
     SvUPGRADE(doc_nums_sv, SVt_PV);
     SvUPGRADE(freqs_sv,    SVt_PV);
@@ -257,21 +269,21 @@ Kino_SegTermDocs_read(TermDocs *term_docs, SV* doc_nums_sv, SV* freqs_sv,
     doc_nums = (U32*)SvGROW(doc_nums_sv, len + 1);
     freqs    = (U32*)SvGROW(freqs_sv,    len + 1);
 
-    while (child->count < term_docs->doc_freq && num_got < num_wanted) {
+    while (child->count < child->doc_freq && num_got < num_wanted) {
         /* manually inlined call to term_docs->next */ 
         child->count++;
         doc_code = freq_stream->read_vint(freq_stream);;
-        term_docs->doc  += doc_code >> 1;
+        child->doc  += doc_code >> 1;
         if (doc_code & 1)
-            term_docs->freq = 1;
+            child->freq = 1;
         else
-            term_docs->freq = freq_stream->read_vint(freq_stream);
+            child->freq = freq_stream->read_vint(freq_stream);
 
         /* if the doc isn't deleted... */
-        if ( !Kino_BitVec_get(child->deldocs, term_docs->doc) ) {
+        if ( !Kino_BitVec_get(child->deldocs, child->doc) ) {
             /* ... append to results */
-            *doc_nums++ = term_docs->doc;
-            *freqs++    = term_docs->freq;
+            *doc_nums++ = child->doc;
+            *freqs++    = child->freq;
             num_got++;
         }
     }
@@ -294,43 +306,67 @@ Kino_SegTermDocs_next_with_positions(TermDocs *term_docs) {
     InStream         *freq_stream;
     InStream         *prox_stream;
     
+    /* local copies */
     child       = (SegTermDocsChild*)term_docs->child;
     freq_stream = child->freq_stream;
     prox_stream = child->prox_stream;
     
     while (1) {
-        if (child->count == term_docs->doc_freq) {
+        /* bail if we're out of docs */
+        if (child->count == child->doc_freq) {
             return 0;
         }
 
+        /* decode delta doc */
         doc_code = freq_stream->read_vint(freq_stream);
-        term_docs->doc  += doc_code >> 1;
+        child->doc  += doc_code >> 1;
 
         /* if the stored num was odd, the freq is 1 */ 
         if (doc_code & 1) {
-            term_docs->freq = 1;
+            child->freq = 1;
         }
         /* otherwise, freq was stored as a VInt. */
         else {
-            term_docs->freq = freq_stream->read_vint(freq_stream);
+            child->freq = freq_stream->read_vint(freq_stream);
         } 
 
         child->count++;
         
-        len = term_docs->freq * sizeof(U32);
-        SvGROW( term_docs->positions, len );
-        SvCUR_set(term_docs->positions, len);
-        positions = (U32*)SvPVX(term_docs->positions);
-        positions_end = (U32*)SvEND(term_docs->positions);
+        /* store positions */
+        len = child->freq * sizeof(U32);
+        SvGROW( child->positions, len );
+        SvCUR_set(child->positions, len);
+        positions = (U32*)SvPVX(child->positions);
+        positions_end = (U32*)SvEND(child->positions);
         while (positions < positions_end) {
             position += prox_stream->read_vint(prox_stream);
             *positions++ = position;
         }
-
-        if (!Kino_BitVec_get(child->deldocs, term_docs->doc))
+        
+        /* if the doc isn't deleted... success! */
+        if (!Kino_BitVec_get(child->deldocs, child->doc))
             break;
     }
     return 1;
+}
+
+void
+Kino_SegTermDocs_seek_tinfo(TermDocs *term_docs, TermInfo *tinfo) {
+    SegTermDocsChild *child;
+    child = (SegTermDocsChild*)term_docs->child;
+
+    child->count = 0;
+
+    if (tinfo == NULL) {
+        child->doc_freq = 0;
+    }
+    else {
+        child->doc      = 0;
+        child->freq     = 0;
+        child->doc_freq = tinfo->doc_freq;
+        child->freq_stream->seek( child->freq_stream, tinfo->frq_fileptr );
+        child->prox_stream->seek( child->prox_stream, tinfo->prx_fileptr );
+    }
 }
 
 bool
@@ -339,30 +375,32 @@ Kino_SegTermDocs_next(TermDocs *term_docs) {
     SegTermDocsChild *child;
     InStream         *freq_stream;
     
+    /* local copies */
     child       = (SegTermDocsChild*)term_docs->child;
     freq_stream = child->freq_stream;
     
     while (1) {
-        if (child->count == term_docs->doc_freq) {
+        /* bail if we're out of docs */
+        if (child->count == child->doc_freq) {
             return 0;
         }
 
         doc_code = freq_stream->read_vint(freq_stream);
-        term_docs->doc  += doc_code >> 1;
+        child->doc  += doc_code >> 1;
 
         /* if the stored num was odd, the freq is 1 */ 
         if (doc_code & 1) {
-            term_docs->freq = 1;
+            child->freq = 1;
         }
         /* otherwise, freq was stored as a VInt. */
         else {
-            term_docs->freq 
-                = child->freq_stream->read_vint(child->freq_stream);
+            child->freq = child->freq_stream->read_vint(child->freq_stream);
         } 
 
         child->count++;
 
-        if (!Kino_BitVec_get(child->deldocs, term_docs->doc))
+        /* if the doc isn't deleted... success! */
+        if (!Kino_BitVec_get(child->deldocs, child->doc))
             break;
     }
     return 1;
@@ -370,7 +408,10 @@ Kino_SegTermDocs_next(TermDocs *term_docs) {
 
 void 
 Kino_SegTermDocs_destroy(TermDocs *term_docs){
-    SegTermDocsChild *child = (SegTermDocsChild*)term_docs->child;
+    SegTermDocsChild *child;
+    child = (SegTermDocsChild*)term_docs->child;
+
+    SvREFCNT_dec(child->positions);
     SvREFCNT_dec(child->freq_stream_sv);
     SvREFCNT_dec(child->prox_stream_sv);
     SvREFCNT_dec(child->deldocs_sv);
@@ -399,7 +440,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

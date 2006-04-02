@@ -26,11 +26,11 @@ __POD__
 
 =head1 NAME
 
-KinoSearch::Index::TermVector 
+KinoSearch::Index::TermVector - Term freq and positional data  
 
 =head1 DESCRIPTION
 
-=head1 METHODS
+Ancillary information about a Term.
 
 =head1 COPYRIGHT
 
@@ -38,7 +38,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

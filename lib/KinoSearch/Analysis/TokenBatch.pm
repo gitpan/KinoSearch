@@ -2,6 +2,7 @@ package KinoSearch::Analysis::TokenBatch;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Util::CClass );
 
 1;
 
@@ -12,54 +13,48 @@ __XS__
 MODULE = KinoSearch   PACKAGE = KinoSearch::Analysis::TokenBatch
 
 TokenBatch*
-new(...)
+new(either_sv)
+    SV *either_sv;
 CODE:
     RETVAL = Kino_TokenBatch_new();
 OUTPUT: RETVAL
 
+=for comment
+
+Add one token to the batch.
+
+=cut
+
 void
-add_token(obj, text, start_offset, end_offset)
-    TokenBatch *obj;
+add_token(batch, text, start_offset, end_offset)
+    TokenBatch *batch;
     SV         *text;
     U32         start_offset;
     U32         end_offset;
 PPCODE:
-    Kino_TokenBatch_add_token(obj, text, start_offset, end_offset);
+    Kino_TokenBatch_add_token(batch, text, start_offset, end_offset);
+
+=for comment
+
+Add many tokens to the batch, by supplying the string to be tokenized, and
+arrays of token starts and token ends (specified in bytes).
+
+=cut
 
 void
-add_many_tokens(obj, raw_av)
-    TokenBatch *obj;
-    AV         *raw_av;
-PREINIT:
-    int   i, max;
-    SV  **sv_ptr;
-    SV   *text;
-    U32   start_offset;
-    U32   end_offset;
+add_many_tokens(batch, string_sv, starts_av, ends_av)
+    TokenBatch *batch;
+    SV         *string_sv;
+    AV         *starts_av;
+    AV         *ends_av;
 PPCODE:
-    max = av_len(raw_av);
-    if ( (max + 1) % 3 != 0) 
-        Kino_confess("Expecting array to have mult3 elements");
-    for (i = 0; i < max; i += 3) {
-        sv_ptr = av_fetch(raw_av, i, 0);
-        if (sv_ptr == NULL)
-            Kino_confess("Failed to retrieve array element");
-        text = *sv_ptr;
-        sv_ptr = av_fetch(raw_av, (i+1), 0);
-        if (sv_ptr == NULL)
-            Kino_confess("Failed to retrieve array element");
-        start_offset = (U32)SvUV(*sv_ptr);
-        sv_ptr = av_fetch(raw_av, (i+2), 0);
-        if (sv_ptr == NULL)
-            Kino_confess("Failed to retrieve array element");
-        end_offset = (U32)SvUV(*sv_ptr);
-        Kino_TokenBatch_add_token(obj, text, start_offset, end_offset);
-    }
+    Kino_TokenBatch_add_many_tokens(batch, string_sv, starts_av, ends_av);
+
 
 =begin comment
 
 Add the postings to the segment.  Postings are serialized and dumped into a
-Sort::External sort pool.  The actual writing takes place later.
+SortExternal sort pool.  The actual writing takes place later.
 
 The serialization algo is designed so that postings emerge from the sort
 pool in the order ideal for writing an index after a  simple lexical sort.
@@ -67,6 +62,7 @@ The concatenated components are:
 
     field number
     term text 
+    null byte
     document number
     positions (C array of U32)
     term length
@@ -75,17 +71,17 @@ The concatenated components are:
 =cut
 
 void
-build_posting_list(obj, doc_num, field_num)
-    TokenBatch *obj;
+build_posting_list(batch, doc_num, field_num)
+    TokenBatch *batch;
     U32         doc_num;
     U16         field_num;
 PPCODE:
-    Kino_TokenBatch_build_plist(obj, doc_num, field_num);
+    Kino_TokenBatch_build_plist(batch, doc_num, field_num);
 
 
 SV*
-_set_or_get(obj, ...) 
-    TokenBatch *obj;
+_set_or_get(batch, ...) 
+    TokenBatch *batch;
 ALIAS:
     set_start_offset = 1
     get_start_offset = 2
@@ -105,7 +101,7 @@ CODE:
 {
     /* fail if looking for info on a single token but there isn't one */
     if (    ( ix < 7 )
-         && ( obj->size == 0 || obj->current == -1)
+         && ( batch->size == 0 || batch->current == -1)
     ) {
         Kino_confess("TokenBatch doesn't currently hold a valid token");
     }
@@ -116,23 +112,23 @@ CODE:
 
     switch (ix) {
 
-    case 1:  obj->start_offsets[ obj->current ] = SvUV( ST(1) );
+    case 1:  batch->start_offsets[ batch->current ] = SvUV( ST(1) );
              /* fall through */
-    case 2:  RETVAL = newSVuv( obj->start_offsets[ obj->current ] );
+    case 2:  RETVAL = newSVuv( batch->start_offsets[ batch->current ] );
              break;
 
-    case 3:  obj->end_offsets[ obj->current ] = SvUV( ST(1) );
+    case 3:  batch->end_offsets[ batch->current ] = SvUV( ST(1) );
              /* fall through */
-    case 4:  RETVAL = newSVuv( obj->end_offsets[ obj->current ] );
+    case 4:  RETVAL = newSVuv( batch->end_offsets[ batch->current ] );
              break;
         
-    case 5:  av_store( obj->texts, obj->current, newSVsv( ST(1) ) );
+    case 5:  av_store( batch->texts, batch->current, newSVsv( ST(1) ) );
              /* fall through */
     case 6:  {
                 SV **sv_ptr;
-                sv_ptr = av_fetch(obj->texts, obj->current, 0);
+                sv_ptr = av_fetch(batch->texts, batch->current, 0);
                 if (sv_ptr == NULL)
-                    RETVAL = newSV(0);
+                    RETVAL = &PL_sv_undef;
                 else 
                     RETVAL =  newSVsv(*sv_ptr);
              }
@@ -140,41 +136,46 @@ CODE:
 
     case 7:  Kino_confess("can't set_all_texts");
              /* fall through */
-    case 8:  RETVAL = newRV_inc( (SV*)obj->texts );
+    case 8:  RETVAL = newRV_inc( (SV*)batch->texts );
              break;
 
     case 9:  Kino_confess("Can't set size on a TokenBatch object");
              /* fall through */
-    case 10: RETVAL = newSVuv(obj->size);
+    case 10: RETVAL = newSVuv(batch->size);
              break;
     
     case 11: Kino_confess("can't set_postings");
              /* fall through */
-    case 12: RETVAL = newRV_inc( (SV*)obj->postings );
+    case 12: RETVAL = newRV_inc( (SV*)batch->postings );
              break;
 
     case 13: Kino_confess("can't set_tv_string");
              /* fall through */
-    case 14: RETVAL = obj->tv_string == NULL
-                ? newSV(0)
-                : newSVsv( obj->tv_string );
+    case 14: RETVAL = newSVsv(batch->tv_string);
              break;
     }
 }
 OUTPUT: RETVAL
 
+=for comment
+
+Proceed to the next item in the TokenBatch.  Returns true if the TokenBatch
+ends up located at valid token.
+
+=cut
+
 bool
-next(obj)
-    TokenBatch *obj;
+next(batch)
+    TokenBatch *batch;
 CODE:
-    RETVAL = Kino_TokenBatch_next(obj);
+    RETVAL = Kino_TokenBatch_next(batch);
 OUTPUT: RETVAL
 
 void
-DESTROY(obj)
-    TokenBatch *obj;
+DESTROY(batch)
+    TokenBatch *batch;
 PPCODE:
-    Kino_TokenBatch_destroy(obj);
+    Kino_TokenBatch_destroy(batch);
 
 
 __H__
@@ -188,7 +189,7 @@ __H__
 #include "ppport.h"
 #include "KinoSearchIndexTerm.h"
 #include "KinoSearchUtilCarp.h"
-#include "KinoSearchUtilEndianUtils.h"
+#include "KinoSearchUtilMathUtils.h"
 #include "KinoSearchUtilMemManager.h"
 
 typedef struct tokenbatch {
@@ -205,6 +206,7 @@ typedef struct tokenbatch {
 TokenBatch* Kino_TokenBatch_new();
 void Kino_TokenBatch_destroy(TokenBatch*);
 void Kino_TokenBatch_add_token(TokenBatch*, SV*, U32, U32);
+void Kino_TokenBatch_add_many_tokens(TokenBatch*, SV*, AV*, AV*);
 U32 Kino_TokenBatch_next(TokenBatch*);
 void Kino_TokenBatch_build_plist(TokenBatch*, U32, U16);
 
@@ -213,6 +215,8 @@ void Kino_TokenBatch_build_plist(TokenBatch*, U32, U16);
 __C__
 
 #include "KinoSearchAnalysisTokenBatch.h"
+
+static void Kino_TokenBatch_do_add_token(TokenBatch*, char*, U32, U32);
 
 TokenBatch*
 Kino_TokenBatch_new() {
@@ -228,8 +232,8 @@ Kino_TokenBatch_new() {
     batch->capacity     = 0;
     batch->size         = 0;
     batch->current      = -1;
-    batch->tv_string    = NULL;
-    batch->postings     = NULL;
+    batch->tv_string    = &PL_sv_undef;
+    batch->postings     = (AV*)&PL_sv_undef;
 
     return batch;
 }
@@ -238,10 +242,8 @@ Kino_TokenBatch_new() {
 void
 Kino_TokenBatch_destroy(TokenBatch *batch) {
     SvREFCNT_dec( (SV*)batch->texts );
-    if (batch->postings != NULL)
-        SvREFCNT_dec( (SV*)batch->postings );
-    if (batch->tv_string != NULL)
-        SvREFCNT_dec(batch->tv_string);
+    SvREFCNT_dec( (SV*)batch->postings );
+    SvREFCNT_dec(batch->tv_string);
     Kino_Safefree(batch->start_offsets);
     Kino_Safefree(batch->end_offsets);
     Kino_Safefree(batch);
@@ -258,10 +260,32 @@ Kino_TokenBatch_next(TokenBatch *batch) {
 }
 
 void
-Kino_TokenBatch_add_token(TokenBatch *batch, SV *text, U32 start_offset,
-                          U32 end_offset) {
-    SV *text_copy;
+Kino_TokenBatch_add_token(TokenBatch *batch, SV *token_text_sv, 
+                          U32 start_offset, U32 end_offset) {
+    char   *ptr;
+    STRLEN  len;
 
+    ptr = SvPV(token_text_sv, len);
+
+    /* sanity check the offsets to make sure they're inside the SV */
+    if (start_offset > len)
+        Kino_confess("start_offset > len (%d > %"UVuf")", 
+            start_offset, (UV) len);
+    if (end_offset > len)
+        Kino_confess("end_offset > len (%d > %"UVuf")", 
+        end_offset, (UV)len);
+
+    Kino_TokenBatch_do_add_token(batch, ptr, start_offset, end_offset);
+}
+
+static void
+Kino_TokenBatch_do_add_token(TokenBatch *batch, char *ptr, U32 start_offset, 
+                             U32 end_offset) {
+    SV   *token_text_sv;
+    int   i, max;
+    char *scanning_ptr;
+
+    /* make room for new tokens */
     if (batch->size >= batch->capacity) {
         batch->capacity += 100;
         av_extend(batch->texts, batch->capacity);
@@ -269,14 +293,68 @@ Kino_TokenBatch_add_token(TokenBatch *batch, SV *text, U32 start_offset,
         Kino_Renew(batch->end_offsets, batch->capacity, U32);
     }
 
-    text_copy = newSVsv(text);
-    av_store(batch->texts, batch->size, text_copy);
+    /* if a null byte is found, truncate the token text */
+    max = end_offset - start_offset;
+    scanning_ptr = ptr;
+    for (i - 0; i < max; i++) {
+        if (*scanning_ptr++ == '\0') {
+            end_offset = start_offset + i;
+            break;
+        }
+    }
+
+    /* add the token to the batch */
+    token_text_sv = newSVpvn( ptr, (end_offset - start_offset) );
+    av_store(batch->texts, batch->size, token_text_sv);
     batch->start_offsets[ batch->size ] = start_offset;
     batch->end_offsets[ batch->size ]   = end_offset;
-    batch->size++;
+    batch->size++; 
 }
 
+void
+Kino_TokenBatch_add_many_tokens(TokenBatch *batch, SV *string_sv, 
+                                AV *starts_av, AV *ends_av) {
+    char   *string_start;
+    STRLEN  len, start_offset, end_offset;
+    I32     i, j, max;
+    SV    **start_sv_ptr;
+    SV    **end_sv_ptr;
+
+    string_start = SvPV(string_sv, len);
+
+    max = av_len(starts_av);
+    for (i = 0; i <= max; i++) {
+        /* retrieve start */
+        start_sv_ptr = av_fetch(starts_av, i, 0);
+        if (start_sv_ptr == NULL)
+            Kino_confess("Failed to retrieve array element");
+        start_offset = SvIV(*start_sv_ptr);
+
+        /* retrieve end */
+        end_sv_ptr = av_fetch(ends_av, i, 0);
+        if (end_sv_ptr == NULL)
+            Kino_confess("Failed to retrieve array element");
+        end_offset = SvIV(*end_sv_ptr);
+
+        /* sanity check the offsets to make sure they're inside the string */
+        if (start_offset > len)
+            Kino_confess("start_offset > len (%d > %"UVuf")", 
+                start_offset, (UV)len);
+        if (end_offset > len)
+            Kino_confess("end_offset > len (%d > %"UVuf")", 
+                end_offset, (UV)len);
+
+        /* calculate the start of the substring and add the token */
+        Kino_TokenBatch_do_add_token(batch, (string_start + start_offset),
+            start_offset, end_offset);
+    }
+}
+
+
 #define POSDATA_LEN 12 
+#define DOC_NUM_LEN 4
+#define NULL_BYTE_LEN 1
+#define TEXT_LEN_LEN 2
 
 /* Encode postings in the serialized format expected by PostingsWriter, plus 
  * the term vector expected by FieldsWriter. */
@@ -326,27 +404,28 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
             Kino_encode_bigend_U16(text_len, text_len_buf);
 
             /* allocate the serialized scalar */
-            len =   2                  /* for now, put text_len at top */
-                  + KINO_FIELD_NUM_LEN 
+            len =   TEXT_LEN_LEN       /* for now, put text_len at top */
+                  + KINO_FIELD_NUM_LEN /* encoded field number */
                   + text_len           /* term text */
-                  + 4                  /* length of encoded doc_num */
+                  + NULL_BYTE_LEN      /* the term text's null byte */
+                  + DOC_NUM_LEN 
                   + POSDATA_LEN
-                  + 2                  /* eventually, text_len goes at end */
-                  + 1;                 /* null byte */ 
+                  + TEXT_LEN_LEN       /* eventually, text_len goes at end */
+                  + NULL_BYTE_LEN;     /* the scalar's null byte */ 
             serialized_sv = newSV(len);
             SvPOK_on(serialized_sv);
             source_ptr = SvPVX(serialized_sv);
             dest_ptr   = source_ptr;
 
             /* concatenate a bunch of stuff onto the serialized scalar */
-            Copy(text_len_buf, dest_ptr, 2, char);
-            dest_ptr += 2;
+            Copy(text_len_buf, dest_ptr, TEXT_LEN_LEN, char);
+            dest_ptr += TEXT_LEN_LEN;
             Copy(field_num_buf, dest_ptr, KINO_FIELD_NUM_LEN, char);
             dest_ptr += KINO_FIELD_NUM_LEN;
-            Copy(text, dest_ptr, text_len, char);
-            dest_ptr += text_len;
-            Copy(doc_num_buf, dest_ptr, 4, char);
-            dest_ptr += 4;
+            Copy(text, dest_ptr, text_len + NULL_BYTE_LEN, char);
+            dest_ptr += text_len + NULL_BYTE_LEN;
+            Copy(doc_num_buf, dest_ptr, DOC_NUM_LEN, char);
+            dest_ptr += DOC_NUM_LEN;
             SvCUR_set(serialized_sv, (dest_ptr - source_ptr)); 
 
             /* store the text => serialized_sv pair in the pos_hash */
@@ -357,9 +436,9 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
             he = hv_fetch_ent(pos_hash, text_sv, 0, 0);
             serialized_sv = HeVAL(he);
             len = SvCUR(serialized_sv)
-                + POSDATA_LEN /* allocate space for upcoming posdata */
-                + 2  /* extra space for encoded text length */
-                + 1; /* null byte */
+                + POSDATA_LEN    /* allocate space for upcoming posdata */
+                + TEXT_LEN_LEN   /* extra space for encoded text length */
+                + NULL_BYTE_LEN; 
             SvGROW( serialized_sv, len );
         }
 
@@ -385,10 +464,9 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
         /* transfer text_len to end of serialized scalar */
         source_ptr = SvPVX(serialized_sv);
         dest_ptr   = SvEND(serialized_sv);
-        SvGROW(serialized_sv, SvCUR(serialized_sv) + 3);
-        Copy(source_ptr, dest_ptr, 2, char);
-        SvCUR(serialized_sv) += 2;
-        source_ptr += 2;
+        Copy(source_ptr, dest_ptr, TEXT_LEN_LEN, char);
+        SvCUR(serialized_sv) += TEXT_LEN_LEN;
+        source_ptr += TEXT_LEN_LEN;
         sv_chop(serialized_sv, source_ptr);
 
         SvREFCNT_inc(serialized_sv);
@@ -396,7 +474,7 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
         i++;
     }
 
-    /* we're done with the pos_hash, so kill it off */
+    /* we're done with the positions hash, so kill it off */
     SvREFCNT_dec(pos_hash);
 
     /* start the term vector string */
@@ -417,11 +495,12 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
         text += KINO_FIELD_NUM_LEN;
 
         /* save the text_len; we'll move it forward later */
-        end_ptr = SvEND(serialized_sv) - 2;
+        end_ptr = SvEND(serialized_sv) - TEXT_LEN_LEN;
         text_len = Kino_decode_bigend_U16( end_ptr );
         Kino_encode_bigend_U16(text_len, text_len_buf);
 
-        source_ptr = SvPVX(serialized_sv) + KINO_FIELD_NUM_LEN + text_len + 4;
+        source_ptr = SvPVX(serialized_sv) + 
+            KINO_FIELD_NUM_LEN + text_len + NULL_BYTE_LEN + DOC_NUM_LEN;
         source_u32 = (U32*)source_ptr;
         dest_u32   = source_u32;
         end_u32    = (U32*)end_ptr;
@@ -439,9 +518,10 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
         /* append the number of positions for this term */
         num_positions =   SvCUR(serialized_sv) 
                         - KINO_FIELD_NUM_LEN
-                        - text_len
-                        - 4  /* doc num */
-                        - 2; /* encoded text len */
+                        - text_len 
+                        - NULL_BYTE_LEN
+                        - DOC_NUM_LEN 
+                        - TEXT_LEN_LEN;
         num_positions /= POSDATA_LEN;
         num_bytes = Kino_OutStream_encode_vint(num_positions, vint_buf);
         sv_catpvn( tv_string_sv, vint_buf, num_bytes );
@@ -465,8 +545,8 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
 
         /* restore the text_len and close the scalar */
         dest_ptr = (char*)dest_u32;
-        Copy(text_len_buf, dest_ptr, 2, char);
-        dest_ptr += 2;
+        Copy(text_len_buf, dest_ptr, TEXT_LEN_LEN, char);
+        dest_ptr += TEXT_LEN_LEN;
         len = dest_ptr - SvPVX(serialized_sv);
         SvCUR_set(serialized_sv, len);
 
@@ -474,11 +554,10 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
         last_len  = text_len;
     }
     
-    if (batch->tv_string != NULL)
-        SvREFCNT_dec(batch->tv_string);
+    /* store the postings array and the term vector string */
+    SvREFCNT_dec(batch->tv_string);
     batch->tv_string = tv_string_sv;
-    if (batch->postings != NULL)
-        SvREFCNT_dec(batch->postings);
+    SvREFCNT_dec(batch->postings);
     batch->postings = out_av;
 }
 
@@ -488,13 +567,11 @@ __POD__
 
 =head1 NAME
 
-KinoSearch::Analysis::TokenBatch
+KinoSearch::Analysis::TokenBatch - a collection of tokens
 
 =head1 DESCRIPTION
 
-=head1 METHODS
-
-=head2 new
+The TokenBatch would be an array of Tokens, if a Token class existed.
 
 =head1 COPYRIGHT
 
@@ -502,7 +579,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

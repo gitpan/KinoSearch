@@ -4,100 +4,56 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-use KinoSearch::Index::TermInfo;
-use Clone 'clone';
-
-use constant FORMAT        => -2;
-use constant SKIP_INTERVAL => 16;    # if changes, must also change in XS
-
-our $INDEX_INTERVAL = 1024;
-
 our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    invindex => undef,
-    seg_name => undef,
-    is_index => 0,
-    # members
-    outstream => undef,
-    other     => undef,
-    # NOTE: this value forces the first field_num in the .tii file to -1.
-    # Do not change it.
-    last_termstring => "\xff\xff",
-    last_fieldnum   => -1,
-    last_tinfo      => undef,
-    last_tis_ptr    => 0,
-    size            => 0,
+    # constructor params
+    invindex       => undef,
+    seg_name       => undef,
+    is_index       => 0,
+    index_interval => 1024,
+    skip_interval  => 16,
 );
 
-sub init_instance {
-    my $self = shift;
-
-    # give object a TermInfo to compare on the first call to add()
-    $self->{last_tinfo} = KinoSearch::Index::TermInfo->new( 0, 0, 0, 0, 0 );
+sub new {
+    my $class = shift;
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
 
     # open an outstream
-    my $suffix = $self->{is_index} ? 'tii' : 'tis';
-    $self->{outstream}
-        = $self->{invindex}->open_outstream("$self->{seg_name}.$suffix");
-    $self->{outstream}
-        ->lu_write( 'iQii', FORMAT, 0, $INDEX_INTERVAL, SKIP_INTERVAL );
+    my $suffix = $args{is_index} ? 'tii' : 'tis';
+    my $outstream
+        = $args{invindex}->open_outstream("$args{seg_name}.$suffix");
 
-    # create a doppleganger which will write the .tii file
-    if ( !$self->{is_index} ) {
-        $self->{other} = __PACKAGE__->new(
-            invindex => $self->{invindex},
-            seg_name => $self->{seg_name},
+    my $self = _new( $outstream,
+        @args{qw( is_index index_interval skip_interval )} );
+
+    # create the tii doppelganger
+    if ( !$args{is_index} ) {
+        my $other = __PACKAGE__->new(
+            invindex => $args{invindex},
+            seg_name => $args{seg_name},
             is_index => 1,
         );
-        $self->{other}->{other} = $self;
-    }
-}
-
-# Write out a term/terminfo combo.
-sub add {
-    my ( $self, $termstring, $tinfo ) = @_;
-    my $last_tinfo = $self->{last_tinfo};
-
-    # write a subset of the entries to the .tii index
-    if ( $self->{size} % $INDEX_INTERVAL == 0 and !$self->{is_index} ) {
-        $self->{other}->add( $self->{last_termstring}, $last_tinfo );
+        $self->_set_other($other);
+        $other->_set_other($self);
     }
 
-    _add_helper(
-        $self->{outstream}, $tinfo, $self->{last_tinfo},
-        $termstring,        $self->{last_termstring}
-    );
-
-    # The .tii index file gets a pointer to the location of the primary
-    if ( $self->{is_index} ) {
-        my $tis_ptr = $self->{other}{outstream}->tell;
-        $self->{outstream}->lu_write( 'W', $tis_ptr - $self->{last_tis_ptr} );
-        $self->{last_tis_ptr} = $tis_ptr;
-    }
-
-    # track number of terms
-    $self->{size}++;
-
-    # remember for delta encoding
-    $self->{last_termstring} = $termstring;
-    $self->{last_tinfo}      = $tinfo;
+    return $self;
 }
 
 sub finish {
-    my $self = shift;
+    my $self      = shift;
+    my $outstream = $self->_get_outstream;
 
-    # rewind to near the beginning of the file and write size
-    $self->{outstream}->seek(4);
-    $self->{outstream}->lu_write( 'Q', $self->{size} );
-    if ( !$self->{is_index} ) {
-        $self->{other}->finish;
+    # seek to near the head and write the number of terms processed
+    $outstream->seek(4);
+    $outstream->lu_write( 'Q', $self->_get_size );
+
+    # cue the doppelganger's exit
+    if ( !$self->_get_is_index ) {
+        $self->_get_other()->finish;
     }
-    $self->{outstream}->close;
-}
 
-sub DESTROY {
-    my $self = shift;
-    undef $self->{other} if defined $self->{other};    # break circular ref
+    $outstream->close;
 }
 
 1;
@@ -108,64 +64,251 @@ __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::TermInfosWriter
 
-#define SKIP_INTERVAL 16
+TermInfosWriter*
+_new(outstream_sv, is_index, index_interval, skip_interval)
+    SV  *outstream_sv;
+    I32  is_index;
+    I32  index_interval;
+    I32  skip_interval;
+CODE:
+    RETVAL = Kino_TInfosWriter_new(outstream_sv, is_index, index_interval, 
+        skip_interval);
+OUTPUT: RETVAL
+
+=for comment
+
+Add a Term (encoded as a termstring) and its associated TermInfo.
+
+=cut 
 
 void
-_add_helper(outstream, tinfo, last_tinfo, termstring_sv, last_termstring_sv)
-    OutStream *outstream;
-    TermInfo  *tinfo;
-    TermInfo  *last_tinfo;
-    SV        *termstring_sv
-    SV        *last_termstring_sv
-PREINIT:
-    STRLEN    termstring_len;
-    char     *termstring_str;
-    STRLEN    last_tstring_len;
-    char     *last_tstring_str;
-    IV        field_num;
-    IV        overlap;
-    char     *diff_start_str;
-    STRLEN    diff_len;
+add(obj, termstring_sv, tinfo)
+    TermInfosWriter *obj;
+    SV              *termstring_sv;
+    TermInfo        *tinfo;
 PPCODE:
+    Kino_TInfosWriter_add(obj, termstring_sv, tinfo);
+
+=for comment
+
+Export the FORMAT constant to Perl.
+
+=cut
+
+IV
+FORMAT(...)
+CODE:
+    RETVAL = KINO_TINFOS_FORMAT;
+OUTPUT: RETVAL
+
+
+SV*
+_set_or_get(obj, ...)
+    TermInfosWriter *obj;
+ALIAS:
+    _set_other     = 1
+    _get_other     = 2
+    _get_outstream = 4
+    _get_is_index  = 6
+    _get_size      = 8
+CODE:
 {
+     /* if called as a setter, make sure the extra arg is there */
+    if (ix % 2 == 1 && items != 2)
+        Kino_confess("usage: $term_info->set_xxxxxx($val)");
+
+    switch (ix) {
+
+    case 1:  SvREFCNT_dec(obj->other_sv);
+             obj->other_sv = newSVsv( ST(1) );
+             Kino_extract_struct(obj->other_sv, obj->other, TermInfosWriter*,
+                "KinoSearch::Index::TermInfosWriter");
+             /* fall through */
+    case 2:  RETVAL = newSVsv(obj->other_sv);
+             break;
+
+    case 4:  RETVAL = newSVsv(obj->fh_sv);
+             break;
+
+    case 6:  RETVAL = newSViv(obj->is_index);
+             break;
+
+    case 8:  RETVAL = newSViv(obj->size);
+             break;
+    }
+}
+OUTPUT: RETVAL
+
+
+void
+DESTROY(obj)
+    TermInfosWriter *obj;
+PPCODE:
+    Kino_TInfosWriter_destroy(obj);
+
+__H__
+
+#ifndef H_KINO_TERM_INFOS_WRITER
+#define H_KINO_TERM_INFOS_WRITER 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchIndexTerm.h"
+#include "KinoSearchIndexTermInfo.h"
+#include "KinoSearchStoreOutStream.h"
+#include "KinoSearchUtilCClass.h"
+#include "KinoSearchUtilMathUtils.h"
+#include "KinoSearchUtilMemManager.h"
+#include "KinoSearchUtilStringHelper.h"
+
+#define KINO_TINFOS_FORMAT -2
+
+typedef struct terminfoswriter {
+    OutStream *fh;
+    SV        *fh_sv;
+    I32        is_index;
+    I32        index_interval;
+    I32        skip_interval;
+    struct terminfoswriter* other;
+    SV        *other_sv;
+    SV        *last_termstring_sv;
+    TermInfo  *last_tinfo;
+    I32        last_fieldnum;
+    double     last_tis_ptr;
+    I32        size;
+} TermInfosWriter;
+
+TermInfosWriter* Kino_TInfosWriter_new(SV*, I32, I32, I32);
+void Kino_TInfosWriter_add(TermInfosWriter*, SV*, TermInfo*);
+void Kino_TInfosWriter_destroy(TermInfosWriter*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchIndexTermInfosWriter.h"
+
+TermInfosWriter*
+Kino_TInfosWriter_new(SV *outstream_sv, I32 is_index, I32 index_interval, 
+                      I32 skip_interval) {
+    TermInfosWriter *obj;
+
+    /* allocate */
+    Kino_New(0, obj, 1, TermInfosWriter);
+
+    /* assign */
+    obj->is_index       = is_index;
+    obj->index_interval = index_interval;
+    obj->skip_interval  = skip_interval;
+    obj->fh_sv          = newSVsv(outstream_sv);
+    Kino_extract_struct(obj->fh_sv, obj->fh, OutStream*,
+        "KinoSearch::Store::OutStream");
+    /* NOTE: this value forces the first field_num in the .tii file to -1.
+     * Do not change it. */
+    obj->last_termstring_sv = newSVpvn("\xff\xff", 2);
+    obj->last_tinfo         = Kino_TInfo_new();
+    obj->last_fieldnum      = -1;
+    obj->last_tis_ptr       = 0,
+    obj->size               = 0;
+    obj->other              = NULL;
+    obj->other_sv           = &PL_sv_undef;
+ 
+    /* write file header */
+    obj->fh->write_int(obj->fh, KINO_TINFOS_FORMAT);
+    obj->fh->write_long(obj->fh, 0.0); /* return to fill in later */
+    obj->fh->write_int(obj->fh, index_interval);
+    obj->fh->write_int(obj->fh, skip_interval);
+
+    return obj;
+}
+
+
+/* Write out a term/terminfo combo. */
+void 
+Kino_TInfosWriter_add(TermInfosWriter* obj, SV* termstring_sv,
+                      TermInfo* tinfo) {
+    char      *termstring, *last_tstring;
+    STRLEN     termstring_len, last_tstring_len;
+
+    I32        field_num;
+    I32        overlap;
+    char      *diff_start_str;
+    STRLEN     diff_len;
+    OutStream* fh;
+
+    /* cache local copy */
+    fh = obj->fh;
+
+    /* write a subset of the entries to the .tii index */
+    if (    (obj->size % obj->index_interval == 0)
+         && (!obj->is_index)               
+    ) {
+        Kino_TInfosWriter_add(obj->other, 
+            obj->last_termstring_sv, obj->last_tinfo);
+    }
+
     /* extract string pointers and string lengths */
-    termstring_str   = SvPV( termstring_sv, termstring_len );
-    last_tstring_str = SvPV( last_termstring_sv, last_tstring_len );
+    termstring   = SvPV( termstring_sv, termstring_len );
+    last_tstring = SvPV( obj->last_termstring_sv, last_tstring_len );
 
     /* to obtain field number, decode packed 'n' at top of termstring */
-    field_num = (I16)Kino_decode_bigend_U16(termstring_str);
+    field_num = (I16)Kino_decode_bigend_U16(termstring);
 
     /* move past field_num */
-    termstring_str   += KINO_FIELD_NUM_LEN;
-    last_tstring_str += KINO_FIELD_NUM_LEN;
+    termstring       += KINO_FIELD_NUM_LEN;
+    last_tstring     += KINO_FIELD_NUM_LEN;
     termstring_len   -= KINO_FIELD_NUM_LEN;
     last_tstring_len -= KINO_FIELD_NUM_LEN;
 
     /* count how many bytes the strings share at the top */ 
-    overlap = Kino_StrHelp_string_diff(last_tstring_str, termstring_str,
+    overlap = Kino_StrHelp_string_diff(last_tstring, termstring,
         last_tstring_len, termstring_len);
-    diff_start_str = termstring_str + overlap;
+    diff_start_str = termstring + overlap;
     diff_len       = termstring_len - overlap;
 
     /* write number of common bytes */
-    outstream->write_vint(outstream, overlap);
+    fh->write_vint(fh, overlap);
 
     /* write common bytes */
-    outstream->write_string(outstream, diff_start_str, diff_len);
+    fh->write_string(fh, diff_start_str, diff_len);
     
     /* write field number and doc_freq */
-    outstream->write_vint(outstream, field_num);
-    outstream->write_vint(outstream, tinfo->doc_freq);
+    fh->write_vint(fh, field_num);
+    fh->write_vint(fh, tinfo->doc_freq);
 
     /* delta encode filepointers */
-    outstream->write_vlong(outstream, 
-        (tinfo->frq_fileptr - last_tinfo->frq_fileptr) );
-    outstream->write_vlong(outstream, 
-        (tinfo->prx_fileptr - last_tinfo->prx_fileptr) );
+    fh->write_vlong(fh, (tinfo->frq_fileptr - obj->last_tinfo->frq_fileptr) );
+    fh->write_vlong(fh, (tinfo->prx_fileptr - obj->last_tinfo->prx_fileptr) );
 
     /* write skipdata */
-    if (tinfo->doc_freq >= SKIP_INTERVAL)
-        outstream->write_vint(outstream, tinfo->skip_offset);
+    if (tinfo->doc_freq >= obj->skip_interval)
+        fh->write_vint(fh, tinfo->skip_offset);
+
+    /* the .tii index file gets a pointer to the location of the primary */
+    if (obj->is_index) {
+        double tis_ptr;
+
+        tis_ptr = obj->other->fh->tell(obj->other->fh);
+        obj->fh->write_vlong(obj->fh, (tis_ptr - obj->last_tis_ptr));
+        obj->last_tis_ptr = tis_ptr;
+    }
+
+    /* track number of terms */
+    obj->size++;
+
+    /* remember for delta encoding */
+    SvSetSV(obj->last_termstring_sv, termstring_sv);
+    StructCopy(tinfo, obj->last_tinfo, TermInfo);
+}
+
+void
+Kino_TInfosWriter_destroy(TermInfosWriter *obj) {
+    SvREFCNT_dec(obj->fh_sv);
+    SvREFCNT_dec(obj->other_sv);
+    SvREFCNT_dec(obj->last_termstring_sv);
+    Kino_TInfo_destroy(obj->last_tinfo);
+    Kino_Safefree(obj);
 }
 
 
@@ -192,7 +335,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

@@ -8,9 +8,11 @@ use base qw( Exporter );
 our @EXPORT_OK = qw(
     SEGMENTS
     DELETEABLE
+    SORTFILE_EXTENSION
     @INDEX_EXTENSIONS
     @COMPOUND_EXTENSIONS
     @VECTOR_EXTENSIONS
+    @SCRATCH_EXTENSIONS
 
     WRITE_LOCK_NAME
     WRITE_LOCK_TIMEOUT
@@ -24,6 +26,9 @@ use constant SEGMENTS => 'segments';
 # name of the index deletable file
 use constant DELETABLE => 'deletable';
 
+# extension of the temporary file used by the SortExternal sort pool
+use constant SORTFILE_EXTENSION => '.srt';
+
 # Most, but not all of Lucene file extenstions. Missing are the ".f$num"
 # extensions.  Also note that 'segments' and 'deletable' don't have
 # extensions.
@@ -35,6 +40,8 @@ our @COMPOUND_EXTENSIONS = qw( fnm frq prx fdx fdt tii tis );
 
 # file extensions for term vectors
 our @VECTOR_EXTENSIONS = qw( tvd tvx tvf );
+
+our @SCRATCH_EXTENSIONS = qw( srt );
 
 # names and constants for lockfiles
 use constant WRITE_LOCK_NAME     => 'write.lock';
@@ -63,7 +70,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

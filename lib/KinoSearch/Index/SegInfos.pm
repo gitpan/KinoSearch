@@ -10,23 +10,34 @@ use constant FORMAT => -1;
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # members
-    infos   => [],
+    infos   => {},
     counter => 0,
     version => ( time * 1000 ),
 );
 
+__PACKAGE__->ready_get_set(qw( counter ));
+
 # Add a SegInfo to the collection.
-sub add_info { push @{ $_[0]->{infos} }, $_[1] }
+sub add_info {
+    my ( $self, $info ) = @_;
+    $self->{infos}{"$info->{seg_name}"} = $info;
+}
+
+# Remove the info corresponding to a segment;
+sub delete_segment {
+    my ( $self, $seg_name ) = @_;
+    confess("no segment named '$seg_name'")
+        unless exists $self->{infos}{$seg_name};
+    delete $self->{infos}{$seg_name};
+}
 
 # Return number of segments in invindex.
-sub size { scalar @{ $_[0]->{infos} } }
+sub size { scalar keys %{ $_[0]->{infos} } }
 
-# Retrieve a SegInfo by array index.
-sub info { $_[0]->{infos}[ $_[1] ] }
-
-# Get/set counter, which is used to name new segments.
-sub get_counter { $_[0]->{counter} }
-sub set_counter { $_[0]->{counter} = $_[1] }
+# Retrieve all infos.
+sub infos {
+    sort { $a->{seg_name} cmp $b->{seg_name} } values %{ $_[0]->{infos} };
+}
 
 # Decode "segments" file.
 sub read_infos {
@@ -46,12 +57,12 @@ sub read_infos {
     if ($num_segs) {
         my @file_contents = $instream->lu_read( 'Ti' x $num_segs );
         while (@file_contents) {
-            push @{ $self->{infos} },
-                KinoSearch::Index::SegInfo->new(
-                seg_name  => shift @file_contents,
-                doc_count => shift @file_contents,
+            my ( $seg_name, $doc_count ) = splice( @file_contents, 0, 2 );
+            $self->{infos}{$seg_name} = KinoSearch::Index::SegInfo->new(
+                seg_name  => $seg_name,
+                doc_count => $doc_count,
                 invindex  => $invindex,
-                );
+            );
         }
     }
 }
@@ -59,7 +70,7 @@ sub read_infos {
 # Write "segments" file
 sub write_infos {
     my ( $self, $invindex ) = @_;
-    my $num_segs  = scalar @{ $self->{infos} };
+    my $num_segs  = scalar keys %{ $self->{infos} };
     my $outstream = $invindex->open_outstream('segments.new');
 
     # prepare header
@@ -67,8 +78,10 @@ sub write_infos {
     my @outstuff = ( FORMAT, $self->{version}, $self->{counter}, $num_segs );
 
     # prepare data
-    push @outstuff, ( $_->{seg_name}, $_->{doc_count} )
-        for @{ $self->{infos} };
+    push @outstuff, map {
+        ( $self->{infos}{$_}{seg_name}, $self->{infos}{$_}{doc_count} )
+        }
+        sort keys %{ $self->{infos} };
 
     # write it all out
     my $template = 'iQii' . ( 'Ti' x $num_segs );
@@ -92,6 +105,8 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
     invindex  => undef,
 );
 
+__PACKAGE__->ready_get(qw( seg_name doc_count invindex ));
+
 1;
 
 __END__
@@ -114,7 +129,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

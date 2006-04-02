@@ -2,7 +2,7 @@ package KinoSearch::Index::TermEnum;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 
 our %instance_vars = __PACKAGE__->init_instance_vars();
 
@@ -87,7 +87,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

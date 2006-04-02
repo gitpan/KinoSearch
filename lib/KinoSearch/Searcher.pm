@@ -67,17 +67,21 @@ sub search {
         ? ( %search_args, query => $_[0] )
         : ( %search_args, @_ );
     verify_args( \%search_args, %args );
+
+    # turn a query string into a query against all fields
     if ( !a_isa_b( $args{query}, 'KinoSearch::Search::Query' ) ) {
         $args{query} = $self->_prepare_simple_search( $args{query} );
     }
+
     return KinoSearch::Search::Hits->new( searcher => $self, %args );
 }
 
+# Search for the query string against all indexed fields
 sub _prepare_simple_search {
     my ( $self, $query_string ) = @_;
 
+    # add each parsed query as a boolean clause to a super-query
     my $super_query = KinoSearch::Search::BooleanQuery->new;
-
     my $indexed_field_names
         = $self->{reader}->get_field_names( indexed => 1 );
     for my $field_name (@$indexed_field_names) {
@@ -91,36 +95,39 @@ sub _prepare_simple_search {
             occur => 'SHOULD',
         );
     }
+
     return $super_query;
 }
 
-my %search_hit_queue_args = (
-    weight     => undef,
-    filter     => undef,
-    num_wanted => undef,
-    sort_spec  => undef,
+my %search_hit_collector_args = (
+    hit_collector => undef,
+    weight        => undef,
+    filter        => undef,
+    sort_spec     => undef,
 );
 
-sub search_hit_queue {
+sub search_hit_collector {
     my $self = shift;
-    verify_args( \%search_hit_queue_args, @_ );
-    my %args = ( %search_hit_queue_args, @_ );
+    verify_args( \%search_hit_collector_args, @_ );
+    my %args = ( %search_hit_collector_args, @_ );
 
-    my $scorer = $args{weight}->scorer( $self->{reader} );
-
-    my $hc = KinoSearch::Search::HitQueueCollector->new(
-        size => $args{num_wanted}, );
-
-    # accumulate hits into the HitCollector if the query is valid
-    if ( defined $scorer ) {
-        $scorer->score_batch(
-            hit_collector => $hc,
-            end           => $self->{reader}->max_doc,
+    # wrap the collector if there's a filter
+    my $collector = $args{hit_collector};
+    if ( defined $args{filter} ) {
+        $collector = KinoSearch::Search::FilteredCollector->new(
+            filter_bits   => $args{filter}->bits($self),
+            hit_collector => $args{hit_collector},
         );
     }
 
-    # return the HitQueue and the number of hits
-    return ( $hc->get_storage, $hc->get_i );
+    # accumulate hits into the HitCollector if the query is valid
+    my $scorer = $args{weight}->scorer( $self->{reader} );
+    if ( defined $scorer ) {
+        $scorer->score_batch(
+            hit_collector => $collector,
+            end           => $self->{reader}->max_doc,
+        );
+    }
 }
 
 sub fetch_doc { $_[0]->{reader}->fetch_doc( $_[1] ) }
@@ -206,12 +213,13 @@ to the Analyzer used at index-time, or the results won't match up.
 
 =head2 search
 
-    my $hits = $searcher->search( query => $query );
+    my $hits = $searcher->search( 
+        query  => $query,  # required
+        filter => $filter, # default: undef (no filtering)
+    );
         
 Process a search and return a L<Hits|KinoSearch::Search::Hits> object.
-
-search() expects labeled hash-style parameters.  At present, there is only
-one: query.  It is likely that others will be added later.
+search() expects labeled hash-style parameters.
 
 =over
 
@@ -223,7 +231,26 @@ it's a query string, it will be parsed using a QueryParser and a search will
 be performed against all indexed fields in the invindex.  For more sophisticated
 searching, supply Query objects, such as TermQuery and BooleanQuery.
 
+=item *
+
+B<filter> - Must be a
+L<KinoSearch::Search::QueryFilter|KinoSearch::Search::QueryFilter>.  Search
+results will be limited to only those documents which pass through the filter.
+
 =back
+
+=head1 Caching a Searcher
+
+When a Searcher is created, a small portion of the invindex is loaded into
+memory.  For large document collections, this startup time may become
+noticable, in which case reusing the searcher is likely to speed up your
+search application.  Caching a Searcher is especially helpful when running a
+high-activity app under mod_perl.
+
+Searcher objects always represent a snapshot of an invindex as it existed when
+the Searcher was created.  If you want the search results to reflect
+modifications to an invindex, you must create a new Searcher after the update
+process completes.
 
 =head1 COPYRIGHT
 
@@ -231,4 +258,4 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.

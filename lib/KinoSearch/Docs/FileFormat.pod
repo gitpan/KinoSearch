@@ -10,7 +10,9 @@ interested in tweaking for high performance, exotic usage, or debugging and
 development.  
 
 On a file system, all the files in an invindex exist in one, flat directory.
-Conceptually, the files have a hierarchical relationship.
+Conceptually, the files have a hierarchical relationship: an invindex is made
+up of "segments", each of which is an independent inverted index, and each
+segment is made up of several subsections.
 
     [invindex]--|
                 |-"segments" file
@@ -193,7 +195,7 @@ bit for each document in the segment; if bit #254 is set then document 254 is
 deleted, and if it turns up in a search it will be masked out.
 
 It is only when a segment's contents are rewritten to a new segment during the
-optimization process that deleted documents truly go away.
+segment-merging process that deleted documents truly go away.
 
 =head2 Field Normalization Files
 
@@ -233,5 +235,5 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 

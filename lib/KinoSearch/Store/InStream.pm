@@ -1,5 +1,5 @@
 package KinoSearch::Store::InStream;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
@@ -219,8 +219,7 @@ PPCODE:
 
         /* thwart potential infinite loop */
         if (repeat_count < 1)
-            Kino_confess(
-                "Internal error: repeat_count < 1 -- Please notify author.");
+            Kino_confess( "invalid repeat_count: %d", repeat_count);
         
         switch(sym) {
 
@@ -299,7 +298,7 @@ __H__
 #include "perl.h"
 #include "XSUB.h"
 #include "KinoSearchUtilCarp.h"
-#include "KinoSearchUtilEndianUtils.h"
+#include "KinoSearchUtilMathUtils.h"
 
 /* Detect whether we're on an ASCII or EBCDIC machine. */
 #if '0' == 240
@@ -442,11 +441,11 @@ Kino_InStream_refill(InStream *instream) {
     check_val = PerlIO_seek(instream->fh, 
         (instream->buf_start + instream->offset), 0);
     if (check_val == -1)
-        Kino_confess("PerlIO_seek failed: %s", strerr() );
+        Kino_confess("refill: PerlIO_seek failed: %d", errno);
     check_val = PerlIO_read(instream->fh, instream->buf, instream->buf_len);
     if (check_val != instream->buf_len) 
-        Kino_confess("Read error: tried to read %d bytes, got %d", 
-            instream->buf_len, check_val);
+        Kino_confess("refill: tried to read %d bytes, got %d: %d", 
+            instream->buf_len, check_val, errno);
 }
 
 char
@@ -470,10 +469,10 @@ Kino_InStream_read_bytes (InStream *instream, char* buf, STRLEN len) {
         start = instream->tell(instream);
         check_val = PerlIO_seek(instream->fh, (start + instream->offset), 0);
         if (check_val == -1)
-            Kino_confess("PerlIO_seek failed: %s", strerr() );
+            Kino_confess("read_bytes: PerlIO_seek failed: %d", errno );
         check_val = PerlIO_read(instream->fh, buf, len);
         if (check_val < len)
-            Kino_confess("Read error: tried to read %"UVuf" bytes, got %d", 
+            Kino_confess("read_bytes: tried to read %"UVuf" bytes, got %d", 
                 (UV)len, check_val);
         
         /* reset vars and refill if there's more in the file */
@@ -616,7 +615,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

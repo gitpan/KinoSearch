@@ -134,10 +134,11 @@ if ($needs_rewrite{$ks_xs_filepath}) {
     my @struct_classes = qw(
         KinoSearch::Analysis::Stemmer::Stemmifier
         KinoSearch::Analysis::TokenBatch
+        KinoSearch::Index::SegTermEnum
         KinoSearch::Index::TermBuffer
         KinoSearch::Index::TermDocs
         KinoSearch::Index::TermInfo
-        KinoSearch::Index::SegTermEnum
+        KinoSearch::Index::TermInfosWriter
         KinoSearch::Search::HitCollector
         KinoSearch::Search::MatchBatch
         KinoSearch::Search::Scorer
@@ -147,6 +148,7 @@ if ($needs_rewrite{$ks_xs_filepath}) {
         KinoSearch::Util::BitVector
         KinoSearch::Util::BoolSet
         KinoSearch::Util::PriorityQueue
+        KinoSearch::Util::SortExternal
     );
 
     my $typemap_start  = qq|\nTYPEMAP\n|;
@@ -201,7 +203,6 @@ my $builder = Module::Build->new(
     dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',
     dist_version_from => 'lib/KinoSearch.pm',
     requires          => {
-        'Sort::External'         => 0.15,
         'Lingua::Stem::Snowball' => 0.94,
         'Lingua::StopWords'      => 0.02,
         'Clone'                  => 0.18,

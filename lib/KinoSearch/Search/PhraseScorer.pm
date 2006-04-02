@@ -20,6 +20,7 @@ sub new {
 
     $self->_init_child;
 
+    # set/derive some member vars
     $self->_set_norms( $args{norms_reader}->get_bytes );
     $self->set_similarity( $args{similarity} );
     $self->_set_weight_value( $args{weight}->get_value );
@@ -48,9 +49,47 @@ __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::PhraseScorer
 
+void
+_init_child(scorer)
+    Scorer *scorer;
+PPCODE:
+    Kino_PhraseScorer_init_child(scorer);
+
+void
+_init_elements(scorer, term_docs_av, phrase_offsets_av) 
+    Scorer *scorer;
+    AV     *term_docs_av;
+    AV     *phrase_offsets_av;
+PREINIT:
+    PhraseScorerChild *child;
+    I32                i;
+    SV               **sv_ptr;
+    IV                 tmp;
+PPCODE:
+{
+    child = (PhraseScorerChild*)scorer->child;
+
+    SvREFCNT_inc(term_docs_av);
+    SvREFCNT_dec(child->term_docs_av);
+    child->term_docs_av = term_docs_av;
+
+    child->num_elements = av_len(term_docs_av) + 1;
+    Kino_New(0, child->term_docs, child->num_elements, TermDocs*);
+    Kino_New(0, child->phrase_offsets, child->num_elements, U32);
+    
+    /* create an array of TermDocs* */
+    for(i = 0; i < child->num_elements; i++) {
+        sv_ptr = av_fetch(term_docs_av, i, 0);
+        tmp                 = SvIV((SV*)SvRV( *sv_ptr ));
+        child->term_docs[i] = INT2PTR(TermDocs*, tmp);
+        sv_ptr = av_fetch(phrase_offsets_av, i, 0);
+        child->phrase_offsets[i] = SvIV( *sv_ptr );
+    }
+}
+
 SV*
-_phrase_scorer_set_or_get(obj, ...)
-    Scorer *obj;
+_phrase_scorer_set_or_get(scorer, ...)
+    Scorer *scorer;
 PREINIT:
     PhraseScorerChild *child;
 ALIAS:
@@ -62,7 +101,7 @@ ALIAS:
     _get_norms        = 6
 CODE:
 {
-    child = (PhraseScorerChild*)obj->child;
+    child = (PhraseScorerChild*)scorer->child;
 
     /* if called as a setter, make sure the extra arg is there */
     if (ix % 2 == 1 && items != 2)
@@ -80,8 +119,7 @@ CODE:
     case 4:  RETVAL = newSVnv(child->weight_value);
              break;
 
-    case 5:  if (child->norms_sv != NULL) 
-                SvREFCNT_dec(child->norms_sv);
+    case 5:  SvREFCNT_dec(child->norms_sv);
              child->norms_sv = newSVsv( ST(1) );
              {
                  SV* bytes_deref_sv;
@@ -102,47 +140,10 @@ CODE:
 OUTPUT: RETVAL
 
 void
-_init_elements(obj, term_docs_av, phrase_offsets_av) 
-    Scorer *obj;
-    AV     *term_docs_av;
-    AV     *phrase_offsets_av;
-PREINIT:
-    PhraseScorerChild *child;
-    I32                i;
-    SV               **sv_ptr;
-    IV                 tmp;
+DESTROY(scorer)
+    Scorer *scorer;
 PPCODE:
-{
-    child = (PhraseScorerChild*)obj->child;
-
-    SvREFCNT_inc(term_docs_av);
-    child->term_docs_av = term_docs_av;
-
-    child->num_elements = av_len(term_docs_av) + 1;
-    Kino_New(0, child->term_docs, child->num_elements, TermDocs*);
-    Kino_New(0, child->phrase_offsets, child->num_elements, U32);
-    
-    /* create an array of TermDocs* */
-    for(i = 0; i < child->num_elements; i++) {
-        sv_ptr = av_fetch(term_docs_av, i, 0);
-        tmp                 = SvIV((SV*)SvRV( *sv_ptr ));
-        child->term_docs[i] = INT2PTR(TermDocs*, tmp);
-        sv_ptr = av_fetch(phrase_offsets_av, i, 0);
-        child->phrase_offsets[i] = SvIV( *sv_ptr );
-    }
-}
-
-void
-_init_child(obj)
-    Scorer *obj;
-PPCODE:
-    Kino_PhraseScorer_init_child(obj);
-
-void
-DESTROY(obj)
-    Scorer *obj;
-PPCODE:
-    Kino_PhraseScorer_destroy(obj);
+    Kino_PhraseScorer_destroy(scorer);
 
 __H__
 
@@ -181,7 +182,6 @@ float Kino_PhraseScorer_score(Scorer*);
 #endif /* include guard */
 
 
-
 __C__
 
 #include "KinoSearchSearchPhraseScorer.h"
@@ -202,8 +202,8 @@ Kino_PhraseScorer_init_child(Scorer *scorer) {
     child->phrase_freq     = 0.0;
     child->norms           = NULL;
     child->phrase_offsets  = NULL;
-    child->term_docs_av    = NULL;
-    child->norms_sv        = NULL;
+    child->term_docs_av    = (AV*)&PL_sv_undef;
+    child->norms_sv        = &PL_sv_undef;;
 
 
     /* define abstract methods */
@@ -238,22 +238,22 @@ Kino_PhraseScorer_next(Scorer *scorer) {
     /* seed the search */
     if ( !term_docs[0]->next(term_docs[0]) )
         return 0;
-    candidate = term_docs[0]->doc;
+    candidate = term_docs[0]->get_doc(term_docs[0]);
 
     /* find a doc which contains all the terms */
     FIND_COMMON_DOC:
     while (1) {
         for (i = 0; i < child->num_elements; i++) {
-            while (term_docs[i]->doc < candidate) {
+            while ( term_docs[i]->get_doc(term_docs[i]) < candidate ) {
                 if ( !term_docs[i]->next(term_docs[i]) )
                     return 0;
             }
-            if (term_docs[i]->doc > candidate) {
-                candidate = term_docs[i]->doc;
+            if (term_docs[i]->get_doc(term_docs[i]) > candidate) {
+                candidate = term_docs[i]->get_doc(term_docs[i]);
             }
         }
         for (i = 0; i < child->num_elements; i++) {
-            if (term_docs[i]->doc != candidate) {
+            if (term_docs[i]->get_doc(term_docs[i]) != candidate) {
                 goto FIND_COMMON_DOC;
             }
         }
@@ -274,6 +274,7 @@ float
 Kino_PhraseScorer_calc_phrase_freq(Scorer *scorer) {
     U32               *phrase_offsets;
     PhraseScorerChild *child;
+    TermDocs         **term_docs;
     U32               *anchors;
     U32               *anchors_start;
     U32               *anchors_end;
@@ -286,10 +287,11 @@ Kino_PhraseScorer_calc_phrase_freq(Scorer *scorer) {
     U32                i;
     STRLEN             len;
 
-    child = (PhraseScorerChild*)scorer->child;
+    child     = (PhraseScorerChild*)scorer->child;
+    term_docs = child->term_docs;
 
     /* create an anchor set */
-    sv_setsv(child->anchor_set, child->term_docs[0]->positions);
+    sv_setsv( child->anchor_set, term_docs[0]->get_positions(term_docs[0]) );
     anchors_start = (U32*)SvPVX(child->anchor_set);
     anchors       = anchors_start;
     anchors_end   = (U32*)SvEND(child->anchor_set);
@@ -307,8 +309,10 @@ Kino_PhraseScorer_calc_phrase_freq(Scorer *scorer) {
         anchors_end = (U32*)SvEND(child->anchor_set);
         new_anchors = anchors;
 
-        candidates     = (U32*)SvPVX(child->term_docs[i]->positions);
-        candidates_end = (U32*)SvEND(child->term_docs[i]->positions);
+        candidates     
+            = (U32*)SvPVX( term_docs[i]->get_positions(term_docs[i]) );
+        candidates_end 
+            = (U32*)SvEND( term_docs[i]->get_positions(term_docs[i]) );
 
         while (anchors < anchors_end) {
             target = *candidates - phrase_offset;
@@ -375,11 +379,8 @@ Kino_PhraseScorer_destroy(Scorer *scorer) {
 
     Kino_Safefree(child->term_docs);
     Kino_Safefree(child->phrase_offsets);
-    if (child->norms_sv != NULL)
-        SvREFCNT_dec(child->norms_sv);
-    if (child->term_docs_av != NULL)
-        SvREFCNT_dec((SV*)child->term_docs_av);
-
+    SvREFCNT_dec(child->norms_sv);
+    SvREFCNT_dec((SV*)child->term_docs_av);
     SvREFCNT_dec(child->anchor_set);
 
     Kino_Safefree(child);
@@ -404,7 +405,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

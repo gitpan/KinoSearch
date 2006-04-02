@@ -113,6 +113,7 @@ sub parse {
             $occur = 'SHOULD';
         }
 
+        # detect tokens which cause this clause to be required or negated
         if (s/$neg_re//) {
             $occur = 'MUST_NOT';
         }
@@ -303,7 +304,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut
 

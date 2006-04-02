@@ -21,6 +21,8 @@ __C__
 
 #include "KinoSearchUtilStringHelper.h"
 
+/* return the number of bytes that two strings have in common */
+
 I32
 Kino_StrHelp_string_diff(char *str1, char *str2, STRLEN len1, STRLEN len2) {
     STRLEN i, len;
@@ -32,6 +34,38 @@ Kino_StrHelp_string_diff(char *str1, char *str2, STRLEN len1, STRLEN len2) {
             break;
     }
     return i;
+}
+
+/* memcmp, but with lengths for both pointers, not just one */
+I32
+Kino_StrHelp_compare_strings(char *a, char *b, STRLEN a_len, STRLEN b_len) {
+    STRLEN len;
+    I32 comparison = 0;
+
+    if (a == NULL  || b == NULL)
+        Kino_confess("Internal error: can't compare unallocated pointers");
+    
+    len = a_len < b_len? a_len : b_len;
+    if (len > 0)
+        comparison = memcmp(a, b, len);
+
+    /* if a is a substring of b, it's less than b, so return a neg num */
+    if (comparison == 0) 
+        comparison = a_len - b_len;
+
+    return comparison;
+}
+
+/* compare the PVs of two scalars */
+I32
+Kino_StrHelp_compare_svs(SV *sva, SV *svb) {
+    char   *a, *b;
+    STRLEN  a_len, b_len;
+
+    a = SvPV(sva, a_len);
+    b = SvPV(svb, b_len);
+
+    return Kino_StrHelp_compare_strings(a, b, a_len, b_len);
 }
 
 __POD__
@@ -51,7 +85,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

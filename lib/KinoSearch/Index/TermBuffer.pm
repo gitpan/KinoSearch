@@ -2,10 +2,10 @@ package KinoSearch::Index::TermBuffer;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args
+    # constructor params
     finfos => undef,
 );
 
@@ -26,45 +26,20 @@ __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::TermBuffer
 
-void
+TermBuffer* 
 _new(class, finfos_size) 
-    char       *class;
-    I32         finfos_size;
-PREINIT:
-    TermBuffer *term_buf;
-    char       *ptr;
-    STRLEN      len;
-PPCODE:
-{
-    Kino_New(0, term_buf, 1, TermBuffer);
-
-    /* reset the TermBuffer */
-    term_buf->termstring = NULL;
-    Kino_TermBuf_reset(term_buf);
-
-    /* derive max_field_num */
-    term_buf->max_field_num = finfos_size - 1;
-    
-    ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)term_buf);
-    XSRETURN(1);
-}
+    char *class;
+    I32   finfos_size;
+CODE:
+    /* ignore class */
+    RETVAL = Kino_TermBuf_new(finfos_size);
+OUTPUT: RETVAL
 
 void
 DESTROY(term_buf)
     TermBuffer *term_buf;
 PPCODE:
     Kino_TermBuf_destroy(term_buf);
-
-
-void
-_set_text_len(term_buf, new_len)
-    TermBuffer *term_buf;
-    UV          new_len;
-PPCODE:
-    Kino_TermBuf_set_text_len(term_buf, new_len);
-    
-
 
 __H__
 
@@ -86,16 +61,36 @@ typedef struct termbuffer {
     I32      max_field_num;
 } TermBuffer;
 
+TermBuffer* Kino_TermBuf_new(I32);
 void Kino_TermBuf_read(TermBuffer*, InStream*);
-void Kino_TermBuf_destroy(TermBuffer*);
 void Kino_TermBuf_reset(TermBuffer*);
 void Kino_TermBuf_set_text_len(TermBuffer*, STRLEN);
+void Kino_TermBuf_destroy(TermBuffer*);
 
 #endif /* include guard */
 
 __C__
 
 #include "KinoSearchIndexTermBuffer.h"
+
+TermBuffer*
+Kino_TermBuf_new(I32 finfos_size) {
+    TermBuffer *term_buf;
+    char       *ptr;
+    STRLEN      len;
+
+    /* allocate */
+    Kino_New(0, term_buf, 1, TermBuffer);
+
+    /* reset the TermBuffer */
+    term_buf->termstring = NULL;
+    Kino_TermBuf_reset(term_buf);
+
+    /* derive max_field_num */
+    term_buf->max_field_num = finfos_size - 1;
+
+    return term_buf;
+}
 
 /* Decode the next term in a term dictionary file (.tii, .tis), but don't turn
  * it into a full-fledged Term object. */
@@ -186,7 +181,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

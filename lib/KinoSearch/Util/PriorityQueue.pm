@@ -2,24 +2,12 @@ package KinoSearch::Util::PriorityQueue;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # constructor args
     max_size => undef,
 );
-
-sub new {
-    my $class = shift;
-    $class = ref($class) || $class;
-    verify_args( \%instance_vars, @_ );
-    my %args = @_;
-    confess("argument max_size is required")
-        unless defined $args{max_size};
-    my $self = _new( $class, $args{max_size} );
-    $self->define_less_than;
-    return $self;
-}
 
 1;
 
@@ -30,23 +18,30 @@ __XS__
 MODULE =  KinoSearch    PACKAGE = KinoSearch::Util::PriorityQueue
 
 void
-_new(class, max_size)
-    char  *class;
-    U32    max_size;
+new(either_sv, ...)
+    SV *either_sv;
 PREINIT:
-    PriorityQueue *obj;
+    char          *class;
+    HV            *args_hash;
+    SV           **max_size_sv_ptr;
+    U32            max_size;
+    PriorityQueue *pq;
 PPCODE:
-    obj   = Kino_PriQ_new(max_size);
+    /* determine the class */
+    class = sv_isobject(either_sv) 
+        ? sv_reftype(either_sv, 0) 
+        : SvPV_nolen(either_sv);
+        
+    /* process hash-style params */
+    Kino_Verify_build_args_hash(args_hash, 
+        "KinoSearch::Util::PriorityQueue::instance_vars", 1);
+    max_size = (U32)SvUV( Kino_Verify_extract_arg(args_hash, "max_size", 8) );
+
+    /* build object */
+    pq    = Kino_PriQ_new(max_size);
     ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)obj);
+    sv_setref_pv(ST(0), class, (void*)pq);
     XSRETURN(1);
-
-
-void
-define_less_than(obj)
-    PriorityQueue *obj;
-PPCODE:
-    obj->less_than = &Kino_PriQ_default_less_than;
 
 =for comment
 
@@ -57,11 +52,11 @@ b) the element belongs in the queue and should displace another
 =cut
 
 void
-insert(obj, element)
-    PriorityQueue *obj;
+insert(pq, element)
+    PriorityQueue *pq;
     SV             *element;
 PPCODE:
-    Kino_PriQ_insert(obj, element);
+    Kino_PriQ_insert(pq, element);
 
 
 =for comment
@@ -71,12 +66,12 @@ Pop the *least* item off of the priority queue.
 =cut
 
 SV*
-pop(obj)
-    PriorityQueue *obj;
+pop(pq)
+    PriorityQueue *pq;
 CODE:
-    RETVAL = Kino_PriQ_pop(obj);
+    RETVAL = Kino_PriQ_pop(pq);
     if (RETVAL == Nullsv) {
-        RETVAL = newSV(0);
+        RETVAL = &PL_sv_undef;
     }
     else {
         RETVAL = newSVsv(RETVAL);
@@ -91,12 +86,12 @@ Return the least item in the queue, but don't remove it.
 =cut
 
 SV*
-peek(obj)
-    PriorityQueue *obj;
+peek(pq)
+    PriorityQueue *pq;
 CODE:
-    RETVAL = Kino_PriQ_peek(obj);
+    RETVAL = Kino_PriQ_peek(pq);
     if (RETVAL == Nullsv) {
-        RETVAL = newSV(0);
+        RETVAL = &PL_sv_undef;
     }
     else {
         RETVAL = newSVsv(RETVAL);
@@ -112,28 +107,28 @@ Empty the queue into an array, with the highest priority item at index 0.
 =cut
 
 void
-pop_all(obj)
-    PriorityQueue *obj;
+pop_all(pq)
+    PriorityQueue *pq;
 PREINIT:
     AV* out_av;
 PPCODE:
-    out_av = Kino_PriQ_pop_all(obj);
+    out_av = Kino_PriQ_pop_all(pq);
     XPUSHs( sv_2mortal(newRV_noinc( (SV*)out_av )) );
 
 
 SV*
-_set_or_get(obj, ...)
-    PriorityQueue *obj;
+_set_or_get(pq, ...)
+    PriorityQueue *pq;
 ALIAS:
     get_size      = 2
     get_max_size  = 4
 CODE:
 {
     switch (ix) {
-    case 2:  RETVAL = newSVuv(obj->size);
+    case 2:  RETVAL = newSVuv(pq->size);
              break;
 
-    case 4:  RETVAL = newSVuv(obj->max_size);
+    case 4:  RETVAL = newSVuv(pq->max_size);
              break;
 
     default: Kino_confess("Internal error: _set_or_get ix: %d", ix); 
@@ -143,10 +138,10 @@ OUTPUT: RETVAL
 
 
 void
-DESTROY(obj)
-    PriorityQueue *obj;
+DESTROY(pq)
+    PriorityQueue *pq;
 PPCODE:
-    Kino_PriQ_destroy(obj);
+    Kino_PriQ_destroy(pq);
 
 __H__
 
@@ -443,19 +438,18 @@ KinoSearch::Util::PriorityQueue - classic heap sort / priority queue
 
 =head1 DESCRIPTION
 
-PriorityQueue is a C-based class that implements a textbook
-heap-sort/priority-queue algorithm.  This particular variant leaves slot 0 in
-the queue open in order to keep the relationship between node rank and index
-clear in the up_heap and down_heap routines.
+PriorityQueue implements a textbook heap-sort/priority-queue algorithm.  This
+particular variant leaves slot 0 in the queue open in order to keep the
+relationship between node rank and index clear in the up_heap and down_heap
+routines.
 
 The nodes in this implementation are all perl scalars, which allows us to use
 Perl's reference counting to manage memory.  However, the underlying queue
 management methods are all written in C, which allows them to be used within
 other C routines without expensive callbacks to Perl. 
 
-Subclass constructors must override the Perl method define_less_than, which
-defines a value for the C pointer-to-function, less_than. The default
-version compares the SvIV value of two scalars.
+Subclass constructors must redefine the C pointer-to-function, less_than. The
+default behavior is to compare the SvIV value of two scalars.
 
 =head1 COPYRIGHT
 
@@ -463,7 +457,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

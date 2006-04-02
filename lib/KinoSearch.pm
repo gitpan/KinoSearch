@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09_01';
 
 use constant K_DEBUG => 0;
 
@@ -47,15 +47,6 @@ __XS__
 #define NEED_newRV_noinc_GLOBAL
 #include "ppport.h"
 
-#define Kino_extract_struct( perl_obj, dest, cname, class ) \
-     if (sv_derived_from( perl_obj, class )) {              \
-         IV tmp = SvIV( (SV*)SvRV(perl_obj) );              \
-         dest = INT2PTR(cname, tmp);                        \
-     }                                                      \
-     else                                                   \
-         Kino_confess("not a %s", class); 
-
-
 MODULE = KinoSearch    PACKAGE = KinoSearch
 
 PROTOTYPES: disable
@@ -80,7 +71,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.08
+0.09_01
 
 =head1 WARNING
 
@@ -135,8 +126,6 @@ Then, write a second application to search the invindex:
     );
     
     my $hits = $searcher->search( query => "foo bar" );
-    $hits->seek( 0, 20 );
-    
     while ( my $hit = $hits->fetch_hit_hashref ) {
         print "$hit->{title}\n";
     }

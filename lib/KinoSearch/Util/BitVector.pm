@@ -2,17 +2,9 @@ package KinoSearch::Util::BitVector;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 
 our %instance_vars = __PACKAGE__->init_instance_vars( capacity => 0, );
-
-sub new {
-    my $class = shift;
-    verify_args( \%instance_vars, @_ );
-    my %args = ( %instance_vars, @_ );
-    $class = ref($class) || $class;
-    return _new( $class, $args{capacity} );
-}
 
 1;
 
@@ -23,16 +15,30 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Util::BitVector
 
 void
-_new(class, capacity)
-    char  *class;
-    U32    capacity;
+new(either_sv, ...)
+    SV        *either_sv;
 PREINIT:
-    BitVector *obj;
+    char      *class;
+    HV        *args_hash;
+    U32        capacity;
+    BitVector *bit_vec;
 PPCODE:
-    obj   = Kino_BitVec_new(capacity);
-    ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)obj);
+    /* determine the class */
+    class = sv_isobject(either_sv) 
+        ? sv_reftype(either_sv, 0) 
+        : SvPV_nolen(either_sv);
+
+    /* process hash-style params */
+    Kino_Verify_build_args_hash(args_hash, 
+        "KinoSearch::Util::BitVector::instance_vars", 1);
+    capacity = (U32)SvUV( Kino_Verify_extract_arg(args_hash, "capacity", 8) );
+
+    /* build object */
+    bit_vec = Kino_BitVec_new(capacity);
+    ST(0)   = sv_newmortal();
+    sv_setref_pv(ST(0), class, (void*)bit_vec);
     XSRETURN(1);
+
 
 =for comment
 Return true if the bit indcated by $num has been set, false if it hasn't
@@ -41,11 +47,11 @@ Return true if the bit indcated by $num has been set, false if it hasn't
 =cut
 
 bool
-get(obj, num)
-    BitVector *obj;
+get(bit_vec, num)
+    BitVector *bit_vec;
     U32        num;
 CODE:
-    RETVAL = Kino_BitVec_get(obj, num);
+    RETVAL = Kino_BitVec_get(bit_vec, num);
 OUTPUT: RETVAL
 
 =for comment
@@ -54,14 +60,14 @@ Set the bit at $num to 1.
 =cut
 
 void
-set(obj, ...)
-    BitVector *obj;
+set(bit_vec, ...)
+    BitVector *bit_vec;
 PREINIT:
     U32 i, num;
 PPCODE:
     for (i = 1; i < items; i++) {
         num = (U32)( SvUV( ST(i) ) );
-        Kino_BitVec_set(obj, num);
+        Kino_BitVec_set(bit_vec, num);
     }
 
 =for comment
@@ -70,11 +76,11 @@ Clear the bit at $num (i.e. set it to 0).
 =cut
 
 void
-clear(obj, num)
-    BitVector *obj;
+clear(bit_vec, num)
+    BitVector *bit_vec;
     U32        num;
 PPCODE:
-    Kino_BitVec_clear(obj, num);
+    Kino_BitVec_clear(bit_vec, num);
 
 =for comment
 Set all the bits bounded by $first and $last, inclusive, to 1.
@@ -82,12 +88,12 @@ Set all the bits bounded by $first and $last, inclusive, to 1.
 =cut
 
 void
-bulk_set(obj, first, last)
-    BitVector *obj;
+bulk_set(bit_vec, first, last)
+    BitVector *bit_vec;
     U32        first;
     U32        last;
 PPCODE:
-    Kino_BitVec_bulk_set(obj, first, last);
+    Kino_BitVec_bulk_set(bit_vec, first, last);
     
 =for comment
 Clear all the bits bounded by $first and $last, inclusive.
@@ -95,12 +101,12 @@ Clear all the bits bounded by $first and $last, inclusive.
 =cut
 
 void
-bulk_clear(obj, first, last)
-    BitVector *obj;
+bulk_clear(bit_vec, first, last)
+    BitVector *bit_vec;
     U32        first;
     U32        last;
 PPCODE:
-    Kino_BitVec_bulk_clear(obj, first, last);
+    Kino_BitVec_bulk_clear(bit_vec, first, last);
 
 =for comment
 Given $num, return either $num (if it is set), the next set bit above it, or
@@ -109,11 +115,11 @@ if no such bit exists, undef (from Perl) or a sentinel (0xFFFFFFFF) from C.
 =cut
     
 SV*
-next_set_bit(obj, num)
-    BitVector *obj;
+next_set_bit(bit_vec, num)
+    BitVector *bit_vec;
     U32        num;
 CODE:
-    num    = Kino_BitVec_next_set_bit(obj, num);
+    num    = Kino_BitVec_next_set_bit(bit_vec, num);
     RETVAL = num == KINO_BITVEC_SENTINEL ? &PL_sv_undef : newSVuv(num);
 OUTPUT: RETVAL
 
@@ -124,11 +130,11 @@ The highest number that next_clear_bit can return is the object's capacity.
 =cut
 
 SV*
-next_clear_bit(obj, num)
-    BitVector *obj;
+next_clear_bit(bit_vec, num)
+    BitVector *bit_vec;
     U32        num;
 CODE:
-    num = Kino_BitVec_next_clear_bit(obj, num);
+    num = Kino_BitVec_next_clear_bit(bit_vec, num);
     RETVAL = num == KINO_BITVEC_SENTINEL ? &PL_sv_undef : newSVuv(num);
 OUTPUT: RETVAL
 
@@ -140,11 +146,11 @@ BitVector.
 =cut
 
 void
-logical_and(obj, other)
-    BitVector *obj;
+logical_and(bit_vec, other)
+    BitVector *bit_vec;
     BitVector *other;
 PPCODE:
-    Kino_BitVec_logical_and(obj, other);
+    Kino_BitVec_logical_and(bit_vec, other);
 
 =for comment
 Return an arrayref of the with each element the number of a set bit.
@@ -152,26 +158,25 @@ Return an arrayref of the with each element the number of a set bit.
 =cut
 
 void
-to_arrayref(obj)
-    BitVector *obj;
+to_arrayref(bit_vec)
+    BitVector *bit_vec;
 PREINIT:
     AV *out_av;
 PPCODE:
-    out_av = Kino_BitVec_to_array(obj);
+    out_av = Kino_BitVec_to_array(bit_vec);
     XPUSHs(newRV_noinc( (SV*)out_av ));
     XSRETURN(1);
     
 
 =for comment
-Setters and getters.  Two quirks: set_capacity can't adjust capacity
-downwards, and set_bits automatically adjusts capacity to the appropriate
-multiple of 8.
+Setters and getters.  A quirk: set_bits automatically adjusts capacity
+upwards to the appropriate multiple of 8 if necessary.
 
 =cut
 
 SV* 
-_set_or_get(obj, ...)
-    BitVector *obj;
+_set_or_get(bit_vec, ...)
+    BitVector *bit_vec;
 ALIAS:
     set_capacity = 1
     get_capacity = 2
@@ -190,22 +195,23 @@ CODE:
     switch (ix) {
 
     case 1:  new_capacity = SvUV(ST(1));
-             if (new_capacity < obj->capacity) {
-                Kino_confess("can't shrink capacity from %d to %d", 
-                    obj->capacity, obj->capacity);
+             if (new_capacity < bit_vec->capacity) {
+                 Kino_BitVec_shrink(bit_vec, new_capacity);
              }
-             Kino_BitVec_grow(obj, new_capacity);
+             else if (new_capacity > bit_vec->capacity) {
+                 Kino_BitVec_grow(bit_vec, new_capacity);
+             }
              /* fall through */
-    case 2:  RETVAL = newSVuv(obj->capacity);
+    case 2:  RETVAL = newSVuv(bit_vec->capacity);
              break;
 
-    case 3:  Kino_Safefree(obj->bits);
-             new_bits      = SvPV(ST(1), len);
-             obj->bits     = (unsigned char*)Kino_savepvn(new_bits, len);
-             obj->capacity = len << 3;
+    case 3:  Kino_Safefree(bit_vec->bits);
+             new_bits          = SvPV(ST(1), len);
+             bit_vec->bits     = (unsigned char*)Kino_savepvn(new_bits, len);
+             bit_vec->capacity = len << 3;
              /* fall through */
-    case 4:  len = ceil(obj->capacity / 8.0);
-             RETVAL = newSVpv((char*)obj->bits, len);
+    case 4:  len = ceil(bit_vec->capacity / 8.0);
+             RETVAL = newSVpv((char*)bit_vec->bits, len);
              break;
 
     default: Kino_confess("Internal error: _set_or_get ix: %d", ix); 
@@ -215,10 +221,10 @@ OUTPUT: RETVAL
 
 
 void
-DESTROY(obj)
-    BitVector *obj;
+DESTROY(bit_vec)
+    BitVector *bit_vec;
 PPCODE:
-    Kino_BitVec_destroy(obj);
+    Kino_BitVec_destroy(bit_vec);
 
 
 __H__
@@ -230,7 +236,7 @@ __H__
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-#include "KinoSearchUtilEndianUtils.h"
+#include "KinoSearchUtilMathUtils.h"
 #include "KinoSearchUtilCarp.h"
 #include "KinoSearchUtilMemManager.h"
 
@@ -267,171 +273,184 @@ static unsigned char bitmasks[] = {
 
 BitVector*
 Kino_BitVec_new(U32 capacity) {
-    BitVector *obj;
-    Kino_New(0, obj, 1, BitVector);
-    obj->capacity = 0;
-    obj->bits = NULL;
-    Kino_BitVec_grow(obj, capacity);
-    return obj;
+    BitVector *bit_vec;
+    Kino_New(0, bit_vec, 1, BitVector);
+    bit_vec->capacity = 0;
+    bit_vec->bits = NULL;
+    Kino_BitVec_grow(bit_vec, capacity);
+    return bit_vec;
 }
 
 BitVector*
-Kino_BitVec_clone(BitVector *obj) {
+Kino_BitVec_clone(BitVector *bit_vec) {
     BitVector *evil_twin;
     U32 byte_size;
 
     Kino_New(0, evil_twin, 1, BitVector);
-    byte_size = ceil(obj->capacity / 8.0);
+    byte_size = ceil(bit_vec->capacity / 8.0);
     evil_twin->bits 
-        = (unsigned char*)Kino_savepvn((char*)obj->bits, byte_size);
-    evil_twin->capacity = obj->capacity;
+        = (unsigned char*)Kino_savepvn((char*)bit_vec->bits, byte_size);
+    evil_twin->capacity = bit_vec->capacity;
 
     return evil_twin;
 }
 
 void
-Kino_BitVec_grow(BitVector *obj, U32 capacity) {
+Kino_BitVec_grow(BitVector *bit_vec, U32 capacity) {
     U32 byte_size;
     U32 old_capacity;
 
     /* derive size in bytes from size in bits */
     byte_size = ceil(capacity / 8.0);
 
-    if (capacity > obj->capacity && obj->bits != NULL) {
+    if (capacity > bit_vec->capacity && bit_vec->bits != NULL) {
         U32 old_byte_size;
-        old_byte_size = ceil(obj->capacity / 8.0);
+        old_byte_size = ceil(bit_vec->capacity / 8.0);
 
-        Kino_Renew(obj->bits, byte_size, unsigned char);
+        Kino_Renew(bit_vec->bits, byte_size, unsigned char);
         /* zero out all new bits, since Renew doesn't guarantee they're 0 */
-        old_capacity = obj->capacity;
-        obj->capacity = capacity;
-        Kino_BitVec_bulk_clear(obj, old_capacity, capacity - 1);
+        old_capacity      = bit_vec->capacity;
+        bit_vec->capacity = capacity;
+        Kino_BitVec_bulk_clear(bit_vec, old_capacity, capacity - 1);
 
         /* shouldn't be necessary, but Valgrind reports an error without it */
         if (byte_size > old_byte_size) {
-            memset( (obj->bits + old_byte_size), 0x00, 
+            memset( (bit_vec->bits + old_byte_size), 0x00, 
                 (byte_size - old_byte_size) );
         }
     }
-    else if (obj->bits == NULL) {
-        Kino_Newz(0, obj->bits, byte_size, unsigned char);
-        obj->capacity = capacity;
+    else if (bit_vec->bits == NULL) {
+        Kino_Newz(0, bit_vec->bits, byte_size, unsigned char);
+        bit_vec->capacity = capacity;
     }
 }
 
 void 
-Kino_BitVec_set(BitVector *obj, U32 num) {
-    if (num >= obj->capacity)
-        Kino_BitVec_grow(obj, num + 1);
-    obj->bits[ (num >> 3) ]  |= bitmasks[num & 0x7];
+Kino_BitVec_shrink(BitVector *bit_vec, U32 capacity) {
+    U32 old_byte_size, byte_size;
+    
+    if (capacity >= bit_vec->capacity)
+        return;
+
+    /* derive size in bytes from size in bits */
+    byte_size = ceil(capacity / 8.0);
+    Kino_Renew(bit_vec->bits, byte_size, unsigned char);
+    bit_vec->capacity = capacity;
 }
 
 void 
-Kino_BitVec_clear(BitVector *obj, U32 num) {
-    if (num >= obj->capacity)
-        Kino_BitVec_grow(obj, num + 1);
+Kino_BitVec_set(BitVector *bit_vec, U32 num) {
+    if (num >= bit_vec->capacity)
+        Kino_BitVec_grow(bit_vec, num + 1);
+    bit_vec->bits[ (num >> 3) ]  |= bitmasks[num & 0x7];
+}
 
-    obj->bits[ (num >> 3) ] &= ~(bitmasks[num & 0x7]);
+void 
+Kino_BitVec_clear(BitVector *bit_vec, U32 num) {
+    if (num >= bit_vec->capacity)
+        Kino_BitVec_grow(bit_vec, num + 1);
+
+    bit_vec->bits[ (num >> 3) ] &= ~(bitmasks[num & 0x7]);
 }
 
 
 void
-Kino_BitVec_bulk_set(BitVector *obj, U32 first, U32 last) {
+Kino_BitVec_bulk_set(BitVector *bit_vec, U32 first, U32 last) {
     unsigned char *ptr;
     U32   num_bytes;
 
     /* detect range errors */
     if (first > last) {
         Kino_confess("bitvec range error: %d %d %d", first, last, 
-            obj->capacity);
+            bit_vec->capacity);
     }
 
     /* grow the bits if necessary */
-    if (last >= obj->capacity) {
-        Kino_BitVec_grow(obj, last);
+    if (last >= bit_vec->capacity) {
+        Kino_BitVec_grow(bit_vec, last);
     }
 
     /* set partial bytes */
     while (first % 8 != 0 && first <= last) {
-        Kino_BitVec_set(obj, first++);
+        Kino_BitVec_set(bit_vec, first++);
     }
     while (last % 8 != 0 && last >= first) {
-        Kino_BitVec_set(obj, last--);
+        Kino_BitVec_set(bit_vec, last--);
     }
-    Kino_BitVec_set(obj, last);
+    Kino_BitVec_set(bit_vec, last);
 
     /* mass set whole bytes */
     if (last > first) {
-        ptr = obj->bits + (first >> 3);
+        ptr = bit_vec->bits + (first >> 3);
         num_bytes = (last - first) >> 3;
         memset(ptr, 0xff, num_bytes);
     }
 }
 
 void
-Kino_BitVec_bulk_clear(BitVector *obj, U32 first, U32 last) {
+Kino_BitVec_bulk_clear(BitVector *bit_vec, U32 first, U32 last) {
     unsigned char *ptr;
     U32   num_bytes;
 
     /* detect range errors */
     if (first > last) {
         Kino_confess("bitvec range error: %d %d %d", first, last, 
-            obj->capacity);
+            bit_vec->capacity);
     }
 
     /* grow the bits if necessary */
-    if (last >= obj->capacity) {
-        Kino_BitVec_grow(obj, last);
+    if (last >= bit_vec->capacity) {
+        Kino_BitVec_grow(bit_vec, last);
     }
 
     /* clear partial bytes */
     while (first % 8 != 0 && first <= last) {
-        Kino_BitVec_clear(obj, first++);
+        Kino_BitVec_clear(bit_vec, first++);
     }
     while (last % 8 != 0 && last >= first) {
-        Kino_BitVec_clear(obj, last--);
+        Kino_BitVec_clear(bit_vec, last--);
     }
-    Kino_BitVec_clear(obj, last);
+    Kino_BitVec_clear(bit_vec, last);
 
     /* mass clear whole bytes */
     if (last > first) {
-        ptr = obj->bits + (first >> 3);
+        ptr       = bit_vec->bits + (first >> 3);
         num_bytes = (last - first) >> 3;
         memset(ptr, 0, num_bytes);
     }
 }
 
 bool
-Kino_BitVec_get(BitVector *obj, U32 num) {
-    if (num >= obj->capacity) return 0;
-    return (obj->bits[ (num >> 3) ] & bitmasks[num & 0x7]) != 0;
+Kino_BitVec_get(BitVector *bit_vec, U32 num) {
+    if (num >= bit_vec->capacity) return 0;
+    return (bit_vec->bits[ (num >> 3) ] & bitmasks[num & 0x7]) != 0;
 }
 
 U32
-Kino_BitVec_next_set_bit(BitVector *obj, U32 num) {
+Kino_BitVec_next_set_bit(BitVector *bit_vec, U32 num) {
     U32   outval;
     unsigned char *bits_ptr;
     unsigned char *end_ptr;
     int i;
     U32 byte_size;
 
-    if (num >= obj->capacity) {
+    if (num >= bit_vec->capacity) {
         return KINO_BITVEC_SENTINEL;
     }
 
     outval = KINO_BITVEC_SENTINEL;
 
-    bits_ptr  = obj->bits + (num >> 3) ;
-    byte_size = ceil(obj->capacity / 8.0);
-    end_ptr   = obj->bits + byte_size;
+    bits_ptr  = bit_vec->bits + (num >> 3) ;
+    byte_size = ceil(bit_vec->capacity / 8.0);
+    end_ptr   = bit_vec->bits + byte_size;
 
     while (outval == KINO_BITVEC_SENTINEL) {
         if (*bits_ptr != 0) {
             /* check each num in represented in this byte */
-            outval = (bits_ptr - obj->bits) * 8;
+            outval = (bits_ptr - bit_vec->bits) * 8;
             for (i = 0; i < 8; i++) {
-                if (Kino_BitVec_get(obj, outval) == 1) {
-                    if (outval < obj->capacity && outval >= num) {
+                if (Kino_BitVec_get(bit_vec, outval) == 1) {
+                    if (outval < bit_vec->capacity && outval >= num) {
                         return outval;
                     }
                 }
@@ -448,28 +467,28 @@ Kino_BitVec_next_set_bit(BitVector *obj, U32 num) {
 }
 
 U32
-Kino_BitVec_next_clear_bit(BitVector *obj, U32 num) {
+Kino_BitVec_next_clear_bit(BitVector *bit_vec, U32 num) {
     U32   outval;
     unsigned char *bits_ptr;
     unsigned char *end_ptr;
     int i;
 
-    if (num >= obj->capacity) {
+    if (num >= bit_vec->capacity) {
         return num;
     }
 
     outval = KINO_BITVEC_SENTINEL;
 
-    bits_ptr = obj->bits + (num >> 3) ;
-    end_ptr  = obj->bits + (obj->capacity >> 3);
+    bits_ptr = bit_vec->bits + (num >> 3) ;
+    end_ptr  = bit_vec->bits + (bit_vec->capacity >> 3);
 
     while (outval == KINO_BITVEC_SENTINEL) {
         if (*bits_ptr != 0xFF) {
             /* check each num in represented in this byte */
-            outval = (bits_ptr - obj->bits) * 8;
+            outval = (bits_ptr - bit_vec->bits) * 8;
             for (i = 0; i < 8; i++) {
-                if (Kino_BitVec_get(obj, outval) == 0) {
-                    if (outval < obj->capacity && outval >= num) {
+                if (Kino_BitVec_get(bit_vec, outval) == 0) {
+                    if (outval < bit_vec->capacity && outval >= num) {
                         return outval;
                     }
                 }
@@ -482,30 +501,30 @@ Kino_BitVec_next_clear_bit(BitVector *obj, U32 num) {
             break;
     }
     /* didn't find clear bits in the set, so return 1 larger than the max */
-    return obj->capacity;
+    return bit_vec->capacity;
 }
 
 void
-Kino_BitVec_logical_and(BitVector *obj, BitVector *other) {
+Kino_BitVec_logical_and(BitVector *bit_vec, BitVector *other) {
     U32 num = 0;
     while (1) {  
-        num = Kino_BitVec_next_set_bit(obj, num);
+        num = Kino_BitVec_next_set_bit(bit_vec, num);
         if (num == KINO_BITVEC_SENTINEL)
             break;
         if ( !Kino_BitVec_get(other, num) ) 
-            Kino_BitVec_clear(obj, num);
+            Kino_BitVec_clear(bit_vec, num);
         num++;
     }
 }
 
 AV*  
-Kino_BitVec_to_array(BitVector* obj) {
+Kino_BitVec_to_array(BitVector* bit_vec) {
     U32  num = 0;
     AV  *out_av;
 
     out_av = newAV();
     while (1) {  
-        num = Kino_BitVec_next_set_bit(obj, num);
+        num = Kino_BitVec_next_set_bit(bit_vec, num);
         if (num == KINO_BITVEC_SENTINEL)
             break;
         av_push( out_av, newSViv(num) );
@@ -515,9 +534,9 @@ Kino_BitVec_to_array(BitVector* obj) {
 }
 
 void
-Kino_BitVec_destroy(BitVector* obj) {
-    Kino_Safefree(obj->bits);
-    Kino_Safefree(obj);
+Kino_BitVec_destroy(BitVector* bit_vec) {
+    Kino_Safefree(bit_vec->bits);
+    Kino_Safefree(bit_vec);
 }
 
 
@@ -541,7 +560,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

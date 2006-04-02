@@ -51,8 +51,8 @@ sub fetch_raw {
     $fdata_stream->seek($start);
     my $num_fields = $fdata_stream->lu_read('V');
     my $template   = 'VaTT' x $num_fields;
-    my @raw        = ( $num_fields, $fdata_stream->lu_read($template) );
-    return \@raw;
+    my @raw        = $fdata_stream->lu_read($template);
+    return ( $num_fields, \@raw );
 }
 
 # Given a doc_num, rebuild a Doc object from the fields that were
@@ -62,11 +62,10 @@ sub fetch_doc {
     my $finfos = $self->{finfos};
 
     # start a new Doc object, read in data
-    my $doc  = KinoSearch::Document::Doc->new;
-    my $data = $self->fetch_raw($doc_num);
+    my $doc = KinoSearch::Document::Doc->new;
+    my ( $num_fields, $data ) = $self->fetch_raw($doc_num);
 
     # docode stored data and build up the Doc object Field by Field.
-    my $num_fields = shift @$data;
     for ( 1 .. $num_fields ) {
         my ( $field_num, $bits, $string, $tv_string )
             = splice( @$data, 0, 4 );
@@ -141,7 +140,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

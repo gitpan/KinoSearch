@@ -36,12 +36,15 @@ sub init_instance {
     $self->{index_enum}->fill_cache;
 }
 
-# Given a term, return a SegTermEnum pre-located at the right spot.
+# Return a SegTermEnum, pre-located at the right spot if a Term is supplied.
 sub terms {
     my ( $self, $term ) = @_;
-
-    # seek to the right place and return a clone of the main Enum
-    $self->fetch_term_info($term);
+    if ( defined $term ) {
+        $self->fetch_term_info($term);
+    }
+    else {
+        $self->{orig_enum}->reset;
+    }
     return $self->{orig_enum}->clone_enum;
 }
 
@@ -125,7 +128,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

@@ -2,19 +2,13 @@ package KinoSearch::Index::TermDocs;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass );
 
 our %instance_vars = __PACKAGE__->init_instance_vars();
 
-sub new {
-    my $class = shift;
-    $class = ref($class) || $class;
-    return $class->_construct_parent;
-}
-
 =begin comment
 
-    $termdocs->seek($term);
+    $term_docs->seek($term);
 
 Locate the TermDocs object at a particular term.
 
@@ -34,15 +28,37 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::TermDocs
 
 void
-_construct_parent(class)
-    char *class;
+new(either_sv)
+    SV   *either_sv;
 PREINIT:
-    TermDocs *obj;
+    char *class;
+    TermDocs *term_docs;
 PPCODE:
-    obj   = Kino_TermDocs_construct_parent();
-    ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)obj);
+    /* determine the class */
+    class = sv_isobject(either_sv) 
+        ? sv_reftype(either_sv, 0) 
+        : SvPV_nolen(either_sv);
+
+    /* build object */
+    term_docs = Kino_TermDocs_new();
+    ST(0)     = sv_newmortal();
+    sv_setref_pv(ST(0), class, (void*)term_docs);
     XSRETURN(1);
+
+void
+seek_tinfo(term_docs, maybe_tinfo_sv)
+    TermDocs *term_docs;
+    SV       *maybe_tinfo_sv;
+PREINIT: 
+    TermInfo *tinfo = NULL;
+PPCODE:
+    /* if maybe_tinfo_sv is undef, tinfo is NULL */
+    if (SvOK(maybe_tinfo_sv)) {
+        Kino_extract_struct(maybe_tinfo_sv, tinfo,
+            TermInfo*, "KinoSearch::Index::TermInfo");
+    }
+    term_docs->seek_tinfo(term_docs, tinfo);
+
 
 =begin comment
 
@@ -57,10 +73,20 @@ iterator is exhausted, true otherwise.
 =cut
 
 bool
-next(obj)
-    TermDocs *obj;
+next(term_docs)
+    TermDocs *term_docs;
 CODE:
-    RETVAL = obj->next(obj);
+    RETVAL = term_docs->next(term_docs);
+OUTPUT: RETVAL
+
+U32
+read(term_docs, doc_nums_sv, freqs_sv, num_wanted)
+    TermDocs  *term_docs
+    SV        *doc_nums_sv;
+    SV        *freqs_sv;
+    U32        num_wanted;
+CODE:
+    RETVAL = term_docs->read(term_docs, doc_nums_sv, freqs_sv, num_wanted);
 OUTPUT: RETVAL
 
 =begin comment
@@ -71,25 +97,27 @@ To do.
 =cut
 
 bool
-skip_to(obj, target)
-    TermDocs *obj;
+skip_to(term_docs, target)
+    TermDocs *term_docs;
     U32       target;
 CODE:
-    RETVAL = obj->skip_to(obj, target);
+    RETVAL = term_docs->skip_to(term_docs, target);
 OUTPUT: RETVAL
 
 SV*
-_parent_set_or_get(obj, ...)
-    TermDocs *obj;
+_parent_set_or_get(term_docs, ...)
+    TermDocs *term_docs;
 ALIAS:
     set_doc       = 1
     get_doc       = 2
     set_freq      = 3
     get_freq      = 4
-    set_doc_freq  = 5
-    get_doc_freq  = 6
-    set_positions = 7
-    get_positions = 8
+    set_positions = 5
+    get_positions = 6
+    set_doc_freq  = 7
+    get_doc_freq  = 8
+PREINIT:
+    U32 num;
 CODE:
 {
     /* if called as a setter, make sure the extra arg is there */
@@ -98,41 +126,43 @@ CODE:
 
     switch (ix) {
 
-    case 1:  obj->doc = SvIV(ST(1));
+    case 1:  Kino_confess("Can't set_doc");
              /* fall through */
-    case 2:  RETVAL = obj->doc == KINO_TERM_DOCS_SENTINEL 
-             ? newSV(0) 
-             : newSVuv(obj->doc);
+    case 2:  num = term_docs->get_doc(term_docs);
+             RETVAL = num == KINO_TERM_DOCS_SENTINEL 
+             ? &PL_sv_undef
+             : newSVuv(num);
              break;
 
-    case 3:  obj->freq = SvIV(ST(1));
+    case 3:  Kino_confess("Can't set_freq");
              /* fall through */
-    case 4:  RETVAL = obj->freq == KINO_TERM_DOCS_SENTINEL 
-             ? newSV(0) 
-             : newSVuv(obj->freq);
+    case 4:  num = term_docs->get_freq(term_docs);
+             RETVAL = num == KINO_TERM_DOCS_SENTINEL 
+             ? &PL_sv_undef 
+             : newSVuv(num);
              break;
 
-    case 5:  obj->doc_freq = SvIV(ST(1));
+    case 5:  Kino_confess("Can't set_positions");
              /* fall through */
-    case 6:  RETVAL = obj->doc_freq == KINO_TERM_DOCS_SENTINEL 
-             ? newSV(0) 
-             : newSVuv(obj->doc_freq);
+    case 6:  RETVAL = newSVsv(term_docs->get_positions(term_docs));
              break;
 
-    case 7:  SvREFCNT_dec(obj->positions);
-             obj->positions = newSVsv(ST(1));
+    case 7:  term_docs->set_doc_freq(term_docs, (U32)SvUV(ST(1)) );
              /* fall through */
-    case 8:  RETVAL = newSVsv(obj->positions);
+    case 8:  num = term_docs->get_doc_freq(term_docs);
+             RETVAL = num == KINO_TERM_DOCS_SENTINEL 
+             ? &PL_sv_undef
+             : newSVuv(num);
              break;
     }
 }
-    OUTPUT: RETVAL
+OUTPUT: RETVAL
 
 void
-DESTROY(obj)
-    TermDocs *obj;
+DESTROY(term_docs)
+    TermDocs *term_docs;
 PPCODE:
-    Kino_TermDocs_destroy(obj);
+    term_docs->destroy(term_docs);
 
 
 __H__
@@ -146,19 +176,30 @@ __H__
 #include "perl.h"
 #include "XSUB.h"
 #include "KinoSearchUtilMemManager.h"
+#include "KinoSearchIndexTermInfo.h"
 
 typedef struct termdocs {
     void  *child;
-    U32    doc;
-    U32    freq;
-    U32    doc_freq;
     SV    *positions;
+    void (*set_doc_freq)(struct termdocs*, U32);
+    U32  (*get_doc_freq)(struct termdocs*);
+    U32  (*get_doc)(struct termdocs*);
+    U32  (*get_freq)(struct termdocs*);
+    SV*  (*get_positions)(struct termdocs*);
+    void (*seek_tinfo)(struct termdocs*, TermInfo*);
     bool (*next)(struct termdocs*);
     bool (*skip_to)(struct termdocs*, U32);
     U32  (*read)(struct termdocs*, SV*, SV*, U32);
+    void (*destroy)(struct termdocs*);
 } TermDocs;
 
-TermDocs* Kino_TermDocs_construct_parent();
+TermDocs* Kino_TermDocs_new();
+void Kino_TermDocs_set_doc_freq_death(TermDocs*, U32);
+U32  Kino_TermDocs_get_doc_freq_death(TermDocs*);
+U32  Kino_TermDocs_get_doc_death(TermDocs*);
+U32  Kino_TermDocs_get_freq_death(TermDocs*);
+SV*  Kino_TermDocs_get_positions_death(TermDocs*);
+void Kino_TermDocs_seek_tinfo_death(TermDocs*, TermInfo*);
 bool Kino_TermDocs_next_death(TermDocs*);
 bool Kino_TermDocs_skip_to_death(TermDocs*, U32);
 U32  Kino_TermDocs_read_death(TermDocs*, SV*, SV*, U32);
@@ -171,23 +212,55 @@ __C__
 #include "KinoSearchIndexTermDocs.h"
 
 TermDocs*
-Kino_TermDocs_construct_parent() {
+Kino_TermDocs_new() {
     TermDocs* term_docs;
     
     Kino_New(0, term_docs, 1, TermDocs);
-    term_docs->doc  = KINO_TERM_DOCS_SENTINEL;
-    term_docs->freq = KINO_TERM_DOCS_SENTINEL;
+    term_docs->child = NULL;
 
     /* force the subclass to override functions */
-    term_docs->next    = Kino_TermDocs_next_death;
-    term_docs->skip_to = Kino_TermDocs_skip_to_death;
-
-    /* term_docs->positions starts life as an empty string */
-    term_docs->positions = newSV(1);
-    SvCUR_set(term_docs->positions, 0);
-    SvPOK_on(term_docs->positions);
+    term_docs->set_doc_freq  = Kino_TermDocs_set_doc_freq_death;
+    term_docs->get_doc_freq  = Kino_TermDocs_get_doc_freq_death;
+    term_docs->get_doc       = Kino_TermDocs_get_doc_death;
+    term_docs->get_freq      = Kino_TermDocs_get_freq_death;
+    term_docs->get_positions = Kino_TermDocs_get_positions_death;
+    term_docs->seek_tinfo    = Kino_TermDocs_seek_tinfo_death;
+    term_docs->next          = Kino_TermDocs_next_death;
+    term_docs->skip_to       = Kino_TermDocs_skip_to_death;
+    term_docs->destroy       = Kino_TermDocs_destroy;
 
     return term_docs;
+}
+
+void
+Kino_TermDocs_set_doc_freq_death(TermDocs *term_docs, U32 doc_freq) {
+    Kino_confess("term_docs->set_doc_freq must be defined in a subclass");
+}
+
+U32
+Kino_TermDocs_get_doc_freq_death(TermDocs *term_docs) {
+    Kino_confess("term_docs->get_doc_freq must be defined in a subclass");
+}
+
+
+U32
+Kino_TermDocs_get_doc_death(TermDocs *term_docs) {
+    Kino_confess("term_docs->get_doc must be defined in a subclass");
+}
+
+U32
+Kino_TermDocs_get_freq_death(TermDocs *term_docs) {
+    Kino_confess("term_docs->get_freq must be defined in a subclass");
+}
+
+SV*
+Kino_TermDocs_get_positions_death(TermDocs *term_docs) {
+    Kino_confess("term_docs->get_positions must be defined in a subclass");
+}
+
+void
+Kino_TermDocs_seek_tinfo_death(TermDocs *term_docs, TermInfo *tinfo) {
+    Kino_confess("term_docs->seek_tinfo must be defined in a subclass");
 }
 
 bool
@@ -208,7 +281,6 @@ Kino_TermDocs_skip_to_death(TermDocs *term_docs, U32 target) {
 
 void
 Kino_TermDocs_destroy(TermDocs *term_docs) {
-    SvREFCNT_dec(term_docs->positions);
     Kino_Safefree(term_docs);
 }
 
@@ -253,7 +325,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

@@ -2,7 +2,8 @@ package KinoSearch::Search::Scorer;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::CClass Exporter );
+our @EXPORT_OK = qw( %score_batch_args );
 
 our %instance_vars = __PACKAGE__->init_instance_vars(
     # constructor params
@@ -11,46 +12,24 @@ our %instance_vars = __PACKAGE__->init_instance_vars(
 
 sub new {
     my $class = shift;
+    verify_args( \%instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
+
     $class = ref($class) || $class;
-    return $class->_construct_parent;
+    my $self = _construct_parent($class);
+
+    if ( defined $args{similarity} ) {
+        $self->set_similarity( $args{similarity} );
+    }
+
+    return $self;
 }
 
-=begin comment
-
-    $scorer->score_batch( 
-        hit_collector => $collector,
-        start         => $start,
-        end           => $end,
-    );
-
-Execute the scoring number crunching, accumulating results via the 
-$hit_collector.
-
-=end comment
-=cut
-
-my %score_batch_args = (
+our %score_batch_args = (
     hit_collector => undef,
     start         => 0,
     end           => 2**31,
 );
-
-sub score_batch {
-    my $self = shift;
-    verify_args( \%score_batch_args, @_ );
-    my %args = ( %score_batch_args, @_ );
-    confess("param 'hit_collector' isn't a KinoSearch::Search::HitCollector")
-        unless a_isa_b( $args{hit_collector},
-        'KinoSearch::Search::HitCollector' );
-
-    $self->do_score_batch(%args);
-}
-
-sub do_score_batch {
-    my ( $self, %args ) = @_;
-    _do_score_batch( $self, @args{qw( start end hit_collector )} );
-    # TODO in Lucene, this method returns true if any docs are processed
-}
 
 =begin comment
 
@@ -69,22 +48,22 @@ __END__
 
 __XS__
 
-MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Scorer
+MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Scorer 
 
 void
 _construct_parent(class)
     char *class;
 PREINIT:
-    Scorer *obj;
+    Scorer *scorer;
 PPCODE:
-    obj   = Kino_Scorer_new();
+    scorer   = Kino_Scorer_new();
     ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)obj);
+    sv_setref_pv(ST(0), class, (void*)scorer);
     XSRETURN(1);
 
 SV*
-_scorer_set_or_get(obj, ...)
-    Scorer *obj;
+_scorer_set_or_get(scorer, ...)
+    Scorer *scorer;
 ALIAS:
     set_similarity = 1
     get_similarity = 2
@@ -96,17 +75,17 @@ CODE:
 
     switch (ix) {
 
-    case 1:  if (obj->similarity_sv != NULL)
-                SvREFCNT_dec(obj->similarity_sv);
-             obj->similarity_sv = newSVsv( ST(1) );
-             Kino_extract_struct( obj->similarity_sv, obj->sim, 
+    case 1:  SvREFCNT_dec(scorer->similarity_sv);
+             scorer->similarity_sv = newSVsv( ST(1) );
+             Kino_extract_struct( scorer->similarity_sv, scorer->sim, 
                 Similarity*, "KinoSearch::Search::Similarity" );
              /* fall through */
-    case 2:  RETVAL = newSVsv(obj->similarity_sv);
+    case 2:  RETVAL = newSVsv(scorer->similarity_sv);
              break;
     }
 }
 OUTPUT: RETVAL
+
 
 =begin comment
 
@@ -114,32 +93,16 @@ OUTPUT: RETVAL
 
 Calculate and return a score for the scorer's current document.
 
-Must be implemented by assigning a valid function for the C
-pointer-to-function scorer->score.
-
 =end comment
 =cut
 
-
 float
-score(obj)
-    Scorer* obj;
+score(scorer)
+    Scorer* scorer;
 CODE:
-    RETVAL = obj->score(obj);
+    RETVAL = scorer->score(scorer);
 OUTPUT: RETVAL
 
-void
-_do_score_batch(obj, start, end, hc)
-    Scorer       *obj;
-    U32           start;
-    U32           end;
-    HitCollector *hc;
-PREINIT:
-    U32           doc;
-PPCODE:
-    while (obj->next(obj)) {
-        hc->collect( hc, obj->doc(obj), obj->score(obj) );
-    }
 
 =begin comment
 
@@ -148,18 +111,53 @@ PPCODE:
 Move the internal state of the scorer to the next document.  Return false when
 there are no more documents to score.
 
-Must be implemented by assigning a valid function for the C
-pointer-to-function scorer->next.
-
 =end comment
 =cut
 
 bool
-next(obj)
-    Scorer* obj;
+next(scorer)
+    Scorer* scorer;
 CODE:
-    RETVAL = obj->next(obj);
+    RETVAL = scorer->next(scorer);
 OUTPUT: RETVAL
+
+
+=begin comment
+
+    $scorer->score_batch( 
+        hit_collector => $collector,
+        start         => $start,
+        end           => $end,
+    );
+
+Execute the scoring number crunching, accumulating results via the 
+$hit_collector.
+
+TODO: Doesn't actually pay any attention to start/end at present.
+
+=end comment
+=cut
+
+void
+score_batch(scorer, ...)
+    Scorer       *scorer;
+PREINIT:
+    HV           *args_hash;
+    U32           start, end;
+    HitCollector *hc;
+PPCODE:
+    /* process hash-style params */
+    Kino_Verify_build_args_hash(args_hash, 
+        "KinoSearch::Search::Scorer::score_batch_args", 1);
+    Kino_extract_struct_from_hv(args_hash, hc, "hit_collector", 13, 
+        HitCollector*, "KinoSearch::Search::HitCollector");
+    start = (U32)SvUV( Kino_Verify_extract_arg(args_hash, "start", 5) );
+    end   = (U32)SvUV( Kino_Verify_extract_arg(args_hash, "end", 3) );
+
+    /* execute scoring loop */
+    while (scorer->next(scorer)) {
+        hc->collect( hc, scorer->doc(scorer), scorer->score(scorer) );
+    }
 
 
 =begin comment
@@ -170,18 +168,19 @@ Not implemented yet.
 =cut
 
 bool
-skip_to(obj, target_doc_num)
-    Scorer* obj;
+skip_to(scorer, target_doc_num)
+    Scorer* scorer;
     U32     target_doc_num;
 CODE:
-    RETVAL = obj->skip_to(obj, target_doc_num);
+    RETVAL = scorer->skip_to(scorer, target_doc_num);
 OUTPUT: RETVAL
 
+
 void
-DESTROY(obj)
-    Scorer *obj;
+DESTROY(scorer)
+    Scorer *scorer;
 PPCODE:
-    Kino_Scorer_destroy(obj);
+    Kino_Scorer_destroy(scorer);
 
     
 __H__
@@ -229,7 +228,9 @@ Kino_Scorer_new() {
     scorer->next          = Kino_Scorer_next_death;
     scorer->score         = Kino_Scorer_score_death;
     scorer->skip_to       = Kino_Scorer_skip_to_death;
-    scorer->similarity_sv = NULL;
+    scorer->similarity_sv = &PL_sv_undef;
+
+    return scorer;
 }
 
 float
@@ -254,8 +255,7 @@ Kino_Scorer_skip_to_death(Scorer* scorer, U32 target_doc_num) {
 
 void
 Kino_Scorer_destroy(Scorer* scorer) {
-    if (scorer->similarity_sv != NULL)
-        SvREFCNT_dec(scorer->similarity_sv);
+    SvREFCNT_dec(scorer->similarity_sv);
     Kino_Safefree(scorer);
 }
 
@@ -281,7 +281,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

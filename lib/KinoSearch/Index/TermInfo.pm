@@ -2,6 +2,7 @@ package KinoSearch::Index::TermInfo;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Util::CClass );
 
 1;
 
@@ -21,16 +22,13 @@ new( class_sv, doc_freq, frq_fileptr, prx_fileptr, skip_offset, index_fileptr )
 PREINIT:
     TermInfo *tinfo;
 CODE:
-{
     Kino_New(0, tinfo, 1, TermInfo);
     tinfo->doc_freq      = doc_freq;
     tinfo->frq_fileptr   = frq_fileptr;
     tinfo->prx_fileptr   = prx_fileptr;
     tinfo->skip_offset   = skip_offset;
     tinfo->index_fileptr = index_fileptr;
-
     RETVAL = tinfo;
-}
 OUTPUT: RETVAL
 
 
@@ -42,11 +40,22 @@ Duplicate a TermInfo object.
 =cut
 
 TermInfo*
-clone( tinfo )
-        TermInfo *tinfo;
-    CODE:
-        RETVAL = Kino_TInfo_dupe(tinfo);
-    OUTPUT: RETVAL
+clone(tinfo)
+    TermInfo *tinfo;
+CODE:
+    RETVAL = Kino_TInfo_dupe(tinfo);
+OUTPUT: RETVAL
+
+=for comment
+Zero out the TermInfo object.
+
+=cut
+
+void
+reset(tinfo)
+    TermInfo *tinfo;
+PPCODE:
+    Kino_TInfo_reset(tinfo);
 
 
 =begin comment
@@ -109,10 +118,10 @@ CODE:
     OUTPUT: RETVAL
 
 void
-DESTROY(obj)
-        TermInfo* obj;
-    CODE: 
-        Kino_Safefree(obj);
+DESTROY(tinfo)
+    TermInfo* tinfo;
+CODE: 
+    Kino_Safefree(tinfo);
 
 __H__
 
@@ -134,6 +143,7 @@ typedef struct terminfo {
 
 TermInfo* Kino_TInfo_new();
 TermInfo* Kino_TInfo_dupe(TermInfo*);
+void      Kino_TInfo_reset(TermInfo*);
 void      Kino_TInfo_destroy(TermInfo*);
 
 #endif /* include guard */
@@ -143,13 +153,11 @@ __C__
 
 #include "KinoSearchIndexTermInfo.h"
 
-static void Kino_TInfo_init(TermInfo*);
-
 TermInfo*
 Kino_TInfo_new() {
     TermInfo* tinfo;
     Kino_New(0, tinfo, 1, TermInfo);
-    Kino_TInfo_init(tinfo);
+    Kino_TInfo_reset(tinfo);
     return tinfo;
 }
 
@@ -168,14 +176,14 @@ Kino_TInfo_dupe(TermInfo *tinfo) {
     return new_tinfo;
 }
 
-static void
-Kino_TInfo_init(TermInfo *tinfo) {
+void
+Kino_TInfo_reset(TermInfo *tinfo) {
     tinfo->doc_freq      = 0;
     tinfo->frq_fileptr   = 0.0;
     tinfo->prx_fileptr   = 0.0;
     tinfo->skip_offset   = 0;
     tinfo->index_fileptr = 0.0;
-}
+};
 
 void 
 Kino_TInfo_destroy(TermInfo *tinfo) {
@@ -220,7 +228,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =end devdocs
 =cut

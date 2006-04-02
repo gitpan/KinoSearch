@@ -128,7 +128,7 @@ sub run_while_locked {
         $do_body->();
     };
     $lock->release if $lock->is_locked;
-    die $@         if $@;
+    confess $@     if $@;
 }
 
 =begin comment
@@ -164,9 +164,9 @@ manipulation are abstracted out rather than executed directly by KinoSearch's
 classes.
 
 A "file" within an invindex might be a real file -- or it might be a ram file,
-or eventually a database record, etc.  Similarly, C<<
-$invindex->delete_file($filename) >> might delete a file from the file system,
-or a key-value pair from a hash, or something else.
+or eventually a database record, etc.  Similarly,
+C<< $invindex->delete_file($filename) >> might delete a file from the file
+system, or a key-value pair from a hash, or something else.
 
 =head1 SEE ALSO
 
@@ -178,7 +178,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.08.
+See L<KinoSearch|KinoSearch> version 0.09.
 
 =cut
 
