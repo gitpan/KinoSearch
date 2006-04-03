@@ -203,6 +203,7 @@ my $builder = Module::Build->new(
     dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',
     dist_version_from => 'lib/KinoSearch.pm',
     requires          => {
+        'Compress::Zlib'         => 0,
         'Lingua::Stem::Snowball' => 0.94,
         'Lingua::StopWords'      => 0.02,
         'Clone'                  => 0.18,

@@ -131,9 +131,12 @@ t/602-boosts.t
 t/603-query_boosts.t
 t/701-uscon.t
 t/999-remove_invindexes.t
-t/CompatTestIndexer.java
+t/benchmarks/extract_reuters.plx
+t/benchmarks/indexers/kinosearch_indexer.plx
+t/benchmarks/indexers/LuceneIndexer.java
+t/benchmarks/indexers/plucene_indexer.plx
+t/benchmarks/README.txt
 t/KinoSearchTestInvIndex.pm
-t/LuceneIndexer.java
 t/pod.t
 t/us_constitution/amend1.html
 t/us_constitution/amend10.html
