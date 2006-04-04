@@ -162,6 +162,7 @@ Kino_PostWriter_write_postings(SortExternal *sort_pool,
         /* retrieve the next posting from the sort pool */
         scratch_sv = sort_pool->fetch(sort_pool);
         SvSetSV(posting_sv, scratch_sv);
+        SvREFCNT_dec(scratch_sv);
 
         /* SortExternal returns undef when exhausted */
         if ( !SvOK(posting_sv) ) {

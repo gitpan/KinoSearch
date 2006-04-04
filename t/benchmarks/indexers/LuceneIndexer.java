@@ -63,13 +63,43 @@ public class LuceneIndexer {
       throws Exception {
     IndexWriter writer = new IndexWriter(indexDir, 
       new WhitespaceAnalyzer(), true);
+      writer.setMaxBufferedDocs(1000);
+      writer.setUseCompoundFile(false);
     
     int docsSoFar = 0;
     for (int i = 0; i < fileList.length; i++) {
       // add content to index
       File f = new File(fileList[i]);
-      Document doc = this.nextDoc(f);
-      writer.addDocument(doc);
+      Document doc = new Document();
+      BufferedReader br = new BufferedReader(new FileReader(f));
+  
+      try {
+        // the title is the first line
+        String title;
+        if ( (title = br.readLine()) == null)
+          throw new Exception("Failed to read title");
+        Field titleField = new Field("title", title, Field.Store.YES, 
+    		Field.Index.TOKENIZED, Field.TermVector.NO);
+        doc.add(titleField);
+    
+        // the body is the rest
+        StringBuffer buf = new StringBuffer();
+        String str;
+        while ( (str = br.readLine()) != null )
+          buf.append( str );
+        String body = buf.toString();
+        Field bodyField = new Field("body", body, Field.Store.YES, 
+    		Field.Index.TOKENIZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
+        doc.add(bodyField);
+        /*
+        Field bodyField = new Field("body", br);
+        doc.add(bodyField);
+        */
+  
+        writer.addDocument(doc);
+      } finally {
+        br.close();
+      }
 
       // bail if we've reached spec'd number of docs
       if (maxToIndex > 0 && ++docsSoFar == maxToIndex)
@@ -82,32 +112,6 @@ public class LuceneIndexer {
     writer.close();
     
     return numIndexed;
-  }
-
-  // Retrieve an article, parse it, and return a Lucene Document.
-  private Document nextDoc(File f) throws Exception {
-    // the title is the first line, the body is the rest
-    BufferedReader br = new BufferedReader(new FileReader(f));
-    String title;
-    if ( (title = br.readLine()) == null)
-      throw new Exception("Failed to read title");
-    StringBuffer buf = new StringBuffer();
-    String str;
-    while ( (str = br.readLine()) != null )
-      buf.append( str );
-    br.close();
-    String body = buf.toString();
-
-    // add title and body to doc 
-    Document doc = new Document();
-    Field titleField = new Field("title", title,
-      Field.Store.YES, Field.Index.TOKENIZED, Field.TermVector.NO);
-    Field bodyField = new Field("body", body,
-      Field.Store.YES, Field.Index.TOKENIZED, Field.TermVector.NO);
-    doc.add(titleField);
-    doc.add(bodyField);
-
-    return doc;
   }
 
   // Print out stats for this run.

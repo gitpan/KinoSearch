@@ -60,7 +60,8 @@ sub build_index {
     );
     $invindexer->spec_field(
         name       => 'body',
-        vectorized => 0,
+        #stored     => 0,
+        #vectorized => 0,
     );
     $invindexer->spec_field(
         name       => 'title',
