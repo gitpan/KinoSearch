@@ -23,16 +23,20 @@ __H__
          IV tmp = SvIV( (SV*)SvRV(perl_obj) );              \
          dest = INT2PTR(cname, tmp);                        \
      }                                                      \
-     else                                                   \
-         Kino_confess("not a %s", class); 
+     else {                                                 \
+         dest = NULL; /* suppress unused var warning */     \
+         Kino_confess("not a %s", class);                   \
+     }
 
 #define Kino_extract_anon_struct( perl_obj, dest )                  \
      if (sv_derived_from( perl_obj, "KinoSearch::Util::CClass" )) { \
          IV tmp = SvIV( (SV*)SvRV(perl_obj) );                      \
          dest = INT2PTR(void*, tmp);                                \
      }                                                              \
-     else                                                           \
-         Kino_confess("not derived from KinoSearch::Util::CClass"); 
+     else {                                                         \
+         dest = NULL; /* suppress unused var warning */             \
+         Kino_confess("not derived from KinoSearch::Util::CClass"); \
+     }
 
 #define Kino_extract_struct_from_hv(hash, dest, key, key_len, cname, class) \
     {                                                                       \
@@ -44,8 +48,10 @@ __H__
             IV tmp = SvIV( (SV*)SvRV(*sv_ptr) );                            \
             dest   = INT2PTR(cname, tmp);                                   \
         }                                                                   \
-        else                                                                \
+        else {                                                              \
+            dest = NULL; /* suppress unused var warning */                  \
             Kino_confess("not a %s", class);                                \
+        }                                                                   \
     }
 
 #endif /* include guard */

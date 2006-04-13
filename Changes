@@ -1,12 +1,13 @@
 Revision history for KinoSearch
 
-0.09
+0.09 2006-04-13
   * Incremental indexing enabled 
       o delete_docs_by_term() added to InvIndexer.
-      o option 'optimize' added to Invindexer::finish.
-  * QueryFilter added.
+      o option 'optimize' added to InvIndexer::finish.
   * Hits now returns the top 100 matches by default unless seek() has been
     called.
+  * QueryFilter added.
+  * Benchmarking scripts added.
 
 0.08  2006-03-10
   * Restore ability to overwrite invindexes.

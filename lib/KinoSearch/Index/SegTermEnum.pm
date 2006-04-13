@@ -196,8 +196,6 @@ ALIAS:
         _get_position        = 14
         _set_is_index        = 15
     is_index                 = 16
-PREINIT:
-    TermInfo  *new_tinfo;
 CODE:
 {
     /* if called as a setter, make sure the extra arg is there */
@@ -246,15 +244,21 @@ CODE:
                      (obj->term_buf->text_len + KINO_FIELD_NUM_LEN) ); 
              break;
 
-    case 9:  Kino_extract_struct( ST(1), new_tinfo, TermInfo*, 
-                "KinoSearch::Index::TermInfo");
-             Kino_TInfo_destroy(obj->tinfo);
-             obj->tinfo = Kino_TInfo_dupe(new_tinfo);
+    case 9:  {
+                TermInfo* new_tinfo;
+                Kino_extract_struct( ST(1), new_tinfo, TermInfo*, 
+                    "KinoSearch::Index::TermInfo");
+                Kino_TInfo_destroy(obj->tinfo);
+                obj->tinfo = Kino_TInfo_dupe(new_tinfo);
+             }
              /* fall through */
-    case 10: RETVAL = newSV(0);
-             new_tinfo = Kino_TInfo_dupe(obj->tinfo);
-             sv_setref_pv(RETVAL, "KinoSearch::Index::TermInfo", 
-                          (void*)new_tinfo);
+    case 10: {
+                TermInfo* new_tinfo;
+                RETVAL = newSV(0);
+                new_tinfo = Kino_TInfo_dupe(obj->tinfo);
+                sv_setref_pv(RETVAL, "KinoSearch::Index::TermInfo", 
+                              (void*)new_tinfo);
+             }
              break;
 
     case 11: obj->index_interval = SvIV( ST(1) );
@@ -338,8 +342,6 @@ Kino_SegTermEnum_new_helper(SV *instream_sv, I32 is_index, SV *finfos_sv,
     I32           format;
     InStream     *instream;
     SegTermEnum  *obj;
-    char         *ptr;
-    STRLEN        len;
 
     /* allocate */
     Kino_New(0, obj, 1, SegTermEnum);

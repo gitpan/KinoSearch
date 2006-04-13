@@ -217,7 +217,7 @@ sub finish {
         = @{$self}{qw( invindex sinfos seg_writer )};
 
     # if no changes were made to the index, don't write anything
-    if ( $self->{state} == UNINITIALIZED ) {
+    if ( $self->{state} == UNINITIALIZED and !$args{optimize} ) {
         return;
     }
 

@@ -26,14 +26,18 @@ __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::TermBuffer
 
-TermBuffer* 
+void
 _new(class, finfos_size) 
     char *class;
     I32   finfos_size;
-CODE:
-    /* ignore class */
-    RETVAL = Kino_TermBuf_new(finfos_size);
-OUTPUT: RETVAL
+PREINIT:
+    TermBuffer *term_buf;
+PPCODE:
+    term_buf = Kino_TermBuf_new(finfos_size);
+    ST(0)   = sv_newmortal();
+    sv_setref_pv(ST(0), class, (void*)term_buf);
+    XSRETURN(1);
+    
 
 void
 DESTROY(term_buf)
@@ -76,8 +80,6 @@ __C__
 TermBuffer*
 Kino_TermBuf_new(I32 finfos_size) {
     TermBuffer *term_buf;
-    char       *ptr;
-    STRLEN      len;
 
     /* allocate */
     Kino_New(0, term_buf, 1, TermBuffer);

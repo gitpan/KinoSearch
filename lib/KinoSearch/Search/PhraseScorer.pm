@@ -178,6 +178,7 @@ bool  Kino_PhraseScorer_next(Scorer*);
 float Kino_PhraseScorer_calc_phrase_freq(Scorer*);
 U32   Kino_PhraseScorer_doc(Scorer*);
 float Kino_PhraseScorer_score(Scorer*);
+void  Kino_PhraseScorer_destroy(Scorer*);
 
 #endif /* include guard */
 
@@ -272,7 +273,6 @@ Kino_PhraseScorer_next(Scorer *scorer) {
 
 float
 Kino_PhraseScorer_calc_phrase_freq(Scorer *scorer) {
-    U32               *phrase_offsets;
     PhraseScorerChild *child;
     TermDocs         **term_docs;
     U32               *anchors;
@@ -282,7 +282,6 @@ Kino_PhraseScorer_calc_phrase_freq(Scorer *scorer) {
     U32               *candidates;
     U32               *candidates_end;
     U32                target;
-    U32                freq;
     U32                phrase_offset;
     U32                i;
     STRLEN             len;

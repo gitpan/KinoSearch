@@ -46,11 +46,23 @@ __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Similarity     
 
-Similarity*
-new(...)
-CODE:
-    RETVAL = Kino_Sim_new();
-OUTPUT: RETVAL
+void
+new(either_sv)
+    SV *either_sv;
+PREINIT:
+    char       *class;
+    Similarity *sim;
+PPCODE:
+    /* determine the class */
+    class = sv_isobject(either_sv) 
+        ? sv_reftype(either_sv, 0) 
+        : SvPV_nolen(either_sv);
+
+    /* build object */
+    sim = Kino_Sim_new();
+    ST(0)   = sv_newmortal();
+    sv_setref_pv(ST(0), class, (void*)sim);
+    XSRETURN(1);
 
 =for comment
 

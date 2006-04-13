@@ -23,7 +23,6 @@ new(either_sv, ...)
 PREINIT:
     char          *class;
     HV            *args_hash;
-    SV           **max_size_sv_ptr;
     U32            max_size;
     PriorityQueue *pq;
 PPCODE:

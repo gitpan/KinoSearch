@@ -273,6 +273,7 @@ PPCODE:
             break;
 
         default: 
+            aSV = NULL; /* suppress unused var compiler warning */
             Kino_confess("Invalid type in template: '%c'", sym);
         }
 

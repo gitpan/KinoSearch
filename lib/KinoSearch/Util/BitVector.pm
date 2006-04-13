@@ -250,6 +250,7 @@ typedef struct bitvector {
 BitVector* Kino_BitVec_new(U32);
 BitVector* Kino_BitVec_clone(BitVector*);
 void Kino_BitVec_grow(BitVector*, U32);
+void Kino_BitVec_shrink(BitVector *, U32);
 void Kino_BitVec_set(BitVector*, U32);
 void Kino_BitVec_clear(BitVector*, U32);
 void Kino_BitVec_bulk_set(BitVector*, U32, U32);
@@ -327,7 +328,7 @@ Kino_BitVec_grow(BitVector *bit_vec, U32 capacity) {
 
 void 
 Kino_BitVec_shrink(BitVector *bit_vec, U32 capacity) {
-    U32 old_byte_size, byte_size;
+    U32 byte_size;
     
     if (capacity >= bit_vec->capacity)
         return;

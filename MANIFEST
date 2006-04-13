@@ -74,6 +74,7 @@ lib/KinoSearch/Store/OutStream.pm
 lib/KinoSearch/Store/RAMInvIndex.pm
 lib/KinoSearch/Store/RAMLock.pm
 lib/KinoSearch/Util/BitVector.pm
+lib/KinoSearch/Util/ByteBuf.pm
 lib/KinoSearch/Util/Carp.pm
 lib/KinoSearch/Util/CClass.pm
 lib/KinoSearch/Util/Class.pm

@@ -22,6 +22,7 @@ new( class_sv, doc_freq, frq_fileptr, prx_fileptr, skip_offset, index_fileptr )
 PREINIT:
     TermInfo *tinfo;
 CODE:
+    class_sv = NULL; /* suppress "unused variable" warning */
     Kino_New(0, tinfo, 1, TermInfo);
     tinfo->doc_freq      = doc_freq;
     tinfo->frq_fileptr   = frq_fileptr;
@@ -183,7 +184,7 @@ Kino_TInfo_reset(TermInfo *tinfo) {
     tinfo->prx_fileptr   = 0.0;
     tinfo->skip_offset   = 0;
     tinfo->index_fileptr = 0.0;
-};
+}
 
 void 
 Kino_TInfo_destroy(TermInfo *tinfo) {

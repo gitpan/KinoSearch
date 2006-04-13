@@ -86,8 +86,13 @@ add(obj, termstring_sv, tinfo)
     TermInfosWriter *obj;
     SV              *termstring_sv;
     TermInfo        *tinfo;
+PREINIT:
+    ByteBuf bb;
+    STRLEN len;
 PPCODE:
-    Kino_TInfosWriter_add(obj, termstring_sv, tinfo);
+    bb.ptr  = SvPV(termstring_sv, len);
+    bb.size = len;
+    Kino_TInfosWriter_add(obj, &bb, tinfo);
 
 =for comment
 
@@ -96,7 +101,7 @@ Export the FORMAT constant to Perl.
 =cut
 
 IV
-FORMAT(...)
+FORMAT()
 CODE:
     RETVAL = KINO_TINFOS_FORMAT;
 OUTPUT: RETVAL
@@ -157,6 +162,7 @@ __H__
 #include "KinoSearchIndexTerm.h"
 #include "KinoSearchIndexTermInfo.h"
 #include "KinoSearchStoreOutStream.h"
+#include "KinoSearchUtilByteBuf.h"
 #include "KinoSearchUtilCClass.h"
 #include "KinoSearchUtilMathUtils.h"
 #include "KinoSearchUtilMemManager.h"
@@ -172,7 +178,7 @@ typedef struct terminfoswriter {
     I32        skip_interval;
     struct terminfoswriter* other;
     SV        *other_sv;
-    SV        *last_termstring_sv;
+    ByteBuf   *last_termstring;
     TermInfo  *last_tinfo;
     I32        last_fieldnum;
     double     last_tis_ptr;
@@ -180,7 +186,7 @@ typedef struct terminfoswriter {
 } TermInfosWriter;
 
 TermInfosWriter* Kino_TInfosWriter_new(SV*, I32, I32, I32);
-void Kino_TInfosWriter_add(TermInfosWriter*, SV*, TermInfo*);
+void Kino_TInfosWriter_add(TermInfosWriter*, ByteBuf*, TermInfo*);
 void Kino_TInfosWriter_destroy(TermInfosWriter*);
 
 #endif /* include guard */
@@ -206,7 +212,7 @@ Kino_TInfosWriter_new(SV *outstream_sv, I32 is_index, I32 index_interval,
         "KinoSearch::Store::OutStream");
     /* NOTE: this value forces the first field_num in the .tii file to -1.
      * Do not change it. */
-    obj->last_termstring_sv = newSVpvn("\xff\xff", 2);
+    obj->last_termstring    = Kino_BB_new_string("\xff\xff", 2);
     obj->last_tinfo         = Kino_TInfo_new();
     obj->last_fieldnum      = -1;
     obj->last_tis_ptr       = 0,
@@ -226,7 +232,7 @@ Kino_TInfosWriter_new(SV *outstream_sv, I32 is_index, I32 index_interval,
 
 /* Write out a term/terminfo combo. */
 void 
-Kino_TInfosWriter_add(TermInfosWriter* obj, SV* termstring_sv,
+Kino_TInfosWriter_add(TermInfosWriter* obj, ByteBuf* termstring_bb,
                       TermInfo* tinfo) {
     char      *termstring, *last_tstring;
     STRLEN     termstring_len, last_tstring_len;
@@ -237,20 +243,22 @@ Kino_TInfosWriter_add(TermInfosWriter* obj, SV* termstring_sv,
     STRLEN     diff_len;
     OutStream* fh;
 
-    /* cache local copy */
+    /* make local copy */
     fh = obj->fh;
 
     /* write a subset of the entries to the .tii index */
     if (    (obj->size % obj->index_interval == 0)
          && (!obj->is_index)               
     ) {
-        Kino_TInfosWriter_add(obj->other, 
-            obj->last_termstring_sv, obj->last_tinfo);
+        Kino_TInfosWriter_add(obj->other, obj->last_termstring,
+        obj->last_tinfo);
     }
 
     /* extract string pointers and string lengths */
-    termstring   = SvPV( termstring_sv, termstring_len );
-    last_tstring = SvPV( obj->last_termstring_sv, last_tstring_len );
+    termstring       = termstring_bb->ptr;
+    last_tstring     = obj->last_termstring->ptr;
+    termstring_len   = termstring_bb->size;
+    last_tstring_len = obj->last_termstring->size;
 
     /* to obtain field number, decode packed 'n' at top of termstring */
     field_num = (I16)Kino_decode_bigend_U16(termstring);
@@ -298,7 +306,8 @@ Kino_TInfosWriter_add(TermInfosWriter* obj, SV* termstring_sv,
     obj->size++;
 
     /* remember for delta encoding */
-    SvSetSV(obj->last_termstring_sv, termstring_sv);
+    Kino_BB_assign_string(obj->last_termstring, termstring_bb->ptr,
+        termstring_bb->size);
     StructCopy(tinfo, obj->last_tinfo, TermInfo);
 }
 
@@ -306,7 +315,7 @@ void
 Kino_TInfosWriter_destroy(TermInfosWriter *obj) {
     SvREFCNT_dec(obj->fh_sv);
     SvREFCNT_dec(obj->other_sv);
-    SvREFCNT_dec(obj->last_termstring_sv);
+    Kino_BB_destroy(obj->last_termstring);
     Kino_TInfo_destroy(obj->last_tinfo);
     Kino_Safefree(obj);
 }

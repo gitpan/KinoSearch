@@ -98,7 +98,7 @@ Kino_Verify_do_build_args_hash(char* defaults_hash_name, I32 stack_st) {
 
     /* make the args hash a copy of the defaults hash */
     (void)hv_iterinit(defaults_hash);
-    while (val_sv = hv_iternextsv(defaults_hash, &key, &key_len)) {
+    while ((val_sv = hv_iternextsv(defaults_hash, &key, &key_len))) {
         val_copy_sv = newSVsv(val_sv);
         hv_store(args_hash, key, key_len, val_copy_sv, 0);
     }

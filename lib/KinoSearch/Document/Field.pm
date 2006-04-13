@@ -170,6 +170,8 @@ __H__
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include "KinoSearchStoreInStream.h"
+#include "KinoSearchUtilCarp.h"
 
 HV*  Kino_Field_extract_tv_cache(SV*);
 void Kino_Field_unpack_posdata(SV*, AV*, AV*, AV*);

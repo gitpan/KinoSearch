@@ -29,9 +29,10 @@ my %needs_rewrite;
 my $lastmod = -f 'lastmod' ? retrieve('lastmod') : {};
 
 # If Build.PL was modified, force recompile of KinoSearch.xs
-my $build_pl_lastmod = (stat('Build.PL'))[9];
-if (!exists $lastmod->{'Build.PL'}
-     or $lastmod->{'Build.PL'} != $build_pl_lastmod) {
+my $build_pl_lastmod = ( stat('Build.PL') )[9];
+if ( !exists $lastmod->{'Build.PL'}
+    or $lastmod->{'Build.PL'} != $build_pl_lastmod )
+{
     $needs_rewrite{$ks_xs_filepath} = 1;
 }
 $lastmod->{'Build.PL'} = $build_pl_lastmod;
@@ -43,10 +44,10 @@ my %code = ( $ks_xs_filepath => '' );
 my @pm_filepaths;
 find(
     {   wanted => sub {
-            if ($File::Find::name =~ /KinoSearch\.pm$/) {
+            if ( $File::Find::name =~ /KinoSearch\.pm$/ ) {
                 unshift @pm_filepaths, $File::Find::name;
             }
-            elsif ($File::Find::name =~ /\.pm$/) {
+            elsif ( $File::Find::name =~ /\.pm$/ ) {
                 push @pm_filepaths, $File::Find::name;
             }
         },
@@ -62,18 +63,19 @@ for my $pm_filepath (@pm_filepaths) {
     my $outfilepath;
 
     # grab code that's delimited by an xs, c, or h __TAG__
-    while ($module_text =~ /
+    while (
+        $module_text =~ /
             ^(__XS__|__C__|__H__)   # the tag to begin a block
             (.*?)                   # code block
             (?=(?:^__[A-Z_]+__|\z)) # either a new tag or the EOF
             /gxsm
         )
     {
-        my $tag = $1;
+        my $tag      = $1;
         my $fragment = $2;
 
         # record the code, transform the filepath into an outfilepath
-        if ($tag eq '__XS__') {
+        if ( $tag eq '__XS__' ) {
             # all XS code goes into one file: lib/KinoSearch.xs
             $outfilepath = $ks_xs_filepath;
             $code{$outfilepath} .= $fragment;
@@ -84,23 +86,24 @@ for my $pm_filepath (@pm_filepaths) {
             $outfilepath =~ s/lib//;
             $outfilepath =~ s/\W//g;
             $outfilepath =~ s/pm$//;
-            if ($tag eq '__H__') {
+            if ( $tag eq '__H__' ) {
                 $outfilepath .= ".h";
                 # prepend an #include to KinoSearch.xs
-                $code{$ks_xs_filepath} 
+                $code{$ks_xs_filepath}
                     = qq|#include "$outfilepath"\n$code{$ks_xs_filepath}|;
             }
             else {
                 $outfilepath .= ".c";
             }
-            $outfilepath = catfile('src', $outfilepath);
+            $outfilepath = catfile( 'src', $outfilepath );
             $code{$outfilepath} = $fragment;
         }
 
         # if the file has been modified, force a recompile
-        my $mod_time = (stat($module_fh))[9];
-        if (    !exists $lastmod->{$pm_filepath}{$tag} 
-            or   $lastmod->{$pm_filepath}{$tag} != $mod_time ) {
+        my $mod_time = ( stat($module_fh) )[9];
+        if ( !exists $lastmod->{$pm_filepath}{$tag}
+            or $lastmod->{$pm_filepath}{$tag} != $mod_time )
+        {
             $needs_rewrite{$outfilepath} = 1;
         }
         $lastmod->{$pm_filepath}{$tag} = $mod_time;
@@ -108,15 +111,14 @@ for my $pm_filepath (@pm_filepaths) {
 }
 
 # write all the files that have been modified.
-for my $outfilepath (keys %needs_rewrite) {
+for my $outfilepath ( keys %needs_rewrite ) {
     print "Writing $outfilepath\n";
-    open( my $fh, '>', $outfilepath ) 
+    open( my $fh, '>', $outfilepath )
         or die "Couldn't open file '$outfilepath' for writing: $!";
     print $fh "$autogen_header $code{$outfilepath}"
         or die "Print to '$outfilepath' failed: $!";
     close $fh or die "Couldn't close file '$outfilepath': $!";
 }
-
 
 =begin Rationale
 
@@ -130,7 +132,7 @@ pattern as all the others).
 =cut
 
 # write the typemap file.
-if ($needs_rewrite{$ks_xs_filepath}) {
+if ( $needs_rewrite{$ks_xs_filepath} ) {
     my @struct_classes = qw(
         KinoSearch::Analysis::Stemmer::Stemmifier
         KinoSearch::Analysis::TokenBatch
@@ -158,7 +160,7 @@ if ($needs_rewrite{$ks_xs_filepath}) {
     for my $struct_class (@struct_classes) {
         my ($ctype) = $struct_class =~ /([^:]+$)/;
         my $uc_ctype = uc($ctype);
-        $ctype .= ' *';
+        $ctype         .= ' *';
         $typemap_start .= "$ctype\t$uc_ctype\n";
         my $input_frag = <<'END_INPUT';
 #UC_CTYPE#
@@ -185,17 +187,17 @@ END_OUTPUT
 
     # blast it out
     print "Writing typemap\n";
-    open(my $typemap_fh, '>', 'typemap') 
+    open( my $typemap_fh, '>', 'typemap' )
         or die "Couldn't open 'typemap' for writing: $!";
-    print $typemap_fh   
+    print $typemap_fh
         "# Auto-generated file.  See KinoSearch::Docs::DevGuide.\n\n"
-            or die "Print to 'typemap' failed: $!";
+        or die "Print to 'typemap' failed: $!";
     print $typemap_fh "$typemap_start $typemap_input $typemap_output"
         or die "Print to 'typemap' failed: $!";
 }
 
 # record mod times in anticipation of Build.PL's next run
-store($lastmod, 'lastmod');
+store( $lastmod, 'lastmod' );
 
 my $builder = Module::Build->new(
     module_name       => 'KinoSearch',
@@ -208,13 +210,15 @@ my $builder = Module::Build->new(
         'Lingua::StopWords'      => 0.02,
         'Clone'                  => 0.18,
     },
-    create_makefile_pl => 'passthrough',
-    xs_files => { $ks_xs_filepath => 'lib/KinoSearch.xs' },
-    c_source => 'src',
+    create_makefile_pl   => 'passthrough',
+#    extra_compiler_flags =>
+#        [ '-Wall', '-Wextra', '-pedantic', '-ansi', '-DPERL_GCC_PEDANTIC' ],
+    xs_files       => { $ks_xs_filepath => 'lib/KinoSearch.xs' },
+    c_source       => 'src',
     add_to_cleanup => [
-        keys %code, 'KinoSearch-*', 'typemap',
-        'MANIFEST.bak', 'lastmod', 'perltidy.ERR', '*.o',
-        ],
+        keys %code, 'KinoSearch-*', 'typemap', 'MANIFEST.bak',
+        'lastmod',  'perltidy.ERR', '*.o',
+    ],
 );
 
 $builder->create_build_script();

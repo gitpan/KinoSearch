@@ -217,7 +217,7 @@ to the Analyzer used at index-time, or the results won't match up.
         query  => $query,  # required
         filter => $filter, # default: undef (no filtering)
     );
-        
+
 Process a search and return a L<Hits|KinoSearch::Search::Hits> object.
 search() expects labeled hash-style parameters.
 

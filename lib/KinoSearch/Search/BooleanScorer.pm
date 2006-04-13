@@ -211,7 +211,6 @@ void
 Kino_BoolScorer_add_subscorer(Scorer* main_scorer, Scorer* subscorer, 
                               char *occur) {
     BoolScorerChild *child;
-    U32              mask;
     BoolSubScorer   *bool_subscorer;
 
     child = (BoolScorerChild*)main_scorer->child;
@@ -318,11 +317,10 @@ Kino_BoolScorer_next(Scorer* scorer) {
 
 float
 Kino_BoolScorer_score(Scorer* scorer){
-    BoolScorerChild *child;
-    MatchBatch      *mbatch;
+    BoolScorerChild *child = (BoolScorerChild*)scorer->child;
+    MatchBatch      *mbatch = child->mbatch;
     U32              masked_doc;
-    child = (BoolScorerChild*)scorer->child;
-    mbatch = child->mbatch;
+    float            score;
 
     if (child->coord_factors == NULL) {
         Kino_BoolScorer_compute_coord_factors(scorer);
@@ -330,7 +328,7 @@ Kino_BoolScorer_score(Scorer* scorer){
 
     /* retrieve the docs accumulated score from the MatchBatch */
     masked_doc = child->doc & KINO_MATCH_BATCH_DOC_MASK;
-    float score = mbatch->scores[masked_doc];
+    score = mbatch->scores[masked_doc];
 
     /* assign bonus for multi-subscorer matches */
     score *= child->coord_factors[ mbatch->matcher_counts[masked_doc] ];

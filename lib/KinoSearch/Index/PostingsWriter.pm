@@ -114,8 +114,8 @@ __H__
 #include "KinoSearchIndexTermDocs.h"
 #include "KinoSearchIndexTermInfosWriter.h"
 #include "KinoSearchStoreOutStream.h"
+#include "KinoSearchUtilByteBuf.h"
 #include "KinoSearchUtilSortExternal.h"
-#include "KinoSearchUtilStringHelper.h"
 
 void Kino_PostWriter_write_postings(SortExternal*, TermInfosWriter*, 
                                     OutStream*, OutStream*);
@@ -127,45 +127,45 @@ __C__
 
 #include "KinoSearchIndexPostingsWriter.h"
 
-static void Kino_PostWriter_deserialize(SV*, SV*, U32*, U32*);
-static void Kino_PostWriter_write_positions(OutStream*, SV*);
+static void Kino_PostWriter_deserialize(ByteBuf*, ByteBuf*, ByteBuf*, 
+                                        U32*, U32*);
+static void Kino_PostWriter_write_positions(OutStream*, ByteBuf*);
 
 void
 Kino_PostWriter_write_postings(SortExternal *sort_pool,
                                TermInfosWriter *tinfos_writer, 
                                OutStream *frq_out, OutStream *prx_out) {
-    SV        *termstring_sv, *last_termstring_sv, *posting_sv, *scratch_sv;
+    ByteBuf   *posting           = NULL;
+    ByteBuf   *positions, *termstring, *last_termstring;
     TermInfo  *tinfo;
-    U32        doc_num;
-    U32        freq;
+    U32        doc_num           = 0;
+    U32        freq              = 0;
     U32        last_doc_num      = 0;
     U32        last_skip_doc     = 0;
     double     frq_ptr, prx_ptr;
     double     last_skip_frq_ptr = 0.0;
     double     last_skip_prx_ptr = 0.0;
     I32        iter              = 0;
-    I32        i, num_returned;
+    I32        i;
     AV        *skip_data_av;
     SV        *skip_sv;
 
-    dSP;
-    
-    last_termstring_sv = newSVpvn("\0\0", 2);
-    termstring_sv      = newSV(0);
-    posting_sv         = newSV(0);
-    tinfo              = Kino_TInfo_new();
-    skip_data_av       = newAV();
-    skip_sv            = &PL_sv_undef;
+    posting         = Kino_BB_new_string("", 0);
+    last_termstring = Kino_BB_new_string("\0\0", 2);
+    termstring      = Kino_BB_new_view(NULL, 0);
+    positions       = Kino_BB_new_view(NULL, 0);
+    tinfo           = Kino_TInfo_new();
+    skip_data_av    = newAV();
+    skip_sv         = &PL_sv_undef;
 
     /* each loop is one field, one term, one doc_num, many positions */
     while (1) {
         /* retrieve the next posting from the sort pool */
-        scratch_sv = sort_pool->fetch(sort_pool);
-        SvSetSV(posting_sv, scratch_sv);
-        SvREFCNT_dec(scratch_sv);
+        Kino_BB_destroy(posting);
+        posting = sort_pool->fetch(sort_pool);
 
-        /* SortExternal returns undef when exhausted */
-        if ( !SvOK(posting_sv) ) {
+        /* SortExternal returns NULL when exhausted */
+        if (posting == NULL) {
             goto FINAL_ITER;
         }
 
@@ -173,15 +173,14 @@ Kino_PostWriter_write_postings(SortExternal *sort_pool,
         iter++;
         tinfo->doc_freq++;    /* lags by 1 iter */
 
-        /* Break up the serialized posting into its parts.
-         * posting_sv gets whittled down until it is only the positions string.
-         */
-        Kino_PostWriter_deserialize(posting_sv, termstring_sv, 
+        /* break up the serialized posting into its parts */
+        Kino_PostWriter_deserialize(posting, termstring, positions, 
             &doc_num, &freq);
 
         /* on the first iter, prime the "heldover" variables */
         if (iter == 1) {
-            SvSetSV(last_termstring_sv, termstring_sv);
+            Kino_BB_assign_string(last_termstring, termstring->ptr,
+                termstring->size);
             tinfo->doc_freq      = 0;
             tinfo->frq_fileptr   = frq_out->tell(frq_out);
             tinfo->prx_fileptr   = prx_out->tell(prx_out);
@@ -192,7 +191,8 @@ Kino_PostWriter_write_postings(SortExternal *sort_pool,
             /* prepare to clear out buffers and exit loop */
             FINAL_ITER: {
                 iter = -1;
-                sv_setpvn(termstring_sv, "\0\0", 2);
+                Kino_BB_destroy(termstring);
+                termstring = Kino_BB_new_string("\0\0", 2);
                 tinfo->doc_freq++;
             }
         }
@@ -212,7 +212,7 @@ Kino_PostWriter_write_postings(SortExternal *sort_pool,
         }
 
         /* if either the term or fieldnum changes, process the last term */
-        if ( Kino_StrHelp_compare_svs(termstring_sv, last_termstring_sv) ) {
+        if ( Kino_BB_compare(termstring, last_termstring) ) {
             /* take note of where we are for the term dictionary */
             frq_ptr = frq_out->tell(frq_out);
             prx_ptr = prx_out->tell(prx_out);
@@ -252,7 +252,7 @@ Kino_PostWriter_write_postings(SortExternal *sort_pool,
             last_skip_prx_ptr = prx_ptr;
 
             /* hand off to TermInfosWriter */
-            Kino_TInfosWriter_add(tinfos_writer, last_termstring_sv, tinfo);
+            Kino_TInfosWriter_add(tinfos_writer, last_termstring, tinfo);
 
             /* start each term afresh */
             tinfo->doc_freq      = 0;
@@ -262,7 +262,8 @@ Kino_PostWriter_write_postings(SortExternal *sort_pool,
             tinfo->index_fileptr = 0;
 
             /* remember the termstring so we can write string diffs */
-            SvSetSV(last_termstring_sv, termstring_sv);
+            Kino_BB_assign_string(last_termstring, termstring->ptr,
+                termstring->size);
 
             last_doc_num    = 0;
         }
@@ -270,15 +271,16 @@ Kino_PostWriter_write_postings(SortExternal *sort_pool,
         /* break out of loop on last iter before writing invalid data */
         if (iter == -1) {
             Kino_TInfo_destroy(tinfo);
-            SvREFCNT_dec(posting_sv);
-            SvREFCNT_dec(termstring_sv);
-            SvREFCNT_dec(last_termstring_sv);
+            Kino_BB_destroy(termstring);
+            Kino_BB_destroy(last_termstring);
+            Kino_BB_destroy(positions);
+            Kino_BB_destroy(posting);
             SvREFCNT_dec( (SV*)skip_data_av );
             return;
         }
 
         /*  write positions data */
-        Kino_PostWriter_write_positions(prx_out, posting_sv);
+        Kino_PostWriter_write_positions(prx_out, positions);
 
         /* write freq data */
         /* doc_code is delta doc_num, shifted left by 1. */
@@ -313,29 +315,31 @@ Kino_PostWriter_add_segment(SortExternal *sort_pool, SegTermEnum* term_enum,
     I32         doc_num, max_doc;
     char        doc_num_buf[4];
     char        text_len_buf[4];
-    SV         *posting_sv, *positions_sv, *doc_map_sv;
+    SV         *positions_sv, *doc_map_sv;
+    ByteBuf    *posting;
     TermBuffer *term_buf;
+    char       *positions_ptr;
     STRLEN      len, common_len, positions_len;
 
-    dSP;
-
+    /* extract the doc number remapping array */
     doc_map_sv = SvRV(doc_map_ref);
     doc_map    = (I32*)SvPV(doc_map_sv, len);
-    max_doc = len / sizeof(I32);
-    posting_sv = newSV(0);
+    max_doc    = len / sizeof(I32);
+
     term_buf   = term_enum->term_buf;
+    posting    = Kino_BB_new_string("", 0);
 
     while (Kino_SegTermEnum_next(term_enum)) {
         /* start with the termstring and the null byte */
         Kino_encode_bigend_U16(term_buf->text_len, text_len_buf);
         common_len = term_buf->text_len + KINO_FIELD_NUM_LEN;
-        sv_setpvn(posting_sv, term_buf->termstring, common_len);
-        sv_catpvn(posting_sv, "\0", NULL_BYTE_LEN);
+        Kino_BB_assign_string(posting, term_buf->termstring, common_len);
+        Kino_BB_cat_string(posting, "\0", NULL_BYTE_LEN);
         common_len += NULL_BYTE_LEN;
 
         term_docs->seek_tinfo(term_docs, term_enum->tinfo);
         while (term_docs->next(term_docs)) {
-            SvCUR_set(posting_sv, common_len);
+            posting->size = common_len; /* can't ever be gt posting->cap */
 
             /* concat the remapped doc number */
             doc_num = term_docs->get_doc(term_docs);
@@ -345,73 +349,68 @@ Kino_PostWriter_add_segment(SortExternal *sort_pool, SegTermEnum* term_enum,
                 Kino_confess("doc_num > max_doc: %d %d", doc_num, max_doc);
             doc_num = doc_map[doc_num];
             Kino_encode_bigend_U32(doc_num, doc_num_buf);
-            sv_catpvn(posting_sv, doc_num_buf, DOC_NUM_LEN); 
+            Kino_BB_cat_string(posting, doc_num_buf, DOC_NUM_LEN); 
 
             /* concat the positions */
             positions_sv = term_docs->get_positions(term_docs);
-            sv_catsv(posting_sv, positions_sv);
+            positions_ptr = SvPV(positions_sv, positions_len);
+            Kino_BB_cat_string(posting, positions_ptr, positions_len);
 
             /* concat the term_length */
-            sv_catpvn(posting_sv, text_len_buf, TEXT_LEN_LEN);
+            Kino_BB_cat_string(posting, text_len_buf, TEXT_LEN_LEN);
 
             /* add the posting to the sortpool */
-            sort_pool->feed(sort_pool, posting_sv);
+            sort_pool->feed(sort_pool, posting->ptr, posting->size);
         }
     }
+    Kino_BB_destroy(posting);
 }
 
 static void 
-Kino_PostWriter_deserialize(SV *posting_sv, SV *termstring_sv, 
+Kino_PostWriter_deserialize(ByteBuf *posting, ByteBuf *termstring, 
+                            ByteBuf *positions,
                             U32 *doc_num_ptr, U32 *freq_ptr) {
-    STRLEN   posting_len, termstring_len;
-    char    *posting_str, *termstring_len_ptr;
-
-    /* extract pointer from serialized posting */
-    posting_str = SvPV(posting_sv, posting_len);
+    char    *ptr;
+    STRLEN   len;
 
     /* extract termstring_len, decoding packed 'n', assign termstring */
-    termstring_len_ptr = posting_str + posting_len - TEXT_LEN_LEN;
-    termstring_len     
-        = Kino_decode_bigend_U16(termstring_len_ptr) + KINO_FIELD_NUM_LEN;
-    sv_setpvn(termstring_sv, posting_str, termstring_len);
+    ptr = posting->ptr + posting->size - TEXT_LEN_LEN;
+    termstring->size = Kino_decode_bigend_U16(ptr) + KINO_FIELD_NUM_LEN;
+    Kino_BB_assign_view(termstring, posting->ptr, termstring->size);
 
     /* extract and assign doc_num, decoding packed 'N' */
-    posting_str  += termstring_len + NULL_BYTE_LEN;
-    *doc_num_ptr  = Kino_decode_bigend_U32(posting_str);
-    posting_str  += DOC_NUM_LEN;
+    ptr = posting->ptr + termstring->size + NULL_BYTE_LEN;
+    *doc_num_ptr  = Kino_decode_bigend_U32(ptr);
 
-    /* whack encoded termstring_len off the end of the posting */
-    posting_len -= TEXT_LEN_LEN; 
-    SvCUR_set(posting_sv, posting_len);
+    /* make positions ByteBuf a view of the positional data in the posting */
+    ptr = posting->ptr + termstring->size + NULL_BYTE_LEN + DOC_NUM_LEN;
+    len = posting->size 
+            - termstring->size 
+            - NULL_BYTE_LEN 
+            - DOC_NUM_LEN 
+            - TEXT_LEN_LEN;
+    Kino_BB_assign_view(positions, ptr, len);
     
-    /* whack field_num/term text off the front, leaving only the positions */
-    sv_chop(posting_sv, posting_str);
-
     /* calculate freq by counting the number of positions, assign */
-    *freq_ptr = (posting_len - termstring_len - DOC_NUM_LEN) / 4;
+    *freq_ptr = len / 4;
 }
 
 /* Write out the positions data using delta encoding.
  */
 static void
-Kino_PostWriter_write_positions(OutStream* prx_outstream, SV* positions_sv) {
-    STRLEN   positions_len;
-    char    *positions;
-    U32     *current_pos_ptr;
-    U32     *end;
+Kino_PostWriter_write_positions(OutStream *prx_out, ByteBuf *positions) {
+    U32     *current_pos_ptr, *end;
     U32      last_pos;
     U32      pos_delta;
 
-    positions = SvPV(positions_sv, positions_len);
-
     /* extract 32 bit unsigned integers from positions_sv.  */
-    current_pos_ptr = (U32*)positions;
-    end             = current_pos_ptr + (positions_len / 4);
+    current_pos_ptr = (U32*)positions->ptr;
+    end             = current_pos_ptr + (positions->size / 4);
     last_pos        = 0;
     while (current_pos_ptr < end) {
         /* get delta and write out as VInt */
         pos_delta = *current_pos_ptr - last_pos;
-        prx_outstream->write_vint(prx_outstream, pos_delta);
+        prx_out->write_vint(prx_out, pos_delta);
 
         /* advance pointers */
         last_pos = *current_pos_ptr;

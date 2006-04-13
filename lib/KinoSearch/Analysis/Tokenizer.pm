@@ -117,7 +117,7 @@ based on the value of C<token_re>.
 =head1 METHODS
 
 =head2 new
-    
+
     # match "O'Henry" as well as "Henry" and "it's" as well as "it"
     my $token_re = qr/
             \b        # start with a word boundary

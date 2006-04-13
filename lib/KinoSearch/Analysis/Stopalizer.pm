@@ -30,23 +30,62 @@ sub init_instance {
     }
 }
 
-sub analyze {
-    my ( $self, $token_batch ) = @_;
-    my $stoplist = $self->{stoplist};
-    my @out;
-
-    # convert stopwords into empty strings
-    while ( $token_batch->next ) {
-        $token_batch->set_text('')
-            if $stoplist->{ $token_batch->get_text };
-    }
-
-    return $token_batch;
-}
-
 1;
 
 __END__
+
+__XS__
+
+TokenBatch*
+analyze(self_hash, batch)
+    HV         *self_hash;
+    TokenBatch *batch;
+CODE:
+    RETVAL = Kino_Stopalizer_analyze(self_hash, batch);
+OUTPUT: RETVAL
+    
+__H__
+
+#ifndef H_KINOSEARCH_ANALYSIS_STOPALIZER
+#define H_KINOSEARCH_ANALYSIS_STOPALIZER 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchAnalysisTokenBatch.h"
+#include "KinoSearchUtilVerifyArgs.h"
+
+TokenBatch* Kino_Stopalizer_analyze(HV*, TokenBatch*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchAnalysisStopalizer.h"
+
+TokenBatch*
+Kino_Stopalizer_analyze(HV* self_hash, TokenBatch *batch) {
+    SV **sv_ptr;
+    HV  *stoplist_hv;
+
+    sv_ptr = hv_fetch(self_hash, "stoplist", 8, 0);
+    if (sv_ptr == NULL)
+        Kino_confess("no element 'stoplist'");
+    if (!SvROK(*sv_ptr))
+        Kino_confess("not a hashref");
+    stoplist_hv = (HV*)SvRV(*sv_ptr);
+    Kino_Verify_extract_arg(self_hash, "stoplist", 8);
+
+    while (batch->next(batch)) {
+        if (hv_exists_ent(stoplist_hv, batch->get_text(batch), 0)) {
+            SV *empty_string_sv = newSVpvn("", 0);
+            batch->set_text(batch, empty_string_sv);
+        }
+    }
+    return batch;
+}
+    
+__POD__
 
 =head1 NAME
 

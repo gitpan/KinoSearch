@@ -310,7 +310,6 @@ Kino_TermScorer_score_batch(Scorer *scorer, U32 start, U32 end,
     U32              freq;
     unsigned char    norm;
     float            score;
-    int              i;
 
     child = (TermScorerChild*)scorer->child;
 

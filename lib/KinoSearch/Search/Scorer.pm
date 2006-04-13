@@ -236,21 +236,25 @@ Kino_Scorer_new() {
 float
 Kino_Scorer_score_death(Scorer* scorer) {
     Kino_confess("scorer->score must be defined in a subclass");
+    return 1.0;
 }
 
 bool
 Kino_Scorer_next_death(Scorer* scorer) {
     Kino_confess("scorer->next must be defined in a subclass");
+    return 1;
 }
 
 U32
 Kino_Scorer_doc_death(Scorer* scorer) {
     Kino_confess("scorer->doc must be defined in a subclass");
+    return 1;
 }
 
 bool
 Kino_Scorer_skip_to_death(Scorer* scorer, U32 target_doc_num) {
     Kino_confess("scorer->skip_to must be defined in a subclass");
+    return 1;
 }
 
 void

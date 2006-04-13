@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 use lib 't';
-use Test::More tests => 6;
+use Test::More tests => 8;
 use File::Spec;
 use List::Util qw( shuffle );
 
@@ -13,7 +13,7 @@ use KinoSearchTestInvIndex qw( create_invindex );
 
 my $invindex = create_invindex();
 
-my ( $sortex, @sort_output );
+my ( $sortex, @orig, @sort_output );
 
 sub init_sortex {
     $sortex = KinoSearch::Util::SortExternal->new(
@@ -24,26 +24,58 @@ sub init_sortex {
 }
 
 init_sortex;
-$sortex->feed($_) for ( shuffle 'a' .. 'z' );
+@orig = ( 'a' .. 'z' );
+$sortex->feed($_) for shuffle(@orig);
 $sortex->sort_all;
 while ( my $result = $sortex->fetch ) {
     push @sort_output, $result;
 }
-is_deeply( \@sort_output, [ 'a' .. 'z' ], "sort letters" );
+is_deeply( \@sort_output, \@orig, "sort letters" );
+@orig        = ();
+@sort_output = ();
+
+init_sortex;
+@orig = qw( a a a b c d x x x x x x y y );
+$sortex->feed($_) for shuffle(@orig);
+$sortex->sort_all;
+while ( defined( my $result = $sortex->fetch ) ) {
+    push @sort_output, $result;
+}
+is_deeply( \@sort_output, \@orig, "sort repeated letters" );
+@orig        = ();
+@sort_output = ();
+
+init_sortex;
+@orig = ( '', '', 'a' .. 'z' );
+$sortex->feed($_) for shuffle(@orig);
+$sortex->sort_all;
+while ( defined( my $result = $sortex->fetch ) ) {
+    push @sort_output, $result;
+}
+is_deeply( \@sort_output, \@orig, "sort letters and empty strings" );
+@orig        = ();
 @sort_output = ();
 
 init_sortex( mem_threshold => 30 );
-init_sortex;
-$sortex->feed($_) for ( shuffle 'a' .. 'z' );
+@orig = 'a' .. 'z';
+$sortex->feed($_) for ( shuffle(@orig) );
 $sortex->sort_all;
 while ( my $result = $sortex->fetch ) {
     push @sort_output, $result;
 }
-is_deeply(
-    \@sort_output,
-    [ 'a' .. 'z' ],
-    "... with an absurdly low mem_threshold"
-);
+is_deeply( \@sort_output, \@orig, "... with an absurdly low mem_threshold" );
+@orig        = ();
+@sort_output = ();
+
+init_sortex( mem_threshold => 1 );
+@orig = 'a' .. 'z';
+$sortex->feed($_) for ( shuffle(@orig) );
+$sortex->sort_all;
+while ( my $result = $sortex->fetch ) {
+    push @sort_output, $result;
+}
+is_deeply( \@sort_output, \@orig, "... with an even lower mem_threshold" );
+@orig        = ();
 @sort_output = ();
 
 init_sortex;
@@ -53,8 +85,7 @@ is_deeply( \@sort_output, [undef], "Sorting nothing returns undef" );
 @sort_output = ();
 
 init_sortex( mem_threshold => 20_000 );
-my @orig = map { pack( 'N', $_ ) } ( 0 .. 11_000 );
-unshift @orig, '';
+@orig = map { pack( 'N', $_ ) } ( 0 .. 11_000 );
 $sortex->feed( shuffle(@orig) );
 $sortex->sort_all;
 while ( defined( my $item = $sortex->fetch ) ) {
@@ -62,6 +93,7 @@ while ( defined( my $item = $sortex->fetch ) ) {
 }
 is_deeply( \@sort_output, \@orig, "Sorting packed integers..." );
 @sort_output = ();
+exit;
 
 init_sortex( mem_threshold => 20_000 );
 @orig = ();

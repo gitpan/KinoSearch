@@ -26,13 +26,14 @@ void Kino_confess (char* pat, ...) {
     va_list args;
     SV      *error_sv;
 
+    dSP;
+
     error_sv = newSV(0);
     
     va_start(args, pat);
     sv_vsetpvf(error_sv, pat, &args);
     va_end(args);
 
-    dSP;
     ENTER;
     SAVETMPS;
     PUSHMARK(SP);

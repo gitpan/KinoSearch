@@ -12,8 +12,11 @@ __H__
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include "KinoSearchUtilCarp.h"
 
 I32 Kino_StrHelp_string_diff(char*, char*, STRLEN, STRLEN);
+I32 Kino_StrHelp_compare_strings(char*, char*, STRLEN, STRLEN);
+I32 Kino_StrHelp_compare_svs(SV*, SV*);
 
 #endif /* include guard */
 
@@ -74,10 +77,11 @@ __POD__
 
 =head1 NAME
 
-KinoSearch::Util::StringHelper
+KinoSearch::Util::StringHelper - String related utilities
 
 =head1 DESCRIPTION
 
+String related utilities, e.g. string comparison functions.
 
 =head1 COPYRIGHT
 

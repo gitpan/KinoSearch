@@ -83,10 +83,13 @@ void
 feed(sortex, ...)
     SortExternal *sortex;
 PREINIT:
-    I32 i;
+    I32      i;
 PPCODE:
     for (i = 1; i < items; i++) {   
-        sortex->feed(sortex, ST(i));
+        SV const * item_sv = ST(i);
+        if (!SvPOK(item_sv))
+            continue;
+        sortex->feed(sortex, SvPVX(item_sv), SvCUR(item_sv));
     }
 
 =for comment
@@ -98,8 +101,17 @@ Fetch the next sorted item from the sort pool.  sort_all must be called first.
 SV*
 fetch(sortex)
     SortExternal *sortex;
+PREINIT:
+    ByteBuf *bb;
 CODE:
-    RETVAL = sortex->fetch(sortex);
+    bb = sortex->fetch(sortex);
+    if (bb == NULL) {
+        RETVAL = newSV(0);
+    }
+    else {
+        RETVAL = newSVpvn(bb->ptr, bb->size);
+        Kino_BB_destroy(bb);
+    }
 OUTPUT: RETVAL
 
 =for comment
@@ -212,40 +224,51 @@ __H__
 
 #include "KinoSearchStoreInStream.h"
 #include "KinoSearchStoreOutStream.h"
+#include "KinoSearchUtilByteBuf.h"
 #include "KinoSearchUtilCClass.h"
-#include "KinoSearchUtilStringHelper.h"
+#include "KinoSearchUtilMemManager.h"
 
 typedef struct sortexrun {
-    double    start;
-    double    pos;
-    double    end;
-    AV       *cache;
+    double     start;
+    double     file_pos;
+    double     end;
+    ByteBuf  **cache;
+    I32        cache_cap;
+    I32        cache_elems;
+    I32        cache_pos;
+    I32        slice_size;
 } SortExRun;
 
 typedef struct sortexternal {
-    AV         *cache;
-    I32         mem_threshold;
-    I32         cache_bytes;
-    I32         run_cache_limit;
+    ByteBuf   **cache;            /* item cache, both incoming and outgoing */
+    I32         cache_cap;        /* allocated limit for cache */
+    I32         cache_elems;      /* number of elems in cache */ 
+    I32         cache_pos;        /* index of current element in cache */
+    ByteBuf   **scratch;          /* memory for use by mergesort */
+    I32         scratch_cap;      /* allocated limit for scratch */
+    I32         mem_threshold;    /* bytes of mem allowed for cache */
+    I32         cache_bytes;      /* bytes of mem occupied by cache */
+    I32         run_cache_limit;  /* bytes of mem allowed each run cache */
     SortExRun **runs;
     I32         num_runs;
-    I32         num_big_runs;
     SV         *outstream_sv;
     OutStream  *outstream;
     SV         *instream_sv;
     InStream   *instream;
     SV         *invindex_sv;
     SV         *seg_name_sv;
-    void      (*feed) (struct sortexternal*, SV*);
-    SV*       (*fetch)(struct sortexternal*);
+    void      (*feed) (struct sortexternal*, char*, I32);
+    ByteBuf*  (*fetch)(struct sortexternal*);
 } SortExternal;
 
 SortExternal* Kino_SortEx_new(SV*, SV*, SV*, I32);
-void Kino_SortEx_feed(SortExternal*, SV*);
-SV*  Kino_SortEx_fetch(SortExternal*);
-SV*  Kino_SortEx_fetch_death(SortExternal*);
-void Kino_SortEx_sort_cache(SortExternal*);
-void Kino_SortEx_destroy(SortExternal *sortex);
+void          Kino_SortEx_feed(SortExternal*, char*, I32);
+ByteBuf*      Kino_SortEx_fetch(SortExternal*);
+ByteBuf*      Kino_SortEx_fetch_death(SortExternal*);
+void          Kino_SortEx_enable_fetch(SortExternal*);
+void          Kino_SortEx_sort_cache(SortExternal*);
+void          Kino_SortEx_sort_run(SortExternal*);
+void          Kino_SortEx_destroy(SortExternal*);
 
 #endif /* include guard */
 
@@ -254,15 +277,21 @@ __C__
 #include "KinoSearchUtilSortExternal.h"
 
 static SortExRun* Kino_SortEx_new_run(double, double);
-static bool       Kino_SortEx_refill_run(SortExternal*, SortExRun*);
+static void       Kino_SortEx_grow_bufbuf(ByteBuf***, I32, I32);
+static I32        Kino_SortEx_refill_run(SortExternal*, SortExRun*);
 static void       Kino_SortEx_refill_cache(SortExternal*);
-static SV*        Kino_SortEx_find_endpost(SortExternal *sortex);
-static void       Kino_SortEx_gatekeeper(SortExternal*, SortExRun*, SV*);
-static I32        Kino_SortEx_find_max_in_range(AV*, SV*);
-static void       Kino_SortEx_destroy_run(SortExRun *run);
+static void       Kino_SortEx_merge_runs(SortExternal*);
+static ByteBuf*   Kino_SortEx_find_endpost(SortExternal*);
+static I32        Kino_SortEx_define_slice(SortExRun*, ByteBuf*);
+static void       Kino_SortEx_mergesort(ByteBuf**, ByteBuf**, I32);
+static void       Kino_SortEx_msort(ByteBuf**, ByteBuf**, U32, U32);
+static void       Kino_SortEx_merge(ByteBuf**, U32, ByteBuf**, U32, 
+                                    ByteBuf**);
+static void       Kino_SortEx_clear_cache(SortExternal*);
+static void       Kino_SortEx_clear_run_cache(SortExRun*);
+static void       Kino_SortEx_destroy_run(SortExRun*);
 
-/* a rough estimate */
-#define KINO_PER_ITEM_OVERHEAD (sizeof(SV) + sizeof(XPV) + sizeof(SV*))
+#define KINO_PER_ITEM_OVERHEAD (sizeof(ByteBuf) + sizeof(ByteBuf*))
 
 SortExternal*
 Kino_SortEx_new(SV *outstream_sv, SV *invindex_sv, SV *seg_name_sv, 
@@ -271,13 +300,17 @@ Kino_SortEx_new(SV *outstream_sv, SV *invindex_sv, SV *seg_name_sv,
 
     /* allocate */
     Kino_New(0, sortex, 1, SortExternal);
-    sortex->cache = newAV();
+    Kino_New(0, sortex->cache, 100, ByteBuf*);
     Kino_New(0, sortex->runs, 1, SortExRun*);
 
     /* init */
+    sortex->scratch         = NULL;
+    sortex->scratch_cap     = 0;
+    sortex->cache_cap       = 100;
+    sortex->cache_elems     = 0;
+    sortex->cache_pos       = 0;
     sortex->cache_bytes     = 0;
     sortex->num_runs        = 0;
-    sortex->num_big_runs    = 0;
     sortex->instream_sv     = &PL_sv_undef;
     sortex->feed            = Kino_SortEx_feed;
     sortex->fetch           = Kino_SortEx_fetch_death;
@@ -297,52 +330,98 @@ Kino_SortEx_new(SV *outstream_sv, SV *invindex_sv, SV *seg_name_sv,
 }
 
 
+/* Create a new SortExRun object */
 static SortExRun*
 Kino_SortEx_new_run(double start, double end) {
     SortExRun *run;
     
     /* allocate */
     Kino_New(0, run, 1, SortExRun);
-    run->cache = newAV();
+    Kino_New(0, run->cache, 100, ByteBuf*);
+
+    /* init */
+    run->cache_cap   = 100;
+    run->cache_elems = 0;
+    run->cache_pos   = 0;
 
     /* assign */
-    run->start = start;
-    run->pos   = start;
-    run->end   = end;
+    run->start    = start;
+    run->file_pos = start;
+    run->end      = end;
 
     return run;
 }
 
 void
-Kino_SortEx_feed(SortExternal* sortex, SV* input_sv) {
-    SV * const item_sv = newSV(0);
-    if (input_sv != NULL) {
-        SvSetSV(item_sv, input_sv);
-        av_push(sortex->cache, item_sv);
-        
-        /* track memory consumed */
-        sortex->cache_bytes += KINO_PER_ITEM_OVERHEAD;
-        if (SvPOK(item_sv))
-            sortex->cache_bytes += SvLEN(item_sv);
+Kino_SortEx_feed(SortExternal* sortex, char* ptr, I32 len) {
+    /* add room for more cache elements if needed */
+    if (sortex->cache_elems == sortex->cache_cap) {
+        /* add 100, plus 10% of the current capacity */
+        sortex->cache_cap = sortex->cache_cap + 100 + (sortex->cache_cap / 8);
+        Kino_Renew(sortex->cache, sortex->cache_cap, ByteBuf*);
     }
+
+    sortex->cache[ sortex->cache_elems ] = Kino_BB_new_string(ptr, len);
+    sortex->cache_elems++;
+        
+    /* track memory consumed */
+    sortex->cache_bytes += KINO_PER_ITEM_OVERHEAD;
+    sortex->cache_bytes += len + 1;
 
     /* check if it's time to flush the cache */
     if (sortex->cache_bytes >= sortex->mem_threshold)
         Kino_SortEx_sort_run(sortex);
 }
 
-void
-Kino_SortEx_sort_cache(SortExternal *sortex) {
-    sortsv(AvARRAY(sortex->cache), av_len(sortex->cache)+1, Perl_sv_cmp);
+ByteBuf*
+Kino_SortEx_fetch(SortExternal *sortex) {
+    if (sortex->cache_pos >= sortex->cache_elems)
+        Kino_SortEx_refill_cache(sortex);
+
+    if (sortex->cache_elems > 0) {
+        return sortex->cache[ sortex->cache_pos++ ];
+    }
+    else {
+        return NULL;
+    }
 }
 
+ByteBuf*
+Kino_SortEx_fetch_death(SortExternal *sortex) {
+    ByteBuf *bb = NULL;
+    Kino_confess("can't call fetch before sort_all");
+    return bb;
+}
+
+void
+Kino_SortEx_enable_fetch(SortExternal *sortex) {
+    sortex->fetch = Kino_SortEx_fetch;
+}
+
+/* Allocate more memory to an array of pointers to pointers to ByteBufs, if
+ * the current allocation isn't sufficient.
+ */
+static void
+Kino_SortEx_grow_bufbuf(ByteBuf ***bb_buf, I32 current, I32 desired) {
+    if (current < desired)
+        Kino_Renew(*bb_buf, desired, ByteBuf*);
+}
+
+/* Sort the main cache.
+ */
+void
+Kino_SortEx_sort_cache(SortExternal *sortex) {
+    Kino_SortEx_grow_bufbuf(&sortex->scratch, sortex->scratch_cap,
+        sortex->cache_elems);
+    Kino_SortEx_mergesort(sortex->cache, sortex->scratch, 
+        sortex->cache_elems);
+}
+
+void
 Kino_SortEx_sort_run(SortExternal *sortex) {
-    I32         i, max;
     OutStream  *outstream;
-    AV         *cache_av;
-    SV        **sv_ptr;
-    char       *string;
-    STRLEN      len;
+    ByteBuf   **cache, **cache_end;
+    ByteBuf    *bb;
     double      start, end;
 
     /* bail if there's nothing in the cache */
@@ -355,28 +434,22 @@ Kino_SortEx_sort_run(SortExternal *sortex) {
 
     /* make local copies */
     outstream = sortex->outstream;
-    cache_av  = sortex->cache;
+    cache     = sortex->cache;
 
     /* mark start of run */
     start = outstream->tell(outstream);
     
     /* write sorted items to file */
     Kino_SortEx_sort_cache(sortex);
-    max = av_len(cache_av); 
-    for (i = 0; i <= max; i++) {
-        /* retrieve one scalar from the input_array */
-        sv_ptr  = av_fetch(cache_av, i, 0);
-        if (sv_ptr == NULL) 
-            Kino_confess("sort_run: NULL sv_ptr");
-        string     = SvPV(*sv_ptr, len);
-
-        outstream->write_vint(outstream, len);
-        outstream->write_bytes(outstream, string, len);
+    cache_end = cache + sortex->cache_elems;
+    for (cache = sortex->cache; cache < cache_end; cache++) {
+        bb = *cache;
+        outstream->write_vint(outstream, bb->size);
+        outstream->write_bytes(outstream, bb->ptr, bb->size);
     }
 
     /* clear the cache */
-    av_clear(cache_av);
-    sortex->cache_bytes = 0;
+    Kino_SortEx_clear_cache(sortex);
 
     /* mark end of run and build a new SortExRun object */
     end = outstream->tell(outstream);
@@ -384,49 +457,35 @@ Kino_SortEx_sort_run(SortExternal *sortex) {
 
     /* recalculate the size allowed for each run's cache */
     sortex->run_cache_limit = (sortex->mem_threshold / 2) / sortex->num_runs;
+    sortex->run_cache_limit = sortex->run_cache_limit < 65536
+        ? 65536 
+        : sortex->run_cache_limit;
 }
 
-Kino_SortEx_enable_fetch(SortExternal *sortex) {
-    sortex->fetch = Kino_SortEx_fetch;
-}
-
-SV*
-Kino_SortEx_fetch_death(SortExternal *sortex) {
-    Kino_confess("can't call fetch before sort_all");
-}
-
-SV*
-Kino_SortEx_fetch(SortExternal *sortex) {
-    SV* retval_sv;
-    if (av_len(sortex->cache) == -1)
-        Kino_SortEx_refill_cache(sortex);
-    
-    retval_sv = av_shift(sortex->cache);
-    return retval_sv;
-}
-
-/* Recover scalars from disk */
-static bool
+/* Recover sorted items from disk, up to the allowable memory limit. 
+ */
+static I32 
 Kino_SortEx_refill_run(SortExternal* sortex, SortExRun *run) {
     InStream *instream;
     double    end;
-    SV       *scratch_sv;
-    char     *read_buf;
-    STRLEN    len;
     I32       run_cache_bytes = 0;
-    int       num_items       = 0; /* number of items recovered */
-    AV       *run_cache_av;
-    const I32 run_cache_limit = sortex->run_cache_limit;
+    int       num_elems       = 0; /* number of items recovered */
+    I32       len;
+    ByteBuf  *bb;
+    I32       run_cache_limit;
+
+    /* see if we actually need to refill */
+    if (run->cache_elems - run->cache_pos)
+        return run->cache_elems - run->cache_pos;
+    else 
+        Kino_SortEx_clear_run_cache(run);
 
     /* make local copies */
     instream        = sortex->instream;
+    run_cache_limit = sortex->run_cache_limit;
     end             = run->end;
-    run_cache_av    = run->cache;
 
-    if (av_len(run_cache_av) != -1)
-        return TRUE;
-
-    instream->seek(instream, run->pos);
+    instream->seek(instream, run->file_pos);
 
     while (1) {
         /* bail if we've read everything in this run */
@@ -444,43 +503,54 @@ Kino_SortEx_refill_run(SortExternal* sortex, SortExRun *run) {
         if (run_cache_bytes > run_cache_limit)
             break;
 
-        /* retrieve and decode len */
+        /* retrieve and decode len; allocate a ByteBuf and recover the string */
         len = instream->read_vint(instream);
-
-        /* recover the stringified scalar */
-        scratch_sv = newSV(len + 1);
-        SvCUR_set(scratch_sv, len);
-        SvPOK_on(scratch_sv);
-        *SvEND(scratch_sv) = '\0';
-        read_buf = SvPVX(scratch_sv);
-        instream->read_bytes(instream, read_buf, len);
+        bb  = Kino_BB_new(len);
+        instream->read_bytes(instream, bb->ptr, len);
+        bb->ptr[len] = '\0';
 
         /* add to the run's cache */
-        av_push(run_cache_av, scratch_sv);
+        if (num_elems == run->cache_cap) {
+            run->cache_cap = run->cache_cap + 100 + (run->cache_cap / 8);
+            Kino_Renew(run->cache, run->cache_cap, ByteBuf*);
+        }
+        run->cache[ num_elems ] = bb;
 
         /* track how much we've read so far */
-        num_items++;
+        num_elems++;
         run_cache_bytes += len + 1 + KINO_PER_ITEM_OVERHEAD;
     }
 
-    run->pos = instream->tell(instream);
+    /* reset the cache array position and length; remember file pos */
+    run->cache_elems = num_elems;
+    run->cache_pos   = 0;
+    run->file_pos    = instream->tell(instream);
 
-    return num_items;
+    return num_elems;
 }
 
+/* Refill the main cache, drawing from the caches of all runs.
+ */
 static void
 Kino_SortEx_refill_cache(SortExternal *sortex) {
-    SV        *endpost_sv;
+    ByteBuf   *endpost;
     SortExRun *run;
     I32        i = 0;
+    I32        total = 0;
+
+    /* free all the existing ByteBufs, as they've been fetched by now */
+    Kino_SortEx_clear_cache(sortex);
     
-    /* make sure all runs have at least one item */
+    /* make sure all runs have at least one item in the cache */
     while (i < sortex->num_runs) {
         run = sortex->runs[i];
-        if (Kino_SortEx_refill_run(sortex, run)) {
+        if (   (run->cache_elems > run->cache_pos)
+            || (Kino_SortEx_refill_run(sortex, run)) 
+        ) {
             i++;
         }
         else {
+            /* discard empty runs */
             Kino_SortEx_destroy_run(run);
             sortex->num_runs--;
             sortex->runs[i] = sortex->runs[ sortex->num_runs ];
@@ -492,107 +562,254 @@ Kino_SortEx_refill_cache(SortExternal *sortex) {
         return;
 
     /* move as many items as possible into the sorting cache */
-    endpost_sv = Kino_SortEx_find_endpost(sortex);
+    endpost = Kino_SortEx_find_endpost(sortex);
     for (i = 0; i < sortex->num_runs; i++) {
-        Kino_SortEx_gatekeeper(sortex, sortex->runs[i], endpost_sv);
+        total += Kino_SortEx_define_slice(sortex->runs[i], endpost);
     }
-    SvREFCNT_dec(endpost_sv);
 
-    Kino_SortEx_sort_cache(sortex);
+    /* make sure we have enough room in both the main cache and the scratch */
+    Kino_SortEx_grow_bufbuf(&sortex->cache,   sortex->cache_cap,   total);
+    Kino_SortEx_grow_bufbuf(&sortex->scratch, sortex->scratch_cap, total);
+
+    Kino_SortEx_merge_runs(sortex);
+    sortex->cache_elems = total;
 }
 
-static SV*
-Kino_SortEx_find_endpost(SortExternal *sortex) {
-    int         i, max, max_index;
-    SV         *endpost_sv;
-    SortExRun  *run;
-    AV         *run_cache_av;
-    SV        **sv_ptr;
+/* Merge all the items which are "in-range" from all the Runs into the main
+ * cache.
+ */
+static void 
+Kino_SortEx_merge_runs(SortExternal *sortex) {
+    SortExRun   *run;
+    ByteBuf   ***slice_starts;
+    ByteBuf    **cache = sortex->cache;
+    I32         *slice_sizes;
+    I32          i = 0, j = 0, slice_size = 0, num_slices = 0;
 
-    endpost_sv = newSV(0);
+    Kino_New(0, slice_starts, sortex->num_runs, ByteBuf**);
+    Kino_New(0, slice_sizes,  sortex->num_runs, I32);
 
-    max = sortex->num_runs;
-    for (i = 0; i < max; i++) {
-        run_cache_av = sortex->runs[i]->cache;
-        max_index = av_len(run_cache_av);
-        if (max_index == -1)
+    /* copy all the elements in range into the cache */
+    j = 0;
+    for (i = 0; i < sortex->num_runs; i++) {
+        run = sortex->runs[i];
+        slice_size      = run->slice_size;
+        if (slice_size == 0)
             continue;
-        sv_ptr = av_fetch(run_cache_av, max_index, 0);
-        if (sv_ptr == NULL)
-            Kino_confess("find_endpost: NULL SV");
+
+        slice_sizes[j]  = slice_size;
+        slice_starts[j] = cache;
+        Copy( (run->cache + run->cache_pos), cache, slice_size, ByteBuf* );
+        
+        run->cache_pos += slice_size;
+        cache += slice_size;
+        num_slices = ++j;
+    }
+
+    /* exploit previous sorting, rather than sort cache naively */
+    while (num_slices > 1) {
+        /* leave the first slice intact if the number of slices is odd */
+        i = 0;
+        j = 0;
+        while (i < num_slices) {
+            if (num_slices - i >= 2) {
+                /* merge two consecutive slices */
+                slice_size = slice_sizes[i] + slice_sizes[i+1];
+                Kino_SortEx_merge(slice_starts[i], slice_sizes[i],
+                    slice_starts[i+1], slice_sizes[i+1], sortex->scratch);
+                slice_sizes[j] = slice_size;
+                slice_starts[j] = slice_starts[i];
+                Copy(sortex->scratch, slice_starts[j], slice_size, ByteBuf*);
+
+                i += 2;
+                j += 1;
+            }
+            else if (num_slices - i >= 1) {
+                /* move single slice pointer */
+                slice_sizes[j]  = slice_sizes[i];
+                slice_starts[j] = slice_starts[i];
+                i += 1;
+                j += 1;
+            }
+        }
+        num_slices = j;
+    }
+
+    Kino_Safefree(slice_starts);
+    Kino_Safefree(slice_sizes);
+}
+
+/* Return a pointer to the item in one of the runs' caches which is 
+ * the highest in sort order, but which we can guarantee is lower in sort
+ * order than any item which has yet to enter a run cache. 
+ */
+static ByteBuf*
+Kino_SortEx_find_endpost(SortExternal *sortex) {
+    int         i;
+    ByteBuf    *endpost = NULL, *candidate = NULL;
+    SortExRun  *run;
+
+    for (i = 0; i < sortex->num_runs; i++) {
+        /* get a run and verify no errors */
+        run = sortex->runs[i];
+        if (run->cache_pos == run->cache_elems || run->cache_elems < 1)
+            Kino_confess("find_endpost encountered an empty run cache");
+
+        /* get the last item in this run's cache */
+        candidate = run->cache[ run->cache_elems - 1 ];
+
+        /* if it's the first run, the item is automatically the new endpost */
         if (i == 0) {
-            SvSetSV(endpost_sv, *sv_ptr);
+            endpost = candidate;
             continue;
         }
-        if (Kino_StrHelp_compare_svs(*sv_ptr, endpost_sv) < 0)
-            SvSetSV(endpost_sv, *sv_ptr);
+        /* if it's less than the current endpost, it's the new endpost */
+        else if (Kino_BB_compare(candidate, endpost) < 0) {
+            endpost = candidate;
+        }
     }
 
-    return endpost_sv;
+    return endpost;
 }
 
-static void
-Kino_SortEx_gatekeeper(SortExternal *sortex, SortExRun *run, SV *endpost_sv) {
-    AV  *sortex_cache_av, *run_cache_av;
-    I32  max_index;
-    SV  *item_sv;
-
-    /* local copies */
-    sortex_cache_av = sortex->cache;
-    run_cache_av    = run->cache;
-
-    max_index = Kino_SortEx_find_max_in_range(run_cache_av, endpost_sv);
-    for(max_index; max_index >= 0; max_index--) {
-        item_sv = av_shift(run_cache_av);
-        av_push(sortex_cache_av, item_sv);
-    }
-}
-
-/* Return the highest index for an item in the run's cache which is lexically
+/* Record the number of items in the run's cache which are lexically
  * less than or equal to the endpost.
  */
 static I32
-Kino_SortEx_find_max_in_range(AV *cache_av, SV *endpost_sv) {
+Kino_SortEx_define_slice(SortExRun *run, ByteBuf *endpost) {
     I32 lo, mid, hi, delta;
-    SV **candidate_sv_ptr;
+    ByteBuf **cache = run->cache;
 
-    lo  = -1;
-    hi = av_len(cache_av) + 1; 
-    mid = 0;
+    /* operate on a slice of the cache */
+    lo  = run->cache_pos - 1;
+    hi  = run->cache_elems;
 
     /* binary search */
     while (hi - lo > 1) {
-        mid = (lo + hi) >> 1;
-        candidate_sv_ptr = av_fetch(cache_av, mid, 0);
-        if (candidate_sv_ptr == NULL)
-            Kino_confess("find_num_in_range: NULL SV");
-        delta = Kino_StrHelp_compare_svs(*candidate_sv_ptr, endpost_sv);
+        mid = (lo + hi) / 2;
+        delta = Kino_BB_compare(cache[mid], endpost);
         if (delta > 0) 
 			hi = mid;
         else
 			lo = mid;
     }
-    return lo;
+
+    run->slice_size = lo == -1 
+        ? 0 
+        : (lo - run->cache_pos) + 1;
+    return run->slice_size;
+}
+
+/* Standard merge sort.
+ */
+static void
+Kino_SortEx_mergesort(ByteBuf **bufbuf, ByteBuf **scratch, I32 buf_size) {
+    if (buf_size == 0)
+        return;
+    Kino_SortEx_msort(bufbuf, scratch, 0, buf_size - 1);
+}
+
+/* Standard merge sort msort function.
+ */
+static void
+Kino_SortEx_msort(ByteBuf **bufbuf, ByteBuf **scratch, U32 left, U32 right) {
+    I32 mid;
+
+    if (right > left) {
+        mid = ( (right+left)/2 ) + 1;
+        Kino_SortEx_msort(bufbuf, scratch, left, mid - 1);
+        Kino_SortEx_msort(bufbuf, scratch, mid,  right);
+        Kino_SortEx_merge( (bufbuf + left),  (mid - left), 
+                           (bufbuf + mid), (right - mid + 1), scratch);
+        Copy( scratch, (bufbuf + left), (right - left + 1), ByteBuf* );
+    }
+}
+
+/* Standard mergesort merge function.  This variant is capable of merging two
+ * discontiguous source arrays.  Copying elements back into the source is left
+ * for the caller.
+ */
+static void
+Kino_SortEx_merge(ByteBuf **left_ptr,  U32 left_size,
+                  ByteBuf **right_ptr, U32 right_size,
+                  ByteBuf **dest) {
+    ByteBuf **left_boundary, **right_boundary;
+
+    left_boundary  = left_ptr  + left_size;
+    right_boundary = right_ptr + right_size;
+
+    while (left_ptr < left_boundary && right_ptr < right_boundary) {
+        if (Kino_BB_compare(*left_ptr, *right_ptr) < 1) {
+            *dest++ = *left_ptr++;
+        }
+        else {
+            *dest++ = *right_ptr++;
+        }
+    }
+    while (left_ptr < left_boundary) {
+        *dest++ = *left_ptr++;
+    }
+    while (right_ptr < right_boundary) {
+        *dest++ = *right_ptr++;
+    }
+}
+
+static void
+Kino_SortEx_clear_cache(SortExternal *sortex) {
+    ByteBuf **cache, **cache_end;
+    cache_end = sortex->cache + sortex->cache_elems;
+    /* only blow away items that haven't been released */
+    for (cache = sortex->cache + sortex->cache_pos; 
+         cache < cache_end; cache++
+    ) {
+        Kino_BB_destroy(*cache);
+    }
+    sortex->cache_bytes = 0;
+    sortex->cache_elems = 0;
+    sortex->cache_pos   = 0;
+}
+
+static void
+Kino_SortEx_clear_run_cache(SortExRun *run) {
+    ByteBuf **cache, **cache_end;
+    cache_end = run->cache + run->cache_elems;
+    /* only destroy items which haven't been passed to the main cache */
+    for (cache = run->cache + run->cache_pos; cache < cache_end; cache++) {
+        Kino_BB_destroy(*cache);
+    }
+    run->cache_elems = 0;
+    run->cache_pos   = 0;
 }
 
 void
 Kino_SortEx_destroy(SortExternal *sortex) {
     I32 i;
-    SvREFCNT_dec((SV*)sortex->cache);
+    
+    /* delegate to Perl garbage collector */
     SvREFCNT_dec(sortex->outstream_sv);
     SvREFCNT_dec(sortex->instream_sv);
     SvREFCNT_dec(sortex->invindex_sv);
     SvREFCNT_dec(sortex->seg_name_sv);
+
+    /* free the cache and the scratch */
+    Kino_SortEx_clear_cache(sortex);
+    Kino_Safefree(sortex->cache);
+    Kino_Safefree(sortex->scratch);
+
+    /* free all of the runs and the array that held them */
     for (i = 0; i < sortex->num_runs; i++) {
         Kino_SortEx_destroy_run(sortex->runs[i]);
     }
     Kino_Safefree(sortex->runs);
+
+    /* free me */
     Kino_Safefree(sortex);
 }
 
 static void
 Kino_SortEx_destroy_run(SortExRun *run) {
-    SvREFCNT_dec(run->cache);
+    Kino_SortEx_clear_run_cache(run);
+    Kino_Safefree(run->cache);
     Kino_Safefree(run);
 }
 

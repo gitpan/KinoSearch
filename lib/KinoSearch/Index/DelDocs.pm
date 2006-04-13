@@ -145,7 +145,7 @@ __C__
 SV*
 Kino_DelDocs_generate_doc_map(BitVector *deldocs, I32 max, I32 offset) {
     SV   *doc_map_sv;
-    I32  *doc_map, *doc_map_start, *doc_map_end;
+    I32  *doc_map;
     I32   new_doc_num;
     int   i;
 

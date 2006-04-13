@@ -240,22 +240,26 @@ Kino_TermDocs_set_doc_freq_death(TermDocs *term_docs, U32 doc_freq) {
 U32
 Kino_TermDocs_get_doc_freq_death(TermDocs *term_docs) {
     Kino_confess("term_docs->get_doc_freq must be defined in a subclass");
+    return 1;
 }
 
 
 U32
 Kino_TermDocs_get_doc_death(TermDocs *term_docs) {
     Kino_confess("term_docs->get_doc must be defined in a subclass");
+    return 1;
 }
 
 U32
 Kino_TermDocs_get_freq_death(TermDocs *term_docs) {
     Kino_confess("term_docs->get_freq must be defined in a subclass");
+    return 1;
 }
 
 SV*
 Kino_TermDocs_get_positions_death(TermDocs *term_docs) {
     Kino_confess("term_docs->get_positions must be defined in a subclass");
+    return &PL_sv_undef;
 }
 
 void
@@ -266,17 +270,20 @@ Kino_TermDocs_seek_tinfo_death(TermDocs *term_docs, TermInfo *tinfo) {
 bool
 Kino_TermDocs_next_death(TermDocs *term_docs) {
     Kino_confess("term_docs->next must be defined in a subclass");
+    return 1;
 }
 
 U32  
 Kino_TermDocs_read_death(TermDocs* term_docs, SV* doc_nums_sv, SV* freqs_sv,
                          U32 num_wanted) {
     Kino_confess("term_docs->read must be defined in a subclass");
+    return 1;
 }
 
 bool
 Kino_TermDocs_skip_to_death(TermDocs *term_docs, U32 target) {
     Kino_confess("term_docs->skip_to must be defined in a subclass");
+    return 1;
 }
 
 void

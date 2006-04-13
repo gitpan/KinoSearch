@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.09_03';
+our $VERSION = '0.09';
 
 use constant K_DEBUG => 0;
 
@@ -51,6 +51,9 @@ MODULE = KinoSearch    PACKAGE = KinoSearch
 
 PROTOTYPES: disable
 
+BOOT:
+    items = 0;
+
 =for comment
 Return 1 if memory debugging is enabled.  See KinoSearch::Util::MemManager.
 
@@ -71,7 +74,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.09_03
+0.09
 
 =head1 WARNING
 
