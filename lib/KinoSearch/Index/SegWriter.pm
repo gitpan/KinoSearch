@@ -137,9 +137,10 @@ sub _merge_norms {
         }
         else {
             # the field isn't in the input segment, so write a default
-            my $zeronorm = $self->{similarity}->lengthnorm(0);
-            my $num_docs = $seg_reader->num_docs;
-            $outstream->lu_write( "a$num_docs", $zeronorm x $num_docs );
+            my $zeronorm   = $similarity->lengthnorm(0);
+            my $num_docs   = $seg_reader->num_docs;
+            my $normstring = $similarity->encode_norm($zeronorm) x $num_docs;
+            $outstream->lu_write( "a$num_docs", $normstring );
         }
     }
 }
@@ -266,7 +267,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

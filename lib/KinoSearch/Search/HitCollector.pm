@@ -140,7 +140,7 @@ ALIAS:
     _get_filter_bits = 6
 CODE:
 {
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
     
     case 1:  SvREFCNT_dec(hc->storage_ref);
              hc->storage_ref = newSVsv( ST(1) );
@@ -162,8 +162,7 @@ CODE:
     case 6:  RETVAL = newSVsv(hc->filter_bits_ref);
              break;
 
-    default: Kino_confess("Internal error: _set_or_get ix: %d", ix); 
-    }
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -354,7 +353,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

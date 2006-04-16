@@ -18,6 +18,18 @@ __H__
 #include "XSUB.h"
 #include "KinoSearchUtilCarp.h"
 
+#define KINO_START_SET_OR_GET_SWITCH                                \
+    /* if called as a setter, make sure the extra arg is there */   \
+    if (ix % 2 == 1 && items != 2)                                  \
+        croak("usage: $seg_term_enum->set_xxxxxx($val)");           \
+    switch (ix) {
+
+#define KINO_END_SET_OR_GET_SWITCH                                  \
+    default: Kino_confess("Internal error. ix: %d", ix);            \
+			 RETVAL = &PL_sv_undef; /* quiet compiler warning */    \
+             break; /* probably unreachable */                      \
+    }
+
 #define Kino_extract_struct( perl_obj, dest, cname, class ) \
      if (sv_derived_from( perl_obj, class )) {              \
          IV tmp = SvIV( (SV*)SvRV(perl_obj) );              \
@@ -75,7 +87,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

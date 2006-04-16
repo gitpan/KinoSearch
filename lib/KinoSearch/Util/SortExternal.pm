@@ -167,11 +167,7 @@ ALIAS:
     _get_seg_name  = 10
 CODE:
 {
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        croak("usage: $term_info->set_xxxxxx($val)");
-    
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  SvREFCNT_dec(sortex->outstream_sv);
              sortex->outstream_sv = newSVsv( ST(1) );
@@ -203,7 +199,8 @@ CODE:
              /* fall through */
     case 10: RETVAL = newSVsv(sortex->seg_name_sv);
              break;
-    }
+
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -831,7 +828,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

@@ -196,6 +196,36 @@ sub add_doc {
     $self->{seg_writer}->add_doc($doc);
 }
 
+sub add_invindexes {
+    my ( $self, @invindexes ) = @_;
+    confess("Can't call add_invindexes after new_doc")
+        if $self->{state} == INITIALIZED;
+
+    # verify or obtain InvIndex objects
+    for (@invindexes) {
+        if ( !a_isa_b( $_, 'KinoSearch::Store::InvIndex' ) ) {
+            $_ = KinoSearch::Store::FSInvIndex->new( path => $_ );
+        }
+    }
+
+    # get a reader for each invindex
+    my @readers
+        = map { KinoSearch::Index::IndexReader->new( invindex => $_ ) }
+        @invindexes;
+
+    # merge finfos and init
+    for my $reader (@readers) {
+        $self->{finfos}->consolidate( $reader->get_finfos );
+    }
+    $self->_delayed_init;
+
+    # add all segments in each of the supplied invindexes
+    my $seg_writer = $self->{seg_writer};
+    for my $reader (@readers) {
+        $seg_writer->add_segment($_) for $reader->segreaders_to_merge('all');
+    }
+}
+
 sub delete_docs_by_term {
     my ( $self, $term ) = @_;
     confess("Not a KinoSearch::Index::Term")
@@ -441,6 +471,19 @@ primed to accept values for the fields spec'd by spec_field.
 
 Add a document to the invindex.
 
+=head2 add_invindexes
+
+    my $invindexer = KinoSearch::InvIndexer->new( 
+        invindex => $invindex,
+        analyzer => $analyzer,
+    );
+    $invindexer->add_invindexes( $another_invindex, $yet_another_invindex );
+    $invindexer->finish;
+
+Absorb existing invindexes into this one.  May only be called once per
+InvIndexer.  add_invindexes() and add_doc() cannot be called on the same
+InvIndexer.
+
 =head2 delete_docs_by_term
 
     my $term = KinoSearch::Index::Term->new( 'id', $unique_id );
@@ -475,7 +518,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =cut
 

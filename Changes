@@ -1,5 +1,9 @@
 Revision history for KinoSearch
 
+0.10
+  * InVindexer::add_invindexes() added.
+  * Tighten up C code for ISO C90 compliance
+
 0.09 2006-04-13
   * Incremental indexing enabled 
       o delete_docs_by_term() added to InvIndexer.

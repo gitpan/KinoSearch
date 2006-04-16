@@ -82,11 +82,7 @@ ALIAS:
     get_index_fileptr = 10
 CODE:
 {
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        Kino_confess("usage: $term_info->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  tinfo->doc_freq = SvIV(ST(1));
              /* fall through */
@@ -113,8 +109,7 @@ CODE:
     case 10: RETVAL = newSVnv(tinfo->index_fileptr);
              break;
         
-    default: Kino_confess("Internal error: _set_or_get invalid ix: %d", ix);
-    }
+    KINO_END_SET_OR_GET_SWITCH
 }
     OUTPUT: RETVAL
 
@@ -229,7 +224,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

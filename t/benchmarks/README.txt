@@ -16,18 +16,24 @@ of the un-tarred Reuters collection.
     ./extract_reuters.plx /path/to/reuters_collection
 
 Filepaths are hard-coded, and the assumption is that the apps will be run from
-within the benchmarks/ directory.  Each of the indexing apps takes three
-optional command line arguments: the number of documents to index, the number
-of times to repeat the indexing process, and the increment, or number of docs
-to add during each index writer instance.
+within the benchmarks/ directory.  Each of the indexing apps takes four
+optional command line arguments: 
 
-    perl indexers/kinosearch_indexer.plx --docs=1000 --reps=6 --increment=10
-    java [flags] LuceneIndexer -docs 1000 -reps 6 -increment 10
+  * The number of documents to index.
+  * The number of times to repeat the indexing process.
+  * The increment, or number of docs to add during each index writer instance.
+  * Whether or not the main text should be stored and vectorized.
+
+    $ perl -Mblib indexers/kinosearch_indexer.plx \
+    > --docs=1000 --reps=6 --increment=10 --store=1
+
+    $ java -server -Xmx500M -XX:CompileThreshold=100 LuceneIndexer \
+    > -docs 1000 -reps 6 -increment 10 -store 1
 
 If no command line args are supplied, the apps will index the entire 19043
-article collection once, using a single index writer.
+article collection once, using a single index writer, and will neither store
+nor vectorize the main text.
 
 Upon finishing, each app will produce a "truncated mean" report: the slowest
 25% and fastest 25% of  reps will be discarded, and the rest will be averaged. 
-
 

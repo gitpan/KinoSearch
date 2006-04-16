@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.09
+version: 0.10_01
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: search engine library
@@ -13,7 +13,7 @@ requires:
 provides:
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.09
+    version: 0.10_01
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:

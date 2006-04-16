@@ -133,6 +133,7 @@ t/603-query_boosts.t
 t/701-uscon.t
 t/999-remove_invindexes.t
 t/benchmarks/extract_reuters.plx
+t/benchmarks/indexers/BenchmarkingIndexer.pm
 t/benchmarks/indexers/kinosearch_indexer.plx
 t/benchmarks/indexers/LuceneIndexer.java
 t/benchmarks/indexers/plucene_indexer.plx

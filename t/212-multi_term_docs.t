@@ -41,7 +41,7 @@ my $term = KinoSearch::Index::Term->new( 'content', 'c' );
 my $term_docs = $reader->term_docs($term);
 my ( $docs, $freqs, $prox ) = ( '', '', '' );
 my ( $d, $f );
-while ( $term_docs->read( $d, $f, 1024 ) ) {
+while ( $term_docs->bulk_read( $d, $f, 1024 ) ) {
     $docs  .= $d;
     $freqs .= $f;
 }

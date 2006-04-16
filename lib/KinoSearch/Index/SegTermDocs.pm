@@ -69,17 +69,11 @@ ALIAS:
     _get_reader        = 10
     set_read_positions = 11
     get_read_positions = 12
-PREINIT:
-    SegTermDocsChild *child;
 CODE:
 {
-    child = (SegTermDocsChild*)term_docs->child;
+    SegTermDocsChild *child = (SegTermDocsChild*)term_docs->child;
 
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        Kino_confess("usage: $term_docs->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  child->count = SvUV(ST(1));
              /* fall through */
@@ -125,7 +119,8 @@ CODE:
     case 12: RETVAL = term_docs->next == Kino_SegTermDocs_next_with_positions 
                 ? newSViv(1) : newSViv(0);
              break;
-    }
+
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -164,7 +159,7 @@ U32  Kino_SegTermDocs_get_doc_freq(TermDocs*);
 U32  Kino_SegTermDocs_get_doc(TermDocs*);
 U32  Kino_SegTermDocs_get_freq(TermDocs*);
 SV*  Kino_SegTermDocs_get_positions(TermDocs*);
-U32  Kino_SegTermDocs_read(TermDocs*, SV*, SV*, U32);
+U32  Kino_SegTermDocs_bulk_read(TermDocs*, SV*, SV*, U32);
 void Kino_SegTermDocs_seek_tinfo(TermDocs*, TermInfo*);
 bool Kino_SegTermDocs_next(TermDocs*);
 bool Kino_SegTermDocs_next_with_positions(TermDocs*);
@@ -197,7 +192,7 @@ Kino_SegTermDocs_init_child(TermDocs *term_docs) {
     term_docs->get_doc       = Kino_SegTermDocs_get_doc;
     term_docs->get_freq      = Kino_SegTermDocs_get_freq;
     term_docs->get_positions = Kino_SegTermDocs_get_positions;
-    term_docs->read          = Kino_SegTermDocs_read;
+    term_docs->bulk_read     = Kino_SegTermDocs_bulk_read;
     term_docs->seek_tinfo    = Kino_SegTermDocs_seek_tinfo;
     term_docs->next          = Kino_SegTermDocs_next;
     term_docs->destroy       = Kino_SegTermDocs_destroy;
@@ -246,8 +241,8 @@ Kino_SegTermDocs_get_positions(TermDocs *term_docs) {
 }
 
 U32 
-Kino_SegTermDocs_read(TermDocs *term_docs, SV* doc_nums_sv, SV* freqs_sv, 
-                      U32 num_wanted) {
+Kino_SegTermDocs_bulk_read(TermDocs *term_docs, SV* doc_nums_sv, 
+                           SV* freqs_sv, U32 num_wanted) {
     SegTermDocsChild *child;
     InStream         *freq_stream;
     U32               doc_code;
@@ -440,7 +435,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

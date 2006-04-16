@@ -31,6 +31,7 @@ typedef struct bytebuf {
 ByteBuf* Kino_BB_new(I32);
 ByteBuf* Kino_BB_new_string(char*, I32);
 ByteBuf* Kino_BB_new_view(char*, I32);
+ByteBuf* Kino_BB_clone(ByteBuf*);
 void     Kino_BB_assign_view(ByteBuf*, char*, I32);
 void     Kino_BB_assign_string(ByteBuf*, char*, I32);
 void     Kino_BB_cat_string(ByteBuf*, char*, I32);
@@ -106,6 +107,17 @@ Kino_BB_new_view(char *ptr, I32 size) {
     bb->flags = 0 | KINO_BB_VIEW;
     
     return bb;
+}
+
+/* Return a "real" copy of the ByteBuf (regardless of whether it was a "view"
+ * ByteBuf before).
+ */
+ByteBuf*
+Kino_BB_clone(ByteBuf *bb) {
+    if (bb == NULL)
+        return NULL;
+    else 
+        return Kino_BB_new_string(bb->ptr, bb->size);
 }
 
 /* Assign the ptr and size members to the passed in values.  Downgrade the
@@ -211,7 +223,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

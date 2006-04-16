@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10_01';
 
 use constant K_DEBUG => 0;
 
@@ -74,7 +74,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.09
+0.10
 
 =head1 WARNING
 
@@ -146,6 +146,11 @@ can be put to many different uses.
 =item *
 
 Extremely fast and scalable - can handle millions of documents
+
+=item *
+
+Incremental indexing (addition/deletion of documents to/from an existing
+index).
 
 =item *
 
@@ -227,6 +232,11 @@ is not compatible with either.
 
 KinoSearch is named for Kino, the main character in John Steinbeck's novella,
 "The Pearl".
+
+=head1 SUPPORT
+
+Please direct support questions to the kinosearch mailing list: subscription
+information at L<http://www.rectangular.com/kinosearch>.
 
 =head1 AUTHORS
 

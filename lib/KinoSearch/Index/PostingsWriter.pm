@@ -333,7 +333,7 @@ Kino_PostWriter_add_segment(SortExternal *sort_pool, SegTermEnum* term_enum,
         /* start with the termstring and the null byte */
         Kino_encode_bigend_U16(term_buf->text_len, text_len_buf);
         common_len = term_buf->text_len + KINO_FIELD_NUM_LEN;
-        Kino_BB_assign_string(posting, term_buf->termstring, common_len);
+        Kino_BB_assign_string(posting, term_buf->termstring->ptr, common_len);
         Kino_BB_cat_string(posting, "\0", NULL_BYTE_LEN);
         common_len += NULL_BYTE_LEN;
 
@@ -437,7 +437,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

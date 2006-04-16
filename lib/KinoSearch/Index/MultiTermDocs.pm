@@ -77,23 +77,18 @@ _set_or_get(term_docs, ...)
 ALIAS:
     _set_sub_term_docs = 1
     _get_sub_term_docs = 2
-PREINIT:
-    MultiTermDocsChild *child;
 CODE:
 {
-    child = (MultiTermDocsChild*)term_docs->child;
+    MultiTermDocsChild *child = (MultiTermDocsChild*)term_docs->child;
 
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        Kino_confess("usage: $term_docs->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
         
     case 1:  Kino_confess("Can't set sub_term_docs");
              /* fall through */
     case 2:  RETVAL = newSVsv( child->sub_term_docs_avref );
              break;
-    }
+
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -110,7 +105,7 @@ __H__
 #include "KinoSearchUtilMemManager.h"
 
 typedef struct multitermdocschild {
-    U32        num_subs;
+    I32        num_subs;
     I32        base;
     I32        pointer;
     SV        *sub_term_docs_avref;
@@ -126,7 +121,7 @@ U32  Kino_MultiTermDocs_get_doc_freq(TermDocs*);
 U32  Kino_MultiTermDocs_get_doc(TermDocs*);
 U32  Kino_MultiTermDocs_get_freq(TermDocs*);
 SV*  Kino_MultiTermDocs_get_positions(TermDocs*);
-U32  Kino_MultiTermDocs_read(TermDocs*, SV*, SV*, U32);
+U32  Kino_MultiTermDocs_bulk_read(TermDocs*, SV*, SV*, U32);
 bool Kino_MultiTermDocs_next(TermDocs*);
 void Kino_MultiTermDocs_destroy(TermDocs*);
 
@@ -140,7 +135,7 @@ void
 Kino_MultiTermDocs_init_child(TermDocs* term_docs, SV *sub_term_docs_avref, 
                               AV *starts_av) {
     MultiTermDocsChild *child;
-    int                 i;
+    I32                 i;
     SV                **sv_ptr;
 	AV                 *sub_term_docs_av;
 
@@ -179,7 +174,7 @@ Kino_MultiTermDocs_init_child(TermDocs* term_docs, SV *sub_term_docs_avref,
     term_docs->get_doc       = Kino_MultiTermDocs_get_doc;
     term_docs->get_freq      = Kino_MultiTermDocs_get_freq;
     term_docs->get_positions = Kino_MultiTermDocs_get_positions;
-    term_docs->read          = Kino_MultiTermDocs_read;
+    term_docs->bulk_read     = Kino_MultiTermDocs_bulk_read;
     term_docs->next          = Kino_MultiTermDocs_next;
 	term_docs->destroy       = Kino_MultiTermDocs_destroy;
 }
@@ -193,7 +188,7 @@ U32
 Kino_MultiTermDocs_get_doc_freq(TermDocs *term_docs) {
     MultiTermDocsChild *child;
     TermDocs           *sub_td;
-    int                 i;
+    I32                 i;
     U32                 doc_freq = 0;
 
 	/* sum the doc_freqs of all segments */
@@ -240,8 +235,8 @@ Kino_MultiTermDocs_get_positions(TermDocs *term_docs) {
 
 
 U32
-Kino_MultiTermDocs_read(TermDocs *term_docs, SV *doc_nums_sv, SV *freqs_sv,
-                        U32 num_wanted) {
+Kino_MultiTermDocs_bulk_read(TermDocs *term_docs, SV *doc_nums_sv, 
+                             SV *freqs_sv, U32 num_wanted) {
     MultiTermDocsChild *child;
     U32                 i, num_got, base;
     U32                *doc_nums;
@@ -261,7 +256,7 @@ Kino_MultiTermDocs_read(TermDocs *term_docs, SV *doc_nums_sv, SV *freqs_sv,
             }
         }
         
-        num_got = child->current->read(
+        num_got = child->current->bulk_read(
             child->current, doc_nums_sv, freqs_sv, num_wanted );
 
         if (num_got == 0) {
@@ -333,7 +328,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

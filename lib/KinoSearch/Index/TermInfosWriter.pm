@@ -118,11 +118,7 @@ ALIAS:
     _get_size      = 8
 CODE:
 {
-     /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        Kino_confess("usage: $term_info->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  SvREFCNT_dec(obj->other_sv);
              obj->other_sv = newSVsv( ST(1) );
@@ -140,7 +136,8 @@ CODE:
 
     case 8:  RETVAL = newSViv(obj->size);
              break;
-    }
+
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -344,7 +341,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

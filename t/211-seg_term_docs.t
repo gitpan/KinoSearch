@@ -20,7 +20,7 @@ my $term = KinoSearch::Index::Term->new( 'content', 'c' );
 my $term_docs = $reader->term_docs($term);
 
 my ( $docs, $freqs, $prox );
-$term_docs->read( $docs, $freqs, 1024 );
+$term_docs->bulk_read( $docs, $freqs, 1024 );
 
 my @doc_nums = unpack( 'I*', $docs );
 is_deeply( \@doc_nums, [ 2, 3 ], "correct doc_nums" );
@@ -38,7 +38,7 @@ is_deeply( \@prox_nums, [ 0, 0, 1 ], "correct positions" );
 $term_docs->_get_deldocs()->set(2);
 $term_docs->seek($term);
 
-$term_docs->read( $docs, $freqs, 1024 );
+$term_docs->bulk_read( $docs, $freqs, 1024 );
 @doc_nums = unpack( 'I*', $docs );
 is_deeply( \@doc_nums, [3], "deletions are honored" );
 
@@ -50,6 +50,6 @@ $invindex = create_invindex(@documents);
 $reader    = KinoSearch::Index::IndexReader->new( invindex => $invindex );
 $term_docs = $reader->term_docs($term);
 
-$term_docs->read( $docs, $freqs, 1024 );
+$term_docs->bulk_read( $docs, $freqs, 1024 );
 @doc_nums = unpack( 'I*', $docs );
 is_deeply( \@doc_nums, [ 0 .. 202 ], "large number of doc_nums correct" );

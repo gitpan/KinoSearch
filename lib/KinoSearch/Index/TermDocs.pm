@@ -80,13 +80,14 @@ CODE:
 OUTPUT: RETVAL
 
 U32
-read(term_docs, doc_nums_sv, freqs_sv, num_wanted)
+bulk_read(term_docs, doc_nums_sv, freqs_sv, num_wanted)
     TermDocs  *term_docs
     SV        *doc_nums_sv;
     SV        *freqs_sv;
     U32        num_wanted;
 CODE:
-    RETVAL = term_docs->read(term_docs, doc_nums_sv, freqs_sv, num_wanted);
+    RETVAL = term_docs->bulk_read(term_docs, doc_nums_sv, freqs_sv, 
+        num_wanted);
 OUTPUT: RETVAL
 
 =begin comment
@@ -120,11 +121,7 @@ PREINIT:
     U32 num;
 CODE:
 {
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        Kino_confess("usage: $term_docs->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  Kino_confess("Can't set_doc");
              /* fall through */
@@ -154,7 +151,8 @@ CODE:
              ? &PL_sv_undef
              : newSVuv(num);
              break;
-    }
+
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -189,7 +187,7 @@ typedef struct termdocs {
     void (*seek_tinfo)(struct termdocs*, TermInfo*);
     bool (*next)(struct termdocs*);
     bool (*skip_to)(struct termdocs*, U32);
-    U32  (*read)(struct termdocs*, SV*, SV*, U32);
+    U32  (*bulk_read)(struct termdocs*, SV*, SV*, U32);
     void (*destroy)(struct termdocs*);
 } TermDocs;
 
@@ -202,7 +200,7 @@ SV*  Kino_TermDocs_get_positions_death(TermDocs*);
 void Kino_TermDocs_seek_tinfo_death(TermDocs*, TermInfo*);
 bool Kino_TermDocs_next_death(TermDocs*);
 bool Kino_TermDocs_skip_to_death(TermDocs*, U32);
-U32  Kino_TermDocs_read_death(TermDocs*, SV*, SV*, U32);
+U32  Kino_TermDocs_bulk_read_death(TermDocs*, SV*, SV*, U32);
 void Kino_TermDocs_destroy(TermDocs*);
 
 #endif /* include guard */
@@ -274,9 +272,9 @@ Kino_TermDocs_next_death(TermDocs *term_docs) {
 }
 
 U32  
-Kino_TermDocs_read_death(TermDocs* term_docs, SV* doc_nums_sv, SV* freqs_sv,
-                         U32 num_wanted) {
-    Kino_confess("term_docs->read must be defined in a subclass");
+Kino_TermDocs_bulk_read_death(TermDocs* term_docs, SV* doc_nums_sv, 
+                              SV* freqs_sv, U32 num_wanted) {
+    Kino_confess("term_docs->bulk_read must be defined in a subclass");
     return 1;
 }
 
@@ -304,7 +302,7 @@ KinoSearch::Index::TermDocs - retrieve list of docs which contain a Term
     # abstract base class, but here's how a subclass works:
 
     $term_docs->seek($term);
-    my $num_got  = $term_docs->read( $docs, $freqs, $num_to_read );
+    my $num_got  = $term_docs->bulk_read( $docs, $freqs, $num_to_read );
     my @doc_nums = unpack( 'I*', $docs );
     my @tf_ds    = unpack( 'I*', $freqs );    # term frequency in document
 
@@ -332,7 +330,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

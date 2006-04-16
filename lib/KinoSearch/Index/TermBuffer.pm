@@ -55,20 +55,20 @@ __H__
 #include "XSUB.h"
 #include "KinoSearchIndexTerm.h"
 #include "KinoSearchStoreInStream.h"
+#include "KinoSearchUtilByteBuf.h"
+#include "KinoSearchUtilCarp.h"
 #include "KinoSearchUtilMemManager.h"
 
 typedef struct termbuffer {
-    char    *termstring;
-    STRLEN   text_len;
-    STRLEN   capacity;
-    char    *fnum_map;
+    ByteBuf *termstring;
+    I32      text_len;
     I32      max_field_num;
 } TermBuffer;
 
 TermBuffer* Kino_TermBuf_new(I32);
 void Kino_TermBuf_read(TermBuffer*, InStream*);
 void Kino_TermBuf_reset(TermBuffer*);
-void Kino_TermBuf_set_text_len(TermBuffer*, STRLEN);
+void Kino_TermBuf_set_termstring(TermBuffer*, char*, I32);
 void Kino_TermBuf_destroy(TermBuffer*);
 
 #endif /* include guard */
@@ -76,6 +76,8 @@ void Kino_TermBuf_destroy(TermBuffer*);
 __C__
 
 #include "KinoSearchIndexTermBuffer.h"
+
+static void Kino_TermBuf_set_text_len(TermBuffer*, I32);
 
 TermBuffer*
 Kino_TermBuf_new(I32 finfos_size) {
@@ -98,17 +100,14 @@ Kino_TermBuf_new(I32 finfos_size) {
  * it into a full-fledged Term object. */
 void
 Kino_TermBuf_read(TermBuffer *term_buf, InStream *instream) {
-    I32 text_overlap;
-    STRLEN finish_chars_len;
-    STRLEN total_text_len;
-    U32 field_num;
+    I32 text_overlap, finish_chars_len, total_text_len, field_num;
 
     /* read bytes which are shared between the last term text and this */
     text_overlap     = instream->read_vint(instream);
     finish_chars_len = instream->read_vint(instream);
     total_text_len   = text_overlap + finish_chars_len;
     Kino_TermBuf_set_text_len(term_buf, total_text_len);
-    instream->read_chars(instream, term_buf->termstring, 
+    instream->read_chars(instream, term_buf->termstring->ptr, 
         (text_overlap + KINO_FIELD_NUM_LEN),
         finish_chars_len);
 
@@ -118,43 +117,49 @@ Kino_TermBuf_read(TermBuffer *term_buf, InStream *instream) {
         Kino_confess("Internal error: field_num %d > max_field_num %d",
             field_num, term_buf->max_field_num);
 
-    Kino_encode_bigend_U16( (U16)field_num, term_buf->termstring);
+    Kino_encode_bigend_U16( (U16)field_num, term_buf->termstring->ptr);
 }
 
 /* Set the TermBuffer object to a sentinel state, indicating that it does not
  * hold a valid Term */
 void
 Kino_TermBuf_reset(TermBuffer *term_buf) {
-    Kino_Safefree(term_buf->termstring);
-    term_buf->termstring = NULL;
+    if (term_buf->termstring != NULL) {
+        Kino_BB_destroy(term_buf->termstring);
+        term_buf->termstring = NULL;
+    }
     term_buf->text_len   = 0;
-    term_buf->capacity   = 0;
+}
+
+void
+Kino_TermBuf_set_termstring(TermBuffer *term_buf, char* ptr, I32 len) {
+    /* the passed in len includes the length of the encoded field num */
+    if (len < 2)
+        Kino_confess("can't set_termstring with a len < 2: %d", len);
+    Kino_TermBuf_set_text_len(term_buf, len - KINO_FIELD_NUM_LEN);
+
+    Kino_BB_assign_string(term_buf->termstring, ptr, len);
 }
 
 /* Set the length of the term text, and ensure that there's enough memory
  * allocated to hold term text that size. */
-void 
-Kino_TermBuf_set_text_len(TermBuffer *term_buf, STRLEN new_len) {
-    term_buf->text_len = new_len;
-    
-    /* bail if the buffer's already at least as big as required */
-    if (term_buf->capacity >= new_len + KINO_FIELD_NUM_LEN) {
-        return;
-    }
-    else {
-        STRLEN amount_to_malloc;
+static void 
+Kino_TermBuf_set_text_len(TermBuffer *term_buf, I32 new_len) {
+    ByteBuf* termstring = term_buf->termstring;
 
-        term_buf->capacity = new_len + KINO_FIELD_NUM_LEN;
-        amount_to_malloc   = term_buf->capacity + 1;
-        if (term_buf->termstring == NULL) {
-            Kino_New(0, term_buf->termstring, amount_to_malloc, char);
-            Copy("\0\0", term_buf->termstring, 2, char);
-        }
-        else {
-            Kino_Renew(term_buf->termstring, amount_to_malloc, char);
-        }
-        term_buf->termstring[ term_buf->capacity ] = '\0';
+    /* initialize if necessary, with a field number of 0 */
+    if (termstring == NULL) {
+        termstring = Kino_BB_new_string("\0\0", 2);
+        term_buf->termstring = termstring;
     }
+
+    /* realloc and set lengths */
+    Kino_BB_grow(termstring, new_len + KINO_FIELD_NUM_LEN);
+    termstring->size   = new_len + KINO_FIELD_NUM_LEN;
+    term_buf->text_len = new_len;
+
+    /* null-terminate */
+    termstring->ptr[ termstring->size ] = '\0';
 }
 
 void 
@@ -183,7 +188,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

@@ -90,8 +90,6 @@ PPCODE:
 SV*
 _phrase_scorer_set_or_get(scorer, ...)
     Scorer *scorer;
-PREINIT:
-    PhraseScorerChild *child;
 ALIAS:
     _set_slop = 1
     _get_slop = 2
@@ -101,13 +99,9 @@ ALIAS:
     _get_norms        = 6
 CODE:
 {
-    child = (PhraseScorerChild*)scorer->child;
+    PhraseScorerChild *child = (PhraseScorerChild*)scorer->child;
 
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        Kino_confess("usage: $scorer->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  child->slop = SvIV( ST(1) );
              /* fall through */
@@ -135,7 +129,7 @@ CODE:
     case 6:  RETVAL = newSVsv(child->norms_sv);
              break;
 
-    }
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -404,7 +398,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

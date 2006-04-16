@@ -123,15 +123,15 @@ ALIAS:
     get_max_size  = 4
 CODE:
 {
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
+
     case 2:  RETVAL = newSVuv(pq->size);
              break;
 
     case 4:  RETVAL = newSVuv(pq->max_size);
              break;
 
-    default: Kino_confess("Internal error: _set_or_get ix: %d", ix); 
-    }
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -456,7 +456,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

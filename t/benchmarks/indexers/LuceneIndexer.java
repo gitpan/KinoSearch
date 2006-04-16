@@ -37,6 +37,7 @@ public class LuceneIndexer {
     int maxToIndex = fileList.length; // default: index all docs
     int numReps    = 1;               // default: run once
     int increment  = 0;
+    boolean store  = false;
     String arg;
     int i = 0;
     while (i < (args.length - 1) && args[i].startsWith("-")) {
@@ -47,6 +48,10 @@ public class LuceneIndexer {
         numReps = Integer.parseInt(args[i++]);
       else if (arg.equals("-increment"))
         increment = Integer.parseInt(args[i++]);
+      else if (arg.equals("-store")) {
+        if (Integer.parseInt(args[i++]) != 0)
+          store = true;
+      }
       else
         throw new Exception("Unknown argument: " + arg);
     }
@@ -60,7 +65,7 @@ public class LuceneIndexer {
     for (int rep = 1; rep <= numReps; rep++) {
       // start the clock and build the index
       long start = new Date().getTime(); 
-      int numIndexed = buildIndex(fileList, maxToIndex, increment);
+      int numIndexed = buildIndex(fileList, maxToIndex, increment, store);
   
       // stop the clock and print a report
       long end = new Date().getTime();
@@ -100,8 +105,8 @@ public class LuceneIndexer {
   }
 
   // Build an index, stopping at maxToIndex docs if maxToIndex > 0.
-  static int buildIndex (String[] fileList, int maxToIndex, int increment) 
-      throws Exception {
+  static int buildIndex (String[] fileList, int maxToIndex, int increment,
+                         boolean store) throws Exception {
     IndexWriter writer = initWriter(0);
     int docsSoFar = 0;
 
@@ -122,19 +127,20 @@ public class LuceneIndexer {
           doc.add(titleField);
       
           // the body is the rest
-          StringBuffer buf = new StringBuffer();
-          String str;
-          while ( (str = br.readLine()) != null )
-            buf.append( str );
-          String body = buf.toString();
-          Field bodyField = new Field("body", body, Field.Store.YES, 
-              Field.Index.TOKENIZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
-          doc.add(bodyField);
-          /*
-          Field bodyField = new Field("body", br);
-          doc.add(bodyField);
-          */
-    
+          if (store) {
+            StringBuffer buf = new StringBuffer();
+            String str;
+            while ( (str = br.readLine()) != null )
+              buf.append( str );
+            String body = buf.toString();
+            Field bodyField = new Field("body", body, Field.Store.YES, 
+                Field.Index.TOKENIZED, Field.TermVector.WITH_POSITIONS_OFFSETS);
+            doc.add(bodyField);
+          } else {
+            Field bodyField = new Field("body", br);
+            doc.add(bodyField);
+          }
+
           writer.addDocument(doc);
         } finally {
           br.close();

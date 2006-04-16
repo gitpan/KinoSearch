@@ -116,11 +116,7 @@ CODE:
         Kino_confess("TokenBatch doesn't currently hold a valid token");
     }
 
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        Kino_confess("usage: $term_info->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  batch->start_offsets[ batch->current ] = SvUV( ST(1) );
              /* fall through */
@@ -156,7 +152,8 @@ CODE:
              /* fall through */
     case 14: RETVAL = newSVsv(batch->tv_string);
              break;
-    }
+    
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -398,8 +395,8 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
     HV      *pos_hash;
     HE      *he;
     AV      *out_av;
-    U32      i, overlap, num_bytes, num_positions;
-    U32      num_postings = 0;
+    I32      i, overlap, num_bytes, num_positions;
+    I32      num_postings = 0;
     SV     **sv_ptr;
     SV      *text_sv;
     char    *text, *source_ptr, *dest_ptr, *end_ptr;
@@ -475,7 +472,7 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
 
         /* append position, start offset, end offset to the serialized_sv */
         dest_u32 = (U32*)SvEND(serialized_sv);
-        *dest_u32++ = i;
+        *dest_u32++ = (U32)i;
         *dest_u32++ = batch->start_offsets[i];
         *dest_u32++ = batch->end_offsets[i];
         len = SvCUR(serialized_sv) + POSDATA_LEN;
@@ -610,7 +607,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

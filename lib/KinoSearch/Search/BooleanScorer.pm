@@ -56,21 +56,16 @@ _boolean_scorer_set_or_get(scorer, ...)
     Scorer* scorer;
 ALIAS:
     _get_subscorer_storage = 2
-PREINIT:
-    BoolScorerChild* child;
 CODE:
 {
-    child = (BoolScorerChild*)scorer->child;
+    BoolScorerChild* child = (BoolScorerChild*)scorer->child;
 
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        croak("usage: $scorer->set_xxxxxx($val)");
-
-    switch (ix) {
+    KINO_START_SET_OR_GET_SWITCH
 
     case 2:  RETVAL = newRV((SV*)child->subscorers_av);
              break;
-    }
+
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -194,7 +189,7 @@ void
 Kino_BoolScorer_compute_coord_factors(Scorer *scorer) {
     BoolScorerChild *child;
     float           *coord_factors;
-    I32              i;
+    U32              i;
 
     child = (BoolScorerChild*)scorer->child;
 
@@ -389,7 +384,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

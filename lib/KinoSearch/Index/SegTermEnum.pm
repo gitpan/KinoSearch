@@ -120,8 +120,14 @@ void
 scan_to(obj, target_termstring_sv)
     SegTermEnum *obj;
     SV          *target_termstring_sv;
+PREINIT:
+    char *ptr;
+    STRLEN len;
 PPCODE:
-    Kino_SegTermEnum_scan_to(obj, target_termstring_sv);
+    ptr = SvPV(target_termstring_sv, len);
+    if (len < 2)
+        Kino_confess("length of termstring < 2: %"UVuf, (UV)len);
+    Kino_SegTermEnum_scan_to(obj, ptr, len);
 
 
 =for comment
@@ -164,8 +170,14 @@ I32
 scan_cache(obj, target_termstring_sv)
     SegTermEnum  *obj;
     SV           *target_termstring_sv;
+PREINIT:
+    char *ptr;
+    STRLEN len;
 CODE:
-    RETVAL = Kino_SegTermEnum_scan_cache(obj, target_termstring_sv);
+    ptr = SvPV(target_termstring_sv, len);
+    if (len < 2)
+        Kino_confess("length of termstring < 2: %"UVuf, (UV)len);
+    RETVAL = Kino_SegTermEnum_scan_cache(obj, ptr, len);
 OUTPUT: RETVAL
 
 
@@ -198,11 +210,7 @@ ALIAS:
     is_index                 = 16
 CODE:
 {
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        croak("usage: $seg_term_enum->set_xxxxxx($val)");
-
-    switch (ix) {
+	KINO_START_SET_OR_GET_SWITCH
 
     case 0:  croak("can't call _get_or_set on it's own");
              break; /* probably unreachable */
@@ -225,14 +233,11 @@ CODE:
              break;
 
     case 7:  if ( SvOK( ST(1) ) ) {
-                 char *scratch_ptr;
-                 STRLEN len;
-                 scratch_ptr = SvPV( ST(1), len );
+                 STRLEN len = SvCUR( ST(1) );
                  if (len < KINO_FIELD_NUM_LEN)
                     Kino_confess("Internal error: termstring too short");
-                 Kino_TermBuf_set_text_len(obj->term_buf, 
-                    len - KINO_FIELD_NUM_LEN);
-                 Copy(scratch_ptr, obj->term_buf->termstring, len, char);
+                 Kino_TermBuf_set_termstring(obj->term_buf, 
+                    SvPVX(ST(1)), len);
              }
              else {
                  Kino_TermBuf_reset(obj->term_buf);
@@ -240,8 +245,8 @@ CODE:
              /* fall through */
     case 8:  RETVAL = (obj->term_buf->termstring == NULL) 
                  ? &PL_sv_undef
-                 : newSVpv( obj->term_buf->termstring,
-                     (obj->term_buf->text_len + KINO_FIELD_NUM_LEN) ); 
+                 : newSVpv( obj->term_buf->termstring->ptr,
+                     obj->term_buf->termstring->size ); 
              break;
 
     case 9:  {
@@ -275,12 +280,10 @@ CODE:
              /* fall through */
     case 16: RETVAL = newSViv(obj->is_index);
              break;
-
-    default: Kino_confess("Internal error: _set_or_get ix: %d", ix); 
-             break; /* probably unreachable */
-    }
+	
+    KINO_END_SET_OR_GET_SWITCH
 }
-    OUTPUT: RETVAL
+OUTPUT: RETVAL
 
 
 void
@@ -299,6 +302,7 @@ __H__
 #include "KinoSearchIndexTermBuffer.h"
 #include "KinoSearchIndexTermInfo.h"
 #include "KinoSearchStoreInStream.h"
+#include "KinoSearchUtilByteBuf.h"
 #include "KinoSearchUtilCarp.h"
 #include "KinoSearchUtilCClass.h"
 #include "KinoSearchUtilMemManager.h"
@@ -316,8 +320,7 @@ typedef struct segtermenum {
     I32         position;
     I32         index_interval;
     I32         skip_interval;
-    char      **termstring_ptr_cache;
-    STRLEN     *term_text_len_cache;
+    ByteBuf   **termstring_cache;
     TermInfo  **tinfos_cache;
 } SegTermEnum;
 
@@ -326,8 +329,8 @@ SegTermEnum* Kino_SegTermEnum_new_helper(SV*, I32, SV*, SV*);
 void Kino_SegTermEnum_reset(SegTermEnum*);
 I32  Kino_SegTermEnum_next(SegTermEnum*);
 void Kino_SegTermEnum_fill_cache(SegTermEnum*);
-void Kino_SegTermEnum_scan_to(SegTermEnum*, SV*);
-I32  Kino_SegTermEnum_scan_cache(SegTermEnum*, SV*);
+void Kino_SegTermEnum_scan_to(SegTermEnum*, char*, I32);
+I32  Kino_SegTermEnum_scan_cache(SegTermEnum*, char*, I32);
 void Kino_SegTermEnum_destroy(SegTermEnum*);
 
 #endif /* include guard */
@@ -347,10 +350,9 @@ Kino_SegTermEnum_new_helper(SV *instream_sv, I32 is_index, SV *finfos_sv,
     Kino_New(0, obj, 1, SegTermEnum);
     obj->tinfo = Kino_TInfo_new();
 
-    /* flag these so they don't get freed unless they get filled later */
-    obj->tinfos_cache         = NULL;
-    obj->termstring_ptr_cache = NULL;
-    obj->term_text_len_cache  = NULL;
+    /* init */
+    obj->tinfos_cache     = NULL;
+    obj->termstring_cache = NULL;
 
     /* save instream, finfos, and term_buffer, incrementing refcounts */
     obj->instream_sv  = newSVsv(instream_sv);
@@ -434,90 +436,68 @@ Kino_SegTermEnum_fill_cache(SegTermEnum* obj) {
     TermBuffer  *term_buf;
     TermInfo    *tinfo;
     TermInfo   **tinfos_cache;
-    STRLEN      *term_text_len_cache;
-    char       **termstring_ptr_cache;
+    ByteBuf    **termstring_cache;
 
-    /* allocate space for cache pointers */
+    /* allocate caches */
     if (obj->tinfos_cache != NULL)
         Kino_confess("Internal error: cache already filled");
-    Kino_New(0, obj->termstring_ptr_cache, obj->enum_size, char*); 
-    Kino_New(0, obj->term_text_len_cache, obj->enum_size, STRLEN);
+    Kino_New(0, obj->termstring_cache, obj->enum_size, ByteBuf*); 
     Kino_New(0, obj->tinfos_cache, obj->enum_size, TermInfo*);
 
     /* make some local copies */
     tinfo                = obj->tinfo;
     term_buf             = obj->term_buf;
     tinfos_cache         = obj->tinfos_cache;
-    term_text_len_cache  = obj->term_text_len_cache;
-    termstring_ptr_cache = obj->termstring_ptr_cache;
+    termstring_cache     = obj->termstring_cache;
 
     while (Kino_SegTermEnum_next(obj)) {
         /* copy tinfo and termstring into caches */
-        *tinfos_cache++         = Kino_TInfo_dupe(tinfo);
-        *term_text_len_cache++  = term_buf->text_len;
-        *termstring_ptr_cache++ = Kino_savepvn(term_buf->termstring, 
-            (term_buf->text_len + KINO_FIELD_NUM_LEN));
+        *tinfos_cache++     = Kino_TInfo_dupe(tinfo);
+        *termstring_cache++ = Kino_BB_clone(term_buf->termstring);
     }
 }
 
 void
-Kino_SegTermEnum_scan_to(SegTermEnum *obj, SV *target_termstring_sv) {
-    TermBuffer *term_buf;
-    char       *target_termstring;
-    STRLEN      target_termstring_len;
-    I32         comparison; 
+Kino_SegTermEnum_scan_to(SegTermEnum *obj, char *target_termstring, 
+                         I32 target_termstring_len) {
+    TermBuffer *term_buf = obj->term_buf;
+    ByteBuf     target;
 
-    /* make local copy */
-    term_buf = obj->term_buf;
-
-    target_termstring = SvPV(target_termstring_sv, target_termstring_len);
+    /* make convenience copies */
+    target.ptr  = target_termstring;
+    target.size = target_termstring_len;
 
     /* keep looping until the termstring is lexically ge target */
     do {
-        comparison = Kino_StrHelp_compare_strings(
-            term_buf->termstring, 
-            target_termstring, 
-            (term_buf->text_len + KINO_FIELD_NUM_LEN), 
-            target_termstring_len
-        );
-        if (comparison >= 0 && obj->position != -1)
+		const I32 comparison = Kino_BB_compare(term_buf->termstring, &target);
+
+        if ( comparison >= 0 &&  obj->position != -1) {
             break;
+        }
     } while (Kino_SegTermEnum_next(obj));
 }
 
 I32
-Kino_SegTermEnum_scan_cache(SegTermEnum *obj, SV *target_termstring_sv) {
-    TermBuffer  *term_buf;
-    I32          lo, mid, hi, result, comparison;
-    char        *target_termstring;
-    STRLEN       target_len;
-    char       **termstrings;
-    STRLEN      *lengths;
-    char        *scratch_ptr;
-    STRLEN       term_text_len;
+Kino_SegTermEnum_scan_cache(SegTermEnum *obj, char *target_termstring, 
+                            I32 target_len) {
+    TermBuffer  *term_buf = obj->term_buf;
+    ByteBuf    **termstrings = obj->termstring_cache;
+    ByteBuf      target;
+    I32          lo       = 0;
+    I32          hi       = obj->enum_size - 1;
+    I32          result   = -100;
+    I32          mid, comparison;
 
-    term_buf = obj->term_buf;
-
-    /* prepare to compare strings */
-    target_termstring = SvPV(target_termstring_sv, target_len);
-    termstrings       = obj->termstring_ptr_cache;
-    lengths           = obj->term_text_len_cache;
+    /* make convenience copies */
+    target.ptr  = target_termstring;
+    target.size = target_len;
     if (obj->tinfos_cache == NULL)
         Kino_confess("Internal Error: fill_cache hasn't been called yet"); 
     
-    lo     = 0;
-    hi     = obj->enum_size - 1;
-    result = -100; 
-
     /* divide and conquer */
     while (hi >= lo) {
         mid        = (lo + hi) >> 1;
-        comparison = Kino_StrHelp_compare_strings(
-            target_termstring,  
-            termstrings[mid], 
-            target_len,        
-            (lengths[mid] + KINO_FIELD_NUM_LEN)
-        );
+        comparison = Kino_BB_compare(&target, termstrings[mid]);
         if (comparison < 0) 
             hi = mid - 1;
         else if (comparison > 0)
@@ -533,12 +513,8 @@ Kino_SegTermEnum_scan_cache(SegTermEnum *obj, SV *target_termstring_sv) {
     
     /* set the state of the Enum/TermBuffer as if we'd called scan_to */
     obj->position  = result;
-    term_text_len  = lengths[result]; 
-    scratch_ptr    = termstrings[result];
-    Kino_TermBuf_set_text_len(term_buf, term_text_len);
-    Copy(scratch_ptr, term_buf->termstring, 
-        (term_text_len + KINO_FIELD_NUM_LEN), char);
-
+    Kino_TermBuf_set_termstring(term_buf, termstrings[result]->ptr,
+        termstrings[result]->size);
     Kino_TInfo_destroy(obj->tinfo);
     obj->tinfo = Kino_TInfo_dupe( obj->tinfos_cache[result] );
 
@@ -547,10 +523,6 @@ Kino_SegTermEnum_scan_cache(SegTermEnum *obj, SV *target_termstring_sv) {
 
 void
 Kino_SegTermEnum_destroy(SegTermEnum *obj) {
-    I32         iter;
-    char      **termstring_ptr_cache_ptr;
-    TermInfo  **tinfos_cache_ptr;
-
     /* put out the garbage for collection */
     SvREFCNT_dec(obj->finfos);
     SvREFCNT_dec(obj->instream_sv);
@@ -560,15 +532,15 @@ Kino_SegTermEnum_destroy(SegTermEnum *obj) {
 
     /* if fill_cache was called, free all of that... */
     if (obj->tinfos_cache != NULL) {
-        termstring_ptr_cache_ptr = obj->termstring_ptr_cache;
-        tinfos_cache_ptr = obj->tinfos_cache;
-        Kino_Safefree(obj->term_text_len_cache);
+		I32         iter;
+		ByteBuf   **termstring_cache = obj->termstring_cache;
+		TermInfo  **tinfos_cache     = obj->tinfos_cache;
         for (iter = 0; iter < obj->enum_size; iter++) {
-            Kino_Safefree(*termstring_ptr_cache_ptr++);
-            Kino_TInfo_destroy(*tinfos_cache_ptr++);
+            Kino_BB_destroy(*termstring_cache++);
+            Kino_TInfo_destroy(*tinfos_cache++);
         }
         Kino_Safefree(obj->tinfos_cache);
-        Kino_Safefree(obj->termstring_ptr_cache);
+        Kino_Safefree(obj->termstring_cache);
     }
 
     /* last, the SegTermEnum object itself */
@@ -594,7 +566,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut

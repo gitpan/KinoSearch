@@ -88,16 +88,11 @@ ALIAS:
     _get_weight_value = 6
     _set_norms        = 7
     _get_norms        = 8
-PREINIT:
-    TermScorerChild *child;
 CODE:
 {
-    child = (TermScorerChild*)scorer->child;
-    /* if called as a setter, make sure the extra arg is there */
-    if (ix % 2 == 1 && items != 2)
-        croak("usage: $scorer->set_xxxxxx($val)");
-
-    switch (ix) {
+    TermScorerChild *child = (TermScorerChild*)scorer->child;
+    
+    KINO_START_SET_OR_GET_SWITCH
 
     case 1:  SvREFCNT_dec(child->term_docs_sv);
              child->term_docs_sv = newSVsv( ST(1) );
@@ -135,7 +130,8 @@ CODE:
              /* fall through */
     case 8:  RETVAL = newSVsv(child->norms_sv);
              break;
-    }
+
+    KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
 
@@ -260,7 +256,7 @@ Kino_TermScorer_next(Scorer* scorer) {
         
     /* refill the queue if needed */
     if (++child->pointer >= child->pointer_max) {
-        child->pointer_max = child->term_docs->read(child->term_docs, 
+        child->pointer_max = child->term_docs->bulk_read(child->term_docs, 
             child->doc_nums_sv, child->freqs_sv, 1024);
         child->doc_nums = (U32*)SvPV_nolen(child->doc_nums_sv);
         child->freqs    = (U32*)SvPV_nolen(child->freqs_sv);
@@ -334,8 +330,8 @@ Kino_TermScorer_score_batch(Scorer *scorer, U32 start, U32 end,
         /* time for a refill? */
         if (++child->pointer >= child->pointer_max) {
             /* try to get more docs and freqs */
-            child->pointer_max = child->term_docs->read(child->term_docs, 
-                child->doc_nums_sv, child->freqs_sv, 1024);
+            child->pointer_max = child->term_docs->bulk_read(
+                child->term_docs, child->doc_nums_sv, child->freqs_sv, 1024);
             child->doc_nums = (U32*)SvPV_nolen(child->doc_nums_sv);
             child->freqs    = (U32*)SvPV_nolen(child->freqs_sv);
 
@@ -379,7 +375,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.09.
+See L<KinoSearch|KinoSearch> version 0.10.
 
 =end devdocs
 =cut
