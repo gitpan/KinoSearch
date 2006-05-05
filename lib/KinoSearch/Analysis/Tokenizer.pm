@@ -3,17 +3,20 @@ use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
+use locale;
+
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+
+        # constructor params / members
+        token_re => undef,    # regex for a single token
+
+        # members
+        separator_re => undef,    # regex for separations between tokens
+    );
+}
 
 use KinoSearch::Analysis::TokenBatch;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-
-    # constructor params / members
-    token_re => undef,    # regex for a single token
-
-    # members
-    separator_re => undef,    # regex for separations between tokens
-);
 
 sub init_instance {
     my $self = shift;

@@ -4,12 +4,14 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    instream => undef,
-    max_doc  => undef,
-    bytes    => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        instream => undef,
+        max_doc  => undef,
+        bytes    => undef,
+    );
+}
 
 sub init_instance {
     my $self = shift;
@@ -31,6 +33,8 @@ sub _ensure_read {
         $self->{bytes} = $self->{instream}->lu_read( 'a' . $self->{max_doc} );
     }
 }
+
+sub close { shift->{instream}->close }
 
 1;
 

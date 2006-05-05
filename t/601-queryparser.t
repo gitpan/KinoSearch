@@ -93,6 +93,10 @@ my @logical_tests = (
 
     '-(+foo)' => [ 0, 0 ],
 
+    'content:b'              => [ 3, 3, ],
+    'bogusfield:a'           => [ 0, 0, ],
+    'bogusfield:a content:b' => [ 3, 0, ],
+
 );
 
 do {
@@ -115,6 +119,5 @@ do {
             # kdump($query);
             # exit;
     }
-
     }
 

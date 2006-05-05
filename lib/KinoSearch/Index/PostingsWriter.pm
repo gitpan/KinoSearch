@@ -4,20 +4,20 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-use File::Temp qw();
-use File::Spec;
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        #constructor params / members
+        invindex => undef,
+        seg_name => undef,
+
+        # members
+        sort_pool => undef,
+    );
+}
+
 use KinoSearch::Index::TermInfo;
 use KinoSearch::Index::TermInfosWriter;
 use KinoSearch::Util::SortExternal;
-
-our %instance_vars = (
-    # constructor params / members
-    invindex => undef,
-    seg_name => undef,
-
-    # members
-    sort_pool => undef,
-);
 
 sub init_instance {
     my $self = shift;
@@ -72,7 +72,10 @@ sub write_postings {
     $tinfos_writer->finish;
 }
 
-sub finish { }
+sub finish {
+    my $self = shift;
+    $self->{sort_pool}->close;
+}
 
 1;
 

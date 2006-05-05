@@ -4,20 +4,22 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        slop => 0,
+        # members
+        field     => undef,
+        terms     => [],
+        positions => [],
+    );
+    __PACKAGE__->ready_get_set(qw( slop ));
+    __PACKAGE__->ready_get(qw( terms ));
+}
+
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Document::Field;
 use KinoSearch::Util::ToStringUtils qw( boost_to_string );
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args / members
-    slop => 0,
-    # members
-    field     => undef,
-    terms     => [],
-    positions => [],
-);
-__PACKAGE__->ready_get_set(qw( slop ));
-__PACKAGE__->ready_get(qw( terms ));
 
 # Add a term/position combo to the query.  The position is specified
 # explicitly in order to allow for phrases with gaps, two terms at the same
@@ -77,9 +79,9 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
-use KinoSearch::Search::PhraseScorer;
+BEGIN { __PACKAGE__->init_instance_vars(); }
 
-our %instance_vars = __PACKAGE__->init_instance_vars();
+use KinoSearch::Search::PhraseScorer;
 
 sub init_instance {
     my $self = shift;

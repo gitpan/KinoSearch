@@ -4,18 +4,21 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params
-    invindex       => undef,
-    seg_name       => undef,
-    is_index       => 0,
-    index_interval => 1024,
-    skip_interval  => 16,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params
+        invindex       => undef,
+        seg_name       => undef,
+        is_index       => 0,
+        index_interval => 1024,
+        skip_interval  => 16,
+    );
+}
+our %instance_vars;
 
 sub new {
     my $class = shift;
-    verify_args( \%instance_vars, @_ );
+    confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = ( %instance_vars, @_ );
 
     # open an outstream

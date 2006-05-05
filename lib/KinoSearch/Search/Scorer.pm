@@ -3,12 +3,16 @@ use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::CClass Exporter );
-our @EXPORT_OK = qw( %score_batch_args );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params
-    similarity => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params
+        similarity => undef,
+    );
+}
+our %instance_vars;
+
+our @EXPORT_OK = qw( %score_batch_args );
 
 sub new {
     my $class = shift;

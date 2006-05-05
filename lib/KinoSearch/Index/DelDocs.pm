@@ -87,6 +87,8 @@ sub generate_doc_map {
 sub bulk_set   { shift->todo_death }
 sub bulk_clear { shift->todo_death }
 
+sub close { }
+
 sub DESTROY {
     my $self = shift;
     delete $num_deletions{"$self"};

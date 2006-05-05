@@ -4,9 +4,32 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+use constant UNINITIALIZED => 0;
+use constant INITIALIZED   => 1;
+use constant FINISHED      => 2;
+
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        create   => undef,
+        invindex => undef,
+        analyzer => undef,
+
+        # members
+        reader       => undef,
+        analyzers    => {},
+        sinfos       => undef,
+        finfos       => undef,
+        doc_template => undef,
+        similarity   => undef,
+        seg_writer   => undef,
+        write_lock   => undef,
+        state        => UNINITIALIZED,
+    );
+}
+
 use Clone qw( clone );
 use File::Spec::Functions qw( catfile tmpdir );
-use File::Temp qw();
 
 use KinoSearch::Document::Doc;
 use KinoSearch::Document::Field;
@@ -22,33 +45,16 @@ use KinoSearch::Index::IndexFileNames
     WRITE_LOCK_TIMEOUT COMMIT_LOCK_TIMEOUT );
 use KinoSearch::Search::Similarity;
 
-use constant UNINITIALIZED => 0;
-use constant INITIALIZED   => 1;
-use constant FINISHED      => 2;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args / members
-    create   => undef,
-    invindex => undef,
-    analyzer => KinoSearch::Analysis::Analyzer->new,
-
-    # members
-    reader       => undef,
-    analyzers    => {},
-    sinfos       => KinoSearch::Index::SegInfos->new,
-    finfos       => undef,
-    doc_template => KinoSearch::Document::Doc->new,
-    similarity   => undef,
-    seg_writer   => undef,
-    write_lock   => undef,
-    state        => UNINITIALIZED,
-);
-
 sub init_instance {
     my $self = shift;
 
-    # get a similarity object
-    $self->{similarity} = KinoSearch::Search::Similarity->new;
+    # use a no-op Analyzer if not supplied
+    $self->{analyzer} ||= KinoSearch::Analysis::Analyzer->new;
+
+    # create a few members
+    $self->{similarity}   = KinoSearch::Search::Similarity->new;
+    $self->{sinfos}       = KinoSearch::Index::SegInfos->new;
+    $self->{doc_template} = KinoSearch::Document::Doc->new;
 
     # confirm or create an InvIndex object
     my $invindex;
@@ -240,16 +246,21 @@ our %finish_defaults = ( optimize => 0, );
 
 sub finish {
     my $self = shift;
-    verify_args( \%finish_defaults, @_ );
+    confess kerror() unless verify_args( \%finish_defaults, @_ );
     my %args = ( %finish_defaults, @_ );
+
+    # if no changes were made to the index, don't write anything
+    if ( $self->{state} == UNINITIALIZED ) {
+        if ( !$args{optimize} ) {
+            return;
+        }
+        else {
+            $self->_delayed_init;
+        }
+    }
 
     my ( $invindex, $sinfos, $seg_writer )
         = @{$self}{qw( invindex sinfos seg_writer )};
-
-    # if no changes were made to the index, don't write anything
-    if ( $self->{state} == UNINITIALIZED and !$args{optimize} ) {
-        return;
-    }
 
     # perform segment merging
     my @to_merge =
@@ -283,19 +294,77 @@ sub finish {
             $sinfos->write_infos($invindex);
         },
     );
-    $self->_purge_merged( \@to_merge );
+
+    my @files_to_delete = $self->_generate_deletions_list( \@to_merge );
+    push @files_to_delete, $self->_read_delqueue;
+
+    # close reader, so that we can delete its files if appropriate
+    $self->{reader}->close if defined $self->{reader};
+
+    $self->_purge_merged(@files_to_delete);
     $self->_release_locks;
     $self->{state} = FINISHED;
 }
 
-# Delete segments that have been folded into the new segment.
-sub _purge_merged {
+# Given an array of SegReaders, return a list of their files.
+sub _generate_deletions_list {
     my ( $self, $readers_to_merge ) = @_;
     my $invindex      = $self->{invindex};
     my @segs_to_merge = map { $_->get_seg_name } @$readers_to_merge;
     my @deletions     = grep { $invindex->file_exists($_) }
         map { ( "$_.cfs", "$_.del" ) } @segs_to_merge;
-    $invindex->delete_file($_) for @deletions;
+    return @deletions;
+}
+
+# Retrieve a list of files that weren't successfully deleted before.
+sub _read_delqueue {
+    my ( $self, $readers_to_merge ) = @_;
+    my $invindex = $self->{invindex};
+    my @deletions;
+
+    if ( $invindex->file_exists('delqueue') ) {
+        my $instream     = $invindex->open_instream('delqueue');
+        my $num_in_queue = $instream->lu_read('i');
+        @deletions = $instream->lu_read("T$num_in_queue");
+        $instream->close;
+    }
+
+    return @deletions;
+}
+
+# Delete segments that have been folded into the new segment.
+sub _purge_merged {
+    my ( $self, @deletions ) = @_;
+    my $invindex = $self->{invindex};
+
+    my @delqueue;
+    for my $deletion (@deletions) {
+        eval { $invindex->delete_file($deletion) };
+        # Win32: if the deletion fails (because a reader is open), queue it
+        if ( $@ and $invindex->file_exists($deletion) ) {
+            push @delqueue, $deletion;
+        }
+    }
+
+    $self->_write_delqueue(@delqueue);
+}
+
+sub _write_delqueue {
+    my ( $self, @delqueue ) = @_;
+    my $invindex  = $self->{invindex};
+    my $num_files = scalar @delqueue;
+
+    if ($num_files) {
+        # we have files that weren't successfully deleted, so write list
+        my $outstream = $invindex->open_outstream('delqueue.new');
+        $outstream->lu_write( "iT$num_files", $num_files, @delqueue );
+        $outstream->close;
+        $invindex->rename_file( 'delqueue.new', 'delqueue' );
+    }
+    elsif ( $invindex->file_exists('delqueue') ) {
+        # no files to delete, so delete the delqueue file if it's there
+        $invindex->delete_file('delqueue');
+    }
 }
 
 # Release the write lock - if it's there.

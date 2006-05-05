@@ -4,6 +4,22 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        invindex   => undef,
+        seg_name   => undef,
+        finfos     => undef,
+        similarity => undef,
+        # members
+        norm_outstreams => [],
+        fields_writer   => undef,
+        postings_writer => undef,
+        doc_count       => 0,
+    );
+    __PACKAGE__->ready_get(qw( seg_name doc_count ));
+}
+
 use KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Index::FieldsWriter;
 use KinoSearch::Index::PostingsWriter;
@@ -11,21 +27,6 @@ use KinoSearch::Index::CompoundFileWriter;
 use KinoSearch::Index::IndexFileNames
     qw( @COMPOUND_EXTENSIONS SORTFILE_EXTENSION );
 use KinoSearch::Search::Similarity;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    invindex   => undef,
-    seg_name   => undef,
-    finfos     => undef,
-    similarity => undef,
-    # members
-    norm_outstreams => [],
-    fields_writer   => undef,
-    postings_writer => undef,
-    doc_count       => 0,
-);
-
-__PACKAGE__->ready_get(qw( seg_name doc_count ));
 
 sub init_instance {
     my $self = shift;

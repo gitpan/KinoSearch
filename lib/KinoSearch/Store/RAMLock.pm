@@ -4,7 +4,7 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::Lock );
 
-our %instance_vars = __PACKAGE__->init_instance_vars;
+BEGIN { __PACKAGE__->init_instance_vars() }
 
 sub do_obtain {
     my $self = shift;

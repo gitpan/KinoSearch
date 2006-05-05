@@ -4,13 +4,20 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer Exporter );
 
-use Lingua::Stem::Snowball qw( stemmers );
-our @EXPORT_OK = qw( %supported_languages );
+our @EXPORT_OK;
+our %supported_languages;
 
-our %instance_vars = __PACKAGE__->init_instance_vars( stemmifier => undef, );
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        stemmifier => undef,
+    );
+    @EXPORT_OK = qw( %supported_languages );
+}
+
+use Lingua::Stem::Snowball qw( stemmers );
 
 # build a list of supported languages.
-my %supported_languages;
 $supported_languages{$_} = 1 for stemmers();
 
 sub init_instance {

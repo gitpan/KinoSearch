@@ -1,6 +1,8 @@
+bin/dump_index
 bin/kinotidy
 Build.PL
 Changes
+devel/hexdebug
 devel/kinotidyrc
 devel/predit
 devel/scan_enum.plx
@@ -118,6 +120,7 @@ t/210-deldocs.t
 t/211-seg_term_docs.t
 t/212-multi_term_docs.t
 t/213-segment_merging.t
+t/214-spec_field.t
 t/302-many_fields.t
 t/303-highlighter.t
 t/501-termquery.t

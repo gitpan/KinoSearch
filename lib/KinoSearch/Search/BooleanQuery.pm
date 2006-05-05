@@ -4,17 +4,18 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        disable_coord => 0,
+        # members
+        clauses          => [],
+        max_clause_count => 1024,
+    );
+    __PACKAGE__->ready_get(qw( clauses ));
+}
+
 use KinoSearch::Search::BooleanClause;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args / members
-    disable_coord => 0,
-    # members
-    clauses          => [],
-    max_clause_count => 1024,
-);
-
-__PACKAGE__->ready_get(qw( clauses ));
 
 # Add an subquery tagged with boolean characteristics.
 sub add_clause {
@@ -77,12 +78,14 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
-use KinoSearch::Search::BooleanScorer;
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members
+        weights => [],
+    );
+}
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # members
-    weights => [],
-);
+use KinoSearch::Search::BooleanScorer;
 
 sub init_instance {
     my $self = shift;

@@ -4,14 +4,16 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-use constant LOCK_POLL_INTERVAL => 1000;
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        invindex  => undef,
+        lock_name => undef,
+        timeout   => 0,
+    );
+}
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    invindex  => undef,
-    lock_name => undef,
-    timeout   => 0,
-);
+use constant LOCK_POLL_INTERVAL => 1000;
 
 # Attempt to aquire lock once per second until the timeout has been reached.
 sub obtain {

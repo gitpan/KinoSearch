@@ -4,6 +4,18 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Searchable );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # params/members
+        invindex => undef,
+        analyzer => undef,
+        # members
+        reader       => undef,
+        close_reader => 0,       # not implemented yet
+    );
+    __PACKAGE__->ready_get(qw( reader ));
+}
+
 use KinoSearch::Store::FSInvIndex;
 use KinoSearch::Index::IndexReader;
 use KinoSearch::Search::Hits;
@@ -13,20 +25,10 @@ use KinoSearch::QueryParser::QueryParser;
 use KinoSearch::Search::BooleanQuery;
 use KinoSearch::Analysis::Analyzer;
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # params/members
-    invindex => undef,
-    analyzer => KinoSearch::Analysis::Analyzer->new,
-    # members
-    reader       => undef,
-    close_reader => 0,       # not implemented yet
-);
-
-__PACKAGE__->ready_get(qw( reader ));
-
 sub init_instance {
     my $self = shift;
 
+    $self->{analyzer} ||= KinoSearch::Analysis::Analyzer->new;
     $self->{similarity} = KinoSearch::Search::Similarity->new;
 
     if ( !defined $self->{reader} ) {
@@ -66,7 +68,7 @@ sub search {
         @_ == 1
         ? ( %search_args, query => $_[0] )
         : ( %search_args, @_ );
-    verify_args( \%search_args, %args );
+    confess kerror() unless verify_args( \%search_args, %args );
 
     # turn a query string into a query against all fields
     if ( !a_isa_b( $args{query}, 'KinoSearch::Search::Query' ) ) {
@@ -108,7 +110,7 @@ my %search_hit_collector_args = (
 
 sub search_hit_collector {
     my $self = shift;
-    verify_args( \%search_hit_collector_args, @_ );
+    confess kerror() unless verify_args( \%search_hit_collector_args, @_ );
     my %args = ( %search_hit_collector_args, @_ );
 
     # wrap the collector if there's a filter

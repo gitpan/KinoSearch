@@ -1,8 +1,14 @@
 Revision history for KinoSearch
 
 0.10
-  * InVindexer::add_invindexes() added.
-  * Tighten up C code for ISO C90 compliance
+  * Improved Windows compatibility.
+  * Make it possible to subclass some KinoSearch classes. 
+  * Add InVindexer::add_invindexes().
+  * Add bin/dump_index, contributed by Brian Phillips.
+  * Tighten up C code for ISO C90 compliance.
+  * Improved support for Russian and KOI8-R encoding.
+  * Fixed bug affecting indexes with segments bigger than 4 GB.
+  * Fixed bug #18899, KinoSearch and locale.
 
 0.09 2006-04-13
   * Incremental indexing enabled 

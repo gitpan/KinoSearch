@@ -4,10 +4,12 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::CClass );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args
-    max_size => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args
+        max_size => undef,
+    );
+}
 
 1;
 

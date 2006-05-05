@@ -4,18 +4,21 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Scorer );
 
-use KinoSearch::Search::Scorer qw( %score_batch_args );
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params
+        weight       => undef,
+        term_docs    => undef,
+        norms_reader => undef,
+    );
+}
+our %instance_vars;
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params
-    weight       => undef,
-    term_docs    => undef,
-    norms_reader => undef,
-);
+use KinoSearch::Search::Scorer qw( %score_batch_args );
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args( \%instance_vars, @_ );
+    confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = ( %instance_vars, @_ );
 
     $self->_init_child;

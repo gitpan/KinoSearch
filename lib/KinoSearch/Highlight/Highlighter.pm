@@ -3,22 +3,24 @@ use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
+use locale;
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    excerpt_field  => undef,
-    analyzer       => undef,
-    terms          => [],
-    excerpt_length => 200,
-    pre_tag        => '<strong>',
-    post_tag       => '</strong>',
-    token_re       => qr/\b\w+(?:'\w+)?\b/,
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        excerpt_field  => undef,
+        analyzer       => undef,
+        terms          => [],
+        excerpt_length => 200,
+        pre_tag        => '<strong>',
+        post_tag       => '</strong>',
+        token_re       => qr/\b\w+(?:'\w+)?\b/,
 
-    # members
-    limit => undef,
-);
-
-__PACKAGE__->ready_get_set(qw( terms ));
+        # members
+        limit => undef,
+    );
+    __PACKAGE__->ready_get_set(qw( terms ));
+}
 
 sub init_instance {
     my $self = shift;

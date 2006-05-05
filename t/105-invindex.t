@@ -11,16 +11,17 @@ BEGIN {
     use_ok('KinoSearch::Store::FSInvIndex');
 }
 
-my $fs_invindex_loc = catdir( tmpdir, 'bogus_invindex' );
+my $fs_invindex_loc = catdir( tmpdir(), 'bogus_invindex' );
+
+# clean up from previous tests if needed.
+rmtree($fs_invindex_loc);
+
 eval {
     my $fs_invindex
         = KinoSearch::Store::FSInvIndex->new( path => $fs_invindex_loc, );
 };
 like( $@, qr/invindex/,
     "opening an invindex that doesn't exist fails without create => 1" );
-
-mkdir $fs_invindex_loc
-    or die "Couldn't create directory '$fs_invindex_loc': $!";
 
 my $fs_invindex = KinoSearch::Store::FSInvIndex->new(
     create => 1,

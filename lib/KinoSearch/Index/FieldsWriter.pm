@@ -4,16 +4,17 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        invindex => undef,
+        seg_name => undef,
+        # members
+        fdata_stream  => undef,
+        findex_stream => undef,
+    );
+}
 use Compress::Zlib qw( compress );
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    invindex => undef,
-    seg_name => undef,
-    # members
-    fdata_stream  => undef,
-    findex_stream => undef,
-);
 
 sub init_instance {
     my $self = shift;

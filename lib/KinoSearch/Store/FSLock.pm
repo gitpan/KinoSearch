@@ -4,13 +4,13 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::Lock );
 
+BEGIN { __PACKAGE__->init_instance_vars() }
+
 use Fcntl qw( :DEFAULT :flock );
 use File::Spec::Functions qw( catfile );
 use KinoSearch::Store::FSInvIndex;
 
 my $disable_locks = 0;    # placeholder -- locks always enabled for now
-
-our %instance_vars = __PACKAGE__->init_instance_vars();
 
 sub init_instance {
     my $self = shift;

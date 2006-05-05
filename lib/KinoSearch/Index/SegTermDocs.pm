@@ -4,14 +4,17 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::TermDocs );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params
-    reader => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params
+        reader => undef,
+    );
+}
+our %instance_vars;
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args( \%instance_vars, @_ );
+    confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = ( %instance_vars, @_ );
 
     _init_child($self);

@@ -4,22 +4,25 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params
+        finfos   => undef,
+        instream => undef,
+        is_index => 0,
+    );
+}
+our %instance_vars;
+
 use KinoSearch::Index::Term;
 use KinoSearch::Index::TermInfo;
 use KinoSearch::Index::TermBuffer;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params
-    finfos   => undef,
-    instream => undef,
-    is_index => 0,
-);
 
 sub new {
     # verify params
     my $ignore = shift;
     my %args = ( %instance_vars, @_ );
-    verify_args( \%instance_vars, %args );
+    confess kerror() unless verify_args( \%instance_vars, %args );
 
     # get a TermBuffer helper object
     my $term_buffer
@@ -65,8 +68,17 @@ sub seek {
 }
 
 sub close {
-    my $instream = $_[0]->get_instream;
+    my $instream = $_[0]->_get_instream;
     $instream->close;
+}
+
+# return a Term, if the Enum is currently valid.
+sub get_term {
+    my $self       = shift;
+    my $termstring = $self->get_termstring;
+    return unless defined $termstring;
+    return KinoSearch::Index::Term->new_from_string( $termstring,
+        $self->_get_finfos );
 }
 
 1;
@@ -210,7 +222,7 @@ ALIAS:
     is_index                 = 16
 CODE:
 {
-	KINO_START_SET_OR_GET_SWITCH
+    KINO_START_SET_OR_GET_SWITCH
 
     case 0:  croak("can't call _get_or_set on it's own");
              break; /* probably unreachable */
@@ -280,7 +292,7 @@ CODE:
              /* fall through */
     case 16: RETVAL = newSViv(obj->is_index);
              break;
-	
+    
     KINO_END_SET_OR_GET_SWITCH
 }
 OUTPUT: RETVAL
@@ -469,7 +481,7 @@ Kino_SegTermEnum_scan_to(SegTermEnum *obj, char *target_termstring,
 
     /* keep looping until the termstring is lexically ge target */
     do {
-		const I32 comparison = Kino_BB_compare(term_buf->termstring, &target);
+        const I32 comparison = Kino_BB_compare(term_buf->termstring, &target);
 
         if ( comparison >= 0 &&  obj->position != -1) {
             break;
@@ -532,9 +544,9 @@ Kino_SegTermEnum_destroy(SegTermEnum *obj) {
 
     /* if fill_cache was called, free all of that... */
     if (obj->tinfos_cache != NULL) {
-		I32         iter;
-		ByteBuf   **termstring_cache = obj->termstring_cache;
-		TermInfo  **tinfos_cache     = obj->tinfos_cache;
+        I32         iter;
+        ByteBuf   **termstring_cache = obj->termstring_cache;
+        TermInfo  **tinfos_cache     = obj->tinfos_cache;
         for (iter = 0; iter < obj->enum_size; iter++) {
             Kino_BB_destroy(*termstring_cache++);
             Kino_TInfo_destroy(*tinfos_cache++);

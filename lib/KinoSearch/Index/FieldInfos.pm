@@ -4,11 +4,21 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class Exporter );
 
-use KinoSearch::Document::Field;
+use constant INDEXED    => "\x01";
+use constant VECTORIZED => "\x02";
+use constant OMIT_NORMS => "\x10";
 
 our @EXPORT_OK;
 
 BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members
+        by_name   => {},
+        by_num    => [],
+        from_file => 0,
+    );
+    __PACKAGE__->ready_get_set(qw( from_file ));
+
     @EXPORT_OK = qw(
         INDEXED
         VECTORIZED
@@ -16,20 +26,8 @@ BEGIN {
     );
 }
 
-use constant INDEXED    => "\x01";
-use constant VECTORIZED => "\x02";
-use constant OMIT_NORMS => "\x10";
-
+use KinoSearch::Document::Field;
 use Clone qw( clone );
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # members
-    by_name   => {},
-    by_num    => [],
-    from_file => 0,
-);
-
-__PACKAGE__->ready_get_set(qw( from_file ));
 
 # Add a user-supplied Field object to the collection.
 sub add_field {
@@ -56,7 +54,7 @@ sub get_infos { @{ $_[0]->{by_num} } }
 # Given a fieldname, return its number.
 sub get_field_num {
     my ( $self, $name ) = @_;
-    confess("don't have a field_num for field named '$name'")
+    return undef
         unless exists $self->{by_name}{$name};
     my $num = $self->{by_name}{$name}->get_field_num;
     return $num;
@@ -177,6 +175,8 @@ sub decode_fnm_bits {
     $field->set_vectorized( ( $bits & VECTORIZED ) eq VECTORIZED );
     $field->set_omit_norms( ( $bits & OMIT_NORMS ) eq OMIT_NORMS );
 }
+
+sub close { }
 
 1;
 

@@ -4,14 +4,16 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-use KinoSearch::Search::HitCollector;
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        query => undef,
+        # members
+        cached_bits => undef,
+    );
+}
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    query => undef,
-    # members
-    cached_bits => undef,
-);
+use KinoSearch::Search::HitCollector;
 
 sub init_instance {
     my $self = shift;

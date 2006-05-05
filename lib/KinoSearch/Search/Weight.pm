@@ -4,17 +4,19 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args / members
-    parent   => undef,
-    searcher => undef,
-    # members
-    similarity   => undef,
-    value        => 0,
-    idf          => undef,
-    query_norm   => undef,
-    query_weight => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        parent   => undef,
+        searcher => undef,
+        # members
+        similarity   => undef,
+        value        => 0,
+        idf          => undef,
+        query_norm   => undef,
+        query_weight => undef,
+    );
+}
 
 # Return the Query that the Weight was derived from.
 sub get_query { shift->{parent} }

@@ -4,25 +4,27 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        analyzer       => undef,
+        default_boolop => 'OR',
+        default_field  => undef,
+        # members
+        bool_groups   => {},
+        phrases       => {},
+        bool_group_re => undef,
+        phrase_re     => undef,
+        label_inc     => 0,
+    );
+}
+
 use KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Search::BooleanQuery;
 use KinoSearch::Search::PhraseQuery;
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Index::Term;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args / members
-    analyzer       => undef,
-    default_boolop => 'OR',
-    default_field  => undef,
-    # members
-    bool_groups   => {},
-    phrases       => {},
-    bool_group_re => undef,
-    phrase_re     => undef,
-    label_inc     => 0,
-);
 
 sub init_instance {
     my $self = shift;
@@ -254,6 +256,38 @@ KinoSearch::QueryParser::QueryParser - transform a string into a Query object
 
 The QueryParser accepts search strings as input and produces Query objects,
 suitable for feeding into L<KinoSearch::Searcher|KinoSearch::Searcher>.
+
+=head2 Syntax
+
+The following constructs are recognized by QueryParser.
+
+=over
+
+=item *
+
+Boolean operators 'AND', 'OR', and 'AND NOT'.
+
+=item *
+
+Prepented +plus and -minus, indicating that the labeled entity should be
+either required or forbidden -- be it a single word, a phrase, or a
+parenthetical group.
+
+=item *
+
+Logical groups, delimited by parentheses.
+
+=item *
+
+Phrases, delimited by double quotes.
+
+=item *
+
+Field-specific terms, in the form of C<fieldname:termtext>.  (The field
+specified by fieldname will be used instead of the QueryParser's default
+field).
+
+=back
 
 =head1 METHODS
 

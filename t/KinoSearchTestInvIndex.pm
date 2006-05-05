@@ -6,6 +6,7 @@ use base qw( Exporter );
 our @EXPORT_OK = qw( 
     create_invindex 
     create_test_invindex 
+    path_for_test_invindex
     get_uscon_docs
 );
 
@@ -15,7 +16,7 @@ use KinoSearch::Store::FSInvIndex;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Analysis::PolyAnalyzer;
 
-use File::Spec::Functions qw( catdir catfile );
+use File::Spec::Functions qw( catdir catfile tmpdir );
 
 # Build a RAMInvIndex, using the supplied array of strings as source material.
 # The invindex will have a single field: "content".
@@ -47,9 +48,10 @@ sub create_invindex {
 sub get_uscon_docs {
 
     my $uscon_dir = catdir( 't', 'us_constitution' );
-    opendir( USCON_DIR, $uscon_dir )
-        or die "couldn't open directory '$uscon_dir': $!";
-    my @filenames = grep {/\.html$/} sort readdir USCON_DIR;
+    opendir( my $uscon_dh, $uscon_dir )
+        or die "couldn't opendir '$uscon_dir': $!";
+    my @filenames = grep {/\.html$/} sort readdir $uscon_dh;
+    closedir $uscon_dh or die "couldn't closedir '$uscon_dir': $!";
 
     my %docs;
 
@@ -78,13 +80,17 @@ sub get_uscon_docs {
     return \%docs;
 }
 
+sub path_for_test_invindex {
+    return catdir( tmpdir(), 'test_invindex' );
+}
+
 sub create_test_invindex {
     my $invindexer;
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
         language => 'en' );
 
     $invindexer = KinoSearch::InvIndexer->new(
-        invindex => 'test_invindex',
+        invindex => path_for_test_invindex(),
         create => 1,
         analyzer => $polyanalyzer,
     );
@@ -98,7 +104,7 @@ sub create_test_invindex {
     undef $invindexer;
 
     $invindexer = KinoSearch::InvIndexer->new(
-        invindex => 'test_invindex',
+        invindex => path_for_test_invindex(),
         analyzer => $polyanalyzer,
     );
     $invindexer->spec_field( name => 'content' );
@@ -112,7 +118,7 @@ sub create_test_invindex {
     undef $invindexer;
 
     $invindexer = KinoSearch::InvIndexer->new(
-        invindex => 'test_invindex',
+        invindex => path_for_test_invindex(),
         analyzer => $polyanalyzer,
     );
     $invindexer->spec_field( name => 'content' );

@@ -4,11 +4,15 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members
+        similarity => undef
+    );
+    __PACKAGE__->ready_get_set(qw( similarity ));
+}
+
 use KinoSearch::Search::Similarity;
-
-our %instance_vars = __PACKAGE__->init_instance_vars( similarity => undef );
-
-__PACKAGE__->ready_get_set(qw( similarity ));
 
 =begin comment
 

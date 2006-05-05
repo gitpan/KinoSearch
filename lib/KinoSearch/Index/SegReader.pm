@@ -4,6 +4,35 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::IndexReader );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # params/members
+        invindex => undef,
+        seg_name => undef,
+
+        # members
+        comp_file_reader => undef,
+        tinfos_reader    => undef,
+        finfos           => undef,
+        fields_reader    => undef,
+        freq_stream      => undef,
+        prox_stream      => undef,
+        deldocs          => undef,
+        norms_readers    => {},
+    );
+
+    __PACKAGE__->ready_get(
+        qw(
+            finfos
+            fields_reader
+            freq_stream
+            prox_stream
+            deldocs
+            seg_name
+            )
+    );
+}
+
 use KinoSearch::Index::CompoundFileReader;
 use KinoSearch::Index::TermInfosReader;
 use KinoSearch::Index::FieldsReader;
@@ -11,33 +40,6 @@ use KinoSearch::Index::FieldInfos;
 use KinoSearch::Index::NormsReader;
 use KinoSearch::Index::SegTermDocs;
 use KinoSearch::Index::DelDocs;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # params/members
-    invindex => undef,
-    seg_name => undef,
-
-    # members
-    comp_file_reader => undef,
-    tinfos_reader    => undef,
-    finfos           => undef,
-    fields_reader    => undef,
-    freq_stream      => undef,
-    prox_stream      => undef,
-    deldocs          => undef,
-    norms_readers    => {},
-);
-
-__PACKAGE__->ready_get(
-    qw(
-        finfos
-        fields_reader
-        freq_stream
-        prox_stream
-        deldocs
-        seg_name
-        )
-);
 
 # use KinoSearch::Util::Class's new()
 # Note: can't inherit IndexReader's new() without recursion problems
@@ -84,8 +86,6 @@ sub init_instance {
     $self->{freq_stream} = $comp_file_reader->open_instream("$seg_name.frq");
     $self->{prox_stream} = $comp_file_reader->open_instream("$seg_name.prx");
     $self->_open_norms;
-
-    # TODO open termvectors
 }
 
 sub max_doc { shift->{fields_reader}->get_size }
@@ -185,6 +185,19 @@ sub segreaders_to_merge {
     return;
 }
 
+sub close {
+    my $self = shift;
+    return unless $self->{close_invindex};
+
+    $self->{deldocs}->close;
+    $self->{finfos}->close;
+    $self->{fields_reader}->close;
+    $self->{tinfos_reader}->close;
+    $self->{comp_file_reader}->close;
+    $self->{freq_stream}->close;
+    $self->{prox_stream}->close;
+    $_->close for values %{ $self->{norms_readers} };
+}
 1;
 
 __END__

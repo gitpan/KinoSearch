@@ -4,12 +4,15 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::CClass );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args
-    invindex      => undef,
-    seg_name      => undef,
-    mem_threshold => 2**24,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args
+        invindex      => undef,
+        seg_name      => undef,
+        mem_threshold => 2**24,
+    );
+}
+our %instance_vars;
 
 sub new {
     my $class = shift;
@@ -48,6 +51,8 @@ sub sort_all {
     # allow fetching now that we're set up
     $self->_enable_fetch;
 }
+
+sub close { shift->_get_instream()->close }
 
 1;
 
@@ -686,9 +691,9 @@ Kino_SortEx_define_slice(SortExRun *run, ByteBuf *endpost) {
         mid = (lo + hi) / 2;
         delta = Kino_BB_compare(cache[mid], endpost);
         if (delta > 0) 
-			hi = mid;
+            hi = mid;
         else
-			lo = mid;
+            lo = mid;
     }
 
     run->slice_size = lo == -1 

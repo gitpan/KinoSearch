@@ -26,7 +26,7 @@ __H__
 
 #define KINO_END_SET_OR_GET_SWITCH                                  \
     default: Kino_confess("Internal error. ix: %d", ix);            \
-			 RETVAL = &PL_sv_undef; /* quiet compiler warning */    \
+             RETVAL = &PL_sv_undef; /* quiet compiler warning */    \
              break; /* probably unreachable */                      \
     }
 

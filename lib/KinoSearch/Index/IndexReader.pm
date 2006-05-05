@@ -4,6 +4,17 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        invindex       => undef,
+        seg_infos      => undef,
+        close_invindex => 1,
+        invindex_owner => 1,
+    );
+    __PACKAGE__->ready_get(qw( invindex ));
+}
+
 use KinoSearch::Store::FSInvIndex;
 use KinoSearch::Index::SegReader;
 use KinoSearch::Index::MultiReader;
@@ -12,16 +23,6 @@ use KinoSearch::Index::IndexFileNames qw(
     WRITE_LOCK_NAME  WRITE_LOCK_TIMEOUT
     COMMIT_LOCK_NAME COMMIT_LOCK_TIMEOUT
 );
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    invindex       => undef,
-    seg_infos      => undef,
-    close_invindex => 0,
-    invindex_owner => 0,
-);
-
-__PACKAGE__->ready_get(qw( invindex ));
 
 sub new {
     my $temp = shift->SUPER::new(@_);
@@ -190,6 +191,17 @@ return all SegReaders.
 =cut
 
 sub segreaders_to_merge { shift->abstract_death }
+
+=begin comment
+
+    $reader->close;
+
+Release all resources.
+
+=end comment
+=cut
+
+sub close { shift->abstract_death }
 
 1;
 

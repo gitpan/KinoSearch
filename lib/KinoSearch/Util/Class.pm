@@ -4,25 +4,32 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 
 use Clone 'clone';
-use KinoSearch::Util::VerifyArgs qw( verify_args );
-
-our %instance_vars = ();
+use KinoSearch::Util::VerifyArgs qw( verify_args kerror );
 
 sub new {
     my $class = shift;    # leave the rest of @_ intact.
 
-    # clone the instance_vars hash and bless it
+    # find a defaults hash and verify args
     $class = ref($class) || $class;
     my $defaults;
     {
         no strict 'refs';
         $defaults = \%{ $class . '::instance_vars' };
     }
+    if ( !verify_args( $defaults, @_ ) ) {
+        # if a user-based subclass, find KinoSearch parent class and verify.
+        my $kinoclass = _traverse_at_isa($class);
+        confess kerror() unless $kinoclass;
+        {
+            no strict 'refs';
+            $defaults = \%{ $kinoclass . '::instance_vars' };
+        }
+        confess kerror() unless verify_args( $defaults, @_ );
+    }
+
+    # merge var => val pairs into new object
     my $self = clone($defaults);
     bless $self, $class;
-
-    # verify argument labels and merge var => val pairs into object
-    verify_args( $defaults, @_ );
     %$self = ( %$self, @_ );
 
     # call customizable initialization routine
@@ -31,15 +38,30 @@ sub new {
     return $self;
 }
 
+# Walk @ISA until a parent class starting with 'KinoSearch::' is found.
+sub _traverse_at_isa {
+    my $orig = shift;
+    {
+        no strict 'refs';
+        my $at_isa = \@{ $orig . '::ISA' };
+        for my $parent (@$at_isa) {
+            return $parent if $parent =~ /^KinoSearch::/;
+            my $grand_parent = _traverse_at_isa($parent);
+            return $grand_parent if $grand_parent;
+        }
+    };
+    return '';
+}
+
 sub init_instance { }
 
 sub init_instance_vars {
     my $package = shift;
 
-    # return %PARENT_CLASS::instance_vars plus args as a flat list
     no strict 'refs';
     my $first_isa = ${ $package . '::ISA' }[0];
-    return ( %{ $first_isa . '::instance_vars' }, @_ );
+    %{ $package . '::instance_vars' }
+        = ( %{ $first_isa . '::instance_vars' }, @_ );
 }
 
 sub ready_get_set {
@@ -113,21 +135,23 @@ warning.  Do not use it on its own.
 
     package KinoSearch::SomePackage::SomeClass;
     use base qw( KinoSearch::Util::Class );
+    
+    BEGIN {
+        __PACKAGE__->init_instance_vars(
+            # constructor params / members
+            foo => undef,
+            bar => {},
 
-    our %instance_vars = __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        foo => undef,
-        bar => {},
-
-        # members
-        baz => {},
-    );
+            # members
+            baz => {},
+        );
+    }
 
 =head1 DESCRIPTION
 
 KinoSearch::Util::Class is a class-building utility a la
 L<Class::Accessor|Class::Accessor>, L<Class::Meta|Class::Meta>, etc.  It
-provides three main services:
+provides four main services:
 
 =over
 
@@ -139,7 +163,11 @@ A mechanism for inheriting instance variable declarations.
 
 A constructor with basic argument checking.
 
-=item 3 
+=item 3
+
+Manufacturing of get_xxxx and set_xxxx methods.
+
+=item 4 
 
 Convenience methods which help in defining abstract classes.
 
@@ -152,19 +180,21 @@ Convenience methods which help in defining abstract classes.
 The %instance_vars hash, which is always a package global, serves as a
 template for the creation of a hash-based object.  It is built up from all the
 %instance_vars hashes in the module's parent classes, using
-init_instance_vars().
+init_instance_vars().  
 
 Key-value pairs in an %instance_vars hash are labeled as "constructor params"
 and/or "members".  Items which are labeled as constructor params can be used
 as arguments to new().
 
-    our %instance_vars = __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        foo => undef,
-        bar => {},
-        # members
-        baz => '',
-    );
+    BEGIN {
+        __PACKAGE__->init_instance_vars(
+            # constructor params / members
+            foo => undef,
+            bar => {},
+            # members
+            baz => '',
+        );
+    }
     
     # ok: specifies foo, uses default for bar, derives baz
     my $object = __PACKAGE__->new( foo => $foo );
@@ -178,21 +208,12 @@ as arguments to new().
         boffo => $boffo,
     );
 
-%instance_vars can contain hashrefs, array-refs, and full-fledged Perl
-objects.  However, it cannot contain C-struct based objects, since
-L<Clone|Clone>'s clone() method doesn't know how to duplicate those safely.
+%instance_vars may contain hashrefs and array-refs, as L<Clone|Clone>'s
+C<clone()> method is used to produce a deep copy.
 
-    # ok, Lock is a Perl object
-    our %instance_vars = __PACKAGE__->init_instance_vars(
-        # members
-        term => KinoSearch::Store::Lock->new,
-    );
-
-    # BAD! causes memory errors, since TermInfo is a C-struct object
-    our %instance_vars = __PACKAGE__->init_instance_vars(
-        # members
-        tinfo => KinoSearch::Index::TermInfo->new,
-    );
+init_instance_vars() must be called from within a BEGIN block and before any
+C<use> directives load a child class -- if children are born before their
+parents, inheritance gets screwed up.
 
 =head1 METHODS
 
@@ -214,13 +235,24 @@ Perform customized initialization routine.  By default, this is a no-op.
 
 =head2 init_instance_vars
 
-    our %instance_vars = __PACKAGE__->init_instance_vars(
-        a_safe_variable_name_that_wont_clash => 1,
-        freep_warble                         => undef,
-    );
+    BEGIN {
+        __PACKAGE__->init_instance_vars(
+            a_safe_variable_name_that_wont_clash => 1,
+            freep_warble                         => undef,
+        );
+    }
 
-Package method only.  Return a flat list containing the arguments, plus all
-the key-value pairs in the parent class's %instance_vars hash.
+Package method only.  Creates a package global %instance_vars hash in the
+passed in package which consists of the passed in arguments plus all the
+key-value pairs in the parent class's %instance_vars hash.
+
+=head2 ready_get_set ready_get ready_set
+
+    # create get_foo(), set_foo(), get_bar(), set_bar() in __PACKAGE__
+    BEGIN { __PACKAGE__->ready_get_set(qw( foo bar )) };
+
+Mass manufacture getters and setters.  The setters do not return a meaningful
+value.
 
 =head2 abstract_death unimplemented_death todo_death
 

@@ -4,12 +4,13 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    field => undef,
-    text  => undef,
-);
-
-__PACKAGE__->ready_get_set(qw( field text ));
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        field => undef,
+        text  => undef,
+    );
+    __PACKAGE__->ready_get_set(qw( field text ));
+}
 
 sub new {
     croak("usage: KinoSearch::Index::Term->new( field, text )")
@@ -35,7 +36,13 @@ sub get_termstring {
         unless @_ == 2;
     my ( $self, $finfos ) = @_;
     my $field_num = $finfos->get_field_num( $self->{field} );
+    return unless defined $field_num;
     return pack( 'n', $field_num ) . $self->{text};
+}
+
+sub to_string {
+    my $self = shift;
+    return "$self->{field}:$self->{text}";
 }
 
 1;
@@ -82,6 +89,10 @@ Constructor.
 =head2 set_text get_text set_field get_field
 
 Getters and setters.
+
+=head1 to_string
+
+Returns a string representation of the Term object.
 
 =head1 COPYRIGHT
 

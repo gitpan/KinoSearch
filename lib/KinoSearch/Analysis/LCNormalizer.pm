@@ -3,8 +3,9 @@ use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
+use locale;
 
-our %instance_vars = __PACKAGE__->init_instance_vars();
+BEGIN { __PACKAGE__->init_instance_vars(); }
 
 sub analyze {
     my ( $self, $token_batch ) = @_;

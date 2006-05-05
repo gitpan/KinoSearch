@@ -4,15 +4,13 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::InvIndex );
 
+our $LOCK_DIR;    # used by FSLock
+
 use File::Spec::Functions qw( canonpath catfile catdir tmpdir no_upwards );
-use Digest::MD5 qw( md5_hex );
-use KinoSearch::Store::InStream;
-use KinoSearch::Store::OutStream;
-use vars qw( $LOCK_DIR );    # used by FSLock
-use KinoSearch::Store::FSLock;
-use KinoSearch::Index::IndexFileNames;
 
 BEGIN {
+    __PACKAGE__->init_instance_vars();
+
     # confirm or create a directory to put lockfiles in
     $LOCK_DIR = catdir( tmpdir, 'kinosearch_lockdir' );
     if ( !-d $LOCK_DIR ) {
@@ -21,7 +19,11 @@ BEGIN {
     }
 }
 
-our %instance_vars = __PACKAGE__->init_instance_vars();
+use Digest::MD5 qw( md5_hex );
+use KinoSearch::Store::InStream;
+use KinoSearch::Store::OutStream;
+use KinoSearch::Store::FSLock;
+use KinoSearch::Index::IndexFileNames;
 
 sub init_instance {
     my $self = shift;
@@ -32,10 +34,11 @@ sub init_instance {
     if ( $self->{create} ) {
         # clear out lockfiles related to this path
         my $lock_prefix = $self->get_lock_prefix;
-        opendir LOCKDIR, $LOCK_DIR,
-            or confess("couldn't opendir '$LOCK_DIR': $!");
-        my @lockfiles = grep {/$lock_prefix/} readdir LOCKDIR;
-        closedir LOCKDIR;
+        opendir( my $lock_dh, $LOCK_DIR )
+            or confess("Couldn't opendir '$LOCK_DIR': $!");
+        my @lockfiles = grep {/$lock_prefix/} readdir $lock_dh;
+        closedir $lock_dh
+            or confess("Couldn't closedir '$LOCK_DIR': $!");
         for (@lockfiles) {
             $_ = catfile( $LOCK_DIR, $_ );
             unlink $_ or confess("couldn't unlink '$_': $!");
@@ -43,18 +46,20 @@ sub init_instance {
 
         # blast any existing index files
         if ( -e $path ) {
-            opendir INVINDEX_DIR, $path
-                or confess("couldn't opendir '$path': $!");
+            opendir( my $invindex_dh, $path )
+                or confess("Couldn't opendir '$path': $!");
             my @to_remove = grep {
                        /^\w+\.(?:cfs|del)$/
                     or $_ eq 'segments'
                     or $_ eq 'deletable'
-            } readdir INVINDEX_DIR;
+            } readdir $invindex_dh;
             for my $removable (@to_remove) {
                 $removable = catfile( $path, $removable );
                 unlink $removable
                     or confess "Couldn't unlink file '$removable': $!";
             }
+            closedir $invindex_dh
+                or confess("Couldn't closedir '$path': $!");
         }
         if ( !-d $path ) {
             mkdir $path or confess("Couldn't mkdir '$path': $!");
@@ -90,9 +95,11 @@ sub open_instream {
 
 sub list {
     my $self = shift;
-    opendir( my $dir, $self->{path} )
+    opendir( my $dh, $self->{path} )
         or confess("Couldn't opendir '$self->{path}'");
-    return no_upwards( readdir $dir );
+    my @files = no_upwards( readdir $dh );
+    closedir $dh or confess("Couldn't closedir '$self->{path}'");
+    return @files;
 }
 
 sub file_exists {

@@ -327,7 +327,7 @@ typedef struct instream {
     double (*read_vlong)(struct instream*);
 } InStream;
 
-InStream* Kino_InStream_new     (char*, SV*, U32, double);
+InStream* Kino_InStream_new     (char*, SV*, double, double);
 void   Kino_InStream_seek       (InStream*, double);
 double Kino_InStream_tell       (InStream*);
 void   Kino_InStream_refill     (InStream*);
@@ -349,7 +349,7 @@ __C__
 
 
 InStream*
-Kino_InStream_new(char *class, SV *fh_sv, U32 offset, double len ) {
+Kino_InStream_new(char *class, SV *fh_sv, double offset, double len ) {
     InStream *instream;
 
     /* allocate */

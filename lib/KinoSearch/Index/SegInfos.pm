@@ -4,18 +4,19 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-use Time::HiRes qw( time );
-
 use constant FORMAT => -1;
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # members
-    infos   => {},
-    counter => 0,
-    version => ( time * 1000 ),
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members
+        infos   => {},
+        counter => 0,
+        version => ( time * 1000 ),
+    );
+    __PACKAGE__->ready_get_set(qw( counter ));
+}
 
-__PACKAGE__->ready_get_set(qw( counter ));
+use Time::HiRes qw( time );
 
 # Add a SegInfo to the collection.
 sub add_info {
@@ -98,14 +99,15 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    seg_name  => '',
-    doc_count => 0,
-    invindex  => undef,
-);
-
-__PACKAGE__->ready_get(qw( seg_name doc_count invindex ));
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        seg_name  => '',
+        doc_count => 0,
+        invindex  => undef,
+    );
+    __PACKAGE__->ready_get(qw( seg_name doc_count invindex ));
+}
 
 1;
 

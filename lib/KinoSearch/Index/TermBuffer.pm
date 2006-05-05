@@ -4,16 +4,19 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::CClass );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params
-    finfos => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params
+        finfos => undef,
+    );
+}
+our %instance_vars;
 
 sub new {
     my $class = shift;
     $class = ref($class) || $class;
     my %args = ( %instance_vars, @_ );
-    verify_args( \%instance_vars, %args );
+    confess kerror() unless verify_args( \%instance_vars, %args );
     my $self = _new( $class, $args{finfos}->size );
     return $self;
 }

@@ -6,15 +6,19 @@ use base qw( KinoSearch::Search::Query );
 
 use KinoSearch::Util::ToStringUtils qw( boost_to_string );
 
-our %instance_vars = __PACKAGE__->init_instance_vars( term => undef );
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        term => undef,
+    );
+    __PACKAGE__->ready_get(qw( term ));
+}
 
 sub init_instance {
     my $self = shift;
     confess("parameter 'term' is not a KinoSearch::Index::Term")
         unless a_isa_b( $self->{term}, 'KinoSearch::Index::Term' );
 }
-
-sub get_term { shift->{term} }
 
 sub create_weight {
     my ( $self, $searcher ) = @_;
@@ -62,6 +66,7 @@ sub scorer {
     my $term      = $self->{parent}{term};
     my $term_docs = $reader->term_docs($term);
     return unless defined $term_docs;
+    return unless $term_docs->get_doc_freq;
 
     my $norms_reader = $reader->norms_reader( $term->get_field );
     return KinoSearch::Search::TermScorer->new(

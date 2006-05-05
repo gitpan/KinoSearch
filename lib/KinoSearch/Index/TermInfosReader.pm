@@ -4,18 +4,20 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        invindex => undef,
+        seg_name => undef,
+        finfos   => undef,
+
+        # members
+        orig_enum  => undef,
+        index_enum => undef,
+    );
+}
+
 use KinoSearch::Index::SegTermEnum;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    invindex => undef,
-    seg_name => undef,
-    finfos   => undef,
-
-    # members
-    orig_enum  => undef,
-    index_enum => undef,
-);
 
 sub init_instance {
     my $self     = shift;
@@ -53,6 +55,9 @@ sub terms {
 sub fetch_term_info {
     my ( $self, $term ) = @_;
     my $termstring = $term->get_termstring( $self->{finfos} );
+
+    # termstring will be undefined if field doesn't exist
+    return unless defined $termstring;
 
     $self->_seek_enum($termstring);
 

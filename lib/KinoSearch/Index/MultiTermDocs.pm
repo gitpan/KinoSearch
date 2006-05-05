@@ -4,14 +4,17 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::TermDocs );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    sub_readers => [],
-    starts      => [],
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        sub_readers => [],
+        starts      => [],
+    );
+}
+our %instance_vars;
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args( \%instance_vars, @_ );
+    confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = ( %instance_vars, @_ );
 
     # get a SegTermDocs for each segment
@@ -137,7 +140,7 @@ Kino_MultiTermDocs_init_child(TermDocs* term_docs, SV *sub_term_docs_avref,
     MultiTermDocsChild *child;
     I32                 i;
     SV                **sv_ptr;
-	AV                 *sub_term_docs_av;
+    AV                 *sub_term_docs_av;
 
     /* allocate */
     Kino_New(0, child, 1, MultiTermDocsChild);
@@ -150,7 +153,7 @@ Kino_MultiTermDocs_init_child(TermDocs* term_docs, SV *sub_term_docs_avref,
 
     /* extract AV* and take stock of how many sub-TermDocs we've got */
     child->sub_term_docs_avref = newSVsv(sub_term_docs_avref);;
-	sub_term_docs_av = (AV*)SvRV(sub_term_docs_avref);
+    sub_term_docs_av = (AV*)SvRV(sub_term_docs_avref);
     child->num_subs = av_len(sub_term_docs_av) + 1;
 
     /* extract starts from starts array, subTermDocs from the subs array */
@@ -176,7 +179,7 @@ Kino_MultiTermDocs_init_child(TermDocs* term_docs, SV *sub_term_docs_avref,
     term_docs->get_positions = Kino_MultiTermDocs_get_positions;
     term_docs->bulk_read     = Kino_MultiTermDocs_bulk_read;
     term_docs->next          = Kino_MultiTermDocs_next;
-	term_docs->destroy       = Kino_MultiTermDocs_destroy;
+    term_docs->destroy       = Kino_MultiTermDocs_destroy;
 }
 
 void
@@ -191,7 +194,7 @@ Kino_MultiTermDocs_get_doc_freq(TermDocs *term_docs) {
     I32                 i;
     U32                 doc_freq = 0;
 
-	/* sum the doc_freqs of all segments */
+    /* sum the doc_freqs of all segments */
     child = (MultiTermDocsChild*)term_docs->child;
     for (i = 0; i < child->num_subs; i++) {
         sub_td = child->sub_term_docs[i];
@@ -244,7 +247,7 @@ Kino_MultiTermDocs_bulk_read(TermDocs *term_docs, SV *doc_nums_sv,
     child = (MultiTermDocsChild*)term_docs->child;
 
     while (1) {
-		/* move to the next SegTermDocs */
+        /* move to the next SegTermDocs */
         while (child->current == NULL) {
             if (child->pointer < child->num_subs) {
                 child->base = child->starts[ child->pointer ];
@@ -260,11 +263,11 @@ Kino_MultiTermDocs_bulk_read(TermDocs *term_docs, SV *doc_nums_sv,
             child->current, doc_nums_sv, freqs_sv, num_wanted );
 
         if (num_got == 0) {
-			/* no more docs left in this segment */
+            /* no more docs left in this segment */
             child->current = NULL;
         }
         else {
-			/* add the start offset for this seg to each doc */
+            /* add the start offset for this seg to each doc */
             base = child->base;
             doc_nums = (U32*)SvPVX(doc_nums_sv);
             for (i = 0; i < num_got; i++) {
@@ -285,14 +288,14 @@ Kino_MultiTermDocs_next(TermDocs* term_docs) {
         return 1;
     }
     else if (child->pointer < child->num_subs) {
-		/* try next segment */
+        /* try next segment */
         child->base    = child->starts[ child->pointer ];
         child->current = child->sub_term_docs[ child->pointer ];
         child->pointer++;
         return term_docs->next(term_docs); /* recurse */
     }
     else {
-		/* done with all segments */
+        /* done with all segments */
         return 0;
     }
 }

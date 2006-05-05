@@ -4,17 +4,19 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::IndexReader );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        invindex    => undef,
+        sub_readers => [],
+        starts      => [],
+        max_doc     => 0,
+        norms_cache => {},
+    );
+}
+
 use KinoSearch::Index::FieldInfos;
 use KinoSearch::Index::SegReader;
 use KinoSearch::Index::MultiTermDocs;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    invindex    => undef,
-    sub_readers => [],
-    starts      => [],
-    max_doc     => 0,
-    norms_cache => {},
-);
 
 # use KinoSearch::Util::Class's new()
 # Note: can't inherit IndexReader's new() without recursion problems
@@ -187,6 +189,12 @@ sub fibonacci {
     my $result = $n < 2 ? $n : fibonacci( $n - 1 ) + fibonacci( $n - 2 );
     $fibo_cache{$n} = $result;
     return $result;
+}
+
+sub close {
+    my $self = shift;
+    return unless $self->{close_invindex};
+    $_->close for @{ $self->{sub_readers} };
 }
 
 1;

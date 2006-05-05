@@ -4,16 +4,18 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::InvIndex );    # !!
 
-use KinoSearch::Store::InStream;
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members / constructor params
+        invindex => undef,
+        seg_name => undef,
+        # members
+        instream => undef,
+        entries  => undef,
+    );
+}
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # members / constructor params
-    invindex => undef,
-    seg_name => undef,
-    # members
-    instream => undef,
-    entries  => undef,
-);
+use KinoSearch::Store::InStream;
 
 sub init_instance {
     my $self = shift;
@@ -56,6 +58,8 @@ sub slurp_file {
     $instream->close;
     return $contents;
 }
+
+sub close { shift->{instream}->close }
 
 1;
 

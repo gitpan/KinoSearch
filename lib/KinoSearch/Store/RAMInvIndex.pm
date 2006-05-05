@@ -4,16 +4,18 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::InvIndex );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members
+        ramfiles => {},
+    );
+}
+
 use Digest::MD5 qw( md5_hex );
 use KinoSearch::Store::FSInvIndex;
 use KinoSearch::Store::InStream;
 use KinoSearch::Store::OutStream;
 use KinoSearch::Store::RAMLock;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # members
-    ramfiles => {},
-);
 
 sub init_instance {
     my $self = shift;

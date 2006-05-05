@@ -4,17 +4,25 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # params / members
-    field         => undef,
-    text          => undef,
-    positions     => [],
-    start_offsets => [],
-    end_offsets   => [],
-);
-
-__PACKAGE__->ready_get_set(
-    qw( field text positions start_offsets end_offsets ));
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # params / members
+        field         => undef,
+        text          => undef,
+        positions     => [],
+        start_offsets => [],
+        end_offsets   => [],
+    );
+    __PACKAGE__->ready_get_set(
+        qw(
+            field
+            text
+            positions
+            start_offsets
+            end_offsets
+            )
+    );
+}
 
 1;
 

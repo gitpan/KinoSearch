@@ -4,13 +4,14 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    doc_num => undef,
-    score   => undef,
-    doc     => undef,
-);
-
-__PACKAGE__->ready_get_set(qw( doc_num score doc ));
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        doc_num => undef,
+        score   => undef,
+        doc     => undef,
+    );
+    __PACKAGE__->ready_get_set(qw( doc_num score doc ));
+}
 
 1;
 

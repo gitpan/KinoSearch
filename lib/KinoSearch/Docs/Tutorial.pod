@@ -44,10 +44,10 @@ L<HTML::Parser|HTML::Parser>.
     my $path_to_invindex = '';
     my $base_url         = '/us_constitution';
     
-    opendir CONSTITUTION_DIR, $source_dir
-        or die "Couldn't open directory '$source_dir': $!";
-    my @filenames = grep {/\.html/} readdir CONSTITUTION_DIR;
-    closedir CONSTITUTION_DIR;
+    opendir( my $source_dh, $source_dir )
+        or die "Couldn't opendir '$source_dir': $!";
+    my @filenames = grep {/\.html/} readdir $source_dh;
+    closedir $source_dh or die "Couldn't closedir '$source_dir': $!";
     
     ### STEP 1: Choose an Analyzer.
     my $analyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
@@ -200,7 +200,6 @@ L<HTML::Parser|HTML::Parser>.
             |;
     
         # calculate first and last hits pages to display / link to
-        my $current_page = int( $first_result / $hits_per_page ) + 1;
         my $current_page = int( $first_result / $hits_per_page ) + 1;
         my $last_page    = ceil( $total_hits / $hits_per_page );
         my $first_page   = max( 1, ( $current_page - 9 ) );

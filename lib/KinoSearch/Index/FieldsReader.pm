@@ -4,26 +4,28 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class Exporter );
 
-our @EXPORT_OK;
-
-BEGIN { @EXPORT_OK = qw( ANALYZED BINARY COMPRESSED ) }
-
 use constant ANALYZED   => "\x01";
 use constant BINARY     => "\x02";
 use constant COMPRESSED => "\x04";
 
+our @EXPORT_OK;
+
+BEGIN {
+    @EXPORT_OK = qw( ANALYZED BINARY COMPRESSED );
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        finfos        => undef,
+        fdata_stream  => undef,
+        findex_stream => undef,
+        # members
+        size => undef,
+    );
+
+}
+
 use Compress::Zlib qw( uncompress );
 use KinoSearch::Document::Field;
 use KinoSearch::Document::Doc;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor params / members
-    finfos        => undef,
-    fdata_stream  => undef,
-    findex_stream => undef,
-    # members
-    size => undef,
-);
 
 sub init_instance {
     my $self = shift;

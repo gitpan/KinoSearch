@@ -3,11 +3,16 @@ use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
+
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        stoplist => undef,
+    );
+}
+
 use KinoSearch::Analysis::Stemmer qw( %supported_languages );
-
 use Lingua::StopWords;
-
-our %instance_vars = __PACKAGE__->init_instance_vars( stoplist => undef, );
 
 sub init_instance {
     my $self     = shift;

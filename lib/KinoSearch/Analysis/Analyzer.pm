@@ -4,7 +4,12 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars( language => '', );
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        language => '',
+    );
+}
 
 # usage: $token_batch = $analyzer->analyze($token_batch);
 sub analyze { return $_[1] }

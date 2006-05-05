@@ -4,27 +4,28 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # params/members
+        searcher  => undef,
+        query     => undef,
+        filter    => undef,
+        sort_spec => undef,
+        num_docs  => undef,
+
+        # members
+        weight      => undef,
+        hit_queue   => undef,
+        highlighter => undef,
+
+        hit_docs   => undef,
+        pointer    => undef,
+        total_hits => undef,
+    );
+}
+
 use KinoSearch::Highlight::Highlighter;
 use KinoSearch::Search::HitCollector;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # params/members
-    searcher  => undef,
-    query     => undef,
-    filter    => undef,
-    sort_spec => undef,
-    num_docs  => undef,
-
-    # members
-    weight      => undef,
-    hit_queue   => undef,
-    highlighter => undef,
-
-    hit_docs   => undef,
-    pointer    => undef,
-    total_hits => undef,
-
-);
 
 sub init_instance {
     my $self = shift;
@@ -98,7 +99,7 @@ my %create_excerpts_defaults = ( highlighter => undef, );
 
 sub create_excerpts {
     my $self = shift;
-    verify_args( \%create_excerpts_defaults, @_ );
+    confess kerror() unless verify_args( \%create_excerpts_defaults, @_ );
     my %args = ( %create_excerpts_defaults, @_ );
 
     $self->{highlighter} = $args{highlighter};

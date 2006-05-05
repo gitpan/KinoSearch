@@ -12,16 +12,19 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::HitCollector );
 
-use KinoSearch::Search::HitQueue;
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args
+        size => undef,
+    );
+}
+our %instance_vars;
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args
-    size => undef,
-);
+use KinoSearch::Search::HitQueue;
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args( \%instance_vars, @_ );
+    confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = @_;
     croak("Required parameter: 'size'") unless defined $args{size};
 
@@ -42,13 +45,19 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::HitCollector );
 
-use KinoSearch::Util::BitVector;
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params
+        capacity => 0,
+    );
+}
+our %instance_vars;
 
-our %instance_vars = __PACKAGE__->init_instance_vars( capacity => 0, );
+use KinoSearch::Util::BitVector;
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args( \%instance_vars, @_ );
+    confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = ( %instance_vars, @_ );
 
     my $bit_vec
@@ -67,14 +76,17 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::HitCollector );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    hit_collector => undef,
-    filter_bits   => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        hit_collector => undef,
+        filter_bits   => undef,
+    );
+}
+our %instance_vars;
 
 sub new {
     my $self = shift->SUPER::new;
-    verify_args( \%instance_vars, @_ );
+    confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = @_;
     croak("Required parameter: 'hit_collector'")
         unless a_isa_b( $args{hit_collector},

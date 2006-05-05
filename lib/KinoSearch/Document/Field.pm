@@ -4,29 +4,48 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        name       => undef,
+        analyzer   => undef,
+        boost      => 1,
+        stored     => 1,
+        indexed    => 1,
+        analyzed   => 1,
+        vectorized => 1,
+        binary     => 0,
+        compressed => 0,
+        omit_norms => 0,
+        field_num  => undef,
+        value      => '',
+        fnm_bits   => undef,
+        fdt_bits   => undef,
+        tv_string  => '',
+        tv_cache   => undef,
+    );
+    __PACKAGE__->ready_get_set(
+        qw(
+            value
+            tv_string
+            boost
+            indexed
+            stored
+            analyzed
+            vectorized
+            binary
+            compressed
+            analyzer
+            field_num
+            name
+            omit_norms
+            )
+    );
+}
+
 use KinoSearch::Index::FieldsReader;
 use KinoSearch::Index::FieldInfos;
 use KinoSearch::Index::TermVector;
-
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    # constructor args / members
-    name       => undef,
-    analyzer   => undef,
-    boost      => 1,
-    stored     => 1,
-    indexed    => 1,
-    analyzed   => 1,
-    vectorized => 1,
-    binary     => 0,
-    compressed => 0,
-    omit_norms => 0,
-    field_num  => undef,
-    value      => '',
-    fnm_bits   => undef,
-    fdt_bits   => undef,
-    tv_string  => '',
-    tv_cache   => undef,
-);
 
 sub init_instance {
     my $self = shift;
@@ -52,24 +71,6 @@ sub breed_with {
     }
     return $kid;
 }
-
-__PACKAGE__->ready_get_set(
-    qw(
-        value
-        tv_string
-        boost
-        indexed
-        stored
-        analyzed
-        vectorized
-        binary
-        compressed
-        analyzer
-        field_num
-        name
-        omit_norms
-        )
-);
 
 sub set_fnm_bits { $_[0]->{fnm_bits} = $_[1] }
 

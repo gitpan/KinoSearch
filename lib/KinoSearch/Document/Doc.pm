@@ -4,10 +4,17 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars( _kino_boost => 1, );
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # special member - used to keep track of boost
+        _kino_boost => 1,
+    );
+}
 
 sub set_value {
-    $_[0]->{ $_[1] }->set_value( $_[2] );
+    my ( $self, $field_name, $value ) = @_;
+    carp("undef supplied to set_value") unless defined $value;
+    $self->{$field_name}->set_value($value);
 }
 
 sub get_value {

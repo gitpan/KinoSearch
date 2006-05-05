@@ -4,10 +4,13 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars( boost => 1, );
-
-# get_boost and set_boost don't do anything useful yet.
-__PACKAGE__->ready_get_set(qw( boost ));
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        boost => 1,
+    );
+    __PACKAGE__->ready_get_set(qw( boost ));
+}
 
 =begin comment
 

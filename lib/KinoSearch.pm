@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.10_01';
+our $VERSION = '0.10';
 
 use constant K_DEBUG => 0;
 
@@ -99,7 +99,7 @@ your document collection.
     );
     
     $invindexer->spec_field( 
-        name  => 'title' 
+        name  => 'title',
         boost => 3,
     );
     $invindexer->spec_field( name => 'bodytext' );

@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 
+use lib 't';
 use Test::More tests => 10;
 use File::Spec::Functions qw( catfile );
 use Carp;
@@ -9,9 +10,12 @@ BEGIN {
     use_ok('KinoSearch::Searcher');
     use_ok('KinoSearch::Analysis::PolyAnalyzer');
 }
+
+use KinoSearchTestInvIndex qw( path_for_test_invindex );
+
 my $tokenizer = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
 my $searcher = KinoSearch::Searcher->new(
-    invindex => 'test_invindex',
+    invindex => path_for_test_invindex(),
     analyzer => $tokenizer,
 );
 

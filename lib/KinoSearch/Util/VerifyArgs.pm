@@ -7,7 +7,11 @@ use Carp;
 
 use base qw( Exporter );
 
-our @EXPORT_OK = qw( verify_args a_isa_b );
+our @EXPORT_OK = qw( verify_args kerror a_isa_b );
+
+my $kerror;
+
+sub kerror {$kerror}
 
 # Verify that named parameters exist in a defaults hash.
 sub verify_args {
@@ -16,7 +20,9 @@ sub verify_args {
     # verify that args came in pairs
     if ( @_ % 2 ) {
         my ( $package, $filename, $line ) = caller(1);
-        die "Parameter error: odd number of args at $filename line $line\n";
+        $kerror
+            = "Parameter error: odd number of args at $filename line $line\n";
+        return 0;
     }
 
     # verify keys, ignore values
@@ -24,8 +30,11 @@ sub verify_args {
         my ( $var, undef ) = ( shift, shift );
         next if exists $defaults->{$var};
         my ( $package, $filename, $line ) = caller(1);
-        die "Invalid parameter: '$var' at $filename line $line\n";
+        $kerror = "Invalid parameter: '$var' at $filename line $line\n";
+        return 0;
     }
+
+    return 1;
 }
 
 =begin comment

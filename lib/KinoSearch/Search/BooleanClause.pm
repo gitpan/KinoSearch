@@ -4,10 +4,12 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = __PACKAGE__->init_instance_vars(
-    occur => 'SHOULD',
-    query => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        occur => 'SHOULD',
+        query => undef,
+    );
+}
 
 sub init_instance {
     my $self = shift;

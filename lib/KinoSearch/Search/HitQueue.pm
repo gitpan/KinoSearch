@@ -4,9 +4,9 @@ use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::PriorityQueue );
 
-use KinoSearch::Search::HitDoc;
+BEGIN { __PACKAGE__->init_instance_vars() }
 
-our %instance_vars = __PACKAGE__->init_instance_vars();
+use KinoSearch::Search::HitDoc;
 
 sub new {
     my $either = shift;
