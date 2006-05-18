@@ -71,7 +71,7 @@ KinoSearch::Index::Term - string of text associated with a field
 =head1 SYNOPSIS
 
     my $foo_term   = KinoSearch::Index::Term->new( 'content', 'foo' );
-    my $term_query = KinoSearch::Search::TermQuery( term => $foo_term );
+    my $term_query = KinoSearch::Search::TermQuery->new( term => $foo_term );
 
 =head1 DESCRIPTION
 
@@ -90,7 +90,7 @@ Constructor.
 
 Getters and setters.
 
-=head1 to_string
+=head2 to_string
 
 Returns a string representation of the Term object.
 
@@ -100,7 +100,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.10.
+See L<KinoSearch|KinoSearch> version 0.11.
 
 =cut
 

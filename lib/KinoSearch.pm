@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use constant K_DEBUG => 0;
 
@@ -74,7 +74,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.10
+0.11
 
 =head1 WARNING
 
@@ -105,7 +105,7 @@ your document collection.
     $invindexer->spec_field( name => 'bodytext' );
     
     while ( my ( $title, $bodytext ) = each %source_documents ) {
-        my $doc = $invindexer->new_doc($title);
+        my $doc = $invindexer->new_doc;
     
         $doc->set_value( title    => $title );
         $doc->set_value( bodytext => $bodytext );

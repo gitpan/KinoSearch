@@ -11,7 +11,6 @@ BEGIN {
     );
 }
 
-use KinoSearch::Analysis::Stemmer qw( %supported_languages );
 use Lingua::StopWords;
 
 sub init_instance {
@@ -25,12 +24,15 @@ sub init_instance {
     }
     else {
         # create a stoplist if language was supplied
-        if ( exists $supported_languages{$language} ) {
+        if ( $language =~ /^(?:da|de|en|es|fr|it|nl|no|pt|ru|sv)$/ ) {
             $self->{stoplist} = Lingua::StopWords::getStopWords($language);
         }
-        # if no language supplied, create an empty stoplist
-        else {
+        # No Finnish stoplist, though we have a stemmmer.
+        elsif ( $language eq 'fi' ) {
             $self->{stoplist} = {};
+        }
+        else {
+            confess "Invalid language: '$language'";
         }
     }
 }
@@ -41,12 +43,19 @@ __END__
 
 __XS__
 
-TokenBatch*
-analyze(self_hash, batch)
-    HV         *self_hash;
+MODULE = KinoSearch   PACKAGE = KinoSearch::Analysis::Stopalizer
+
+SV*
+analyze(self_hash, batch_sv)
+    HV *self_hash;
+    SV *batch_sv;
+PREINIT:
     TokenBatch *batch;
 CODE:
-    RETVAL = Kino_Stopalizer_analyze(self_hash, batch);
+    Kino_extract_struct( batch_sv, batch, TokenBatch*,
+        "KinoSearch::Analysis::TokenBatch");
+    (void)Kino_Stopalizer_analyze(self_hash, batch);
+    RETVAL = newSVsv(batch_sv);
 OUTPUT: RETVAL
     
 __H__
@@ -87,7 +96,7 @@ Kino_Stopalizer_analyze(HV* self_hash, TokenBatch *batch) {
             batch->set_text(batch, empty_string_sv);
         }
     }
-    return batch;
+    batch->reset(batch);
 }
     
 __POD__
@@ -160,7 +169,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.10.
+See L<KinoSearch|KinoSearch> version 0.11.
 
 =cut
 

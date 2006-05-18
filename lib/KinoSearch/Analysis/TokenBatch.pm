@@ -204,6 +204,7 @@ typedef struct tokenbatch {
     I32    size;
     I32    current;
     U32  (*next)(struct tokenbatch*);
+    void (*reset)(struct tokenbatch*);
     void (*set_text)(struct tokenbatch*, SV*);
     SV*  (*get_text)(struct tokenbatch*);
 } TokenBatch;
@@ -211,6 +212,7 @@ typedef struct tokenbatch {
 TokenBatch* Kino_TokenBatch_new();
 void Kino_TokenBatch_destroy(TokenBatch*);
 U32  Kino_TokenBatch_next(TokenBatch*);
+void Kino_TokenBatch_reset(TokenBatch*);
 void Kino_TokenBatch_set_text(TokenBatch*, SV*);
 SV*  Kino_TokenBatch_get_text(TokenBatch*);
 void Kino_TokenBatch_add_token(TokenBatch*, SV*, U32, U32);
@@ -244,6 +246,7 @@ Kino_TokenBatch_new() {
     batch->next         = Kino_TokenBatch_next;
     batch->set_text     = Kino_TokenBatch_set_text;
     batch->get_text     = Kino_TokenBatch_get_text;
+    batch->reset        = Kino_TokenBatch_reset;
 
     return batch;
 }
@@ -266,6 +269,11 @@ Kino_TokenBatch_next(TokenBatch *batch) {
         : batch->current == (batch->size -1) ? -1 
         : batch->current + 1;
     return batch->current == -1 ? 0 : 1;
+}
+
+void
+Kino_TokenBatch_reset(TokenBatch *batch) {
+    batch->current = -1;
 }
 
 void 
@@ -607,7 +615,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.10.
+See L<KinoSearch|KinoSearch> version 0.11.
 
 =end devdocs
 =cut

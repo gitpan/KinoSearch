@@ -29,15 +29,18 @@ sub init_invindexer {
     $invindexer->spec_field( name => 'letters' );
 }
 
-for my $iter ( 1 .. 10 ) {
-    my $create = $iter == 1 ? 1 : 0;
+my $create = 1;
+my @correct;
+for my $num_letters ( reverse 1 .. 10 ) {
     init_invindexer( create => $create );
+    $create = 0;
     for my $letter ( 'a' .. 'b' ) {
         my $doc     = $invindexer->new_doc;
-        my $content = ( "$letter " x $iter ) . 'z';
+        my $content = ( "$letter " x $num_letters ) . 'z';
 
         $doc->set_value( letters => $content );
         $invindexer->add_doc($doc);
+        push @correct, $content if $letter eq 'b';
     }
     $invindexer->finish;
 }
@@ -48,10 +51,9 @@ $searcher = KinoSearch::Searcher->new(
 );
 $hits = $searcher->search( query => 'b' );
 is( $hits->total_hits, 10, "correct total_hits from merged invindex" );
-is( $hits->fetch_hit_hashref->{letters},
-    "b b b b b b b b b b z",
-    "correct top scoring hit from merged invindex"
-);
+my @got;
+push @got, $hits->fetch_hit_hashref->{letters} for 1 .. $hits->total_hits;
+is_deeply( \@got, \@correct, "correct top scoring hit from merged invindex" );
 
 init_invindexer();
 $another_invindex = create_invindex( "atlantic ocean", "fresh fish" );

@@ -158,7 +158,7 @@ public class LuceneIndexer {
 
     // finish index
     int numIndexed = writer.docCount();
-    ///writer.optimize();
+    writer.optimize();
     writer.close();
     
     return numIndexed;

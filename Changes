@@ -1,6 +1,11 @@
 Revision history for KinoSearch
 
-0.10
+0.11 2006-05-17
+  * Restore Stopalizer functionality.
+  * Launder filenames so they pass taint check when index is initialized.
+  * Restore call to optimize() in Lucene benchmarker.
+
+0.10 2006-05-04
   * Improved Windows compatibility.
   * Make it possible to subclass some KinoSearch classes. 
   * Add InVindexer::add_invindexes().

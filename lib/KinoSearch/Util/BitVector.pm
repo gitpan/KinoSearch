@@ -157,6 +157,20 @@ logical_and(bit_vec, other)
 PPCODE:
     Kino_BitVec_logical_and(bit_vec, other);
 
+
+=for comment
+Return a count of the number of set bits in the BitVector.
+
+=cut
+
+U32
+count(bit_vec)
+    BitVector *bit_vec;
+CODE:
+    RETVAL = Kino_BitVec_count(bit_vec);
+OUTPUT: RETVAL
+
+
 =for comment
 Return an arrayref of the with each element the number of a set bit.
 
@@ -259,6 +273,7 @@ bool Kino_BitVec_get(BitVector*, U32);
 U32  Kino_BitVec_next_set_bit(BitVector*, U32);
 U32  Kino_BitVec_next_clear_bit(BitVector*, U32);
 void Kino_BitVec_logical_and(BitVector*, BitVector*);
+U32  Kino_BitVec_count(BitVector*);
 AV*  Kino_BitVec_to_array(BitVector*);
 void Kino_BitVec_destroy(BitVector*);
 
@@ -518,6 +533,38 @@ Kino_BitVec_logical_and(BitVector *bit_vec, BitVector *other) {
     }
 }
 
+const U32 BYTE_COUNTS[256] = {
+    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+    4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8
+};
+
+U32 Kino_BitVec_count(BitVector *bit_vec) {
+    U32 count = 0;
+    U32 byte_size = ceil(bit_vec->capacity / 8.0);
+    unsigned char *ptr = bit_vec->bits;
+    unsigned char *limit = ptr + byte_size;
+
+    for( ; ptr < limit; ptr++) {
+        count += BYTE_COUNTS[*ptr];
+    }
+
+    return count;
+}
+
 AV*  
 Kino_BitVec_to_array(BitVector* bit_vec) {
     U32  num = 0;
@@ -561,7 +608,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.10.
+See L<KinoSearch|KinoSearch> version 0.11.
 
 =end devdocs
 =cut

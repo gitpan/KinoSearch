@@ -9,12 +9,6 @@ create a simple search engine. It requires the html presentation of the US
 Constitution included in the distribution for KinoSearch, under
 C<t/us_constitution>.
 
-Taint mode is enabled on these scripts by default, since both indexers and
-search scripts typically handle untrusted data -- see L<perlsec|perlsec> for
-an explanation of why you really, really shouldn't turn it off.  You'll either
-have to set the script as an executable and run it via C<./invindexer.plx>, or
-add the C<-T> flag on the command line: C<perl -T invindexer.plx>
-
 Note that a proper indexer for html documents would not rely on quick-n-dirty
 regular expressions for stripping tags, as this one does for the sake of
 brevity -- it would use a dedicated parsing module such as
@@ -22,7 +16,7 @@ L<HTML::Parser|HTML::Parser>.
 
 =head2 invindexer.plx
 
-    #!/usr/bin/perl -T
+    #!/usr/bin/perl
     use strict;
     use warnings;
     
@@ -292,5 +286,5 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.10.
+See L<KinoSearch|KinoSearch> version 0.11.
 

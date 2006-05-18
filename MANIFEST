@@ -107,6 +107,7 @@ t/102-strings_template_io.t
 t/103-repeats_template_io.t
 t/104-parse_template_io.t
 t/105-invindex.t
+t/150-polyanalyzer.t
 t/201-field_infos.t
 t/202-term.t
 t/203-compound_file_reader.t

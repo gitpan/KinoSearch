@@ -1,7 +1,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
+use Test::More tests => 15;
+use List::Util qw( shuffle );
 
 BEGIN { use_ok('KinoSearch::Util::BitVector') }
 
@@ -57,6 +58,15 @@ $bit_vec->set( 1 .. 3, 10, 20, 30 );
 $other->set( 2 .. 10, 25 .. 35 );
 $bit_vec->logical_and($other);
 is_deeply( $bit_vec->to_arrayref, [ 2, 3, 10, 30 ], "logical_and" );
+
+$bit_vec = KinoSearch::Util::BitVector->new;
+my @counts;
+for ( shuffle 1 .. 64 ) {
+    $bit_vec->set($_);
+    push @counts, $bit_vec->count;
+}
+is_deeply( \@counts, [ 1 .. 64 ],
+    'count() returns the right number of bits' );
 
 # valgrind only - detect off-by-one error
 for my $cap ( 5 .. 24 ) {

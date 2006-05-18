@@ -48,8 +48,8 @@ sub open_outstream {
 
     # use perl scalars as virtual files;
     my $data = '';
-    $self->{ramfiles}{$filename} ||= \$data;
-    open( my $fh, '>:scalar', $self->{ramfiles}{$filename} ) or die $!;
+    $self->{ramfiles}{$filename} = \$data;
+    open( my $fh, '>:scalar', \$data ) or die $!;
     binmode($fh);
     return KinoSearch::Store::OutStream->new($fh);
 }

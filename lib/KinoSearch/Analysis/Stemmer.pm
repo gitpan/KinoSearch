@@ -2,9 +2,8 @@ package KinoSearch::Analysis::Stemmer;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Analysis::Analyzer Exporter );
+use base qw( KinoSearch::Analysis::Analyzer );
 
-our @EXPORT_OK;
 our %supported_languages;
 
 BEGIN {
@@ -12,7 +11,6 @@ BEGIN {
         # constructor params / members
         stemmifier => undef,
     );
-    @EXPORT_OK = qw( %supported_languages );
 }
 
 use Lingua::Stem::Snowball qw( stemmers );
@@ -80,7 +78,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.10.
+See L<KinoSearch|KinoSearch> version 0.11.
 
 =cut
 

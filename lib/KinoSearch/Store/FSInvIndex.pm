@@ -48,11 +48,18 @@ sub init_instance {
         if ( -e $path ) {
             opendir( my $invindex_dh, $path )
                 or confess("Couldn't opendir '$path': $!");
-            my @to_remove = grep {
-                       /^\w+\.(?:cfs|del)$/
-                    or $_ eq 'segments'
-                    or $_ eq 'deletable'
-            } readdir $invindex_dh;
+            my @to_remove;
+            for ( readdir $invindex_dh ) {
+                if (/(^\w+\.(?:cfs|del)$)/) {
+                    push @to_remove, $1;
+                }
+                elsif ( $_ eq 'segments' ) {
+                    push @to_remove, 'segments';
+                }
+                elsif ( $_ eq 'delqueue' ) {
+                    push @to_remove, 'delqueue';
+                }
+            }
             for my $removable (@to_remove) {
                 $removable = catfile( $path, $removable );
                 unlink $removable
@@ -189,6 +196,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.10.
+See L<KinoSearch|KinoSearch> version 0.11.
 
 =cut
