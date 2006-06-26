@@ -1,3 +1,4 @@
+ApacheLicense2.0.txt
 bin/dump_index
 bin/kinotidy
 Build.PL
@@ -14,6 +15,7 @@ lib/KinoSearch/Analysis/LCNormalizer.pm
 lib/KinoSearch/Analysis/PolyAnalyzer.pm
 lib/KinoSearch/Analysis/Stemmer.pm
 lib/KinoSearch/Analysis/Stopalizer.pm
+lib/KinoSearch/Analysis/Token.pm
 lib/KinoSearch/Analysis/TokenBatch.pm
 lib/KinoSearch/Analysis/Tokenizer.pm
 lib/KinoSearch/Docs/DevGuide.pod
@@ -21,7 +23,11 @@ lib/KinoSearch/Docs/FileFormat.pod
 lib/KinoSearch/Docs/Tutorial.pod
 lib/KinoSearch/Document/Doc.pm
 lib/KinoSearch/Document/Field.pm
+lib/KinoSearch/Highlight/Encoder.pm
+lib/KinoSearch/Highlight/Formatter.pm
 lib/KinoSearch/Highlight/Highlighter.pm
+lib/KinoSearch/Highlight/SimpleHTMLEncoder.pm
+lib/KinoSearch/Highlight/SimpleHTMLFormatter.pm
 lib/KinoSearch/Index/CompoundFileReader.pm
 lib/KinoSearch/Index/CompoundFileWriter.pm
 lib/KinoSearch/Index/DelDocs.pm
@@ -52,8 +58,8 @@ lib/KinoSearch/QueryParser/QueryParser.pm
 lib/KinoSearch/Search/BooleanClause.pm
 lib/KinoSearch/Search/BooleanQuery.pm
 lib/KinoSearch/Search/BooleanScorer.pm
+lib/KinoSearch/Search/Hit.pm
 lib/KinoSearch/Search/HitCollector.pm
-lib/KinoSearch/Search/HitDoc.pm
 lib/KinoSearch/Search/HitQueue.pm
 lib/KinoSearch/Search/Hits.pm
 lib/KinoSearch/Search/PhraseQuery.pm
@@ -108,6 +114,10 @@ t/103-repeats_template_io.t
 t/104-parse_template_io.t
 t/105-invindex.t
 t/150-polyanalyzer.t
+t/152-token_batch.t
+t/153-lc_normalizer.t
+t/154-tokenizer.t
+t/155-stopalizer.t
 t/201-field_infos.t
 t/202-term.t
 t/203-compound_file_reader.t
@@ -131,6 +141,7 @@ t/504-similarity.t
 t/505-hit_queue.t
 t/506-hit_collector.t
 t/507-query_filter.t
+t/508-hits.t
 t/601-queryparser.t
 t/602-boosts.t
 t/603-query_boosts.t
@@ -143,6 +154,7 @@ t/benchmarks/indexers/LuceneIndexer.java
 t/benchmarks/indexers/plucene_indexer.plx
 t/benchmarks/README.txt
 t/KinoSearchTestInvIndex.pm
+t/pod-coverage.t
 t/pod.t
 t/us_constitution/amend1.html
 t/us_constitution/amend10.html

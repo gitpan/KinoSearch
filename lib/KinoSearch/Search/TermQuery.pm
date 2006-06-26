@@ -39,6 +39,12 @@ sub to_string {
 
 }
 
+sub get_similarity {
+	my ( $self, $searcher ) = @_;
+	my $field_name = $self->{term}->get_field;
+	return $searcher->get_similarity($field_name);
+}
+
 sub equals { shift->todo_death }
 
 package KinoSearch::Search::TermWeight;
@@ -129,7 +135,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

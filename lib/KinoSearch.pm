@@ -4,25 +4,9 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use constant K_DEBUG => 0;
-
-# if K_DEBUG is enabled, expose the kdump pretty printer throughout KinoSearch
-BEGIN {
-    if (K_DEBUG) {
-        eval 'use Data::Dumper;';
-        *kdump = sub {
-            my $kdumper = Data::Dumper->new( [@_] );
-            $kdumper->Sortkeys( sub { return [ sort keys %{ $_[0] } ] } );
-            $kdumper->Indent(1);
-            warn $kdumper->Dump;
-        };
-    }
-    else {
-        *kdump = sub { };
-    }
-}
 
 use XSLoader;
 # This loads a large number of disparate subs.
@@ -31,6 +15,14 @@ XSLoader::load( 'KinoSearch', $VERSION );
 
 use base qw( Exporter );
 our @EXPORT_OK = qw( K_DEBUG kdump );
+
+sub kdump {
+    require Data::Dumper;
+    my $kdumper = Data::Dumper->new( [@_] );
+    $kdumper->Sortkeys( sub { return [ sort keys %{ $_[0] } ] } );
+    $kdumper->Indent(1);
+    warn $kdumper->Dump;
+}
 
 1;
 
@@ -74,12 +66,19 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.11
+0.12
 
-=head1 WARNING
+=head1 BACKWARDS COMPATIBILITY POLICY 
 
-KinoSearch is alpha test software.  The API and the file format are subject to
-change.
+KinoSearch is officially "alpha" software, mostly because the file format may
+be changed in the future. If you have an incremental indexing app set up when
+that change arrives, and your sysadmin upgrades KinoSearch unaware of that,
+your app will suddenly start crashing.  Until the file format issue is
+settled, changes to the API are also fair game.
+
+However, if you are in a position to control module installation on your
+machine and you can test your apps when upgrading, KinoSearch is easily stable
+and mature enough for heavy use.
 
 =head1 SYNOPSIS
 
@@ -242,7 +241,7 @@ information at L<http://www.rectangular.com/kinosearch>.
 
 Marvin Humphrey, E<lt>marvin at rectangular dot comE<gt>
 
-Java Lucene by Doug Cutting et al.
+Apache Lucene by Doug Cutting et al.
 
 =head1 BUGS
 
@@ -260,6 +259,10 @@ Copyright 2005-2006 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
+
+Terms of usage for Apache Lucene, from which portions of KinoSearch are
+derived, are spelled out in the Apache License: see the file
+"ApacheLicense2.0.txt".
 
 =head1 DISCLAIMER OF WARRANTY
 

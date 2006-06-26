@@ -22,9 +22,10 @@ my $stopalizer    = KinoSearch::Analysis::Stopalizer->new( language => 'en' );
 my $stemmer       = KinoSearch::Analysis::Stemmer->new( language => 'en' );
 my $polyanalyzer  = KinoSearch::Analysis::PolyAnalyzer->new(
     analyzers => [ $lc_normalizer, $tokenizer, $stopalizer, $stemmer, ], );
+    #analyzers => [ $lc_normalizer, $tokenizer, ], );
 
 my $input = 'Eats, shoots and leaves.';
-$batch->add_token( $input, 0, bytes::length($input) );
+$batch->append( $input, 0, bytes::length($input) );
 $batch = $polyanalyzer->analyze($batch);
 
 my @got;

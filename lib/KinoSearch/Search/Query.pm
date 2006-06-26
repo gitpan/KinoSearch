@@ -78,9 +78,11 @@ sub merge_boolean_queries { shift->todo_death }
 
 # return the Similarity implementation used by the Query.
 sub get_similarity {
-    my ( $self, $searcher ) = @_;
+    my ( $self, $searcher, $field_name ) = @_;
     # This can be overriden in subclasses, allowing alternative Sims.
-    return $searcher->get_similarity;
+    return defined $field_name
+        ? $searcher->get_similarity($field_name)
+        : $searcher->get_similarity;
 }
 
 sub clone { shift->todo_death }
@@ -149,7 +151,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

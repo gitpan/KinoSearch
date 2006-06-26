@@ -1,10 +1,15 @@
 #!/usr/bin/perl
 
-use Test::More tests => 4;
+use Test::More tests => 5;
 
 BEGIN {
     use_ok('KinoSearch::Search::Similarity');
 }
+
+use KinoSearch::Store::RAMInvIndex;
+use KinoSearch::Analysis::Tokenizer;
+use KinoSearch::InvIndexer;
+use KinoSearch::Searcher;
 
 my $sim = KinoSearch::Search::Similarity->new;
 
@@ -29,3 +34,41 @@ for ( 0 .. 255 ) {
 is_deeply( \@transformed, \@floats,
     "using the norm_decoder produces desired results" );
 
+
+my $invindex   = KinoSearch::Store::RAMInvIndex->new( create => 1 );
+my $tokenizer  = KinoSearch::Analysis::Tokenizer->new;
+my $invindexer = KinoSearch::InvIndexer->new( 
+	analyzer => $tokenizer,
+	invindex => $invindex,
+);
+$invindexer->spec_field( name => 'body' );
+$invindexer->spec_field(
+	name  => 'title',
+	boost => 2,
+);
+my $title_sim = KinoSearch::Search::TitleSimilarity->new;
+$invindexer->set_similarity( title => $title_sim );
+
+my %source_docs = (
+	'spam spam spam spam' => 'a load of spam',
+	'not spam' => 'not spam not even close to spam',
+);
+while ( my ( $title, $body ) = each %source_docs ) {
+	my $doc = $invindexer->new_doc;
+	$doc->set_value( title => $title );
+	$doc->set_value( body  => $body  );
+	$invindexer->add_doc($doc);
+}
+$invindexer->finish;
+undef $invindexer;
+
+my $searcher = KinoSearch::Searcher->new(
+	invindex => $invindex,
+	analyzer => $tokenizer,
+);
+$searcher->set_similarity( title => $title_sim );
+
+my $hits = $searcher->search( query => 'spam' );
+
+is($hits->fetch_hit_hashref->{'title'}, 'not spam', 
+	"TitleSimilarity works well on title fields" );

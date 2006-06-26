@@ -22,13 +22,13 @@ my $hits = $searcher->search( query => $term_query );
 $hits->seek( 0, 50 );
 is( $hits->total_hits, 2, "correct number of hits returned" );
 
-my ( $hashref, $score ) = $hits->fetch_hit_hashref;
+my $hashref = $hits->fetch_hit_hashref;
 is( $hashref->{content}, 'c c c d', "most relevant doc is highest" );
 
-( $hashref, $score ) = $hits->fetch_hit_hashref;
+$hashref = $hits->fetch_hit_hashref;
 is( $hashref->{content}, 'c d', "second most relevant" );
 
 $hits->seek( 1, 50 );
-( $hashref, $score ) = $hits->fetch_hit_hashref;
+$hashref = $hits->fetch_hit_hashref;
 is( $hashref->{content}, 'c d', "fresh seek" );
 

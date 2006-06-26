@@ -74,7 +74,7 @@ __POD__
 
 =head1 NAME
 
-KinoSearch::Index::IntMap - compact array of integers
+KinoSearch::Util::IntMap - compact array of integers
 
 =head1 DESCRIPTION
 
@@ -88,7 +88,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =end devdocs
 =cut

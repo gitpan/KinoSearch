@@ -135,6 +135,7 @@ pattern as all the others).
 if ( $needs_rewrite{$ks_xs_filepath} ) {
     my @struct_classes = qw(
         KinoSearch::Analysis::Stemmer::Stemmifier
+        KinoSearch::Analysis::Token
         KinoSearch::Analysis::TokenBatch
         KinoSearch::Index::SegTermEnum
         KinoSearch::Index::TermBuffer

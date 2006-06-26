@@ -13,7 +13,7 @@ $hc->collect( $_->[0], $_->[1] ) for @docs_and_scores;
 my $hit_queue = $hc->get_storage;
 isa_ok( $hit_queue, 'KinoSearch::Search::HitQueue' );
 
-my @scores = map { $_->get_score } @{ $hit_queue->hit_docs };
+my @scores = map { $_->get_score } @{ $hit_queue->hits };
 is_deeply( \@scores, [ 2, 1, 0 ], "collect into HitQueue" );
 
 $hc = KinoSearch::Search::BitCollector->new;

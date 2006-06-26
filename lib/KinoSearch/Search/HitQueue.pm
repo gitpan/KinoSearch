@@ -6,7 +6,7 @@ use base qw( KinoSearch::Util::PriorityQueue );
 
 BEGIN { __PACKAGE__->init_instance_vars() }
 
-use KinoSearch::Search::HitDoc;
+use KinoSearch::Search::Hit;
 
 sub new {
     my $either = shift;
@@ -17,20 +17,25 @@ sub new {
     return $self;
 }
 
-# Create an array of "empty" HitDoc objects -- they have scores and doc_nums,
+# Create an array of "empty" Hit objects -- they have scores and ids,
 # but the stored fields have yet to be retrieved.
-sub hit_docs {
-    my $self = shift;
+sub hits {
+    my ( $self, $start_offset, $num_wanted, $reader ) = @_;
+    my @hits = @{ $self->pop_all };
 
-    # transform score/doc_num scalars into HitDoc objects
-    my @hit_docs = map {
-        KinoSearch::Search::HitDoc->new(
-            doc_num => unpack( 'N', "$_" ),
-            score   => 0 + $_,
+    if ( defined $start_offset and defined $num_wanted ) {
+        @hits = splice( @hits, $start_offset, $num_wanted );
+    }
+
+    @hits = map {
+        KinoSearch::Search::Hit->new(
+            id     => unpack( 'N', "$_" ),
+            score  => 0 + $_,
+            reader => $reader
             )
-    } @{ $self->pop_all };
+    } @hits;
 
-    return \@hit_docs;
+    return \@hits;
 }
 
 1;
@@ -73,7 +78,7 @@ Kino_HitQ_less_than(SV* a, SV* b) {
         ptr_a = SvPVX(a);
         ptr_b = SvPVX(b);
         /* sort by doc_num second */
-        return (bool)memcmp(ptr_b, ptr_a, 4);
+        return (bool) (memcmp(ptr_b, ptr_a, 4) < 0);
     }
     /* sort by score first */
     return SvNV(a) < SvNV(b);
@@ -104,7 +109,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =end devdocs
 =cut

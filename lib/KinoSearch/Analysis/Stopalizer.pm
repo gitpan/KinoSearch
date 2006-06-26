@@ -54,8 +54,9 @@ PREINIT:
 CODE:
     Kino_extract_struct( batch_sv, batch, TokenBatch*,
         "KinoSearch::Analysis::TokenBatch");
-    (void)Kino_Stopalizer_analyze(self_hash, batch);
-    RETVAL = newSVsv(batch_sv);
+    Kino_Stopalizer_analyze(self_hash, batch);
+    SvREFCNT_inc(batch_sv);
+    RETVAL = batch_sv;
 OUTPUT: RETVAL
     
 __H__
@@ -66,6 +67,7 @@ __H__
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include "KinoSearchAnalysisToken.h"
 #include "KinoSearchAnalysisTokenBatch.h"
 #include "KinoSearchUtilVerifyArgs.h"
 
@@ -79,8 +81,9 @@ __C__
 
 TokenBatch*
 Kino_Stopalizer_analyze(HV* self_hash, TokenBatch *batch) {
-    SV **sv_ptr;
-    HV  *stoplist_hv;
+    SV         **sv_ptr;
+    HV          *stoplist_hv;
+    Token       *token;
 
     sv_ptr = hv_fetch(self_hash, "stoplist", 8, 0);
     if (sv_ptr == NULL)
@@ -90,13 +93,15 @@ Kino_Stopalizer_analyze(HV* self_hash, TokenBatch *batch) {
     stoplist_hv = (HV*)SvRV(*sv_ptr);
     Kino_Verify_extract_arg(self_hash, "stoplist", 8);
 
-    while (batch->next(batch)) {
-        if (hv_exists_ent(stoplist_hv, batch->get_text(batch), 0)) {
-            SV *empty_string_sv = newSVpvn("", 0);
-            batch->set_text(batch, empty_string_sv);
+    while (Kino_TokenBatch_next(batch)) {
+        token = batch->current;
+        if (hv_exists(stoplist_hv, token->text, token->len)) {
+            token->len = 0;
         }
     }
-    batch->reset(batch);
+
+    Kino_TokenBatch_reset(batch);
+    return batch;
 }
     
 __POD__
@@ -169,7 +174,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

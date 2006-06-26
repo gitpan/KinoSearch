@@ -7,9 +7,9 @@ use base qw( KinoSearch::Util::Class );
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # members
-        similarity => undef
+        similarity => undef,
+        field_sims => {},
     );
-    __PACKAGE__->ready_get_set(qw( similarity ));
 }
 
 use KinoSearch::Search::Similarity;
@@ -75,6 +75,40 @@ Weights.
 
 sub doc_freq { shift->abstract_death }
 
+=begin comment
+
+    $searchable->set_similarity($sim);
+    $searchable->set_similarity( $field_name, $alternate_sim );
+
+    my $sim     = $searchable->get_similarity;
+    my $alt_sim = $searchable->get_similarity($field_name);
+
+Set or get Similarity.  If a field name is included, set/retrieve the 
+Similarity instance for that field only.
+
+=end comment
+=cut
+
+sub set_similarity {
+    if ( @_ == 3 ) {
+        my ( $self, $field_name, $sim ) = @_;
+        $self->{field_sims}{$field_name} = $sim;
+    }
+    else {
+        $_[0]->{similarity} = $_[1];
+    }
+}
+
+sub get_similarity {
+    my ( $self, $field_name ) = @_;
+    if ( defined $field_name and exists $self->{field_sims}{$field_name} ) {
+        return $self->{field_sims}{$field_name};
+    }
+    else {
+        return $self->{similarity};
+    }
+}
+
 # not sure these are needed (call $query->create_weight($searcher) instead)
 sub create_weight { shift->unimplemented_death }
 sub rewrite_query { shift->unimplemented_death }
@@ -105,7 +139,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =end devdocs
 =cut

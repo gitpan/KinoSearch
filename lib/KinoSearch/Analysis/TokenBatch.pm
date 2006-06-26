@@ -29,20 +29,26 @@ PPCODE:
     sv_setref_pv(ST(0), class, (void*)batch);
     XSRETURN(1);
 
-=for comment
-
-Add one token to the batch.
-
-=cut
-
 void
-add_token(batch, text, start_offset, end_offset)
+append(batch, text_sv, start_offset, end_offset, ...)
     TokenBatch *batch;
-    SV         *text;
-    U32         start_offset;
-    U32         end_offset;
+    SV         *text_sv;
+    I32         start_offset;
+    I32         end_offset;
+PREINIT:
+    char   *text;
+    STRLEN  len;
+    I32     pos_inc = 1;
+    Token  *token;
 PPCODE:
-    Kino_TokenBatch_add_token(batch, text, start_offset, end_offset);
+    text  = SvPV(text_sv, len);
+    if (items == 5)
+        pos_inc = SvIV( ST(4) );
+    else if (items > 5)
+        Kino_confess("Too many arguments: %d", items);
+
+    token = Kino_Token_new(text, len, start_offset, end_offset, pos_inc);
+    Kino_TokenBatch_append(batch, token);
 
 =for comment
 
@@ -57,9 +63,50 @@ add_many_tokens(batch, string_sv, starts_av, ends_av)
     SV         *string_sv;
     AV         *starts_av;
     AV         *ends_av;
+PREINIT:
+    char   *string_start;
+    STRLEN  len, start_offset, end_offset;
+    I32     i, max;
+    SV    **start_sv_ptr;
+    SV    **end_sv_ptr;
+    Token  *token;
 PPCODE:
-    Kino_TokenBatch_add_many_tokens(batch, string_sv, starts_av, ends_av);
+{
+    string_start = SvPV(string_sv, len);
 
+    max = av_len(starts_av);
+    for (i = 0; i <= max; i++) {
+        /* retrieve start */
+        start_sv_ptr = av_fetch(starts_av, i, 0);
+        if (start_sv_ptr == NULL)
+            Kino_confess("Failed to retrieve @starts array element");
+        start_offset = SvIV(*start_sv_ptr);
+
+        /* retrieve end */
+        end_sv_ptr = av_fetch(ends_av, i, 0);
+        if (end_sv_ptr == NULL)
+            Kino_confess("Failed to retrieve @ends array element");
+        end_offset = SvIV(*end_sv_ptr);
+
+        /* sanity check the offsets to make sure they're inside the string */
+        if (start_offset > len)
+            Kino_confess("start_offset > len (%d > %"UVuf")", 
+                start_offset, (UV)len);
+        if (end_offset > len)
+            Kino_confess("end_offset > len (%d > %"UVuf")", 
+                end_offset, (UV)len);
+
+        /* calculate the start of the substring and add the token */
+        token = Kino_Token_new(
+            (string_start + start_offset), 
+            (end_offset - start_offset), 
+            start_offset, 
+            end_offset,
+            1
+        );
+        Kino_TokenBatch_append(batch, token);
+    }
+}
 
 =begin comment
 
@@ -88,19 +135,69 @@ build_posting_list(batch, doc_num, field_num)
 PPCODE:
     Kino_TokenBatch_build_plist(batch, doc_num, field_num);
 
+void
+set_all_texts(batch, texts_av)
+    TokenBatch *batch;
+    AV         *texts_av;
+PREINIT:
+    Token  *token;
+    I32     i, max;
+    SV    **sv_ptr;
+    char   *text;
+    STRLEN  len;
+PPCODE:
+{
+    token = batch->first;
+    max = av_len(texts_av);
+    for (i = 0; i <= max; i++) {
+        if (token == NULL) {
+            Kino_confess("Batch size %d doesn't match array size %d",
+                batch->size, (max + 1));
+        }
+        sv_ptr = av_fetch(texts_av, i, 0);
+        if (sv_ptr == NULL) {
+            Kino_confess("Encountered a null SV* pointer");
+        }
+        text = SvPV(*sv_ptr, len);
+        Kino_Safefree(token->text);
+        token->text = Kino_savepvn(text, len);
+        token->len = len;
+        token = token->next;
+    }
+}
+
+void
+get_all_texts(batch)
+    TokenBatch *batch;
+PREINIT: 
+    Token *token;
+    AV *out_av;
+PPCODE:
+{
+    out_av = newAV();
+    token = batch->first;
+    while (token != NULL) {
+        SV *text = newSVpvn(token->text, token->len);
+        av_push(out_av, text);
+        token = token->next;
+    }
+    XPUSHs(sv_2mortal( newRV_noinc((SV*)out_av) ));
+    XSRETURN(1);
+}
+
 
 SV*
 _set_or_get(batch, ...) 
     TokenBatch *batch;
 ALIAS:
-    set_start_offset = 1
-    get_start_offset = 2
-    set_end_offset   = 3
-    get_end_offset   = 4
-    set_text         = 5
-    get_text         = 6
-    set_all_texts    = 7
-    get_all_texts    = 8
+    set_text         = 1
+    get_text         = 2
+    set_start_offset = 3
+    get_start_offset = 4
+    set_end_offset   = 5
+    get_end_offset   = 6
+    set_pos_inc      = 7
+    get_pos_inc      = 8
     set_size         = 9
     get_size         = 10
     set_postings     = 11
@@ -110,32 +207,35 @@ ALIAS:
 CODE:
 {
     /* fail if looking for info on a single token but there isn't one */
-    if (    ( ix < 7 )
-         && ( batch->size == 0 || batch->current == -1)
-    ) {
+    if ((ix < 7) && (batch->current == NULL))
         Kino_confess("TokenBatch doesn't currently hold a valid token");
-    }
 
     KINO_START_SET_OR_GET_SWITCH
 
-    case 1:  batch->start_offsets[ batch->current ] = SvUV( ST(1) );
+    case 1:  {
+                Token *current = batch->current;
+                char   *text;
+                Kino_Safefree(current->text);
+                text = SvPV( ST(1), current->len );
+                current->text = Kino_savepvn( text, current->len );
+             }
              /* fall through */
-    case 2:  RETVAL = newSVuv( batch->start_offsets[ batch->current ] );
+    case 2:  RETVAL = newSVpvn(batch->current->text, batch->current->len);
              break;
 
-    case 3:  batch->end_offsets[ batch->current ] = SvUV( ST(1) );
+    case 3:  batch->current->start_offset = SvIV( ST(1) );
              /* fall through */
-    case 4:  RETVAL = newSVuv( batch->end_offsets[ batch->current ] );
-             break;
-        
-    case 5:  batch->set_text(batch, ST(1) );
-             /* fall through */
-    case 6:  RETVAL = newSVsv(batch->get_text(batch));
+    case 4:  RETVAL = newSViv(batch->current->start_offset);
              break;
 
-    case 7:  Kino_confess("can't set_all_texts");
+    case 5:  batch->current->end_offset = SvIV( ST(1) );
              /* fall through */
-    case 8:  RETVAL = newRV_inc( (SV*)batch->texts );
+    case 6:  RETVAL = newSViv(batch->current->end_offset);
+             break;
+
+    case 7:  batch->current->pos_inc = SvIV( ST(1) );
+             /* fall through */
+    case 8:  RETVAL = newSViv(batch->current->pos_inc);
              break;
 
     case 9:  Kino_confess("Can't set size on a TokenBatch object");
@@ -157,14 +257,13 @@ CODE:
 }
 OUTPUT: RETVAL
 
-=for comment
+void
+reset(batch)
+    TokenBatch *batch;
+PPCODE:
+    Kino_TokenBatch_reset(batch);
 
-Proceed to the next item in the TokenBatch.  Returns true if the TokenBatch
-ends up located at valid token.
-
-=cut
-
-bool
+I32
 next(batch)
     TokenBatch *batch;
 CODE:
@@ -187,37 +286,29 @@ __H__
 #include "perl.h"
 #include "XSUB.h"
 #include "ppport.h"
+#include "KinoSearchAnalysisToken.h"
 #include "KinoSearchIndexTerm.h"
-#include "KinoSearchStoreOutStream.h"
 #include "KinoSearchUtilCarp.h"
 #include "KinoSearchUtilMathUtils.h"
 #include "KinoSearchUtilMemManager.h"
 #include "KinoSearchUtilStringHelper.h"
 
 typedef struct tokenbatch {
-    AV    *texts;
-    AV    *postings;
-    SV    *tv_string;
-    U32   *start_offsets;
-    U32   *end_offsets;
-    I32    capacity;
-    I32    size;
-    I32    current;
-    U32  (*next)(struct tokenbatch*);
-    void (*reset)(struct tokenbatch*);
-    void (*set_text)(struct tokenbatch*, SV*);
-    SV*  (*get_text)(struct tokenbatch*);
+    Token   *first;
+    Token   *last;
+    Token   *current;
+    I32      size;
+    I32      initialized;
+    AV      *postings;
+    SV      *tv_string;
 } TokenBatch;
 
 TokenBatch* Kino_TokenBatch_new();
-void Kino_TokenBatch_destroy(TokenBatch*);
-U32  Kino_TokenBatch_next(TokenBatch*);
-void Kino_TokenBatch_reset(TokenBatch*);
-void Kino_TokenBatch_set_text(TokenBatch*, SV*);
-SV*  Kino_TokenBatch_get_text(TokenBatch*);
-void Kino_TokenBatch_add_token(TokenBatch*, SV*, U32, U32);
-void Kino_TokenBatch_add_many_tokens(TokenBatch*, SV*, AV*, AV*);
-void Kino_TokenBatch_build_plist(TokenBatch*, U32, U16);
+void   Kino_TokenBatch_destroy(TokenBatch *batch);
+void   Kino_TokenBatch_append(TokenBatch *batch, Token *token);
+I32    Kino_TokenBatch_next(TokenBatch *batch);
+void   Kino_TokenBatch_reset(TokenBatch *batch);
+void   Kino_TokenBatch_build_plist(TokenBatch*, U32, U16);
 
 #endif /* include guard */
 
@@ -225,28 +316,21 @@ __C__
 
 #include "KinoSearchAnalysisTokenBatch.h"
 
-static void Kino_TokenBatch_do_add_token(TokenBatch*, char*, U32, U32);
-
 TokenBatch*
 Kino_TokenBatch_new() {
     TokenBatch *batch;
 
-    /* allocate or flag as not allocated */
+    /* allocate */
     Kino_New(0, batch, 1, TokenBatch);
-    batch->texts         = newAV();
-    batch->start_offsets = NULL;
-    batch->end_offsets   = NULL;
 
     /* init */
-    batch->capacity     = 0;
+    batch->first        = NULL;
+    batch->last         = NULL;
+    batch->current      = NULL;
     batch->size         = 0;
-    batch->current      = -1;
+    batch->initialized  = 0;
     batch->tv_string    = &PL_sv_undef;
     batch->postings     = (AV*)&PL_sv_undef;
-    batch->next         = Kino_TokenBatch_next;
-    batch->set_text     = Kino_TokenBatch_set_text;
-    batch->get_text     = Kino_TokenBatch_get_text;
-    batch->reset        = Kino_TokenBatch_reset;
 
     return batch;
 }
@@ -254,138 +338,53 @@ Kino_TokenBatch_new() {
 
 void
 Kino_TokenBatch_destroy(TokenBatch *batch) {
-    SvREFCNT_dec( (SV*)batch->texts );
+    Token *token = batch->first;
+    while (token != NULL) {
+        Token *next = token->next;
+        Kino_Token_destroy(token);
+        token = next;
+    }
     SvREFCNT_dec( (SV*)batch->postings );
     SvREFCNT_dec(batch->tv_string);
-    Kino_Safefree(batch->start_offsets);
-    Kino_Safefree(batch->end_offsets);
     Kino_Safefree(batch);
 }
 
-U32
+I32
 Kino_TokenBatch_next(TokenBatch *batch) {
-    batch->current =
-          batch->size == 0                   ? -1
-        : batch->current == (batch->size -1) ? -1 
-        : batch->current + 1;
-    return batch->current == -1 ? 0 : 1;
+    /* enter iterative mode */
+    if (batch->initialized == 0) {
+        batch->current = batch->first;
+        batch->initialized = 1;
+    }
+    /* continue iterative mode */
+    else {
+        batch->current = batch->current->next;
+    }
+    return batch->current == NULL ? 0 : 1;
 }
 
 void
 Kino_TokenBatch_reset(TokenBatch *batch) {
-    batch->current = -1;
-}
-
-void 
-Kino_TokenBatch_set_text(TokenBatch* batch, SV* new_text_sv) {
-    if ( batch->size == 0 || batch->current == -1)
-        Kino_confess("TokenBatch doesn't currently hold a valid token");
-    av_store( batch->texts, batch->current, newSVsv(new_text_sv) );
-}
-
-SV*  
-Kino_TokenBatch_get_text(TokenBatch* batch) {
-    SV **sv_ptr;
-    if ( batch->size == 0 || batch->current == -1)
-        Kino_confess("TokenBatch doesn't currently hold a valid token");
-    sv_ptr = av_fetch(batch->texts, batch->current, 0);
-    if (sv_ptr == NULL)
-        return &PL_sv_undef;
-    else 
-        return (*sv_ptr);
+    batch->initialized = 0;
 }
 
 void
-Kino_TokenBatch_add_token(TokenBatch *batch, SV *token_text_sv, 
-                          U32 start_offset, U32 end_offset) {
-    char   *ptr;
-    STRLEN  len;
+Kino_TokenBatch_append(TokenBatch *batch, Token *token) {
+    token->next  = NULL;
+    token->prev  = batch->last;
 
-    ptr = SvPV(token_text_sv, len);
-
-    /* sanity check the offsets to make sure they're inside the SV */
-    if (start_offset > len)
-        Kino_confess("start_offset > len (%d > %"UVuf")", 
-            start_offset, (UV) len);
-    if (end_offset > len)
-        Kino_confess("end_offset > len (%d > %"UVuf")", 
-        end_offset, (UV)len);
-
-    Kino_TokenBatch_do_add_token(batch, ptr, start_offset, end_offset);
-}
-
-static void
-Kino_TokenBatch_do_add_token(TokenBatch *batch, char *ptr, U32 start_offset, 
-                             U32 end_offset) {
-    SV   *token_text_sv;
-    int   i, max;
-    char *scanning_ptr;
-
-    /* make room for new tokens */
-    if (batch->size >= batch->capacity) {
-        batch->capacity += 100;
-        av_extend(batch->texts, batch->capacity);
-        Kino_Renew(batch->start_offsets, batch->capacity, U32);
-        Kino_Renew(batch->end_offsets, batch->capacity, U32);
+    /* if this is the first token added, init */
+    if (batch->first == NULL) {
+        batch->first   = token;
+        batch->last    = token;
+    }
+    else {
+        batch->last->next = token;
+        batch->last       = token;
     }
 
-    /* if a null byte is found, truncate the token text */
-    max = end_offset - start_offset;
-    scanning_ptr = ptr;
-    for (i = 0; i < max; i++) {
-        if (*scanning_ptr++ == '\0') {
-            end_offset = start_offset + i;
-            break;
-        }
-    }
-
-    /* add the token to the batch */
-    token_text_sv = newSVpvn( ptr, (end_offset - start_offset) );
-    av_store(batch->texts, batch->size, token_text_sv);
-    batch->start_offsets[ batch->size ] = start_offset;
-    batch->end_offsets[ batch->size ]   = end_offset;
-    batch->size++; 
+    batch->size++;
 }
-
-void
-Kino_TokenBatch_add_many_tokens(TokenBatch *batch, SV *string_sv, 
-                                AV *starts_av, AV *ends_av) {
-    char   *string_start;
-    STRLEN  len, start_offset, end_offset;
-    I32     i, max;
-    SV    **start_sv_ptr;
-    SV    **end_sv_ptr;
-
-    string_start = SvPV(string_sv, len);
-
-    max = av_len(starts_av);
-    for (i = 0; i <= max; i++) {
-        /* retrieve start */
-        start_sv_ptr = av_fetch(starts_av, i, 0);
-        if (start_sv_ptr == NULL)
-            Kino_confess("Failed to retrieve array element");
-        start_offset = SvIV(*start_sv_ptr);
-
-        /* retrieve end */
-        end_sv_ptr = av_fetch(ends_av, i, 0);
-        if (end_sv_ptr == NULL)
-            Kino_confess("Failed to retrieve array element");
-        end_offset = SvIV(*end_sv_ptr);
-
-        /* sanity check the offsets to make sure they're inside the string */
-        if (start_offset > len)
-            Kino_confess("start_offset > len (%d > %"UVuf")", 
-                start_offset, (UV)len);
-        if (end_offset > len)
-            Kino_confess("end_offset > len (%d > %"UVuf")", 
-                end_offset, (UV)len);
-
-        /* calculate the start of the substring and add the token */
-        Kino_TokenBatch_do_add_token(batch, (string_start + start_offset),
-            start_offset, end_offset);
-    }
-}
-
 
 #define POSDATA_LEN 12 
 #define DOC_NUM_LEN 4
@@ -403,10 +402,10 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
     HV      *pos_hash;
     HE      *he;
     AV      *out_av;
-    I32      i, overlap, num_bytes, num_positions;
+    I32      i = 0;
+    I32      overlap, num_bytes, num_positions;
     I32      num_postings = 0;
     SV     **sv_ptr;
-    SV      *text_sv;
     char    *text, *source_ptr, *dest_ptr, *end_ptr;
     char    *last_text = "";
     STRLEN   text_len, len, fake_len;
@@ -422,27 +421,20 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
 
     /* build a posting list hash */
     pos_hash = newHV();
-    for (i = 0; i < batch->size; i++) {
-        /* the keys of the hash are the token texts */
-        sv_ptr = av_fetch(batch->texts, i, 0);
-        if (sv_ptr == NULL)
-            continue;
-        else 
-            text_sv = *sv_ptr;
-
+    while (Kino_TokenBatch_next(batch)) {
+        Token* token = batch->current;
         /* either start a new hash entry or retrieve an existing one */
-        if (!hv_exists_ent(pos_hash, text_sv, 0)) {
+        if (!hv_exists(pos_hash, token->text, token->len)) {
             /* the values are the serialized scalars */
-            text = SvPV(text_sv, text_len);
-            if (text_len > 65535) 
-                Kino_confess("Maximum token length is 65535; got %"UVuf, 
-                    (UV)text_len);
-            Kino_encode_bigend_U16(text_len, text_len_buf);
+            if (token->len > 65535) 
+                Kino_confess("Maximum token length is 65535; got %d", 
+                    token->len);
+            Kino_encode_bigend_U16(token->len, text_len_buf);
 
             /* allocate the serialized scalar */
             len =   TEXT_LEN_LEN       /* for now, put text_len at top */
                   + KINO_FIELD_NUM_LEN /* encoded field number */
-                  + text_len           /* term text */
+                  + token->len         /* term text */
                   + NULL_BYTE_LEN      /* the term text's null byte */
                   + DOC_NUM_LEN 
                   + POSDATA_LEN
@@ -458,19 +450,24 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
             dest_ptr += TEXT_LEN_LEN;
             Copy(field_num_buf, dest_ptr, KINO_FIELD_NUM_LEN, char);
             dest_ptr += KINO_FIELD_NUM_LEN;
-            Copy(text, dest_ptr, text_len + NULL_BYTE_LEN, char);
-            dest_ptr += text_len + NULL_BYTE_LEN;
+            Copy(token->text, dest_ptr, token->len, char);
+            dest_ptr += token->len;
+            *dest_ptr = '\0';
+            dest_ptr += NULL_BYTE_LEN;
             Copy(doc_num_buf, dest_ptr, DOC_NUM_LEN, char);
             dest_ptr += DOC_NUM_LEN;
             SvCUR_set(serialized_sv, (dest_ptr - source_ptr)); 
 
+
             /* store the text => serialized_sv pair in the pos_hash */
-            (void)hv_store_ent(pos_hash, text_sv, serialized_sv, 0); 
+            (void)hv_store(pos_hash, token->text, token->len, serialized_sv, 0); 
         }
         else {
             /* retrieve the serialized scalar and allocate more space */
-            he = hv_fetch_ent(pos_hash, text_sv, 0, 0);
-            serialized_sv = HeVAL(he);
+            sv_ptr = hv_fetch(pos_hash, token->text, token->len, 0);
+            if (sv_ptr == NULL) 
+                Kino_confess("unexpected null sv_ptr");
+            serialized_sv = *sv_ptr;
             len = SvCUR(serialized_sv)
                 + POSDATA_LEN    /* allocate space for upcoming posdata */
                 + TEXT_LEN_LEN   /* extra space for encoded text length */
@@ -481,10 +478,14 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
         /* append position, start offset, end offset to the serialized_sv */
         dest_u32 = (U32*)SvEND(serialized_sv);
         *dest_u32++ = (U32)i;
-        *dest_u32++ = batch->start_offsets[i];
-        *dest_u32++ = batch->end_offsets[i];
+        i += token->pos_inc;
+        *dest_u32++ = token->start_offset;
+        *dest_u32++ = token->end_offset;
         len = SvCUR(serialized_sv) + POSDATA_LEN;
         SvCUR_set(serialized_sv, len);
+
+        /* destroy the token, because nobody else will -- XXX MAYBE? */
+        /* Kino_Token_destroy(token); */
     }
 
     /* allocate and presize the array to hold the output */
@@ -599,15 +600,72 @@ Kino_TokenBatch_build_plist(TokenBatch *batch, U32 doc_num, U16 field_num) {
 
 __POD__
 
-=begin devdocs
-
 =head1 NAME
 
 KinoSearch::Analysis::TokenBatch - a collection of tokens
 
+=head1 SYNOPSIS
+
+    while ( $batch->next ) {
+        $batch->set_text( lc( $batch->get_text ) );
+    }
+
+=head1 EXPERIMENTAL API 
+
+TokenBatch's API should be considered experimental and is likely to change.
+
 =head1 DESCRIPTION
 
-The TokenBatch would be an array of Tokens, if a Token class existed.
+A TokenBatch is a collection of L<Tokens|KinoSearch::Analysis::Token> which
+you can add to, then iterate over.  
+
+=head1 METHODS
+
+=head2 new
+
+    my $batch = KinoSearch::Analysis::TokenBatch->new;
+
+Constructor.
+
+=head2 append 
+
+    $batch->append( $text, $start_offset, $end_offset, $pos_inc );
+
+Add a Token to the end of the batch.  Accepts either three or four arguments:
+text, start_offset, end_offset, and an optional position increment which
+defaults to 1 if not supplied.  For a description of what these arguments
+mean, see the docs for L<Token|KinoSearch::Analysis::Token>.
+
+=head2 next
+
+    while ( $batch->next ) {
+        # ...
+    }
+
+Proceed to the next token in the TokenBatch.  Returns true if the TokenBatch
+ends up located at valid token.
+
+=head1 ACCESSOR METHODS
+
+All of TokenBatch's accessor methods affect the current Token.  Calling any of
+these methods when the TokenBatch is not located at a valid Token will trigger
+an exception.
+
+=head2 set_text get_text 
+
+Set/get the text of the current Token.
+
+=head2 set_start_offset get_start_offset
+
+Set/get the start_offset of the current Token.
+
+=head2 set_end_offset get_end_offset
+
+Set/get the end_offset of the current Token.
+
+=head2 set_pos_inc get_pos_inc
+
+Set/get the position increment of the current Token.
 
 =head1 COPYRIGHT
 
@@ -615,9 +673,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
-=end devdocs
 =cut
-
 

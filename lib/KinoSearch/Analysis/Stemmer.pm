@@ -31,12 +31,15 @@ sub init_instance {
 }
 
 sub analyze {
-    my ( $self, $token_batch ) = @_;
+    my ( $self, $batch ) = @_;
 
     # replace terms with stemmed versions.
-    $self->{stemmifier}->stem_in_place( $token_batch->get_all_texts );
+    my $all_texts = $batch->get_all_texts;
+    $self->{stemmifier}->stem_in_place($all_texts);
+    $batch->set_all_texts($all_texts);
 
-    return $token_batch;
+    $batch->reset;
+    return $batch;
 }
 
 1;
@@ -78,7 +81,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

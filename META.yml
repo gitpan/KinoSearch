@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.11
+version: 0.12
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: search engine library
@@ -13,7 +13,7 @@ requires:
 provides:
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.11
+    version: 0.12
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:
@@ -24,6 +24,8 @@ provides:
     file: lib/KinoSearch/Analysis/Stemmer.pm
   KinoSearch::Analysis::Stopalizer:
     file: lib/KinoSearch/Analysis/Stopalizer.pm
+  KinoSearch::Analysis::Token:
+    file: lib/KinoSearch/Analysis/Token.pm
   KinoSearch::Analysis::TokenBatch:
     file: lib/KinoSearch/Analysis/TokenBatch.pm
   KinoSearch::Analysis::Tokenizer:
@@ -32,8 +34,16 @@ provides:
     file: lib/KinoSearch/Document/Doc.pm
   KinoSearch::Document::Field:
     file: lib/KinoSearch/Document/Field.pm
+  KinoSearch::Highlight::Encoder:
+    file: lib/KinoSearch/Highlight/Encoder.pm
+  KinoSearch::Highlight::Formatter:
+    file: lib/KinoSearch/Highlight/Formatter.pm
   KinoSearch::Highlight::Highlighter:
     file: lib/KinoSearch/Highlight/Highlighter.pm
+  KinoSearch::Highlight::SimpleHTMLEncoder:
+    file: lib/KinoSearch/Highlight/SimpleHTMLEncoder.pm
+  KinoSearch::Highlight::SimpleHTMLFormatter:
+    file: lib/KinoSearch/Highlight/SimpleHTMLFormatter.pm
   KinoSearch::Index::CompoundFileReader:
     file: lib/KinoSearch/Index/CompoundFileReader.pm
   KinoSearch::Index::CompoundFileWriter:
@@ -102,10 +112,10 @@ provides:
     file: lib/KinoSearch/Search/BooleanQuery.pm
   KinoSearch::Search::FilteredCollector:
     file: lib/KinoSearch/Search/HitCollector.pm
+  KinoSearch::Search::Hit:
+    file: lib/KinoSearch/Search/Hit.pm
   KinoSearch::Search::HitCollector:
     file: lib/KinoSearch/Search/HitCollector.pm
-  KinoSearch::Search::HitDoc:
-    file: lib/KinoSearch/Search/HitDoc.pm
   KinoSearch::Search::HitQueue:
     file: lib/KinoSearch/Search/HitQueue.pm
   KinoSearch::Search::HitQueueCollector:
@@ -134,6 +144,8 @@ provides:
     file: lib/KinoSearch/Search/TermScorer.pm
   KinoSearch::Search::TermWeight:
     file: lib/KinoSearch/Search/TermQuery.pm
+  KinoSearch::Search::TitleSimilarity:
+    file: lib/KinoSearch/Search/Similarity.pm
   KinoSearch::Search::Weight:
     file: lib/KinoSearch/Search/Weight.pm
   KinoSearch::Searcher:

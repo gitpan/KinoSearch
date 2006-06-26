@@ -22,6 +22,7 @@ BEGIN {
         finfos       => undef,
         doc_template => undef,
         similarity   => undef,
+        field_sims   => {},
         seg_writer   => undef,
         write_lock   => undef,
         state        => UNINITIALIZED,
@@ -121,7 +122,8 @@ sub init_instance {
 
 sub _delayed_init {
     my $self = shift;
-    my ( $invindex, $finfos ) = @{$self}{ 'invindex', 'finfos' };
+    my ( $invindex, $finfos, $field_sims ) 
+        = @{$self}{qw( invindex finfos field_sims )};
 
     confess("finish has been called")
         if $self->{state} == FINISHED;
@@ -129,10 +131,16 @@ sub _delayed_init {
         if $self->{state} == INITIALIZED;
     $self->{state} = INITIALIZED;
 
-    # create a Doc object which will serve as a cloning template
+    # create a cloning template
     my $doc = $self->{doc_template};
     for my $field ( $doc->get_fields ) {
         $field->set_field_num( $finfos->get_field_num( $field->get_name ) );
+    }
+
+    # set sim for each field
+    my $main_sim = $self->{similarity};
+    for my $finfo ( $finfos->get_infos ) {
+        $field_sims->{ $finfo->get_name } ||= $main_sim;
     }
 
     # name a new segment and create a SegWriter
@@ -141,7 +149,7 @@ sub _delayed_init {
         invindex   => $invindex,
         seg_name   => $out_seg_name,
         finfos     => $finfos->clone,
-        similarity => $self->{similarity},
+        field_sims => $field_sims,
     );
 }
 
@@ -184,6 +192,16 @@ sub new_doc {
     my $self = shift;
     $self->_delayed_init unless $self->{state} == INITIALIZED;
     return clone( $self->{doc_template} );
+}
+
+sub set_similarity {
+    if ( @_ == 3 ) {
+        my ( $self, $field_name, $sim ) = @_; 
+        $self->{field_sims}{$field_name} = $sim; 
+    }
+    else {  
+        $_[0]->{similarity} = $_[1];
+    }
 }
 
 sub add_doc {
@@ -587,7 +605,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

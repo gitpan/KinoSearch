@@ -8,14 +8,15 @@ use locale;
 BEGIN { __PACKAGE__->init_instance_vars(); }
 
 sub analyze {
-    my ( $self, $token_batch ) = @_;
+    my ( $self, $batch ) = @_;
 
     # lc all of the terms, one by one
-    while ( $token_batch->next ) {
-        $token_batch->set_text( lc( $token_batch->get_text ) );
+    while ( $batch->next ) {
+        $batch->set_text( lc( $batch->get_text ) );
     }
 
-    return $token_batch;
+    $batch->reset;
+    return $batch;
 }
 
 1;
@@ -52,7 +53,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

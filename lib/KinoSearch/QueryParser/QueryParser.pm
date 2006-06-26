@@ -163,6 +163,7 @@ sub parse {
         elsif (s/([^"(\s]+)//) {
             my $token_texts = $self->_analyze($1);
             my @terms = map { KinoSearch::Index::Term->new( $field, $_ ) }
+                grep { $_ ne '' }
                 @$token_texts;
             for my $term (@terms) {
                 my $query
@@ -194,7 +195,7 @@ sub _analyze {
     my ( $self, $string ) = @_;
 
     my $token_batch = KinoSearch::Analysis::TokenBatch->new;
-    $token_batch->add_token( $string, 0, bytes::length($string) );
+    $token_batch->append( $string, 0, bytes::length($string) );
     $token_batch = $self->{analyzer}->analyze($token_batch);
     my @token_texts;
     while ( $token_batch->next ) {
@@ -338,7 +339,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

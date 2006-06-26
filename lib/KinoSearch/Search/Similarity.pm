@@ -38,6 +38,24 @@ sub query_norm {
     return ( 1 / sqrt($sum_of_squared_weights) );
 }
 
+package KinoSearch::Search::TitleSimilarity;
+use strict;
+use warnings;
+use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Search::Similarity );
+
+sub new {
+	my $self = shift->SUPER::new(@_);
+	$self->_use_title_tf;
+	return $self;
+}
+
+sub lengthnorm {
+	return 0 unless $_[1];
+	return 1 / sqrt($_[1]);
+}
+
+
 1;
 
 __END__
@@ -152,6 +170,12 @@ CODE:
 OUTPUT: RETVAL
 
 void
+_use_title_tf(sim)
+	Similarity *sim;
+PPCODE:
+	sim->tf = Kino_Sim_title_tf;
+
+void
 DESTROY(sim)
     Similarity *sim;
 PPCODE:
@@ -176,6 +200,7 @@ typedef struct similarity {
 
 Similarity* Kino_Sim_new();
 float Kino_Sim_default_tf(Similarity*, float);
+float Kino_Sim_title_tf(Similarity*, float);
 char  Kino_Sim_float2byte(Similarity*, float);
 float Kino_Sim_byte2float(Similarity*, char);
 float Kino_Sim_coord(Similarity*, U32, U32);
@@ -211,6 +236,12 @@ float
 Kino_Sim_default_tf(Similarity *sim, float freq) {
     return( sqrt(freq) );
 }
+
+float
+Kino_Sim_title_tf(Similarity *sim, float freq) {
+    return 1.0;
+}
+
 
 char 
 Kino_Sim_float2byte(Similarity *sim, float f) {
@@ -290,6 +321,8 @@ KinoSearch::Search::Similarity - calculate how closely two items match
 The Similarity class encapsulates some of the math used when calculating
 scores.
 
+TitleSimilarity is tuned for best results with title fields.
+
 =head1 SEE ALSO
 
 The Lucene equivalent of this class provides a thorough discussion of the
@@ -301,7 +334,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =end devdocs
 =cut

@@ -10,10 +10,12 @@ BEGIN {
         # constructor params / members
         excerpt_field  => undef,
         analyzer       => undef,
+        formatter      => undef,
+        encoder        => undef,
         terms          => [],
         excerpt_length => 200,
-        pre_tag        => '<strong>',
-        post_tag       => '</strong>',
+        pre_tag        => undef, # back compat
+        post_tag       => undef, # back compat
         token_re       => qr/\b\w+(?:'\w+)?\b/,
 
         # members
@@ -22,10 +24,27 @@ BEGIN {
     __PACKAGE__->ready_get_set(qw( terms ));
 }
 
+use KinoSearch::Highlight::SimpleHTMLFormatter;
+use KinoSearch::Highlight::SimpleHTMLEncoder;
+
 sub init_instance {
     my $self = shift;
     croak("Missing required arg 'excerpt_field'")
         unless defined $self->{excerpt_field};
+
+    # assume HTML
+    if (!defined $self->{encoder}) {
+        $self->{encoder} = KinoSearch::Highlight::SimpleHTMLEncoder->new;
+    }
+    if (!defined $self->{formatter}) {
+        my ( $pre_tag, $post_tag ) = @{$self}{qw( pre_tag post_tag )};
+        $pre_tag = '<strong>' unless defined $pre_tag;
+        $post_tag = '</strong>' unless defined $post_tag;
+        $self->{formatter} = KinoSearch::Highlight::SimpleHTMLFormatter->new(
+            pre_tag => $pre_tag,
+            post_tag => $post_tag,
+        );
+    }
 
     # scoring window is 1.66 * excerpt_length, with the loc in the middle
     $self->{limit} = int( $self->{excerpt_length} / 3 );
@@ -44,8 +63,8 @@ sub generate_excerpt {
     return '' unless $text_length;
 
     # determine the rough boundaries of the excerpt
-    my ( $starts, $ends ) = $self->_starts_and_ends($field);
-    my $best_location = $self->_calc_best_location($starts);
+    my $posits = $self->_starts_and_ends($field);
+    my $best_location = $self->_calc_best_location($posits);
     my $top           = $best_location - $limit;
 
     # expand the excerpt if the best location is near the end
@@ -120,8 +139,8 @@ sub generate_excerpt {
 
     # remap locations now that we know the starting and ending bytes
     $text_length = bytes::length($text);
-    my @relative_starts = map { $_ - $top } @$starts;
-    my @relative_ends   = map { $_ - $top } @$ends;
+    my @relative_starts = map { $_->[0] - $top } @$posits;
+    my @relative_ends   = map { $_->[1] - $top } @$posits;
 
     # get rid of pairs with at least one member outside the text
     while ( @relative_starts and $relative_starts[0] < 0 ) {
@@ -133,20 +152,24 @@ sub generate_excerpt {
         pop @relative_ends;
     }
 
-    # insert highlighting tags
-    if ( bytes::length $self->{pre_tag} or bytes::length $self->{post_tag} ) {
-        my $pre_tag  = $self->{pre_tag};
-        my $post_tag = $self->{post_tag};
-        # traverse the excerpt from back to front, inserting highlight tags
-        while (@relative_starts) {
-            my $loc = pop @relative_ends;
-            $text =~ s/^(\C{$loc})/$1$post_tag/;
-            $loc = pop @relative_starts;
-            $text =~ s/^(\C{$loc})/$1$pre_tag/;
-        }
+    # insert highlight tags
+    my $formatter = $self->{formatter};
+    my $encoder   = $self->{encoder};
+    my $output_text = '';
+    my ( $start, $end, $last_start, $last_end ) = ( undef, undef, 0, 0 );
+    while (@relative_starts) {
+        $end   = shift @relative_ends;
+        $start = shift @relative_starts;
+        $output_text .= $encoder->encode(
+            bytes::substr( $text, $last_end, $start - $last_end ) );
+        $output_text .= $formatter->highlight(
+            $encoder->encode( bytes::substr( $text, $start, $end - $start ) )
+        );
+        $last_end = $end;
     }
+    $output_text .= $encoder->encode( bytes::substr( $text, $last_end ) );
 
-    return $text;
+    return $output_text;
 }
 
 =for comment
@@ -157,7 +180,7 @@ that are part of a phrase, only include points that are part of the phrase.
 
 sub _starts_and_ends {
     my ( $self, $field ) = @_;
-    my ( @starts, @ends );
+    my @posits;
     my %done;
 
 TERM: for my $term ( @{ $self->{terms} } ) {
@@ -170,8 +193,11 @@ TERM: for my $term ( @{ $self->{terms} } ) {
             # add all starts and ends
             my $term_vector = $field->term_vector($term_text);
             next TERM unless defined $term_vector;
-            push @starts, @{ $term_vector->get_start_offsets };
-            push @ends,   @{ $term_vector->get_end_offsets };
+            my $starts = $term_vector->get_start_offsets;
+            my $ends   = $term_vector->get_end_offsets;
+            while (@$starts) {
+                push @posits, [ shift @$starts, shift @$ends, 1 ];
+            }
         }
         # intersect positions for phrase terms
         else {
@@ -184,6 +210,10 @@ TERM: for my $term ( @{ $self->{terms} } ) {
 
             my $posit_vec    = KinoSearch::Util::BitVector->new;
             my @term_vectors = map { $field->term_vector($_) } @term_texts;
+
+            # make sure all terms are present
+            next TERM unless scalar @term_vectors == scalar @term_texts;
+
             my $i            = 0;
             for my $tv (@term_vectors) {
                 # one term missing, ergo no phrase
@@ -204,29 +234,34 @@ TERM: for my $term ( @{ $self->{terms} } ) {
             }
 
             # add only those starts/ends that belong to a valid position
+            my $tv_start_positions = $term_vectors[0]->get_positions;
+            my $tv_starts = $term_vectors[0]->get_start_offsets;
+            my $tv_end_positions = $term_vectors[-1]->get_positions;
+            my $tv_ends = $term_vectors[-1]->get_end_offsets;
             $i = 0;
-            for my $tv (@term_vectors) {
-                my @valid_positions
-                    = map { $_ + $i } @{ $posit_vec->to_arrayref };
-                my $tv_positions = $tv->get_positions;
-                my $tv_starts    = $tv->get_start_offsets;
-                my $tv_ends      = $tv->get_end_offsets;
-                my $next_valid   = shift @valid_positions;
-                for my $j ( 0 .. $#$tv_positions ) {
-                    next unless $tv_positions->[$j] == $next_valid;
-                    push @starts, $tv_starts->[$j];
-                    push @ends,   $tv_ends->[$j];
-                    last unless ( $next_valid = shift @valid_positions );
+            my $j = 0;
+            my $last_token_index = $#term_vectors;
+            for my $valid_position ( @{ $posit_vec->to_arrayref } ) {
+                while ( $i <= $#$tv_start_positions ) {
+                    last if ( $tv_start_positions->[$i] >= $valid_position );
+                    $i++;
                 }
+                $valid_position += $last_token_index;
+                while ( $j <= $#$tv_end_positions ) {
+                    last if ( $tv_end_positions->[$j] >= $valid_position );
+                    $j++;
+                }
+                push @posits,
+                    [ $tv_starts->[$i], $tv_ends->[$j], scalar @$term ];
                 $i++;
+                $j++;
             }
         }
     }
 
     # sort and return
-    @starts = sort { $a <=> $b } @starts;
-    @ends   = sort { $a <=> $b } @ends;
-    return ( \@starts, \@ends );
+    @posits = sort { $a->[0] <=> $b->[0] } @posits;
+    return \@posits;
 }
 
 =for comment 
@@ -237,30 +272,34 @@ number of bytes per character is larger than 1.
 =cut
 
 sub _calc_best_location {
-    my ( $self, $starts ) = @_;
+    my ( $self, $posits ) = @_;
     my $window = $self->{limit} * 2;
 
     # if there aren't any keywords, take the excerpt from the top of the text
-    return 0 unless @$starts;
+    return 0 unless @$posits;
 
-    my %locations = map { ( $_ => 0 ) } @$starts;
+    my %locations = map { ( $_->[0] => 0 ) } @$posits;
 
     # if another keyword is in close proximity, add to the loc's score
-    for my $loc_index ( 0 .. $#$starts ) {
+    for my $loc_index ( 0 .. $#$posits ) {
         # only score positions that are in range
-        my $location        = $starts->[$loc_index];
+        my $location        = $posits->[$loc_index][0];
         my $other_loc_index = $loc_index - 1;
         while ( $other_loc_index > 0 ) {
-            my $diff = $location - $starts->[$other_loc_index];
+            my $diff = $location - $posits->[$other_loc_index][0];
             last if $diff > $window;
-            $locations{$location} += ( 1 / ( 1 + log($diff) ) );
+            my $num_tokens_at_pos = $posits->[$other_loc_index][2];
+            $locations{$location}
+                += ( 1 / ( 1 + log($diff) ) ) * $num_tokens_at_pos;
             --$other_loc_index;
         }
         $other_loc_index = $loc_index + 1;
-        while ( $other_loc_index <= $#$starts ) {
-            my $diff = $starts->[$other_loc_index] - $location;
+        while ( $other_loc_index <= $#$posits ) {
+            my $diff = $posits->[$other_loc_index] - $location;
             last if $diff > $window;
-            $locations{$location} += ( 1 / ( 1 + log($diff) ) );
+            my $num_tokens_at_pos = $posits->[$other_loc_index][2];
+            $locations{$location}
+                += ( 1 / ( 1 + log($diff) ) ) * $num_tokens_at_pos;
             ++$other_loc_index;
         }
     }
@@ -298,8 +337,8 @@ generated at index-time.
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
         excerpt_field  => 'bodytext', # required
         excerpt_length => 150,        # default: 200
-        pre_tag        => '*',        # default: '<strong>'
-        post_tag       => '*',        # default: '</strong>',
+        formatter      => $formatter, # default: SimpleHTMLFormatter
+        encoder        => $encoder,   # default: SimpleHTMLEncoder
     );
 
 Constructor.  Takes hash-style parameters: 
@@ -319,14 +358,22 @@ to change in the future.
 
 =item *
 
-B<pre_tag> - a string which will be inserted immediately prior to any keyword
-in the excerpt, typically to accentuate it.  If you don't want highlighting,
-set both C<pre_tag> and C<post_tag> to C<''>.
+B<formatter> - an object which subclasses L<KinoSearch::Highlight::Formatter>,
+used to perform the actual highlighting.
 
 =item *
 
-B<post_tag> - a string which will be inserted immediately after any keyword in
-the excerpt.
+B<encoder> - an object which subclasses L<KinoSearch::Highlight::Encoder>.
+All excerpt text gets passed through the encoder, including highlighted terms.
+By default, this is a SimpleHTMLEncoder, which encodes HTML entities.
+
+=item *
+
+B<pre_tag> - deprecated.  
+
+=item *
+
+B<post_tag> - deprecated.
 
 =back
 
@@ -336,6 +383,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut

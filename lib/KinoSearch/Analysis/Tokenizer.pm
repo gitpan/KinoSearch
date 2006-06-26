@@ -41,15 +41,15 @@ sub init_instance {
 }
 
 sub analyze {
-    my ( $self, $token_batch ) = @_;
+    my ( $self, $batch ) = @_;
 
-    my $new_token_batch = KinoSearch::Analysis::TokenBatch->new;
+    my $new_batch = KinoSearch::Analysis::TokenBatch->new;
     my $token_re        = $self->{token_re};
     my $separator_re    = $self->{separator_re};
 
     # alias input to $_
-    while ( $token_batch->next ) {
-        local $_ = $token_batch->get_text;
+    while ( $batch->next ) {
+        local $_ = $batch->get_text;
 
         # ensure that pos is set to 0 for this scalar
         pos = 0;
@@ -63,10 +63,10 @@ sub analyze {
         $#starts = $#ends;
 
         # add the new tokens to the batch
-        $new_token_batch->add_many_tokens( $_, \@starts, \@ends );
+        $new_batch->add_many_tokens( $_, \@starts, \@ends );
     }
 
-    return $new_token_batch;
+    return $new_batch;
 }
 
 1;
@@ -150,6 +150,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut

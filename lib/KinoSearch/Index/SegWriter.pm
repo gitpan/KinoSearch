@@ -10,7 +10,7 @@ BEGIN {
         invindex   => undef,
         seg_name   => undef,
         finfos     => undef,
-        similarity => undef,
+        field_sims => undef,
         # members
         norm_outstreams => [],
         fields_writer   => undef,
@@ -26,7 +26,6 @@ use KinoSearch::Index::PostingsWriter;
 use KinoSearch::Index::CompoundFileWriter;
 use KinoSearch::Index::IndexFileNames
     qw( @COMPOUND_EXTENSIONS SORTFILE_EXTENSION );
-use KinoSearch::Search::Similarity;
 
 sub init_instance {
     my $self = shift;
@@ -59,15 +58,16 @@ sub add_doc {
     my ( $self, $doc ) = @_;
     my $norm_outstreams = $self->{norm_outstreams};
     my $postings_cache  = $self->{postings_cache};
-    my $similarity      = $self->{similarity};
+    my $field_sims      = $self->{field_sims};
     my $doc_boost       = $doc->get_boost;
 
     for my $indexed_field ( grep { $_->get_indexed } $doc->get_fields ) {
+        my $field_name  = $indexed_field->get_name;
         my $token_batch = KinoSearch::Analysis::TokenBatch->new;
 
         # if the field has content, put it in the TokenBatch
         if ( $indexed_field->get_value_len ) {
-            $token_batch->add_token( $indexed_field->get_value, 0,
+            $token_batch->append( $indexed_field->get_value, 0,
                 $indexed_field->get_value_len );
         }
 
@@ -88,9 +88,11 @@ sub add_doc {
 
         # encode a norm into a byte, write it to an outstream
         my $norm_val = $doc_boost * $indexed_field->get_boost
-            * $similarity->lengthnorm( $token_batch->get_size );
+            * $field_sims->{$field_name}
+            ->lengthnorm( $token_batch->get_size );
         my $outstream = $norm_outstreams->[ $indexed_field->get_field_num ];
-        $outstream->lu_write( 'a', $similarity->encode_norm($norm_val) );
+        $outstream->lu_write( 'a',
+            $field_sims->{$field_name}->encode_norm($norm_val) );
 
         # feed PostingsWriter
         $self->{postings_writer}->add_postings( $token_batch->get_postings );
@@ -125,12 +127,13 @@ sub add_segment {
 sub _merge_norms {
     my ( $self, $seg_reader, $doc_map ) = @_;
     my $norm_outstreams = $self->{norm_outstreams};
-    my $similarity      = $self->{similarity};
+    my $field_sims      = $self->{field_sims};
     my @indexed_fields  = grep { $_->get_indexed } $self->{finfos}->get_infos;
 
     for my $field (@indexed_fields) {
+        my $field_name   = $field->get_name;
         my $outstream    = $norm_outstreams->[ $field->get_field_num ];
-        my $norms_reader = $seg_reader->norms_reader( $field->get_name );
+        my $norms_reader = $seg_reader->norms_reader($field_name);
         # if the field was indexed before, copy the norms
         if ( defined $norms_reader ) {
             _write_remapped_norms( $outstream, $doc_map,
@@ -138,9 +141,11 @@ sub _merge_norms {
         }
         else {
             # the field isn't in the input segment, so write a default
-            my $zeronorm   = $similarity->lengthnorm(0);
-            my $num_docs   = $seg_reader->num_docs;
-            my $normstring = $similarity->encode_norm($zeronorm) x $num_docs;
+            my $zeronorm = $field_sims->{$field_name}->lengthnorm(0);
+            my $num_docs = $seg_reader->num_docs;
+            my $normstring
+                = $field_sims->{$field_name}->encode_norm($zeronorm)
+                x $num_docs;
             $outstream->lu_write( "a$num_docs", $normstring );
         }
     }
@@ -268,7 +273,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =end devdocs
 =cut

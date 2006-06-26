@@ -15,11 +15,9 @@ BEGIN {
 
         # members
         weight      => undef,
-        hit_queue   => undef,
         highlighter => undef,
 
         hit_docs   => undef,
-        pointer    => undef,
         total_hits => undef,
     );
 }
@@ -43,7 +41,6 @@ sub seek {
     my ( $self, $start_offset, $num_wanted ) = @_;
     croak('Usage: $hits->seek( START, NUM_TO_RETRIEVE );')
         unless @_ = 3;
-    $self->{pointer} = $start_offset;
 
     # collect enough to satisfy both the offset and the num wanted
     my $collector = KinoSearch::Search::HitQueueCollector->new(
@@ -57,10 +54,12 @@ sub seek {
         sort_spec     => $self->{sort_spec},
     );
     $self->{total_hits} = $collector->get_total_hits;
-    $self->{hit_queue}  = $collector->get_hit_queue;
+    my $hit_queue       = $collector->get_hit_queue;
 
-    # turn the HitQueue into HitDocs
-    $self->{hit_docs} = $self->{hit_queue}->hit_docs;
+    # turn the HitQueue into an array of Hit objects
+    $self->{hit_docs} = $hit_queue->hits( $start_offset, $num_wanted,
+        $self->{searcher}->get_reader );
+    
 }
 
 sub total_hits {
@@ -70,26 +69,34 @@ sub total_hits {
     return $self->{total_hits};
 }
 
+sub fetch_hit {
+    my $self = shift;
+    $self->seek( 0, 100 )
+        unless defined $self->{total_hits};
+
+    my $hit = shift @{ $self->{hit_docs} };
+    return unless defined $hit;
+    return $hit;
+}
+
 sub fetch_hit_hashref {
     my $self = shift;
     $self->seek( 0, 100 )
         unless defined $self->{total_hits};
 
     # bail if there aren't any more *captured* hits
-    return unless exists $self->{hit_docs}[ $self->{pointer} ];
+    my $hit = shift @{ $self->{hit_docs} };
+    return unless defined $hit;
 
     # lazily fetch stored fields
-    my $hit_doc = $self->{hit_docs}[ $self->{pointer}++ ];
-    $hit_doc->set_doc( $self->{searcher}->fetch_doc( $hit_doc->get_doc_num ) )
-        unless defined $hit_doc->get_doc;
-    my $hashref = $hit_doc->get_doc()->to_hashref;
+    my $hashref = $hit->get_field_values;
 
     if ( !exists $hashref->{score} ) {
-        $hashref->{score} = $hit_doc->get_score;
+        $hashref->{score} = $hit->get_score;
     }
     if ( defined $self->{highlighter} and !exists $hashref->{excerpt} ) {
         $hashref->{excerpt}
-            = $self->{highlighter}->generate_excerpt( $hit_doc->get_doc );
+            = $self->{highlighter}->generate_excerpt( $hit->get_doc );
     }
 
     return $hashref;
@@ -116,8 +123,8 @@ KinoSearch::Search::Hits - access search results
 
     my $hits = $searcher->search( query => $query );
     $hits->seek( 0, 10 );
-    while ( my $hit = $hits->fetch_hit_hashref ) {
-        print "<p>$hit->{title} <em>$hit->{score}</em></p>\n";
+    while ( my $hashref = $hits->fetch_hit_hashref ) {
+        print "<p>$hashref->{title} <em>$hashref->{score}</em></p>\n";
     }
 
 =head1 DESCRIPTION
@@ -146,9 +153,17 @@ Position the Hits iterator at START, and capture NUM_TO_RETRIEVE docs.
 Return the total number of documents which matched the query used to produce
 the Hits object.  (This number is unlikely to match NUM_TO_RETRIEVE.)
 
+=head2 fetch_hit
+
+    while ( my $hit = $hits->fetch_hit ) {
+        # ...
+    }
+
+Return the next hit as a KinoSearch::Search::Hit object.
+
 =head2 fetch_hit_hashref
 
-    while ( my $hit = $hits->fetch_hit_hashref ) {
+    while ( my $hashref = $hits->fetch_hit_hashref ) {
         # ...
     }
 
@@ -174,7 +189,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
 

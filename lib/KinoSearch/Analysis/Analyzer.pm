@@ -30,15 +30,20 @@ KinoSearch::Analysis::Analyzer - base class for analyzers
 
 In KinoSearch, an Analyzer is a filter which processes text, transforming it
 from one form into another.  For instance, an analyzer might break up a long
-text into an array of tokens, or it might convert text to lowercase.
+text into smaller pieces (L<Tokenizer|KinoSearch::Analysis::Tokenizer>), or it
+might convert text to lowercase
+(L<LCNormalizer|KinoSearch::Analysis::LCNormalizer>).
 
-=head1 TODO
+=head1 METHODS
 
-At this time, public subclassing of Analyzer is not supported.  If that is to
-happen, the problem of how to store a collection of tokens both efficiently
-and elegantly must be solved.  An array of tokens, each of which is a
-hash-based object, is elegant but not efficient.  The current scheme is
-efficient but not elegant.
+=head2 analyze (EXPERIMENTAL)
+
+    $token_batch = $analyzer->analyze($token_batch);
+
+All Analyzer subclasses provide an C<analyze> method.  C<analyze()>
+takes a single L<TokenBatch|KinoSearch::Analysis::TokenBatch> as input, and it
+returns a TokenBatch, either the same one (probably transformed in some way),
+or a new one.
 
 =head1 COPYRIGHT
 
@@ -46,6 +51,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.11.
+See L<KinoSearch|KinoSearch> version 0.12.
 
 =cut
+

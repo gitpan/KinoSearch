@@ -1,5 +1,18 @@
 Revision history for KinoSearch
 
+0.12 2006-06-26
+  * Modify Highlighter API 
+    o Deprecate pre_tag, post_tag arguments to new().
+    o Now encodes some HTML entities by default.
+    o Add support for new classes Encoder, SimpleHTMLEncoder, Formatter, 
+      and SimpleHTMLFormatter.
+  * Add new class KinoSearch::Search::Hit.
+  * Add Hits::fetch_hit, which returns a Hit object.
+  * Expose experimental API for TokenBatch.
+  * Expose experimental API for Analyzer::analyze().
+  * Fix bug with Stopalized indexes and QueryParser.
+  * Fix bug: returned hits now sort secondarily on doc_num as advertised.
+
 0.11 2006-05-17
   * Restore Stopalizer functionality.
   * Launder filenames so they pass taint check when index is initialized.
