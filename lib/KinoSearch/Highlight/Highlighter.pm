@@ -14,8 +14,8 @@ BEGIN {
         encoder        => undef,
         terms          => [],
         excerpt_length => 200,
-        pre_tag        => undef, # back compat
-        post_tag       => undef, # back compat
+        pre_tag        => undef,                  # back compat
+        post_tag       => undef,                  # back compat
         token_re       => qr/\b\w+(?:'\w+)?\b/,
 
         # members
@@ -33,15 +33,15 @@ sub init_instance {
         unless defined $self->{excerpt_field};
 
     # assume HTML
-    if (!defined $self->{encoder}) {
+    if ( !defined $self->{encoder} ) {
         $self->{encoder} = KinoSearch::Highlight::SimpleHTMLEncoder->new;
     }
-    if (!defined $self->{formatter}) {
+    if ( !defined $self->{formatter} ) {
         my ( $pre_tag, $post_tag ) = @{$self}{qw( pre_tag post_tag )};
-        $pre_tag = '<strong>' unless defined $pre_tag;
+        $pre_tag  = '<strong>'  unless defined $pre_tag;
         $post_tag = '</strong>' unless defined $post_tag;
         $self->{formatter} = KinoSearch::Highlight::SimpleHTMLFormatter->new(
-            pre_tag => $pre_tag,
+            pre_tag  => $pre_tag,
             post_tag => $post_tag,
         );
     }
@@ -63,7 +63,7 @@ sub generate_excerpt {
     return '' unless $text_length;
 
     # determine the rough boundaries of the excerpt
-    my $posits = $self->_starts_and_ends($field);
+    my $posits        = $self->_starts_and_ends($field);
     my $best_location = $self->_calc_best_location($posits);
     my $top           = $best_location - $limit;
 
@@ -153,8 +153,8 @@ sub generate_excerpt {
     }
 
     # insert highlight tags
-    my $formatter = $self->{formatter};
-    my $encoder   = $self->{encoder};
+    my $formatter   = $self->{formatter};
+    my $encoder     = $self->{encoder};
     my $output_text = '';
     my ( $start, $end, $last_start, $last_end ) = ( undef, undef, 0, 0 );
     while (@relative_starts) {
@@ -214,7 +214,7 @@ TERM: for my $term ( @{ $self->{terms} } ) {
             # make sure all terms are present
             next TERM unless scalar @term_vectors == scalar @term_texts;
 
-            my $i            = 0;
+            my $i = 0;
             for my $tv (@term_vectors) {
                 # one term missing, ergo no phrase
                 next TERM unless defined $tv;
@@ -235,13 +235,14 @@ TERM: for my $term ( @{ $self->{terms} } ) {
 
             # add only those starts/ends that belong to a valid position
             my $tv_start_positions = $term_vectors[0]->get_positions;
-            my $tv_starts = $term_vectors[0]->get_start_offsets;
-            my $tv_end_positions = $term_vectors[-1]->get_positions;
-            my $tv_ends = $term_vectors[-1]->get_end_offsets;
+            my $tv_starts          = $term_vectors[0]->get_start_offsets;
+            my $tv_end_positions   = $term_vectors[-1]->get_positions;
+            my $tv_ends            = $term_vectors[-1]->get_end_offsets;
             $i = 0;
-            my $j = 0;
+            my $j                = 0;
             my $last_token_index = $#term_vectors;
             for my $valid_position ( @{ $posit_vec->to_arrayref } ) {
+
                 while ( $i <= $#$tv_start_positions ) {
                     last if ( $tv_start_positions->[$i] >= $valid_position );
                     $i++;
@@ -383,6 +384,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 
 =cut

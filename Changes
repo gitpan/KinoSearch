@@ -1,5 +1,12 @@
 Revision history for KinoSearch
 
+0.13 2006-08-19
+  * Fix "negate operator" bug in QueryParser.
+  * Allow multiple fields to be spec'd for QueryParser.
+  * Add Finnish stoplist.
+  * Add ExtUtils::ParseXS and ExtUtils::CBuilder as prereqs, since
+    Module::Build doesn't handle C code as of 0.28.
+
 0.12 2006-06-26
   * Modify Highlighter API 
     o Deprecate pre_tag, post_tag arguments to new().

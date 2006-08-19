@@ -11,7 +11,7 @@ BEGIN {
     );
 }
 
-sub highlight {  
+sub highlight {
     my ( $self, $text ) = @_;
     return "$self->{pre_tag}$text$self->{post_tag}";
 }
@@ -73,6 +73,6 @@ Copyright 2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 
 =cut

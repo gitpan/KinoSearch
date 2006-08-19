@@ -43,9 +43,9 @@ sub init_instance {
 sub analyze {
     my ( $self, $batch ) = @_;
 
-    my $new_batch = KinoSearch::Analysis::TokenBatch->new;
-    my $token_re        = $self->{token_re};
-    my $separator_re    = $self->{separator_re};
+    my $new_batch    = KinoSearch::Analysis::TokenBatch->new;
+    my $token_re     = $self->{token_re};
+    my $separator_re = $self->{separator_re};
 
     # alias input to $_
     while ( $batch->next ) {
@@ -150,6 +150,6 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 
 =cut

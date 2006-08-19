@@ -1,9 +1,9 @@
 ApacheLicense2.0.txt
-bin/dump_index
-bin/kinotidy
 Build.PL
 Changes
+devel/dump_index
 devel/hexdebug
+devel/kinotidy
 devel/kinotidyrc
 devel/predit
 devel/scan_enum.plx
@@ -145,6 +145,7 @@ t/508-hits.t
 t/601-queryparser.t
 t/602-boosts.t
 t/603-query_boosts.t
+t/604-simple_search.t
 t/701-uscon.t
 t/999-remove_invindexes.t
 t/benchmarks/extract_reuters.plx

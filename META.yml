@@ -1,19 +1,24 @@
 ---
 name: KinoSearch
-version: 0.12
+version: 0.13
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: search engine library
 license: perl
+resources:
+  license: http://dev.perl.org/licenses/
 requires:
   Clone: 0.18
   Compress::Zlib: 0
   Lingua::Stem::Snowball: 0.94
   Lingua::StopWords: 0.02
+build_requires:
+  ExtUtils::CBuilder: 0
+  ExtUtils::ParseXS: 0
 provides:
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.12
+    version: 0.13
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:
@@ -194,4 +199,7 @@ provides:
     file: lib/KinoSearch/Util/ToolSet.pm
   KinoSearch::Util::VerifyArgs:
     file: lib/KinoSearch/Util/VerifyArgs.pm
-generated_by: Module::Build version 0.2612
+generated_by: Module::Build version 0.2805
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

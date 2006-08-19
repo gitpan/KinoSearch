@@ -21,4 +21,5 @@ my @token_texts;
 while ( $batch->next ) {
     push @token_texts, $batch->get_text;
 }
-is_deeply( \@token_texts, ['', '', '', 'walrus'], "stopwords stopalized" );
+is_deeply( \@token_texts, [ '', '', '', 'walrus' ], "stopwords stopalized" );
+

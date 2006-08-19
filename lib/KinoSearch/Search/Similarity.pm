@@ -45,16 +45,15 @@ use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Similarity );
 
 sub new {
-	my $self = shift->SUPER::new(@_);
-	$self->_use_title_tf;
-	return $self;
+    my $self = shift->SUPER::new(@_);
+    $self->_use_title_tf;
+    return $self;
 }
 
 sub lengthnorm {
-	return 0 unless $_[1];
-	return 1 / sqrt($_[1]);
+    return 0 unless $_[1];
+    return 1 / sqrt( $_[1] );
 }
-
 
 1;
 
@@ -334,7 +333,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 
 =end devdocs
 =cut

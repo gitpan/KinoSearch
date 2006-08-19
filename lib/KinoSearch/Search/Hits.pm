@@ -54,12 +54,12 @@ sub seek {
         sort_spec     => $self->{sort_spec},
     );
     $self->{total_hits} = $collector->get_total_hits;
-    my $hit_queue       = $collector->get_hit_queue;
+    my $hit_queue = $collector->get_hit_queue;
 
     # turn the HitQueue into an array of Hit objects
     $self->{hit_docs} = $hit_queue->hits( $start_offset, $num_wanted,
         $self->{searcher}->get_reader );
-    
+
 }
 
 sub total_hits {
@@ -189,7 +189,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 
 =cut
 

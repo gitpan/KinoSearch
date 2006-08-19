@@ -9,7 +9,8 @@ BEGIN {
         # constructor args / members
         analyzer       => undef,
         default_boolop => 'OR',
-        default_field  => undef,
+        default_field  => undef,    # back compat
+        fields         => undef,
         # members
         bool_groups   => {},
         phrases       => {},
@@ -41,6 +42,20 @@ sub init_instance {
     # create labels which won't appear in search strings
     $self->{phrase_re}     = qr/^(_phrase$randstring\d+)/;
     $self->{bool_group_re} = qr/^(_boolgroup$randstring\d+)/;
+
+    # verify fields param
+    my $fields =
+        defined $self->{fields}
+        ? $self->{fields}
+        : [ $self->{default_field} ];
+    croak("Required parameter 'fields' not supplied as arrayref")
+        unless ( defined $fields
+        and reftype($fields) eq 'ARRAY' );
+    $self->{fields} = $fields;
+
+    # verify analyzer
+    croak("Missing required param 'analyzer'")
+        unless a_isa_b( $self->{analyzer}, 'KinoSearch::Analysis::Analyzer' );
 }
 
 # regex matching a quoted string
@@ -83,7 +98,7 @@ my $field_re = qr/^
 sub parse {
     my ( $self, $qstring_orig ) = @_;
     $qstring_orig = '' unless defined $qstring_orig;
-    my $default_field  = $self->{default_field};
+    my $default_fields = $self->{fields};
     my $default_boolop = $self->{default_boolop};
     my @clauses;
 
@@ -124,7 +139,7 @@ sub parse {
         }
 
         # set the field
-        my $field = s/^$field_re// ? $1 : $default_field;
+        my $fields = s/^$field_re// ? [$1] : $default_fields;
 
         # if a phrase label is detected...
         if (s/$self->{phrase_re}//) {
@@ -133,24 +148,11 @@ sub parse {
             # retreive the text and analyze it
             my $orig_phrase_text = delete $self->{phrases}{$1};
             my $token_texts      = $self->_analyze($orig_phrase_text);
-
-            # create a TermQuery, a PhraseQuery, or nothing
-            if ( @$token_texts == 1 ) {
-                my $term = KinoSearch::Index::Term->new( $field,
-                    $token_texts->[0] );
-                $query = KinoSearch::Search::TermQuery->new( term => $term );
+            if (@$token_texts) {
+                my $query = $self->_get_field_query( $fields, $token_texts );
+                push @clauses, { query => $query, occur => $occur }
+                    if defined $query;
             }
-            elsif ( @$token_texts > 1 ) {
-                $query = KinoSearch::Search::PhraseQuery->new;
-                for my $token_text (@$token_texts) {
-                    $query->add_term(
-                        KinoSearch::Index::Term->new( $field, $token_text ),
-                    );
-                }
-            }
-
-            push @clauses, { query => $query, occur => $occur }
-                if defined $query;
         }
         # if a label indicating a bool group is detected...
         elsif (s/$self->{bool_group_re}//) {
@@ -162,12 +164,9 @@ sub parse {
         # what's left is probably a term
         elsif (s/([^"(\s]+)//) {
             my $token_texts = $self->_analyze($1);
-            my @terms = map { KinoSearch::Index::Term->new( $field, $_ ) }
-                grep { $_ ne '' }
-                @$token_texts;
-            for my $term (@terms) {
-                my $query
-                    = KinoSearch::Search::TermQuery->new( term => $term );
+            @$token_texts = grep { $_ ne '' } @$token_texts;
+            if (@$token_texts) {
+                my $query = $self->_get_field_query( $fields, $token_texts );
                 push @clauses, { occur => $occur, query => $query };
             }
         }
@@ -187,6 +186,50 @@ sub parse {
             );
         }
         return $bool_query;
+    }
+}
+
+# Wrap a TermQuery/PhraseQuery to deal with multiple fields.
+sub _get_field_query {
+    my ( $self, $fields, $token_texts ) = @_;
+
+    my @queries = grep { defined $_ }
+        map { $self->_gen_single_field_query( $_, $token_texts ) } @$fields;
+
+    if ( @queries == 0 ) {
+        return;
+    }
+    elsif ( @queries == 1 ) {
+        return $queries[0];
+    }
+    else {
+        my $wrapper_query = KinoSearch::Search::BooleanQuery->new;
+        for my $query (@queries) {
+            $wrapper_query->add_clause(
+                query => $query,
+                occur => 'SHOULD',
+            );
+        }
+        return $wrapper_query;
+    }
+}
+
+# Create a TermQuery, a PhraseQuery, or nothing.
+sub _gen_single_field_query {
+    my ( $self, $field, $token_texts ) = @_;
+
+    if ( @$token_texts == 1 ) {
+        my $term = KinoSearch::Index::Term->new( $field, $token_texts->[0] );
+        return KinoSearch::Search::TermQuery->new( term => $term );
+    }
+    elsif ( @$token_texts > 1 ) {
+        my $phrase_query = KinoSearch::Search::PhraseQuery->new;
+        for my $token_text (@$token_texts) {
+            $phrase_query->add_term(
+                KinoSearch::Index::Term->new( $field, $token_text ),
+            );
+        }
+        return $phrase_query;
     }
 }
 
@@ -247,8 +290,8 @@ KinoSearch::QueryParser::QueryParser - transform a string into a Query object
 =head1 SYNOPSIS
 
     my $query_parser = KinoSearch::QueryParser::QueryParser->new(
-        analyzer      => $analyzer,
-        default_field => 'bodytext',
+        analyzer => $analyzer,
+        fields   => [ 'bodytext' ],
     );
     my $query = $query_parser->parse( $query_string );
     my $hits  = $searcher->search( query => $query );
@@ -286,7 +329,7 @@ Phrases, delimited by double quotes.
 
 Field-specific terms, in the form of C<fieldname:termtext>.  (The field
 specified by fieldname will be used instead of the QueryParser's default
-field).
+fields).
 
 =back
 
@@ -295,9 +338,9 @@ field).
 =head2 new
 
     my $query_parser = KinoSearch::QueryParser::QueryParser->new(
-        analyzer       => $analyzer,      # required
-        default_field  => 'bodytext',     # required
-        default_boolop => 'AND',          # default: 'OR'
+        analyzer       => $analyzer,       # required
+        fields         => [ 'bodytext' ],  # required
+        default_boolop => 'AND',           # default: 'OR'
     );
 
 Constructor.  Takes hash-style parameters:
@@ -313,9 +356,12 @@ match up.
 
 =item *
 
-B<default_field> - the name of the (only) field which will be searched
-against.  If you need to search multiple fields, you need multiple QueryParser
-objects.
+B<fields> - the names of the fields which will be searched against.  Must be
+supplied as an arrayref.
+
+=item *
+
+B<default_field> - deprecated. Use C<fields> instead.
 
 =item *
 
@@ -339,7 +385,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 
 =cut
 

@@ -82,23 +82,13 @@ sub search {
 sub _prepare_simple_search {
     my ( $self, $query_string ) = @_;
 
-    # add each parsed query as a boolean clause to a super-query
-    my $super_query = KinoSearch::Search::BooleanQuery->new;
     my $indexed_field_names
         = $self->{reader}->get_field_names( indexed => 1 );
-    for my $field_name (@$indexed_field_names) {
-        my $query_parser = KinoSearch::QueryParser::QueryParser->new(
-            default_field => $field_name,
-            analyzer      => $self->{analyzer},
-        );
-        my $sub_query = $query_parser->parse($query_string);
-        $super_query->add_clause(
-            query => $sub_query,
-            occur => 'SHOULD',
-        );
-    }
-
-    return $super_query;
+    my $query_parser = KinoSearch::QueryParser::QueryParser->new(
+        fields   => $indexed_field_names,
+        analyzer => $self->{analyzer},
+    );
+    return $query_parser->parse($query_string);
 }
 
 my %search_hit_collector_args = (
@@ -260,4 +250,4 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.

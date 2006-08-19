@@ -7,9 +7,9 @@ use base qw( KinoSearch::Util::Class );
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # constructor params / members
-        id      => undef,
-        score   => undef,
-        reader  => undef,
+        id     => undef,
+        score  => undef,
+        reader => undef,
         # members
         doc     => undef,
         hashref => undef,
@@ -80,5 +80,5 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 

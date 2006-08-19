@@ -122,7 +122,7 @@ sub init_instance {
 
 sub _delayed_init {
     my $self = shift;
-    my ( $invindex, $finfos, $field_sims ) 
+    my ( $invindex, $finfos, $field_sims )
         = @{$self}{qw( invindex finfos field_sims )};
 
     confess("finish has been called")
@@ -196,10 +196,10 @@ sub new_doc {
 
 sub set_similarity {
     if ( @_ == 3 ) {
-        my ( $self, $field_name, $sim ) = @_; 
-        $self->{field_sims}{$field_name} = $sim; 
+        my ( $self, $field_name, $sim ) = @_;
+        $self->{field_sims}{$field_name} = $sim;
     }
-    else {  
+    else {
         $_[0]->{similarity} = $_[1];
     }
 }
@@ -605,7 +605,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.12.
+See L<KinoSearch|KinoSearch> version 0.13.
 
 =cut
 

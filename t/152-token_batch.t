@@ -8,9 +8,9 @@ BEGIN { use_ok('KinoSearch::Analysis::TokenBatch') }
 use KinoSearch::Analysis::Token;
 
 my $batch = KinoSearch::Analysis::TokenBatch->new;
-$batch->append("car", 0, 3);
-$batch->append("bike", 10, 14);
-$batch->append("truck", 20, 25);
+$batch->append( "car",   0,  3 );
+$batch->append( "bike",  10, 14 );
+$batch->append( "truck", 20, 25 );
 
 my @texts;
 while ( $batch->next ) {
