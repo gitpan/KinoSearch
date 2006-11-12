@@ -97,6 +97,8 @@ sub init_instance {
         my $query = $clause->get_query;
         push @$weights, $query->create_weight($searcher);
     }
+
+    undef $self->{searcher}; # don't want the baggage
 }
 
 sub get_value { shift->{parent}->get_boost }
@@ -227,7 +229,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =cut
 

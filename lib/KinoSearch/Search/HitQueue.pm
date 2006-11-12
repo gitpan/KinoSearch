@@ -20,7 +20,7 @@ sub new {
 # Create an array of "empty" Hit objects -- they have scores and ids,
 # but the stored fields have yet to be retrieved.
 sub hits {
-    my ( $self, $start_offset, $num_wanted, $reader ) = @_;
+    my ( $self, $start_offset, $num_wanted, $searcher ) = @_;
     my @hits = @{ $self->pop_all };
 
     if ( defined $start_offset and defined $num_wanted ) {
@@ -29,9 +29,9 @@ sub hits {
 
     @hits = map {
         KinoSearch::Search::Hit->new(
-            id     => unpack( 'N', "$_" ),
-            score  => 0 + $_,
-            reader => $reader
+            id       => unpack( 'N', "$_" ),
+            score    => 0 + $_,
+            searcher => $searcher
             )
     } @hits;
 
@@ -109,7 +109,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

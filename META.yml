@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.13
+version: 0.14
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: search engine library
@@ -18,7 +18,7 @@ build_requires:
 provides:
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.13
+    version: 0.14
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:
@@ -115,6 +115,8 @@ provides:
     file: lib/KinoSearch/Search/BooleanScorer.pm
   KinoSearch::Search::BooleanWeight:
     file: lib/KinoSearch/Search/BooleanQuery.pm
+  KinoSearch::Search::CacheDFSource:
+    file: lib/KinoSearch/Search/MultiSearcher.pm
   KinoSearch::Search::FilteredCollector:
     file: lib/KinoSearch/Search/HitCollector.pm
   KinoSearch::Search::Hit:
@@ -127,6 +129,10 @@ provides:
     file: lib/KinoSearch/Search/HitCollector.pm
   KinoSearch::Search::Hits:
     file: lib/KinoSearch/Search/Hits.pm
+  KinoSearch::Search::MultiSearcher:
+    file: lib/KinoSearch/Search/MultiSearcher.pm
+  KinoSearch::Search::OffsetCollector:
+    file: lib/KinoSearch/Search/HitCollector.pm
   KinoSearch::Search::PhraseQuery:
     file: lib/KinoSearch/Search/PhraseQuery.pm
   KinoSearch::Search::PhraseScorer:
@@ -139,6 +145,8 @@ provides:
     file: lib/KinoSearch/Search/QueryFilter.pm
   KinoSearch::Search::Scorer:
     file: lib/KinoSearch/Search/Scorer.pm
+  KinoSearch::Search::SearchServer:
+    file: lib/KinoSearch/Search/SearchServer.pm
   KinoSearch::Search::Searchable:
     file: lib/KinoSearch/Search/Searchable.pm
   KinoSearch::Search::Similarity:
@@ -155,6 +163,8 @@ provides:
     file: lib/KinoSearch/Search/Weight.pm
   KinoSearch::Searcher:
     file: lib/KinoSearch/Searcher.pm
+  KinoSearch::Searcher::SearchClient:
+    file: lib/KinoSearch/Search/SearchClient.pm
   KinoSearch::Store::FSInvIndex:
     file: lib/KinoSearch/Store/FSInvIndex.pm
   KinoSearch::Store::FSLock:

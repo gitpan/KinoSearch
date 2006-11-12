@@ -126,6 +126,7 @@ U32  Kino_MultiTermDocs_get_freq(TermDocs*);
 SV*  Kino_MultiTermDocs_get_positions(TermDocs*);
 U32  Kino_MultiTermDocs_bulk_read(TermDocs*, SV*, SV*, U32);
 bool Kino_MultiTermDocs_next(TermDocs*);
+bool Kino_MultiTermDocs_skip_to(TermDocs*, U32);
 void Kino_MultiTermDocs_destroy(TermDocs*);
 
 #endif /* include guard */
@@ -179,6 +180,7 @@ Kino_MultiTermDocs_init_child(TermDocs* term_docs, SV *sub_term_docs_avref,
     term_docs->get_positions = Kino_MultiTermDocs_get_positions;
     term_docs->bulk_read     = Kino_MultiTermDocs_bulk_read;
     term_docs->next          = Kino_MultiTermDocs_next;
+    term_docs->skip_to       = Kino_MultiTermDocs_skip_to;
     term_docs->destroy       = Kino_MultiTermDocs_destroy;
 }
 
@@ -300,6 +302,27 @@ Kino_MultiTermDocs_next(TermDocs* term_docs) {
     }
 }
 
+bool
+Kino_MultiTermDocs_skip_to(TermDocs *term_docs, U32 target) {
+    MultiTermDocsChild *child = (MultiTermDocsChild*)term_docs->child;
+    
+    if (   child->current != NULL 
+        && child->current->skip_to(child->current, (target - child->base))
+    ) {
+        return TRUE;
+    }
+    else if (child->pointer < child->num_subs) {
+        /* try next segment */
+        child->base    = child->starts[ child->pointer ];
+        child->current = child->sub_term_docs[ child->pointer ];
+        child->pointer++;
+        return term_docs->skip_to(term_docs, target); /* recurse */
+    }
+    else {
+        return FALSE;
+    }
+}
+
 void
 Kino_MultiTermDocs_destroy(TermDocs* term_docs) {
     MultiTermDocsChild *child; 
@@ -331,7 +354,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

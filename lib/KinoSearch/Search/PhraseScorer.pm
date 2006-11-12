@@ -242,12 +242,15 @@ Kino_PhraseScorer_next(Scorer *scorer) {
     FIND_COMMON_DOC:
     while (1) {
         for (i = 0; i < child->num_elements; i++) {
-            while ( term_docs[i]->get_doc(term_docs[i]) < candidate ) {
-                if ( !term_docs[i]->next(term_docs[i]) )
+            U32 thisdoc = term_docs[i]->get_doc(term_docs[i]);
+            if (thisdoc > candidate)
+                candidate = thisdoc;
+        }
+        for (i = 0; i < child->num_elements; i++) {
+            U32 thisdoc = term_docs[i]->get_doc(term_docs[i]);
+            if (thisdoc < candidate) {
+                if (!term_docs[i]->skip_to(term_docs[i], candidate))
                     return 0;
-            }
-            if (term_docs[i]->get_doc(term_docs[i]) > candidate) {
-                candidate = term_docs[i]->get_doc(term_docs[i]);
             }
         }
         for (i = 0; i < child->num_elements; i++) {
@@ -401,7 +404,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

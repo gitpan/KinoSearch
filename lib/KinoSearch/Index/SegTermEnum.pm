@@ -216,10 +216,12 @@ ALIAS:
     get_term_info            = 10
         _set_index_interval  = 11
     get_index_interval       = 12
-        _set_position        = 13
-        _get_position        = 14
-        _set_is_index        = 15
-    is_index                 = 16
+        _set_skip_interval   = 13
+    get_skip_interval        = 14
+        _set_position        = 15
+        _get_position        = 16
+        _set_is_index        = 17
+    is_index                 = 18
 CODE:
 {
     KINO_START_SET_OR_GET_SWITCH
@@ -283,14 +285,19 @@ CODE:
     case 12: RETVAL = newSViv(obj->index_interval);
              break;
 
-    case 13: obj->position = SvIV( ST(1) );
+    case 13: obj->skip_interval = SvIV( ST(1) );
              /* fall through */
-    case 14: RETVAL = newSViv(obj->position);
+    case 14: RETVAL = newSViv(obj->skip_interval);
              break;
 
-    case 15: Kino_confess("can't set is_index");
+    case 15: obj->position = SvIV( ST(1) );
              /* fall through */
-    case 16: RETVAL = newSViv(obj->is_index);
+    case 16: RETVAL = newSViv(obj->position);
+             break;
+
+    case 17: Kino_confess("can't set is_index");
+             /* fall through */
+    case 18: RETVAL = newSViv(obj->is_index);
              break;
     
     KINO_END_SET_OR_GET_SWITCH
@@ -578,7 +585,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

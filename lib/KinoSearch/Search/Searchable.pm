@@ -113,8 +113,11 @@ sub get_similarity {
 sub create_weight { shift->unimplemented_death }
 sub rewrite_query { shift->unimplemented_death }
 
-# needed by MultiSearcher?
-sub doc_freqs { shift->unimplemented_death }
+sub doc_freqs {
+    my ( $self, $terms ) = @_;
+    my @doc_freqs = map { $self->doc_freq($_) } @$terms;
+    return \@doc_freqs;
+}
 
 sub close { }
 
@@ -139,7 +142,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

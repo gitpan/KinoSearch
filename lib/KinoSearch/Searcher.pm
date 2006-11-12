@@ -78,12 +78,16 @@ sub search {
     return KinoSearch::Search::Hits->new( searcher => $self, %args );
 }
 
+sub get_field_names {
+    my $self = shift;
+    return $self->{reader}->get_field_names(@_);
+}
+
 # Search for the query string against all indexed fields
 sub _prepare_simple_search {
     my ( $self, $query_string ) = @_;
 
-    my $indexed_field_names
-        = $self->{reader}->get_field_names( indexed => 1 );
+    my $indexed_field_names = $self->get_field_names( indexed => 1 );
     my $query_parser = KinoSearch::QueryParser::QueryParser->new(
         fields   => $indexed_field_names,
         analyzer => $self->{analyzer},
@@ -132,7 +136,7 @@ sub doc_freq {
 
 sub create_weight {
     my ( $self, $query ) = @_;
-    return $query->create_weight($self);
+    return $query->to_weight($self);
 }
 
 sub rewrite {
@@ -250,4 +254,4 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.

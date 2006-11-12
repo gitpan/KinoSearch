@@ -38,6 +38,13 @@ sub query_norm {
     return ( 1 / sqrt($sum_of_squared_weights) );
 }
 
+# KLUDGE -- see comment at STORABLE_thaw.
+sub STORABLE_freeze { 
+    my ( $self, $cloning ) = @_;
+    return if $cloning;
+    return "1" 
+}
+
 package KinoSearch::Search::TitleSimilarity;
 use strict;
 use warnings;
@@ -62,6 +69,27 @@ __END__
 __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Similarity     
+
+=begin comment
+
+KLUDGE!!
+
+Rather than attempt to serialize a Similarity, we just create a new one.
+
+=end comment
+=cut
+
+void
+STORABLE_thaw(blank_obj, cloning, serialized)
+    SV *blank_obj;
+    SV *cloning;
+    SV *serialized;
+PPCODE:
+{
+    Similarity *sim = Kino_Sim_new();
+    SV *deep_obj = SvRV(blank_obj);
+    sv_setiv(deep_obj, PTR2IV(sim));
+}
 
 void
 new(either_sv)
@@ -333,7 +361,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

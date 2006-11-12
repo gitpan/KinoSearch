@@ -65,6 +65,9 @@ sub init_instance {
 
     $self->{idf} = $self->{similarity}
         ->idf( $self->{parent}->get_term, $self->{searcher} );
+
+    # kill this because we don't want its baggage.
+    undef $self->{searcher};
 }
 
 sub scorer {
@@ -135,7 +138,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =cut
 

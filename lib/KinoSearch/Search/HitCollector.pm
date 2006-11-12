@@ -39,6 +39,10 @@ sub new {
 *get_total_hits = *KinoSearch::Search::HitCollector::get_i;
 *get_hit_queue  = *KinoSearch::Search::HitCollector::get_storage;
 
+sub get_max_size {
+    shift->get_hit_queue->get_max_size;
+}
+
 package KinoSearch::Search::BitCollector;
 use strict;
 use warnings;
@@ -99,6 +103,35 @@ sub new {
     return $self;
 }
 
+package KinoSearch::Search::OffsetCollector;
+use strict;
+use warnings;
+use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Search::HitCollector );
+
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        hit_collector => undef,
+        offset        => undef,
+    );
+}
+our %instance_vars;
+
+sub new {
+    my $self = shift->SUPER::new;
+    confess kerror() unless verify_args( \%instance_vars, @_ );
+    my %args = @_;
+    croak("Required parameter: 'hit_collector'")
+        unless a_isa_b( $args{hit_collector},
+        "KinoSearch::Search::HitCollector" );
+
+    $self->_set_f( $args{offset} );
+    $self->_set_storage( $args{hit_collector} );
+    $self->_define_collect;
+
+    return $self;
+}
+
 1;
 
 __END__
@@ -148,8 +181,10 @@ ALIAS:
     get_storage      = 2
     _set_i           = 3
     get_i            = 4
-    _set_filter_bits = 5
-    _get_filter_bits = 6
+    _set_f           = 5
+    _get_f           = 6
+    _set_filter_bits = 7
+    _get_filter_bits = 8
 CODE:
 {
     KINO_START_SET_OR_GET_SWITCH
@@ -165,13 +200,18 @@ CODE:
              /* fall through */
     case 4:  RETVAL = newSVuv(hc->i);
              break;
+
+    case 5:  hc->f = SvNV( ST(1) );
+             /* fall through */
+    case 6:  RETVAL = newSVnv(hc->f);
+             break;
              
-    case 5:  SvREFCNT_dec(hc->filter_bits_ref);
+    case 7:  SvREFCNT_dec(hc->filter_bits_ref);
              hc->filter_bits_ref = newSVsv( ST(1) );
              Kino_extract_struct( hc->filter_bits_ref, hc->filter_bits, 
                 BitVector*, "KinoSearch::Util::BitVector" );
              /* fall through */
-    case 6:  RETVAL = newSVsv(hc->filter_bits_ref);
+    case 8:  RETVAL = newSVsv(hc->filter_bits_ref);
              break;
 
     KINO_END_SET_OR_GET_SWITCH
@@ -209,6 +249,16 @@ _define_collect(hc);
 PPCODE:
     hc->collect = Kino_HC_collect_filtered;
 
+MODULE = KinoSearch    PACKAGE = KinoSearch::Search::OffsetCollector
+
+void
+_define_collect(hc);
+    HitCollector *hc;
+PPCODE:
+    hc->collect = Kino_HC_collect_offset;
+
+
+
 __H__
 
 #ifndef H_KINO_HIT_COLLECTOR
@@ -238,6 +288,7 @@ void Kino_HC_collect_death(HitCollector*, U32, float);
 void Kino_HC_collect_HitQueue(HitCollector*, U32, float);
 void Kino_HC_collect_BitVec(HitCollector*, U32, float);
 void Kino_HC_collect_filtered(HitCollector*, U32, float);
+void Kino_HC_collect_offset(HitCollector*, U32, float);
 void Kino_HC_destroy(HitCollector*);
 
 #endif /* include guard */
@@ -331,6 +382,14 @@ Kino_HC_collect_filtered(HitCollector *hc, U32 doc_num, float score) {
 }
 
 void
+Kino_HC_collect_offset(HitCollector *hc, U32 doc_num, float score) {
+    HitCollector *inner_collector = (HitCollector*)hc->storage;
+    U32 offset_doc_num = doc_num + hc->f;
+    inner_collector->collect(inner_collector, offset_doc_num, score);
+}
+
+
+void
 Kino_HC_destroy(HitCollector *hc) {
     SvREFCNT_dec(hc->storage_ref);
     SvREFCNT_dec(hc->filter_bits_ref);
@@ -365,7 +424,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

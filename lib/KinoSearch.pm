@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use constant K_DEBUG => 0;
 
@@ -66,7 +66,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.13
+0.14
 
 =head1 BACKWARDS COMPATIBILITY POLICY 
 

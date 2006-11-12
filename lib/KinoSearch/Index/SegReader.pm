@@ -140,6 +140,10 @@ sub fetch_term_info {
     return $self->{tinfos_reader}->fetch_term_info($term);
 }
 
+sub get_skip_interval {
+    shift->{tinfos_reader}->get_skip_interval;
+}
+
 sub doc_freq {
     my ( $self, $term ) = @_;
     my $tinfo = $self->{tinfos_reader}->fetch_term_info($term);
@@ -218,7 +222,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =end devdocs
 =cut

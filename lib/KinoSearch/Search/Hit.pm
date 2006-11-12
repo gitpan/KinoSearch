@@ -7,9 +7,9 @@ use base qw( KinoSearch::Util::Class );
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # constructor params / members
-        id     => undef,
-        score  => undef,
-        reader => undef,
+        id       => undef,
+        score    => undef,
+        searcher => undef,
         # members
         doc     => undef,
         hashref => undef,
@@ -19,7 +19,7 @@ BEGIN {
 
 sub get_doc {
     my $self = shift;
-    $self->{doc} ||= $self->{reader}->fetch_doc( $self->{id} );
+    $self->{doc} ||= $self->{searcher}->fetch_doc( $self->{id} );
     return $self->{doc};
 }
 
@@ -80,5 +80,5 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 

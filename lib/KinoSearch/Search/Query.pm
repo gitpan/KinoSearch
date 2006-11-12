@@ -72,7 +72,8 @@ Return all the Terms within this query.
 
 sub extract_terms { shift->abstract_death }
 
-# These are used by MultiSearcher.
+# These will be needed by MultiSearcher if we add queries which rewrite
+# themselves.
 sub combine               { shift->todo_death }
 sub merge_boolean_queries { shift->todo_death }
 
@@ -151,7 +152,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =cut
 

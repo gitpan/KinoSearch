@@ -20,6 +20,8 @@ BEGIN {
         hit_docs   => undef,
         total_hits => undef,
     );
+
+    __PACKAGE__->ready_get(qw( hit_docs ));
 }
 
 use KinoSearch::Highlight::Highlighter;
@@ -34,7 +36,7 @@ sub init_instance {
         unless $self->{searcher};
 
     # turn the Query into a Weight (so the Query won't get mussed)
-    $self->{weight} = $self->{query}->to_weight( $self->{searcher} );
+    $self->{weight} = $self->{searcher}->create_weight( $self->{query} );
 }
 
 sub seek {
@@ -57,8 +59,8 @@ sub seek {
     my $hit_queue = $collector->get_hit_queue;
 
     # turn the HitQueue into an array of Hit objects
-    $self->{hit_docs} = $hit_queue->hits( $start_offset, $num_wanted,
-        $self->{searcher}->get_reader );
+    $self->{hit_docs}
+        = $hit_queue->hits( $start_offset, $num_wanted, $self->{searcher} );
 
 }
 
@@ -189,7 +191,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.13.
+See L<KinoSearch|KinoSearch> version 0.14.
 
 =cut
 

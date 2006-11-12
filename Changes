@@ -1,5 +1,8 @@
 Revision history for KinoSearch
 
+0.14 2006-11-12 
+  * Add MultiSearcher, SearchServer and SearchClient.
+
 0.13 2006-08-19
   * Fix "negate operator" bug in QueryParser.
   * Allow multiple fields to be spec'd for QueryParser.
