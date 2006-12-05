@@ -1,5 +1,11 @@
 Revision history for KinoSearch
 
+0.15 2006-12-04
+  * Remove dead lock files when possible (with a warning), rather than failing
+    outright.  (Credit to Matthew O'Connor, Luke Closs, Socialtext for
+    providing initial implementation and test.)
+  * Fix package name glitch in SearchClient.
+
 0.14 2006-11-12 
   * Add MultiSearcher, SearchServer and SearchClient.
 

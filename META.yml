@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.14
+version: 0.15
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: search engine library
@@ -18,7 +18,7 @@ build_requires:
 provides:
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.14
+    version: 0.15
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:
@@ -145,6 +145,8 @@ provides:
     file: lib/KinoSearch/Search/QueryFilter.pm
   KinoSearch::Search::Scorer:
     file: lib/KinoSearch/Search/Scorer.pm
+  KinoSearch::Search::SearchClient:
+    file: lib/KinoSearch/Search/SearchClient.pm
   KinoSearch::Search::SearchServer:
     file: lib/KinoSearch/Search/SearchServer.pm
   KinoSearch::Search::Searchable:
@@ -163,8 +165,6 @@ provides:
     file: lib/KinoSearch/Search/Weight.pm
   KinoSearch::Searcher:
     file: lib/KinoSearch/Searcher.pm
-  KinoSearch::Searcher::SearchClient:
-    file: lib/KinoSearch/Search/SearchClient.pm
   KinoSearch::Store::FSInvIndex:
     file: lib/KinoSearch/Store/FSInvIndex.pm
   KinoSearch::Store::FSLock:

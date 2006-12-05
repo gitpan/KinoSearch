@@ -42,6 +42,6 @@ Copyright 2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.14.
+See L<KinoSearch|KinoSearch> version 0.15.
 
 =cut

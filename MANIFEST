@@ -116,6 +116,7 @@ t/102-strings_template_io.t
 t/103-repeats_template_io.t
 t/104-parse_template_io.t
 t/105-invindex.t
+t/106-locking.t
 t/150-polyanalyzer.t
 t/152-token_batch.t
 t/153-lc_normalizer.t

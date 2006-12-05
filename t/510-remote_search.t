@@ -51,7 +51,7 @@ else {
 }
 
 my $tokenizer2 = KinoSearch::Analysis::Tokenizer->new;
-my $searchclient = KinoSearch::Searcher::SearchClient->new(
+my $searchclient = KinoSearch::Search::SearchClient->new(
     analyzer => $tokenizer2,
     peer_address => 'localhost:7890',
     password => 'foo',

@@ -11,7 +11,7 @@ BEGIN {
     );
 }
 
-__PACKAGE__->ready_get(qw( create ));
+__PACKAGE__->ready_get(qw( create path ));
 
 =begin comment
 
@@ -180,7 +180,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.14.
+See L<KinoSearch|KinoSearch> version 0.15.
 
 =cut
 

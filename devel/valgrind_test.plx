@@ -17,7 +17,7 @@ closedir $t_dir;
 open(my $log_fh, '>', "valgrind_test.log");
 
 for my $t_file (@t_files) {
-    my $command = "valgrind --leak-check=full perl -Mblib t/$t_file 2>&1";
+    my $command = "valgrind --leak-check=full $^X -Mblib t/$t_file 2>&1";
     my $output  = "\n\n" . (scalar localtime(time)) . "\n$command\n";
     $output    .= `$command`;
     print $output;

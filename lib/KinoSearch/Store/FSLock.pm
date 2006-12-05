@@ -27,11 +27,30 @@ sub do_obtain {
 
     return 1 if $disable_locks;
 
+    my $lock_name = $self->{lock_name};
+
+    # check for locks created by old processes and remove them
+    if ( -e $lock_name ) {
+        open( my $fh, $lock_name ) or confess "Can't open $lock_name: $!";
+        my $line = <$fh>;
+        $line =~ /pid: (\d+)/;
+        my $pid = $1;
+        close $fh or confess "Can't close '$lock_name': $!";
+        unless ( kill 0 => $pid ) {
+            warn "Lockfile looks dead - removing";
+            unlink $lock_name or confess "Can't unlink '$lock_name: $!";
+        }
+    }
+
     # create a lock by creating a lockfile
     return
-        unless
-        sysopen( my $fh, $self->{lock_name}, O_CREAT | O_WRONLY | O_EXCL );
-    CORE::close $fh or die "couldn't close '$self->{lock_name}': $!";
+        unless sysopen( my $fh, $lock_name, O_CREAT | O_WRONLY | O_EXCL );
+
+    # print pid and path to the lock file, using YAML for future compat
+    print $fh "pid: $$\ninvindex: " . $self->{invindex}->get_path . "\n";
+    close $fh or confess "Can't close '$lock_name': $!";
+
+    # success!
     return 1;
 }
 
@@ -42,7 +61,7 @@ sub release {
 
     # release the lock by removing the lockfile from the file system
     unlink $self->{lock_name}
-        or croak("Couldn't unlink file '$self->{lock_name}': $!");
+        or confess("Couldn't unlink file '$self->{lock_name}': $!");
 }
 
 sub is_locked {
@@ -71,7 +90,7 @@ Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.14.
+See L<KinoSearch|KinoSearch> version 0.15.
 
 =end devdocs
 =cut

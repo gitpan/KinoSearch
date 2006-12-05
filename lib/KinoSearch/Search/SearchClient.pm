@@ -1,4 +1,4 @@
-package KinoSearch::Searcher::SearchClient;
+package KinoSearch::Search::SearchClient;
 use strict;
 use warnings;
 use KinoSearch::Util::ToolSet;
@@ -199,7 +199,7 @@ Copyright 2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.14.
+See L<KinoSearch|KinoSearch> version 0.15.
 
 =cut
 
