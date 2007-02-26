@@ -1,6 +1,7 @@
-#!/usr/bin/perl
+use strict;
+use warnings;
+use lib 'buildlib';
 
-use lib 't';
 use Test::More tests => 7;
 use File::Spec::Functions qw( catfile );
 
@@ -10,7 +11,7 @@ BEGIN {
     use_ok('KinoSearch::Searcher');
 }
 
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoTestUtils qw( create_invindex );
 
 my $invindex = create_invindex( 'a', 'b', 'c c c d', 'c d', 'd' .. 'z', );
 

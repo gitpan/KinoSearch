@@ -1,6 +1,7 @@
-package KinoSearch::Search::Weight;
 use strict;
 use warnings;
+
+package KinoSearch::Search::Weight;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -72,9 +73,9 @@ sub to_string {
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Search::Weight - Searcher-dependent transformation of a Query
+KinoSearch::Search::Weight - Searcher-dependent transformation of a Query.
 
 =head1 SYNOPSIS
 
@@ -91,11 +92,11 @@ are encapsulated within a class.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

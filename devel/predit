@@ -8,14 +8,14 @@ use Getopt::Std qw( getopts );
 
 $File::Find::dont_use_nlink = 1;
 
-use vars qw( $opt_s $opt_v );
-getopts('sv:');
+use vars qw( $opt_v );
+getopts('v:');
 die "usage: predit [-s] [-v pattern] [perl code] [file ...]"
     unless @ARGV >= 2;
 
 my $code = shift @ARGV;
 
-my $exclude;
+my $exclude = qr/(svn|cvs|^\.)/;
 if (defined $opt_v) {
     $exclude = qr/$opt_v/;
 }
@@ -37,24 +37,12 @@ sub maybe_edit {
     open( my $fh, "<", $filepath )
         or die "Couldn't open '$filepath' for reading: $!";
 
-    my $orig = '';
-    my $edited = '';
-    if ($opt_s) {
-        local $/;
-        $orig = $edited = <$fh>;
-        for ($edited) {
-            eval $code;
-            die $@ if $@;
-        }
+    my $orig = my $edited = do { local $/; <$fh> };
+    for ($edited) {
+        eval $code;
+        die $@ if $@;
     }
-    else {
-        while (<$fh>) {
-            $orig .= $_;
-            eval $code;
-            die $@ if $@;
-            $edited .= $_;
-        }
-    }
+
     close $fh or die "Couldn't close '$filepath': $!";
 
 	if ($edited eq $orig) {

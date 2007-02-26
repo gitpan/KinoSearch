@@ -1,12 +1,13 @@
-#!/usr/bin/perl
+use strict;
+use warnings;
+use lib 'buildlib';
 
-use lib 't';
 use Test::More tests => 4;
 use File::Spec::Functions qw( catfile );
 
 BEGIN { use_ok('KinoSearch::Search::PhraseQuery') }
 
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoTestUtils qw( create_invindex );
 use KinoSearch::Index::Term;
 use KinoSearch::Searcher;
 

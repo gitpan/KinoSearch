@@ -1,69 +1,38 @@
-package KinoSearch::Analysis::Tokenizer;
 use strict;
 use warnings;
+
+package KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
-use locale;
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
-
         # constructor params / members
-        token_re => undef,    # regex for a single token
-
-        # members
-        separator_re => undef,    # regex for separations between tokens
+        token_re => qr/\w+(?:'\w+)*/,
     );
 }
 
+use KinoSearch::Analysis::Token;
 use KinoSearch::Analysis::TokenBatch;
-
-sub init_instance {
-    my $self = shift;
-
-    # supply defaults if token_re wasn't specified
-    if ( !defined $self->{token_re} ) {
-        $self->{token_re}     = qr/\b\w+(?:'\w+)?\b/;
-        $self->{separator_re} = qr/\W*/;
-    }
-
-    # if user-defined token_re...
-    if ( !defined $self->{separator_re} ) {
-
-        # define separator using lookahead
-        $self->{separator_re} = qr/
-            .*?                    # match up to...
-            (?=                    # but not including...
-                $self->{token_re}  # a token, 
-                |\z                # or the end of the string
-            )/xsm;
-    }
-}
 
 sub analyze {
     my ( $self, $batch ) = @_;
-
-    my $new_batch    = KinoSearch::Analysis::TokenBatch->new;
-    my $token_re     = $self->{token_re};
-    my $separator_re = $self->{separator_re};
+    my $token_re  = $self->{token_re};
+    my $new_batch = KinoSearch::Analysis::TokenBatch->new;
 
     # alias input to $_
-    while ( $batch->next ) {
-        local $_ = $batch->get_text;
+    while ( my $token = $batch->next ) {
+        for ( $token->get_text ) {
+            # accumulate token start_offsets and end_offsets
+            my ( @starts, @ends );
+            while (/$token_re/g) {
+                push @starts, $-[0];
+                push @ends,   $+[0];
+            }
 
-        # ensure that pos is set to 0 for this scalar
-        pos = 0;
-
-        # accumulate token start_offsets and end_offsets
-        my ( @starts, @ends );
-        1 while ( m/$separator_re/g and push @starts,
-            pos and m/$token_re/g and push @ends, pos );
-
-        # correct for overshoot
-        $#starts = $#ends;
-
-        # add the new tokens to the batch
-        $new_batch->add_many_tokens( $_, \@starts, \@ends );
+            # add the new tokens to the batch
+            $new_batch->add_many_tokens( $_, \@starts, \@ends );
+        }
     }
 
     return $new_batch;
@@ -73,9 +42,11 @@ sub analyze {
 
 __END__
 
+__POD__
+
 =head1 NAME
 
-KinoSearch::Analysis::Tokenizer - customizable tokenizing 
+KinoSearch::Analysis::Tokenizer - Customizable tokenizing.
 
 =head1 SYNOPSIS
 
@@ -121,14 +92,12 @@ based on the value of C<token_re>.
 
 =head2 new
 
-    # match "O'Henry" as well as "Henry" and "it's" as well as "it"
+    # match "it's" as well as "it" and "O'Henry's" as well as "Henry"
     my $token_re = qr/
-            \b        # start with a word boundary
             \w+       # Match word chars.
             (?:       # Group, but don't capture...
                '\w+   # ... an apostrophe plus word chars.
-            )?        # Matching the apostrophe group is optional.
-            \b        # end with a word boundary
+            )*        # Matching the apostrophe group is optional.
         /xsm;
     my $tokenizer = KinoSearch::Analysis::Tokenizer->new(
         token_re => $token_re, # default: what you see above
@@ -146,10 +115,10 @@ B<token_re> - must be a pre-compiled regular expression matching one token.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut

@@ -1,0 +1,2 @@
+The buildbin/ directory is a place to put executable files built during the
+install process which aren't intended to be installed permanently.

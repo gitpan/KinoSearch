@@ -1,110 +1,136 @@
-package KinoSearch::Store::Lock;
 use strict;
 use warnings;
+
+package KinoSearch::Store::Lock;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Util::Obj );
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # constructor params / members
-        invindex  => undef,
+        folder    => undef,
         lock_name => undef,
+        lock_id   => "",
         timeout   => 0,
     );
 }
-
-use constant LOCK_POLL_INTERVAL => 1000;
-
-# Attempt to aquire lock once per second until the timeout has been reached.
-sub obtain {
-    my $self = shift;
-
-    # calculate maximum seconds to sleep
-    my $sleepcount = $self->{timeout} / LOCK_POLL_INTERVAL;
-
-    # keep trying to obtain lock until timeout is reached
-    my $locked = $self->do_obtain;
-    while ( !$locked ) {
-        croak("Couldn't get lock using '$self->{lock_name}'")
-            if $sleepcount-- <= 0;
-        sleep 1;
-        $locked = $self->do_obtain;
-    }
-
-    return $locked;
-}
-
-=begin comment
-
-    my $locked = $lock->do_obtain;
-
-Do the actual work to aquire the lock and return a boolean reflecting
-success/failure.
-
-=end comment
-=cut
-
-sub do_obtain { shift->abstract_death }
-
-=begin comment
-
-    $lock->release;
-
-Release the lock.
-
-=end comment
-=cut
-
-sub release { shift->abstract_death }
-
-=begin comment
-
-    my $locked_or_not = $lock->is_locked;
-
-Return true if the resource is locked, false otherwise.
-
-=end comment
-=cut
-
-sub is_locked { shift->abstract_death }
-
-# Getter for lock_name.
-sub get_lock_name { shift->{lock_name} }
+our %instance_vars;
 
 1;
 
 __END__
 
+__XS__
+
+MODULE = KinoSearch    PACKAGE = KinoSearch::Store::Lock
+
+kino_Lock*
+new(...)
+CODE:
+{
+    /* parse params */
+    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
+        "KinoSearch::Store::Lock::instance_vars");
+    kino_Folder *folder = (kino_Folder*)extract_obj(args_hash,
+        SNL("folder"), "KinoSearch::Store::Folder");
+    kino_i32_t timeout     = extract_iv(args_hash, SNL("timeout"));
+    SV *lock_name_sv       = extract_sv(args_hash, SNL("lock_name"));
+    SV *lock_id_sv         = extract_sv(args_hash, SNL("lock_id"));
+    kino_ByteBuf lock_name = KINO_BYTEBUF_BLANK;
+    kino_ByteBuf lock_id   = KINO_BYTEBUF_BLANK;
+    SV_TO_TEMP_BB(lock_name_sv, lock_name);
+    SV_TO_TEMP_BB(lock_id_sv, lock_id);
+
+    /* create object */
+    RETVAL = kino_Lock_new(folder, &lock_name, &lock_id, timeout);
+}
+OUTPUT: RETVAL
+
+IV
+obtain(self);
+    kino_Lock *self;
+CODE:
+    RETVAL = Kino_Lock_Obtain(self);
+OUTPUT: RETVAL
+    
+IV
+do_obtain(self);
+    kino_Lock *self;
+CODE:
+    RETVAL = Kino_Lock_Do_Obtain(self);
+OUTPUT: RETVAL
+
+void
+release(self);
+    kino_Lock *self;
+PPCODE:
+    Kino_Lock_Release(self);
+
+IV
+is_locked(self);
+    kino_Lock *self;
+CODE:
+    RETVAL = Kino_Lock_Is_Locked(self);
+OUTPUT: RETVAL
+    
+void
+_set_or_get(self, ...)
+    kino_Lock *self;
+ALIAS:
+    get_lock_name = 2
+    get_lock_id   = 4
+    get_folder    = 6
+    get_timeout   = 8
+PPCODE:
+{
+    START_SET_OR_GET_SWITCH
+
+    case 2:  retval = bb_to_sv(self->lock_name);
+             break;
+
+    case 4:  retval = bb_to_sv(self->lock_id);
+             break;
+
+    case 6:  retval = kobj_to_pobj(self->folder);
+             break;
+
+    case 8:  retval = newSViv(self->timeout);
+             break;
+
+    END_SET_OR_GET_SWITCH
+}
+
+
+__POD__
+
+
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Store::Lock - mutex lock on an invindex
+KinoSearch::Store::Lock - Mutex lock on a Folder.
 
 =head1 SYNOPSIS
 
-    # abstract base class, but here's typical usage:
-    
-    my $lock = $invindex->make_lock(
-        lock_name => COMMIT_LOCK_NAME,
+    my $lock = $folder->make_lock(
+        lock_name => WRITE_LOCK_NAME,
+        lock_id   => $hostname,
         timeout   => 5000,
     );
 
 =head1 DESCRIPTION
 
 The Lock class produces an interprocess mutex lock.  It does not rely on
-flock.
-
-Lock must be subclassed, and instances must be constructed using the
-C<make_lock> factory method of KinoSearch::Store::InvIndex.
+flock, but creates a lock "file".  What exactly constitutes that "file"
+depends on the Folder implementation.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

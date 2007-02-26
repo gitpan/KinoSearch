@@ -1,81 +1,58 @@
-package KinoSearch::Index::CompoundFileReader;
 use strict;
 use warnings;
+
+package KinoSearch::Index::CompoundFileReader;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Store::InvIndex );    # !!
+use base qw( KinoSearch::Store::Folder );    # !!
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # members / constructor params
         invindex => undef,
-        seg_name => undef,
-        # members
-        instream => undef,
-        entries  => undef,
+        seg_info => undef,
     );
 }
-
-use KinoSearch::Store::InStream;
-
-sub init_instance {
-    my $self = shift;
-    my ( $seg_name, $invindex ) = @{$self}{ 'seg_name', 'invindex' };
-
-    # read in names and lengths for all the "files" within the compound file
-    my $instream = $self->{instream}
-        = $invindex->open_instream("$seg_name.cfs");
-    my $num_entries       = $instream->lu_read('V');
-    my @offsets_and_names = $instream->lu_read( 'QT' x $num_entries );
-    my $offset            = shift @offsets_and_names;
-    my %entries;
-    while (@offsets_and_names) {
-        my $filename = shift @offsets_and_names;
-        my $next_offset = shift @offsets_and_names || $instream->length;
-        $entries{$filename} = {
-            offset => $offset,
-            len    => $next_offset - $offset,
-        };
-        $offset = $next_offset;
-    }
-    $self->{entries} = \%entries;
-}
-
-sub open_instream {
-    my ( $self, $filename ) = @_;
-    my $entry = $self->{entries}{$filename};
-    croak("filename '$filename' is not accessible") unless defined $entry;
-    open( my $duped_fh, '<&=', $self->{instream}->get_fh )
-        or confess("Couldn't dupe filehandle: $!");
-    return KinoSearch::Store::InStream->new( $duped_fh, $entry->{offset},
-        $entry->{len} );
-}
-
-sub slurp_file {
-    my ( $self, $filename ) = @_;
-    my $instream = $self->open_instream($filename);
-    my $contents
-        = $instream->lu_read( 'a' . $self->{entries}{$filename}{len} );
-    $instream->close;
-    return $contents;
-}
-
-sub close { shift->{instream}->close }
+our %instance_vars;
 
 1;
 
 __END__
 
+__XS__
+
+MODULE = KinoSearch   PACKAGE = KinoSearch::Index::CompoundFileReader
+
+kino_CompoundFileReader*
+new(...)
+CODE:
+{
+    /* parse params */
+    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
+        "KinoSearch::Index::CompoundFileReader::instance_vars");
+    kino_InvIndex *invindex = (kino_InvIndex*)extract_obj(
+         args_hash, SNL("invindex"), "KinoSearch::InvIndex");
+    kino_SegInfo *seg_info = extract_obj(args_hash, SNL("seg_info"),
+        "KinoSearch::Index::SegInfo");
+
+    RETVAL = kino_CFReader_new(invindex, seg_info);
+}
+OUTPUT: RETVAL
+
+
+
+__POD__
+
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Index::CompoundFileReader - read from a compound file
+KinoSearch::Index::CompoundFileReader - Read from a compound file.
 
 =head1 SYNOPSIS
 
     my $comp_file_reader = KinoSearch::Index::CompoundFileReader->new(
         invindex => $invindex,
-        filename => "$seg_name.cfs",
+        filename => "$seg_name.cf",
     );
     my $instream = $comp_file_reader->open_instream("$seg_name.fnm");
 
@@ -84,20 +61,25 @@ KinoSearch::Index::CompoundFileReader - read from a compound file
 A CompoundFileReader provides access to the files contained within the
 compound file format written by CompoundFileWriter.  The InStream objects it
 spits out behave largely like InStreams opened against discrete files --
-$instream->seek(0) seeks to the beginning of the sub-file, not the beginning
+$instream->sseek(0) seeks to the beginning of the sub-file, not the beginning
 of the compound file.  
 
+Each of the InStreams spawned maintains its own memory buffer; however, they
+all share a single filehandle.  This allows KinoSearch to get around the
+limitations that many operating systems place on the number of available
+filehandles.
+
 CompoundFileReader is a little unusual in that it subclasses
-KinoSearch::Store::InvIndex, which is outside of the KinoSearch::Index::
+KinoSearch::Store::Folder, which is outside of the KinoSearch::Index::
 package.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

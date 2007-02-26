@@ -1,0 +1,148 @@
+use strict;
+use warnings;
+
+package KinoSearch::Index::TermVectorsWriter;
+use KinoSearch::Util::ToolSet;
+use base qw( KinoSearch::Util::Obj );
+
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        #constructor params / members
+        invindex => undef,
+        seg_info => undef,
+    );
+}
+our %instance_vars;
+
+sub add_doc_vec {
+    my ( $self, $doc_vec ) = @_;
+    my $seg_info = $self->_get_seg_info;
+    my $tv_out   = $self->_get_tv_out;
+    my $tvx_out  = $self->_get_tvx_out;
+    my @fields   = $doc_vec->get_field_names;
+
+    # write file pointer
+    $tvx_out->lu_write( 'Q', $tv_out->stell );
+
+    # write num_fields
+    $tv_out->lu_write( 'V', scalar @fields );
+
+    # write field numbers and field strings
+    for my $field_name (@fields) {
+        my $field_num = $seg_info->field_num($field_name);
+        $tv_out->lu_write( 'VT', $field_num,
+            $doc_vec->field_string($field_name) );
+    }
+}
+
+sub add_segment {
+    my ( $self, $seg_reader, $doc_map, $field_num_map ) = @_;
+    my $tv_reader = $seg_reader->get_tv_reader;
+    $self->_add_segment( $tv_reader, $doc_map, $field_num_map,
+        $seg_reader->max_doc );
+}
+
+1;
+
+__END__
+
+__XS__
+
+MODULE = KinoSearch    PACKAGE = KinoSearch::Index::TermVectorsWriter
+
+kino_TermVectorsWriter*
+new(...)
+CODE:
+{
+    /* parse params */
+    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
+        "KinoSearch::Index::TermVectorsWriter::instance_vars");
+    kino_InvIndex *invindex = (kino_InvIndex*)extract_obj(
+        args_hash, SNL("invindex"), "KinoSearch::InvIndex");
+    kino_SegInfo *seg_info = (kino_SegInfo*)extract_obj(
+        args_hash, SNL("seg_info"), "KinoSearch::Index::SegInfo");
+
+    RETVAL = kino_TVWriter_new(invindex, seg_info);
+}
+OUTPUT: RETVAL
+
+void
+_set_or_get(self, ...)
+    kino_TermVectorsWriter *self;
+ALIAS:
+    _get_seg_info = 2
+    _get_tv_out   = 4
+    _get_tvx_out  = 6
+PPCODE:
+{
+    START_SET_OR_GET_SWITCH
+
+    case 2:  retval = kobj_to_pobj(self->seg_info);
+             break;
+
+    case 4:  retval = kobj_to_pobj(self->tv_out);
+             break;
+
+    case 6:  retval = kobj_to_pobj(self->tvx_out);
+             break;
+
+    END_SET_OR_GET_SWITCH
+}
+
+void 
+_add_segment(self, tv_reader, doc_map, field_num_map_sv, max_doc)
+    kino_TermVectorsWriter *self;
+    kino_TermVectorsReader *tv_reader;
+    kino_IntMap *doc_map;
+    SV *field_num_map_sv;
+    kino_u32_t max_doc;
+PPCODE:
+{
+    kino_IntMap *field_num_map = NULL;
+    if (SvOK(field_num_map_sv)) {
+        EXTRACT_STRUCT(field_num_map_sv, field_num_map, kino_IntMap*,
+            "KinoSearch::Util::IntMap");
+    }
+    kino_TVWriter_add_segment(self, tv_reader, doc_map, field_num_map,
+        max_doc);
+}
+
+SV*
+tv_string(self, batch)
+    kino_TermVectorsWriter *self;
+    kino_TokenBatch *batch;
+CODE:
+{
+    kino_ByteBuf *bb = Kino_TVWriter_TV_String(self, batch);
+    RETVAL = bb_to_sv(bb);
+    REFCOUNT_DEC(bb);
+}
+OUTPUT: RETVAL
+    
+
+void
+finish(self);
+    kino_TermVectorsWriter *self;
+PPCODE:
+    Kino_TVWriter_Finish(self);
+
+__POD__
+
+=begin devdocs
+
+=head1 PRIVATE CLASS
+
+KinoSearch::Index::TermVectorsWriter - Add term vectors to index.
+
+=head1 COPYRIGHT
+
+Copyright 2005-2007 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.20_01.
+
+=end devdocs
+=cut
+
+

@@ -1,0 +1,149 @@
+NAME
+
+    Charmonizer - harmonize C build enviromnents.
+
+OVERVIEW
+
+    Charmonizer is a tool for probing, normalizing, and testing the build
+    environment provided by a C compiler and an operating system.  It works by
+    attempting to compile lots of little programs and analyzing the output
+    from those that build successfully.  
+    
+    Charmonizer itself has no prerequisites other than an ISO C90-compliant
+    compiler which can be invoked from C via the system() command.  For all
+    intents and purposes it is written in pure C90.  (A lightweight source
+    filter called "metaquote" is employed to make embedding C source code
+    within C source code less gnarly).
+    
+PROBING
+
+        #include "Charmonizer/Probe.h"
+        #include "Charmonizer/Probe/Integers.h"
+        #include "Charmonizer/Probe/LargeFiles.h"
+
+        int main() 
+        {
+            /* tell Charmonizer about your OS and compiler */
+            chaz_Probe_init("darwin", "cc", "-I/usr/local/include", NULL);
+            
+            /* run desired Charmonizer modules */
+            chaz_Integers_run();
+            chaz_LargeFiles_run();
+
+            /* tear down */
+            chaz_Probe_clean_up();
+
+            return 0;
+        }
+
+    The purpose of Charmonizer's probing toolset is to generate a single C
+    header file called "charmony.h", gathering together information that is
+    ordinarily only available at runtime and assigning predictable names to
+    functionality which may go by many different aliases on different systems.
+
+    One header file, "Charmonizer/Probe.h", provides the primary interface and
+    a suite of topically oriented modules, e.g.
+    "Charmonizer/Probe/LargeFiles.h", "Charmonizer/Probe/Integers.h" do the
+    heavy lifting.  Each module exports 1 main function, ModuleName_run(),
+    which appends output to charmony.h. The config gets built up bit by bit as
+    you run each module in turn.  "charmony.h" can be further customized by
+    writing your own content to it.
+
+TESTING 
+
+    #include "Charmonizer/Test.h"
+    #include "Charmonizer/Test/Integers.h"
+    #include "Charmonizer/Test/Largefile.h"
+    #include "MyTest.h"
+
+    int main() {
+        int all_tests_pass = 0;
+
+        /* set up */
+        chaz_Test_init();
+        chaz_Integers_init_test();
+        chaz_LargeFiles_init_test();
+        MyTest_init_test();
+
+        /* Run all the tests */
+        all_tests_pass = chaz_Test_run_all_tests();
+
+        /* tear down */
+        chaz_Test_clean_up();
+
+        return all_tests_pass;
+    }
+
+    Charmonizer provides both a general test harness for writing your own
+    tests, and a corresponding test module for each probing module. The stock
+    tests can be found within "Charmonizer/Test" -- e.g. at
+    "Charmonizer/Test/Integers.h".  
+    
+    The stock tests require access to "charmony.h".  Not all tests will pass
+    in every environment, and the expectation is that you will append
+    charmony.h with ifdef tests as necessary to draw in supplementary code.
+    (Charmonizer restricts itself to working with what it finds, and
+    does not supply a library of compatibility functions.)
+
+        #ifndef HAS_DIRENT_H
+          #include "my/dirent.h"
+        #endif
+
+C NAMESPACE
+
+    Charmonizer allows you to prepend a prefix onto every symbol it exports.
+    For public code, such as header files, this helps avoid namespace
+    collisions.  For private code, the prefixes are stripped via
+    the USE_SHORT_NAMES symbol.
+
+        #ifdef LUCY_HAS_LONG_LONG
+            /* ... */
+        #define LUCY_USE_SHORT_NAMES
+        #ifdef HAS_LONG_LONG
+
+FILESYSTEM NAMESPACE
+
+    Charmonizer creates a number of temporary files within the current working
+    directory while it runs.  These files all begin with "_charm".
+
+CHARMONIZER SOURCE CODE AND THE METAQUOTE UTILITY
+
+    Charmonizer is (more or less) a C program which writes C code.  Writing C
+    from C is ordinarily quite awkward, because when you try to embed more
+    than a line or two of C source code inside C string literals, things get
+    ugly fast.  
+
+    To get around this problem, Charmonizer uses a source filter.  In the
+    "real" Charmonizer source code, longer code fragments are surrounded by
+    METAQUOTE tags instead of literal double quotes.  
+    
+        char hello_source[] = METAQUOTE
+            #include <stdio.h>
+            int main() { 
+                printf("Hello, world.\n");
+                return 0;
+            }
+        METAQUOTE;
+
+    These source files are run through the "metaquote" utility -- which
+    transforms everything between paired METAQUOTE tags into concatenated
+    string literals.  The result is hideous but valid C.
+
+    The "real" charmonizer source code lives in the src/ directory.  Files use
+    the suffixes .charm and .harm to differentiate them from post-filtering .c
+    and .h files.
+
+SECURITY
+
+    Under no circumstances should input from untrusted users be supplied to
+    Charmonizer.  A lot of what it does it does by passing strings to the
+    system() command.  
+
+COPYRIGHT AND LICENSE
+
+    /* Copyright 2006-2007 Marvin Humphrey
+     *
+     * This program is free software; you can redistribute it and/or modify
+     * under the same terms as Perl itself.
+     */
+

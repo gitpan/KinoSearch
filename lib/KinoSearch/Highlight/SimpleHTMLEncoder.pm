@@ -1,6 +1,7 @@
-package KinoSearch::Highlight::SimpleHTMLEncoder;
 use strict;
 use warnings;
+
+package KinoSearch::Highlight::SimpleHTMLEncoder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -25,7 +26,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Highlight::SimpleHTMLEncoder - encode a few HTML entities
+KinoSearch::Highlight::SimpleHTMLEncoder - Encode a few HTML entities.
 
 =head1 SYNOPSIS
 
@@ -40,10 +41,10 @@ entities.  Currently, this module takes a minimal approach, encoding only
 
 =head1 COPYRIGHT
 
-Copyright 2006 Marvin Humphrey
+Copyright 2006-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut

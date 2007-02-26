@@ -1,6 +1,7 @@
-package KinoSearch::Search::BooleanQuery;
 use strict;
 use warnings;
+
+package KinoSearch::Search::BooleanQuery;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
@@ -73,8 +74,6 @@ sub clone {
 }
 
 package KinoSearch::Search::BooleanWeight;
-use strict;
-use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
@@ -98,7 +97,7 @@ sub init_instance {
         push @$weights, $query->create_weight($searcher);
     }
 
-    undef $self->{searcher}; # don't want the baggage
+    undef $self->{searcher};    # don't want the baggage
 }
 
 sub get_value { shift->{parent}->get_boost }
@@ -121,7 +120,7 @@ sub normalize {
 }
 
 sub scorer {
-    my ( $self, $reader ) = @_;
+    my ( $self, $ix_reader ) = @_;
 
     my $scorer = KinoSearch::Search::BooleanScorer->new(
         similarity => $self->{similarity}, );
@@ -131,7 +130,7 @@ sub scorer {
     my $i       = 0;
     for my $weight ( @{ $self->{weights} } ) {
         my $clause    = $clauses->[ $i++ ];
-        my $subscorer = $weight->scorer($reader);
+        my $subscorer = $weight->scorer($ix_reader);
         if ( defined $subscorer ) {
             $scorer->add_subscorer( $subscorer, $clause->get_occur );
         }
@@ -149,7 +148,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Search::BooleanQuery - match boolean combinations of Queries
+KinoSearch::Search::BooleanQuery - Match boolean combinations of Queries.
 
 =head1 SYNOPSIS
 
@@ -214,7 +213,7 @@ Add a clause to the BooleanQuery.  Takes hash-style parameters:
 =item *
 
 B<query> - an object which belongs to a subclass of
-L<KinoSearch::Search::Query|KinoSearch::Search::Query>.
+L<KinoSearch::Search::Query>.
 
 =item *
 
@@ -225,11 +224,11 @@ B<occur> - must be one of three possible values: 'SHOULD', 'MUST', or
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut
 

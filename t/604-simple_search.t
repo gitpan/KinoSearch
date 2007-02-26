@@ -1,42 +1,51 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
+
+package MySchema::title;
+use base qw( KinoSearch::Schema::FieldSpec );
+
+package MySchema::body;
+use base qw( KinoSearch::Schema::FieldSpec );
+
+package MySchema;
+use base qw( KinoSearch::Schema );
+__PACKAGE__->init_fields(qw( title body ));
+use KinoSearch::Analysis::Tokenizer;
+sub analyzer { KinoSearch::Analysis::Tokenizer->new }
+
+package main;
 
 use Test::More tests => 12;
 
 use KinoSearch::Searcher;
+use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
-use KinoSearch::Store::RAMInvIndex;
-use KinoSearch::Analysis::Tokenizer;
+use KinoSearch::Store::RAMFolder;
 use KinoSearch::QueryParser::QueryParser;
 
-my $tokenizer  = KinoSearch::Analysis::Tokenizer->new;
-my $invindex   = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $invindexer = KinoSearch::InvIndexer->new(
-    analyzer => $tokenizer,
-    invindex => $invindex,
+my $folder   = KinoSearch::Store::RAMFolder->new;
+my $invindex = KinoSearch::InvIndex->create(
+    folder => $folder,
+    schema => MySchema->new,
 );
 
-$invindexer->spec_field( name => 'title' );
-$invindexer->spec_field( name => 'body' );
-
+my $invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
 my %docs = (
     'a' => 'foo',
     'b' => 'bar',
 );
-
 while ( my ( $title, $body ) = each %docs ) {
-    my $doc = $invindexer->new_doc;
-    $doc->set_value( title => $title );
-    $doc->set_value( body  => $body );
-    $invindexer->add_doc($doc);
+    $invindexer->add_doc(
+        {   title => $title,
+            body  => $body,
+        }
+    );
 }
 $invindexer->finish;
 
-my $searcher = KinoSearch::Searcher->new(
-    analyzer => $tokenizer,
-    invindex => $invindex,
-);
+my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );
+
+my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
 my $or_parser = KinoSearch::QueryParser::QueryParser->new(
     analyzer => $tokenizer,
     fields   => [ 'title', 'body', ],

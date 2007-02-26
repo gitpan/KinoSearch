@@ -1,18 +1,17 @@
-package KinoSearch::Search::Searchable;
 use strict;
 use warnings;
+
+package KinoSearch::Search::Searchable;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # members
-        similarity => undef,
-        field_sims => {},
+        schema => undef,
     );
+    __PACKAGE__->ready_get(qw( schema ));
 }
-
-use KinoSearch::Search::Similarity;
 
 =begin comment
 
@@ -56,12 +55,23 @@ sub max_doc { shift->abstract_death }
 
     my $doc =  $searchable->fetch_doc($doc_num);
 
-Generate a Doc object, retrieving the stored fields from the invindex.
+Retrieve stored fields as a hashref.
 
 =end comment
 =cut
 
 sub fetch_doc { shift->abstract_death }
+
+=begin comment
+
+    my $doc_vector =  $searchable->fetch_doc_vec($doc_num);
+
+Generate a DocVector object from the relevant term vector files.
+
+=end comment
+=cut
+
+sub fetch_doc_vec { shift->abstract_death }
 
 =begin comment
 
@@ -77,41 +87,26 @@ sub doc_freq { shift->abstract_death }
 
 =begin comment
 
-    $searchable->set_similarity($sim);
-    $searchable->set_similarity( $field_name, $alternate_sim );
+    my $sim       = $searchable->get_similarity;
+    my $field_sim = $searchable->get_similarity($field_name);
 
-    my $sim     = $searchable->get_similarity;
-    my $alt_sim = $searchable->get_similarity($field_name);
-
-Set or get Similarity.  If a field name is included, set/retrieve the 
+Retrieve a Similarity object.  If a field name is included, retrieve the
 Similarity instance for that field only.
 
 =end comment
 =cut
 
-sub set_similarity {
-    if ( @_ == 3 ) {
-        my ( $self, $field_name, $sim ) = @_;
-        $self->{field_sims}{$field_name} = $sim;
-    }
-    else {
-        $_[0]->{similarity} = $_[1];
-    }
-}
-
 sub get_similarity {
     my ( $self, $field_name ) = @_;
-    if ( defined $field_name and exists $self->{field_sims}{$field_name} ) {
-        return $self->{field_sims}{$field_name};
-    }
-    else {
-        return $self->{similarity};
-    }
+
+    # prevent undef warning -- we always want to return a similarity
+    $field_name ||= "";
+
+    return $self->{schema}->fetch_sim($field_name);
 }
 
-# not sure these are needed (call $query->create_weight($searcher) instead)
-sub create_weight { shift->unimplemented_death }
-sub rewrite_query { shift->unimplemented_death }
+# Factory method for turning a Query into a Weight.
+sub create_weight { shift->abstract_death }
 
 sub doc_freqs {
     my ( $self, $terms ) = @_;
@@ -127,22 +122,22 @@ __END__
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Search::Searchable - base class for searching an invindex
+KinoSearch::Search::Searchable - Base class for searching an InvIndex.
 
 =head1 DESCRIPTION 
 
-Abstract base class for objects which search an invindex.  The most prominent
+Abstract base class for objects which search an InvIndex.  The most prominent
 subclass is KinoSearch::Searcher.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

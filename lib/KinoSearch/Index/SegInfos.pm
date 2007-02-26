@@ -1,27 +1,40 @@
-package KinoSearch::Index::SegInfos;
 use strict;
 use warnings;
+
+package KinoSearch::Index::SegInfos;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-use constant FORMAT => -1;
+use Time::HiRes qw( time );
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # members
-        infos   => {},
-        counter => 0,
-        version => ( time * 1000 ),
+        infos       => {},
+        seg_counter => 0,
+        version     => ( int( time * 1000 ) ),
+        generation  => 0,
     );
-    __PACKAGE__->ready_get_set(qw( counter ));
+    __PACKAGE__->ready_get_set(qw( seg_counter generation ));
 }
 
-use Time::HiRes qw( time );
+use KinoSearch::Index::SegInfo;
+use KinoSearch::Index::IndexFileNames
+    qw( filename_from_gen SEG_INFOS_FORMAT );
+use KinoSearch::Util::CClass qw( to_kino to_perl );
+use KinoSearch::Util::YAML qw( encode_yaml parse_yaml );
 
 # Add a SegInfo to the collection.
 sub add_info {
     my ( $self, $info ) = @_;
-    $self->{infos}{"$info->{seg_name}"} = $info;
+    $self->{infos}{ $info->get_seg_name } = $info;
+}
+
+sub get_info {
+    my ( $self, $seg_name ) = @_;
+    my $info = $self->{infos}{$seg_name};
+    confess("No segment named '$seg_name'") unless defined $info;
+    return $info;
 }
 
 # Remove the info corresponding to a segment;
@@ -32,81 +45,69 @@ sub delete_segment {
     delete $self->{infos}{$seg_name};
 }
 
-# Return number of segments in invindex.
+# Return number of segments in folder.
 sub size { scalar keys %{ $_[0]->{infos} } }
 
 # Retrieve all infos.
 sub infos {
-    sort { $a->{seg_name} cmp $b->{seg_name} } values %{ $_[0]->{infos} };
+    values %{ $_[0]->{infos} };
 }
 
 # Decode "segments" file.
 sub read_infos {
-    my ( $self, $invindex ) = @_;
-    my $instream = $invindex->open_instream('segments');
+    my ( $self, $folder ) = @_;
+    my $filename = $folder->latest_gen( 'segments', '.yaml' );
+    return unless defined $filename;
+    my $segs_data = parse_yaml( $folder->slurp_file($filename) );
 
-    # support only recent index formats
-    my $format = $instream->lu_read('i');
-    croak("unsupported format: '$format'")
-        unless $format == FORMAT;
+    # check format
+    confess("Unsupported seg infos format: '$segs_data->{format}'")
+        unless $segs_data->{format} <= SEG_INFOS_FORMAT;
 
-    # read header
-    @{$self}{ 'version', 'counter' } = $instream->lu_read('Qi');
-    my $num_segs = $instream->lu_read('i');
+    $self->{seg_counter} = $segs_data->{seg_counter};
+    $self->{generation}  = $segs_data->{generation};
 
     # build one SegInfo object for each segment
-    if ($num_segs) {
-        my @file_contents = $instream->lu_read( 'Ti' x $num_segs );
-        while (@file_contents) {
-            my ( $seg_name, $doc_count ) = splice( @file_contents, 0, 2 );
-            $self->{infos}{$seg_name} = KinoSearch::Index::SegInfo->new(
-                seg_name  => $seg_name,
-                doc_count => $doc_count,
-                invindex  => $invindex,
-            );
-        }
+    return unless defined $segs_data->{segments};
+    while ( my ( $seg_name, $seg_meta ) = each %{ $segs_data->{segments} } ) {
+        $self->{infos}{$seg_name} = KinoSearch::Index::SegInfo->new(
+            seg_name => $seg_name,
+            metadata => to_kino($seg_meta),
+        );
     }
 }
 
-# Write "segments" file
+# Write "segments" file.
 sub write_infos {
-    my ( $self, $invindex ) = @_;
-    my $num_segs  = scalar keys %{ $self->{infos} };
-    my $outstream = $invindex->open_outstream('segments.new');
+    my ( $self, $folder ) = @_;
 
-    # prepare header
+    # increment the filename and the generation
+    $self->{generation}++;
     $self->{version}++;
-    my @outstuff = ( FORMAT, $self->{version}, $self->{counter}, $num_segs );
 
-    # prepare data
-    push @outstuff, map {
-        ( $self->{infos}{$_}{seg_name}, $self->{infos}{$_}{doc_count} )
-        }
-        sort keys %{ $self->{infos} };
-
-    # write it all out
-    my $template = 'iQii' . ( 'Ti' x $num_segs );
-    $outstream->lu_write( $template, @outstuff );
-    $outstream->close;
-
-    # clobber the old segments file
-    $invindex->rename_file( "segments.new", "segments" );
-}
-
-package KinoSearch::Index::SegInfo;
-use strict;
-use warnings;
-use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
-
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        seg_name  => '',
-        doc_count => 0,
-        invindex  => undef,
+    # create a YAML-izable data structure
+    my %data = (
+        format      => SEG_INFOS_FORMAT,
+        version     => $self->{version},
+        ks_version  => $KinoSearch::VERSION,
+        seg_counter => $self->{seg_counter},
+        generation  => $self->{generation},
     );
-    __PACKAGE__->ready_get(qw( seg_name doc_count invindex ));
+    my %segments;
+    for ( values %{ $self->{infos} } ) {
+        $segments{ $_->get_seg_name } = $_->get_metadata;
+    }
+    $data{segments} = \%segments if scalar keys %segments;
+
+    # write out YAML-ized data to a provisional file
+    my $outstream = $folder->open_outstream('segments.new');
+    $outstream->print( encode_yaml( \%data ) );
+    $outstream->sclose;
+
+    # rename the file, making the new index revision active
+    my $filename
+        = filename_from_gen( "segments", $self->{generation}, ".yaml" );
+    $folder->rename_file( "segments.new", $filename );
 }
 
 1;
@@ -115,23 +116,23 @@ __END__
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Index::SegInfos - manage segment statistical data
+KinoSearch::Index::SegInfos - Manage segment statistical data.
 
 =head1 DESCRIPTION
 
-SegInfos ties together the segments which make up an invindex.  It stores a
+SegInfos ties together the segments which make up an folder.  It stores a
 little information about each, plus some unifying information such as the
 counter used to name new segments.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

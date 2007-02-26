@@ -1,35 +1,40 @@
-#!perl
 use strict;
 use warnings;
+
 use Time::HiRes qw( sleep );
 use Test::More;
+use File::Spec::Functions qw( tmpdir catdir catfile );
+use File::Path qw( rmtree );
 
 BEGIN {
     if ( $^O =~ /mswin/i ) {
         plan( 'skip_all', "fork on Windows not supported by KS" );
     }
     else {
-        plan( tests => 3 );
+        plan( tests => 4 );
     }
-    use_ok 'KinoSearch::Store::FSLock';
+    use_ok 'KinoSearch::Store::Lock';
 }
 
-use KinoSearch::Store::FSInvIndex;
+use KinoSearch::Store::FSFolder;
+my $path = catdir( tmpdir(), "lock_test_invindex" );
+rmtree($path);
+mkdir $path or die "Can't mkdir '$path': $!";
 
 Dead_locks_are_removed: {
-    my $lock_path = "$KinoSearch::Store::FSInvIndex::LOCK_DIR/test-foo";
+    my $lock_path = catfile( $path, 'foo' );
 
     # Remove any existing lockfile
     unlink $lock_path;
     die "Can't unlink '$lock_path'" if -e $lock_path;
 
-    # Fake index for test simplicity
-    my $mock_index = MockIndex->new( prefix => 'test' );
+    my $folder = KinoSearch::Store::FSFolder->new( path => $path );
 
     sub make_lock {
-        my $lock = KinoSearch::Store::FSLock->new(
-            invindex  => $mock_index,
+        my $lock = KinoSearch::Store::Lock->new(
+            folder    => $folder,
             lock_name => 'foo',
+            @_
         );
         $lock->obtain;
         return $lock;
@@ -51,20 +56,12 @@ Dead_locks_are_removed: {
     sleep .1;
     ok( -e $lock_path, "daemon secured lock" );
 
+    eval { make_lock( lock_id => 'somebody_else' ) };
+    like( $@, qr/somebody_else/, "different lock_id fails to get lock" );
+
     eval { make_lock() };
     warn $@ if $@;
     ok( !$@, 'second lock attempt did not die' );
+
 }
-
-package MockIndex;
-use strict;
-use warnings;
-
-sub new {
-    my ( $class, %args ) = @_;
-    bless \%args, $class;
-}
-
-sub get_path        {"bar"}
-sub get_lock_prefix { $_[0]->{prefix} }
 

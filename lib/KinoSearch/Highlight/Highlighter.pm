@@ -1,21 +1,19 @@
-package KinoSearch::Highlight::Highlighter;
 use strict;
 use warnings;
+
+package KinoSearch::Highlight::Highlighter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
-use locale;
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # constructor params / members
-        excerpt_field  => undef,
+        fields         => undef,
         analyzer       => undef,
         formatter      => undef,
         encoder        => undef,
         terms          => [],
         excerpt_length => 200,
-        pre_tag        => undef,                  # back compat
-        post_tag       => undef,                  # back compat
         token_re       => qr/\b\w+(?:'\w+)?\b/,
 
         # members
@@ -29,20 +27,18 @@ use KinoSearch::Highlight::SimpleHTMLEncoder;
 
 sub init_instance {
     my $self = shift;
-    croak("Missing required arg 'excerpt_field'")
-        unless defined $self->{excerpt_field};
+    confess("Invalid value for required arg fields")
+        unless ( defined $self->{fields}
+        and reftype( $self->{fields} ) eq 'ARRAY' );
 
     # assume HTML
     if ( !defined $self->{encoder} ) {
         $self->{encoder} = KinoSearch::Highlight::SimpleHTMLEncoder->new;
     }
     if ( !defined $self->{formatter} ) {
-        my ( $pre_tag, $post_tag ) = @{$self}{qw( pre_tag post_tag )};
-        $pre_tag  = '<strong>'  unless defined $pre_tag;
-        $post_tag = '</strong>' unless defined $post_tag;
         $self->{formatter} = KinoSearch::Highlight::SimpleHTMLFormatter->new(
-            pre_tag  => $pre_tag,
-            post_tag => $post_tag,
+            pre_tag  => '<strong>',
+            post_tag => '</strong>',
         );
     }
 
@@ -50,20 +46,34 @@ sub init_instance {
     $self->{limit} = int( $self->{excerpt_length} / 3 );
 }
 
-sub generate_excerpt {
-    my ( $self, $doc ) = @_;
+sub generate_excerpts {
+    my ( $self, $doc, $doc_vector ) = @_;
+
+    # create an excerpt for each field spec'd
+    my %excerpts;
+    for my $field_name ( @{ $self->{fields} } ) {
+        $excerpts{$field_name}
+            = $self->_gen_excerpt( $doc, $doc_vector, $field_name );
+    }
+
+    return \%excerpts;
+}
+
+sub _gen_excerpt {
+    my ( $self, $doc, $doc_vector, $excerpt_field ) = @_;
     my $excerpt_length = $self->{excerpt_length};
     my $limit          = $self->{limit};
     my $token_re       = $self->{token_re};
 
     # retrieve the text from the chosen field
-    my $field       = $doc->get_field( $self->{excerpt_field} );
-    my $text        = $field->get_value;
-    my $text_length = bytes::length $text;
+    my $text = $doc->{$excerpt_field};
+    return unless defined $text;
+    my $text_length = length $text;
+    my $orig_length = $text_length;
     return '' unless $text_length;
 
     # determine the rough boundaries of the excerpt
-    my $posits        = $self->_starts_and_ends($field);
+    my $posits = $self->_starts_and_ends( $doc_vector, $excerpt_field );
     my $best_location = $self->_calc_best_location($posits);
     my $top           = $best_location - $limit;
 
@@ -79,20 +89,20 @@ sub generate_excerpt {
     }
     # ... otherwise ...
     else {
-        # lop off $top bytes
-        $text = bytes::substr( $text, $top );
+        # lop off $top characters
+        $text = substr( $text, $top );
 
         # try to start the excerpt at a sentence boundary
         if ($text =~ s/
                 \A
                 (
-                \C{0,$limit}?
+                .{0,$limit}?
                 \.\s+
                 )
                 //xsm
             )
         {
-            $top += bytes::length($1);
+            $top += length($1);
         }
         # no sentence boundary, so we'll need an ellipsis
         else {
@@ -100,7 +110,7 @@ sub generate_excerpt {
             if ($text =~ s/
                 \A
                 (
-                \C{0,$limit}?  # don't go outside the window
+                .{0,$limit}?  # don't go outside the window
                 $token_re      # match possible partial token
                 .*?            # ... and any junk following that token
                 )
@@ -108,15 +118,15 @@ sub generate_excerpt {
                 /... /xsm    # ... insert an ellipsis
                 )
             {
-                $top += bytes::length($1);
+                $top += length($1);
                 $top -= 4    # three dots and a space
             }
         }
     }
 
     # remove possible partial tokens from the end of the excerpt
-    $text = bytes::substr( $text, 0, $excerpt_length + 1 );
-    if ( bytes::length($text) > $excerpt_length ) {
+    $text = substr( $text, 0, $excerpt_length + 1 );
+    if ( length($text) > $excerpt_length ) {
         my $extra_char = chop $text;
         # if the extra char wasn't part of a token, we aren't splitting one
         if ( $extra_char =~ $token_re ) {
@@ -125,9 +135,9 @@ sub generate_excerpt {
     }
 
     # if the excerpt doesn't end with a full stop, end with an an ellipsis
-    if ( $text !~ /\.\s*\Z/xsm ) {
+    if ( $orig_length > length($text) and $text !~ /\.\s*\Z/xsm ) {
         $text =~ s/\W+\Z//xsm;
-        while ( bytes::length($text) + 4 > $excerpt_length ) {
+        while ( length($text) + 4 > $excerpt_length ) {
             my $extra_char = chop $text;
             if ( $extra_char =~ $token_re ) {
                 $text =~ s/\W+$token_re\Z//xsm; # if unsuccessful, that's fine
@@ -138,7 +148,7 @@ sub generate_excerpt {
     }
 
     # remap locations now that we know the starting and ending bytes
-    $text_length = bytes::length($text);
+    $text_length = length($text);
     my @relative_starts = map { $_->[0] - $top } @$posits;
     my @relative_ends   = map { $_->[1] - $top } @$posits;
 
@@ -161,13 +171,12 @@ sub generate_excerpt {
         $end   = shift @relative_ends;
         $start = shift @relative_starts;
         $output_text .= $encoder->encode(
-            bytes::substr( $text, $last_end, $start - $last_end ) );
+            substr( $text, $last_end, $start - $last_end ) );
         $output_text .= $formatter->highlight(
-            $encoder->encode( bytes::substr( $text, $start, $end - $start ) )
-        );
+            $encoder->encode( substr( $text, $start, $end - $start ) ) );
         $last_end = $end;
     }
-    $output_text .= $encoder->encode( bytes::substr( $text, $last_end ) );
+    $output_text .= $encoder->encode( substr( $text, $last_end ) );
 
     return $output_text;
 }
@@ -179,7 +188,7 @@ that are part of a phrase, only include points that are part of the phrase.
 =cut
 
 sub _starts_and_ends {
-    my ( $self, $field ) = @_;
+    my ( $self, $doc_vector, $excerpt_field ) = @_;
     my @posits;
     my %done;
 
@@ -191,7 +200,8 @@ TERM: for my $term ( @{ $self->{terms} } ) {
             $done{$term_text} = 1;
 
             # add all starts and ends
-            my $term_vector = $field->term_vector($term_text);
+            my $term_vector
+                = $doc_vector->term_vector( $excerpt_field, $term_text );
             next TERM unless defined $term_vector;
             my $starts = $term_vector->get_start_offsets;
             my $ends   = $term_vector->get_end_offsets;
@@ -208,8 +218,10 @@ TERM: for my $term ( @{ $self->{terms} } ) {
             next TERM if $done{$phrase_text};
             $done{$phrase_text} = 1;
 
-            my $posit_vec    = KinoSearch::Util::BitVector->new;
-            my @term_vectors = map { $field->term_vector($_) } @term_texts;
+            my $posit_vec = KinoSearch::Util::BitVector->new;
+            my @term_vectors
+                = map { $doc_vector->term_vector( $excerpt_field, $_ ) }
+                @term_texts;
 
             # make sure all terms are present
             next TERM unless scalar @term_vectors == scalar @term_texts;
@@ -259,19 +271,17 @@ TERM: for my $term ( @{ $self->{terms} } ) {
             }
         }
     }
-
-    # sort and return
-    @posits = sort { $a->[0] <=> $b->[0] } @posits;
-    return \@posits;
+    @posits = sort { $a->[0] <=> $b->[0] || $b->[1] <=> $a->[1] } @posits;
+    my @unique;
+    my $last = ~0;
+    for (@posits) {
+        push @unique, $_ if $_->[0] != $last;
+        $last = $_->[0];
+    }
+    return \@unique;
 }
 
-=for comment 
-Select the byte address representing the greatest keyword density.  Because
-the algorithm counts bytes rather than characters, it will degrade if the
-number of bytes per character is larger than 1.
-
-=cut
-
+# Select the character position representing the greatest keyword density.
 sub _calc_best_location {
     my ( $self, $posits ) = @_;
     my $window = $self->{limit} * 2;
@@ -315,12 +325,12 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Highlight::Highlighter - create and highlight excerpts
+KinoSearch::Highlight::Highlighter - Create and highlight excerpts.
 
 =head1 SYNOPSIS
 
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        excerpt_field  => 'bodytext',
+        fields  => ['bodytext'],
     );
     $hits->create_excerpts( highlighter => $highlighter );
 
@@ -336,10 +346,10 @@ generated at index-time.
 =head2 new
 
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        excerpt_field  => 'bodytext', # required
-        excerpt_length => 150,        # default: 200
-        formatter      => $formatter, # default: SimpleHTMLFormatter
-        encoder        => $encoder,   # default: SimpleHTMLEncoder
+        fields         => ['content'], # required
+        excerpt_length => 150,         # default: 200
+        formatter      => $formatter,  # default: SimpleHTMLFormatter
+        encoder        => $encoder,    # default: SimpleHTMLEncoder
     );
 
 Constructor.  Takes hash-style parameters: 
@@ -348,14 +358,12 @@ Constructor.  Takes hash-style parameters:
 
 =item *
 
-B<excerpt_field> - the name of the field from which to draw the excerpt.  This
-field B<must> be C<vectorized>.
+B<fields> - the names of the fields from which to draw excerpts.  Each field
+in the list must be spec'd as C<vectorized>.
 
 =item *
 
-B<excerpt_length> - the length of the excerpt, in I<bytes>.  This should
-probably use characters as a unit instead of bytes, and the behavior is likely
-to change in the future.
+B<excerpt_length> - the maximum length of each excerpt, in characters.
 
 =item *
 
@@ -368,22 +376,14 @@ B<encoder> - an object which subclasses L<KinoSearch::Highlight::Encoder>.
 All excerpt text gets passed through the encoder, including highlighted terms.
 By default, this is a SimpleHTMLEncoder, which encodes HTML entities.
 
-=item *
-
-B<pre_tag> - deprecated.  
-
-=item *
-
-B<post_tag> - deprecated.
-
 =back
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut

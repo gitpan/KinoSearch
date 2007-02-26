@@ -1,93 +1,164 @@
-package KinoSearch::Util::CClass;
 use strict;
 use warnings;
+
+package KinoSearch::Util::CClass;
 use KinoSearch::Util::ToolSet;
-use base('KinoSearch::Util::Class');
+use base qw( KinoSearch::Util::Obj Exporter );
+
+our @EXPORT_OK = qw( to_kino to_perl );
+
+use KinoSearch::Util::Hash;
+use KinoSearch::Util::ByteBuf;
+use KinoSearch::Util::VArray;
+
+# Translate a complex data structure in Perl to the equivalent in KinoSearch C
+# structures.  Undefined elements will trigger a warning and be turned to
+# empty strings.
+sub to_kino {
+    my $input   = shift;
+    my $reftype = reftype($input);
+
+    if ( !$reftype ) {
+        return KinoSearch::Util::ByteBuf->new($input);
+    }
+    elsif ( $reftype eq 'HASH' ) {
+        my $capacity = scalar keys %$input;
+        my $hash = KinoSearch::Util::Hash->new( capacity => $capacity );
+        while ( my ( $k, $v ) = each %$input ) {
+            my $val = to_kino($v);
+            $hash->store( $k, $val );
+        }
+        return $hash;
+    }
+    elsif ( $reftype eq 'ARRAY' ) {
+        my $varray
+            = KinoSearch::Util::VArray->new( capacity => scalar @$input );
+        $varray->push( to_kino($_) ) for @$input;
+        return $varray;
+    }
+    elsif ( a_isa_b( $input, 'KinoSearch::Util::Obj' ) ) {
+        return $input;
+    }
+}
+
+# Transform what may or may not be a KinoSearch object into a Perl complex
+# data structure if possible.
+sub to_perl {
+    my $input = shift;
+    if ( ref($input) and $input->can('to_perl') ) {
+        return $input->to_perl;
+    }
+    else {
+        return $input;
+    }
+}
+
+sub _test { return scalar @_ }
+
+sub _test_obj {
+    if ( !defined $KinoSearch::Util::CClass::testobj ) {
+        $KinoSearch::Util::CClass::testobj = __PACKAGE__->_new;
+    }
+    return $KinoSearch::Util::CClass::testobj;
+}
 
 1;
 
 __END__
 
-__H__
+__XS__
 
-#ifndef H_KINO_CCLASS
-#define H_KINO_CCLASS 1
+MODULE = KinoSearch     PACKAGE = KinoSearch::Util::CClass
 
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-#include "KinoSearchUtilCarp.h"
+=for comment
 
-#define KINO_START_SET_OR_GET_SWITCH                                \
-    /* if called as a setter, make sure the extra arg is there */   \
-    if (ix % 2 == 1 && items != 2)                                  \
-        croak("usage: $seg_term_enum->set_xxxxxx($val)");           \
-    switch (ix) {
+These are all for testing purposes only.
 
-#define KINO_END_SET_OR_GET_SWITCH                                  \
-    default: Kino_confess("Internal error. ix: %d", ix);            \
-             RETVAL = &PL_sv_undef; /* quiet compiler warning */    \
-             break; /* probably unreachable */                      \
-    }
+=cut
 
-#define Kino_extract_struct( perl_obj, dest, cname, class ) \
-     if (sv_derived_from( perl_obj, class )) {              \
-         IV tmp = SvIV( (SV*)SvRV(perl_obj) );              \
-         dest = INT2PTR(cname, tmp);                        \
-     }                                                      \
-     else {                                                 \
-         dest = NULL; /* suppress unused var warning */     \
-         Kino_confess("not a %s", class);                   \
-     }
+kino_CClass*
+_new(class)
+    const classname_char *class;
+CODE:
+    RETVAL = kino_CClass_new();
+    KINO_UNUSED_VAR(class);
+OUTPUT: RETVAL
 
-#define Kino_extract_anon_struct( perl_obj, dest )                  \
-     if (sv_derived_from( perl_obj, "KinoSearch::Util::CClass" )) { \
-         IV tmp = SvIV( (SV*)SvRV(perl_obj) );                      \
-         dest = INT2PTR(void*, tmp);                                \
-     }                                                              \
-     else {                                                         \
-         dest = NULL; /* suppress unused var warning */             \
-         Kino_confess("not derived from KinoSearch::Util::CClass"); \
-     }
+void
+_callback(self)
+    kino_Obj *self;
+PPCODE:
+{
+    kino_ByteBuf bb = KINO_BYTEBUF_BLANK; 
+    kino_CClass_callback(self, "_test", &bb, &bb, &bb, NULL);
+}
 
-#define Kino_extract_struct_from_hv(hash, dest, key, key_len, cname, class) \
-    {                                                                       \
-        SV **sv_ptr;                                                        \
-        sv_ptr = hv_fetch(hash, key, key_len, 0);                           \
-        if (sv_ptr == NULL)                                                 \
-            Kino_confess("Failed to retrieve hash entry '%s'", key);        \
-        if (sv_derived_from( *sv_ptr, class )) {                            \
-            IV tmp = SvIV( (SV*)SvRV(*sv_ptr) );                            \
-            dest   = INT2PTR(cname, tmp);                                   \
-        }                                                                   \
-        else {                                                              \
-            dest = NULL; /* suppress unused var warning */                  \
-            Kino_confess("not a %s", class);                                \
-        }                                                                   \
-    }
+SV*
+_callback_bb(self);
+    kino_Obj *self;
+CODE:
+{
+    kino_ByteBuf bb = KINO_BYTEBUF_BLANK; 
+    kino_ByteBuf *val = kino_CClass_callback_bb(self, "_test", &bb, &bb, 
+        &bb, NULL);
+    RETVAL = bb_to_sv(val);
+    REFCOUNT_DEC(val);
+}
+OUTPUT: RETVAL
 
-#endif /* include guard */
+    
+IV
+_callback_i(self)
+    kino_Obj *self;
+CODE:
+{
+    kino_ByteBuf bb = KINO_BYTEBUF_BLANK;
+    RETVAL = kino_CClass_callback_i(self, "_test", &bb, &bb, &bb, NULL);
+}
+OUTPUT: RETVAL
+
+float
+_callback_f(self)
+    kino_Obj *self;
+CODE:
+{
+    kino_ByteBuf bb = KINO_BYTEBUF_BLANK;
+    RETVAL = kino_CClass_callback_f(self, "_test", &bb, &bb, &bb, NULL);
+}
+OUTPUT: RETVAL
+
+SV*
+_callback_obj(self)
+    kino_Obj *self;
+CODE: 
+{
+    kino_ByteBuf bb = KINO_BYTEBUF_BLANK;
+    kino_Obj *other = kino_CClass_callback_obj( self, "_test_obj", &bb, 
+        &bb, &bb, NULL);
+    RETVAL = kobj_to_pobj(other);
+}
+OUTPUT: RETVAL
+
 
 __POD__
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Util::CClass - base class for C-struct objects
+KinoSearch::Util::CClass - Callbacks to Perl from C.
 
 =head1 DESCRIPTION
 
-KinoSearch's C-struct objects use this as a base class, rather than
-KinoSearch::Util::Class.
+A framework for KinoSearch's C objects to use when calling back to Perl.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

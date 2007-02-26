@@ -1,9 +1,8 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
+use lib 'buildlib';
 
-use lib 't';
-use Test::More tests => 8;
+use Test::More tests => 6;
 use File::Spec::Functions qw( catfile );
 
 BEGIN {
@@ -11,7 +10,7 @@ BEGIN {
     use_ok('KinoSearch::Index::Term');
 }
 
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoTestUtils qw( create_invindex );
 
 my $invindex = create_invindex(
     "What's he building in there?",
@@ -19,25 +18,19 @@ my $invindex = create_invindex(
     "We have a right to know."
 );
 
-my $reader = KinoSearch::Index::IndexReader->new( invindex => $invindex );
+my $ix_reader = KinoSearch::Index::IndexReader->new( invindex => $invindex );
 
 isa_ok(
-    $reader,
+    $ix_reader,
     'KinoSearch::Index::SegReader',
     "single segment indexes cause new to return a SegReader"
 );
 
-isa_ok( $reader->norms_reader('content'), 'KinoSearch::Index::NormsReader' );
-ok( !$reader->has_deletions, "has_deletions returns false if no deletions" );
-is( $reader->max_doc, 3, "max_doc returns correct number" );
+is( $ix_reader->max_doc, 3, "max_doc returns correct number" );
 
 my $term = KinoSearch::Index::Term->new( 'content', 'building' );
-my $enum = $reader->terms($term);
-isa_ok(
-    $enum,
-    'KinoSearch::Index::SegTermEnum',
-    "terms returns a SegTermEnum"
-);
-my $tinfo = $enum->get_term_info;
+my $term_list = $ix_reader->field_terms($term);
+isa_ok( $term_list, 'KinoSearch::Index::TermList',
+    "field_terms returns a TermList" );
+my $tinfo = $term_list->get_term_info;
 is( $tinfo->get_doc_freq, 2, "correct place in enum" );
-

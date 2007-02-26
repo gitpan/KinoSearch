@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 BEGIN { use_ok('KinoSearch::Util::PriorityQueue') }
 
@@ -42,4 +42,12 @@ is_deeply( \@prioritized, [ 1596 .. 1600 ],
 @prioritized = ();
 
 $pq->insert($_) for ( 3, 1, 2, 20, 10 );
+
+$pq = KinoSearch::Util::PriorityQueue->new( max_size => 100 );
+my @nums = 1 .. 100;
+while (@nums) {
+    my $tick = int( rand(@nums) );
+    $pq->insert( splice( @nums, $tick, 1 ) );
+}
+is_deeply( $pq->pop_all, [ reverse 1 .. 100 ], "random order insertion" );
 

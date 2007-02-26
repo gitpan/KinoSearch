@@ -1,6 +1,7 @@
-#!/usr/bin/perl
+use strict;
+use warnings;
+use lib 'buildlib';
 
-use lib 't';
 use Test::More tests => 6;
 use File::Spec::Functions qw( catfile );
 
@@ -9,7 +10,7 @@ BEGIN {
     use_ok('KinoSearch::Search::BooleanScorer');
 }
 
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoTestUtils qw( create_invindex );
 
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Index::Term;
@@ -22,10 +23,7 @@ push @docs, ('c d x');
 my $invindex  = create_invindex(@docs);
 my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
 
-my $searcher = KinoSearch::Searcher->new(
-    invindex => $invindex,
-    analyzer => $tokenizer,
-);
+my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );
 
 my $bool_query = KinoSearch::Search::BooleanQuery->new;
 

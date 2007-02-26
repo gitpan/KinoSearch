@@ -1,6 +1,7 @@
-package KinoSearch::Search::TermQuery;
 use strict;
 use warnings;
+
+package KinoSearch::Search::TermQuery;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
@@ -48,8 +49,6 @@ sub get_similarity {
 sub equals { shift->todo_death }
 
 package KinoSearch::Search::TermWeight;
-use strict;
-use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
@@ -71,18 +70,16 @@ sub init_instance {
 }
 
 sub scorer {
-    my ( $self, $reader ) = @_;
+    my ( $self, $ix_reader ) = @_;
     my $term      = $self->{parent}{term};
-    my $term_docs = $reader->term_docs($term);
+    my $term_docs = $ix_reader->term_docs($term);
     return unless defined $term_docs;
     return unless $term_docs->get_doc_freq;
 
-    my $norms_reader = $reader->norms_reader( $term->get_field );
     return KinoSearch::Search::TermScorer->new(
-        weight       => $self,
-        term_docs    => $term_docs,
-        similarity   => $self->{similarity},
-        norms_reader => $norms_reader,
+        weight     => $self,
+        term_docs  => $term_docs,
+        similarity => $self->{similarity},
     );
 }
 
@@ -97,7 +94,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Search::TermQuery - match individual Terms
+KinoSearch::Search::TermQuery - Match individual Terms.
 
 =head1 SYNOPSIS
 
@@ -109,10 +106,9 @@ KinoSearch::Search::TermQuery - match individual Terms
 
 =head1 DESCRIPTION 
 
-TermQuery is a subclass of
-L<KinoSearch::Search::Query|KinoSearch::Search::Query> for matching individual
-L<Terms|KinoSearch::Index::Term>.  Note that since Term objects are associated
-with one and only one field, so are TermQueries.
+TermQuery is a subclass of L<KinoSearch::Search::Query> for matching
+individual L<Terms|KinoSearch::Index::Term>.  Note that since Term objects are
+associated with one and only one field, so are TermQueries.
 
 =head1 METHODS
 
@@ -134,11 +130,11 @@ B<term> - a L<KinoSearch::Index::Term>.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut
 

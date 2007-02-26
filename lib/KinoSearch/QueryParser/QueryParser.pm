@@ -1,16 +1,17 @@
-package KinoSearch::QueryParser::QueryParser;
 use strict;
 use warnings;
+
+package KinoSearch::QueryParser::QueryParser;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
         # constructor args / members
-        analyzer       => undef,
+        schema         => undef,
         default_boolop => 'OR',
-        default_field  => undef,    # back compat
         fields         => undef,
+        analyzer       => undef,
         # members
         bool_groups   => {},
         phrases       => {},
@@ -30,7 +31,7 @@ use KinoSearch::Index::Term;
 sub init_instance {
     my $self = shift;
 
-    croak("default_boolop must be either 'AND' or 'OR'")
+    confess("default_boolop must be either 'AND' or 'OR'")
         unless $self->{default_boolop} =~ /^(?:AND|OR)$/;
 
     # create a random string that presumably won't appear in a search string
@@ -43,19 +44,19 @@ sub init_instance {
     $self->{phrase_re}     = qr/^(_phrase$randstring\d+)/;
     $self->{bool_group_re} = qr/^(_boolgroup$randstring\d+)/;
 
-    # verify fields param
-    my $fields =
-        defined $self->{fields}
-        ? $self->{fields}
-        : [ $self->{default_field} ];
-    croak("Required parameter 'fields' not supplied as arrayref")
-        unless ( defined $fields
-        and reftype($fields) eq 'ARRAY' );
-    $self->{fields} = $fields;
+    # verify schema or analyzer
+    confess("Must supply either schema or analyzer")
+        unless ( a_isa_b( $self->{schema}, "KinoSearch::Schema" )
+        or a_isa_b( $self->{analyzer}, "KinoSearch::Analysis::Analyzer" ) );
 
-    # verify analyzer
-    croak("Missing required param 'analyzer'")
-        unless a_isa_b( $self->{analyzer}, 'KinoSearch::Analysis::Analyzer' );
+    # verify or create fields param
+    if ( !defined $self->{fields} ) {
+        my @fields = map { $_->get_name }
+            grep { $_->indexed } $self->{schema}->all_fspecs;
+        $self->{fields} = \@fields;
+    }
+    confess("Required parameter 'fields' not supplied as arrayref")
+        unless reftype( $self->{fields} ) eq 'ARRAY';
 }
 
 # regex matching a quoted string
@@ -98,6 +99,7 @@ my $field_re = qr/^
 sub parse {
     my ( $self, $qstring_orig ) = @_;
     $qstring_orig = '' unless defined $qstring_orig;
+    utf8::upgrade($qstring_orig);
     my $default_fields = $self->{fields};
     my $default_boolop = $self->{default_boolop};
     my @clauses;
@@ -143,16 +145,11 @@ sub parse {
 
         # if a phrase label is detected...
         if (s/$self->{phrase_re}//) {
-            my $query;
-
             # retreive the text and analyze it
             my $orig_phrase_text = delete $self->{phrases}{$1};
-            my $token_texts      = $self->_analyze($orig_phrase_text);
-            if (@$token_texts) {
-                my $query = $self->_get_field_query( $fields, $token_texts );
-                push @clauses, { query => $query, occur => $occur }
-                    if defined $query;
-            }
+            my $query = $self->_get_field_query( $fields, $orig_phrase_text );
+            push @clauses, { query => $query, occur => $occur }
+                if defined $query;
         }
         # if a label indicating a bool group is detected...
         elsif (s/$self->{bool_group_re}//) {
@@ -163,12 +160,9 @@ sub parse {
         }
         # what's left is probably a term
         elsif (s/([^"(\s]+)//) {
-            my $token_texts = $self->_analyze($1);
-            @$token_texts = grep { $_ ne '' } @$token_texts;
-            if (@$token_texts) {
-                my $query = $self->_get_field_query( $fields, $token_texts );
-                push @clauses, { occur => $occur, query => $query };
-            }
+            my $query = $self->_get_field_query( $fields, $1 );
+            push @clauses, { occur => $occur, query => $query }
+                if defined $query;
         }
     }
 
@@ -191,10 +185,21 @@ sub parse {
 
 # Wrap a TermQuery/PhraseQuery to deal with multiple fields.
 sub _get_field_query {
-    my ( $self, $fields, $token_texts ) = @_;
+    my ( $self, $fields, $text ) = @_;
+    my $supplied_analyzer = $self->{analyzer};
+    my $schema            = $self->{schema};
 
-    my @queries = grep { defined $_ }
-        map { $self->_gen_single_field_query( $_, $token_texts ) } @$fields;
+    my @queries;
+    for my $field (@$fields) {
+        # custom analyze for each field unless override
+        my $analyzer = $supplied_analyzer;
+        $analyzer = $schema->fetch_analyzer($field) unless defined $analyzer;
+        $analyzer = $schema->fetch_analyzer()       unless defined $analyzer;
+
+        my @token_texts = grep {length} $analyzer->analyze_raw($text);
+        my $query = $self->_gen_single_field_query( $field, \@token_texts );
+        push @queries, $query if defined $query;
+    }
 
     if ( @queries == 0 ) {
         return;
@@ -231,20 +236,8 @@ sub _gen_single_field_query {
         }
         return $phrase_query;
     }
-}
 
-# break a string into tokens
-sub _analyze {
-    my ( $self, $string ) = @_;
-
-    my $token_batch = KinoSearch::Analysis::TokenBatch->new;
-    $token_batch->append( $string, 0, bytes::length($string) );
-    $token_batch = $self->{analyzer}->analyze($token_batch);
-    my @token_texts;
-    while ( $token_batch->next ) {
-        push @token_texts, $token_batch->get_text;
-    }
-    return \@token_texts;
+    return;
 }
 
 # replace all phrases with labels
@@ -285,21 +278,21 @@ __END__
 
 =head1 NAME
 
-KinoSearch::QueryParser::QueryParser - transform a string into a Query object
+KinoSearch::QueryParser::QueryParser - Transform a string into a Query object.
 
 =head1 SYNOPSIS
 
     my $query_parser = KinoSearch::QueryParser::QueryParser->new(
-        analyzer => $analyzer,
-        fields   => [ 'bodytext' ],
+        schema => MySchema->new,
+        fields => [ 'body' ],
     );
     my $query = $query_parser->parse( $query_string );
     my $hits  = $searcher->search( query => $query );
 
 =head1 DESCRIPTION
 
-The QueryParser accepts search strings as input and produces Query objects,
-suitable for feeding into L<KinoSearch::Searcher|KinoSearch::Searcher>.
+The QueryParser accepts UTF-8 search strings as input and produces Query
+objects, suitable for feeding into L<KinoSearch::Searcher>.
 
 =head2 Syntax
 
@@ -338,30 +331,33 @@ fields).
 =head2 new
 
     my $query_parser = KinoSearch::QueryParser::QueryParser->new(
-        analyzer       => $analyzer,       # required
-        fields         => [ 'bodytext' ],  # required
+        schema         => MySchema->new,   # required
+        analyzer       => $analyzer,       # overrides schema
+        fields         => [ 'bodytext' ],  # default: indexed fields
         default_boolop => 'AND',           # default: 'OR'
     );
 
-Constructor.  Takes hash-style parameters:
+Constructor.  Takes hash-style parameters.  Either C<searchable> or C<analyzer>
+must be supplied.
 
 =over
 
 =item *
 
-B<analyzer> - An object which subclasses
-L<KinoSearch::Analysis::Analyzer|KinoSearch::Analysis::Analyzer>.  This
-B<must> be identical to the Analyzer used at index-time, or the results won't
-match up.
+B<schema> - An object which subclasses L<KinoSearch::Schema>.
 
 =item *
 
-B<fields> - the names of the fields which will be searched against.  Must be
-supplied as an arrayref.
+B<analyzer> - An object which subclasses L<KinoSearch::Analysis::Analyzer>.
+Ordinarily, the analyzers specified by each field's definition will be used,
+but if C<analyzer> is supplied, it will override and be used for all fields.
+This can lead to mismatches between what is in the index and what is being
+searched for, so use caution.
 
 =item *
 
-B<default_field> - deprecated. Use C<fields> instead.
+B<fields> - the names of the fields which will be searched against.  By
+default, those fields which are defined as indexed in the supplied Schema.
 
 =item *
 
@@ -375,17 +371,16 @@ want only documents which match all of the query terms, set this to 'AND'.
 
     my $query = $query_parser->parse( $query_string );
 
-Turn a query string into a Query object.  Depending on the contents of the
-query string, the returned object could be any one of several subclasses of
-L<KinoSearch::Search::Query|KinoSearch::Search::Query>.
+Turn a UTF-8 query string into a Query object.  Depending on the contents of
+the query string, the returned object could be any one of several subclasses
+of L<KinoSearch::Search::Query>.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut
-

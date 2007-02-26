@@ -1,8 +1,9 @@
-package KinoSearch::Search::Scorer;
 use strict;
 use warnings;
+
+package KinoSearch::Search::Scorer;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::CClass Exporter );
+use base qw( KinoSearch::Util::Obj Exporter );
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
@@ -10,24 +11,8 @@ BEGIN {
         similarity => undef,
     );
 }
-our %instance_vars;
 
 our @EXPORT_OK = qw( %score_batch_args );
-
-sub new {
-    my $class = shift;
-    verify_args( \%instance_vars, @_ );
-    my %args = ( %instance_vars, @_ );
-
-    $class = ref($class) || $class;
-    my $self = _construct_parent($class);
-
-    if ( defined $args{similarity} ) {
-        $self->set_similarity( $args{similarity} );
-    }
-
-    return $self;
-}
 
 our %score_batch_args = (
     hit_collector => undef,
@@ -55,71 +40,43 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Scorer 
 
 void
-_construct_parent(class)
-    char *class;
-PREINIT:
-    Scorer *scorer;
-PPCODE:
-    scorer   = Kino_Scorer_new();
-    ST(0) = sv_newmortal();
-    sv_setref_pv(ST(0), class, (void*)scorer);
-    XSRETURN(1);
-
-SV*
-_scorer_set_or_get(scorer, ...)
-    Scorer *scorer;
+_scorer_set_or_get(self, ...)
+    kino_Scorer *self;
 ALIAS:
     set_similarity = 1
     get_similarity = 2
-CODE:
+PPCODE:
 {
-    KINO_START_SET_OR_GET_SWITCH
+    START_SET_OR_GET_SWITCH
 
-    case 1:  SvREFCNT_dec(scorer->similarity_sv);
-             scorer->similarity_sv = newSVsv( ST(1) );
-             Kino_extract_struct( scorer->similarity_sv, scorer->sim, 
-                Similarity*, "KinoSearch::Search::Similarity" );
-             /* fall through */
-    case 2:  RETVAL = newSVsv(scorer->similarity_sv);
+    case 1:  REFCOUNT_DEC(self->sim);
+             EXTRACT_STRUCT( ST(1), self->sim, kino_Similarity*, 
+                "KinoSearch::Search::Similarity" );
+             REFCOUNT_INC(self->sim);
              break;
 
-    KINO_END_SET_OR_GET_SWITCH
+    case 2:  retval = self->sim  == NULL
+                ? newSV(0)
+                : kobj_to_pobj(self->sim);
+             break;
+
+    END_SET_OR_GET_SWITCH
 }
-OUTPUT: RETVAL
 
-
-=begin comment
-
-    my $score = $scorer->score;
-
-Calculate and return a score for the scorer's current document.
-
-=end comment
-=cut
 
 float
-score(scorer)
-    Scorer* scorer;
+score(self)
+    kino_Scorer* self;
 CODE:
-    RETVAL = scorer->score(scorer);
+    RETVAL = Kino_Scorer_Score(self);
 OUTPUT: RETVAL
 
 
-=begin comment
-
-    my $valid_state = $scorer->next;
-
-Move the internal state of the scorer to the next document.  Return false when
-there are no more documents to score.
-
-=end comment
-=cut
-
 bool
-next(scorer)
-    Scorer* scorer;
+next(self)
+    kino_Scorer* self;
 CODE:
-    RETVAL = scorer->next(scorer);
+    RETVAL = Kino_Scorer_Next(self);
 OUTPUT: RETVAL
 
 
@@ -140,138 +97,42 @@ TODO: Doesn't actually pay any attention to start/end at present.
 =cut
 
 void
-score_batch(scorer, ...)
-    Scorer       *scorer;
-PREINIT:
-    HV           *args_hash;
-    U32           start, end;
-    HitCollector *hc;
+score_batch(self, ...)
+    kino_Scorer *self;
 PPCODE:
-    /* process hash-style params */
-    Kino_Verify_build_args_hash(args_hash, 
-        "KinoSearch::Search::Scorer::score_batch_args", 1);
-    Kino_extract_struct_from_hv(args_hash, hc, "hit_collector", 13, 
-        HitCollector*, "KinoSearch::Search::HitCollector");
-    start = (U32)SvUV( Kino_Verify_extract_arg(args_hash, "start", 5) );
-    end   = (U32)SvUV( Kino_Verify_extract_arg(args_hash, "end", 3) );
+{
+    /* parse params */
+    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
+        "KinoSearch::Search::Scorer::score_batch_args");
+    kino_HitCollector *hc = (kino_HitCollector*)extract_obj(
+        args_hash, SNL("hit_collector"), "KinoSearch::Search::HitCollector");
+    /* unused for now...
+    kino_u32_t start = extract_uv(args_hash, SNL("start"));
+    kino_u32_t end   = extract_uv(args_hash, SNL("end"));
+    */
 
     /* execute scoring loop */
-    while (scorer->next(scorer)) {
-        hc->collect( hc, scorer->doc(scorer), scorer->score(scorer) );
+    while (Kino_Scorer_Next(self)) {
+        hc->collect( hc, Kino_Scorer_Doc(self), Kino_Scorer_Score(self) );
     }
+}
 
-
-=begin comment
-
-Not implemented yet.
-
-=end comment
-=cut
 
 bool
-skip_to(scorer, target_doc_num)
-    Scorer* scorer;
-    U32     target_doc_num;
+skip_to(self, target_doc_num)
+    kino_Scorer* self;
+    kino_u32_t target_doc_num;
 CODE:
-    RETVAL = scorer->skip_to(scorer, target_doc_num);
+    RETVAL = Kino_Scorer_Skip_To(self, target_doc_num);
 OUTPUT: RETVAL
-
-
-void
-DESTROY(scorer)
-    Scorer *scorer;
-PPCODE:
-    Kino_Scorer_destroy(scorer);
-
-    
-__H__
-
-#ifndef H_KINO_SCORER
-#define H_KINO_SCORER 1
-
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-#include "KinoSearchSearchSimilarity.h"
-#include "KinoSearchUtilMemManager.h"
-#include "KinoSearchUtilCarp.h"
-
-typedef struct scorer {
-    void       *child;
-    Similarity *sim;
-    float     (*score)(struct scorer*);
-    bool      (*next)(struct scorer*);
-    U32       (*doc)(struct scorer*);
-    bool      (*skip_to)(struct scorer*, U32);
-    SV         *similarity_sv;
-} Scorer;
-
-Scorer* Kino_Scorer_new();
-float Kino_Scorer_score_death(Scorer*);
-bool  Kino_Scorer_next_death(Scorer*);
-U32   Kino_Scorer_doc_death(Scorer*);
-bool  Kino_Scorer_skip_to_death(Scorer*, U32);
-void  Kino_Scorer_destroy(Scorer*);
-
-#endif /* include guard */
-
-__C__
-
-#include "KinoSearchSearchScorer.h"
-
-Scorer*
-Kino_Scorer_new() {
-    Scorer* scorer;
-
-    Kino_New(0, scorer, 1, Scorer);
-    scorer->child         = NULL;
-    scorer->sim           = NULL;
-    scorer->next          = Kino_Scorer_next_death;
-    scorer->score         = Kino_Scorer_score_death;
-    scorer->skip_to       = Kino_Scorer_skip_to_death;
-    scorer->similarity_sv = &PL_sv_undef;
-
-    return scorer;
-}
-
-float
-Kino_Scorer_score_death(Scorer* scorer) {
-    Kino_confess("scorer->score must be defined in a subclass");
-    return 1.0;
-}
-
-bool
-Kino_Scorer_next_death(Scorer* scorer) {
-    Kino_confess("scorer->next must be defined in a subclass");
-    return 1;
-}
-
-U32
-Kino_Scorer_doc_death(Scorer* scorer) {
-    Kino_confess("scorer->doc must be defined in a subclass");
-    return 1;
-}
-
-bool
-Kino_Scorer_skip_to_death(Scorer* scorer, U32 target_doc_num) {
-    Kino_confess("scorer->skip_to must be defined in a subclass");
-    return 1;
-}
-
-void
-Kino_Scorer_destroy(Scorer* scorer) {
-    SvREFCNT_dec(scorer->similarity_sv);
-    Kino_Safefree(scorer);
-}
-
 
 __POD__
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Search::Scorer - score documents against a Query
+KinoSearch::Search::Scorer - Score documents against a Query.
 
 =head1 DESCRIPTION 
 
@@ -282,11 +143,11 @@ further processing, typically by a HitCollector.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

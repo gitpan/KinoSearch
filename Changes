@@ -1,5 +1,157 @@
 Revision history for KinoSearch
 
+0.20_01 2007-02-26
+  
+  KinoSearch 0.20 is a major rewrite, adding many new features.  It also
+  breaks backwards compatibility in a number of ways.  
+  
+  Two key features, UTF-8 support and custom sorting, were not possible to
+  implement while preserving backwards compatibility.  Once the decision was
+  made to proceed with them, breaking all existing installations, it made
+  little sense to proceed by half measures, so the API has been given a
+  significant overhaul.
+
+  KinoSearch has always carried an "alpha code" warning; it is being invoked
+  for this release.  While it will continue to carry the "alpha" warning for
+  a short while longer, the point of jamming so many changes into one release
+  is to cause disruption only once; once the code in 0.20 proves itself,
+  hopefully no more backwards incompatible changes will be needed any time
+  soon.
+
+  New behaviors:
+
+    * KinoSearch now uses UTF-8 for all input and output, throughout the
+      entire library.  This affects many classes, but particularly those under
+      Analysis, Highlight, and QueryParser.
+    * The default scoring algorithm has changed subtly -- aggressive 
+      per-field boosting is no longer important or even desirable.  The old
+      behavior is available from KinoSearch::Contrib::LongFieldSim.
+
+  New public classes:
+
+    * KinoSearch::Schema
+    * KinoSearch::Schema::Field
+    * KinoSearch::InvIndex
+    * KinoSearch::Analysis::Token
+    * KinoSearch::Search::RangeFilter
+    * KinoSearch::Search::SortSpec
+    * KinoSearch::Search::Similarity
+    * KinoSearch::Contrib::LongFieldSim
+
+  New documentation:
+
+    * KinoSearch::Docs::NFS
+
+  Removed classes:
+
+    * KinoSearch::Document::Doc
+    * KinoSearch::Document::Field
+    * KinoSearch::Search::Hit
+
+  Renamed classes:
+
+    * KinoSearch::Store::InvIndex    => KinoSearch::Store::Folder
+    * KinoSearch::Store::FSInvIndex  => KinoSearch::Store::FSFolder
+    * KinoSearch::Store::RAMInvIndex => KinoSearch::Store::RAMFolder
+
+  Updated documentation:
+
+    * KinoSearch
+    * KinoSearch::Docs::DevGuide
+    * KinoSearch::Docs::FileFormat
+    * KinoSearch::Docs::Tutorial
+
+  Classes with API changes:
+
+    * KinoSearch::InvIndexer
+      o new() - Args changed.
+        * create - Removed.
+        * analyzer - Removed.
+        * lock_id - Added.
+      o spec_field() - Removed.
+      o new_doc() - Removed.
+      o add_doc() - Args changed.
+        * Takes a hashref rather than a Doc object.
+        * Accepts optional labeled param 'boost'.
+      o delete_docs_by_term() - Removed.
+      o delete_by_term() - Added.  (Behavior differs subtly from
+        delete_docs_by_term()).
+
+    * KinoSearch::Searcher
+      o new() - args changed.
+        * analyzer - Removed.
+      o search() - Now calls Hits->seek before returning Hits object.  Args
+          changed.
+        * offset - Added.
+        * num_wanted - Added.
+        * sort_spec - Added.
+
+    * KinoSearch::Search::Hits
+      o Now comes pre-seeked, courtesy of changes to Searcher.
+      o seek() - No longer triggers new number crunching if requested values
+        can be accomodated using results of prior search.
+      o fetch_hit() - Removed.
+      o create_excerpts() - Now puts multiple excerpts under $hit->{excerpts}
+        rather than one under $hit->{excerpt}.
+
+    * KinoSearch::Search::MultiSearcher
+      o new() - Args changed.
+        * schema - Added.
+        * analyzer - Removed.
+
+    * KinoSearch::Highlight::Highlighter
+      o new() - Args changed.
+        * fields - Added.
+        * excerpt_length - Now specified in characters rather than bytes.
+        * excerpt_field - Removed.
+        * pre_tag - Removed.
+        * post_tag - Removed.
+
+    * KinoSearch::QueryParser::QueryParser
+      o new() - Args changed.
+        * schema - Added.
+        * default_field - Removed.
+        * analyzer - No longer required -- now used to override schema.
+
+    * KinoSearch::Analysis::TokenBatch
+      o new() - Args changed.
+        * text - Added.
+      o next() - Returns a Token instead of a boolean.
+      o reset() - Added.
+      o add_many_tokens() - Added.
+      o set_text(), get_text(), set_start_offset(), get_start_offset(),
+        set_end_offset(), get_end_offset(), set_pos_inc(), get_pos_inc - All
+        removed. 
+
+  Internal changes:
+
+    Large-scale refactoring has taken place.  The most significant 
+    changes are...
+
+    * OO framework imposed on C code via boilerplater.pl, with
+      KinoSearch::Util::Obj as the base class.
+    * Charmonizer added.
+    * perlapi functions and data structures replaced whenever possible.
+    * Lots of classes, especially under KinoSearch::Index, reorganized around
+      Schema and SegInfo.  
+    * Many tests added, removed, or revised to accomodate changes in the main
+      library code.
+    * C code moved to dedicated files.
+    * Build.PL custom code moved to buildlib/KinoSearchBuild.pm
+  
+  File Format:
+
+    * Significantly redesigned.  The most visible change is that the segments
+      file is now encoded using YAML rather than an arbitrary binary format.
+    * Old indexes cannot be read and must be regenerated.
+
+  Locking
+
+    * write.lock files now located in the index directory rather than 
+      under /tmp.
+    * Commit locks are no longer needed due to file format changes.
+    * Stale write locks are now removed without warning.
+
 0.15 2006-12-04
   * Remove dead lock files when possible (with a warning), rather than failing
     outright.  (Credit to Matthew O'Connor, Luke Closs, Socialtext for

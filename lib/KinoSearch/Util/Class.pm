@@ -1,6 +1,7 @@
-package KinoSearch::Util::Class;
 use strict;
 use warnings;
+
+package KinoSearch::Util::Class;
 use KinoSearch::Util::ToolSet;
 
 use Clone 'clone';
@@ -16,7 +17,10 @@ sub new {
         no strict 'refs';
         $defaults = \%{ $class . '::instance_vars' };
     }
+
     if ( !verify_args( $defaults, @_ ) ) {
+        confess kerror() if $class =~ /^KinoSearch/;
+
         # if a user-based subclass, find KinoSearch parent class and verify.
         my $kinoclass = _traverse_at_isa($class);
         confess kerror() unless $kinoclass;
@@ -85,20 +89,6 @@ sub ready_set {
     }
 }
 
-=for Rationale:
-KinoSearch is not thread-safe.  Among other things, the C-struct-based classes
-cause segfaults or bus errors when their data gets double-freed by DESTROY.
-Therefore, CLONE dies with a user-friendly error message before that happens.
-
-=cut
-
-sub CLONE {
-    my $package = shift;
-    die(      "CLONE invoked by package '$package', indicating that threads "
-            . "or Win32 fork were initiated, but KinoSearch is not thread-safe"
-    );
-}
-
 sub abstract_death {
     my ( undef, $filename, $line, $methodname ) = caller(1);
     die "ERROR: $methodname', called at $filename line $line, is an "
@@ -124,7 +114,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Util::Class - class building utility
+KinoSearch::Util::Class - Class-building utility.
 
 =head1 PRIVATE CLASS
 
@@ -149,9 +139,8 @@ warning.  Do not use it on its own.
 
 =head1 DESCRIPTION
 
-KinoSearch::Util::Class is a class-building utility a la
-L<Class::Accessor|Class::Accessor>, L<Class::Meta|Class::Meta>, etc.  It
-provides four main services:
+KinoSearch::Util::Class is a class-building utility a la L<Class::Accessor>,
+L<Class::Meta>, etc.  It provides four main services:
 
 =over
 
@@ -208,7 +197,7 @@ as arguments to new().
         boffo => $boffo,
     );
 
-%instance_vars may contain hashrefs and array-refs, as L<Clone|Clone>'s
+%instance_vars may contain hashrefs and array-refs, as L<Clone>'s
 C<clone()> method is used to produce a deep copy.
 
 init_instance_vars() must be called from within a BEGIN block and before any
@@ -221,7 +210,7 @@ parents, inheritance gets screwed up.
 
 A generic constructor with basic argument checking.  new() expects hash-style
 labeled parameters; the label names must be present in the %instance_vars
-hash, or it will croak().
+hash, or it will confess().
 
 After verifying the labeled parameters, new() creates a deep clone of
 %instance_vars, and merges in the labeled arguments.  It then calls
@@ -273,11 +262,11 @@ todo_death indicates a feature that might get implemented someday.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut
 

@@ -1,6 +1,7 @@
-package KinoSearch::Search::SearchServer;
 use strict;
 use warnings;
+
+package KinoSearch::Search::SearchServer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -40,13 +41,13 @@ sub init_instance {
 }
 
 my %dispatch = (
-    get_field_names      => \&do_get_field_names,
-    max_doc              => \&do_max_doc,
-    doc_freq             => \&do_doc_freq,
-    doc_freqs            => \&do_doc_freqs,
-    search_hit_collector => \&do_search_hit_collector,
-    fetch_doc            => \&do_fetch_doc,
-    terminate            => undef,
+    max_doc         => \&do_max_doc,
+    doc_freq        => \&do_doc_freq,
+    doc_freqs       => \&do_doc_freqs,
+    search_top_docs => \&do_search_top_docs,
+    fetch_doc       => \&do_fetch_doc,
+    fetch_doc_vec   => \&do_fetch_doc_vec,
+    terminate       => undef,
 );
 
 sub serve {
@@ -108,11 +109,6 @@ sub serve {
     }
 }
 
-sub do_get_field_names {
-    my ( $self, $args ) = @_;
-    return $self->{searchable}->get_field_names(%$args);
-}
-
 sub do_doc_freq {
     my ( $self, $args ) = @_;
     my $doc_freq = $self->{searchable}->doc_freq( $args->{term} );
@@ -124,27 +120,11 @@ sub do_doc_freqs {
     return $self->{searchable}->doc_freqs( $args->{terms} );
 }
 
-sub do_search_hit_collector {
+sub do_search_top_docs {
     my ( $self, $args ) = @_;
-
     confess("remote filtered search not supported")
         if defined $args->{filter};
-    my $collector = KinoSearch::Search::HitQueueCollector->new(
-        size => $args->{num_wanted} );
-
-    my $scorer = $args->{weight}->scorer( $self->{searchable}->get_reader );
-
-    if ( defined $scorer ) {
-        $scorer->score_batch(
-            hit_collector => $collector,
-            end           => $self->{searchable}->max_doc,
-        );
-    }
-    my $hit_queue = $collector->get_hit_queue;
-    my $hit_docs  = $hit_queue->hits;
-    my %score_docs;
-    $score_docs{ $_->get_id } = $_->get_score for @$hit_docs;
-    return \%score_docs;
+    return $self->{searchable}->search_top_docs(%$args);
 }
 
 sub do_max_doc {
@@ -158,19 +138,23 @@ sub do_fetch_doc {
     return $self->{searchable}->fetch_doc( $args->{doc_num} );
 }
 
+sub do_fetch_doc_vec {
+    my ( $self, $args ) = @_;
+    return $self->{searchable}->fetch_doc_vec( $args->{doc_num} );
+}
+
 1;
 
 __END__
 
 =head1 NAME
 
-KinoSearch::Search::SearchServer - make a Searcher remotely accessible
+KinoSearch::Search::SearchServer - Make a Searcher remotely accessible.
 
 =head1 SYNOPSIS
 
     my $searcher = KinoSearch::Searcher->new(
-        analyzer => $analyzer,
-        invindex => '/path/to/invindex',
+        invindex => MySchema->open('path/to/invindex'),
     );
     my $server = KinoSearch::Search::SearchServer->new(
         searchable => $searcher,
@@ -219,11 +203,11 @@ Open a listening socket on localhost and wait for SearchClients to connect.
 
 =head1 COPYRIGHT
 
-Copyright 2006 Marvin Humphrey
+Copyright 2006-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.14.
 
 =cut
 

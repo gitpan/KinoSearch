@@ -1,22 +1,23 @@
-package KinoSearch::Index::MultiReader;
 use strict;
 use warnings;
+
+package KinoSearch::Index::MultiReader;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::IndexReader );
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
-        invindex    => undef,
+        # params / members
         sub_readers => [],
-        starts      => [],
-        max_doc     => 0,
-        norms_cache => {},
+        # members
+        starts  => [],
+        max_doc => 0,
     );
 }
 
-use KinoSearch::Index::FieldInfos;
 use KinoSearch::Index::SegReader;
 use KinoSearch::Index::MultiTermDocs;
+use KinoSearch::Index::MultiTermList;
 
 # use KinoSearch::Util::Class's new()
 # Note: can't inherit IndexReader's new() without recursion problems
@@ -51,6 +52,27 @@ sub num_docs {
     return $num_docs;
 }
 
+sub field_terms {
+    my ( $self, $term ) = @_;
+    return unless defined $term;
+    my $term_list = $self->start_field_terms( $term->get_field );
+    $term_list->seek($term);
+    return $term_list;
+}
+
+sub start_field_terms {
+    my ( $self, $field ) = @_;
+    return unless defined $field;
+    my $fspec = $self->{invindex}->get_schema->fetch_fspec($field);
+    return unless ( defined $fspec and $fspec->indexed );
+    my $term_list = KinoSearch::Index::MultiTermList->new(
+        sub_readers => $self->{sub_readers},
+        field       => $field,
+        tl_cache    => $self->{tl_caches}{$field},
+    );
+    return $term_list;
+}
+
 sub term_docs {
     my ( $self, $term ) = @_;
 
@@ -76,14 +98,21 @@ sub fetch_doc {
     return $self->{sub_readers}[$reader_index]->fetch_doc($doc_num);
 }
 
+sub fetch_doc_vec {
+    my ( $self, $doc_num ) = @_;
+    my $reader_index = $self->_reader_index($doc_num);
+    $doc_num -= $self->{starts}[$reader_index];
+    return $self->{sub_readers}[$reader_index]->fetch_doc_vec($doc_num);
+}
+
 sub delete_docs_by_term {
     my ( $self, $term ) = @_;
     $_->delete_docs_by_term($term) for @{ $self->{sub_readers} };
 }
 
-sub commit_deletions {
+sub write_deletions {
     my $self = shift;
-    $_->commit_deletions for @{ $self->{sub_readers} };
+    $_->write_deletions for @{ $self->{sub_readers} };
 }
 
 # Determine which sub-reader a document resides in
@@ -110,46 +139,6 @@ sub _reader_index {
 
     }
     return $hi;
-}
-
-sub norms_reader {
-    # TODO refactor and minimize copying
-    my ( $self, $field_num ) = @_;
-    if ( exists $self->{norms_cache}{$field_num} ) {
-        return $self->{norms_cache}{$field_num};
-    }
-    else {
-        my $bytes = '';
-        for my $seg_reader ( @{ $self->{sub_readers} } ) {
-            my $seg_norms_reader = $seg_reader->norms_reader($field_num);
-            $bytes .= ${ $seg_norms_reader->get_bytes } if $seg_norms_reader;
-        }
-        my $norms_reader = $self->{norms_cache}{$field_num}
-            = KinoSearch::Index::NormsReader->new(
-            bytes   => $bytes,
-            max_doc => $self->max_doc,
-            );
-        return $norms_reader;
-    }
-}
-
-sub generate_field_infos {
-    my $self       = shift;
-    my $new_finfos = KinoSearch::Index::FieldInfos->new;
-    my @sub_finfos
-        = map { $_->generate_field_infos } @{ $self->{sub_readers} };
-    $new_finfos->consolidate(@sub_finfos);
-    return $new_finfos;
-}
-
-sub get_field_names {
-    my $self = shift;
-    my %field_names;
-    for my $sub_reader ( @{ $self->{sub_readers} } ) {
-        my $sub_field_names = $sub_reader->get_field_names;
-        @field_names{@$sub_field_names} = (1) x scalar @$sub_field_names;
-    }
-    return [ keys %field_names ];
 }
 
 sub segreaders_to_merge {
@@ -180,6 +169,20 @@ sub segreaders_to_merge {
     }
 }
 
+sub seg_searchers {
+    my $self = shift;
+    my ( $starts, $seg_readers ) = @{$self}{qw( starts seg_readers )};
+    my @seg_searchers;
+    for my $i ( 0 .. $#$starts ) {
+        push @seg_searchers,
+            KinoSearch::Search::SegSearcher->new(
+            seg_reader => $seg_readers->[$i],
+            offset     => $starts->[$i],
+            );
+    }
+    return \@seg_searchers;
+}
+
 # Generate fibonacci series
 my %fibo_cache;
 
@@ -193,7 +196,6 @@ sub fibonacci {
 
 sub close {
     my $self = shift;
-    return unless $self->{close_invindex};
     $_->close for @{ $self->{sub_readers} };
 }
 
@@ -203,9 +205,9 @@ __END__
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Index::MultiReader - read from a multi-segment invindex
+KinoSearch::Index::MultiReader - Read from a multi-segment InvIndex.
 
 =head1 DESCRIPTION 
 
@@ -213,11 +215,11 @@ Multi-segment implementation of IndexReader.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

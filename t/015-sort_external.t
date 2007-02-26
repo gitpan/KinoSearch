@@ -1,24 +1,27 @@
 use strict;
 use warnings;
+use lib 'buildlib';
 
-use lib 't';
-use Test::More tests => 8;
+use Test::More tests => 9;
 use File::Spec;
 use List::Util qw( shuffle );
 
 BEGIN {
     use_ok("KinoSearch::Util::SortExternal");
 }
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoTestUtils qw( create_invindex );
 
-my $invindex = create_invindex();
+my $invindex  = create_invindex("foo");
+my $seg_infos = KinoSearch::Index::SegInfos->new;
+$seg_infos->read_infos( $invindex->get_folder );
+my $seg_info = $seg_infos->get_info('_1');
 
 my ( $sortex, @orig, @sort_output );
 
 sub init_sortex {
     $sortex = KinoSearch::Util::SortExternal->new(
         invindex => $invindex,
-        seg_name => '_1',
+        seg_info => $seg_info,
         @_,
     );
 }
@@ -93,7 +96,6 @@ while ( defined( my $item = $sortex->fetch ) ) {
 }
 is_deeply( \@sort_output, \@orig, "Sorting packed integers..." );
 @sort_output = ();
-exit;
 
 init_sortex( mem_threshold => 20_000 );
 @orig = ();

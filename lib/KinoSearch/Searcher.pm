@@ -1,6 +1,7 @@
-package KinoSearch::Searcher;
 use strict;
 use warnings;
+
+package KinoSearch::Searcher;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Searchable );
 
@@ -8,90 +9,120 @@ BEGIN {
     __PACKAGE__->init_instance_vars(
         # params/members
         invindex => undef,
-        analyzer => undef,
         # members
-        reader       => undef,
-        close_reader => 0,       # not implemented yet
+        folder      => undef,
+        ix_reader   => undef,
+        sort_caches => {},
     );
-    __PACKAGE__->ready_get(qw( reader ));
+    __PACKAGE__->ready_get(qw( ix_reader ));
 }
 
-use KinoSearch::Store::FSInvIndex;
 use KinoSearch::Index::IndexReader;
 use KinoSearch::Search::Hits;
 use KinoSearch::Search::HitCollector;
-use KinoSearch::Search::Similarity;
+use KinoSearch::Search::TopDocCollector;
+use KinoSearch::Search::ScoreDoc;
+use KinoSearch::Search::SortCollector;
+use KinoSearch::Search::TopDocs;
 use KinoSearch::QueryParser::QueryParser;
 use KinoSearch::Search::BooleanQuery;
-use KinoSearch::Analysis::Analyzer;
 
 sub init_instance {
     my $self = shift;
 
-    $self->{analyzer} ||= KinoSearch::Analysis::Analyzer->new;
-    $self->{similarity} = KinoSearch::Search::Similarity->new;
+    # verify InvIndex and extract schema and folder
+    my $invindex = $self->{invindex};
+    confess("Missing required arg 'invindex'")
+        unless a_isa_b( $invindex, "KinoSearch::InvIndex" );
+    $self->{schema} = $invindex->get_schema;
+    $self->{folder} = $invindex->get_folder;
 
-    if ( !defined $self->{reader} ) {
-        # confirm or create an InvIndex object
-        my $invindex;
-        if ( blessed( $self->{invindex} )
-            and $self->{invindex}->isa('KinoSearch::Store::InvIndex') )
-        {
-            $invindex = $self->{invindex};
-        }
-        elsif ( defined $self->{invindex} ) {
-            $invindex = $self->{invindex}
-                = KinoSearch::Store::FSInvIndex->new(
-                create => $self->{create},
-                path   => $self->{invindex},
-                );
-        }
-        else {
-            croak("valid 'reader' or 'invindex' must be supplied");
-        }
-
-        # now that we have an invindex, get a reader for it
-        $self->{reader} = KinoSearch::Index::IndexReader->new(
-            invindex => $self->{invindex} );
-    }
+    # get an IndexReader
+    $self->{ix_reader}
+        = KinoSearch::Index::IndexReader->new( invindex => $invindex );
 }
 
 my %search_args = (
-    query    => undef,
-    filter   => undef,
-    num_docs => undef,
+    query      => undef,
+    filter     => undef,
+    sort_spec  => undef,
+    offset     => 0,
+    num_wanted => 10,
 );
 
 sub search {
     my $self = shift;
-    my %args =
-        @_ == 1
-        ? ( %search_args, query => $_[0] )
-        : ( %search_args, @_ );
-    confess kerror() unless verify_args( \%search_args, %args );
+    confess kerror() unless verify_args( \%search_args, @_ );
+    my %args = ( %search_args, @_ );
 
     # turn a query string into a query against all fields
     if ( !a_isa_b( $args{query}, 'KinoSearch::Search::Query' ) ) {
         $args{query} = $self->_prepare_simple_search( $args{query} );
     }
 
-    return KinoSearch::Search::Hits->new( searcher => $self, %args );
+    # get a Hits object, and perform the search
+    my $hits = KinoSearch::Search::Hits->new(
+        searcher  => $self,
+        query     => $args{query},
+        filter    => $args{filter},
+        sort_spec => $args{sort_spec},
+    );
+    $hits->seek( $args{offset}, $args{num_wanted} );
+    return $hits;
 }
 
-sub get_field_names {
+my %search_top_docs_args = (
+    query      => undef,
+    filter     => undef,
+    sort_spec  => undef,
+    num_wanted => undef,
+);
+
+sub search_top_docs {
     my $self = shift;
-    return $self->{reader}->get_field_names(@_);
+    confess kerror() unless verify_args( \%search_top_docs_args, @_ );
+    my %args = ( %search_top_docs_args, @_ );
+
+    my $weight = $self->create_weight( $args{query} );
+
+    my $collector;
+    if ( $args{sort_spec} ) {
+        my $collator
+            = $args{sort_spec}->make_field_doc_collator( $self->{ix_reader} );
+        $collector = KinoSearch::Search::SortCollector->new(
+            size     => $args{num_wanted},
+            collator => $collator,
+        );
+    }
+    else {
+        $collector = KinoSearch::Search::TopDocCollector->new(
+            size => $args{num_wanted} );
+    }
+
+    $self->search_hit_collector(
+        hit_collector => $collector,
+        weight        => $weight,
+        filter        => $args{filter},
+    );
+    my $score_docs = $collector->get_hit_queue()->score_docs;
+
+    my $max_score =
+          @$score_docs
+        ? $score_docs->[0]->get_score
+        : 0;
+
+    return KinoSearch::Search::TopDocs->new(
+        score_docs => $score_docs,
+        max_score  => $max_score,
+        total_hits => $collector->get_total_hits,
+    );
 }
 
 # Search for the query string against all indexed fields
 sub _prepare_simple_search {
     my ( $self, $query_string ) = @_;
-
-    my $indexed_field_names = $self->get_field_names( indexed => 1 );
     my $query_parser = KinoSearch::QueryParser::QueryParser->new(
-        fields   => $indexed_field_names,
-        analyzer => $self->{analyzer},
-    );
+        schema => $self->{schema}, );
     return $query_parser->parse($query_string);
 }
 
@@ -99,7 +130,6 @@ my %search_hit_collector_args = (
     hit_collector => undef,
     weight        => undef,
     filter        => undef,
-    sort_spec     => undef,
 );
 
 sub search_hit_collector {
@@ -110,28 +140,27 @@ sub search_hit_collector {
     # wrap the collector if there's a filter
     my $collector = $args{hit_collector};
     if ( defined $args{filter} ) {
-        $collector = KinoSearch::Search::FilteredCollector->new(
-            filter_bits   => $args{filter}->bits($self),
-            hit_collector => $args{hit_collector},
-        );
+        $collector = $args{filter}->make_collector( $collector, $self );
     }
 
     # accumulate hits into the HitCollector if the query is valid
-    my $scorer = $args{weight}->scorer( $self->{reader} );
+    my $scorer = $args{weight}->scorer( $self->{ix_reader} );
     if ( defined $scorer ) {
         $scorer->score_batch(
             hit_collector => $collector,
-            end           => $self->{reader}->max_doc,
+            end           => $self->{ix_reader}->max_doc,
         );
     }
 }
 
-sub fetch_doc { $_[0]->{reader}->fetch_doc( $_[1] ) }
-sub max_doc   { shift->{reader}->max_doc }
+sub fetch_doc     { $_[0]->{ix_reader}->fetch_doc( $_[1] ) }
+sub fetch_doc_vec { $_[0]->{ix_reader}->fetch_doc_vec( $_[1] ) }
+
+sub max_doc { shift->{ix_reader}->max_doc }
 
 sub doc_freq {
     my ( $self, $term ) = @_;
-    return $self->{reader}->doc_freq($term);
+    return $self->{ix_reader}->doc_freq($term);
 }
 
 sub create_weight {
@@ -139,20 +168,9 @@ sub create_weight {
     return $query->to_weight($self);
 }
 
-sub rewrite {
-    my ( $self, $query ) = @_;
-    my $reader = $self->{reader};
-    while (1) {
-        my $rewritten = $query->rewrite($reader);
-        last if ( 0 + $rewritten == 0 + $query );
-        $query = $rewritten;
-    }
-    return $query;
-}
-
 sub close {
     my $self = shift;
-    $self->{reader}->close if $self->{close_reader};
+    $self->{ix_reader}->close if $self->{close_reader};
 }
 
 1;
@@ -161,19 +179,18 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Searcher - execute searches
+KinoSearch::Searcher - Execute searches.
 
 =head1 SYNOPSIS
 
-    my $analyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
-        language => 'en',
-    );
-
     my $searcher = KinoSearch::Searcher->new(
-        invindex => $invindex,
-        analyzer => $analyzer,
+        invindex => MySchema->open('/path/to/invindex'),
     );
-    my $hits = $searcher->search( query => 'foo bar' );
+    my $hits = $searcher->search( 
+        query      => 'foo bar' 
+        offset     => 0,
+        num_wanted => 100,
+    );
 
 
 =head1 DESCRIPTION
@@ -185,33 +202,27 @@ Use the Searcher class to perform queries against an invindex.
 =head2 new
 
     my $searcher = KinoSearch::Searcher->new(
-        invindex => $invindex,
-        analyzer => $analyzer,
+        invindex => MySchema->open('/path/to/invindex'),
     );
 
-Constructor.  Takes two labeled parameters, both of which are required.
+Constructor.  Takes one labeled parameter.
 
 =over
 
 =item *
 
-B<invindex> - can be either a path to an invindex, or a
-L<KinoSearch::Store::InvIndex|KinoSearch::Store::InvIndex> object.
-
-=item *
-
-B<analyzer> - An object which subclasses
-L<KinoSearch::Analysis::Analyer|KinoSearch::Analysis::Analyzer>, such as a
-L<PolyAnalyzer|KinoSearch::Analysis::PolyAnalyzer>.  This B<must> be identical
-to the Analyzer used at index-time, or the results won't match up.
+B<invindex> - an object which isa L<KinoSearch::InvIndex>.
 
 =back
 
 =head2 search
 
     my $hits = $searcher->search( 
-        query  => $query,  # required
-        filter => $filter, # default: undef (no filtering)
+        query      => $query,     # required
+        offset     => 20,         # default: 0
+        num_wanted => 10,         # default: 10
+        filter     => $filter,    # default: undef (no filtering)
+        sort_spec  => $sort_spec, # default: undef (sort by relevance)
     );
 
 Process a search and return a L<Hits|KinoSearch::Search::Hits> object.
@@ -222,36 +233,51 @@ search() expects labeled hash-style parameters.
 =item *
 
 B<query> - Can be either an object which subclasses
-L<KinoSearch::Search::Query|KinoSearch::Search::Query>, or a query string.  If
-it's a query string, it will be parsed using a QueryParser and a search will
-be performed against all indexed fields in the invindex.  For more sophisticated
-searching, supply Query objects, such as TermQuery and BooleanQuery.
+L<KinoSearch::Search::Query>, or a UTF-8 query string.  If it's a query
+string, it will be parsed using a QueryParser and a search will be performed
+against all indexed fields in the InvIndex.  For more sophisticated searching,
+supply Query objects, such as TermQuery and BooleanQuery.
 
 =item *
 
-B<filter> - Must be a
-L<KinoSearch::Search::QueryFilter|KinoSearch::Search::QueryFilter>.  Search
-results will be limited to only those documents which pass through the filter.
+B<offset> - The number of most-relevant hits to discard, typically used when
+"paging" through hits N at a time.  Setting offset to 20 and num_wanted to 10
+retrieves hits 21-30, assuming that 30 hits can be found.
+
+=item *
+
+B<num_wanted> - The number of hits you would like to see after offset is taken
+into account.  
+
+=item *
+
+B<filter> - Must be a L<KinoSearch::Search::QueryFilter>.  Search results will
+be limited to only those documents which pass through the filter.
+
+=item *
+
+B<sort_spec> - Must be a L<KinoSearch::Search::SortSpec>, which will affect
+how results are ranked and returned.
 
 =back
 
 =head1 Caching a Searcher
 
-When a Searcher is created, a small portion of the invindex is loaded into
+When a Searcher is created, a small portion of the InvIndex is loaded into
 memory.  For large document collections, this startup time may become
 noticable, in which case reusing the searcher is likely to speed up your
 search application.  Caching a Searcher is especially helpful when running a
 high-activity app under mod_perl.
 
-Searcher objects always represent a snapshot of an invindex as it existed when
+Searcher objects always represent a snapshot of an InvIndex as it existed when
 the Searcher was created.  If you want the search results to reflect
-modifications to an invindex, you must create a new Searcher after the update
+modifications to an InvIndex, you must create a new Searcher after the update
 process completes.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.

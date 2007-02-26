@@ -1,6 +1,7 @@
-package KinoSearch::Highlight::Formatter;
 use strict;
 use warnings;
+
+package KinoSearch::Highlight::Formatter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -16,11 +17,11 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Highlight::Formatter - format highlighted bits within excerpts
+KinoSearch::Highlight::Formatter - Format highlighted bits within excerpts.
 
 =head1 SYNOPSIS
 
-	# abstract base class
+    # abstract base class
 
 =head1 DESCRIPTION
 
@@ -31,17 +32,17 @@ excerpt.  The text might be a single term, or it might be a phrase.
 
 =head2 highlight
 
-	my $highlighted = $formatter->highlight($text);
+    my $highlighted = $formatter->highlight($text);
 
 Highlight text by e.g. surrounding it with asterisks, or html "strong" tags,
 etc.
 
 =head1 COPYRIGHT
 
-Copyright 2006 Marvin Humphrey
+Copyright 2006-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut

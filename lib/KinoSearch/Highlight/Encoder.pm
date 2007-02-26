@@ -1,6 +1,7 @@
-package KinoSearch::Highlight::Encoder;
 use strict;
 use warnings;
+
+package KinoSearch::Highlight::Encoder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -16,7 +17,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Highlight::Encoder - encode excerpted text
+KinoSearch::Highlight::Encoder - Encode excerpted text.
 
 =head1 SYNOPSIS
 
@@ -37,10 +38,10 @@ KinoSearch::Highlight::SimpleHTMLEncoder.
 
 =head1 COPYRIGHT
 
-Copyright 2006 Marvin Humphrey
+Copyright 2006-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut

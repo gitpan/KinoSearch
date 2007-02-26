@@ -1,6 +1,7 @@
-package KinoSearch::Index::TermVector;
 use strict;
 use warnings;
+
+package KinoSearch::Index::TermVector;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -32,9 +33,9 @@ __POD__
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Index::TermVector - Term freq and positional data  
+KinoSearch::Index::TermVector - Term freq and positional data.
 
 =head1 DESCRIPTION
 
@@ -42,11 +43,11 @@ Ancillary information about a Term.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =end devdocs
 =cut

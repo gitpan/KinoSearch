@@ -1,6 +1,7 @@
-package KinoSearch::Search::Hits;
 use strict;
 use warnings;
+
+package KinoSearch::Search::Hits;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
@@ -11,94 +12,81 @@ BEGIN {
         query     => undef,
         filter    => undef,
         sort_spec => undef,
-        num_docs  => undef,
 
         # members
-        weight      => undef,
         highlighter => undef,
 
-        hit_docs   => undef,
+        score_docs => undef,
         total_hits => undef,
+        tick       => undef,
     );
 
-    __PACKAGE__->ready_get(qw( hit_docs ));
+    __PACKAGE__->ready_get(qw( score_docs ));
 }
 
 use KinoSearch::Highlight::Highlighter;
-use KinoSearch::Search::HitCollector;
-
-sub init_instance {
-    my $self = shift;
-
-    croak("required parameter 'query' not supplied")
-        unless $self->{query};
-    croak("required parameter 'searcher' not supplied")
-        unless $self->{searcher};
-
-    # turn the Query into a Weight (so the Query won't get mussed)
-    $self->{weight} = $self->{searcher}->create_weight( $self->{query} );
-}
 
 sub seek {
-    my ( $self, $start_offset, $num_wanted ) = @_;
-    croak('Usage: $hits->seek( START, NUM_TO_RETRIEVE );')
+    my ( $self, $offset, $num_wanted ) = @_;
+    my $searcher = $self->{searcher};
+
+    confess('Usage: $hits->seek( OFFSET, NUM_WANTED );')
         unless @_ = 3;
 
+    # set our pointer for the next call to fetch_hit_hashref
+    $self->{tick} = $offset;
+
+    # if the seek takes us within bounds, don't redo the search
+    if ( defined $self->{score_docs}
+        and @{ $self->{score_docs} } > $offset + $num_wanted )
+    {
+        return;
+    }
+
     # collect enough to satisfy both the offset and the num wanted
-    my $collector = KinoSearch::Search::HitQueueCollector->new(
-        size => $num_wanted + $start_offset, );
-
-    # execute the search!
-    $self->{searcher}->search_hit_collector(
-        hit_collector => $collector,
-        weight        => $self->{weight},
-        filter        => $self->{filter},
-        sort_spec     => $self->{sort_spec},
+    my $top_docs = $searcher->search_top_docs(
+        num_wanted => $num_wanted + $offset,
+        query      => $self->{query},
+        filter     => $self->{filter},
+        sort_spec  => $self->{sort_spec},
     );
-    $self->{total_hits} = $collector->get_total_hits;
-    my $hit_queue = $collector->get_hit_queue;
 
-    # turn the HitQueue into an array of Hit objects
-    $self->{hit_docs}
-        = $hit_queue->hits( $start_offset, $num_wanted, $self->{searcher} );
-
+    # store away score_docs and total_hits
+    $self->{score_docs} = $top_docs->get_score_docs;
+    $self->{total_hits} = $top_docs->get_total_hits;
 }
 
 sub total_hits {
     my $self = shift;
-    $self->seek( 0, 100 )
+    confess("seek() must be called before total_hits()")
         unless defined $self->{total_hits};
     return $self->{total_hits};
 }
 
-sub fetch_hit {
-    my $self = shift;
-    $self->seek( 0, 100 )
-        unless defined $self->{total_hits};
-
-    my $hit = shift @{ $self->{hit_docs} };
-    return unless defined $hit;
-    return $hit;
-}
-
 sub fetch_hit_hashref {
-    my $self = shift;
-    $self->seek( 0, 100 )
+    my $self     = shift;
+    my $searcher = $self->{searcher};
+
+    confess("seek() must be called before total_hits()")
         unless defined $self->{total_hits};
 
     # bail if there aren't any more *captured* hits
-    my $hit = shift @{ $self->{hit_docs} };
-    return unless defined $hit;
+    return if ( $self->{tick} >= @{ $self->{score_docs} } );
+
+    # get a score doc then increment counter
+    my $score_doc = $self->{score_docs}[ $self->{tick}++ ];
 
     # lazily fetch stored fields
-    my $hashref = $hit->get_field_values;
+    my $hashref = $searcher->fetch_doc( $score_doc->get_id );
 
-    if ( !exists $hashref->{score} ) {
-        $hashref->{score} = $hit->get_score;
-    }
-    if ( defined $self->{highlighter} and !exists $hashref->{excerpt} ) {
-        $hashref->{excerpt}
-            = $self->{highlighter}->generate_excerpt( $hit->get_doc );
+    # add score to hashref
+    $hashref->{score} = $score_doc->get_score;
+
+    # add highlights if wanted
+    if ( defined $self->{highlighter} ) {
+        my $doc_vector = $searcher->fetch_doc_vec( $score_doc->get_id );
+        $hashref->{excerpts} = $self->{highlighter}
+            ->generate_excerpts( $hashref, $doc_vector );
     }
 
     return $hashref;
@@ -119,7 +107,7 @@ sub create_excerpts {
 
 =head1 NAME
 
-KinoSearch::Search::Hits - access search results
+KinoSearch::Search::Hits - Access search results.
 
 =head1 SYNOPSIS
 
@@ -155,14 +143,6 @@ Position the Hits iterator at START, and capture NUM_TO_RETRIEVE docs.
 Return the total number of documents which matched the query used to produce
 the Hits object.  (This number is unlikely to match NUM_TO_RETRIEVE.)
 
-=head2 fetch_hit
-
-    while ( my $hit = $hits->fetch_hit ) {
-        # ...
-    }
-
-Return the next hit as a KinoSearch::Search::Hit object.
-
 =head2 fetch_hit_hashref
 
     while ( my $hashref = $hits->fetch_hit_hashref ) {
@@ -178,20 +158,20 @@ clobbered.
 =head2 create_excerpts
 
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        excerpt_field => 'bodytext',    
+        fields => ['bodytext'],    
     );
     $hits->create_excerpts( highlighter => $highlighter );
 
 Use the supplied highlighter to generate excerpts.  See
-L<KinoSearch::Highlight::Highlighter|KinoSearch::Highlight::Highlighter>.
+L<KinoSearch::Highlight::Highlighter>.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.20_01.
 
 =cut
 

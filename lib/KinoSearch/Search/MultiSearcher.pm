@@ -1,6 +1,7 @@
-package KinoSearch::Search::MultiSearcher;
 use strict;
 use warnings;
+
+package KinoSearch::Search::MultiSearcher;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Searcher );
 
@@ -9,16 +10,33 @@ BEGIN {
         # members / constructor args
         searchables => undef,
         # members
-        starts      => undef,
-        max_doc     => undef,
+        analyzers => undef,
+        starts    => undef,
+        max_doc   => undef,
     );
 }
 
-use KinoSearch::Search::Similarity;
+use KinoSearch::Search::HitCollector;
 
 sub init_instance {
-    my $self = shift;
-    
+    my $self        = shift;
+    my $searchables = $self->{searchables};
+
+    # confirm schema
+    if ( !defined $self->{schema} ) {
+        $self->{schema} = $self->{searchables}[0]->get_schema;
+    }
+    confess("required parameter 'schema'")
+        unless a_isa_b( $self->{schema}, "KinoSearch::Schema" );
+
+    # confirm that all searchables use the same schema
+    my $orig = ref $self->{schema};
+    for (@$searchables) {
+        my $candidate = ref( $_->get_schema );
+        next if $candidate eq $orig;
+        confess("Conflicting schemas: '$orig' '$candidate'");
+    }
+
     # derive max_doc, relative start offsets
     my $max_doc = 0;
     my @starts;
@@ -27,21 +45,7 @@ sub init_instance {
         $max_doc += $searchable->max_doc;
     }
     $self->{max_doc} = $max_doc;
-    $self->{starts} = \@starts;
-
-    # default similarity
-    $self->{similarity} = KinoSearch::Search::Similarity->new
-        unless defined $self->{similarity};
-}
-
-sub get_field_names {
-    my $self = shift;
-    my %field_names;
-    for my $searchable ( @{ $self->{searchables} } ) {
-        my $sub_field_names = $searchable->get_field_names;
-        @field_names{@$sub_field_names} = (1) x scalar @$sub_field_names;
-    }
-    return [ keys %field_names ];
+    $self->{starts}  = \@starts;
 }
 
 sub max_doc { shift->{max_doc} }
@@ -67,10 +71,66 @@ sub doc_freq {
 
 sub fetch_doc {
     my ( $self, $doc_num ) = @_;
-    my $i = $self->subsearcher($doc_num);
+    my $i          = $self->subsearcher($doc_num);
     my $searchable = $self->{searchables}[$i];
     $doc_num -= $self->{starts}[$i];
     return $searchable->fetch_doc($doc_num);
+}
+
+sub fetch_doc_vec {
+    my ( $self, $doc_num ) = @_;
+    my $i          = $self->subsearcher($doc_num);
+    my $searchable = $self->{searchables}[$i];
+    $doc_num -= $self->{starts}[$i];
+    return $searchable->fetch_doc($doc_num);
+}
+
+my %search_top_docs_args = (
+    query      => undef,
+    filter     => undef,
+    sort_spec  => undef,
+    num_wanted => undef,
+);
+
+sub search_top_docs {
+    my $self = shift;
+    my ( $searchables, $starts ) = @{$self}{qw( searchables starts )};
+    confess kerror() unless verify_args( \%search_top_docs_args, @_ );
+    my %args = ( %search_top_docs_args, @_ );
+
+    # don't allow sort_spec until we fix the sort cache problem.
+    confess("sort_spec not currently supported by MultiSearcher")
+        if defined $args{sort_spec};
+
+    my $weight = $self->create_weight( $args{query} );
+
+    my $hit_q
+        = KinoSearch::Search::HitQueue->new( max_size => $args{num_wanted} );
+
+    my $total_hits = 0;
+    for my $i ( 0 .. $#$searchables ) {
+        my $searchable = $searchables->[$i];
+        my $base       = $starts->[$i];
+        my $top_docs   = $searchable->search_top_docs(%args);
+        $total_hits += $top_docs->get_total_hits;
+        my $score_docs = $top_docs->get_score_docs;
+        for my $score_doc (@$score_docs) {
+            $score_doc->set_id( $score_doc->get_id + $base );
+            last unless $hit_q->insert_score_doc($score_doc);
+        }
+    }
+    my $score_docs = $hit_q->score_docs;
+
+    my $max_score =
+          @$score_docs
+        ? $score_docs->[0]->get_score
+        : 0;
+
+    return KinoSearch::Search::TopDocs->new(
+        score_docs => $score_docs,
+        max_score  => $max_score,
+        total_hits => $total_hits,
+    );
 }
 
 my %search_hit_collector_args = (
@@ -89,36 +149,24 @@ sub search_hit_collector {
     for my $i ( 0 .. $#$searchables ) {
         my $searchable = $searchables->[$i];
         my $start      = $starts->[$i];
-        my $collector = KinoSearch::Search::OffsetCollector->new(
+        my $collector  = KinoSearch::Search::HitCollector->new_offset_coll(
             hit_collector => $args{hit_collector},
             offset        => $start
         );
-        $searchable->search_hit_collector( %args, hit_collector => $collector);
+        $searchable->search_hit_collector( %args,
+            hit_collector => $collector );
     }
-}
-
-sub rewrite {
-    my ( $self, $orig_query ) = @_;
-
-    # not necessary to rewrite until we add query types that need it
-    return $orig_query;
-
-    #my @queries = map { $_->rewrite($orig_query) } @{ $self->{searchables} };
-    #my $combined = $queries->[0]->combine(\@queries);
-    #return $combined;
 }
 
 sub create_weight {
     my ( $self, $query ) = @_;
     my $searchables = $self->{searchables};
 
-    my $rewritten_query = $self->rewrite($query);
-
     # generate an array of unique terms
-    my @terms = $rewritten_query->extract_terms;
+    my @terms = $query->extract_terms;
     my %unique_terms;
     for my $term (@terms) {
-        if ( a_isa_b($term, "KinoSearch::Index::Term") ) {
+        if ( a_isa_b( $term, "KinoSearch::Index::Term" ) ) {
             $unique_terms{ $term->to_string } = $term;
         }
         else {
@@ -132,7 +180,7 @@ sub create_weight {
     # get an aggregated doc_freq for each term
     my @aggregated_doc_freqs = (0) x scalar @terms;
     for my $i ( 0 .. $#$searchables ) {
-        my $doc_freqs = $searchables->[$i]->doc_freqs(\@terms);
+        my $doc_freqs = $searchables->[$i]->doc_freqs( \@terms );
         for my $j ( 0 .. $#terms ) {
             $aggregated_doc_freqs[$j] += $doc_freqs->[$j];
         }
@@ -144,16 +192,14 @@ sub create_weight {
 
     my $cache_df_source = KinoSearch::Search::CacheDFSource->new(
         doc_freq_map => \%doc_freq_map,
-        max_doc => $self->max_doc,
-        similarity => $self->get_similarity,
+        max_doc      => $self->max_doc,
+        schema       => $self->{schema},
     );
 
-    return $rewritten_query->to_weight($cache_df_source);
+    return $query->to_weight($cache_df_source);
 }
 
 package KinoSearch::Search::CacheDFSource;
-use strict;
-use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Searchable );
 
@@ -170,7 +216,7 @@ sub init_instance { }
 sub doc_freq {
     my ( $self, $term ) = @_;
     my $df = $self->{doc_freq_map}{ $term->to_string };
-    confess("df for " . $term->to_string . " not available")
+    confess( "df for " . $term->to_string . " not available" )
         unless defined $df;
 }
 
@@ -181,10 +227,6 @@ sub doc_freqs {
 }
 
 sub max_doc { shift->{max_doc} }
-
-sub rewrite {
-   return $_[1];
-}
 
 =for comment
 
@@ -203,27 +245,33 @@ KinoSearch::Search::MultiSearcher - Aggregate results from multiple searchers.
 
 =head1 SYNOPSIS
 
+    my $schema = MySchema->new;
     for my $server_name (@server_names) {
         push @searchers, KinoSearch::Search::SearchClient->new(
             peer_address => "$server_name:$port",
-            analyzer     => $analyzer,
             password     => $pass,
+            schema       => $schema,
         );
     }
     my $multi_searcher = KinoSearch::Search::MultiSearcher->new(
         searchables => \@searchers,
-        analyzer    => $analyzer,
+        schema      => $schema,
     );
     my $hits = $multi_searcher->search( query => $query );
 
 =head1 DESCRIPTION
 
 Aside from the arguments to its constructor, MultiSearcher looks and acts just
-like a L<KinoSearch::Searcher> object.
+like a L<KinoSearch::Searcher> object, albeit with some limitations.
 
 The primary use for MultiSearcher is to aggregate results from several remote
 searchers via L<SearchClient|KinoSearch::Search::SearchClient>, diffusing the
 cost of searching a large corpus over multiple machines.
+
+=head2 Limitations
+
+At present, SortSpec is not supported by MultiSearcher.  Also, note that
+QueryFilter is not supported by SearchClient.
 
 =head1 METHODS
 
@@ -235,7 +283,7 @@ Constructor.  Takes two hash-style parameters, both of which are required.
 
 =item *
 
-B<analyzer> - an item which subclasses L<KinoSearch::Analysis::Analyzer>.
+B<schema> - an object which subclasses L<KinoSearch::KinoSearch::Schema>.
 
 =item *
 
@@ -245,12 +293,10 @@ B<searchables> - a reference to an array of searchers.
 
 =head1 COPYRIGHT
 
-Copyright 2006 Marvin Humphrey
+Copyright 2006-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.15.
+See L<KinoSearch> version 0.14.
 
 =cut
-
-
