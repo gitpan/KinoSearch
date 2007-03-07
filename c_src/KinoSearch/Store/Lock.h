@@ -19,7 +19,7 @@ KINO_CLASS("KinoSearch::Store::Lock", "Lock", "KinoSearch::Util::Obj");
 
 struct kino_Lock {
     KINO_LOCK_VTABLE *_; 
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_Folder      *folder;
     struct kino_ByteBuf     *lock_name;
     struct kino_ByteBuf     *lock_id;

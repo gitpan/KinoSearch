@@ -22,8 +22,7 @@ KINO_FINAL_CLASS("KinoSearch::Util::SortExternal", "SortEx",
 
 struct kino_SortExternal {
     KINO_SORTEXTERNAL_VTABLE *_;
-    kino_u32_t refcount;
-
+    KINO_OBJ_MEMBER_VARS;
     struct kino_ByteBuf  **cache; /* item cache, incoming and outgoing */
     kino_u32_t             cache_cap;   /* allocated limit for cache */
     kino_u32_t             cache_elems; /* number of elems in cache */ 

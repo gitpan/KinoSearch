@@ -19,7 +19,6 @@ BEGIN {
         seg_infos     => undef,
         seg_writer    => undef,
         write_lock    => undef,
-        utf8_fields   => {},
         has_deletions => 0,
     );
 }
@@ -57,7 +56,8 @@ sub init_instance {
     }
 
     # read the segment infos
-    my $seg_infos = $self->{seg_infos} = KinoSearch::Index::SegInfos->new;
+    my $seg_infos = $self->{seg_infos}
+        = KinoSearch::Index::SegInfos->new( schema => $self->{schema} );
     $seg_infos->read_infos($folder);
 
     # get an IndexReader if the invindex already has content
@@ -78,12 +78,6 @@ sub init_instance {
         invindex => $invindex,
         seg_info => $seg_info,
     );
-
-    # cache names of fields for which utf8 verification is necessary
-    for my $field_spec ( $schema->all_fspecs ) {
-        next if $field_spec->binary;
-        $self->{utf8_fields}{ $field_spec->get_name } = 1;
-    }
 }
 
 my %add_doc_args = ( boost => undef, );
@@ -94,13 +88,7 @@ sub add_doc {
     confess("First argument must be a hashref")
         unless reftype($doc) eq 'HASH';
     confess kerror() unless verify_args( \%add_doc_args, @_ );
-    my %args        = @_;
-    my $utf8_fields = $self->{utf8_fields};
-
-    for my $field_name ( keys %$doc ) {
-        next unless $utf8_fields->{$field_name};
-        utf8::upgrade( $doc->{$field_name} );
-    }
+    my %args   = @_;
 
     # add doc to output segment
     my $boost = defined $args{boost} ? $args{boost} : 1.0;
@@ -109,13 +97,20 @@ sub add_doc {
 
 sub add_invindexes {
     my ( $self, @invindexes ) = @_;
+    my $schema = $self->{schema};
 
     # all the invindexes must match our schema
-    my $orig_class = ref( $self->{schema} );
-    for (@invindexes) {
-        my $other_class = ref( $_->get_schema );
-        next if $other_class eq $orig_class;
-        confess("Schema subclass '$other_class' doesn't match $orig_class");
+    my $orig_class = ref($schema);
+    for my $invindex (@invindexes) {
+        my $other_schema = $invindex->get_schema;
+        my $other_class  = ref($other_schema);
+        if ( $other_class ne $orig_class ) {
+            confess("Schema class '$other_class' doesn't match $orig_class");
+        }
+        for my $other_field ( $other_schema->all_fields ) {
+            my $fspec_class = ref( $other_schema->fetch_fspec($other_field) );
+            $schema->add_field( $other_field, $fspec_class );
+        }
     }
 
     # get an ix_reader for each InvIndex
@@ -387,6 +382,6 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =cut

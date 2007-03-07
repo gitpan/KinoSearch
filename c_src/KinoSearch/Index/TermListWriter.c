@@ -157,6 +157,7 @@ init_field(TermListWriter *self, i32_t field_num)
     TInfo_Reset(self->last_tinfo);
     self->last_tinfo->field_num = field_num;
     self->last_text->len = 0;
+    self->last_tl_ptr = 0;
 }
 
 /* Close files, store metadata for a field.

@@ -18,7 +18,7 @@ KINO_FINAL_CLASS("KinoSearch::Index::TermListWriter", "TLWriter",
 
 struct kino_TermListWriter {
     KINO_TERMLISTWRITER_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_InvIndex  *invindex;
     struct kino_SegInfo   *seg_info;
     struct kino_OutStream *fh;

@@ -29,10 +29,8 @@ seek(self, term_sv)
 PPCODE:
 {
     kino_Term *term = NULL;
-    if (SvOK(term_sv)) {
-        EXTRACT_STRUCT(term_sv, term, kino_Term*,
-            "KinoSearch::Index::Term");
-    }
+    MAYBE_EXTRACT_STRUCT(term_sv, term, kino_Term*,
+        "KinoSearch::Index::Term");
     Kino_TermList_Seek(self, term);
 }
 
@@ -111,7 +109,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

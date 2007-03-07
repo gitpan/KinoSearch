@@ -14,7 +14,7 @@ KINO_CLASS("KinoSearch::Util::Int", "Int", "KinoSearch::Util::Obj");
 
 struct kino_Int {
     KINO_INT_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_i64_t value;
 };
 

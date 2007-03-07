@@ -1,5 +1,15 @@
 Revision history for KinoSearch
 
+0.20_02 2007-03-06
+  * Rework Schema API.
+    o Add instance method add_field(), facilitating dynamic schemas.
+    o Remove init_fields().
+    o Require the declaration of a %FIELDS hash.
+    o Change how field names are associated with FieldSpecs.
+    o Update documentation throughout KinoSearch to reflect the new API.
+  * Fix crashing bug in in TermListWriter/TermListReader isolated by Edward 
+    Betts.
+
 0.20_01 2007-02-26
   
   KinoSearch 0.20 is a major rewrite, adding many new features.  It also
@@ -30,7 +40,7 @@ Revision history for KinoSearch
   New public classes:
 
     * KinoSearch::Schema
-    * KinoSearch::Schema::Field
+    * KinoSearch::Schema::FieldSpec
     * KinoSearch::InvIndex
     * KinoSearch::Analysis::Token
     * KinoSearch::Search::RangeFilter

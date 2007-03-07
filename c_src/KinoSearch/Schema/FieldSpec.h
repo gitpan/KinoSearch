@@ -13,8 +13,7 @@ KINO_CLASS("KinoSearch::Schema::FieldSpec", "FSpec",
 
 struct kino_FieldSpec {
     KINO_FIELDSPEC_VTABLE *_;
-    kino_u32_t refcount;
-    struct kino_ByteBuf *name;
+    KINO_OBJ_MEMBER_VARS;
     float          boost;
     kino_bool_t    indexed;
     kino_bool_t    stored;
@@ -32,7 +31,7 @@ struct kino_FieldSpec {
  */
 KINO_FUNCTION(
 kino_FieldSpec*
-kino_FSpec_new(const char *class_name, const struct kino_ByteBuf *field_name));
+kino_FSpec_new(const char *class_name));
 
 KINO_METHOD("Kino_FSpec_Destroy",
 void

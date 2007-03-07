@@ -26,8 +26,7 @@ KINO_CLASS("KinoSearch::Search::BooleanScorer", "BoolScorer",
 
 struct kino_BooleanScorer {
     KINO_BOOLEANSCORER_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_SCORER_MEMBER_VARS
+    KINO_SCORER_MEMBER_VARS;
 
     kino_u32_t          doc_num;
     kino_u32_t          end;

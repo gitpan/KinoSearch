@@ -18,6 +18,8 @@ our %score_batch_args = (
     hit_collector => undef,
     start         => 0,
     end           => 2**31,
+    prune_factor  => 2**31,
+    seg_starts    => undef,
 );
 
 =begin comment
@@ -106,15 +108,12 @@ PPCODE:
         "KinoSearch::Search::Scorer::score_batch_args");
     kino_HitCollector *hc = (kino_HitCollector*)extract_obj(
         args_hash, SNL("hit_collector"), "KinoSearch::Search::HitCollector");
-    /* unused for now...
-    kino_u32_t start = extract_uv(args_hash, SNL("start"));
-    kino_u32_t end   = extract_uv(args_hash, SNL("end"));
-    */
-
-    /* execute scoring loop */
-    while (Kino_Scorer_Next(self)) {
-        hc->collect( hc, Kino_Scorer_Doc(self), Kino_Scorer_Score(self) );
-    }
+    kino_u32_t start        = extract_uv(args_hash, SNL("start"));
+    kino_u32_t end          = extract_uv(args_hash, SNL("end"));
+    kino_u32_t prune_factor = extract_uv(args_hash, SNL("prune_factor"));
+    kino_VArray *seg_starts = (kino_VArray*)maybe_extract_obj(args_hash, 
+        SNL("seg_starts"), "KinoSearch::Util::VArray");
+    Kino_Scorer_Score_Batch(self, hc, start, end, prune_factor, seg_starts);
 }
 
 
@@ -147,7 +146,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

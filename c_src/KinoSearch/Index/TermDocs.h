@@ -17,7 +17,7 @@ KINO_CLASS("KinoSearch::Index::TermDocs", "TermDocs",
 
 struct kino_TermDocs {
     KINO_TERMDOCS_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
 };
 
 /* Setters and getters....

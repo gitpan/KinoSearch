@@ -198,7 +198,6 @@ c_src/r/KinoSearch/Util/VArray.r
 c_src/r/KinoSearch/Util/ViewByteBuf.r
 c_src/r/KinoSearch/Util/VirtualTable.r
 Changes
-charmonize.c
 charmonizer/charm_test.c
 charmonizer/charmonize.c
 charmonizer/metaquote_src/metaquote.c
@@ -356,6 +355,7 @@ lib/KinoSearch/Util/CClass.pm
 lib/KinoSearch/Util/Class.pm
 lib/KinoSearch/Util/DynVirtualTable.pm
 lib/KinoSearch/Util/Hash.pm
+lib/KinoSearch/Util/Int.pm
 lib/KinoSearch/Util/IntMap.pm
 lib/KinoSearch/Util/Obj.pm
 lib/KinoSearch/Util/PriorityQueue.pm
@@ -445,6 +445,7 @@ t/018-cclass.t
 t/019-obj.t
 t/020-yaml.t
 t/021-dyn_virtual_table.t
+t/022-bytebuf.t
 t/050-ramfile.t
 t/051-fsfile.t
 t/101-simple_template_io.t
@@ -481,6 +482,7 @@ t/302-many_fields.t
 t/303-highlighter.t
 t/304-verify_utf8.t
 t/305-invindexer.t
+t/306-dynamic_schema.t
 t/501-termquery.t
 t/502-phrasequery.t
 t/503-booleanquery.t
@@ -493,6 +495,7 @@ t/509-multi_searcher.t
 t/510-remote_search.t
 t/511-sort_spec.t
 t/512-range_filter.t
+t/513-scorer.t
 t/601-queryparser.t
 t/602-boosts.t
 t/603-query_boosts.t
@@ -503,5 +506,5 @@ t/701-uscon.t
 t/999-remove_invindexes.t
 t/pod-coverage.t
 t/pod.t
-xshelper/KinoXSHelper.c
-xshelper/KinoXSHelper.h
+xshelper/XSHelper.c
+xshelper/XSHelper.h

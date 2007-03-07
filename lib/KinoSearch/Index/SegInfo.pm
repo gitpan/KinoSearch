@@ -52,14 +52,10 @@ CODE:
     kino_Hash *fspecs     = NULL;
 
     SV_TO_TEMP_BB(seg_name_sv, seg_name);
-    if (SvOK(metadata_sv)) {
-        EXTRACT_STRUCT(metadata_sv, metadata, kino_Hash*,
-            "KinoSearch::Util::Hash");
-    }
-    if (SvOK(fspecs_sv)) {
-        EXTRACT_STRUCT(fspecs_sv, fspecs, kino_Hash*,
-            "KinoSearch::Util::Hash");
-    }
+    MAYBE_EXTRACT_STRUCT(metadata_sv, metadata, kino_Hash*,
+		"KinoSearch::Util::Hash");
+    MAYBE_EXTRACT_STRUCT(fspecs_sv, fspecs, kino_Hash*,
+		"KinoSearch::Util::Hash");
 
     RETVAL = kino_SegInfo_new(&seg_name, fspecs, metadata);
 }
@@ -170,6 +166,12 @@ CODE:
 }
 OUTPUT: RETVAL
 
+void
+add_field(self, field_name)
+    kino_SegInfo *self;
+    kino_ByteBuf field_name;
+PPCODE:
+    kino_SegInfo_add_field(self, &field_name);
 
 __POD__
 
@@ -197,7 +199,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

@@ -13,7 +13,7 @@ KINO_CLASS("KinoSearch::Util::CClass", "CClass", "KinoSearch::Util::Obj");
 
 struct kino_CClass {
     KINO_CCLASS_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
 };
 
 /* Constructor -- for testing only.

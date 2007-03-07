@@ -11,8 +11,7 @@ KINO_CLASS("KinoSearch::Search::SortedHitQueue", "SortedHitQ",
 
 struct kino_SortedHitQueue {
     KINO_SORTEDHITQUEUE_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_HITQUEUE_MEMBER_VARS
+    KINO_HITQUEUE_MEMBER_VARS;
 };
 
 KINO_FUNCTION(

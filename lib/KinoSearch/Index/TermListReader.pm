@@ -50,12 +50,11 @@ field_terms(self, term_sv)
     SV *term_sv;
 CODE:
 {
-    kino_Term *term = NULL;
     kino_SegTermList *seg_term_list;
-    if (SvOK(term_sv)) {
-        EXTRACT_STRUCT(term_sv, term, kino_Term*,
-            "KinoSearch::Index::Term");
-    }
+    kino_Term *term = NULL;
+    MAYBE_EXTRACT_STRUCT(term_sv, term, kino_Term*,
+        "KinoSearch::Index::Term");
+
     seg_term_list = Kino_TLReader_Field_Terms(self, term);
     RETVAL = seg_term_list == NULL
         ? newSV(0)
@@ -85,12 +84,11 @@ fetch_term_info(self, term_sv)
     SV *term_sv;
 CODE:
 {
-    kino_Term *term = NULL;
     kino_TermInfo *tinfo;
-    if (SvOK(term_sv)) {
-        EXTRACT_STRUCT(term_sv, term, kino_Term*,
-            "KinoSearch::Index::Term");
-    }
+    kino_Term *term = NULL;
+    MAYBE_EXTRACT_STRUCT(term_sv, term, kino_Term*,
+        "KinoSearch::Index::Term");
+
     tinfo = Kino_TLReader_Fetch_Term_Info(self, term);
     RETVAL = tinfo == NULL
         ? newSV(0)
@@ -137,7 +135,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

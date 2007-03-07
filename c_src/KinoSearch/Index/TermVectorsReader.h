@@ -20,7 +20,7 @@ KINO_FINAL_CLASS("KinoSearch::Index::TermVectorsReader", "TVReader",
 
 struct kino_TermVectorsReader {
     KINO_TERMVECTORSREADER_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_Schema   *schema;
     struct kino_Folder   *folder;
     struct kino_SegInfo  *seg_info;
@@ -35,15 +35,13 @@ kino_TermVectorsReader*
 kino_TVReader_new(struct kino_Schema *schema, struct kino_Folder *folder, 
                   struct kino_SegInfo *seg_info));
 
-/* Return the raw bytes of an entry.  If field_num_map is not null, remap the
- * field numbers.
+/* Return the raw bytes of an entry.
  */
 KINO_METHOD("Kino_TVReader_Read_Record",
 void
 kino_TVReader_read_record(kino_TermVectorsReader *self, 
                           kino_i32_t doc_num,
-                          struct kino_ByteBuf *buffer,
-                          struct kino_IntMap *field_num_map));
+                          struct kino_ByteBuf *buffer));
 
 KINO_METHOD("Kino_TVReader_Destroy",
 void

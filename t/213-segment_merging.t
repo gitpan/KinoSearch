@@ -2,21 +2,19 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-package BiggerSchema::aux;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package BiggerSchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 # BiggerSchema is like TestSchema, but it has an extra field named "aux".
 # Because "aux" sorts before "content", it forces a remapping of field numbers
 # when an invindex created under TestSchema is opened/modified under
 # BiggerSchema.
 package BiggerSchema;
 use base qw( KinoSearch::Schema );
-__PACKAGE__->init_fields(qw( aux content ));
 use KinoSearch::Analysis::Tokenizer;
-use KinoSearch::Contrib::LongFieldSim;
+
+our %FIELDS = (
+    content => 'KinoSearch::Schema::FieldSpec',
+    aux     => 'KinoSearch::Schema::FieldSpec',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
 package main;

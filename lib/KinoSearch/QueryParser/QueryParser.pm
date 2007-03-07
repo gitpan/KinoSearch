@@ -51,8 +51,10 @@ sub init_instance {
 
     # verify or create fields param
     if ( !defined $self->{fields} ) {
-        my @fields = map { $_->get_name }
-            grep { $_->indexed } $self->{schema}->all_fspecs;
+        my $schema = $self->{schema};
+        my @fields =
+            grep { $schema->fetch_fspec($_)->indexed }
+            $self->{schema}->all_fields;
         $self->{fields} = \@fields;
     }
     confess("Required parameter 'fields' not supplied as arrayref")
@@ -381,6 +383,6 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =cut

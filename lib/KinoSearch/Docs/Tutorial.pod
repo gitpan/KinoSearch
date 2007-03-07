@@ -24,21 +24,21 @@ Setting this up is roughly analogous to the step of defining a table in SQL,
 and is accomplished by subclassing L<KinoSearch::Schema>.
 
 The most important thing a Schema tells you is what fields are present and how
-they're defined, information which is communicated via subclasses of
-L<KinoSearch::Schema::FieldSpec>.  For our search of the US Constitution,
-we'll use three fields: C<title>, C<content>, and C<url>.  C<title> and
-C<content> will be indexed (the default), so that they can be searched...
+they're defined, information which is communicated via the C<%FIELDS> hash and
+subclasses of L<KinoSearch::Schema::FieldSpec>.  For our search of the US
+Constitution, we'll use three fields: C<title>, C<content>, and C<url>.
 
-    package USConSchema::title;
-    use base qw( KinoSearch::Schema::FieldSpec );
+    our %FIELDS = (
+        title   => 'KinoSearch::Schema::FieldSpec',
+        content => 'KinoSearch::Schema::FieldSpec',
+        url     => 'USConSchema::UnIndexedField',    # custom subclass
+    );
 
-    package USConSchema::content;
-    use base qw( KinoSearch::Schema::FieldSpec );
+C<title> and C<content> will be indexed (the default), so that they can be
+searched, but C<url> won't because our urls won't contain any information that
+we think will help people find what they're looking for.
 
-... but C<url> won't because our urls won't contain any information that we
-think will help people find what they're looking for.
-
-    package USConSchema::url;
+    package USConSchema::UnIndexedField;
     use base qw( KinoSearch::Schema::FieldSpec );
     sub indexed {0}
 
@@ -135,9 +135,11 @@ Now Amendments should score higher than Articles most of the time.
 
 Try setting the C<url> field so that it gets C<indexed>.
 
-    package USConSchema::url;
-    use base qw( KinoSearch::Schema::FieldSpec );
-    # sub indexed {0}  <-- commented out, so uses default true value
+    our %FIELDS = (
+        title   => 'KinoSearch::Schema::FieldSpec',
+        content => 'KinoSearch::Schema::FieldSpec',
+        url     => 'KinoSearch::Schema::FieldSpec', # will be indexed, now
+    );
 
 Now try a search for "html" or "us_constitution".
 
@@ -147,5 +149,5 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 

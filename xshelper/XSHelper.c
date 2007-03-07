@@ -1,7 +1,7 @@
 /* WARNING -- this file may be a copy.  The original lives in xshelper/.
  */
 
-#include "KinoXSHelper.h"
+#include "XSHelper.h"
 
 HV*
 build_args_hash(SV** stack, kino_i32_t start, kino_i32_t num_stack_elems, 
@@ -96,6 +96,23 @@ extract_obj(HV *hash, char *key, STRLEN key_len, char *class)
     }
     else {
         CONFESS("not a %s", class);
+    }
+    return retval;
+}
+
+void*
+maybe_extract_obj(HV *hash, char *key, STRLEN key_len, char *class)
+{
+    SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
+    void* retval = NULL;
+    if (sv_ptr != NULL && SvOK(*sv_ptr)) {
+        if (sv_derived_from( *sv_ptr, class )) {
+            IV temp = SvIV( (SV*)SvRV(*sv_ptr) );
+            retval = INT2PTR(void*, temp);
+        }
+        else {
+            CONFESS("not a %s", class);
+        }
     }
     return retval;
 }

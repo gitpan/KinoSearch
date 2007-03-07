@@ -21,7 +21,7 @@ KINO_FINAL_CLASS("KinoSearch::Index::PostingsWriter", "PostWriter",
 
 struct kino_PostingsWriter {
     KINO_POSTINGSWRITER_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_InvIndex      *invindex;
     struct kino_SegInfo       *seg_info;
     struct kino_SortExternal  *sort_pool;
@@ -47,7 +47,7 @@ KINO_METHOD("Kino_PostWriter_Add_Batch",
 void
 kino_PostWriter_add_batch(kino_PostingsWriter *self, 
                           struct kino_TokenBatch *batch, 
-                          struct kino_FieldSpec *field_spec,
+                          const struct kino_ByteBuf *field_name,
                           kino_i32_t doc_num, 
                           float doc_boost, 
                           float length_norm));

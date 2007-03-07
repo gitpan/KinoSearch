@@ -15,8 +15,7 @@ KINO_CLASS("KinoSearch::Search::TopDocCollector", "TDColl",
 
 struct kino_TopDocCollector {
     KINO_TOPDOCCOLLECTOR_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_HITCOLLECTOR_MEMBER_VARS
+    KINO_HITCOLLECTOR_MEMBER_VARS;
     float                   min_score;
     kino_u32_t              num_hits;
     kino_u32_t              total_hits;

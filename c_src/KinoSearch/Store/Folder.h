@@ -16,7 +16,7 @@ KINO_CLASS("KinoSearch::Store::Folder", "Folder", "KinoSearch::Util::Obj");
 
 struct kino_Folder {
     KINO_FOLDER_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_ByteBuf *path;
 };
 

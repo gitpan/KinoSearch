@@ -44,29 +44,24 @@ sub init_instance {
 sub get_size { $_[0]->{size} }
 
 sub read_record {
-    my ( $self, $doc_num, $field_num_map ) = @_;
-    my ( $dsx_in, $ds_in ) = @{$self}{ 'dsx_in', 'ds_in' };
+    my ( $self,   $doc_num ) = @_;
+    my ( $dsx_in, $ds_in )   = @{$self}{ 'dsx_in', 'ds_in' };
 
+    # get to the right section of the variable length file
     $dsx_in->sseek( $doc_num * 8 );
-    my $file_ptr      = $dsx_in->lu_read('Q');
+    my $file_ptr = $dsx_in->lu_read('Q');
+    $ds_in->sseek($file_ptr);
+
+    # figure out the record length
     my $next_file_ptr =
           $doc_num == $self->{size} - 1
         ? $ds_in->slength
         : $dsx_in->lu_read('Q');
 
+    # read in the record
     my $record_len = $next_file_ptr - $file_ptr;
-
-    $ds_in->sseek($file_ptr);
-
-    # if not remapping, record can be copied whole */
-    if ( !defined $field_num_map ) {
-        my $record = $ds_in->lu_read("a$record_len");
-        return \$record;
-    }
-    # we have to map field numbers
-    else {
-        return _read_and_remap( $ds_in, $field_num_map, $record_len );
-    }
+    my $record     = $ds_in->lu_read("a$record_len");
+    return \$record;
 }
 
 # Given a doc_num, rebuild a document from the fields that were stored.
@@ -84,8 +79,7 @@ sub fetch_doc {
 
     # docode stored data and build up the doc field by field.
     for ( 1 .. $num_fields ) {
-        my $field_num  = $ds_in->lu_read('V');
-        my $field_name = $seg_info->field_name($field_num);
+        my $field_name = $ds_in->lu_read('T');
         my $field_spec = $schema->fetch_fspec($field_name);
 
         # condition the value
@@ -111,59 +105,6 @@ sub close {
 
 __END__
 
-__XS__
-
-MODULE = KinoSearch   PACKAGE = KinoSearch::Index::DocReader
-
-SV*
-_read_and_remap(ds_in, field_num_map, record_len)
-    kino_InStream *ds_in;
-    kino_IntMap   *field_num_map;
-    IV             record_len;
-CODE:
-{
-    kino_u32_t i;
-    kino_u32_t num_fields;
-    char vint_bufbuf[10];
-    char *vint_buf = vint_bufbuf;
-    size_t vint_bytes;
-    SV *target = newSV(record_len);
-
-    SvPOK_on(target);
-    
-    /* re-encode number of fields */
-    num_fields = Kino_InStream_Read_VInt(ds_in);
-    vint_bytes = kino_OutStream_encode_vint(num_fields, vint_buf);
-    sv_catpvn(target, vint_buf, vint_bytes);
-
-    /* copy strings */
-    for (i = 0; i < num_fields; i++) {
-        kino_u32_t field_string_len;
-        kino_u32_t field_num     = Kino_InStream_Read_VInt(ds_in);
-        kino_i32_t new_field_num = Kino_IntMap_Get(field_num_map, field_num);
-
-        /* verify and write remapped field num */
-        if (new_field_num == -1)
-            CONFESS("Don't recognize field_num '%ld'", field_num);
-        vint_bytes = kino_OutStream_encode_vint(new_field_num, vint_buf);
-        sv_catpvn(target, vint_buf, vint_bytes);
-
-        /* write field string length */
-        field_string_len = Kino_InStream_Read_VInt(ds_in);
-        vint_bytes = kino_OutStream_encode_vint(field_string_len, vint_buf);
-        sv_catpvn(target, vint_buf, vint_bytes);
-        
-        /* write field string bytes */
-        SvGROW(target, SvCUR(target) + field_string_len);
-        Kino_InStream_Read_Bytes(ds_in, SvEND(target), field_string_len);
-        SvCUR_set(target, SvCUR(target) + field_string_len);
-    }
-
-    RETVAL = newRV_noinc(target);
-}
-OUTPUT: RETVAL
-
-
 __POD__
 
 =begin devdocs
@@ -185,7 +126,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

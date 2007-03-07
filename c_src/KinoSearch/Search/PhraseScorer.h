@@ -14,8 +14,7 @@ KINO_CLASS("KinoSearch::Search::PhraseScorer", "PhraseScorer",
 
 struct kino_PhraseScorer {
     KINO_PHRASESCORER_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_SCORER_MEMBER_VARS
+    KINO_SCORER_MEMBER_VARS;
     
     kino_u32_t             doc_num;
     kino_u32_t             slop;

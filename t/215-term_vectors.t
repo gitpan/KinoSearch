@@ -2,26 +2,24 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-package MySchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( content ));
-
-package AltSchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package AltSchema::aux;
-use base qw( KinoSearch::Schema::FieldSpec );
 
 package AltSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = (
+    content => 'KinoSearch::Schema::FieldSpec',
+    aux     => 'KinoSearch::Schema::FieldSpec',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( content aux ));
 
 package main;
 use utf8;

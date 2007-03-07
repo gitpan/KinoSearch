@@ -24,7 +24,7 @@ KINO_CLASS("KinoSearch::Search::HitCollector", "HC", "KinoSearch::Util::Obj");
 
 struct kino_HitCollector {
     KINO_HITCOLLECTOR_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_HC_collect_t collect;
     kino_HC_release_t release;
     void *data;

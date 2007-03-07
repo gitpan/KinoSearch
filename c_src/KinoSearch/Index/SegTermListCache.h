@@ -19,8 +19,7 @@ KINO_CLASS("KinoSearch::Index::SegTermListCache", "SegTLCache",
 
 struct kino_SegTermListCache {
     KINO_SEGTERMLISTCACHE_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_TERMLISTCACHE_MEMBER_VARS
+    KINO_TERMLISTCACHE_MEMBER_VARS;
 
     struct kino_TermInfo   **tinfos;
     struct kino_Schema      *schema;

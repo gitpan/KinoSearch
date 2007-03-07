@@ -10,7 +10,8 @@ use KinoTestUtils qw( create_invindex );
 
 my $invindex = create_invindex( "a", "a b" );
 
-my $seg_infos = KinoSearch::Index::SegInfos->new;
+my $seg_infos
+    = KinoSearch::Index::SegInfos->new( schema => $invindex->get_schema );
 $seg_infos->read_infos( $invindex->get_folder );
 $seg_infos->write_infos( $invindex->get_folder );
 

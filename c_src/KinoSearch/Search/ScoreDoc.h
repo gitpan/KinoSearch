@@ -14,7 +14,7 @@ KINO_CLASS("KinoSearch::Search::ScoreDoc", "ScoreDoc",
 
 struct kino_ScoreDoc {
     KINO_SCOREDOC_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_u32_t    id;
     float         score;
 };

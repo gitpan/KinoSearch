@@ -17,8 +17,7 @@ KINO_CLASS("KinoSearch::Search::TermScorer", "TermScorer",
 
 struct kino_TermScorer {
     KINO_TERMSCORER_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_SCORER_MEMBER_VARS
+    KINO_SCORER_MEMBER_VARS;
     kino_u32_t            doc_num;
     struct kino_TermDocs* term_docs;
     kino_u32_t            pointer;

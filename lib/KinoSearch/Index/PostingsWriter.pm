@@ -16,7 +16,7 @@ our %instance_vars;
 
 our %add_batch_vars = (
     token_batch => undef,
-    field_spec  => undef,
+    field_name  => undef,
     doc_num     => undef,
     doc_boost   => undef,
     length_norm => undef,
@@ -136,13 +136,15 @@ PPCODE:
         "KinoSearch::Index::PostingsWriter::add_batch_vars");
     kino_TokenBatch *batch = (kino_TokenBatch*)extract_obj( args_hash, 
         SNL("token_batch"), "KinoSearch::Analysis::TokenBatch");
-    kino_FieldSpec *field_spec = (kino_FieldSpec*)extract_obj( args_hash, 
-        SNL("field_spec"), "KinoSearch::Schema::FieldSpec");
     kino_i32_t doc_num     = extract_iv( args_hash, SNL("doc_num") );
     float      doc_boost   = extract_nv( args_hash, SNL("doc_boost") );
     float      length_norm = extract_nv( args_hash, SNL("length_norm") );
+    SV *field_name_sv      = extract_sv( args_hash, SNL("field_name") );
+    kino_ByteBuf field_name = KINO_BYTEBUF_BLANK;
 
-    kino_PostWriter_add_batch(self, batch, field_spec, doc_num, doc_boost,
+    SV_TO_TEMP_BB(field_name_sv, field_name);
+    
+    kino_PostWriter_add_batch(self, batch, &field_name, doc_num, doc_boost,
         length_norm);
 }
 
@@ -156,10 +158,8 @@ _add_segment(self, tl_reader, term_docs, doc_map, field_num_map_sv)
 PPCODE:
 {
     kino_IntMap *field_num_map = NULL;
-    if (SvOK(field_num_map_sv)) {
-        EXTRACT_STRUCT(field_num_map_sv, field_num_map, kino_IntMap*,
-            "KinoSearch::Util::IntMap");
-    }
+    MAYBE_EXTRACT_STRUCT(field_num_map_sv, field_num_map, kino_IntMap*,
+        "KinoSearch::Util::IntMap");
     Kino_PostWriter_Add_Segment(self, tl_reader, term_docs, doc_map,
         field_num_map);
 }
@@ -183,7 +183,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

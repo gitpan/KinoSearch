@@ -11,7 +11,7 @@ KINO_FINAL_CLASS("KinoSearch::Index::TermInfo", "TInfo",
 
 struct kino_TermInfo {
     KINO_TERMINFO_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_i32_t field_num;
     kino_i32_t doc_freq;
     kino_u64_t post_fileptr;

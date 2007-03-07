@@ -5,7 +5,7 @@ use lib 'buildlib';
 use strict;
 use warnings;
 
-package MySchema::content;
+package MySchema::UnAnalyzed;
 use base qw( KinoSearch::Schema::FieldSpec );
 sub analyzed {0}
 
@@ -13,7 +13,7 @@ package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-__PACKAGE__->init_fields(qw( content ));
+our %FIELDS = ( content => 'MySchema::UnAnalyzed' );
 
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 

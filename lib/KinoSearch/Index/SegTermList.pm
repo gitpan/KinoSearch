@@ -47,10 +47,9 @@ CODE:
     SV *field_sv = extract_sv(args_hash, SNL("field"));
     kino_ByteBuf field = KINO_BYTEBUF_BLANK;
 
-    if (SvOK(tl_cache_sv)) {
-        EXTRACT_STRUCT(tl_cache_sv, tl_cache, kino_SegTermListCache*, 
-            "KinoSearch::Index::SegTermListCache");
-    }
+    MAYBE_EXTRACT_STRUCT(tl_cache_sv, tl_cache, kino_SegTermListCache*, 
+        "KinoSearch::Index::SegTermListCache");
+
 
     if (SvOK(field_sv))
         SV_TO_TEMP_BB(field_sv, field);
@@ -111,7 +110,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

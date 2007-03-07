@@ -2,9 +2,6 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-package MySchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MySchema::alt;
 use base qw( KinoSearch::Schema::FieldSpec );
 sub boost {0.1}
@@ -12,8 +9,13 @@ sub boost {0.1}
 package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = (
+    content => 'KinoSearch::Schema::FieldSpec',
+    alt     => 'MySchema::alt',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( content alt ));
 
 package main;
 

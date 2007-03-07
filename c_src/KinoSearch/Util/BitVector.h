@@ -12,7 +12,7 @@ KINO_CLASS("KinoSearch::Util::BitVector", "BitVec", "KinoSearch::Util::Obj");
 
 struct kino_BitVector {
     KINO_BITVECTOR_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_u32_t capacity;
     kino_u8_t *bits;
     kino_u32_t count;

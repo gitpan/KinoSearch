@@ -6,6 +6,8 @@ use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
+our %FIELDS = ();
+
 package main;
 use Test::More tests => 10;
 use KinoSearch::Store::RAMFolder;
@@ -13,18 +15,15 @@ use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::InvIndexer;
 use KinoSearch::Searcher;
 
+my $schema = MySchema->new;
+
 for my $num_fields ( 1 .. 10 ) {
     # build an invindex with $num_fields fields, and the same content in each
-    my $field_name = "field$num_fields";
-    eval qq|package MySchema::$field_name;
-            use base qw( KinoSearch::Schema::FieldSpec );
-            MySchema->init_fields(qw( $field_name ));
-            package main;
-            |;
-    die $@ if $@;
+    $schema->add_field(
+        "field$num_fields" => 'KinoSearch::Schema::FieldSpec' );
     my $folder   = KinoSearch::Store::RAMFolder->new;
     my $invindex = KinoSearch::InvIndex->create(
-        schema => MySchema->new,
+        schema => $schema,
         folder => $folder,
     );
 

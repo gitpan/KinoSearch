@@ -12,7 +12,8 @@ use KinoSearch::Index::SegInfo;
 
 my $invindex  = create_invindex( 'a' .. 'e' );
 my $folder    = $invindex->get_folder;
-my $seg_infos = KinoSearch::Index::SegInfos->new;
+my $schema    = $invindex->get_schema;
+my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
 $seg_infos->read_infos($folder);
 my $seg_info = $seg_infos->get_info('_1');
 

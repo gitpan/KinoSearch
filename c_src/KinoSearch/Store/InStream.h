@@ -21,8 +21,7 @@ KINO_FINAL_CLASS("KinoSearch::Store::InStream", "InStream",
 
 struct kino_InStream {
     KINO_INSTREAM_VTABLE *_;
-    kino_u32_t refcount;
-
+    KINO_OBJ_MEMBER_VARS;
     kino_u64_t   offset;
     kino_u64_t   len;
     char        *buf;          

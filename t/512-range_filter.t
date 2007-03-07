@@ -7,23 +7,21 @@ use List::Util qw( shuffle );
 
 BEGIN { use_ok('KinoSearch::Search::RangeFilter') }
 
-package RangeSchema::name;
-use base qw( KinoSearch::Schema::FieldSpec );
-sub analyzed {0}
-
-package RangeSchema::cat;
-use base qw( KinoSearch::Schema::FieldSpec );
-sub analyzed {0}
-
-package RangeSchema::unused;
+package RangeSchema::UnAnalyzed;
 use base qw( KinoSearch::Schema::FieldSpec );
 sub analyzed {0}
 
 package RangeSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = (
+    name   => 'RangeSchema::UnAnalyzed',
+    cat    => 'RangeSchema::UnAnalyzed',
+    unused => 'RangeSchema::UnAnalyzed',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( name cat unused ));
 
 package main;
 

@@ -17,7 +17,7 @@ KINO_CLASS("KinoSearch::Index::TermListReader", "TLReader",
 
 struct kino_TermListReader {
     KINO_TERMLISTREADER_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_Schema *schema;
     struct kino_Folder *folder;
     struct kino_SegInfo *seg_info;

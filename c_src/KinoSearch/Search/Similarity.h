@@ -13,7 +13,7 @@ KINO_CLASS("KinoSearch::Search::Similarity", "Sim", "KinoSearch::Util::Obj");
 
 struct kino_Similarity {
     KINO_SIMILARITY_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     float         *norm_decoder;
     float         *prox_decoder;
 };

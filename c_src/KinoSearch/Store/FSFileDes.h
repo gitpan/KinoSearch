@@ -13,8 +13,7 @@ KINO_CLASS("KinoSearch::Store::FSFileDes", "FSFileDes",
 
 struct kino_FSFileDes {
     KINO_FSFILEDES_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_FILEDES_MEMBER_VARS
+    KINO_FILEDES_MEMBER_VARS;
     FILE *fhandle;
 };
 

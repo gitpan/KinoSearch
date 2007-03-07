@@ -54,7 +54,8 @@ sub create {
         timeout   => WRITE_LOCK_TIMEOUT,
         do_body   => sub {
             # write empty segments data
-            my $seg_infos = KinoSearch::Index::SegInfos->new;
+            my $seg_infos
+                = KinoSearch::Index::SegInfos->new( schema => $schema );
             $seg_infos->write_infos($folder);
         },
     );
@@ -96,7 +97,8 @@ sub clobber {
             $folder->delete_file($_) for @kino_files;
 
             # write empty segments data
-            my $seg_infos = KinoSearch::Index::SegInfos->new;
+            my $seg_infos
+                = KinoSearch::Index::SegInfos->new( schema => $schema );
             $seg_infos->write_infos($folder);
         },
     );
@@ -262,7 +264,7 @@ Copyright 2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =cut
 

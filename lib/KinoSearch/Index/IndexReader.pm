@@ -36,10 +36,11 @@ sub new {
 sub _open_multi_or_segreader {
     my $self = shift;
 
-    # verify InvIndex
+    # verify InvIndex and extract schema
     my $invindex = $self->{invindex};
     confess("Missing required arg 'invindex'")
         unless a_isa_b( $invindex, "KinoSearch::InvIndex" );
+    my $schema = $self->{invindex}->get_schema;
 
     my $seg_infos;
     if ( defined $self->{seg_infos} ) {
@@ -48,7 +49,7 @@ sub _open_multi_or_segreader {
     }
     else {
         # ... or read the most recent segments file
-        $seg_infos = KinoSearch::Index::SegInfos->new;
+        $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
         my $folder = $invindex->get_folder;
         $seg_infos->read_infos($folder);
     }
@@ -79,7 +80,7 @@ sub _open_multi_or_segreader {
         last unless $@;
         my $saved_error = $@;
         my $gen         = $seg_infos->get_generation;
-        $seg_infos = KinoSearch::Index::SegInfos->new;
+        $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
         $seg_infos->read_infos( $invindex->get_folder );
         if ( $seg_infos->get_generation == $gen ) {
             confess($saved_error);
@@ -236,18 +237,6 @@ sub segreaders_to_merge { shift->abstract_death }
 
 =begin comment
 
-Return an arrayref of SegSearchers, one for each segment the IndexReader
-contains.
-
-    my $seg_searchers = $ix_reader->seg_searchers;
-
-=end comment
-=cut
-
-sub seg_searchers { shift->abstract_death }
-
-=begin comment
-
     $ix_reader->close;
 
 Release all resources.
@@ -288,7 +277,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

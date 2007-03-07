@@ -15,8 +15,7 @@ KINO_FINAL_CLASS("KinoSearch::Store::OutStream", "OutStream",
 
 struct kino_OutStream {
     KINO_OUTSTREAM_VTABLE *_;
-    kino_u32_t refcount;
-
+    KINO_OBJ_MEMBER_VARS;
     char         *buf;
     kino_u64_t    buf_start;
     kino_u32_t    buf_pos;

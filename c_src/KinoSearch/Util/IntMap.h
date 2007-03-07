@@ -10,7 +10,7 @@ KINO_CLASS("KinoSearch::Util::IntMap", "IntMap", "KinoSearch::Util::Obj");
 
 struct kino_IntMap {
     KINO_INTMAP_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_i32_t *ints;
     kino_i32_t size;
 };

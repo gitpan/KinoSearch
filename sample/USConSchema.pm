@@ -1,13 +1,7 @@
 use strict;
 use warnings;
 
-package USConSchema::title;
-use base 'KinoSearch::Schema::FieldSpec';
-
-package USConSchema::content;
-use base 'KinoSearch::Schema::FieldSpec';
-
-package USConSchema::url;
+package USConSchema::UnIndexedField;
 use base 'KinoSearch::Schema::FieldSpec';
 sub indexed {0}
 
@@ -15,7 +9,11 @@ package USConSchema;
 use base 'KinoSearch::Schema';
 use KinoSearch::Analysis::PolyAnalyzer;
 
-__PACKAGE__->init_fields(qw( title content url ));
+our %FIELDS = (
+    title   => 'KinoSearch::Schema::FieldSpec',
+    content => 'KinoSearch::Schema::FieldSpec',
+    url     => 'USConSchema::UnIndexedField',
+);
 
 sub analyzer {
     return KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );

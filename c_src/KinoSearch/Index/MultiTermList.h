@@ -17,8 +17,7 @@ KINO_CLASS( "KinoSearch::Index::MultiTermList", "MultiTermList",
 
 struct kino_MultiTermList {
     KINO_MULTITERMLIST_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_TERMLIST_MEMBER_VARS
+    KINO_TERMLIST_MEMBER_VARS;
     struct kino_ByteBuf        *field;
     struct kino_Term           *term;
     struct kino_PriorityQueue  *list_q;

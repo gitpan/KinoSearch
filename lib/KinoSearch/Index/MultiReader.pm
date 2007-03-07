@@ -169,20 +169,6 @@ sub segreaders_to_merge {
     }
 }
 
-sub seg_searchers {
-    my $self = shift;
-    my ( $starts, $seg_readers ) = @{$self}{qw( starts seg_readers )};
-    my @seg_searchers;
-    for my $i ( 0 .. $#$starts ) {
-        push @seg_searchers,
-            KinoSearch::Search::SegSearcher->new(
-            seg_reader => $seg_readers->[$i],
-            offset     => $starts->[$i],
-            );
-    }
-    return \@seg_searchers;
-}
-
 # Generate fibonacci series
 my %fibo_cache;
 
@@ -219,7 +205,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

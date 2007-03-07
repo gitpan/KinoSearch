@@ -148,11 +148,6 @@ sub segreaders_to_merge {
     return;
 }
 
-sub seg_searchers {
-    my $self = shift;
-    return [ KinoSearch::Search::SegSearcher->new( seg_reader => $self ) ];
-}
-
 sub close {
     my $self = shift;
     $self->{deldocs}->close;
@@ -182,7 +177,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

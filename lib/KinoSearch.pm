@@ -5,7 +5,7 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.20_01';
+our $VERSION = '0.20_02';
 
 use constant K_DEBUG => 0;
 
@@ -48,7 +48,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.20_01
+0.20_02
 
 =head1 EXTRA WARNING
 
@@ -71,21 +71,17 @@ First, plan out your index structure and describe it with a "schema".
 
     # ./MySchema.pm
 
-    package MySchema::title;
-    use base qw( KinoSearch::Schema::Field );
-
-    package MySchema::content;
-    use base qw( KinoSearch::Schema::Field );
-
     package MySchema;
     use base qw( KinoSearch::Schema );
-
     use KinoSearch::Analysis::PolyAnalyzer;
-
-    __PACKAGE__->init_fields(qw( title content ));
+    
+    our %FIELDS = (
+        title   => 'KinoSearch::Schema::FieldSpec',
+        content => 'KinoSearch::Schema::FieldSpec',
+    );
 
     sub analyzer { 
-        KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
+        return KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
     }
 
 Next, create the index and add documents to it.
@@ -197,7 +193,7 @@ L<KinoSearch::Schema> - Plan out your index.
 
 =item *
 
-L<KinoSearch::Schema::Field> - Define index fields.
+L<KinoSearch::Schema::FieldSpec> - Define index fields.
 
 =item *
 

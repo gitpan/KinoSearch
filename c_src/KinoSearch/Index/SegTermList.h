@@ -20,8 +20,7 @@ KINO_CLASS("KinoSearch::Index::SegTermList", "SegTermList",
 
 struct kino_SegTermList {
     KINO_SEGTERMLIST_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_TERMLIST_MEMBER_VARS
+    KINO_TERMLIST_MEMBER_VARS;
 
     struct kino_Schema           *schema;
     struct kino_Folder           *folder;

@@ -14,8 +14,7 @@ KINO_CLASS("KinoSearch::Index::TermListCache", "TLCache",
 
 struct kino_TermListCache {
     KINO_TERMLISTCACHE_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_TERMLIST_MEMBER_VARS
+    KINO_TERMLIST_MEMBER_VARS;
 
     struct kino_ByteBuf    **term_texts;
     struct kino_Term        *term;

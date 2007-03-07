@@ -34,9 +34,6 @@ sub analyze {
     return $new_batch;
 }
 
-package MySchema::plain;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MySchema::boosted;
 use base qw( KinoSearch::Schema::FieldSpec );
 
@@ -49,7 +46,11 @@ package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-__PACKAGE__->init_fields(qw( plain boosted ));
+our %FIELDS = (
+    plain   => 'KinoSearch::Schema::FieldSpec',
+    boosted => 'MySchema::boosted',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
 package main;

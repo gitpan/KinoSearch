@@ -9,6 +9,9 @@ use Time::HiRes qw( time );
 
 BEGIN {
     __PACKAGE__->init_instance_vars(
+        # params/members
+        schema => undef,
+
         # members
         infos       => {},
         seg_counter => 0,
@@ -19,10 +22,18 @@ BEGIN {
 }
 
 use KinoSearch::Index::SegInfo;
+use KinoSearch::Schema::FieldSpec;
+use KinoSearch::Schema;
 use KinoSearch::Index::IndexFileNames
     qw( filename_from_gen SEG_INFOS_FORMAT );
 use KinoSearch::Util::CClass qw( to_kino to_perl );
 use KinoSearch::Util::YAML qw( encode_yaml parse_yaml );
+
+sub init_instance {
+    my $self = shift;
+    confess("Missing required parameter schema") unless defined
+        $self->{schema};
+}
 
 # Add a SegInfo to the collection.
 sub add_info {
@@ -56,6 +67,7 @@ sub infos {
 # Decode "segments" file.
 sub read_infos {
     my ( $self, $folder ) = @_;
+    my $schema   = $self->{schema};
     my $filename = $folder->latest_gen( 'segments', '.yaml' );
     return unless defined $filename;
     my $segs_data = parse_yaml( $folder->slurp_file($filename) );
@@ -66,6 +78,16 @@ sub read_infos {
 
     $self->{seg_counter} = $segs_data->{seg_counter};
     $self->{generation}  = $segs_data->{generation};
+
+    # Add any unknown fields to the Schema instance
+    while ( my ( $field, $fspec_class ) = each %{ $segs_data->{fields} }) {
+        if ( !$fspec_class->isa("KinoSearch::Schema::FieldSpec") ) {
+            confess(  "Attempted to load field '$field' assigned to "
+                    . "'$fspec_class', but '$fspec_class' isn't a "
+                    . "KinoSearch::Schema::FieldSpec" );
+        }
+        $schema->add_field( $field, $fspec_class );
+    }
 
     # build one SegInfo object for each segment
     return unless defined $segs_data->{segments};
@@ -80,14 +102,20 @@ sub read_infos {
 # Write "segments" file.
 sub write_infos {
     my ( $self, $folder ) = @_;
+    my $schema = $self->{schema};
 
     # increment the filename and the generation
     $self->{generation}++;
     $self->{version}++;
 
+    # build a hash of field_name => fspec_class pairings
+    my %fields
+        = map { $_ => ref( $schema->fetch_fspec($_) ) } $schema->all_fields;
+
     # create a YAML-izable data structure
     my %data = (
         format      => SEG_INFOS_FORMAT,
+        fields      => \%fields,
         version     => $self->{version},
         ks_version  => $KinoSearch::VERSION,
         seg_counter => $self->{seg_counter},
@@ -132,7 +160,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

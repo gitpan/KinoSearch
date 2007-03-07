@@ -10,7 +10,7 @@ KINO_CLASS("KinoSearch::Util::VArray", "VA", "KinoSearch::Util::Obj");
 
 struct kino_VArray {
     KINO_VARRAY_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_Obj   **elems;
     kino_u32_t   size;
     kino_u32_t   cap;

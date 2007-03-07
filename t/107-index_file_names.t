@@ -21,7 +21,8 @@ sub touch {
     $outstream->sclose;
 }
 
-my $seg_infos = KinoSearch::Index::SegInfos->new;
+my $seg_infos
+    = KinoSearch::Index::SegInfos->new( schema => $invindex->get_schema );
 $seg_infos->read_infos($folder);
 
 touch( $folder, "_234.p25" );

@@ -17,8 +17,7 @@ KINO_CLASS("KinoSearch::Store::FSFolder", "FSFolder",
 
 struct kino_FSFolder {
     KINO_FSFOLDER_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_FOLDER_MEMBER_VARS
+    KINO_FOLDER_MEMBER_VARS;
 };
 
 KINO_FUNCTION(

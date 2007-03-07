@@ -2,30 +2,31 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-package ControlSchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package ControlSchema::category;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package ControlSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = (
+    content  => 'KinoSearch::Schema::FieldSpec',
+    category => 'KinoSearch::Schema::FieldSpec',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( content category ));
 
-package BoostedFieldSchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package BoostedFieldSchema::category;
+package BoostedField;
 use base qw( KinoSearch::Schema::FieldSpec );
 sub boost {100}
 
 package BoostedFieldSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = (
+    content  => 'KinoSearch::Schema::FieldSpec',
+    category => 'BoostedField',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( content category ));
 
 package main;
 

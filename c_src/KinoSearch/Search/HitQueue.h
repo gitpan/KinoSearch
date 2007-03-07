@@ -11,8 +11,7 @@ KINO_CLASS("KinoSearch::Search::HitQueue", "HitQ",
 
 struct kino_HitQueue {
     KINO_HITQUEUE_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_PRIORITYQUEUE_MEMBER_VARS
+    KINO_PRIORITYQUEUE_MEMBER_VARS;
 };
 
 KINO_FUNCTION(

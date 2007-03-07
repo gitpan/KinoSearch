@@ -1,16 +1,13 @@
 use strict;
 use warnings;
 
-package MySchema::id;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package MySchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MySchema;
 use base qw( KinoSearch::Schema );
 
-__PACKAGE__->init_fields(qw( id content ));
+our %FIELDS = (
+    content => 'KinoSearch::Schema::FieldSpec',
+    id      => 'KinoSearch::Schema::FieldSpec',
+);
 
 use KinoSearch::Analysis::Tokenizer;
 

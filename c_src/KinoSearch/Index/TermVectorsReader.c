@@ -50,10 +50,8 @@ TVReader_destroy(TermVectorsReader *self)
     free(self);
 }
 
-
 void
-TVReader_read_record(TermVectorsReader *self, i32_t doc_num, ByteBuf *target,
-                     IntMap *field_num_map)
+TVReader_read_record(TermVectorsReader *self, i32_t doc_num, ByteBuf *target)
 {
     u64_t fileptr, next_fileptr;
     u32_t len;
@@ -69,49 +67,10 @@ TVReader_read_record(TermVectorsReader *self, i32_t doc_num, ByteBuf *target,
 
     BB_Grow(target, len);
 
+    /* copy the whole record */
     InStream_SSeek(tv_in, fileptr);
-
-    /* if not remapping, record can be copied whole */
-    if (field_num_map == NULL) {
-        InStream_Read_Bytes(tv_in, target->ptr, len);
-        target->len = len;
-    }
-    /* we have to remap field numbers */
-    else {
-        u32_t i;
-        u32_t num_fields;
-        char vint_bufbuf[10];
-        char *vint_buf = vint_bufbuf;
-        size_t vint_bytes;
-
-        /* re-encode number of fields */
-        num_fields = InStream_Read_VInt(tv_in);
-        vint_bytes = OutStream_encode_vint(num_fields, vint_buf);
-        BB_Cat_Str(target, vint_buf, vint_bytes);
-
-        /* copy strings */
-        for (i = 0; i < num_fields; i++) {
-            u32_t field_string_len;
-            u32_t field_num     = InStream_Read_VInt(tv_in);
-            i32_t new_field_num = IntMap_Get(field_num_map, field_num);
-
-            /* verify and write remapped field num */
-            if (new_field_num == -1)
-                CONFESS("Don't recognize field_num '%ld'", field_num);
-            vint_bytes = OutStream_encode_vint(new_field_num, vint_buf);
-            BB_Cat_Str(target, vint_buf, vint_bytes);
-
-            /* write field string length */
-            field_string_len = InStream_Read_VInt(tv_in);
-            vint_bytes = OutStream_encode_vint(field_string_len, vint_buf);
-            BB_Cat_Str(target, vint_buf, vint_bytes);
-            
-            /* write field string bytes */
-            BB_Grow(target, target->len + field_string_len);
-            InStream_Read_Bytes(tv_in, BBEND(target), field_string_len);
-            target->len += field_string_len;
-        }
-    }
+    InStream_Read_Bytes(tv_in, target->ptr, len);
+    target->len = len;
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

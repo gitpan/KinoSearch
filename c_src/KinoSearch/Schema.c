@@ -10,23 +10,30 @@
 #include "KinoSearch/Search/Similarity.r"
 
 Schema*
-Schema_new(const char *class_name, Hash *fspecs, Hash *sims, Similarity *sim)
+Schema_new(const char *class_name, void *analyzer, void *analyzers, 
+           Similarity *sim)
 {
     CREATE_SUBCLASS(self, class_name, Schema, SCHEMA);
 
     /* assign */
-    REFCOUNT_INC(fspecs);
-    REFCOUNT_INC(sims);
+    CClass_svrefcount_inc(analyzer);
+    CClass_svrefcount_inc(analyzers);
     REFCOUNT_INC(sim);
-    self->fspecs = fspecs;
-    self->sims   = sims;
-    self->sim    = sim;
+    self->analyzer    = analyzer;
+    self->analyzers   = analyzers;
+    self->sim         = sim;
 
     /* init */
-    self->analyzer    = NULL;
-    self->analyzers   = NULL;
+    self->fspecs      = Hash_new(0);
+    self->sims        = Hash_new(0);
 
     return self;
+}
+
+void
+Schema_add_field(Schema *self, const ByteBuf *field_name, FieldSpec *fspec)
+{
+    Hash_Store_BB(self->fspecs, field_name, (Obj*)fspec);
 }
 
 FieldSpec*

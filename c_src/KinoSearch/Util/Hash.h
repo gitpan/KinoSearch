@@ -12,7 +12,7 @@ KINO_CLASS("KinoSearch::Util::Hash", "Hash", "KinoSearch::Util::Obj");
 
 struct kino_Hash {
     KINO_HASH_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_HashEntry    **buckets;
     kino_u32_t                 num_buckets;
     kino_u32_t                 size;

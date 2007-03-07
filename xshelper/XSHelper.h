@@ -1,4 +1,4 @@
-/* KinoXSHelper.h -- functions used by XS bindings for KinoSearch.
+/* XSHelper.h -- functions used by XS bindings.
  * 
  * WARNING -- this file may be a copy.  The original lives in xshelper/.
  */
@@ -115,6 +115,12 @@ extract_nv(HV* hash, char* key, kino_i32_t key_len);
 void*
 extract_obj(HV *hash, char *key, STRLEN key_len, char *class);
 
+/* Like extract_obj(), but will return NULL without warning if the hash value
+ * is undef.
+ */
+void*
+maybe_extract_obj(HV *hash, char *key, STRLEN key_len, char *class);
+
 /* Given an SV* that may be either an object or a class name, return the
  * class name.  Morally equivalent to ( ref($class) || $class ).
  */
@@ -123,15 +129,25 @@ derive_class(SV* either_sv);
 
 /* Extract a struct pointer from a Perl object, checking class.
  */
-#define EXTRACT_STRUCT( perl_obj, dest, cname, class ) \
-     if (sv_derived_from( perl_obj, class )) { \
-         const IV tmp = SvIV( (SV*)SvRV(perl_obj) ); \
-         dest = INT2PTR(cname, tmp); \
-     } \
-     else { \
-         dest = NULL; /* suppress unused var warning */ \
-         CONFESS("not a %s", class); \
-     }
+#define EXTRACT_STRUCT( perl_obj, dest, cname, class_name ) \
+    do { \
+        if (sv_derived_from( perl_obj, class_name )) { \
+            const IV tmp = SvIV( (SV*)SvRV(perl_obj) ); \
+            dest = INT2PTR(cname, tmp); \
+        } \
+        else { \
+            dest = NULL; /* suppress unused var warning */ \
+            CONFESS("not a %s", class_name); \
+        } \
+    } while (0)
+
+#define MAYBE_EXTRACT_STRUCT( perl_obj, dest, cname, class_name ) \
+    do { \
+        if ((SvOK(perl_obj)) && sv_derived_from( perl_obj, class_name )) { \
+            const IV tmp = SvIV( (SV*)SvRV(perl_obj) ); \
+            dest = INT2PTR(cname, tmp); \
+        } \
+    } while (0)
 
 /* Compare the IV values of two scalars.  Used by PriorityQueue XS binding.
  */

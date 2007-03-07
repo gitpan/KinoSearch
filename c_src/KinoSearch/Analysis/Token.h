@@ -10,7 +10,7 @@ KINO_CLASS("KinoSearch::Analysis::Token", "Token", "KinoSearch::Util::Obj");
 
 struct kino_Token {
     KINO_TOKEN_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     char       *text;
     size_t      len;
     kino_u32_t  start_offset;

@@ -13,7 +13,7 @@ KINO_CLASS("KinoSearch::Search::FieldDocCollator", "FDocCollator",
 
 struct kino_FieldDocCollator {
     KINO_FIELDDOCCOLLATOR_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_u32_t                 cap;
     kino_u32_t                 size;
     struct kino_IntMap       **sort_caches;

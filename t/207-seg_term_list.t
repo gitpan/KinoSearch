@@ -12,21 +12,16 @@ use KinoSearch::Index::SegInfos;
 use KinoSearch::Util::YAML qw( parse_yaml );
 use KinoSearch::Util::CClass qw( to_kino );
 
-package MySchema::a;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package MySchema::b;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package MySchema::c;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MySchema;
 use base qw( KinoSearch::Schema );
 
 use KinoSearch::Analysis::Analyzer;
 
-__PACKAGE__->init_fields(qw( a b c ));
+our %FIELDS = (
+    a => 'KinoSearch::Schema::FieldSpec',
+    b => 'KinoSearch::Schema::FieldSpec',
+    c => 'KinoSearch::Schema::FieldSpec',
+);
 
 sub analyzer { KinoSearch::Analysis::Analyzer->new }
 
@@ -51,7 +46,7 @@ for my $animal (@animals) {
 }
 $invindexer->finish;
 
-my $seg_infos = KinoSearch::Index::SegInfos->new;
+my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
 $seg_infos->read_infos($folder);
 my $seg_info = $seg_infos->get_info('_1');
 

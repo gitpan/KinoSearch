@@ -13,8 +13,7 @@ KINO_CLASS("KinoSearch::Search::SortCollector", "SortColl",
 
 struct kino_SortCollector {
     KINO_SORTCOLLECTOR_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_TOPDOCCOLLECTOR_MEMBER_VARS
+    KINO_TOPDOCCOLLECTOR_MEMBER_VARS;
     struct kino_FieldDocCollator *collator;
     kino_i32_t                    min_doc;
 };

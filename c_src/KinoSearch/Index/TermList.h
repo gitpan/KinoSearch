@@ -15,7 +15,7 @@ KINO_CLASS("KinoSearch::Index::TermList", "TermList",
 
 struct kino_TermList {
     KINO_TERMLIST_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
 };
 
 /* Seek the TermList to the first Term which is lexically greater than

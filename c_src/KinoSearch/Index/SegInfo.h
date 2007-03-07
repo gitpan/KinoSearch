@@ -16,7 +16,7 @@ KINO_FINAL_CLASS("KinoSearch::Index::SegInfo", "SegInfo",
 
 struct kino_SegInfo {
     KINO_SEGINFO_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_ByteBuf  *seg_name;
     kino_u32_t            doc_count;
     struct kino_Hash     *by_name; /* field numbers by name */
@@ -32,6 +32,14 @@ kino_SegInfo*
 kino_SegInfo_new(const struct kino_ByteBuf *seg_name, 
                  struct kino_Hash *fspecs,
                  struct kino_Hash *metadata));
+
+/* Attempt to add a field to the SegInfo.  If the field was already known,
+ * nothing will happen.
+ */
+KINO_METHOD("Kino_SegInfo_Add_Field",
+void
+kino_SegInfo_add_field(kino_SegInfo *self, 
+                       const struct kino_ByteBuf *field_name));
 
 /* Store arbitrary data in the segment's metadata, to be serialized later. 
  * Callers should be very conservative about what they place here, since it is

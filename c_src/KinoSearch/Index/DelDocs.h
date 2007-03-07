@@ -17,8 +17,7 @@ KINO_FINAL_CLASS("KinoSearch::Index::DelDocs", "DelDocs",
 
 struct kino_DelDocs {
     KINO_DELDOCS_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_BITVECTOR_MEMBER_VARS
+    KINO_BITVECTOR_MEMBER_VARS;
     kino_i32_t            del_gen;
     struct kino_InvIndex *invindex;
     struct kino_SegInfo  *seg_info;

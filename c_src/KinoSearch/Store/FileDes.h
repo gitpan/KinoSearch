@@ -10,7 +10,7 @@ KINO_CLASS("KinoSearch::Store::FileDes", "FileDes", "KinoSearch::Util::Obj");
 
 struct kino_FileDes {
     KINO_FILEDES_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     char       *path;
     char       *mode;
     kino_u64_t  pos;

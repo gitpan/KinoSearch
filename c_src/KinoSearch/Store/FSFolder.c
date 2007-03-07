@@ -155,14 +155,19 @@ FSFolder_slurp_file(FSFolder *self, const ByteBuf *filename)
     /* read and verify */
     amount_read = fread(retval->ptr, sizeof(char), len, f);
     if (amount_read < 0 || (size_t)amount_read != len) {
+        REFCOUNT_DEC(path);
+        REFCOUNT_DEC(retval);
         CONFESS("Expected %d bytes reading %s, got %d", (int)len,
             path->ptr, amount_read);
     }
     retval->len = len;
 
     /* clean up */
-    if (fclose(f))
+    if (fclose(f)) {
+        REFCOUNT_DEC(path);
+        REFCOUNT_DEC(retval);
         CONFESS("Couldn't fclose file '%s': %s", path->ptr, strerror(errno));
+    }
     REFCOUNT_DEC(path);
 
     return retval;

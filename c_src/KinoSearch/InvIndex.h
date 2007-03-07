@@ -13,7 +13,7 @@ KINO_CLASS("KinoSearch::InvIndex", "InvIndex", "KinoSearch::Util::Obj");
 
 struct kino_InvIndex {
     KINO_INVINDEX_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_Schema       *schema;
     struct kino_Folder       *folder;
 };

@@ -2,23 +2,20 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-package PlainSchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package PlainSchema;
 use base qw( KinoSearch::Schema );
-__PACKAGE__->init_fields(qw( content ));
 use KinoSearch::Analysis::PolyAnalyzer;
-sub analyzer { KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ ) }
 
-package StopSchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
+our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
+
+sub analyzer { KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ ) }
 
 package StopSchema;
 use base qw( KinoSearch::Schema );
-__PACKAGE__->init_fields(qw( content ));
 use KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::Analysis::Stopalizer;
+
+our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
 
 sub analyzer {
     my $whitespace_tokenizer
@@ -29,16 +26,15 @@ sub analyzer {
         analyzers => [ $whitespace_tokenizer, $stopalizer, ], );
 }
 
-package MultiFieldSchema::a;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package MultiFieldSchema::b;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MultiFieldSchema;
 use base qw( KinoSearch::Schema );
-__PACKAGE__->init_fields(qw( a b ));
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = (
+    a => 'KinoSearch::Schema::FieldSpec',
+    b => 'KinoSearch::Schema::FieldSpec',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
 package main;

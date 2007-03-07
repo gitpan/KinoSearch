@@ -14,8 +14,7 @@ KINO_CLASS("KinoSearch::Store::RAMFolder", "RAMFolder",
 
 struct kino_RAMFolder {
     KINO_RAMFOLDER_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_FOLDER_MEMBER_VARS
+    KINO_FOLDER_MEMBER_VARS;
     struct kino_Hash *ram_files;
 };
 

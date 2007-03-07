@@ -13,8 +13,7 @@ KINO_CLASS("KinoSearch::Store::RAMFileDes", "RAMFileDes",
 
 struct kino_RAMFileDes {
     KINO_RAMFILEDES_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_FILEDES_MEMBER_VARS
+    KINO_FILEDES_MEMBER_VARS;
     struct kino_VArray *buffers;
     kino_u64_t len;
 };

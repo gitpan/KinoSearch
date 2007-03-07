@@ -58,10 +58,8 @@ _new(field, seg_term_lists, tl_cache_sv)
 CODE:
 {
     kino_TermListCache *tl_cache = NULL;
-    if (SvOK(tl_cache_sv)) {
-        EXTRACT_STRUCT(tl_cache_sv, tl_cache, kino_TermListCache*,
-            "KinoSearch::Index::TermListCache");
-    }
+    MAYBE_EXTRACT_STRUCT(tl_cache_sv, tl_cache, kino_TermListCache*,
+        "KinoSearch::Index::TermListCache");
     RETVAL = kino_MultiTermList_new(&field, seg_term_lists, tl_cache);
 }
 OUTPUT: RETVAL
@@ -102,7 +100,7 @@ Copyright 2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

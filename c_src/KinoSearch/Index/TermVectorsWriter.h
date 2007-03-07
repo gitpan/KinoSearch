@@ -21,7 +21,7 @@ KINO_FINAL_CLASS("KinoSearch::Index::TermVectorsWriter", "TVWriter",
 
 struct kino_TermVectorsWriter {
     KINO_TERMVECTORSWRITER_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_InvIndex  *invindex;
     struct kino_SegInfo   *seg_info;
     struct kino_OutStream *tv_out;
@@ -40,7 +40,6 @@ void
 kino_TVWriter_add_segment(kino_TermVectorsWriter *self, 
                           struct kino_TermVectorsReader *tv_reader,
                           struct kino_IntMap *doc_map,
-                          struct kino_IntMap *field_num_map,
                           kino_u32_t max_doc));
                           
 KINO_METHOD("Kino_TVWriter_Finish",

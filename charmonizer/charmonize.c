@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include "Charmonizer/Probe.h"
+#include "Charmonizer/Probe/DirSep.h"
 #include "Charmonizer/Probe/FuncMacro.h"
 #include "Charmonizer/Probe/Headers.h"
 #include "Charmonizer/Probe/Integers.h"
@@ -48,6 +49,7 @@ int main(int argc, char **argv)
     init(argc, argv);
 
     /* modules section */
+    chaz_DirSep_run();
     chaz_Headers_run();
     chaz_FuncMacro_run();
     chaz_Integers_run();
@@ -92,7 +94,7 @@ init(int argc, char **argv)
         chaz_Probe_set_verbosity(verbosity);
     }
     chaz_Probe_init(os_name, cc_command, cc_flags, NULL);
-    chaz_Probe_set_prefixes("LUCY_", "lucy_", "lucy_");
+    chaz_Probe_set_prefixes("KINO_", "kino_", "kino_");
 
     /* clean up */
     free(infile_str);
@@ -154,9 +156,9 @@ write_charmony_postamble(void)
 
     if (strcmp(os_name, "mswin32") == 0) {
         fprintf(charmony_fh,
-            "#ifndef LUCY_HAS_LARGE_FILE_SUPPORT\n"
+            "#ifndef KINO_HAS_LARGE_FILE_SUPPORT\n"
             "  #include \"win32lfs.h\"\n"  
-            "#endif /* LUCY_HAS_LARGE_FILE_SUPPORT */\n"
+            "#endif /* KINO_HAS_LARGE_FILE_SUPPORT */\n"
         );
     }
 }
@@ -177,5 +179,4 @@ die(char* format, ...)
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
-
 

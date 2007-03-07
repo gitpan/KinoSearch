@@ -16,7 +16,6 @@ our %instance_vars;
 
 sub add_doc_vec {
     my ( $self, $doc_vec ) = @_;
-    my $seg_info = $self->_get_seg_info;
     my $tv_out   = $self->_get_tv_out;
     my $tvx_out  = $self->_get_tvx_out;
     my @fields   = $doc_vec->get_field_names;
@@ -29,17 +28,15 @@ sub add_doc_vec {
 
     # write field numbers and field strings
     for my $field_name (@fields) {
-        my $field_num = $seg_info->field_num($field_name);
-        $tv_out->lu_write( 'VT', $field_num,
+        $tv_out->lu_write( 'TT', $field_name,
             $doc_vec->field_string($field_name) );
     }
 }
 
 sub add_segment {
-    my ( $self, $seg_reader, $doc_map, $field_num_map ) = @_;
+    my ( $self, $seg_reader, $doc_map ) = @_;
     my $tv_reader = $seg_reader->get_tv_reader;
-    $self->_add_segment( $tv_reader, $doc_map, $field_num_map,
-        $seg_reader->max_doc );
+    $self->_add_segment( $tv_reader, $doc_map, $seg_reader->max_doc );
 }
 
 1;
@@ -70,15 +67,11 @@ void
 _set_or_get(self, ...)
     kino_TermVectorsWriter *self;
 ALIAS:
-    _get_seg_info = 2
     _get_tv_out   = 4
     _get_tvx_out  = 6
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
-
-    case 2:  retval = kobj_to_pobj(self->seg_info);
-             break;
 
     case 4:  retval = kobj_to_pobj(self->tv_out);
              break;
@@ -90,22 +83,13 @@ PPCODE:
 }
 
 void 
-_add_segment(self, tv_reader, doc_map, field_num_map_sv, max_doc)
+_add_segment(self, tv_reader, doc_map, max_doc)
     kino_TermVectorsWriter *self;
     kino_TermVectorsReader *tv_reader;
     kino_IntMap *doc_map;
-    SV *field_num_map_sv;
     kino_u32_t max_doc;
 PPCODE:
-{
-    kino_IntMap *field_num_map = NULL;
-    if (SvOK(field_num_map_sv)) {
-        EXTRACT_STRUCT(field_num_map_sv, field_num_map, kino_IntMap*,
-            "KinoSearch::Util::IntMap");
-    }
-    kino_TVWriter_add_segment(self, tv_reader, doc_map, field_num_map,
-        max_doc);
-}
+    kino_TVWriter_add_segment(self, tv_reader, doc_map, max_doc);
 
 SV*
 tv_string(self, batch)
@@ -140,7 +124,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

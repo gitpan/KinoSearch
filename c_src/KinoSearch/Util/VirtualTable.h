@@ -22,7 +22,7 @@ KINO_CLASS("KinoSearch::Util::VirtualTable", "VirtualTable",
 
 struct kino_VirtualTable {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
 };

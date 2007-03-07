@@ -26,7 +26,7 @@ KINO_CLASS("KinoSearch::Util::PriorityQueue", "PriQ",
 
 struct kino_PriorityQueue {
     KINO_PRIORITYQUEUE_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_u32_t              size;
     kino_u32_t              max_size;
     void                  **heap;

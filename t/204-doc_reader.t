@@ -8,9 +8,6 @@ BEGIN { use_ok('KinoSearch::Store::RAMFolder') }
 BEGIN { use_ok('KinoSearch::Index::DocReader') }
 BEGIN { use_ok('KinoSearch::Index::CompoundFileReader') }
 
-package MySchema::text;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MySchema::textcomp;
 use base qw( KinoSearch::Schema::FieldSpec );
 
@@ -34,9 +31,15 @@ sub stored {0}
 
 package MySchema;
 use base qw( KinoSearch::Schema );
-__PACKAGE__->init_fields(qw( text textcomp bin bincomp unstored ));
-
 use KinoSearch::Analysis::Analyzer;
+
+our %FIELDS = (
+    text     => 'KinoSearch::Schema::FieldSpec',
+    textcomp => 'MySchema::textcomp',
+    bin      => 'MySchema::bin',
+    bincomp  => 'MySchema::bincomp',
+    unstored => 'MySchema::unstored',
+);
 
 sub analyzer { KinoSearch::Analysis::Analyzer->new }
 
@@ -49,9 +52,10 @@ my $bin_val = my $val = "a b c \xe2\x98\xA0 \0a";
 _utf8_on($val);
 
 my $folder   = KinoSearch::Store::RAMFolder->new;
+my $schema   = MySchema->new;
 my $invindex = KinoSearch::InvIndex->create(
     folder => $folder,
-    schema => MySchema->new,
+    schema => $schema,
 );
 
 my $invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
@@ -65,7 +69,7 @@ $invindexer->add_doc(
 );
 $invindexer->finish;
 
-my $seg_infos = KinoSearch::Index::SegInfos->new;
+my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
 $seg_infos->read_infos($folder);
 my $seg_info = $seg_infos->get_info('_1');
 

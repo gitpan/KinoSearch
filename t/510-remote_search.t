@@ -43,7 +43,7 @@ else {
     exit(0);
 }
 
-my $searchclient = KinoSearch::Searcher::SearchClient->new(
+my $searchclient = KinoSearch::Search::SearchClient->new(
     schema       => TestSchema->new,
     peer_address => 'localhost:7890',
     password     => 'foo',

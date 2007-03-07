@@ -9,66 +9,77 @@
 #include "KinoSearch/Util/IntMap.r"
 
 SegInfo*
-SegInfo_new(const ByteBuf *seg_name, Hash *fspecs, Hash *metadata)
+SegInfo_new(const ByteBuf *seg_name, Hash *fspecs, Hash *source_metadata)
 {
     Hash   *seg_info_metadata = NULL;
-    Hash   *by_name = NULL;
-    VArray *by_num = NULL;
-    i64_t   i;
     CREATE(self, SegInfo, SEGINFO);
 
-    /* maybe extract metadata, sanity check */
-    if (metadata != NULL) {
-        REFCOUNT_INC(metadata);
-        self->metadata = metadata;
-        seg_info_metadata = (Hash*)Hash_Fetch(metadata, "seg_info", 8);
+    /* either assign or create metadata hash */
+    if (source_metadata != NULL) {
+        seg_info_metadata = (Hash*)Hash_Fetch(source_metadata, "seg_info", 8);
+        REFCOUNT_INC(source_metadata);
+        self->metadata = source_metadata;
     }
     else {
         self->metadata = Hash_new(0);
     }
-    
+
     /* assign */
     self->seg_name  = BB_CLONE(seg_name);
     self->doc_count = seg_info_metadata == NULL
         ? 0
         : Hash_Fetch_I64(seg_info_metadata, "doc_count", 9);
 
-
-    /* get sorted list of field nums, either from metadata or fspecs hash */
+    /* get list of field nums, either from metadata or fspecs hash */
     if (seg_info_metadata != NULL) {
-        by_num = (VArray*)Hash_Fetch(seg_info_metadata, "field_names", 11);
-        if (by_num == NULL)
+        u32_t i;
+        VArray *source_by_num = (VArray*)Hash_Fetch(seg_info_metadata, 
+            "field_names", 11);
+        if (source_by_num == NULL)
             CONFESS("Failed to extract 'field_names' from metadata");
-        REFCOUNT_INC(by_num);
+
+        /* init */
+        self->by_num  = VA_new(source_by_num->size);
+        self->by_name = Hash_new(source_by_num->size);
+
+        /* copy the list of fields from the source */
+        for (i = 0; i < source_by_num->size; i++) {
+            ByteBuf *name = (ByteBuf*)VA_Fetch(source_by_num, i);
+            SegInfo_Add_Field(self, name);
+        }
     }
     else if (fspecs != NULL) {
         ByteBuf *field_name;
         Obj *ignore;
-        by_num = VA_new(fspecs->size);
 
+        /* init */
+        self->by_num  = VA_new(fspecs->size);
+        self->by_name = Hash_new(fspecs->size);
+
+        /* add all fields in the fspecs */
         Hash_Iter_Init(fspecs);
         while (Hash_Iter_Next(fspecs, &field_name, &ignore)) {
-            VA_Push(by_num, (Obj*)field_name);
+            SegInfo_Add_Field(self, field_name);
         }
-
-        qsort(by_num->elems, by_num->size, sizeof(ByteBuf*), BB_compare);
     }
     else {
         CONFESS("Either metadata or fspecs must be non-NULL");
     }
-    self->by_num = by_num;
 
-    /* map from sorted field name to field numbers */
-    self->by_name = Hash_new(by_num->size * 3/2);
-    by_name       = self->by_name;
-    for (i = 0; i< by_num->size; i++) {
-        ByteBuf *name = (ByteBuf*)VA_Fetch(by_num, i);
-        Int *num = Int_new(i);
-        Hash_Store_BB(by_name, name, (Obj*)num);
+    return self;
+}
+
+void
+SegInfo_add_field(SegInfo *self, const ByteBuf *field_name)
+{
+    if ( (Hash_Fetch_BB(self->by_name, field_name)) == NULL) {
+        Int *num = Int_new(self->by_num->size);
+        ByteBuf *name_copy = BB_CLONE(field_name);
+        VA_Push(self->by_num, (Obj*)name_copy);
+        Hash_Store_BB(self->by_name, name_copy, (Obj*)num);
+        REFCOUNT_DEC(name_copy);
         REFCOUNT_DEC(num);
     }
-    
-    return self;
 }
 
 void
@@ -149,15 +160,28 @@ SegInfo_generate_field_num_map(SegInfo *self, SegInfo *other)
     IntMap *map = NULL;
     u32_t my_num_fields    = self->by_num->size;
     u32_t their_num_fields = other->by_num->size;
+    bool_t must_build      = false;
 
 
-    /* If the number of fields is the same, the field numbers must be the
-     * same, since it's not allowed to remove fields or have conflicting defs.
-     * Therefore, we only build the map if we have different fields.
-     * Furthermore, the current SegInfo is always the superset, because it's
-     * always the one being written.
-     */
-    if (my_num_fields != their_num_fields) {
+    /* don't build the map unless field lists differ */
+    if (their_num_fields != my_num_fields) {
+        must_build = true;
+    }
+    else {
+        u32_t i;
+        VArray *my_by_num     = self->by_num;
+        VArray *their_by_num  = other->by_num;
+        for (i = 0; i < my_num_fields; i++) {
+            ByteBuf *my_field_name = (ByteBuf*)VA_Fetch(my_by_num, i);
+            ByteBuf *their_field_name = (ByteBuf*)VA_Fetch(their_by_num, i);
+            if (!BB_Equals(my_field_name, (Obj*)their_field_name)) {
+                must_build = true;
+                break;
+            }
+        }
+    }
+
+    if (must_build) {
         u32_t i;
         i32_t *ints = MALLOCATE(their_num_fields, i32_t);
 

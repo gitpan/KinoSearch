@@ -26,9 +26,7 @@ sub sortsub           { }
 sub new {
     my $class = shift;
     $class = ref($class) || $class;
-    my $name = lc($class);
-    $name =~ s/^.*?(\w+)$/$1/;
-    my $self = $class->_new($name);
+    my $self = $class->_new();
 
     # sanity check
     if ( $class->store_pos_boost ) {
@@ -53,6 +51,17 @@ sub new {
     return $self;
 }
 
+sub get_singleton {
+    my $class = shift;
+    my $singleton_ref;
+    {
+        no strict 'refs';
+        $singleton_ref = \${ $class . '::kino_singleton' };
+    }
+    $$singleton_ref ||= $class->new;
+    return $$singleton_ref;
+}
+
 1;
 
 __END__
@@ -62,11 +71,10 @@ __XS__
 MODULE = KinoSearch   PACKAGE = KinoSearch::Schema::FieldSpec
 
 kino_FieldSpec*
-_new(class, name)
-    const classname_char *class;
-    kino_ByteBuf name;
+_new(class_name)
+    const classname_char *class_name;
 CODE:
-    RETVAL = kino_FSpec_new(class, &name);
+    RETVAL = kino_FSpec_new(class_name);
 OUTPUT: RETVAL
 
 void
@@ -85,7 +93,6 @@ ALIAS:
     _set_store_freq        = 17
     _set_store_position    = 19
     _set_store_pos_boost   = 21
-    get_name               = 24 
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -126,9 +133,6 @@ PPCODE:
     case 21: self->store_pos_boost = SvTRUE( ST(1) );
              break;
 
-    case 24: retval = bb_to_sv(self->name);
-             break;
-
     END_SET_OR_GET_SWITCH
 }
     
@@ -143,7 +147,7 @@ KinoSearch::Schema::FieldSpec -- Define a field's behavior.
 
 Define your custom subclass:
 
-    package MySchema::price;
+    package MySchema::UnAnalyzed;
     use base qw( KinoSearch::Schema::FieldSpec )
     sub analyzed { 0 }
 
@@ -151,13 +155,16 @@ Then, arrange for your subclass of KinoSearch::Schema to load it.
 
     package MySchema;
     use base qw( KinoSearch::Schema );
-    __PACKAGE__->init_fields(qw( name price id description ))
+
+    our %FIELDS = (
+        name  => 'KinoSearch::Schema::FieldSpec',
+        price => 'MySchema::UnAnalyzed',
+    );
 
 =head1 DESCRIPTION
 
-KinoSearch::Schema::FieldSpec is an API for associating attributes and
-behaviors with a field name.  To create a field, subclass FieldSpec; to
-customize it, override one or more of the default methods.
+A FieldSpec associates traits and behaviors with a field name.  If the default
+behaviors are not appropriate for a given field, FieldSpec may be subclassed.
 
 =head1 CLASS METHODS
 
@@ -175,27 +182,27 @@ Fields such as "category" or "product_number" might be indexed but not analyzed.
 
 =head2 stored
 
-Store the raw field value, so that it can be retrieved when the document turns
-up in a search. Default true.
+Returns a boolean indicating whether to store the raw field value, so that it
+can be retrieved when the document turns up in a search. Default true.
 
 =head2 compressed
 
-Compress the stored field, using the zlib compression algorithm.  Default
-false.
+Returns a boolean indicating whether to compress the stored field, using the
+zlib compression algorithm.  Default false.
 
 =head2 vectorized
 
-Store the field's "term vectors", which are required by
-L<KinoSearch::Highlight::Highlighter> for excerpt selection and search term
-highlighting.  Default true.
+Returns a boolean indication whether to store the field's "term vectors",
+which are required by L<KinoSearch::Highlight::Highlighter> for excerpt
+selection and search term highlighting.  Default true.
 
 Term vectors require a fair amount of space, so you should turn this off if
 you don't need it.
 
 =head2 boost
 
-A multiplier which determines how much a field contributes to a document's
-score.  Default 1.0.
+Returns a  multiplier which determines how much a field contributes to a
+document's score.  Default 1.0.
 
 =head2 analyzer
 
@@ -215,10 +222,10 @@ L<KinoSearch::Search::Similarity>, rather than the Schema's default.
 TEMPORARY API - the capacity to store boosts per position is not going
 away, but the way which you will indicate it will change.
 
-Indicate that the index should store a scoring multiplier for each and every
-token in this field.  This is expensive, but can be useful if, for example,
-you want text which was emboldened or italicized in the source material to
-have greater weight than surrounding text.  See
+Returns a boolean indicating whether the index should store a scoring
+multiplier for each and every token in this field.  This is expensive, but can
+be useful if, for example, you want text which was emboldened or italicized in
+the source material to have greater weight than surrounding text.  See
 L<KinoSearch::Analysis::Token>.
 
 =head1 COPYRIGHT
@@ -227,9 +234,6 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =cut
-
-
-

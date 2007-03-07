@@ -6,12 +6,9 @@
 
 
 FieldSpec*
-FSpec_new(const char *class_name, const ByteBuf *field_name)
+FSpec_new(const char *class_name)
 {
     CREATE_SUBCLASS(self, class_name, FieldSpec, FIELDSPEC);
-
-    /* assign */
-    self->name         = BB_CLONE(field_name);
 
     /* set everything to 0, so errors get detected */
     self->boost              = 0.0;
@@ -32,7 +29,6 @@ FSpec_new(const char *class_name, const ByteBuf *field_name)
 void
 FSpec_destroy(FieldSpec *self)
 {
-    REFCOUNT_DEC(self->name);
     free(self);
 }
 

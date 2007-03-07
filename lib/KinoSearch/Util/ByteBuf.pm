@@ -3,7 +3,9 @@ use warnings;
 
 package KinoSearch::Util::ByteBuf;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Obj );
+use base qw( KinoSearch::Util::Obj Exporter );
+
+our @EXPORT_OK = qw( bb_compare bb_less_than ); # testing only
 
 1;
 
@@ -26,6 +28,22 @@ CODE:
 }
 OUTPUT: RETVAL
 
+kino_i32_t
+bb_compare(bb_a, bb_b)
+    kino_ByteBuf *bb_a;
+    kino_ByteBuf *bb_b;
+CODE: 
+    RETVAL = kino_BB_compare(&bb_a, &bb_b);
+OUTPUT: RETVAL
+
+kino_i32_t
+bb_less_than(bb_a, bb_b)
+    kino_ByteBuf *bb_a;
+    kino_ByteBuf *bb_b;
+CODE: 
+    RETVAL = kino_BB_less_than(&bb_a, &bb_b);
+OUTPUT: RETVAL
+
 __POD__
 
 =begin devdocs
@@ -42,7 +60,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

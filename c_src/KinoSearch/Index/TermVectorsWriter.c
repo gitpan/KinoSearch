@@ -104,8 +104,7 @@ TVWriter_tv_string(TermVectorsWriter *self, TokenBatch *batch)
 
 void
 TVWriter_add_segment(TermVectorsWriter *self, TermVectorsReader *tv_reader,
-                     IntMap *doc_map, IntMap *field_num_map, 
-                     kino_u32_t max_doc)
+                     IntMap *doc_map, kino_u32_t max_doc)
 {
     u32_t      orig;
     ByteBuf   *bb       = BB_new(0);
@@ -125,7 +124,7 @@ TVWriter_add_segment(TermVectorsWriter *self, TermVectorsReader *tv_reader,
         OutStream_Write_Long( tvx_out, OutStream_STell(tv_out) );
         
         /* copy the raw record */
-        TVReader_Read_Record(tv_reader, orig, bb, field_num_map);
+        TVReader_Read_Record(tv_reader, orig, bb);
         OutStream_Write_Bytes(tv_out, bb->ptr, bb->len);
         bb->len = 0;
     }

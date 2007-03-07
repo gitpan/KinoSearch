@@ -13,7 +13,7 @@ KINO_CLASS("KinoSearch::Index::Term", "Term", "KinoSearch::Util::Obj");
 
 struct kino_Term {
     KINO_TERM_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_ByteBuf *field;
     struct kino_ByteBuf *text;
 };

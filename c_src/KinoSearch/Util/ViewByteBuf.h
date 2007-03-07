@@ -21,7 +21,7 @@ KINO_CLASS("KinoSearch::Util::ViewByteBuf", "ViewBB",
 
 struct kino_ViewByteBuf {
     KINO_VIEWBYTEBUF_VTABLE *_;
-    kino_u32_t  refcount;
+    KINO_OBJ_MEMBER_VARS;
     char       *ptr;
     size_t      len;  /* number of valid chars */
     size_t      cap;  /* allocated bytes, including any null termination */

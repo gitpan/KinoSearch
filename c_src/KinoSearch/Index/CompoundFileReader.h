@@ -18,8 +18,7 @@ KINO_CLASS("KinoSearch::Index::CompoundFileReader", "CFReader",
 
 struct kino_CompoundFileReader {
     KINO_COMPOUNDFILEREADER_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_FOLDER_MEMBER_VARS
+    KINO_FOLDER_MEMBER_VARS;
     struct kino_InvIndex *invindex;
     struct kino_Folder   *folder;
     struct kino_SegInfo  *seg_info;

@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.20_01
+version: 0.20_02
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -18,7 +18,7 @@ build_requires:
 provides:
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.20_01
+    version: 0.20_02
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:
@@ -151,6 +151,8 @@ provides:
     file: lib/KinoSearch/Search/ScoreDoc.pm
   KinoSearch::Search::Scorer:
     file: lib/KinoSearch/Search/Scorer.pm
+  KinoSearch::Search::SearchClient:
+    file: lib/KinoSearch/Search/SearchClient.pm
   KinoSearch::Search::SearchServer:
     file: lib/KinoSearch/Search/SearchServer.pm
   KinoSearch::Search::Searchable:
@@ -177,8 +179,6 @@ provides:
     file: lib/KinoSearch/Search/Weight.pm
   KinoSearch::Searcher:
     file: lib/KinoSearch/Searcher.pm
-  KinoSearch::Searcher::SearchClient:
-    file: lib/KinoSearch/Search/SearchClient.pm
   KinoSearch::Store::FSFileDes:
     file: lib/KinoSearch/Store/FSFileDes.pm
   KinoSearch::Store::FSFolder:
@@ -209,6 +209,8 @@ provides:
     file: lib/KinoSearch/Util/DynVirtualTable.pm
   KinoSearch::Util::Hash:
     file: lib/KinoSearch/Util/Hash.pm
+  KinoSearch::Util::Int:
+    file: lib/KinoSearch/Util/Int.pm
   KinoSearch::Util::IntMap:
     file: lib/KinoSearch/Util/IntMap.pm
   KinoSearch::Util::Obj:
@@ -235,3 +237,84 @@ generated_by: Module::Build version 0.2806
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
   version: 1.2
+no_index:
+  directory:
+    - t
+    - buildlib
+    - buildbin
+    - xshelper
+    - sample
+  file:
+    - Build
+    - MANIFEST
+    - Changes
+    - ApacheLicense2.0.txt
+    - META.yml
+    - Makefile.PL
+    - Build.PL
+    - ppport.h
+    - lib/KinoSearch/Search/TopDocs.pm
+    - lib/KinoSearch/Search/BooleanClause.pm
+    - lib/KinoSearch/Search/Weight.pm
+    - lib/KinoSearch/Search/FieldDocCollator.pm
+    - lib/KinoSearch/Search/TermScorer.pm
+    - lib/KinoSearch/Search/HitQueue.pm
+    - lib/KinoSearch/Search/Searchable.pm
+    - lib/KinoSearch/Search/HitCollector.pm
+    - lib/KinoSearch/Search/FieldDoc.pm
+    - lib/KinoSearch/Search/SortedHitQueue.pm
+    - lib/KinoSearch/Search/BooleanScorer.pm
+    - lib/KinoSearch/Search/Scorer.pm
+    - lib/KinoSearch/Search/TopDocCollector.pm
+    - lib/KinoSearch/Search/PhraseScorer.pm
+    - lib/KinoSearch/Search/ScoreDoc.pm
+    - lib/KinoSearch/Search/SortCollector.pm
+    - lib/KinoSearch/Index/SegInfos.pm
+    - lib/KinoSearch/Index/CompoundFileReader.pm
+    - lib/KinoSearch/Index/TermListReader.pm
+    - lib/KinoSearch/Index/SegWriter.pm
+    - lib/KinoSearch/Index/MultiReader.pm
+    - lib/KinoSearch/Index/DelDocs.pm
+    - lib/KinoSearch/Index/SegTermDocs.pm
+    - lib/KinoSearch/Index/TermDocs.pm
+    - lib/KinoSearch/Index/DocVector.pm
+    - lib/KinoSearch/Index/CompoundFileWriter.pm
+    - lib/KinoSearch/Index/TermInfo.pm
+    - lib/KinoSearch/Index/DocReader.pm
+    - lib/KinoSearch/Index/MultiTermDocs.pm
+    - lib/KinoSearch/Index/IndexReader.pm
+    - lib/KinoSearch/Index/TermVector.pm
+    - lib/KinoSearch/Index/SegTermList.pm
+    - lib/KinoSearch/Index/TermVectorsWriter.pm
+    - lib/KinoSearch/Index/IndexFileNames.pm
+    - lib/KinoSearch/Index/SegReader.pm
+    - lib/KinoSearch/Index/TermList.pm
+    - lib/KinoSearch/Index/PostingsWriter.pm
+    - lib/KinoSearch/Index/DocWriter.pm
+    - lib/KinoSearch/Index/TermListCache.pm
+    - lib/KinoSearch/Index/TermVectorsReader.pm
+    - lib/KinoSearch/Index/TermListWriter.pm
+    - lib/KinoSearch/Index/SegInfo.pm
+    - lib/KinoSearch/Index/MultiTermList.pm
+    - lib/KinoSearch/Store/FSFileDes.pm
+    - lib/KinoSearch/Store/Lock.pm
+    - lib/KinoSearch/Store/FileDes.pm
+    - lib/KinoSearch/Store/InStream.pm
+    - lib/KinoSearch/Store/OutStream.pm
+    - lib/KinoSearch/Store/RAMFileDes.pm
+    - lib/KinoSearch/Util/StringHelper.pm
+    - lib/KinoSearch/Util/VArray.pm
+    - lib/KinoSearch/Util/PriorityQueue.pm
+    - lib/KinoSearch/Util/CClass.pm
+    - lib/KinoSearch/Util/IntMap.pm
+    - lib/KinoSearch/Util/Obj.pm
+    - lib/KinoSearch/Util/SortExternal.pm
+    - lib/KinoSearch/Util/ToStringUtils.pm
+    - lib/KinoSearch/Util/BitVector.pm
+    - lib/KinoSearch/Util/VerifyArgs.pm
+    - lib/KinoSearch/Util/Hash.pm
+    - lib/KinoSearch/Util/ViewByteBuf.pm
+    - lib/KinoSearch/Util/ByteBuf.pm
+    - lib/KinoSearch/Util/YAML.pm
+    - lib/KinoSearch/Util/DynVirtualTable.pm
+    - lib/KinoSearch/Util/Int.pm

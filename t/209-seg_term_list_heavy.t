@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 3;
+use Test::More tests => 5;
 use File::Spec::Functions qw( catfile );
 
 BEGIN { use_ok('KinoSearch::Index::TermListReader') }
@@ -10,7 +10,7 @@ BEGIN { use_ok('KinoSearch::Index::TermListReader') }
 use KinoSearch::Index::CompoundFileReader;
 use KinoSearch::Index::Term;
 
-use KinoTestUtils qw( create_invindex );
+use KinoTestUtils qw( create_invindex path_for_test_invindex );
 use KinoSearch::Util::YAML qw( parse_yaml );
 
 my @docs;
@@ -39,7 +39,7 @@ my $invindex = create_invindex(
 
 my $folder    = $invindex->get_folder;
 my $schema    = $invindex->get_schema;
-my $seg_infos = KinoSearch::Index::SegInfos->new;
+my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
 $seg_infos->read_infos($folder);
 my $seg_info = $seg_infos->get_info('_1');
 
@@ -52,7 +52,22 @@ my $tl_reader = KinoSearch::Index::TermListReader->new(
     folder   => $comp_file_reader,
     seg_info => $seg_info,
 );
+
 my $term_list = $tl_reader->start_field_terms('content');
+$term_list->next;
+my $last_text = $term_list->get_term->get_text;
+$term_list->next;
+my $current_text;
+my $num_iters = 2;
+while (1) {
+    $current_text = $term_list->get_term->get_text;
+    last unless $current_text gt $last_text;
+    last unless $term_list->next;
+    $num_iters++;
+    $current_text = $last_text;
+}
+cmp_ok( $last_text, 'lt', $current_text, "term texts in sorted order" );
+is( $num_iters, $term_list->get_size, "iterated over all terms" );
 
 my $term = KinoSearch::Index::Term->new( 'content', 'A' );
 $term_list->seek($term);
@@ -65,3 +80,4 @@ $term_list->seek($term);
 $tinfo = $term_list->get_term_info();
 
 is( $tinfo->get_doc_freq, 2, "correct retrieval #2" );
+

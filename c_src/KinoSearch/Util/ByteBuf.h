@@ -20,7 +20,7 @@ KINO_CLASS("KinoSearch::Util::ByteBuf", "BB", "KinoSearch::Util::Obj");
 
 struct kino_ByteBuf {
     KINO_BYTEBUF_VTABLE *_;
-    kino_u32_t  refcount;
+    KINO_OBJ_MEMBER_VARS;
     char       *ptr;
     size_t      len; /* number of valid chars */
     size_t      cap;  /* allocated bytes, including any null termination */

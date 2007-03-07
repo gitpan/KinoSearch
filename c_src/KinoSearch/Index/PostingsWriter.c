@@ -67,12 +67,14 @@ PostWriter_destroy(PostingsWriter *self)
 
 void
 PostWriter_add_batch(PostingsWriter *self, TokenBatch *batch, 
-                     FieldSpec *fspec, kino_i32_t doc_num, float doc_boost, 
-                     float length_norm)
+                     const ByteBuf *field_name, kino_i32_t doc_num, 
+                     float doc_boost, float length_norm)
 {
+    Schema       *schema    = self->invindex->schema;
+    FieldSpec    *fspec     = Schema_Fetch_FSpec(schema, field_name);
     SortExternal *sort_pool = self->sort_pool;
-    u16_t         field_num = SegInfo_Field_Num(self->seg_info, fspec->name);
-    Similarity   *sim = Schema_Fetch_Sim(self->invindex->schema, fspec->name);
+    u16_t         field_num = SegInfo_Field_Num(self->seg_info, field_name);
+    Similarity   *sim = Schema_Fetch_Sim(schema, field_name);
     float         field_boost = doc_boost * fspec->boost * length_norm;
     char         doc_num_buf[4];
     char         field_num_buf[2];

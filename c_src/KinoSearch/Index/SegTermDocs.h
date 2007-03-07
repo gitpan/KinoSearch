@@ -22,8 +22,7 @@ KINO_CLASS("KinoSearch::Index::SegTermDocs", "SegTermDocs",
 
 struct kino_SegTermDocs {
     KINO_SEGTERMDOCS_VTABLE *_;
-    kino_u32_t refcount;
-
+    KINO_OBJ_MEMBER_VARS;
     kino_u32_t             count;
     kino_u32_t             doc_freq;
     kino_u32_t             doc;

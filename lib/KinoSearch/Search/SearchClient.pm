@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package KinoSearch::Searcher::SearchClient;
+package KinoSearch::Search::SearchClient;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Searcher );
 
@@ -179,7 +179,7 @@ Copyright 2006-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.14.
+See L<KinoSearch> version 0.20.
 
 =cut
 

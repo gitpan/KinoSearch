@@ -7,27 +7,7 @@ use List::Util qw( shuffle );
 
 BEGIN { use_ok('KinoSearch::Search::SortSpec') }
 
-package SortSchema::name;
-use base qw( KinoSearch::Schema::FieldSpec );
-sub analyzed {0}
-
-package SortSchema::speed;
-use base qw( KinoSearch::Schema::FieldSpec );
-sub analyzed {0}
-
-package SortSchema::weight;
-use base qw( KinoSearch::Schema::FieldSpec );
-sub analyzed {0}
-
-package SortSchema::home;
-use base qw( KinoSearch::Schema::FieldSpec );
-sub analyzed {0}
-
-package SortSchema::cat;
-use base qw( KinoSearch::Schema::FieldSpec );
-sub analyzed {0}
-
-package SortSchema::unused;
+package SortSchema::UnAnalyzed;
 use base qw( KinoSearch::Schema::FieldSpec );
 sub analyzed {0}
 
@@ -35,7 +15,15 @@ package SortSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( name speed weight home cat unused ));
+
+our %FIELDS = (
+    name   => 'SortSchema::UnAnalyzed',
+    speed  => 'SortSchema::UnAnalyzed',
+    weight => 'SortSchema::UnAnalyzed',
+    home   => 'SortSchema::UnAnalyzed',
+    cat    => 'SortSchema::UnAnalyzed',
+    unused => 'SortSchema::UnAnalyzed',
+);
 
 package main;
 

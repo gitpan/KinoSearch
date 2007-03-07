@@ -16,7 +16,7 @@ KINO_CLASS("KinoSearch::Schema", "Schema", "KinoSearch::Util::Obj");
 
 struct kino_Schema {
     KINO_SCHEMA_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_Similarity   *sim;
     struct kino_Hash         *fspecs;
     struct kino_Hash         *sims;
@@ -28,8 +28,14 @@ struct kino_Schema {
  */
 KINO_FUNCTION(
 kino_Schema*
-kino_Schema_new(const char *class_name, struct kino_Hash *fspecs, 
-                struct kino_Hash *sims, struct kino_Similarity *sim));
+kino_Schema_new(const char *class_name, void *analyzer, void *analyzers,
+                struct kino_Similarity *sim));
+
+KINO_METHOD("Kino_Schema_Add_Field",
+void
+kino_Schema_add_field(kino_Schema *self, 
+                      const struct kino_ByteBuf *field_name,
+                      struct kino_FieldSpec *field_spec));
 
 KINO_METHOD("Kino_Schema_Fetch_FSpec",
 struct kino_FieldSpec*

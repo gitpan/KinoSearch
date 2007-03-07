@@ -86,33 +86,50 @@ document storage, term vectors, and deletions.
 All segment files use non-human-readable binary formats, but they all adhere
 to the same simple pattern: records stacked end-to-end-to-end.  Given
 unlimited memory, any segment file may be read into an array by running a
-single deserialization function against it over and over until the file ends
-(though for some of the simpler files, which are just solid arrays of bits or
-integers, a dedicated deserializer would be overkill).
+single deserialization function against it over and over until the file ends.
 
 =head2 Term List
 
-A segment's Term List is housed in two files, one primary and one auxiliary.
+A segment's Term List is spread out over several files: one primary file and
+one auxiliary file per indexed field.  
 
 =over
 
 =item *
 
-B<_XXX.tl> - B<T>erm B<L>ist.  Enumerates all the indexed terms in the
-segment.
+B<_XXX.tlYYY> - B<T>erm B<L>ist.  Enumerates all the indexed terms for a given
+field in the segment.  Terms are sorted by lexical comparison of term text.
 
 =item *
 
-B<_XXX.tlx> - B<T>erm B<L>ist IndeB<X>.  Houses periodic samples from the main
-term list -- typically, every 16th term.
+B<_XXX.tlxYYY> - B<T>erm B<L>ist IndeB<X>.  Houses periodic samples from the
+main term list -- typically, every 128th term.  Each entry is augmented by a
+file pointer into the main term list.
 
 =back
 
-Terms are ordered first by field number, then according to the field's sort
-order.  The default sort order is determined by lexical comparison of term
-text, but may be overridden.
 
-When a Searcher is launched, the entire .tlx file is decoded and cached as an
+The files follow the naming pattern C<_XXX.tlYYY>, where "_XXX" is the
+segment, and "YYY" is the field number.  So, if you were indexing plain text
+files and you had two fields, only one of which was indexed...
+
+    package MySchema::UnIndexed;
+    use base qw( KinoSearch::Schema::FieldSpec );
+    sub indexed  {0}
+    sub analyzed {0}
+    
+    package MySchema;
+    use base qw( KinoSearch::Schema );
+    our %FIELDS  = (
+        content  => 'KinoSearch::Schema::FieldSpec',
+        filepath => 'MySchema::UnIndexed',
+    );
+
+... there would only be 1 pair of term list files per segment, "_XXX.tl0" and
+"_XXX.tlx0", containing in this example the terms for the "content" field.
+
+
+When a Searcher is launched, each .tlx file is decoded and cached as an
 in-memory array of Terms.  To locate a term in the main term list, first a
 binary search is performed against the term list index array.  The results of
 this search point to a small slice of the main on-disk term list file, which
@@ -127,26 +144,8 @@ on pages 8, 86, and 240, that would be three postings, which taken together
 form a "posting list".  The same terminology applies to an index in electronic
 form.
 
-The number of postings files per segment in KinoSearch varies: each segment
-has one such file per indexed field.  The files follow the naming pattern
-C<_XXX.pYYY>, where "_XXX" is the segment, and "YYY" is the field number.  So,
-if you were indexing plain text files and you had two fields, only one of
-which was indexed...
-
-    package MySchema::content;
-    use base qw( KinoSearch::Schema::FieldSpec );
-    
-    package MySchema::filepath;
-    use base qw( KinoSearch::Schema::FieldSpec );
-
-    sub indexed {0}
-    sub analyzed {0}
-    
-    package MySchema;
-    ...
-
-... there would only be 1 postings file per segment, "_XXX.p0", containing in
-this example the postings for the "content" field.
+Each segment has one postings file per indexed field.  The file names follow
+the same pattern as the term list files, but with a "p": C<_XXX.pYYY>.
 
 When a search is performed for a single term, first that term is looked up in
 the term list.  If the term exists in a segment, the record in the term list
@@ -185,7 +184,7 @@ positions.
 
 =item *
 
-B<pos_boosts> - For some applications, it makes sense to store boost
+B<pos_boosts> - Optional. For some applications, it makes sense to store boost
 per-position rather than apply the same boost to each position.
 
 =back
@@ -211,15 +210,15 @@ value at that location points at a file position in the _XXX.ds file.
 =back
 
 When a document number turns up as a hit in a search and its associated
-document must be retrieved, KinoSearch look up the doc number in the _XXX.dsx
+document must be retrieved, KinoSearch looks up the doc number in the _XXX.dsx
 file to find the file pointer, then seeks to that location in the _XXX.ds file
 and deserializes the document.
 
 Not all information associated with the original document can be recovered at
 search-time.  For instance, if a field is spec'd as C<indexed> but not
-C<stored>, its terms will be in the term list, but its original content will
-I<not> be found along with the rest of the document in the relevant _XXX.ds
-file.
+C<stored>, its terms will appear in the term list, but its original content
+will I<not> be found along with the rest of the document in the relevant
+_XXX.ds file.
 
 =head2 Term Vectors
 
@@ -259,8 +258,8 @@ the deletions for segment "_aa".
 =head1 Compound File
 
 If you peer inside an index directory, you won't actually find any files with
-the extensions C<tl>, C<tlx>, C<ds>, C<dsx>, or C<pYYY>, unless there is a
-live indexing process underway.  What you will find is one file per segment
+the extensions C<tlYYY>, C<tlxYYY>, C<pYYY>, C<ds>, or C<dsx>, unless there is
+a live indexing process underway.  What you will find is one file per segment
 named "_XXX.cf". (cf => B<C>ompound B<F>ile)
 
 To minimize the need for file descriptors at search-time, KinoSearch
@@ -280,14 +279,14 @@ field and populate it with an externally generated unique identifier.
 
 =head1 A Typical Search
 
-Here's a simplified version of how a search for "freedom" against a given
-segment plays out:
+Here's a simplified narrative, dramatizing how a search for "freedom" against
+a given segment plays out:
 
 =over
 
 =item 1
 
-The searcher asks the TermListIndex file, "Do you know anything about
+The searcher asks the relevant TermListIndex file, "Do you know anything about
 'freedom'?"  TermListIndex replies, "Can't say for sure, but if the TermList
 file does, 'freedom' is probably somewhere around byte 21008".  
 
@@ -318,5 +317,5 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 

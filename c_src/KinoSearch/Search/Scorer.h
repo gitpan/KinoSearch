@@ -7,13 +7,14 @@ typedef struct kino_Scorer kino_Scorer;
 typedef struct KINO_SCORER_VTABLE KINO_SCORER_VTABLE;
 
 struct kino_Similarity;
+struct kino_HitCollector;
 struct kino_ByteBuf;
 
 KINO_CLASS("KinoSearch::Search::Scorer", "Scorer", "KinoSearch::Util::Obj");
 
 struct kino_Scorer {
     KINO_SCORER_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_Similarity *sim;
     struct kino_ByteBuf    *raw_prox_bb;
     kino_u32_t             *prox;
@@ -60,6 +61,16 @@ kino_Scorer_score(kino_Scorer *self));
 KINO_METHOD("Kino_Scorer_Skip_To",
 kino_bool_t
 kino_Scorer_skip_to(kino_Scorer*, kino_u32_t));
+
+/* Collect hits bracketed by [start] and [end], inclusive.  Collect a maximum
+ * of [prune_factor] hits per segment.
+ */
+KINO_METHOD("Kino_Scorer_Score_Batch",
+void
+kino_Scorer_score_batch(kino_Scorer *self, struct kino_HitCollector *hc, 
+                        kino_u32_t start, kino_u32_t end, 
+                        kino_u32_t prune_factor, 
+                        struct kino_VArray *seg_starts));
 
 KINO_END_CLASS
 

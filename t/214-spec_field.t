@@ -28,14 +28,12 @@ use base qw( KinoSearch::Schema );
 
 use KinoSearch::Analysis::Tokenizer;
 
-__PACKAGE__->init_fields(
-    qw(
-        analyzed
-        polyanalyzed
-        unanalyzed
-        unindexedbutanalyzed
-        unanalyzedunindexed
-        )
+our %FIELDS = (
+    analyzed             => 'MySchema::analyzed',
+    polyanalyzed         => 'MySchema::polyanalyzed',
+    unanalyzed           => 'MySchema::unanalyzed',
+    unindexedbutanalyzed => 'MySchema::unindexedbutanalyzed',
+    unanalyzedunindexed  => 'MySchema::unanalyzedunindexed',
 );
 
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }

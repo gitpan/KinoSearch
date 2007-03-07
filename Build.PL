@@ -33,7 +33,6 @@ END_WARNING
     exit unless $response;
 }
 
-my $ks_xs_filepath = KinoSearchBuild->get_ks_xs_filepath;
 my $builder        = KinoSearchBuild->new(
     module_name       => 'KinoSearch',
     license           => 'perl',
@@ -50,9 +49,6 @@ my $builder        = KinoSearchBuild->new(
         'ExtUtils::ParseXS'  => 0,
     },
     create_makefile_pl => 'passthrough',
-    xs_files           => { $ks_xs_filepath => 'lib/KinoSearch.xs' },
-    c_source           => 'c_src',
-    include_dirs       => [ curdir() ],
     add_to_cleanup     => [ 'MANIFEST.bak', 'perltidy.ERR', ],
 );
 

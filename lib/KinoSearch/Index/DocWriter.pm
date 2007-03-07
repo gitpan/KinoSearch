@@ -54,21 +54,16 @@ sub add_doc {
         my $field_spec = $schema->fetch_fspec($_);
         if ( $field_spec->compressed ) {
             utf8_flag_off( $doc->{$_} );
-            $fdata_stream->lu_write(
-                'VT',
-                $seg_info->field_num($_),
-                compress( $doc->{$_} )
-            );
+            $fdata_stream->lu_write( 'TT', $_, compress( $doc->{$_} ) );
         }
         else {
-            $fdata_stream->lu_write( 'VT', $seg_info->field_num($_),
-                $doc->{$_} );
+            $fdata_stream->lu_write( 'TT', $_, $doc->{$_} );
         }
     }
 }
 
 sub add_segment {
-    my ( $self, $seg_reader, $doc_map, $field_num_map ) = @_;
+    my ( $self, $seg_reader, $doc_map ) = @_;
     my ( $findex_stream, $fdata_stream )
         = @{$self}{qw( findex_stream fdata_stream )};
     my $doc_reader = $seg_reader->get_doc_reader;
@@ -84,8 +79,8 @@ sub add_segment {
         $findex_stream->lu_write( 'Q', $fdata_stream->stell );
 
         # retrieve a record
-        my $record = $doc_reader->read_record( $orig, $field_num_map );
-        my $len = bytes::length($$record);
+        my $record = $doc_reader->read_record($orig);
+        my $len    = bytes::length($$record);
         $fdata_stream->lu_write( "a$len", $$record );
     }
 }
@@ -123,8 +118,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut
-

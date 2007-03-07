@@ -57,11 +57,23 @@ sub add_doc {
     my $doc_num    = $seg_info->get_doc_count;
     my $doc_vector = KinoSearch::Index::DocVector->new;
 
-    # analyze and invert field values
+    # iterate over fields
     for my $field_name ( keys %$doc ) {
+        # verify that field is in schema 
         my $field_spec = $schema->fetch_fspec($field_name);
         confess("Unknown field name: '$field_name'")
             unless defined $field_spec;
+
+        # add field to segment if it's new
+        if ( !$seg_info->field_num($field_name) ) {
+            $seg_info->add_field( $field_name );
+        }
+
+        # upgrade fields that aren't binary to utf8
+        if ( !$field_spec->binary ) {
+            utf8::upgrade( $doc->{$field_name} );
+        }
+
         next unless $field_spec->indexed;
 
         my $token_batch = KinoSearch::Analysis::TokenBatch->new(
@@ -86,7 +98,7 @@ sub add_doc {
         my $sim = $schema->fetch_sim($field_name);
         $self->{postings_writer}->add_batch(
             token_batch => $token_batch,
-            field_spec  => $field_spec,
+            field_name  => $field_name,
             doc_num     => $doc_num,
             doc_boost   => $doc_boost,
             length_norm => $sim->length_norm( $token_batch->get_size ),
@@ -112,9 +124,9 @@ sub add_segment {
         = $seg_info->generate_field_num_map( $seg_reader->get_seg_info );
 
     # bulk add the slab of documents to the various writers
-    $self->{doc_writer}->add_segment( $seg_reader,      $doc_map, $fnum_map );
     $self->{postings_writer}->add_segment( $seg_reader, $doc_map, $fnum_map );
-    $self->{tv_writer}->add_segment( $seg_reader,       $doc_map, $fnum_map );
+    $self->{doc_writer}->add_segment( $seg_reader, $doc_map );
+    $self->{tv_writer}->add_segment( $seg_reader,  $doc_map );
 
     $seg_info->set_doc_count(
         $seg_info->get_doc_count + $seg_reader->num_docs );
@@ -181,7 +193,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut

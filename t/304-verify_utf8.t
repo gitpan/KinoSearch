@@ -2,14 +2,11 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-package MySchema::content;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-__PACKAGE__->init_fields(qw( content ));
+our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
 
 sub analyzer { KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ ) }
 

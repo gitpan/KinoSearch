@@ -10,11 +10,13 @@ BEGIN {
         # params/members
         invindex => undef,
         # members
-        folder      => undef,
-        ix_reader   => undef,
-        sort_caches => {},
+        folder       => undef,
+        ix_reader    => undef,
+        sort_caches  => {},
+        prune_factor => undef,
     );
     __PACKAGE__->ready_get(qw( ix_reader ));
+    __PACKAGE__->ready_get_set(qw( prune_factor ));
 }
 
 use KinoSearch::Index::IndexReader;
@@ -136,6 +138,7 @@ sub search_hit_collector {
     my $self = shift;
     confess kerror() unless verify_args( \%search_hit_collector_args, @_ );
     my %args = ( %search_hit_collector_args, @_ );
+    my $ix_reader = $self->{ix_reader};
 
     # wrap the collector if there's a filter
     my $collector = $args{hit_collector};
@@ -144,11 +147,14 @@ sub search_hit_collector {
     }
 
     # accumulate hits into the HitCollector if the query is valid
-    my $scorer = $args{weight}->scorer( $self->{ix_reader} );
+    my $scorer = $args{weight}->scorer($ix_reader);
     if ( defined $scorer ) {
+        
         $scorer->score_batch(
             hit_collector => $collector,
-            end           => $self->{ix_reader}->max_doc,
+            end           => $ix_reader->max_doc,
+            prune_factor  => $self->{prune_factor} || 2**31,
+            seg_starts    => undef, #  $ix_reader->get_seg_starts;
         );
     }
 }
@@ -280,4 +286,4 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.

@@ -11,7 +11,7 @@ KINO_CLASS("KinoSearch::Index::MultiTermDocs", "MultiTermDocs",
 
 struct kino_MultiTermDocs {
     KINO_MULTITERMDOCS_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     kino_u32_t      num_subs;
     kino_u32_t      base;
     kino_u32_t      pointer;

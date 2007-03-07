@@ -11,7 +11,7 @@ KINO_CLASS("KinoSearch::Index::Posting", "Posting", "KinoSearch::Util::Obj");
 
 struct kino_Posting {
     KINO_POSTING_VTABLE *_;
-    kino_u32_t refcount;
+    KINO_OBJ_MEMBER_VARS;
     struct kino_ByteBuf  *stringified;
     kino_i32_t           *positions;
 };

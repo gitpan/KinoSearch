@@ -13,8 +13,7 @@ KINO_CLASS("KinoSearch::Search::FieldDoc", "FieldDoc",
 
 struct kino_FieldDoc {
     KINO_FIELDDOC_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_SCOREDOC_MEMBER_VARS
+    KINO_SCOREDOC_MEMBER_VARS;
     struct kino_FieldDocCollator *collator;
 };
 

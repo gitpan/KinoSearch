@@ -6,49 +6,13 @@ use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
 use KinoSearch::InvIndex;
-use KinoSearch::Index::IndexFileNames
-    qw( WRITE_LOCK_NAME WRITE_LOCK_TIMEOUT unused_files );
 use KinoSearch::Search::Similarity;
 use KinoSearch::Util::Hash;
-
-# class data -- keyed by class name
-our %field_registry;
+use KinoSearch::Schema::FieldSpec;
 
 #-----------------------------------------------------------------------
 # CLASS METHODS
 #-----------------------------------------------------------------------
-
-my %reserved_names = (
-    doc_boost => 1,
-    boost     => 1,
-    score     => 1,
-    excerpt   => 1,
-    excerpts  => 1,
-);
-
-sub init_fields {
-    my ( $class, @field_names ) = @_;
-
-    $field_registry{$class} ||= {};
-    my $slot = $field_registry{$class};
-
-    for my $field_name (@field_names) {
-        my $field_class = $class . "::$field_name";
-        confess("Illegal field name: $field_name")
-            unless $field_class =~ /^\w+(::\w+)*$/;
-        confess("'$field_name' is reserved for internal use")
-            if $reserved_names{$field_name};
-        confess("Field names beginning with 'kino' are reserved")
-            if $field_name =~ /^kino/i;
-        if ( !$field_class->isa('KinoSearch::Schema::FieldSpec') ) {
-            confess(  "'$field_class' either isn't loaded or isn't a "
-                    . "KinoSearch::Schema::FieldSpec" );
-        }
-
-        # add FieldSpec subclass to this Schema subclass's list
-        $slot->{$field_name} = $field_class;
-    }
-}
 
 sub analyzer   { shift->abstract_death }
 sub similarity { KinoSearch::Search::Similarity->new }
@@ -56,35 +20,19 @@ sub similarity { KinoSearch::Search::Similarity->new }
 sub new {
     my ( $class, $folder ) = @_;
 
-    # get a primary Similarity
-    my $main_sim = $class->similarity;
-
-    # accumulate a collection of FieldSpec objects and similarity mappings
-    my $fspecs = KinoSearch::Util::Hash->new;
-    my $sims   = KinoSearch::Util::Hash->new;
-    my $slot   = $field_registry{$class};
-    confess("No Fields defined for $class") unless defined $slot;
-    while ( my ( $field_name, $field_class ) = each %$slot ) {
-        my $field_spec = $field_class->new;
-        $fspecs->store( $field_name, $field_spec );
-        my $sim = $field_class->similarity;
-        next unless $sim;
-        $sims->store( $field_name, $sim );
-    }
+    # get a primary Similarity and primary analyzer
+    my $main_sim         = $class->similarity;
+    my $default_analyzer = $class->analyzer;
 
     # create object
-    my $self = $class->_new( $fspecs, $sims, $main_sim );
+    my $self = $class->_new( $default_analyzer, {}, $main_sim );
 
-    # cache analyzer instances
-    my %analyzers;
-    my $default_analyzer = $class->analyzer;
-    while ( my ( $field_name, $field_class ) = each %$slot ) {
-        next unless $field_class->analyzed;
-        $analyzers{$field_name} = $field_class->analyzer
-            || $default_analyzer;
+    # register all the fields in %FIELDS
+    my $fields = _retrieve_FIELDS_hashref( $class . '::FIELDS' );
+    confess("Can't find \%$class\::FIELDS hash") unless defined $fields;
+    while ( my ( $field_name, $fspec_class ) = each %$fields ) {
+        $self->add_field( $field_name, $fspec_class );
     }
-    $self->_set_main_analyzer($default_analyzer);
-    $self->_set_analyzers( \%analyzers );
 
     return $self;
 }
@@ -117,6 +65,58 @@ sub open {
 # INSTANCE METHODS
 #-----------------------------------------------------------------------
 
+my %reserved_names = (
+    doc_boost => 1,
+    boost     => 1,
+    score     => 1,
+    excerpt   => 1,
+    excerpts  => 1,
+);
+
+sub add_field {
+    my ( $self, $field_name, $fspec_class ) = @_;
+
+    # validate
+    confess('Usage: $schema->add_field( $field_name, $field_class')
+        unless @_ == 3;
+    confess("'$field_name' is reserved for internal use")
+        if $reserved_names{$field_name};
+    confess("Field names beginning with 'kino' are reserved")
+        if $field_name =~ /^kino/i;
+
+    if ( !$fspec_class->isa('KinoSearch::Schema::FieldSpec') ) {
+        confess(  "'$fspec_class' either isn't loaded or isn't a "
+                . "KinoSearch::Schema::FieldSpec" );
+    }
+
+    # if the field already has an association, verify pairing and return
+    my $current = $self->fetch_fspec($field_name);
+    if ($current) {
+        return if $fspec_class eq ref($current);
+        confess(  "'$field_name' assigned to '$fspec_class', "
+                . "which conflicts with '$current'" );
+    }
+
+    # add the association to the object
+    $self->_add_field( $field_name, $fspec_class->get_singleton );
+
+    # associate an analyzer if the FieldSpec subclass provides one
+    if ( $fspec_class->analyzed ) {
+        my $analyzer = $fspec_class->analyzer;
+        if ( defined $analyzer ) {
+            my $analyzers = $self->_get_analyzers;
+            $analyzers->{$field_name} = $analyzer;
+        }
+    }
+
+    # associate a Similarity if the FieldSpec subclass provides one
+    my $sim = $fspec_class->similarity;
+    if ( defined $sim ) {
+        my $sims = $self->_get_sims;
+        $sims->store( $field_name, $sim );
+    }
+}
+
 sub num_fields {
     my $self = shift;
     return $self->get_fspecs->get_size;
@@ -131,13 +131,25 @@ __XS__
 MODULE = KinoSearch     PACKAGE = KinoSearch::Schema
 
 kino_Schema*
-_new(class, fspecs, sims, sim)
+_new(class, analyzer, analyzers, sim)
     const classname_char *class;
-    kino_Hash *fspecs;
-    kino_Hash *sims;
+    SV *analyzer;
+    SV *analyzers;
     kino_Similarity *sim;
 CODE:
-    RETVAL = kino_Schema_new(class, fspecs, sims, sim);
+    RETVAL = kino_Schema_new(class, analyzer, analyzers, sim);
+OUTPUT: RETVAL
+
+SV*
+_retrieve_FIELDS_hashref(name)
+	const char *name;
+CODE:
+{
+	HV* fields_hash = get_hv(name, 0);
+	RETVAL = fields_hash == NULL
+		? newSV(0)
+		: newRV_inc((SV*)fields_hash);
+}
 OUTPUT: RETVAL
 
 void
@@ -145,8 +157,8 @@ _set_or_get(self, ...)
     kino_Schema *self;
 ALIAS:
     get_fspecs         = 2
-    _set_main_analyzer = 3
-    _set_analyzers     = 5
+    _get_analyzers     = 4
+    _get_sims          = 6
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -154,14 +166,11 @@ PPCODE:
     case 2:  retval = kobj_to_pobj(self->fspecs);
              break;
 
-    case 3: SvREFCNT_dec((SV*)self->analyzer);
-            self->analyzer = (void*)newSVsv( ST(1) );
-            break;
+    case 4:  retval = newSVsv(self->analyzers);
+             break;
 
-    case 5: SvREFCNT_dec((SV*)self->analyzers);
-            self->analyzers = (void*)SvRV( ST(1) );
-            SvREFCNT_inc((SV*)self->analyzers);
-            break;
+    case 6:  retval = kobj_to_pobj(self->sims);
+             break;
 
     END_SET_OR_GET_SWITCH
 }
@@ -171,24 +180,36 @@ fetch_analyzer(self, ...)
     kino_Schema *self;
 CODE:
 {
-    if (items == 1 && self->analyzer != NULL) {
-        RETVAL = newSVsv(self->analyzer);
-    }
-    else if (items == 2 && self->analyzers != NULL) {
-        HE *entry = hv_fetch_ent(self->analyzers, ST(1), 0, 0);
-        if (entry == NULL) {
-            RETVAL = newSV(0);
+    RETVAL = NULL;
+
+    /* get a registered analyzer if there is one */
+    if (items == 2 && self->analyzers != NULL) {
+        HV *analyzers_hash = (HV*)SvRV((SV*)self->analyzers);
+        HE *entry = hv_fetch_ent(analyzers_hash, ST(1), 0, 0);
+        if (entry != NULL) {
+            SV *const analyzer_sv = HeVAL(entry);
+            if SvOK(analyzer_sv) {
+                RETVAL = newSVsv( HeVAL(entry) );
+            }
         }
-        else {
-            RETVAL = newSVsv( HeVAL(entry) );
-        }
     }
-    else {
-        RETVAL = newSV(0);
+
+    /* get main analyzer if we didn't haven't got one yet */
+    if (RETVAL == NULL) { 
+        RETVAL = self->analyzer == NULL
+            ? newSV(0)
+            : newSVsv(self->analyzer);
     }
 }
 OUTPUT: RETVAL
     
+void
+_add_field(self, field_name, fspec)
+    kino_Schema *self;
+    kino_ByteBuf field_name;
+    kino_FieldSpec *fspec;
+PPCODE:
+    Kino_Schema_Add_Field(self, &field_name, fspec);
 
 SV*
 fetch_sim(self, field_name)
@@ -217,7 +238,7 @@ CODE:
 OUTPUT: RETVAL
 
 void
-all_fspecs(self)
+all_fields(self)
     kino_Schema *self;
 PPCODE:
 {
@@ -230,8 +251,8 @@ PPCODE:
     Kino_Hash_Iter_Init(self->fspecs);
     while (Kino_Hash_Iter_Next(self->fspecs, &name, (kino_Obj**)&field_spec)
     ) {
-        SV *const fspec_sv = kobj_to_pobj(field_spec);
-        PUSHs( sv_2mortal(fspec_sv) );
+        SV *const field_name_sv = bb_to_sv(name);
+        PUSHs( sv_2mortal(field_name_sv) );
     }
     XSRETURN(num_fields);
 }
@@ -247,21 +268,14 @@ KinoSearch::Schema -- User-created specification for an inverted index.
 First, create a subclass of KinoSearch::Schema which describes the structure
 of your inverted index.
 
-    # define fields by subclassing KinoSearch::Schema::FieldSpec
-
-    package MySchema::title;
-    use base qw( KinoSearch::Schema::FieldSpec );
-
-    package MySchema::content;
-    use base qw( KinoSearch::Schema::FieldSpec );
-
-    # subclass KinoSearch::Schema to finish your specification
-
     package MySchema;
     use base qw( KinoSearch::Schema );
     use KinoSearch::Analysis::PolyAnalyzer;
 
-    __PACKAGE__->init_fields(qw( title content ));
+    our %FIELDS = (
+        title   => 'KinoSearch::Schema::FieldSpec',
+        content => 'KinoSearch::Schema::FieldSpec',
+    );
 
     sub analyzer { 
         return KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
@@ -292,8 +306,8 @@ definition, but implemented using only Perl code.
 KinoSearch::Schema is an abstract class.  To use it, you must provide your own
 subclass.
 
-Every Schema subclass must meet two requirements.  It must call
-init_fields(), and it must provide an implementation of analyzer().
+Every Schema subclass must meet two requirements: it must declare a %FIELDS
+hash, and it must provide an implementation of analyzer().
 
 =head2 Always use the same Schema 
 
@@ -304,23 +318,36 @@ L<Searcher|KinoSearch::Searcher> with either a modified version or a completely
 different Schema, you'll either get incorrect results or a crash.
 
 Once an actual index has been created using a particular Schema, existing
-fields may not be removed and their definitions may not be changed.  However,
-it is possible to add new fields during subsequent indexing sessions.
+fields may not be associated with new FieldSpec subclasses and their
+definitions may not be changed.  However, it is possible to add new fields
+during subsequent indexing sessions.
 
-=head1 CLASS METHODS
+=head1 CLASS VARIABLES
 
-=head2 init_fields
+=head2 %FIELDS
+
+Every Schema subclass must declare a C<%FIELDS> hash using C<our> (I<not>
+C<my>).  The keys of the hash are field names, and the values must be class
+names which identify either L<KinoSearch::Schema::FieldSpec> or a subclass.
+
+    package UnAnalyzedField;
+    use base qw( KinoSearch::Schema::FieldSpec );
+    sub analyzed { 0 }
 
     package MySchema;
-    __PACKAGE__->init_fields(qw( title content ));
+    use base qw( KinoSearch::Schema );
 
-Takes a list of field names as arguments.  For each field name, KinoSearch
-verifies that a corresponding subclass of L<KinoSearch::Schema::FieldSpec> has
-been loaded and registers it with the Schema subclass.
+    our %FIELDS = (
+        title   => 'KinoSearch::Schema::FieldSpec',
+        content => 'KinoSearch::Schema::FieldSpec',
+        url     => 'UnAnalyzedField',
+    );
 
-The FieldSpec subclass names are derived by combining the Schema's class name
-with the field name -- for instance, in the above example they would be named
-"MySchema::title" and "MySchema::content".
+new() uses %FIELDS as a base set when initializing each new object.
+Additional fields may be be added subsequently to individual objects using
+add_field().
+
+=head1 CLASS METHODS
 
 =head2 analzyer 
 
@@ -384,7 +411,21 @@ attempts to delete any files within it that look like index files.
 
     my $invindex = MySchema->open('/path/to/invindex');
 
-Open an existing invindex for either reading or updating.
+Open an existing invindex for either reading or updating.  All fields which
+have ever been defined for this invindex will be loaded/verified via
+add_field().
+
+=head1 INSTANCE METHODS
+
+=head2 add_field
+
+    $schema->add_field( foo => 'KinoSearch::Analysis::FieldSpec' );
+
+Add a field to an individual schema object.  
+
+Calling add_field multiple times against the same field name is fine, but the
+name of the FieldSpec subclass must always be the same or an exception will be
+thrown.
 
 =head1 COPYRIGHT
 
@@ -392,7 +433,6 @@ Copyright 2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =cut
-

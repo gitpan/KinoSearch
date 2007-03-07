@@ -1,10 +1,7 @@
 use strict;
 use warnings;
 
-package MySchema::title;
-use base qw( KinoSearch::Schema::FieldSpec );
-
-package MySchema::body;
+package MySchema::LongField;
 use base qw( KinoSearch::Schema::FieldSpec );
 use KinoSearch::Contrib::LongFieldSim;
 sub similarity { KinoSearch::Contrib::LongFieldSim->new }
@@ -12,8 +9,13 @@ sub similarity { KinoSearch::Contrib::LongFieldSim->new }
 package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
+
+our %FIELDS = (
+    title => 'KinoSearch::Schema::FieldSpec',
+    body  => 'MySchema::LongField',
+);
+
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-__PACKAGE__->init_fields(qw( title body));
 
 package main;
 use Test::More tests => 6;

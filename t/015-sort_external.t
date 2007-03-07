@@ -12,7 +12,8 @@ BEGIN {
 use KinoTestUtils qw( create_invindex );
 
 my $invindex  = create_invindex("foo");
-my $seg_infos = KinoSearch::Index::SegInfos->new;
+my $seg_infos
+    = KinoSearch::Index::SegInfos->new( schema => $invindex->get_schema );
 $seg_infos->read_infos( $invindex->get_folder );
 my $seg_info = $seg_infos->get_info('_1');
 

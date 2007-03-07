@@ -16,8 +16,7 @@ KINO_CLASS("KinoSearch::Util::DynVirtualTable", "DynVT",
 
 struct kino_DynVirtualTable {
     KINO_DYNVIRTUALTABLE_VTABLE *_;
-    kino_u32_t refcount;
-    KINO_VIRTUALTABLE_MEMBER_VARS
+    KINO_VIRTUALTABLE_MEMBER_VARS;
     /* There cannot be more members without conflicting with the vtables that
      * "inherit" from VirtualTable: KINO_OBJ_VTABLE and all of its
      * descendents.

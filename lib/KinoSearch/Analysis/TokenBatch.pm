@@ -294,7 +294,7 @@ Constructor.  Takes one optional hash-style argument.
 =item *
 
 B<text> - UTF-8 encoded text, used to prime the TokenBatch with a single
-initial <Token|KinoSearch::Analysis::Token>.
+initial L<Token|KinoSearch::Analysis::Token>.
 
 =back
 
@@ -338,7 +338,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20_01.
+See L<KinoSearch> version 0.20.
 
 =cut
 

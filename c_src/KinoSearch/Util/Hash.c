@@ -33,13 +33,16 @@ static void
 rebuild_hash(Hash *self);
 
 Hash*
-Hash_new(u32_t capacity)
+Hash_new(u32_t proposed_capacity)
 {
+    u32_t capacity;
     CREATE(self, Hash, HASH);
 
     /* set a minumum capacity */
-    if (capacity < 16)
+    if (proposed_capacity < 16)
         capacity = 16;
+    else 
+	    capacity = proposed_capacity * 3/2;
 
     /* init */
     self->size = 0;
