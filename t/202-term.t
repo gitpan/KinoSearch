@@ -1,11 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 7;
 use List::Util qw( shuffle );
 use Storable qw( nfreeze thaw );
 
-BEGIN { use_ok('KinoSearch::Index::Term') }
+use KinoSearch::Index::Term;
 
 my $foo_term = KinoSearch::Index::Term->new( "f1", "foo" );
 my $bar_term = KinoSearch::Index::Term->new( "f3", "bar" );

@@ -46,7 +46,7 @@ PPCODE:
 
 SV*
 to_base36(num)
-    kino_u32_t num;
+    chy_u32_t num;
 CODE:
 {
     kino_ByteBuf *bb = kino_StrHelp_to_base36(num);

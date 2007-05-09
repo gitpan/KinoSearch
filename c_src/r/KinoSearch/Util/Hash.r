@@ -10,10 +10,14 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_HASH
 #define R_KINO_HASH 1
 
 #include "KinoSearch/Util/Hash.h"
+
+#define KINO_HASH_BOILERPLATE
 
 typedef void
 (*kino_Hash_destroy_t)(kino_Hash *self);
@@ -30,7 +34,7 @@ typedef void
 
 typedef void
 (*kino_Hash_store_i64_t)(kino_Hash *self, const char *str, size_t key_len, 
-                        kino_i64_t num);
+                        chy_i64_t num);
 
 typedef kino_Obj*
 (*kino_Hash_fetch_bb_t)(kino_Hash *self, const kino_ByteBuf *key);
@@ -38,84 +42,96 @@ typedef kino_Obj*
 typedef kino_Obj*
 (*kino_Hash_fetch_t)(kino_Hash *self, const char *key, size_t key_len);
 
-typedef kino_i64_t
+typedef chy_i64_t
 (*kino_Hash_fetch_i64_t)(kino_Hash *self, const char *key, size_t key_len);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_Hash_delete_bb_t)(kino_Hash *self, const kino_ByteBuf *key);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_Hash_delete_t)(kino_Hash *self, const char *key, size_t key_ley);
 
 typedef void
 (*kino_Hash_iter_init_t)(kino_Hash *self);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_Hash_iter_next_t)(kino_Hash *self, kino_ByteBuf **key, kino_Obj **value);
+
+typedef kino_ByteBuf*
+(*kino_Hash_add_key_t)(kino_Hash *self, const kino_ByteBuf *key);
+
+typedef kino_ByteBuf*
+(*kino_Hash_find_key_t)(kino_Hash *self, const kino_ByteBuf *key);
 
 typedef struct kino_VArray*
 (*kino_Hash_keys_t)(kino_Hash *self);
 
-#define Kino_Hash_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_Hash_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_Hash_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_Hash_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_Hash_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_Hash_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_Hash_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_Hash_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_Hash_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_Hash_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_Hash_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_Hash_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_Hash_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_Hash_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_Hash_Clear(_self) \
-    (_self)->_->clear((kino_Hash*)_self)
+#define Kino_Hash_Clear(self) \
+    (self)->_->clear((kino_Hash*)self)
 
-#define Kino_Hash_Store(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->store((kino_Hash*)_self, _arg1, _arg2, _arg3)
+#define Kino_Hash_Store(self, str, len, value) \
+    (self)->_->store((kino_Hash*)self, str, len, value)
 
-#define Kino_Hash_Store_BB(_self, _arg1, _arg2) \
-    (_self)->_->store_bb((kino_Hash*)_self, _arg1, _arg2)
+#define Kino_Hash_Store_BB(self, key, value) \
+    (self)->_->store_bb((kino_Hash*)self, key, value)
 
-#define Kino_Hash_Store_I64(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->store_i64((kino_Hash*)_self, _arg1, _arg2, _arg3)
+#define Kino_Hash_Store_I64(self, str, key_len, num) \
+    (self)->_->store_i64((kino_Hash*)self, str, key_len, num)
 
-#define Kino_Hash_Fetch_BB(_self, _arg1) \
-    (_self)->_->fetch_bb((kino_Hash*)_self, _arg1)
+#define Kino_Hash_Fetch_BB(self, key) \
+    (self)->_->fetch_bb((kino_Hash*)self, key)
 
-#define Kino_Hash_Fetch(_self, _arg1, _arg2) \
-    (_self)->_->fetch((kino_Hash*)_self, _arg1, _arg2)
+#define Kino_Hash_Fetch(self, key, key_len) \
+    (self)->_->fetch((kino_Hash*)self, key, key_len)
 
-#define Kino_Hash_Fetch_I64(_self, _arg1, _arg2) \
-    (_self)->_->fetch_i64((kino_Hash*)_self, _arg1, _arg2)
+#define Kino_Hash_Fetch_I64(self, key, key_len) \
+    (self)->_->fetch_i64((kino_Hash*)self, key, key_len)
 
-#define Kino_Hash_Delete_BB(_self, _arg1) \
-    (_self)->_->delete_bb((kino_Hash*)_self, _arg1)
+#define Kino_Hash_Delete_BB(self, key) \
+    (self)->_->delete_bb((kino_Hash*)self, key)
 
-#define Kino_Hash_Delete(_self, _arg1, _arg2) \
-    (_self)->_->delete((kino_Hash*)_self, _arg1, _arg2)
+#define Kino_Hash_Delete(self, key, key_ley) \
+    (self)->_->delete((kino_Hash*)self, key, key_ley)
 
-#define Kino_Hash_Iter_Init(_self) \
-    (_self)->_->iter_init((kino_Hash*)_self)
+#define Kino_Hash_Iter_Init(self) \
+    (self)->_->iter_init((kino_Hash*)self)
 
-#define Kino_Hash_Iter_Next(_self, _arg1, _arg2) \
-    (_self)->_->iter_next((kino_Hash*)_self, _arg1, _arg2)
+#define Kino_Hash_Iter_Next(self, key, value) \
+    (self)->_->iter_next((kino_Hash*)self, key, value)
 
-#define Kino_Hash_Keys(_self) \
-    (_self)->_->keys((kino_Hash*)_self)
+#define Kino_Hash_Add_Key(self, key) \
+    (self)->_->add_key((kino_Hash*)self, key)
+
+#define Kino_Hash_Find_Key(self, key) \
+    (self)->_->find_key((kino_Hash*)self, key)
+
+#define Kino_Hash_Keys(self) \
+    (self)->_->keys((kino_Hash*)self)
 
 struct KINO_HASH_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -136,6 +152,8 @@ struct KINO_HASH_VTABLE {
     kino_Hash_delete_t delete;
     kino_Hash_iter_init_t iter_init;
     kino_Hash_iter_next_t iter_next;
+    kino_Hash_add_key_t add_key;
+    kino_Hash_find_key_t find_key;
     kino_Hash_keys_t keys;
 };
 
@@ -168,6 +186,10 @@ extern KINO_HASH_VTABLE KINO_HASH;
   #define Hash_iter_init kino_Hash_iter_init
   #define Hash_iter_next_t kino_Hash_iter_next_t
   #define Hash_iter_next kino_Hash_iter_next
+  #define Hash_add_key_t kino_Hash_add_key_t
+  #define Hash_add_key kino_Hash_add_key
+  #define Hash_find_key_t kino_Hash_find_key_t
+  #define Hash_find_key kino_Hash_find_key
   #define Hash_keys_t kino_Hash_keys_t
   #define Hash_keys kino_Hash_keys
   #define Hash_Clone Kino_Hash_Clone
@@ -188,19 +210,19 @@ extern KINO_HASH_VTABLE KINO_HASH;
   #define Hash_Delete Kino_Hash_Delete
   #define Hash_Iter_Init Kino_Hash_Iter_Init
   #define Hash_Iter_Next Kino_Hash_Iter_Next
+  #define Hash_Add_Key Kino_Hash_Add_Key
+  #define Hash_Find_Key Kino_Hash_Find_Key
   #define Hash_Keys Kino_Hash_Keys
-  #define HASH KINO_HASH
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_HASH_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_HashEntry ** buckets; \
-    kino_u32_t  num_buckets; \
-    kino_u32_t  size; \
-    kino_u32_t  threshold; \
+    chy_u32_t  num_buckets; \
+    chy_u32_t  size; \
+    chy_u32_t  threshold; \
     struct kino_HashEntry * next_entry; \
-    kino_u32_t  iter_bucket
-
+    chy_u32_t  iter_bucket
 
 #ifdef KINO_WANT_HASH_VTABLE
 KINO_HASH_VTABLE KINO_HASH = {
@@ -226,14 +248,21 @@ KINO_HASH_VTABLE KINO_HASH = {
     (kino_Hash_delete_t)kino_Hash_delete,
     (kino_Hash_iter_init_t)kino_Hash_iter_init,
     (kino_Hash_iter_next_t)kino_Hash_iter_next,
+    (kino_Hash_add_key_t)kino_Hash_add_key,
+    (kino_Hash_find_key_t)kino_Hash_find_key,
     (kino_Hash_keys_t)kino_Hash_keys
 };
 #endif /* KINO_WANT_HASH_VTABLE */
 
+#undef KINO_HASH_BOILERPLATE
+
+
 #endif /* R_KINO_HASH */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

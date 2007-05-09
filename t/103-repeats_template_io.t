@@ -1,11 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 18;
+use Test::More tests => 17;
 
-BEGIN {
-    use_ok('KinoSearch::Store::RAMFolder');
-}
+use KinoSearch::Store::RAMFolder;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my ( @items, $packed, $template );
@@ -49,4 +47,3 @@ for my $num ( 2, 19, 101 ) {
     $template .= 'T';
     check_io( $template, $template, @items );
 }
-

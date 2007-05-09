@@ -1,4 +1,5 @@
 #define KINO_USE_SHORT_NAMES
+#define CHY_USE_SHORT_NAMES
 
 #include <string.h>
 #include <stdio.h>
@@ -121,7 +122,7 @@ BB_hash_code(ByteBuf *self)
 void
 BB_copy_str(ByteBuf *self, char* ptr, size_t len) 
 {
-    BB_Grow(self, len);
+    BB_GROW(self, len);
     memcpy(self->ptr, ptr, len);
     self->len = len;
     self->ptr[len] = '\0';
@@ -130,7 +131,7 @@ BB_copy_str(ByteBuf *self, char* ptr, size_t len)
 void
 BB_copy_bb(ByteBuf *self, const ByteBuf *other)
 {
-    BB_Grow(self, other->len);
+    BB_GROW(self, other->len);
     memcpy(self->ptr, other->ptr, other->len);
     self->len = other->len;
     self->ptr[other->len] = '\0';
@@ -140,7 +141,7 @@ void
 BB_cat_str(ByteBuf *self, char* ptr, size_t len) 
 {
     const size_t new_len = self->len + len;
-    BB_Grow(self, new_len);
+    BB_GROW(self, new_len);
     memcpy((self->ptr + self->len), ptr, len);
     self->len = new_len;
     self->ptr[new_len] = '\0';
@@ -150,7 +151,7 @@ void
 BB_cat_bb(ByteBuf *self, const ByteBuf *other) 
 {
     const size_t new_len = self->len + other->len;
-    BB_Grow(self, new_len);
+    BB_GROW(self, new_len);
     memcpy((self->ptr + self->len), other->ptr, other->len);
     self->len = new_len;
     self->ptr[new_len] = '\0';
@@ -159,7 +160,7 @@ BB_cat_bb(ByteBuf *self, const ByteBuf *other)
 void
 BB_cat_i64(ByteBuf *self, i64_t num)
 {
-    BB_Grow(self, self->len + MAX_I64_CHARS);
+    BB_GROW(self, self->len + MAX_I64_CHARS);
     self->len += sprintf(BBEND(self), "%"I64P, num);
 }
 
@@ -198,17 +199,47 @@ BB_grow(ByteBuf *self, size_t new_len)
     self->cap = new_len + 1;
 }
 
+bool_t
+BB_starts_with(ByteBuf *self, const ByteBuf *prefix)
+{
+    size_t len = prefix->len;
+    if (     len <= self->len
+        &&  (memcmp(self->ptr, prefix->ptr, len) == 0)
+    ) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool_t
+BB_ends_with_str(ByteBuf *self, const char *postfix, size_t postfix_len)
+{
+    if (postfix_len <= self->len) { 
+        char *start = BBEND(self) - postfix_len;
+        if (memcmp(start, postfix, postfix_len) == 0)
+            return true;
+    }
+
+    return false;
+}
+
 void
 BB_serialize(ByteBuf *self, ByteBuf *target)
 {
-    size_t new_size = target->len + self->len + sizeof(u32_t);
+    size_t new_len = target->len + self->len + sizeof(u32_t);
+    char *ptr;
+
+    /* make room */
+    BB_GROW(target, new_len + 1);
+    ptr = BBEND(target);
+    target->len = new_len;
 
     /* header u32_t length, followed by content */
-    BB_Grow(target, new_size);
-    Math_encode_bigend_u32(self->len, BBEND(target));
-    target->len += sizeof(u32_t);
-    memcpy(BBEND(target), self->ptr, self->len + 1);
-    target->len += self->len;
+    MATH_ENCODE_U32(self->len, ptr);
+    ptr += sizeof(u32_t);
+    memcpy(ptr, self->ptr, self->len + 1);
 }
 
 ByteBuf*
@@ -254,7 +285,7 @@ BB_compare(const void *va, const void *vb)
     return comparison;
 }
 
-kino_bool_t
+bool_t
 BB_less_than(const void *va, const void *vb)
 {
     const ByteBuf *a = *(const ByteBuf**)va;

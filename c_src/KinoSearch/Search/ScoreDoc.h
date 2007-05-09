@@ -15,23 +15,21 @@ KINO_CLASS("KinoSearch::Search::ScoreDoc", "ScoreDoc",
 struct kino_ScoreDoc {
     KINO_SCOREDOC_VTABLE *_;
     KINO_OBJ_MEMBER_VARS;
-    kino_u32_t    id;
+    chy_u32_t     doc_num;
     float         score;
 };
 
 /* Constructor
  */
-KINO_FUNCTION(
 kino_ScoreDoc*
-kino_ScoreDoc_new(kino_u32_t id, float score));
+kino_ScoreDoc_new(chy_u32_t doc_num, float score);
 
-KINO_FUNCTION(
 kino_ScoreDoc*
-kino_ScoreDoc_deserialize(struct kino_ViewByteBuf *serialized));
+kino_ScoreDoc_deserialize(struct kino_ViewByteBuf *serialized);
 
-KINO_METHOD("Kino_ScoreDoc_Serialize",
 void
-kino_ScoreDoc_serialize(kino_ScoreDoc *self, struct kino_ByteBuf *target));
+kino_ScoreDoc_serialize(kino_ScoreDoc *self, struct kino_ByteBuf *target);
+KINO_METHOD("Kino_ScoreDoc_Serialize");
 
 KINO_END_CLASS
 

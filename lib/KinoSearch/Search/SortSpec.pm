@@ -5,13 +5,13 @@ package KinoSearch::Search::SortSpec;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # members
-        criteria => [],
-    );
-    __PACKAGE__->ready_get_set(qw( criteria ));
-}
+our %instance_vars = (
+    # members
+    criteria => [],
+);
+
+BEGIN { __PACKAGE__->ready_get_set(qw( criteria )) }
+
 use KinoSearch::Search::FieldDocCollator;
 
 my %add_defaults = (
@@ -30,11 +30,11 @@ sub add {
 
 # Factory method returning a prepped FieldDocCollator.
 sub make_field_doc_collator {
-    my ( $self, $ix_reader ) = @_;
+    my ( $self, $reader ) = @_;
     my $collator = KinoSearch::Search::FieldDocCollator->new;
 
     for my $criterion ( @{ $self->{criteria} } ) {
-        my $sort_cache = $ix_reader->fetch_sort_cache( $criterion->{field} );
+        my $sort_cache = $reader->fetch_sort_cache( $criterion->{field} );
         $collator->add(
             sort_cache => $sort_cache,
             reverse    => $criterion->{'reverse'},
@@ -82,6 +82,8 @@ faster.
 =head1 METHODS
 
 =head2 new
+
+    my $sort_spec = KinoSearch::Search::SortSpec->new;
 
 Constructor.  Takes no arguments.
 

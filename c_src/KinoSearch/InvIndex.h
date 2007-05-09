@@ -20,13 +20,12 @@ struct kino_InvIndex {
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_InvIndex*
-kino_InvIndex_new(struct kino_Schema *schema, struct kino_Folder *folder));
+kino_InvIndex_new(struct kino_Schema *schema, struct kino_Folder *folder);
 
-KINO_METHOD("Kino_InvIndex_Destroy",
 void 
-kino_InvIndex_destroy(kino_InvIndex *self));
+kino_InvIndex_destroy(kino_InvIndex *self);
+KINO_METHOD("Kino_InvIndex_Destroy");
 
 KINO_END_CLASS
 

@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <stdio.h>
@@ -53,22 +52,19 @@ TVReader_destroy(TermVectorsReader *self)
 void
 TVReader_read_record(TermVectorsReader *self, i32_t doc_num, ByteBuf *target)
 {
-    u64_t fileptr, next_fileptr;
+    u64_t filepos;
     u32_t len;
     InStream *tv_in  = self->tv_in;
     InStream *tvx_in = self->tvx_in;
 
-    InStream_SSeek(tvx_in, doc_num * 8);
-    fileptr = InStream_Read_Long(tvx_in);
-    next_fileptr = (i64_t)InStream_SLength(tvx_in) == (doc_num + 1) * 8
-        ? InStream_SLength(tv_in)
-        : InStream_Read_Long(tvx_in);
-    len     = next_fileptr - fileptr;
+    InStream_SSeek(tvx_in, doc_num * 16);
+    filepos = InStream_Read_Long(tvx_in);
+    len     = InStream_Read_Long(tvx_in);
 
-    BB_Grow(target, len);
+    BB_GROW(target, len);
 
     /* copy the whole record */
-    InStream_SSeek(tv_in, fileptr);
+    InStream_SSeek(tv_in, filepos);
     InStream_Read_Bytes(tv_in, target->ptr, len);
     target->len = len;
 }

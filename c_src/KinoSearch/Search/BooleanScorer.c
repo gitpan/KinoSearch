@@ -1,39 +1,14 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_BOOLEANSCORER_VTABLE
 #include "KinoSearch/Search/BooleanScorer.r"
 
 #include "KinoSearch/Search/Similarity.r"
-
-#define MATCH_BATCH_SIZE (1 << 11)
-#define MATCH_BATCH_DOC_MASK (MATCH_BATCH_SIZE - 1)
-
-struct MatchBatch {
-    u32_t     count;
-    float    *scores;
-    u32_t    *matcher_counts;
-    u32_t    *bool_masks;
-    u32_t    *recent_docs;
-};
-
-struct BoolSubScorer {
-    Scorer        *scorer;
-    u32_t          bool_mask;
-    bool_t         done;
-    BoolSubScorer *next_subscorer;
-};
-
-/* Constructor for a MatchBatch.
- */
-static MatchBatch* 
-new_mbatch(void);
-
-/* Return a MatchBatch to a "zeroed" state.  Only the matcher_counts and the
- * count are actually cleared; the rest get initialized the next time a doc
- * gets captured. */
-static void 
-clear_mbatch(MatchBatch *match_batch);
+#include "KinoSearch/Search/Tally.r"
+#include "KinoSearch/Search/ANDScorer.r"
+#include "KinoSearch/Search/ANDNOTScorer.r"
+#include "KinoSearch/Search/ANDORScorer.r"
+#include "KinoSearch/Search/ORScorer.r"
 
 /* BooleanScorers award bonus points to documents which match multiple
  * subqueries.  This routine calculates the size of the bonuses. 
@@ -41,38 +16,46 @@ clear_mbatch(MatchBatch *match_batch);
 static void
 compute_coord_factors(BooleanScorer *scorer);
 
-/* Build up the array of positions which match this query within the current
- * doc.
+/* Trigger initialization, then proceed normally.  Called once only.
  */
-static void
-build_prox(BooleanScorer *self);
+static bool_t
+next_first_time(BooleanScorer *self);
+static bool_t
+skip_to_first_time(BooleanScorer *self, u32_t target);
 
-/* Comparison op for qsorting an array of u32_t.
+/* Choose an inner scorer based on what kinds of subscorers we've accumulated.
  */
-static int
-compare_u32(const void *va, const void *vb);
+static void 
+init_inner_scorer(BooleanScorer *self);
+static void
+init_some_required(BooleanScorer *self);
+static void
+init_none_required(BooleanScorer *self);
+static void
+add_prohibited_scorers(BooleanScorer *self, Scorer *provisional_scorer);
 
 BooleanScorer*
-BoolScorer_new(Similarity *sim) 
+BoolScorer_new(Similarity *sim)
 {
     CREATE(self, BooleanScorer, BOOLEANSCORER);
 
     /* assign */
-    self->sim = sim;
     REFCOUNT_INC(sim);
+    self->sim              = sim;
 
     /* init */
-    self->doc_num          = 0;
-    self->end              = 0;
-    self->max_coord        = 1;
-    self->coord_factors    = NULL;
-    self->required_mask    = 0;
-    self->prohibited_mask  = 0;
-    self->next_mask        = 1;
-    self->mbatch           = new_mbatch();
-    self->subscorers       = NULL;
-    self->raw_prox_bb      = BB_new(0);
-    self->num_prox         = 0;
+    self->tally               = Tally_new();
+    self->and_scorers         = VA_new(1);
+    self->not_scorers         = VA_new(1);
+    self->or_scorers          = VA_new(1);
+    self->coord_factors       = NULL;
+    self->max_coord           = 0;
+    self->first_time          = true;
+
+    /* prepare for delayed init on first call to Next or Skip_To */
+    self->scorer              = (Scorer*)self;
+    self->do_next             = (Scorer_next_t)next_first_time;
+    self->do_skip_to          = (Scorer_skip_to_t)skip_to_first_time;
 
     return self;
 }
@@ -80,262 +63,224 @@ BoolScorer_new(Similarity *sim)
 void
 BoolScorer_destroy(BooleanScorer *self) 
 {
-    BoolSubScorer   *sub;
-
-    if (self->mbatch != NULL) {
-        free(self->mbatch->scores);
-        free(self->mbatch->matcher_counts);
-        free(self->mbatch->bool_masks);
-        free(self->mbatch->recent_docs);
-        free(self->mbatch);
-    }
-
-    /* individual scorers will be GC'd on their own */
-    sub = self->subscorers;
-    while (sub != NULL) {
-        BoolSubScorer *const next_sub = sub->next_subscorer;
-        REFCOUNT_DEC(sub->scorer);
-        free(sub);
-        sub = next_sub;
-    }
-
-    REFCOUNT_DEC(self->raw_prox_bb);
+    REFCOUNT_DEC(self->tally);
     REFCOUNT_DEC(self->sim);
+    REFCOUNT_DEC(self->and_scorers);
+    REFCOUNT_DEC(self->or_scorers);
+    REFCOUNT_DEC(self->not_scorers);
+    if (self->scorer != (Scorer*)self)
+        REFCOUNT_DEC(self->scorer);
     free(self->coord_factors);
-
     free(self);
 }
 
-static MatchBatch*
-new_mbatch() 
+static ByteBuf must     = BB_LITERAL("MUST");
+static ByteBuf must_not = BB_LITERAL("MUST_NOT");
+static ByteBuf should   = BB_LITERAL("SHOULD");
+
+void
+BoolScorer_add_subscorer(BooleanScorer *self, Scorer *subscorer, 
+                         const ByteBuf *occur)
 {
-    MatchBatch* mbatch = MALLOCATE(1, MatchBatch);
-
-    /* allocate and init */
-    mbatch->scores            = MALLOCATE(MATCH_BATCH_SIZE, float);
-    mbatch->matcher_counts    = MALLOCATE(MATCH_BATCH_SIZE, u32_t);
-    mbatch->bool_masks        = MALLOCATE(MATCH_BATCH_SIZE, u32_t);
-    mbatch->recent_docs       = MALLOCATE(MATCH_BATCH_SIZE, u32_t);
-    mbatch->count             = 0;
-
-    return mbatch;
-}
-
-static void
-clear_mbatch(MatchBatch *mbatch) 
-{
-    memset(mbatch->matcher_counts, 0, MATCH_BATCH_SIZE * sizeof(u32_t));
-    mbatch->count = 0;
+    if (BB_Equals(occur, (Obj*)&must)) {
+        VA_Push(self->and_scorers, (Obj*)subscorer); 
+        self->max_coord++;
+    }
+    else if (BB_Equals(occur, (Obj*)&must_not)) {
+        VA_Push(self->not_scorers, (Obj*)subscorer); 
+    }
+    else if (BB_Equals(occur, (Obj*)&should)) {
+        VA_Push(self->or_scorers, (Obj*)subscorer);
+        self->max_coord++;
+    }
+    else {
+        CONFESS("Unrecognized value for 'occur': '%s'", occur->ptr);
+    }
 }
 
 static void
 compute_coord_factors(BooleanScorer *self) 
 {
-    float *coord_factors;
     u32_t  i;
     Similarity *const sim = self->sim;
     const u32_t max_coord = self->max_coord;
+    float *coord_factors = MALLOCATE((max_coord + 1), float);
 
-    self->coord_factors = MALLOCATE((max_coord + 1), float);
-    coord_factors = self->coord_factors;
-
-    for (i = 0; i <= self->max_coord; i++) {
+    self->coord_factors = coord_factors;
+    for (i = 0; i <= max_coord; i++) {
         *coord_factors++ = Sim_Coord(sim, i, max_coord);
     }
 }
 
-void
-BoolScorer_add_subscorer(BooleanScorer* self, Scorer* subscorer,
-                              char *occur) 
+static bool_t
+next_first_time(BooleanScorer *self)
 {
-    BoolSubScorer *bool_subscorer = MALLOCATE(1, BoolSubScorer);
+    compute_coord_factors(self);
+    init_inner_scorer(self);
+    return self->do_next(self->scorer);
+}
 
-    REFCOUNT_INC(subscorer);
-
-    bool_subscorer->scorer = subscorer;
-
-    /* if this scorer is required or negated, assign it a unique mask bit. */
-    if (strcmp(occur, "SHOULD") == 0) {
-        bool_subscorer->bool_mask = 0;
-        self->max_coord++;
-    }
-    else {
-        if (self->next_mask == 0) {
-            CONFESS("more than 32 required or prohibited clauses");
-        }
-        bool_subscorer->bool_mask = self->next_mask;
-        self->next_mask <<= 1;
-
-        if (strcmp(occur, "MUST_NOT") == 0) {
-            self->prohibited_mask |= bool_subscorer->bool_mask;
-        }
-        else { /* "MUST" occur */
-            self->max_coord++;
-            self->required_mask |= bool_subscorer->bool_mask;
-        }
-    }
-
-    /* prime the pump */
-    bool_subscorer->done = !Scorer_Next(subscorer);
-
-    /* link up the linked list of subscorers */
-    bool_subscorer->next_subscorer = self->subscorers;
-    self->subscorers = bool_subscorer;
+static bool_t
+skip_to_first_time(BooleanScorer *self, u32_t target)
+{
+    compute_coord_factors(self);
+    init_inner_scorer(self);
+    return self->do_skip_to(self->scorer, target);
 }
 
 bool_t
-BoolScorer_next(BooleanScorer* self) 
+BoolScorer_next(BooleanScorer *self)
 {
-    MatchBatch *const mbatch = self->mbatch;
-    bool_t more;
-    BoolSubScorer *sub;
+    return self->do_next(self->scorer);
+}
 
-    do {
-        while (mbatch->count-- > 0) { 
+bool_t
+BoolScorer_skip_to(BooleanScorer *self, u32_t target)
+{
+    return self->do_skip_to(self->scorer, target);
+}
 
-            /* check to see if the doc is prohibited */
-            const u32_t doc        = mbatch->recent_docs[ mbatch->count ];
-            const u32_t masked_doc = doc & MATCH_BATCH_DOC_MASK;
-            const u32_t bool_mask  = mbatch->bool_masks[masked_doc];
-            if (   (bool_mask & self->prohibited_mask) == 0
-                && (bool_mask & self->required_mask) 
-                        == self->required_mask
-            ) {
-                /* it's not prohibited, so next() was successful */
-                self->doc_num = doc;
-                build_prox(self);
-                return true;
-            }
-        }
-
-        /* refill the queue, processing all docs within the next range */
-        clear_mbatch(mbatch);
-        more = 0;
-        self->end += MATCH_BATCH_SIZE;
-        
-        /* iterate through subscorers, caching results to the MatchBatch */
-        for (sub = self->subscorers; 
-             sub != NULL; 
-             sub = sub->next_subscorer
-        ) {
-            Scorer *const subscorer = sub->scorer;
-            while (!sub->done 
-                   && Scorer_Doc(subscorer) < self->end
-            ) {
-                const u32_t doc        = Scorer_Doc(subscorer);
-                const u32_t masked_doc = doc & MATCH_BATCH_DOC_MASK;
-                if (mbatch->matcher_counts[masked_doc] == 0) {
-                    /* first subscorer to hit this doc */
-                    mbatch->recent_docs[mbatch->count] = doc;
-                    mbatch->count++;
-                    mbatch->matcher_counts[masked_doc] = 1;
-                    mbatch->scores[masked_doc] = Scorer_Score(subscorer);
-                    mbatch->bool_masks[masked_doc] = sub->bool_mask;
-                }
-                else {
-                    mbatch->matcher_counts[masked_doc]++;
-                    mbatch->scores[masked_doc] += Scorer_Score(subscorer);
-                    mbatch->bool_masks[masked_doc] |= sub->bool_mask;
-                }
-
-                /* check whether this subscorer is exhausted */
-                sub->done = !Scorer_Next(subscorer);
-            }
-            /* if at least one subscorer succeeded, loop back */
-            if (!sub->done) {
-                more = 1;
-            }
-        } 
-    } while (mbatch->count > 0 || more);
-
-    /* out of docs!  we're done. */
+static bool_t
+next_is_false(BooleanScorer *self)
+{
     return false;
 }
 
-float
-BoolScorer_score(BooleanScorer* self) 
+static bool_t
+skip_to_is_false(BooleanScorer *self, u32_t target)
 {
-    MatchBatch *const mbatch = self->mbatch;
-    u32_t             masked_doc;
-    float             score;
-
-    if (self->coord_factors == NULL) {
-        compute_coord_factors(self);
-    }
-
-    /* retrieve the docs accumulated score from the MatchBatch */
-    masked_doc = self->doc_num & MATCH_BATCH_DOC_MASK;
-    score = mbatch->scores[masked_doc];
-
-    /* add coordination bonus based on position hits -- disbled for now */
-    /* score *= Sim_Prox_Coord(self->sim, self->prox, self->num_prox); */
-
-    /* assign bonus for multi-subscorer matches */
-    score *= self->coord_factors[ mbatch->matcher_counts[masked_doc] ];
-    return score;
+    UNUSED_VAR(target);
+    return false;
 }
 
 static void
-build_prox(BooleanScorer *self)
+init_inner_scorer(BooleanScorer *self)
 {
-    BoolSubScorer *sub = self->subscorers;
-    u32_t *source, *dest, *limit;
-    u32_t  num_prox = 0;
-    u32_t  last_pos = U32_MAX;
-
-    /* calculate and allocate required space */
-    for ( ; sub != NULL; sub = sub->next_subscorer) {
-        num_prox += sub->scorer->num_prox;
+    /* start the branching */
+    if (self->and_scorers->size > 0) {
+        init_some_required(self);
     }
-    BB_Grow(self->raw_prox_bb, num_prox * sizeof(u32_t));
-    self->raw_prox_bb->len = num_prox * sizeof(u32_t);
-
-    /* copy positions from subscorers */
-    dest = (u32_t*)self->raw_prox_bb->ptr;
-    for (sub = self->subscorers; sub != NULL; sub = sub->next_subscorer) {
-        Scorer *const subscorer = sub->scorer;
-        memcpy(dest, subscorer->prox, subscorer->num_prox * sizeof(u32_t));
-        dest += subscorer->num_prox;
+    else if (self->or_scorers->size > 0) {
+        init_none_required(self);
     }
-
-    /* sort positions, then filter dupes */
-    if (num_prox) {
-        qsort(self->raw_prox_bb->ptr, num_prox, sizeof(u32_t), compare_u32);
-        source = (u32_t*)self->raw_prox_bb->ptr;
-        limit  = (u32_t*)BBEND(self->raw_prox_bb);
-        dest   = source;
-        for ( ; source < limit; source++) {
-            if (last_pos != *source) {
-                *dest++ = *source;
-                last_pos = *source;
-            }
-        }
+    else {
+        /* all prohibited */
+        self->scorer     = NULL;
+        self->do_next    = (Scorer_next_t)next_is_false;
+        self->do_skip_to = (Scorer_skip_to_t)skip_to_is_false;
     }
-    self->prox = (u32_t*)self->raw_prox_bb->ptr;
-    self->num_prox = dest - self->prox;
-    self->raw_prox_bb->len = self->num_prox * sizeof(u32_t);
 }
 
-static int
-compare_u32(const void *va, const void *vb)
+static void
+init_none_required(BooleanScorer *self)
 {
-    const u32_t *a = (u32_t*)va;
-    const u32_t *b = (u32_t*)vb;
-    if (*a < *b) 
-        return -1;
-    else if (*a == *b)
-        return 0;
-    else
-        return 1;
+    Scorer *provisional_scorer;
+
+    if (self->or_scorers->size == 1) {
+        provisional_scorer = (Scorer*)VA_Fetch(self->or_scorers, 0);
+        REFCOUNT_INC(provisional_scorer);
+    }
+    else {
+        provisional_scorer 
+            = (Scorer*)ORScorer_new(self->sim, self->or_scorers);
+    }
+    
+    add_prohibited_scorers(self, provisional_scorer);
+}
+
+static void
+init_some_required(BooleanScorer *self)
+{
+    Scorer *provisional_scorer;
+    Scorer *or_scorer = NULL;
+
+    if (self->and_scorers->size == 1) {
+        provisional_scorer = (Scorer*)VA_Fetch(self->and_scorers, 0);
+        REFCOUNT_INC(provisional_scorer);
+    }
+    else {
+        u32_t i;
+        provisional_scorer = (Scorer*)ANDScorer_new(self->sim);
+        for (i = 0; i < self->and_scorers->size; i++) {
+            Scorer *subscorer = (Scorer*)VA_Fetch(self->and_scorers, i); 
+            ANDScorer_add_subscorer((ANDScorer*)provisional_scorer, 
+                subscorer);
+        }
+    }
+
+    if (self->or_scorers->size == 1) {
+        or_scorer = (Scorer*)VA_Fetch(self->or_scorers, 0);
+        REFCOUNT_INC(or_scorer);
+    }
+    else if (self->or_scorers->size > 1) {
+        or_scorer = (Scorer*)ORScorer_new(self->sim, self->or_scorers);
+    }
+
+    if (or_scorer != NULL) {
+        ANDORScorer *temp = ANDORScorer_new(self->sim, provisional_scorer, 
+            or_scorer);
+        REFCOUNT_DEC(provisional_scorer);
+        REFCOUNT_DEC(or_scorer);
+        provisional_scorer = (Scorer*)temp;
+    }
+
+    add_prohibited_scorers(self, provisional_scorer);
+}
+
+static void
+add_prohibited_scorers(BooleanScorer *self, Scorer *provisional_scorer)
+{
+    Scorer *not_scorer = NULL;
+
+    /* group not scorers together if necessary */
+    if (self->not_scorers->size == 1) {
+        not_scorer = (Scorer*)VA_Fetch(self->not_scorers, 0); 
+        REFCOUNT_INC(not_scorer);
+    }
+    else if (self->not_scorers->size > 1) {
+        not_scorer = (Scorer*)ORScorer_new(self->sim, self->not_scorers);
+    }
+
+    if (not_scorer != NULL) {
+        ANDNOTScorer *temp = ANDNOTScorer_new(self->sim, provisional_scorer, 
+            not_scorer);
+        REFCOUNT_DEC(provisional_scorer);
+        REFCOUNT_DEC(not_scorer);
+        provisional_scorer = (Scorer*)temp;
+    }
+
+    /* save one extra deref */
+    self->scorer     = provisional_scorer;
+    self->do_next    = provisional_scorer->_->next;
+    self->do_skip_to = provisional_scorer->_->skip_to;
 }
 
 u32_t
-BoolScorer_doc(BooleanScorer* self) 
+BoolScorer_doc(BooleanScorer *self)
 {
-    return self->doc_num;
+    return Scorer_Doc(self->scorer);
 }
 
-/* Copyright 2006-2007 Marvin Humphrey
+Tally*
+BoolScorer_tally(BooleanScorer *self)
+{
+    Tally *const tally        = self->tally;
+    Tally *const raw_tally    = Scorer_Tally(self->scorer);
+    const u32_t  num_matchers = raw_tally->num_matchers;
+
+    /* transfer score; factor in coord */
+    tally->score = raw_tally->score;
+    if (num_matchers > self->max_coord)
+        CONFESS("Too many matchers: %u > %u", num_matchers, self->max_coord);
+    tally->score *= self->coord_factors[ raw_tally->num_matchers ];
+    /* Note: we retain num_matchers of 1 in our final tally, so that if this
+     * BooleanScorer is a subscorer of another, the coord doesn't feed back.
+     */
+
+    return tally;
+}
+
+/* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

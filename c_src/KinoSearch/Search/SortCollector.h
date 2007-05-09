@@ -15,19 +15,18 @@ struct kino_SortCollector {
     KINO_SORTCOLLECTOR_VTABLE *_;
     KINO_TOPDOCCOLLECTOR_MEMBER_VARS;
     struct kino_FieldDocCollator *collator;
-    kino_i32_t                    min_doc;
+    chy_i32_t                     min_doc;
 };
 
 /* Constructor.  
  */
-KINO_FUNCTION(
 kino_SortCollector *
 kino_SortColl_new(struct kino_FieldDocCollator *collator, 
-                  kino_u32_t num_hits));
+                  chy_u32_t num_hits);
 
-KINO_METHOD("Kino_SortColl_Destroy",
 void
-kino_SortColl_destroy(kino_SortCollector *self));
+kino_SortColl_destroy(kino_SortCollector *self);
+KINO_METHOD("Kino_SortColl_Destroy");
 
 KINO_END_CLASS
 

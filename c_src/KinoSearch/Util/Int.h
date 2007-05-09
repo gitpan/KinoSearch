@@ -15,14 +15,13 @@ KINO_CLASS("KinoSearch::Util::Int", "Int", "KinoSearch::Util::Obj");
 struct kino_Int {
     KINO_INT_VTABLE *_;
     KINO_OBJ_MEMBER_VARS;
-    kino_i64_t value;
+    chy_i64_t value;
 };
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_Int*
-kino_Int_new(kino_i64_t value));
+kino_Int_new(chy_i64_t value);
 
 KINO_END_CLASS
 

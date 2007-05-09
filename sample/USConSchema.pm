@@ -9,7 +9,7 @@ package USConSchema;
 use base 'KinoSearch::Schema';
 use KinoSearch::Analysis::PolyAnalyzer;
 
-our %FIELDS = (
+our %fields = (
     title   => 'KinoSearch::Schema::FieldSpec',
     content => 'KinoSearch::Schema::FieldSpec',
     url     => 'USConSchema::UnIndexedField',

@@ -10,10 +10,17 @@
 
  ***********************************************/
 
-#ifndef R_KINO_VA
-#define R_KINO_VA 1
+
+
+#ifndef R_KINO_VARRAY
+#define R_KINO_VARRAY 1
 
 #include "KinoSearch/Util/VArray.h"
+
+#define KINO_VARRAY_BOILERPLATE
+
+typedef kino_VArray*
+(*kino_VA_clone_t)(kino_VArray *self);
 
 typedef void
 (*kino_VA_destroy_t)(kino_VArray *self);
@@ -31,59 +38,59 @@ typedef kino_Obj*
 (*kino_VA_shift_t)(kino_VArray *self);
 
 typedef void
-(*kino_VA_grow_t)(kino_VArray *self, kino_u32_t capacity);
+(*kino_VA_grow_t)(kino_VArray *self, chy_u32_t capacity);
 
 typedef kino_Obj*
-(*kino_VA_fetch_t)(kino_VArray *self, kino_u32_t num);
+(*kino_VA_fetch_t)(kino_VArray *self, chy_u32_t num);
 
 typedef void
-(*kino_VA_store_t)(kino_VArray *self, kino_u32_t num, kino_Obj *elem);
+(*kino_VA_store_t)(kino_VArray *self, chy_u32_t num, kino_Obj *elem);
 
-#define Kino_VA_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_VA_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_VA_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_VA_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_VA_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_VA_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_VA_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_VA_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_VA_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_VA_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_VA_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_VA_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_VA_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_VA_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_VA_Push(_self, _arg1) \
-    (_self)->_->push((kino_VArray*)_self, _arg1)
+#define Kino_VA_Push(self, element) \
+    (self)->_->push((kino_VArray*)self, element)
 
-#define Kino_VA_Pop(_self) \
-    (_self)->_->pop((kino_VArray*)_self)
+#define Kino_VA_Pop(self) \
+    (self)->_->pop((kino_VArray*)self)
 
-#define Kino_VA_Unshift(_self, _arg1) \
-    (_self)->_->unshift((kino_VArray*)_self, _arg1)
+#define Kino_VA_Unshift(self, element) \
+    (self)->_->unshift((kino_VArray*)self, element)
 
-#define Kino_VA_Shift(_self) \
-    (_self)->_->shift((kino_VArray*)_self)
+#define Kino_VA_Shift(self) \
+    (self)->_->shift((kino_VArray*)self)
 
-#define Kino_VA_Grow(_self, _arg1) \
-    (_self)->_->grow((kino_VArray*)_self, _arg1)
+#define Kino_VA_Grow(self, capacity) \
+    (self)->_->grow((kino_VArray*)self, capacity)
 
-#define Kino_VA_Fetch(_self, _arg1) \
-    (_self)->_->fetch((kino_VArray*)_self, _arg1)
+#define Kino_VA_Fetch(self, num) \
+    (self)->_->fetch((kino_VArray*)self, num)
 
-#define Kino_VA_Store(_self, _arg1, _arg2) \
-    (_self)->_->store((kino_VArray*)_self, _arg1, _arg2)
+#define Kino_VA_Store(self, num, elem) \
+    (self)->_->store((kino_VArray*)self, num, elem)
 
 struct KINO_VARRAY_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -108,6 +115,7 @@ extern KINO_VARRAY_VTABLE KINO_VARRAY;
   #define VArray kino_VArray
   #define VARRAY KINO_VARRAY
   #define VA_new kino_VA_new
+  #define VA_clone kino_VA_clone
   #define VA_destroy kino_VA_destroy
   #define VA_push_t kino_VA_push_t
   #define VA_push kino_VA_push
@@ -137,15 +145,13 @@ extern KINO_VARRAY_VTABLE KINO_VARRAY;
   #define VA_Grow Kino_VA_Grow
   #define VA_Fetch Kino_VA_Fetch
   #define VA_Store Kino_VA_Store
-  #define VARRAY KINO_VARRAY
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_VARRAY_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     kino_Obj ** elems; \
-    kino_u32_t  size; \
-    kino_u32_t  cap
-
+    chy_u32_t  size; \
+    chy_u32_t  cap
 
 #ifdef KINO_WANT_VARRAY_VTABLE
 KINO_VARRAY_VTABLE KINO_VARRAY = {
@@ -153,7 +159,7 @@ KINO_VARRAY_VTABLE KINO_VARRAY = {
     1,
     (KINO_OBJ_VTABLE*)&KINO_OBJ,
     "KinoSearch::Util::VArray",
-    (kino_Obj_clone_t)kino_Obj_clone,
+    (kino_Obj_clone_t)kino_VA_clone,
     (kino_Obj_destroy_t)kino_VA_destroy,
     (kino_Obj_equals_t)kino_Obj_equals,
     (kino_Obj_hash_code_t)kino_Obj_hash_code,
@@ -170,10 +176,15 @@ KINO_VARRAY_VTABLE KINO_VARRAY = {
 };
 #endif /* KINO_WANT_VARRAY_VTABLE */
 
-#endif /* R_KINO_VA */
+#undef KINO_VARRAY_BOILERPLATE
+
+
+#endif /* R_KINO_VARRAY */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

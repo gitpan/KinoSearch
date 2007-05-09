@@ -81,7 +81,7 @@ _new(class)
     const classname_char *class;
 CODE:
     RETVAL = kino_CClass_new();
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
 OUTPUT: RETVAL
 
 void

@@ -19,7 +19,7 @@ kino_Obj*
 _new(class)
     const classname_char *class;
 CODE:
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_Obj_new();
 OUTPUT: RETVAL
 
@@ -30,7 +30,7 @@ CODE:
     RETVAL = Kino_Obj_Clone(self);
 OUTPUT: RETVAL
 
-kino_bool_t
+chy_bool_t
 equals(self, other)
     kino_Obj *self;
     kino_Obj *other;
@@ -38,7 +38,7 @@ CODE:
     RETVAL = Kino_Obj_Equals(self, other);
 OUTPUT: RETVAL
 
-kino_i32_t
+chy_i32_t
 hash_code(self)
     kino_Obj *self;
 CODE:
@@ -50,7 +50,7 @@ Uses class names rather than VTABLE pointers from Perl space.
 
 =cut
 
-kino_bool_t
+chy_bool_t
 is_a(self, class_name)
     kino_Obj *self;
     const char *class_name;
@@ -125,7 +125,7 @@ PPCODE:
     SV *deserialized_pobj;
     kino_Obj *obj;
     SV *deep_obj = SvRV(blank_obj);
-    KINO_UNUSED_VAR(cloning);
+    CHY_UNUSED_VAR(cloning);
 
     ENTER;
     SAVETMPS;

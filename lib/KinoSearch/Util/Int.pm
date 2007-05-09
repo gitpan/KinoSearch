@@ -16,9 +16,9 @@ MODULE = KinoSearch   PACKAGE = KinoSearch::Util::Int
 kino_Int*
 new(class_name, value)
     const classname_char *class_name;
-    kino_u64_t value;
+    chy_u64_t value;
 CODE:
-    KINO_UNUSED_VAR(class_name);
+    CHY_UNUSED_VAR(class_name);
     RETVAL = kino_Int_new(value);
 OUTPUT: RETVAL
 

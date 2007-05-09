@@ -1,15 +1,14 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_SCOREDOC_VTABLE
 #include "KinoSearch/Search/ScoreDoc.r"
 
 ScoreDoc*
-ScoreDoc_new(kino_u32_t id, float score)
+ScoreDoc_new(u32_t doc_num, float score)
 {
     CREATE(self, ScoreDoc, SCOREDOC);
-    self->id      = id;
-    self->score   = score;
+    self->doc_num     = doc_num;
+    self->score       = score;
     return self;
 }
 
@@ -20,12 +19,12 @@ ScoreDoc_serialize(ScoreDoc *self, ByteBuf *target)
     size_t new_len = target->len + sizeof(u32_t) + sizeof(float);
 
     /* add space */
-    BB_Grow(target, new_len);
+    BB_GROW(target, new_len);
     ptr = BBEND(target);
     target->len = new_len;
 
     /* doc_num */
-    Math_encode_bigend_u32(self->id, ptr);
+    MATH_ENCODE_U32(self->doc_num, ptr);
     ptr += sizeof(u32_t);
 
     /* score */
@@ -43,7 +42,7 @@ ScoreDoc_deserialize(ViewByteBuf *serialized)
         CONFESS("Not enough chars in serialization: %d", serialized->len);
 
     /* decode doc_num */
-    self->id = Math_decode_bigend_u32(serialized->ptr);
+    MATH_DECODE_U32(self->doc_num, serialized->ptr);
     serialized->ptr += sizeof(u32_t);
     serialized->len -= sizeof(u32_t);
 

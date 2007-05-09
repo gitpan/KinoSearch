@@ -3,8 +3,7 @@ use warnings;
 
 use Test::More tests => 8;
 
-BEGIN { use_ok('KinoSearch::Analysis::Tokenizer') }
-
+use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Analysis::TokenBatch;
 
 my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
@@ -13,7 +12,7 @@ my ($text) = $tokenizer->analyze_raw("o'malley's");
 is( $text, "o'malley's", "multiple apostrophes for default token_re" );
 
 my $batch = KinoSearch::Analysis::TokenBatch->new( text => "a b c" );
-$batch = $tokenizer->analyze($batch);
+$batch = $tokenizer->analyze_batch($batch);
 
 my ( @token_texts, @start_offsets, @end_offsets );
 while ( my $token = $batch->next ) {
@@ -27,7 +26,7 @@ is_deeply( \@end_offsets,   [ 1, 3, 5, ], "correct end offsets" );
 
 $tokenizer = KinoSearch::Analysis::Tokenizer->new( token_re => qr/./ );
 $batch     = KinoSearch::Analysis::TokenBatch->new( text    => "a b c" );
-$batch     = $tokenizer->analyze($batch);
+$batch     = $tokenizer->analyze_batch($batch);
 
 @token_texts   = ();
 @start_offsets = ();
@@ -41,3 +40,14 @@ is_deeply( \@token_texts, [ 'a', ' ', 'b', ' ', 'c' ], "texts: custom re" );
 is_deeply( \@start_offsets, [ 0 .. 4 ], "starts: custom re" );
 is_deeply( \@end_offsets,   [ 1 .. 5 ], "ends: custom re" );
 
+$batch->reset;
+$batch       = $tokenizer->analyze_batch($batch);
+@token_texts = ();
+while ( my $token = $batch->next ) {
+    push @token_texts, $token->get_text;
+}
+is_deeply(
+    \@token_texts,
+    [ 'a', ' ', 'b', ' ', 'c' ],
+    "no freakout when fed multiple tokens"
+);

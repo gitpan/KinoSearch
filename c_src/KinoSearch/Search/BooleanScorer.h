@@ -4,75 +4,68 @@
 #include "KinoSearch/Search/Scorer.r"
 
 struct kino_Similarity;
+struct kino_Tally;
+struct kino_VArray;
 
 typedef struct kino_BooleanScorer kino_BooleanScorer;
 typedef struct KINO_BOOLEANSCORER_VTABLE KINO_BOOLEANSCORER_VTABLE;
 
-/* A MatchBatch holds scoring data for up to 2048 documents.  
- */
-typedef struct kino_MatchBatch kino_MatchBatch;
-
-/* A BoolSubScorer wraps a scorer for a clause within a BooleanQuery.
- */
-typedef struct kino_BoolSubScorer kino_BoolSubScorer;
-
-#ifdef KINO_USE_SHORT_NAMES
-  #define MatchBatch kino_MatchBatch
-  #define BoolSubScorer kino_BoolSubScorer
-#endif
-
-KINO_CLASS("KinoSearch::Search::BooleanScorer", "BoolScorer", 
+KINO_CLASS("KinoSearch::Search::BooleanScorer", "BoolScorer",
     "KinoSearch::Search::Scorer");
 
 struct kino_BooleanScorer {
     KINO_BOOLEANSCORER_VTABLE *_;
     KINO_SCORER_MEMBER_VARS;
-
-    kino_u32_t          doc_num;
-    kino_u32_t          end;
-    kino_u32_t          max_coord;
-    float              *coord_factors;
-    kino_u32_t          required_mask;
-    kino_u32_t          prohibited_mask;
-    kino_u32_t          next_mask;
-    kino_MatchBatch    *mbatch;
-    kino_BoolSubScorer *subscorers; /* linked list */
+    struct kino_Scorer         *scorer; /**< configurable internal Scorer */
+    struct kino_Tally          *tally;
+    struct kino_VArray         *and_scorers;
+    struct kino_VArray         *or_scorers;
+    struct kino_VArray         *not_scorers;
+    chy_u32_t                   max_coord;
+    float                      *coord_factors;
+    kino_Scorer_next_t          do_next;
+    kino_Scorer_skip_to_t       do_skip_to;
+    chy_bool_t                  first_time;
 };
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_BooleanScorer* 
-kino_BoolScorer_new(struct kino_Similarity *sim));
+kino_BoolScorer_new(struct kino_Similarity *sim);
 
-KINO_METHOD("Kino_BoolScorer_Destroy",
 void
-kino_BoolScorer_destroy(kino_BooleanScorer *self));
+kino_BoolScorer_destroy(kino_BooleanScorer *self);
+KINO_METHOD("Kino_BoolScorer_Destroy");
 
-KINO_METHOD("Kino_BoolScorer_Next",
-kino_bool_t
-kino_BoolScorer_next(kino_BooleanScorer *self));
+chy_bool_t
+kino_BoolScorer_next(kino_BooleanScorer *self);
+KINO_METHOD("Kino_BoolScorer_Next");
 
-KINO_METHOD("Kino_BoolScorer_Score",
-float
-kino_BoolScorer_score(kino_BooleanScorer *self));
+chy_bool_t
+kino_BoolScorer_skip_to(kino_BooleanScorer *self, chy_u32_t target);
+KINO_METHOD("Kino_BoolScorer_Skip_To");
 
-KINO_METHOD("Kino_BoolScorer_Doc",
-kino_u32_t 
-kino_BoolScorer_doc(kino_BooleanScorer *self));
+struct kino_Tally*
+kino_BoolScorer_tally(kino_BooleanScorer *self);
+KINO_METHOD("Kino_BoolScorer_Tally");
 
-/* Add a scorer for a sub-query of the BooleanQuery.
+chy_u32_t 
+kino_BoolScorer_doc(kino_BooleanScorer *self);
+KINO_METHOD("Kino_BoolScorer_Doc");
+
+/* Add a scorer for a sub-query.
  */
-KINO_METHOD("Kino_BoolScorer_Add_Subscorer",
 void
 kino_BoolScorer_add_subscorer(kino_BooleanScorer* self, 
-                              kino_Scorer* subscorer, char *occur));
+                              kino_Scorer* subscorer, 
+                              const struct kino_ByteBuf *occur);
+KINO_METHOD("Kino_BoolScorer_Add_Subscorer");
 
 KINO_END_CLASS
 
 #endif /* H_KINO_BOOLEANSCORER */
 
-/* Copyright 2006-2007 Marvin Humphrey
+/* Copyright 2005-2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

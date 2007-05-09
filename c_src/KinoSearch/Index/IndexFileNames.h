@@ -10,21 +10,28 @@ struct kino_VArray;
  * reader should be able to read anything up to and including the current
  * format.
  */
-
 #define KINO_IXINFOS_FORMAT 1
 #define KINO_SEG_INFOS_FORMAT 1
 #define KINO_COMPOUND_FILE_FORMAT 1
 #define KINO_DOC_STORAGE_FORMAT 1 
-#define KINO_TERM_LIST_FORMAT 1
+#define KINO_LEXICON_FORMAT 1
 #define KINO_POSTING_LIST_FORMAT 1
 #define KINO_DELDOCS_FORMAT 1
+
+/* Constants related to locking. 
+ */
+#define KINO_READ_LOCK_TIMEOUT   1000
+#define KINO_WRITE_LOCK_NAME     "write"
+#define KINO_WRITE_LOCK_TIMEOUT  1000
+#define KINO_COMMIT_LOCK_NAME    "commit"
+#define KINO_COMMIT_LOCK_TIMEOUT 5000
 
 #ifdef KINO_USE_SHORT_NAMES
   #define IXINFOS_FORMAT         KINO_IXINFOS_FORMAT
   #define SEG_INFOS_FORMAT       KINO_SEG_INFOS_FORMAT
   #define COMPOUND_FILE_FORMAT   KINO_COMPOUND_FILE_FORMAT
   #define DOC_STORAGE_FORMAT     KINO_DOC_STORAGE_FORMAT 
-  #define TERM_LIST_FORMAT       KINO_TERM_LIST_FORMAT
+  #define LEXICON_FORMAT       KINO_LEXICON_FORMAT
   #define POSTING_LIST_FORMAT    KINO_POSTING_LIST_FORMAT
   #define DELDOCS_FORMAT         KINO_DELDOCS_FORMAT
 #endif
@@ -42,7 +49,7 @@ kino_IxFileNames_latest_gen(struct kino_VArray *list,
  */
 struct kino_ByteBuf*
 kino_IxFileNames_filename_from_gen(const struct kino_ByteBuf *base, 
-                                   kino_i32_t gen, 
+                                   chy_i32_t gen, 
                                    const struct kino_ByteBuf *ext);
 
 #ifdef KINO_USE_SHORT_NAMES

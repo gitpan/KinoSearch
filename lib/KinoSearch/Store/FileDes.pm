@@ -19,8 +19,8 @@ void
 fdread(self, dest, dest_offset, len)
     kino_FileDes *self;
     char *dest;
-    kino_u32_t dest_offset;
-    kino_u32_t len;
+    chy_u32_t dest_offset;
+    chy_u32_t len;
 PPCODE:
     Kino_FileDes_FDRead(self, dest, dest_offset, len);
 
@@ -28,11 +28,11 @@ void
 fdwrite(self, buf, len)
     kino_FileDes *self;
     char *buf;
-    kino_u32_t len;
+    chy_u32_t len;
 PPCODE:
     Kino_FileDes_FDWrite(self, buf, len);
 
-kino_u64_t
+chy_u64_t
 fdlength(self)
     kino_FileDes *self;
 CODE:
@@ -51,10 +51,22 @@ For testing purposes only.  Track number of FileDes objects in existence.
 
 =cut
 
-kino_i32_t
-global_count()
+chy_i32_t
+object_count()
 CODE:
-    RETVAL = kino_FileDes_global_count;
+    RETVAL = kino_FileDes_object_count;
+OUTPUT: RETVAL
+
+=for comment
+
+For testing purposes only.  Track number of FileDes objects in an open state.
+
+=cut
+
+chy_i32_t
+open_count()
+CODE:
+    RETVAL = kino_FileDes_open_count;
 OUTPUT: RETVAL
 
 =for comment

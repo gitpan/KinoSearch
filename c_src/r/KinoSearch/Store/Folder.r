@@ -10,14 +10,22 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_FOLDER
 #define R_KINO_FOLDER 1
 
 #include "KinoSearch/Store/Folder.h"
 
+#define KINO_FOLDER_BOILERPLATE
+
 typedef struct kino_OutStream*
 (*kino_Folder_open_outstream_t)(kino_Folder *self,  
                            const struct kino_ByteBuf *filename);
+
+typedef struct kino_OutStream*
+(*kino_Folder_safe_open_outstream_t)(kino_Folder *self,  
+                                const struct kino_ByteBuf *filename);
 
 typedef struct kino_InStream*
 (*kino_Folder_open_instream_t)(kino_Folder *self,  
@@ -26,7 +34,7 @@ typedef struct kino_InStream*
 typedef struct kino_VArray*
 (*kino_Folder_list_t)(kino_Folder *self);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_Folder_file_exists_t)(kino_Folder *self, 
                         const struct kino_ByteBuf *filename);
 
@@ -48,80 +56,63 @@ typedef struct kino_ByteBuf*
                        const struct kino_ByteBuf *base, 
                        const struct kino_ByteBuf *ext);
 
-typedef struct kino_Lock*
-(*kino_Folder_make_lock_t)(kino_Folder *self, 
-                      const struct kino_ByteBuf *lock_name,
-                      const struct kino_ByteBuf *lock_id,
-                      kino_i32_t timeout);
-
-typedef void
-(*kino_Folder_run_locked_t)(kino_Folder *self, 
-                       const struct kino_ByteBuf *lock_name,
-                       const struct kino_ByteBuf *lock_id,
-                       kino_i32_t timeout, 
-                       void(*func)(void *arg), 
-                       void *arg);
-
 typedef void
 (*kino_Folder_close_f_t)(kino_Folder *self);
 
-#define Kino_Folder_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_Folder_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_Folder_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_Folder_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_Folder_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_Folder_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_Folder_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_Folder_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_Folder_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_Folder_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_Folder_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_Folder_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_Folder_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_Folder_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_Folder_Open_OutStream(_self, _arg1) \
-    (_self)->_->open_outstream((kino_Folder*)_self, _arg1)
+#define Kino_Folder_Open_OutStream(self, filename) \
+    (self)->_->open_outstream((kino_Folder*)self, filename)
 
-#define Kino_Folder_Open_InStream(_self, _arg1) \
-    (_self)->_->open_instream((kino_Folder*)_self, _arg1)
+#define Kino_Folder_Safe_Open_OutStream(self, filename) \
+    (self)->_->safe_open_outstream((kino_Folder*)self, filename)
 
-#define Kino_Folder_List(_self) \
-    (_self)->_->list((kino_Folder*)_self)
+#define Kino_Folder_Open_InStream(self, filename) \
+    (self)->_->open_instream((kino_Folder*)self, filename)
 
-#define Kino_Folder_File_Exists(_self, _arg1) \
-    (_self)->_->file_exists((kino_Folder*)_self, _arg1)
+#define Kino_Folder_List(self) \
+    (self)->_->list((kino_Folder*)self)
 
-#define Kino_Folder_Rename_File(_self, _arg1, _arg2) \
-    (_self)->_->rename_file((kino_Folder*)_self, _arg1, _arg2)
+#define Kino_Folder_File_Exists(self, filename) \
+    (self)->_->file_exists((kino_Folder*)self, filename)
 
-#define Kino_Folder_Delete_File(_self, _arg1) \
-    (_self)->_->delete_file((kino_Folder*)_self, _arg1)
+#define Kino_Folder_Rename_File(self, from, to) \
+    (self)->_->rename_file((kino_Folder*)self, from, to)
 
-#define Kino_Folder_Slurp_File(_self, _arg1) \
-    (_self)->_->slurp_file((kino_Folder*)_self, _arg1)
+#define Kino_Folder_Delete_File(self, filename) \
+    (self)->_->delete_file((kino_Folder*)self, filename)
 
-#define Kino_Folder_Latest_Gen(_self, _arg1, _arg2) \
-    (_self)->_->latest_gen((kino_Folder*)_self, _arg1, _arg2)
+#define Kino_Folder_Slurp_File(self, filename) \
+    (self)->_->slurp_file((kino_Folder*)self, filename)
 
-#define Kino_Folder_Make_Lock(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->make_lock((kino_Folder*)_self, _arg1, _arg2, _arg3)
+#define Kino_Folder_Latest_Gen(self, base, ext) \
+    (self)->_->latest_gen((kino_Folder*)self, base, ext)
 
-#define Kino_Folder_Run_Locked(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    (_self)->_->run_locked((kino_Folder*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
-
-#define Kino_Folder_Close_F(_self) \
-    (_self)->_->close_f((kino_Folder*)_self)
+#define Kino_Folder_Close_F(self) \
+    (self)->_->close_f((kino_Folder*)self)
 
 struct KINO_FOLDER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -132,6 +123,7 @@ struct KINO_FOLDER_VTABLE {
     kino_Obj_to_string_t to_string;
     kino_Obj_serialize_t serialize;
     kino_Folder_open_outstream_t open_outstream;
+    kino_Folder_safe_open_outstream_t safe_open_outstream;
     kino_Folder_open_instream_t open_instream;
     kino_Folder_list_t list;
     kino_Folder_file_exists_t file_exists;
@@ -139,8 +131,6 @@ struct KINO_FOLDER_VTABLE {
     kino_Folder_delete_file_t delete_file;
     kino_Folder_slurp_file_t slurp_file;
     kino_Folder_latest_gen_t latest_gen;
-    kino_Folder_make_lock_t make_lock;
-    kino_Folder_run_locked_t run_locked;
     kino_Folder_close_f_t close_f;
 };
 
@@ -151,6 +141,8 @@ extern KINO_FOLDER_VTABLE KINO_FOLDER;
   #define FOLDER KINO_FOLDER
   #define Folder_open_outstream_t kino_Folder_open_outstream_t
   #define Folder_open_outstream kino_Folder_open_outstream
+  #define Folder_safe_open_outstream_t kino_Folder_safe_open_outstream_t
+  #define Folder_safe_open_outstream kino_Folder_safe_open_outstream
   #define Folder_open_instream_t kino_Folder_open_instream_t
   #define Folder_open_instream kino_Folder_open_instream
   #define Folder_list_t kino_Folder_list_t
@@ -165,10 +157,6 @@ extern KINO_FOLDER_VTABLE KINO_FOLDER;
   #define Folder_slurp_file kino_Folder_slurp_file
   #define Folder_latest_gen_t kino_Folder_latest_gen_t
   #define Folder_latest_gen kino_Folder_latest_gen
-  #define Folder_make_lock_t kino_Folder_make_lock_t
-  #define Folder_make_lock kino_Folder_make_lock
-  #define Folder_run_locked_t kino_Folder_run_locked_t
-  #define Folder_run_locked kino_Folder_run_locked
   #define Folder_close_f_t kino_Folder_close_f_t
   #define Folder_close_f kino_Folder_close_f
   #define Folder_Clone Kino_Folder_Clone
@@ -179,6 +167,7 @@ extern KINO_FOLDER_VTABLE KINO_FOLDER;
   #define Folder_To_String Kino_Folder_To_String
   #define Folder_Serialize Kino_Folder_Serialize
   #define Folder_Open_OutStream Kino_Folder_Open_OutStream
+  #define Folder_Safe_Open_OutStream Kino_Folder_Safe_Open_OutStream
   #define Folder_Open_InStream Kino_Folder_Open_InStream
   #define Folder_List Kino_Folder_List
   #define Folder_File_Exists Kino_Folder_File_Exists
@@ -186,16 +175,12 @@ extern KINO_FOLDER_VTABLE KINO_FOLDER;
   #define Folder_Delete_File Kino_Folder_Delete_File
   #define Folder_Slurp_File Kino_Folder_Slurp_File
   #define Folder_Latest_Gen Kino_Folder_Latest_Gen
-  #define Folder_Make_Lock Kino_Folder_Make_Lock
-  #define Folder_Run_Locked Kino_Folder_Run_Locked
   #define Folder_Close_F Kino_Folder_Close_F
-  #define FOLDER KINO_FOLDER
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_FOLDER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_ByteBuf * path
-
 
 #ifdef KINO_WANT_FOLDER_VTABLE
 KINO_FOLDER_VTABLE KINO_FOLDER = {
@@ -211,6 +196,7 @@ KINO_FOLDER_VTABLE KINO_FOLDER = {
     (kino_Obj_to_string_t)kino_Obj_to_string,
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_Folder_open_outstream_t)kino_Folder_open_outstream,
+    (kino_Folder_safe_open_outstream_t)kino_Folder_safe_open_outstream,
     (kino_Folder_open_instream_t)kino_Folder_open_instream,
     (kino_Folder_list_t)kino_Folder_list,
     (kino_Folder_file_exists_t)kino_Folder_file_exists,
@@ -218,16 +204,19 @@ KINO_FOLDER_VTABLE KINO_FOLDER = {
     (kino_Folder_delete_file_t)kino_Folder_delete_file,
     (kino_Folder_slurp_file_t)kino_Folder_slurp_file,
     (kino_Folder_latest_gen_t)kino_Folder_latest_gen,
-    (kino_Folder_make_lock_t)kino_Folder_make_lock,
-    (kino_Folder_run_locked_t)kino_Folder_run_locked,
     (kino_Folder_close_f_t)kino_Folder_close_f
 };
 #endif /* KINO_WANT_FOLDER_VTABLE */
 
+#undef KINO_FOLDER_BOILERPLATE
+
+
 #endif /* R_KINO_FOLDER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

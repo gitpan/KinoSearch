@@ -5,42 +5,135 @@ package KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        token_re => qr/\w+(?:'\w+)*/,
-    );
-}
+our %instance_vars = (
+    # inherited (and useless)
+    language => '',
+
+    # constructor params / members
+    token_re => qr/\w+(?:'\w+)*/,
+);
 
 use KinoSearch::Analysis::Token;
 use KinoSearch::Analysis::TokenBatch;
 
-sub analyze {
-    my ( $self, $batch ) = @_;
-    my $token_re  = $self->{token_re};
-    my $new_batch = KinoSearch::Analysis::TokenBatch->new;
-
-    # alias input to $_
-    while ( my $token = $batch->next ) {
-        for ( $token->get_text ) {
-            # accumulate token start_offsets and end_offsets
-            my ( @starts, @ends );
-            while (/$token_re/g) {
-                push @starts, $-[0];
-                push @ends,   $+[0];
-            }
-
-            # add the new tokens to the batch
-            $new_batch->add_many_tokens( $_, \@starts, \@ends );
-        }
-    }
-
-    return $new_batch;
-}
-
 1;
 
 __END__
+
+__XS__
+
+MODULE = KinoSearch  PACKAGE = KinoSearch::Analysis::Tokenizer
+
+kino_TokenBatch*
+_do_analyze(self_hv, batch_or_text_sv)
+    HV *self_hv;
+    SV *batch_or_text_sv;
+ALIAS:
+    analyze_batch = 1
+    analyze_text  = 2
+CODE:
+{
+    kino_TokenBatch *batch           = NULL;
+    SV              *token_re        = extract_sv(self_hv, SNL("token_re"));
+    MAGIC           *mg              = NULL;
+    REGEXP          *rx              = NULL;
+    chy_u32_t        num_code_points = 0;
+    SV              *wrapper         = sv_newmortal();
+    RETVAL                           = kino_TokenBatch_new(NULL);
+
+    if (ix == 1) {
+        EXTRACT_STRUCT( batch_or_text_sv, batch, kino_TokenBatch*,
+            "KinoSearch::Analysis::TokenBatch");
+    }
+
+    /* extract regexp struct from qr// entity */
+    if (SvROK(token_re)) {
+        SV *sv = SvRV(token_re);
+        if (SvMAGICAL(sv))
+            mg = mg_find(sv, PERL_MAGIC_qr); 
+    }
+    if (!mg)
+        CONFESS("not a qr// entity");
+    rx = (REGEXP*)mg->mg_obj;
+
+    /* fake up an SV wrapper to feed to the regex engine */
+    sv_upgrade(wrapper, SVt_PV);
+    SvREADONLY_on(wrapper);
+    SvLEN(wrapper) = 0;
+    SvUTF8_on(wrapper);
+
+    while (1) {
+        STRLEN  len;
+        char   *string_beg;
+        char   *string_end;
+        char   *string_arg;
+
+        if (ix == 1) {
+            kino_Token *token = Kino_TokenBatch_Next(batch);
+            if (token == NULL)
+                break;
+            len          = token->len;
+            string_beg   = token->text;
+            string_end   = string_beg + len;
+            string_arg   = string_beg;
+        }
+        else {
+            string_beg   = SvPVutf8( ST(1), len );
+            string_end   = string_beg + len;
+            string_arg   = string_beg;
+        }
+
+        /* wrap the string in an SV to please the regex engine */
+        SvPVX(wrapper) = string_beg;
+        SvCUR_set(wrapper, len);
+        SvPOK_on(wrapper);
+
+        while (
+            pregexec(rx, string_arg, string_end, string_arg, 1, wrapper, 1)
+        ) {
+#if (PERL_VERSION >= 9) && (PERL_SUBVERSION >= 5)
+            char *const start_ptr = string_arg + rx->offs[0].start;
+            char *const end_ptr   = string_arg + rx->offs[0].end;
+#else 
+            char *const start_ptr = string_arg + rx->startp[0];
+            char *const end_ptr   = string_arg + rx->endp[0];
+#endif
+            chy_u32_t start, end;
+            kino_Token *new_token;
+
+            /* get start and end offsets in Unicode code points */
+            for( ; string_arg < start_ptr; num_code_points++) {
+                string_arg += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*string_arg];
+                if (string_arg > string_end)
+                    CONFESS("scanned past end of '%s'", string_beg);
+            }
+            start = num_code_points;
+            for( ; string_arg < end_ptr; num_code_points++) {
+                string_arg += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*string_arg];
+                if (string_arg > string_end)
+                    CONFESS("scanned past end of '%s'", string_beg);
+            }
+            end = num_code_points;
+
+            /* add a token to the new_batch */
+            new_token = kino_Token_new(
+                start_ptr,
+                (end_ptr - start_ptr),
+                start,
+                end,
+                1.0f, /* boost always 1 for now */
+                1     /* position increment */
+            );
+            Kino_TokenBatch_Append(RETVAL, new_token);
+            REFCOUNT_DEC(new_token);
+        }
+
+        if (ix == 2) /* analyze_text only runs one loop iter */
+            break;
+    }
+}
+OUTPUT: RETVAL
+    
 
 __POD__
 

@@ -5,28 +5,25 @@ package KinoSearch::Index::TermVectorsReader;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        #constructor params / members
-        schema   => undef,
-        folder   => undef,
-        seg_info => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor params / members
+    schema   => undef,
+    folder   => undef,
+    seg_info => undef,
+);
 
 use KinoSearch::Index::DocVector;
 
 sub doc_vec {
     my ( $self, $doc_num ) = @_;
-    my $tv_in    = $self->_get_tv_in;
-    my $tvx_in   = $self->_get_tvx_in;
+    my $tv_in  = $self->_get_tv_in;
+    my $tvx_in = $self->_get_tvx_in;
 
     my $doc_vec = KinoSearch::Index::DocVector->new;
 
-    $tvx_in->sseek( $doc_num * 8 );
-    my $fileptr = $tvx_in->lu_read('Q');
-    $tv_in->sseek($fileptr);
+    $tvx_in->sseek( $doc_num * 16 );
+    my $filepos = $tvx_in->lu_read('Q');
+    $tv_in->sseek($filepos);
 
     my $num_fields = $tv_in->lu_read('V');
 
@@ -103,5 +100,3 @@ See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut
-
-

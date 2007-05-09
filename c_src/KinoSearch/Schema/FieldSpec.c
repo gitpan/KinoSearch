@@ -1,9 +1,9 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_FIELDSPEC_VTABLE
 #include "KinoSearch/Schema/FieldSpec.r"
 
+#include "KinoSearch/Posting.r"
 
 FieldSpec*
 FSpec_new(const char *class_name)
@@ -18,10 +18,7 @@ FSpec_new(const char *class_name)
     self->vectorized         = false;
     self->binary             = false;
     self->compressed         = false;
-    self->store_field_boost  = false;
-    self->store_freq         = false;
-    self->store_position     = false;
-    self->store_pos_boost    = false;
+    self->posting            = NULL;
 
     return self;
 }
@@ -29,6 +26,7 @@ FSpec_new(const char *class_name)
 void
 FSpec_destroy(FieldSpec *self)
 {
+    REFCOUNT_DEC(self->posting);
     free(self);
 }
 

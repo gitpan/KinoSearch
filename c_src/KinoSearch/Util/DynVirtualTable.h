@@ -25,15 +25,14 @@ struct kino_DynVirtualTable {
 
 /* Constructor.  Returns singletons, keyed by class name.
  */
-KINO_FUNCTION(
 kino_DynVirtualTable*
 kino_DynVT_singleton(const char *subclass_name, 
                      KINO_OBJ_VTABLE *parent, 
-                     size_t parent_size));
+                     size_t parent_size);
 
-KINO_METHOD("Kino_DynVT_Destroy",
 void
-kino_DynVT_destroy(kino_DynVirtualTable *self));
+kino_DynVT_destroy(kino_DynVirtualTable *self);
+KINO_METHOD("Kino_DynVT_Destroy");
 
 KINO_END_CLASS
 

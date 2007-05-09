@@ -1,4 +1,5 @@
 #define KINO_USE_SHORT_NAMES
+#define CHY_USE_SHORT_NAMES
 
 #define KINO_WANT_VIRTUALTABLE_VTABLE
 #include "KinoSearch/Util/VirtualTable.r"

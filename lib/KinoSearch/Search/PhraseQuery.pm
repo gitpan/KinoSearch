@@ -5,21 +5,28 @@ package KinoSearch::Search::PhraseQuery;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
+our %instance_vars = (
+    # inherited
+    boost => 1.0,
+
+    # params / members
+    slop => 0,
+
+    # members
+    field     => undef,
+    terms     => [],
+    positions => [],
+);
+
 BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args / members
-        slop => 0,
-        # members
-        field     => undef,
-        terms     => [],
-        positions => [],
-    );
     __PACKAGE__->ready_get_set(qw( slop ));
     __PACKAGE__->ready_get(qw( terms ));
 }
 
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Util::ToStringUtils qw( boost_to_string );
+use KinoSearch::Util::VArray;
+use KinoSearch::Util::Int;
 
 # Add a term/position combo to the query.  The position is specified
 # explicitly in order to allow for phrases with gaps, two terms at the same
@@ -40,15 +47,15 @@ sub add_term {
     push @{ $self->{positions} }, $position;
 }
 
-sub create_weight {
+sub make_weight {
     my ( $self, $searcher ) = @_;
 
-    # optimize for one-term phrases
+    # optimize for one-term "phrases"
     if ( @{ $self->{terms} } == 1 ) {
         my $term_query
             = KinoSearch::Search::TermQuery->new( term => $self->{terms}[0],
             );
-        return $term_query->create_weight($searcher);
+        return $term_query->make_weight($searcher);
     }
     else {
         return KinoSearch::Search::PhraseWeight->new(
@@ -77,43 +84,83 @@ package KinoSearch::Search::PhraseWeight;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
-BEGIN { __PACKAGE__->init_instance_vars(); }
+our %instance_vars = (
+    # inherited
+    searcher   => undef,
+    similarity => undef,
+    parent     => undef,
+);
 
+use KinoSearch::Util::VArray;
 use KinoSearch::Search::PhraseScorer;
 
 sub init_instance {
-    my $self = shift;
-    $self->{similarity}
-        = $self->{parent}->get_similarity( $self->{searcher} );
-    $self->{idf} = $self->{similarity}
-        ->idf( $self->{parent}->get_terms, $self->{searcher} );
+    my $self  = shift;
+    my $field = $self->{parent}{field};
+    my $terms = $self->{parent}{terms};
 
-    undef $self->{searcher};    # don't want the baggage
+    # don't keep searcher around; it interferes with serialization
+    my $searcher = delete $self->{searcher};
+
+    # retrieve the correct Similarity for the phrase's field
+    my $sim = $self->{similarity} = $searcher->get_schema->fetch_sim($field);
+
+    # store IDF for the phrase
+    my $idf = $self->{idf} = $sim->idf( $terms, $searcher );
+
+    # calculate raw impact
+    $self->{raw_impact} = $idf * $self->{parent}->get_boost;
+
+    # make final preparations
+    $self->perform_query_normalization($searcher);
 }
 
+sub sum_of_squared_weights { shift->{raw_impact}**2 }
+
+sub normalize {
+    my ( $self, $query_norm_factor ) = @_;
+    $self->{query_norm_factor} = $query_norm_factor;
+    $self->{normalized_impact}
+        = $self->{raw_impact} * $self->{idf} * $query_norm_factor;
+}
+
+sub get_value { shift->{normalized_impact} }
+
 sub scorer {
-    my ( $self, $ix_reader ) = @_;
-    my $query = $self->{parent};
-
-    # look up each term
-    my @term_docs;
-    for my $term ( @{ $query->{terms} } ) {
-        my $td = $ix_reader->term_docs($term);
-
-        # bail if any one of the terms isn't in the index
-        return unless defined $td;
-        push @term_docs, $td;
-    }
+    my ( $self, $reader ) = @_;
+    my $query     = $self->{parent};
+    my $terms     = $query->{terms};
+    my $num_terms = scalar @$terms;
+    my $positions = $query->{positions};
 
     # bail if there are no terms
-    return unless @term_docs;
+    return unless $num_terms;
+
+    # bail unless the fields posting type supports positions
+    my $fspec         = $reader->get_schema->fetch_fspec( $query->{field} );
+    my $posting_class = $fspec->posting_type;
+    return unless $posting_class->isa("KinoSearch::Posting::ScorePosting");
+
+    # look up each term
+    my $plists  = KinoSearch::Util::VArray->new( capacity => $num_terms );
+    my $offsets = KinoSearch::Util::VArray->new( capacity => $num_terms );
+    for my $i ( 0 .. $#$terms ) {
+        my $plist = $reader->posting_list( term => $terms->[$i] );
+
+        # bail if any one of the terms isn't in the index
+        return unless $plist->get_doc_freq;
+
+        $plists->push($plist);
+        $offsets->push( KinoSearch::Util::Int->new( $positions->[$i] ) );
+    }
 
     return KinoSearch::Search::PhraseScorer->new(
         weight         => $self,
+        weight_value   => $self->get_value,
         slop           => $query->{slop},
         similarity     => $self->{similarity},
-        term_docs      => \@term_docs,
-        phrase_offsets => $query->{positions},
+        posting_lists  => $plists,
+        phrase_offsets => $offsets,
     );
 }
 
@@ -163,4 +210,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

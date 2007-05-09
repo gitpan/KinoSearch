@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_HITQUEUE_VTABLE
@@ -6,7 +5,7 @@
 
 #include "KinoSearch/Search/ScoreDoc.r"
 
-/* Compare score first, doc id second. 
+/* Compare score first, doc num second. 
  */
 static bool_t
 HitQ_less_than(const void *a, const void *b);
@@ -33,7 +32,7 @@ HitQ_less_than(const void *a, const void *b)
 
     if (score_doc_a->score == score_doc_b->score) {
         /* sort by doc_num second */
-        return score_doc_a->id > score_doc_b->id;
+        return score_doc_a->doc_num > score_doc_b->doc_num;
     }
     else {
         /* sort by score first */

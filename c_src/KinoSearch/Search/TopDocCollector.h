@@ -17,20 +17,19 @@ struct kino_TopDocCollector {
     KINO_TOPDOCCOLLECTOR_VTABLE *_;
     KINO_HITCOLLECTOR_MEMBER_VARS;
     float                   min_score;
-    kino_u32_t              num_hits;
-    kino_u32_t              total_hits;
+    chy_u32_t               num_hits;
+    chy_u32_t               total_hits;
     struct kino_HitQueue   *hit_q;
 };
 
 /* Constructor. 
  */
-KINO_FUNCTION(
 kino_TopDocCollector* 
-kino_TDColl_new(kino_u32_t num_hits));
+kino_TDColl_new(chy_u32_t num_hits);
 
-KINO_METHOD("Kino_TDColl_Destroy",
 void
-kino_TDColl_destroy(kino_TopDocCollector *self));
+kino_TDColl_destroy(kino_TopDocCollector *self);
+KINO_METHOD("Kino_TDColl_Destroy");
 
 KINO_END_CLASS
 

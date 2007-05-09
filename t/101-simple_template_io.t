@@ -1,13 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 16;
+
+use KinoSearch::Store::RAMFolder;
 
 srand(2);
-
-BEGIN {
-    use_ok('KinoSearch::Store::RAMFolder');
-}
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my ( @nums, $packed, $template );
@@ -73,4 +71,3 @@ is( $folder->slurp_file('VLong medium'),
 @nums = map { $_ * 2**31 } 0 .. 2000;
 $_ += int( rand( 2**16 ) ) for @nums;
 check_io( 'VLong large', 'W' . scalar @nums, @nums );
-

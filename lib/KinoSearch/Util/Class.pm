@@ -5,7 +5,6 @@ package KinoSearch::Util::Class;
 use KinoSearch::Util::ToolSet;
 
 use Clone 'clone';
-use KinoSearch::Util::VerifyArgs qw( verify_args kerror );
 
 sub new {
     my $class = shift;    # leave the rest of @_ intact.
@@ -59,15 +58,6 @@ sub _traverse_at_isa {
 
 sub init_instance { }
 
-sub init_instance_vars {
-    my $package = shift;
-
-    no strict 'refs';
-    my $first_isa = ${ $package . '::ISA' }[0];
-    %{ $package . '::instance_vars' }
-        = ( %{ $first_isa . '::instance_vars' }, @_ );
-}
-
 sub ready_get_set {
     ready_get(@_);
     ready_set(@_);
@@ -95,18 +85,13 @@ sub abstract_death {
         . "abstract method and must be defined in a subclass";
 }
 
-sub unimplemented_death {
-    my ( undef, $filename, $line, $methodname ) = caller(1);
-    die "ERROR: $methodname, called at $filename line $line, is "
-        . "intentionally unimplemented in KinoSearch, though it is part "
-        . "of Lucene";
-}
-
 sub todo_death {
     my ( undef, $filename, $line, $methodname ) = caller(1);
     die "ERROR: $methodname, called at $filename line $line, is not "
         . "implemented yet in KinoSearch, but is on the todo list";
 }
+
+sub hash_code { refaddr(shift) }
 
 1;
 
@@ -126,37 +111,31 @@ warning.  Do not use it on its own.
     package KinoSearch::SomePackage::SomeClass;
     use base qw( KinoSearch::Util::Class );
     
-    BEGIN {
-        __PACKAGE__->init_instance_vars(
-            # constructor params / members
-            foo => undef,
-            bar => {},
+    our %instance_vars = (
+        # constructor params / members
+        foo => undef,
+        bar => {},
 
-            # members
-            baz => {},
-        );
-    }
+        # members
+        baz => {},
+    );
 
 =head1 DESCRIPTION
 
 KinoSearch::Util::Class is a class-building utility a la L<Class::Accessor>,
-L<Class::Meta>, etc.  It provides four main services:
+L<Class::Meta>, etc.  It provides three main services:
 
 =over
 
-=item 1 
-
-A mechanism for inheriting instance variable declarations.
-
-=item 2 
+=item 1
 
 A constructor with basic argument checking.
 
-=item 3
+=item 2
 
 Manufacturing of get_xxxx and set_xxxx methods.
 
-=item 4 
+=item 3 
 
 Convenience methods which help in defining abstract classes.
 
@@ -166,43 +145,21 @@ Convenience methods which help in defining abstract classes.
 
 =head2 %instance_vars
 
-The %instance_vars hash, which is always a package global, serves as a
-template for the creation of a hash-based object.  It is built up from all the
-%instance_vars hashes in the module's parent classes, using
-init_instance_vars().  
+Each class which uses the inherited constructor needs to define an
+%instance_vars hash as a package global, which serves as a template
+for the creation of a hash-based object.  
 
-Key-value pairs in an %instance_vars hash are labeled as "constructor params"
-and/or "members".  Items which are labeled as constructor params can be used
-as arguments to new().
+    our %instance_vars = (
+        # constructor params / members
+        foo => undef,
+        bar => {},
 
-    BEGIN {
-        __PACKAGE__->init_instance_vars(
-            # constructor params / members
-            foo => undef,
-            bar => {},
-            # members
-            baz => '',
-        );
-    }
-    
-    # ok: specifies foo, uses default for bar, derives baz
-    my $object = __PACKAGE__->new( foo => $foo );
-
-    # not ok: baz isn't a constructor param
-    my $object = __PACKAGE__->new( baz => $baz );
-
-    # ok if a parent class defines boffo as a constructor param
-    my $object = __PACKAGE__->new( 
-        foo   => $foo,
-        boffo => $boffo,
+        # members
+        baz => '',
     );
 
 %instance_vars may contain hashrefs and array-refs, as L<Clone>'s
 C<clone()> method is used to produce a deep copy.
-
-init_instance_vars() must be called from within a BEGIN block and before any
-C<use> directives load a child class -- if children are born before their
-parents, inheritance gets screwed up.
 
 =head1 METHODS
 
@@ -222,19 +179,6 @@ $self->init_instance() before returning the blessed reference.
 
 Perform customized initialization routine.  By default, this is a no-op.
 
-=head2 init_instance_vars
-
-    BEGIN {
-        __PACKAGE__->init_instance_vars(
-            a_safe_variable_name_that_wont_clash => 1,
-            freep_warble                         => undef,
-        );
-    }
-
-Package method only.  Creates a package global %instance_vars hash in the
-passed in package which consists of the passed in arguments plus all the
-key-value pairs in the parent class's %instance_vars hash.
-
 =head2 ready_get_set ready_get ready_set
 
     # create get_foo(), set_foo(), get_bar(), set_bar() in __PACKAGE__
@@ -243,20 +187,15 @@ key-value pairs in the parent class's %instance_vars hash.
 Mass manufacture getters and setters.  The setters do not return a meaningful
 value.
 
-=head2 abstract_death unimplemented_death todo_death
+=head2 abstract_death todo_death
 
     sub an_abstract_method      { shift->abstract_death }
-    sub an_unimplemented_method { shift->unimplemented_death }
     sub maybe_someday           { shift->todo_death }
 
 These are just different ways to die(), and are of little interest until your
 particular application comes face to face with one of them.  
 
 abstract_death indicates that a method must be defined in a subclass.
-
-unimplemented_death indicates a feature/function that will probably not be
-implemented.  Typically, this would appear for a sub that a developer
-intimately familiar with Lucene would expect to find.
 
 todo_death indicates a feature that might get implemented someday.
 

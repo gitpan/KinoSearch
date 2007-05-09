@@ -6,73 +6,55 @@
 typedef struct kino_PriorityQueue kino_PriorityQueue;
 typedef struct KINO_PRIORITYQUEUE_VTABLE KINO_PRIORITYQUEUE_VTABLE;
 
-/* Comparison function.  
- */
-typedef kino_bool_t 
-(*kino_PriQ_less_than_t)(const void *a, const void *b);
-
-/* Dispose of discarded elements.
- */
-typedef void
-(*kino_PriQ_free_elem_t)(void *elem);
-
-#ifdef KINO_USE_SHORT_NAMES
-  #define PriQ_less_than_t kino_PriQ_less_than_t
-  #define PriQ_free_elem_t kino_PriQ_free_elem_t
-#endif /* KINO_USE_SHORT_NAMES */
-
 KINO_CLASS("KinoSearch::Util::PriorityQueue", "PriQ", 
     "KinoSearch::Util::Obj");
 
 struct kino_PriorityQueue {
     KINO_PRIORITYQUEUE_VTABLE *_;
     KINO_OBJ_MEMBER_VARS;
-    kino_u32_t              size;
-    kino_u32_t              max_size;
+    chy_u32_t               size;
+    chy_u32_t               max_size;
     void                  **heap;
-    kino_PriQ_less_than_t   less_than;
-    kino_PriQ_free_elem_t   free_elem;
+    kino_Obj_less_than_t    less_than;
+    kino_Obj_free_elem_t    free_elem;
 };
-
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_PriorityQueue*
-kino_PriQ_new(kino_u32_t max_size, kino_PriQ_less_than_t less_than, 
-              kino_PriQ_free_elem_t free_elem));
+kino_PriQ_new(chy_u32_t max_size, kino_Obj_less_than_t less_than, 
+              kino_Obj_free_elem_t free_elem);
 
 /* Initialize base elements.  Called by subclass constructors.
  */
-KINO_FUNCTION(
 void
-kino_PriQ_init_base(kino_PriorityQueue *self, kino_u32_t max_size, 
-                    kino_PriQ_less_than_t less_than, 
-                    kino_PriQ_free_elem_t free_elem));
+kino_PriQ_init_base(kino_PriorityQueue *self, chy_u32_t max_size, 
+                    kino_Obj_less_than_t less_than, 
+                    kino_Obj_free_elem_t free_elem);
 
 /* Add an element to the Queue if either...
  * a) the queue isn't full, or
  * b) the element belongs in the queue and should displace another
  */
-KINO_METHOD("Kino_PriQ_Insert",
-kino_bool_t
-kino_PriQ_insert(kino_PriorityQueue *self, void *element));
+chy_bool_t
+kino_PriQ_insert(kino_PriorityQueue *self, void *element);
+KINO_METHOD("Kino_PriQ_Insert");
 
 /* Pop the *least* item off of the priority queue.
  */
-KINO_METHOD("Kino_PriQ_Pop",
 void*
-kino_PriQ_pop(kino_PriorityQueue *self));
+kino_PriQ_pop(kino_PriorityQueue *self);
+KINO_FINAL_METHOD("Kino_PriQ_Pop");
 
 /* Return the least item in the queue, but don't remove it.
  */
-KINO_METHOD("Kino_PriQ_Peek",
 void*
-kino_PriQ_peek(kino_PriorityQueue *self));
+kino_PriQ_peek(kino_PriorityQueue *self);
+KINO_FINAL_METHOD("Kino_PriQ_Peek");
 
-KINO_METHOD("Kino_PriQ_Destroy",
 void
-kino_PriQ_destroy(kino_PriorityQueue *self));
+kino_PriQ_destroy(kino_PriorityQueue *self);
+KINO_METHOD("Kino_PriQ_Destroy");
 
 KINO_END_CLASS
 

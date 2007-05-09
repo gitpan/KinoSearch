@@ -11,18 +11,19 @@ BEGIN {
         plan( 'skip_all', "fork on Windows not supported by KS" );
     }
     else {
-        plan( tests => 4 );
+        plan( tests => 3 );
     }
-    use_ok 'KinoSearch::Store::Lock';
 }
 
+use KinoSearch::Store::Lock;
 use KinoSearch::Store::FSFolder;
+
 my $path = catdir( tmpdir(), "lock_test_invindex" );
 rmtree($path);
 mkdir $path or die "Can't mkdir '$path': $!";
 
 Dead_locks_are_removed: {
-    my $lock_path = catfile( $path, 'foo' );
+    my $lock_path = catfile( $path, 'foo.lock' );
 
     # Remove any existing lockfile
     unlink $lock_path;
@@ -32,11 +33,14 @@ Dead_locks_are_removed: {
 
     sub make_lock {
         my $lock = KinoSearch::Store::Lock->new(
+            timeout   => 0,
             folder    => $folder,
             lock_name => 'foo',
+            agent_id  => '',
             @_
         );
-        $lock->obtain;
+        $lock->clear_stale;
+        $lock->obtain or die "no dice";
         return $lock;
     }
 
@@ -56,12 +60,11 @@ Dead_locks_are_removed: {
     sleep .1;
     ok( -e $lock_path, "daemon secured lock" );
 
-    eval { make_lock( lock_id => 'somebody_else' ) };
-    like( $@, qr/somebody_else/, "different lock_id fails to get lock" );
+    eval { make_lock( agent_id => 'somebody_else' ) };
+    like( $@, qr/no dice/, "different agent_id fails to get lock" );
 
     eval { make_lock() };
     warn $@ if $@;
     ok( !$@, 'second lock attempt did not die' );
 
 }
-

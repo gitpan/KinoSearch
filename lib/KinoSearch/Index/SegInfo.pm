@@ -7,15 +7,12 @@ use base qw( KinoSearch::Util::Obj );
 
 use Time::HiRes;
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params
-        seg_name => undef,
-        fspecs   => undef,
-        metadata => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor params
+    seg_name => undef,
+    fspecs   => undef,
+    metadata => undef,
+);
 
 use KinoSearch::Util::CClass qw( to_kino to_perl );
 
@@ -53,9 +50,9 @@ CODE:
 
     SV_TO_TEMP_BB(seg_name_sv, seg_name);
     MAYBE_EXTRACT_STRUCT(metadata_sv, metadata, kino_Hash*,
-		"KinoSearch::Util::Hash");
+        "KinoSearch::Util::Hash");
     MAYBE_EXTRACT_STRUCT(fspecs_sv, fspecs, kino_Hash*,
-		"KinoSearch::Util::Hash");
+        "KinoSearch::Util::Hash");
 
     RETVAL = kino_SegInfo_new(&seg_name, fspecs, metadata);
 }
@@ -66,20 +63,6 @@ increment_doc_count(self)
     kino_SegInfo *self;
 PPCODE:
     self->doc_count++;
-
-SV*
-generate_field_num_map(self, other)
-    kino_SegInfo *self;
-    kino_SegInfo *other;
-CODE:
-{
-    kino_IntMap *map = Kino_SegInfo_Generate_Field_Num_Map(self, other);
-    RETVAL = map == NULL
-        ? newSV(0)
-        : kobj_to_pobj(map);
-    REFCOUNT_DEC(map);
-}
-OUTPUT: RETVAL
 
 void
 _add_metadata(self, key_sv, val)
@@ -145,7 +128,7 @@ PPCODE:
 SV*
 field_name(self, field_num)
     kino_SegInfo *self;
-    kino_i32_t    field_num;
+    chy_i32_t     field_num;
 CODE:
 {
     kino_ByteBuf *name = Kino_SegInfo_Field_Name(self, field_num);
@@ -159,7 +142,7 @@ field_num(self, field_name)
     kino_ByteBuf  field_name;
 CODE:
 {
-    kino_i32_t num = Kino_SegInfo_Field_Num(self, &field_name);
+    chy_i32_t num = Kino_SegInfo_Field_Num(self, &field_name);
     RETVAL = num == -1 
         ? newSV(0)
         : newSViv(num);
@@ -172,6 +155,13 @@ add_field(self, field_name)
     kino_ByteBuf field_name;
 PPCODE:
     kino_SegInfo_add_field(self, &field_name);
+
+chy_u32_t 
+num_fields(self)
+    kino_SegInfo *self;
+CODE:
+    RETVAL = self->by_num->size;
+OUTPUT: RETVAL
 
 __POD__
 

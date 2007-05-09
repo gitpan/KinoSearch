@@ -5,12 +5,11 @@ package KinoSearch::Highlight::SimpleHTMLFormatter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Highlight::Formatter );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        pre_tag  => '<strong>',
-        post_tag => '</strong>',
-    );
-}
+our %instance_vars = (
+    # constructor params / members
+    pre_tag  => '<strong>',
+    post_tag => '</strong>',
+);
 
 sub highlight {
     my ( $self, $text ) = @_;
@@ -39,7 +38,7 @@ KinoSearch::Highlight::SimpleHTMLFormatter - Surround highlight bits with tags.
 =head1 DESCRIPTION
 
 This subclass of L<KinoSearch::Highlight::Formatter> highlights text by
-surrounding it with HTML "strong" tags.
+surrounding it with tags.
 
 =head1 METHODS
 

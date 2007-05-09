@@ -17,12 +17,13 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Store::InStream
 
 kino_InStream*
-reopen(self, offset, len)
+reopen(self, filename, offset, len)
     kino_InStream *self;
-    kino_u64_t offset;
-    kino_u64_t len;
+    kino_ByteBuf filename;
+    chy_u64_t offset;
+    chy_u64_t len;
 CODE:
-    RETVAL = Kino_InStream_Reopen(self, offset, len);
+    RETVAL = Kino_InStream_Reopen(self, &filename, offset, len);
 OUTPUT: RETVAL
 
 kino_InStream*
@@ -30,26 +31,26 @@ new(class, file_des)
     const classname_char *class;
     kino_FileDes *file_des;
 CODE:
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_InStream_new(file_des);
 OUTPUT: RETVAL
 
 void
 sseek(self, target)
     kino_InStream *self;
-    kino_u64_t     target;
+    chy_u64_t      target;
 PPCODE:
     Kino_InStream_SSeek(self, target);
 
 
-kino_u64_t
+chy_u64_t
 stell(self)
     kino_InStream *self;
 CODE:
     RETVAL = Kino_InStream_STell(self);
 OUTPUT: RETVAL
 
-kino_u64_t
+chy_u64_t
 slength(self)
     kino_InStream *self;
 CODE:
@@ -80,6 +81,41 @@ PPCODE:
 
     END_SET_OR_GET_SWITCH
 }
+
+void
+read_byteso(self, buffer_sv, start, len)
+    kino_InStream *self;
+    SV *buffer_sv;
+    size_t start;
+    size_t len;
+PPCODE:
+{
+    size_t total_len = start + len;
+    char *ptr;
+    SvUPGRADE(buffer_sv, SVt_PV);
+    ptr = SvGROW(buffer_sv, total_len);
+    Kino_InStream_Read_BytesO(self, ptr, start, len);
+    SvPOK_on(buffer_sv);
+    if (SvCUR(buffer_sv) < total_len) {
+        SvCUR_set(buffer_sv, total_len);
+        *(SvEND(buffer_sv)) = '\0';
+    }
+}
+
+int
+read_raw_vlong(self, buffer_sv)
+    kino_InStream *self;
+    SV *buffer_sv;
+CODE:
+{
+    char *ptr;
+    SvUPGRADE(buffer_sv, SVt_PV);
+    ptr = SvGROW(buffer_sv, 10);
+    RETVAL = Kino_InStream_Read_Raw_VLong(self, ptr);
+    SvPOK_on(buffer_sv);
+    SvCUR_set(buffer_sv, RETVAL);
+}
+OUTPUT: RETVAL
 
 
 =begin comment
@@ -176,12 +212,12 @@ PPCODE:
             if (sym == 'b') 
                 aIV = aChar;
             else
-                aIV = (kino_u8_t)aChar;
+                aIV = (chy_u8_t)aChar;
             aSV = newSViv(aIV);
             break;
 
         case 'i': /* signed 32-bit integer */
-            aSV = newSViv( (kino_i32_t)Kino_InStream_Read_Int(self) );
+            aSV = newSViv( (chy_i32_t)Kino_InStream_Read_Int(self) );
             break;
             
         case 'I': /* unsigned 32-bit integer */
@@ -199,7 +235,7 @@ PPCODE:
             SvPOK_on(aSV);
             *SvEND(aSV) = '\0';
             string = SvPVX(aSV);
-            Kino_InStream_Read_Chars(self, string, 0, len);
+            Kino_InStream_Read_Bytes(self, string, len);
             break;
 
         case 'V': /* VInt */

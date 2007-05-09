@@ -2,19 +2,26 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 11;
+use Test::More tests => 13;
 use File::Spec::Functions qw( catfile );
 
-BEGIN { use_ok('KinoSearch::Index::DelDocs') }
+use KinoSearch::Index::DelDocs;
 
 use KinoTestUtils qw( create_invindex );
+use TestSchema;
+
 use KinoSearch::Index::SegInfo;
+use KinoSearch::Index::SegInfos;
+use KinoSearch::InvIndexer;
+use KinoSearch::Store::RAMFolder;
+use KinoSearch::InvIndex;
+use KinoSearch::Searcher;
 
 my $invindex  = create_invindex( 'a' .. 'e' );
 my $folder    = $invindex->get_folder;
 my $schema    = $invindex->get_schema;
 my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
-$seg_infos->read_infos($folder);
+$seg_infos->read_infos( folder => $folder );
 my $seg_info = $seg_infos->get_info('_1');
 
 my $deldocs = KinoSearch::Index::DelDocs->new(
@@ -62,5 +69,55 @@ is_deeply(
 
 is( $deldocs->get_num_deletions, 2,
     "write_deldocs and read_deldocs save/recover num_deletions correctly" );
-is( $deldocs->get_capacity, 8,
-    "write_deldocs wrote correct number of bytes" );
+is( $deldocs->get_cap, 8, "write_deldocs wrote correct number of bytes" );
+
+$folder   = KinoSearch::Store::RAMFolder->new;
+$schema   = TestSchema->new;
+$invindex = KinoSearch::InvIndex->create(
+    folder => $folder,
+    schema => $schema,
+);
+my $invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
+$invindexer->add_doc( { content => $_ } ) for 'a' .. 'c';
+$invindexer->finish;
+$invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
+$invindexer->delete_by_term( content => $_ ) for 'a' .. 'c';
+$invindexer->finish;
+$invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
+$invindexer->add_doc( { content => $_ } ) for 'a' .. 'c';
+$invindexer->finish;
+
+my $searcher = KinoSearch::Searcher->new( invindex => $invindex );
+my $hits     = $searcher->search( query            => 'a' );
+is( $hits->total_hits, 1, "deleting then re-adding works" );
+
+my @expected;
+for ( 'a' .. 'e' ) {
+    $hits = $searcher->search( query => $_ );
+    my @contents;
+    while ( my $hit = $hits->fetch_hit_hashref ) {
+        push @contents, $hit->{content};
+    }
+    push @expected, \@contents;
+}
+$invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
+$invindexer->finish( optimize => 1 );
+$searcher = KinoSearch::Searcher->new( invindex => $invindex );
+@got = ();
+for ( 'a' .. 'e' ) {
+    $hits = $searcher->search( query => $_ );
+    my @contents;
+    while ( my $hit = $hits->fetch_hit_hashref ) {
+        push @contents, $hit->{content};
+    }
+    push @got, \@contents;
+}
+is_deeply( \@got, \@expected, "segment merging handles deletions correctly" );
+
+$invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
+$invindexer->delete_by_term( content => $_ ) for 'a' .. 'c';
+$invindexer->finish;
+$searcher = KinoSearch::Searcher->new( invindex => $invindex );
+$hits     = $searcher->search( query            => 'a' );
+is( $hits->total_hits, 0, "adding and searching empty segments is ok" );
+

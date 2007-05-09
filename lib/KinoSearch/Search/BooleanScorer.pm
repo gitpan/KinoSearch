@@ -5,8 +5,10 @@ package KinoSearch::Search::BooleanScorer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Scorer );
 
-BEGIN { __PACKAGE__->init_instance_vars() }
-our %instance_vars;
+our %instance_vars = (
+    # params
+    similarity => undef,
+);
 
 1;
 
@@ -35,9 +37,9 @@ void
 add_subscorer(self, subscorer, occur)
     kino_BooleanScorer *self;
     kino_Scorer *subscorer;
-    char *occur;
+    kino_ByteBuf occur;
 PPCODE:
-    Kino_BoolScorer_Add_Subscorer(self, subscorer, occur);
+    Kino_BoolScorer_Add_Subscorer(self, subscorer, &occur);
 
 __POD__
 

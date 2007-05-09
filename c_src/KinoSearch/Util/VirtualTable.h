@@ -27,9 +27,9 @@ struct kino_VirtualTable {
     const char *class_name;
 };
 
-KINO_METHOD("Kino_VirtualTable_Destroy",
 void
-kino_VirtualTable_destroy(kino_VirtualTable *self));
+kino_VirtualTable_destroy(kino_VirtualTable *self);
+KINO_METHOD("Kino_VirtualTable_Destroy");
 
 KINO_END_CLASS
 

@@ -3,10 +3,13 @@
 #include "XSUB.h"
 #include "ppport.h"
 
-#include "KinoSearch/Util/ToolSet.h"
-
 #define KINO_WANT_CCLASS_VTABLE
 #include "KinoSearch/Util/CClass.r"
+
+#include "KinoSearch/Util/Obj.r"
+#include "KinoSearch/Util/ByteBuf.r"
+#include "KinoSearch/Util/Carp.h"
+#include "KinoSearch/Util/MemManager.h"
 
 static SV*
 kobj_to_pobj(kino_Obj *obj);
@@ -89,17 +92,17 @@ kino_CClass_callback_bb(kino_Obj *self, char *method, ...)
     return retval;
 }
 
-kino_i32_t
+chy_i32_t
 kino_CClass_callback_i(kino_Obj *self, char *method, ...) 
 {
     va_list args;
     SV *return_sv;
-    kino_i32_t retval;
+    chy_i32_t retval;
 
     va_start(args, method);
     return_sv = do_callback_sv(self, method, args);
     va_end(args);
-    retval = (kino_i32_t)SvIV(return_sv);
+    retval = (chy_i32_t)SvIV(return_sv);
 
     FREETMPS;
     LEAVE;

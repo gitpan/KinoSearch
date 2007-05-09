@@ -12,36 +12,37 @@ KINO_FINAL_CLASS("KinoSearch::Index::TermInfo", "TInfo",
 struct kino_TermInfo {
     KINO_TERMINFO_VTABLE *_;
     KINO_OBJ_MEMBER_VARS;
-    kino_i32_t field_num;
-    kino_i32_t doc_freq;
-    kino_u64_t post_fileptr;
-    kino_i32_t skip_offset;
-    kino_u64_t index_fileptr;
+    chy_i32_t doc_freq;
+    chy_u64_t post_filepos;
+    chy_u64_t skip_filepos;
+    chy_u64_t index_filepos;
 };
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_TermInfo*
-kino_TInfo_new(kino_i32_t field_num,
-               kino_i32_t doc_freq,
-               kino_u64_t post_fileptr,
-               kino_i32_t skip_offset,
-               kino_u64_t index_fileptr));
+kino_TInfo_new(chy_i32_t doc_freq,
+               chy_u64_t post_filepos,
+               chy_u64_t skip_filepos,
+               chy_u64_t index_filepos);
 
 /* "Zero out" the TermInfo.
  */
-KINO_METHOD("Kino_TInfo_Reset",
 void
-kino_TInfo_reset(kino_TermInfo *self)); 
+kino_TInfo_reset(kino_TermInfo *self);
+KINO_METHOD("Kino_TInfo_Reset");
 
-KINO_METHOD("Kino_TInfo_Copy",
 void
-kino_TInfo_copy(kino_TermInfo *self, kino_TermInfo *other));
+kino_TInfo_copy(kino_TermInfo *self, const kino_TermInfo *other);
+KINO_METHOD("Kino_TInfo_Copy");
 
-KINO_METHOD("Kino_TInfo_Clone",
 kino_TermInfo*
-kino_TInfo_clone(kino_TermInfo *self));
+kino_TInfo_clone(kino_TermInfo *self);
+KINO_METHOD("Kino_TInfo_Clone");
+
+struct kino_ByteBuf*
+kino_TInfo_to_string(kino_TermInfo *self);
+KINO_METHOD("Kino_TInfo_To_String");
 
 KINO_END_CLASS
 

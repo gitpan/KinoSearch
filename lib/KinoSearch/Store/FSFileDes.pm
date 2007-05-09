@@ -9,21 +9,6 @@ use base qw( KinoSearch::Store::FileDes );
 
 __END__
 
-__XS__
-
-MODULE = KinoSearch     PACKAGE = KinoSearch::Store::FSFileDes
-
-kino_FSFileDes*
-new(class, path, mode)
-    const classname_char *class;
-    const char *path;
-    const char *mode;
-CODE:
-    KINO_UNUSED_VAR(class);
-    RETVAL = kino_FSFileDes_new(path, mode);
-OUTPUT: RETVAL
-
-
 __POD__
 
 =begin devdocs

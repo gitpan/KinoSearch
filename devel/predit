@@ -15,7 +15,7 @@ die "usage: predit [-s] [-v pattern] [perl code] [file ...]"
 
 my $code = shift @ARGV;
 
-my $exclude = qr/(svn|cvs|^\.)/;
+my $exclude = qr#(?:svn|cvs|(?:^|/)\.[^.]|\.o$)#;
 if (defined $opt_v) {
     $exclude = qr/$opt_v/;
 }

@@ -14,9 +14,8 @@ struct kino_HitQueue {
     KINO_PRIORITYQUEUE_MEMBER_VARS;
 };
 
-KINO_FUNCTION(
 kino_HitQueue*
-kino_HitQ_new(kino_u32_t max_size));
+kino_HitQ_new(chy_u32_t max_size);
 
 KINO_END_CLASS
 

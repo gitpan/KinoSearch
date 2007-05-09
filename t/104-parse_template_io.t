@@ -1,11 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 3;
 
-BEGIN {
-    use_ok('KinoSearch::Store::RAMFolder');
-}
+use KinoSearch::Store::RAMFolder;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my ( @items, $packed, $template );

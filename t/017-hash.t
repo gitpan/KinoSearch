@@ -1,10 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 20;
 use List::Util qw( shuffle );
 
-BEGIN { use_ok('KinoSearch::Util::Hash') }
+use KinoSearch::Util::Hash;
 use KinoSearch::Util::ByteBuf;
 
 my ( $hash, @orig, @got );
@@ -20,13 +20,12 @@ sub build_perl_hashref {
     return \%perl_hash;
 }
 
-# convenient alias
-sub new_bb { KinoSearch::Util::ByteBuf->new( $_[0] ) }
+sub get_bb { KinoSearch::Util::ByteBuf->new(shift) }
 
 $hash = KinoSearch::Util::Hash->new( capacity => 1 );
 
 @orig = 1 .. 100;
-$hash->store( $_, new_bb($_) ) for @orig;
+$hash->store( $_, get_bb($_) ) for @orig;
 $source{$_} = $_ for @orig;
 push @got, $hash->fetch($_) for 1 .. 100;
 @got = map { $_->to_string } @got;
@@ -34,7 +33,7 @@ is_deeply( \@got, \@orig, "Basic store and fetch" );
 
 is( $hash->get_size, 100, "size incremented properly" );
 
-$hash->store( "40", new_bb("new value") );
+$hash->store( "40", get_bb("new value") );
 is( $hash->fetch("40")->to_string,
     "new value", "store obliterates existing value" );
 is( $hash->get_size, 100, "size unaffected after replacement of a val" );
@@ -66,7 +65,7 @@ is( $hash->get_size, 0, "size is 0 after clear" );
 $hash = KinoSearch::Util::Hash->new( capacity => 1 );
 for ( 1 .. 10 ) {
     $source{$_} = $_;
-    $hash->store( $_, new_bb($_) );
+    $hash->store( $_, get_bb($_) );
 }
 $dest_ref = build_perl_hashref($hash);
 is_deeply( \%source, $dest_ref, "iteration" );
@@ -82,12 +81,29 @@ for my $iter ( 1 .. 500 ) {
     $source{$string} = "value: $string";
 }
 while ( my ( $k, $v ) = each %source ) {
-    $hash->store( $k, new_bb($v) );
+    $hash->store( $k, get_bb($v) );
 }
 while ( my ( $k, $v ) = each %source ) {
-    $hash->store( $k, new_bb($v) );    # overwrite every pair for good measure
+    # overwrite every pair for good measure
+    $hash->store( $k, get_bb($v) );
 }
 
 $dest_ref = build_perl_hashref($hash);
 is_deeply( \%source, $dest_ref, "random binary strings" );
+
+# hash set mimicry
+$hash = KinoSearch::Util::Hash->new( capacity => 10 );
+$hash->store( "foo", get_bb("bar") );
+my $key_copy = $hash->find_key("foo");
+is( $key_copy->to_string, "foo", "find_key finds existing key" );
+$key_copy = $hash->find_key("bar");
+is( $key_copy, undef, "find_key doesn't find non-existent key" );
+
+$key_copy = $hash->add_key("bar");
+is( $key_copy->to_string, "bar", "add_key adds non-existent key" );
+
+$key_copy = $hash->add_key("foo");
+is( $key_copy->to_string, "foo", "add_key retrieves existing key..." );
+is( $hash->fetch("foo")->to_string,
+    "bar", "... but doesn't clobber existing value" );
 

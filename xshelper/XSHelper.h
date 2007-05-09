@@ -81,32 +81,32 @@ typedef kino_ViewByteBuf kino_ViewByteBuf_utf8;
 /* Create a mortalized hash, built using a defaults hash and @_.
  */
 HV*
-build_args_hash(SV** stack, kino_i32_t start, kino_i32_t num_stack_elems, 
+build_args_hash(SV** stack, chy_i32_t start, chy_i32_t num_stack_elems, 
                 char* defaults_hash_name);
 
 /* Given a key, extract a SV* from a hash.  Perform error checking that the
  * perlapi functions leave out.
  */
 SV* 
-extract_sv(HV* hash, char* key, kino_i32_t key_len);
+extract_sv(HV* hash, char* key, chy_i32_t key_len);
 
 /* Given a key, extract a SV* from a hash and return its UV value.  Perform
  * error checking that the perlapi functions leave out.
  */
 UV
-extract_uv(HV* hash, char* key, kino_i32_t key_len);
+extract_uv(HV* hash, char* key, chy_i32_t key_len);
 
 /* Given a key, extract a SV* from a hash and return its IV value.  Perform
  * error checking that the perlapi functions leave out.
  */
 IV
-extract_iv(HV* hash, char* key, kino_i32_t key_len);
+extract_iv(HV* hash, char* key, chy_i32_t key_len);
 
 /* Given a key, extract a SV* from a hash and return its NV value.  Perform
  * error checking that the perlapi functions leave out.
  */
 NV
-extract_nv(HV* hash, char* key, kino_i32_t key_len);
+extract_nv(HV* hash, char* key, chy_i32_t key_len);
 
 /* Given a key, extract a SV* from a hash, determine whether it is an object
  * which inherits from [class], and extract a void pointer which the caller
@@ -151,7 +151,7 @@ derive_class(SV* either_sv);
 
 /* Compare the IV values of two scalars.  Used by PriorityQueue XS binding.
  */
-kino_bool_t
+chy_bool_t
 less_than_sviv(const void *a, const void *b);
 
 /* Wrapper for sv_free which is guaranteed not to include thread context

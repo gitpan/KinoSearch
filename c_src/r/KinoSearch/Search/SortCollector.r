@@ -10,38 +10,42 @@
 
  ***********************************************/
 
-#ifndef R_KINO_SORTCOLL
-#define R_KINO_SORTCOLL 1
+
+
+#ifndef R_KINO_SORTCOLLECTOR
+#define R_KINO_SORTCOLLECTOR 1
 
 #include "KinoSearch/Search/SortCollector.h"
+
+#define KINO_SORTCOLLECTOR_BOILERPLATE
 
 typedef void
 (*kino_SortColl_destroy_t)(kino_SortCollector *self);
 
-#define Kino_SortColl_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_SortColl_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_SortColl_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_SortColl_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_SortColl_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_SortColl_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_SortColl_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_SortColl_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_SortColl_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_SortColl_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_SortColl_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_SortColl_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_SortColl_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_SortColl_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_SORTCOLLECTOR_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -67,21 +71,19 @@ extern KINO_SORTCOLLECTOR_VTABLE KINO_SORTCOLLECTOR;
   #define SortColl_Is_A Kino_SortColl_Is_A
   #define SortColl_To_String Kino_SortColl_To_String
   #define SortColl_Serialize Kino_SortColl_Serialize
-  #define SORTCOLLECTOR KINO_SORTCOLLECTOR
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SORTCOLLECTOR_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     kino_HC_collect_t  collect; \
     kino_HC_release_t  release; \
     void * data; \
     float  min_score; \
-    kino_u32_t  num_hits; \
-    kino_u32_t  total_hits; \
+    chy_u32_t  num_hits; \
+    chy_u32_t  total_hits; \
     struct kino_HitQueue * hit_q; \
     struct kino_FieldDocCollator * collator; \
-    kino_i32_t  min_doc
-
+    chy_i32_t  min_doc
 
 #ifdef KINO_WANT_SORTCOLLECTOR_VTABLE
 KINO_SORTCOLLECTOR_VTABLE KINO_SORTCOLLECTOR = {
@@ -99,10 +101,15 @@ KINO_SORTCOLLECTOR_VTABLE KINO_SORTCOLLECTOR = {
 };
 #endif /* KINO_WANT_SORTCOLLECTOR_VTABLE */
 
-#endif /* R_KINO_SORTCOLL */
+#undef KINO_SORTCOLLECTOR_BOILERPLATE
+
+
+#endif /* R_KINO_SORTCOLLECTOR */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

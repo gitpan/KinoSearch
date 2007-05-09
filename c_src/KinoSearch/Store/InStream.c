@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_INSTREAM_VTABLE
@@ -6,8 +5,10 @@
 
 #include "KinoSearch/Store/FileDes.r"
 
+/* Shared constructor code.  [filename] will be used as is.
+ */
 static InStream*
-do_new(FileDes *file_des, u64_t offset, u64_t len);
+do_new(FileDes *file_des, ByteBuf *filename, u64_t offset, u64_t len);
 
 static void
 refill(InStream *self);
@@ -19,18 +20,23 @@ InStream*
 InStream_new(FileDes *file_des)
 {
     u64_t len = FileDes_FDLength(file_des);
-    return do_new(file_des, 0, len);
+    ByteBuf *filename = BB_new_str(file_des->path, strlen(file_des->path));
+    return do_new(file_des, filename, 0, len);
 }
 
 InStream*
-InStream_reopen(InStream *self, u64_t offset, u64_t len)
+InStream_reopen(InStream *self, const ByteBuf *sub_file, u64_t offset, 
+                u64_t len)
 {
     FileDes *const file_des = self->file_des;
-    return do_new(file_des, offset, len);
+    ByteBuf *filename = sub_file == NULL 
+        ? BB_CLONE(self->filename)
+        : BB_CLONE(sub_file);
+    return do_new(file_des, filename, offset, len);
 }
 
 static InStream*
-do_new(FileDes *file_des, u64_t offset, u64_t len)
+do_new(FileDes *file_des, ByteBuf *filename, u64_t offset, u64_t len)
 {
     CREATE(self, InStream, INSTREAM);
 
@@ -42,6 +48,7 @@ do_new(FileDes *file_des, u64_t offset, u64_t len)
 
     /* assign */
     REFCOUNT_INC(file_des);
+    self->filename  = filename;  /* use argument; no refcount incrementing */
     self->file_des  = file_des;
     self->offset    = offset;
     self->len       = len;
@@ -56,24 +63,9 @@ void
 InStream_destroy(InStream *self)
 {
     REFCOUNT_DEC(self->file_des);
+    REFCOUNT_DEC(self->filename);
     free(self->buf);
     free(self);
-}
-
-u32_t
-InStream_decode_vint(char **source_ptr) 
-{
-    u8_t *source = (u8_t*)*source_ptr;
-    u32_t aU32   = 0;
-
-    do {
-        aU32 = (aU32 << 7) | (*source & 0x7f);
-    } while ((*source++ & 0x80) != 0);
-
-    /* set passed-in ptr */
-    *source_ptr = (char*)source;
-
-    return aU32;
 }
 
 static void
@@ -96,7 +88,7 @@ refill(InStream *self)
         const u64_t file_len = InStream_SLength(self);
         if (self->buf_start >= file_len) {
             CONFESS("Read past EOF of %s (start: %"U64P " len %lu)",
-                self->file_des->path, self->buf_start, 
+                self->filename->ptr, self->buf_start, 
                 (unsigned long)file_len);
         }
         self->buf_len = file_len - self->buf_start;
@@ -114,10 +106,13 @@ read_internal(InStream *self, char *dest, u32_t dest_offset, u32_t len)
     u64_t position = InStream_STell(self) + self->offset;
 
     if (file_des->pos != position) {
-        FileDes_FDSeek(file_des, position);
+        if ( !FileDes_FDSeek(file_des, position) ) {
+            CONFESS("Error for '%s': %s", self->filename->ptr, Carp_kerror);
+        }
     }
 
-    FileDes_FDRead(file_des, dest, dest_offset, len);
+    if ( !FileDes_FDRead(file_des, dest, dest_offset, len) )
+        CONFESS("Error for '%s': %s", self->filename->ptr, Carp_kerror);
 }
 
 void
@@ -193,7 +188,7 @@ InStream_read_bytes (InStream *self, char* buf, size_t len)
 }
 
 void
-InStream_read_chars(InStream *self, char *buf, size_t start, size_t len) 
+InStream_read_byteso(InStream *self, char *buf, size_t start, size_t len) 
 {
     buf += start;
     InStream_Read_Bytes(self, buf, len);
@@ -202,9 +197,12 @@ InStream_read_chars(InStream *self, char *buf, size_t start, size_t len)
 u32_t
 InStream_read_int (InStream *self) 
 {
-    u8_t buf[4];
-    InStream_Read_Bytes(self, (char*)buf, 4);
-    return Math_decode_bigend_u32(buf);
+    u32_t retval;
+    InStream_Read_Bytes(self, (char*)&retval, 4);
+#ifdef LITTLE_END 
+    MATH_DECODE_U32(retval, &retval);
+#endif
+    return retval;
 }
 
 u64_t
@@ -212,13 +210,15 @@ InStream_read_long (InStream *self)
 {
     u8_t buf[8];
     u64_t aQuad;
+    u32_t scratch;
 
     /* get 8 bytes from the stream */
     InStream_Read_Bytes(self, (char*)buf, 8);
 
-    aQuad = Math_decode_bigend_u32(buf);
-    aQuad = aQuad << 32;
-    aQuad |= Math_decode_bigend_u32(buf + 4);
+    MATH_DECODE_U32(aQuad, buf);
+    aQuad <<= 32;
+    MATH_DECODE_U32(scratch, (buf + 4));
+    aQuad |= scratch;
 
     return aQuad;
 }
@@ -236,8 +236,6 @@ InStream_read_vint (InStream *self)
     return aU32;
 }
 
-#define VLONG_MAX_BYTES 10
-
 u64_t 
 InStream_read_vlong (InStream *self) 
 {
@@ -251,6 +249,16 @@ InStream_read_vlong (InStream *self)
     return aQuad;
 }
 
+int
+InStream_read_raw_vlong (InStream *self, char *buf) 
+{
+    u8_t *dest = (u8_t*)buf;
+    do {
+        *dest = (u8_t)InStream_Read_Byte(self);
+    } while ((*dest++ & 0x80) != 0);
+    return dest - (u8_t*)buf;
+}
+
 u64_t
 InStream_slength(InStream *self)
 {
@@ -260,14 +268,16 @@ InStream_slength(InStream *self)
 InStream*
 InStream_clone(InStream *self)
 {
-    return InStream_Reopen(self, self->offset, self->len);
+    return InStream_Reopen(self, self->filename, self->offset, self->len);
 }
 
 void
 InStream_sclose(InStream *self)
 {
     if (--self->file_des->stream_count == 0) {
-        FileDes_FDClose(self->file_des);
+        if ( !FileDes_FDClose(self->file_des) ) {
+            CONFESS("Error for '%s': %s", self->filename->ptr, Carp_kerror);
+        }
     }
 }
 

@@ -17,36 +17,36 @@ struct kino_FSFileDes {
     FILE *fhandle;
 };
 
-/* Constructor.
+/* Constructor.  Will return NULL if attempt to open the file fails.
  */
-KINO_FUNCTION(
 kino_FSFileDes*
-kino_FSFileDes_new(const char *mode, const char *class));
+kino_FSFileDes_new(const char *path, int oflags, int fdmode, 
+                   const char *fmode);
 
-KINO_METHOD("Kino_FSFileDes_Destroy",
 void
-kino_FSFileDes_destroy(kino_FSFileDes *self));
+kino_FSFileDes_destroy(kino_FSFileDes *self);
+KINO_METHOD("Kino_FSFileDes_Destroy");
 
-KINO_METHOD("Kino_FSFileDes_FDSeek",
-void
-kino_FSFileDes_fdseek(kino_FSFileDes *self, kino_u64_t target));
+chy_bool_t
+kino_FSFileDes_fdseek(kino_FSFileDes *self, chy_u64_t target);
+KINO_METHOD("Kino_FSFileDes_FDSeek");
 
-KINO_METHOD("Kino_FSFileDes_FDRead",
-void
+chy_bool_t
 kino_FSFileDes_fdread(kino_FSFileDes *self, char *dest, 
-                      kino_u32_t dest_offset, kino_u32_t len));
+                      chy_u32_t dest_offset, chy_u32_t len);
+KINO_METHOD("Kino_FSFileDes_FDRead");
 
-KINO_METHOD("Kino_FSFileDes_FDWrite",
-void
-kino_FSFileDes_fdwrite(kino_FSFileDes *self, char* buf, kino_u32_t len));
+chy_bool_t
+kino_FSFileDes_fdwrite(kino_FSFileDes *self, const char* buf, chy_u32_t len);
+KINO_METHOD("Kino_FSFileDes_FDWrite");
 
-KINO_METHOD("Kino_FSFileDes_FDLength",
-kino_u64_t
-kino_FSFileDes_fdlength(kino_FSFileDes *self));
+chy_u64_t
+kino_FSFileDes_fdlength(kino_FSFileDes *self);
+KINO_METHOD("Kino_FSFileDes_FDLength");
 
-KINO_METHOD("Kino_FSFileDes_FDClose",
-void
-kino_FSFileDes_fdclose(kino_FSFileDes *self));
+chy_bool_t
+kino_FSFileDes_fdclose(kino_FSFileDes *self);
+KINO_METHOD("Kino_FSFileDes_FDClose");
 
 KINO_END_CLASS
 

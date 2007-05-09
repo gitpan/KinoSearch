@@ -10,10 +10,14 @@
 
  ***********************************************/
 
-#ifndef R_KINO_BB
-#define R_KINO_BB 1
+
+
+#ifndef R_KINO_BYTEBUF
+#define R_KINO_BYTEBUF 1
 
 #include "KinoSearch/Util/ByteBuf.h"
+
+#define KINO_BYTEBUF_BOILERPLATE
 
 typedef kino_ByteBuf*
 (*kino_BB_clone_t)(kino_ByteBuf *self);
@@ -21,10 +25,10 @@ typedef kino_ByteBuf*
 typedef void
 (*kino_BB_destroy_t)(kino_ByteBuf *self);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_BB_equals_t)(kino_ByteBuf *self, kino_ByteBuf *other);
 
-typedef kino_i32_t
+typedef chy_i32_t
 (*kino_BB_hash_code_t)(kino_ByteBuf *self);
 
 typedef kino_ByteBuf*
@@ -46,59 +50,72 @@ typedef void
 (*kino_BB_cat_bb_t)(kino_ByteBuf *self, const kino_ByteBuf *other);
 
 typedef void
-(*kino_BB_cat_i64_t)(kino_ByteBuf *self, kino_i64_t num);
+(*kino_BB_cat_i64_t)(kino_ByteBuf *self, chy_i64_t num);
 
-typedef kino_i64_t
+typedef chy_i64_t
 (*kino_BB_to_i64_t)(kino_ByteBuf *self);
 
 typedef void
 (*kino_BB_grow_t)(kino_ByteBuf *self, size_t new_size);
 
-#define Kino_BB_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+typedef chy_bool_t
+(*kino_BB_starts_with_t)(kino_ByteBuf *self, const kino_ByteBuf *prefix);
 
-#define Kino_BB_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+typedef chy_bool_t
+(*kino_BB_ends_with_str_t)(kino_ByteBuf *self, const char *postfix, 
+                      size_t postfix_len);
 
-#define Kino_BB_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_BB_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_BB_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_BB_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_BB_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_BB_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_BB_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_BB_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_BB_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_BB_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_BB_Copy_Str(_self, _arg1, _arg2) \
-    (_self)->_->copy_str((kino_ByteBuf*)_self, _arg1, _arg2)
+#define Kino_BB_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_BB_Copy_BB(_self, _arg1) \
-    (_self)->_->copy_bb((kino_ByteBuf*)_self, _arg1)
+#define Kino_BB_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_BB_Cat_Str(_self, _arg1, _arg2) \
-    (_self)->_->cat_str((kino_ByteBuf*)_self, _arg1, _arg2)
+#define Kino_BB_Copy_Str(self, ptr, size) \
+    (self)->_->copy_str((kino_ByteBuf*)self, ptr, size)
 
-#define Kino_BB_Cat_BB(_self, _arg1) \
-    (_self)->_->cat_bb((kino_ByteBuf*)_self, _arg1)
+#define Kino_BB_Copy_BB(self, other) \
+    (self)->_->copy_bb((kino_ByteBuf*)self, other)
 
-#define Kino_BB_Cat_I64(_self, _arg1) \
-    (_self)->_->cat_i64((kino_ByteBuf*)_self, _arg1)
+#define Kino_BB_Cat_Str(self, ptr, size) \
+    (self)->_->cat_str((kino_ByteBuf*)self, ptr, size)
 
-#define Kino_BB_To_I64(_self) \
-    (_self)->_->to_i64((kino_ByteBuf*)_self)
+#define Kino_BB_Cat_BB(self, other) \
+    (self)->_->cat_bb((kino_ByteBuf*)self, other)
 
-#define Kino_BB_Grow(_self, _arg1) \
-    (_self)->_->grow((kino_ByteBuf*)_self, _arg1)
+#define Kino_BB_Cat_I64(self, num) \
+    (self)->_->cat_i64((kino_ByteBuf*)self, num)
+
+#define Kino_BB_To_I64(self) \
+    (self)->_->to_i64((kino_ByteBuf*)self)
+
+#define Kino_BB_Grow(self, new_size) \
+    (self)->_->grow((kino_ByteBuf*)self, new_size)
+
+#define Kino_BB_Starts_With(self, prefix) \
+    (self)->_->starts_with((kino_ByteBuf*)self, prefix)
+
+#define Kino_BB_Ends_With_Str(self, postfix, postfix_len) \
+    (self)->_->ends_with_str((kino_ByteBuf*)self, postfix, postfix_len)
 
 struct KINO_BYTEBUF_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -115,6 +132,8 @@ struct KINO_BYTEBUF_VTABLE {
     kino_BB_cat_i64_t cat_i64;
     kino_BB_to_i64_t to_i64;
     kino_BB_grow_t grow;
+    kino_BB_starts_with_t starts_with;
+    kino_BB_ends_with_str_t ends_with_str;
 };
 
 extern KINO_BYTEBUF_VTABLE KINO_BYTEBUF;
@@ -149,6 +168,10 @@ extern KINO_BYTEBUF_VTABLE KINO_BYTEBUF;
   #define BB_to_i64 kino_BB_to_i64
   #define BB_grow_t kino_BB_grow_t
   #define BB_grow kino_BB_grow
+  #define BB_starts_with_t kino_BB_starts_with_t
+  #define BB_starts_with kino_BB_starts_with
+  #define BB_ends_with_str_t kino_BB_ends_with_str_t
+  #define BB_ends_with_str kino_BB_ends_with_str
   #define BB_Clone Kino_BB_Clone
   #define BB_Destroy Kino_BB_Destroy
   #define BB_Equals Kino_BB_Equals
@@ -163,15 +186,15 @@ extern KINO_BYTEBUF_VTABLE KINO_BYTEBUF;
   #define BB_Cat_I64 Kino_BB_Cat_I64
   #define BB_To_I64 Kino_BB_To_I64
   #define BB_Grow Kino_BB_Grow
-  #define BYTEBUF KINO_BYTEBUF
+  #define BB_Starts_With Kino_BB_Starts_With
+  #define BB_Ends_With_Str Kino_BB_Ends_With_Str
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_BYTEBUF_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     char * ptr; \
     size_t  len; \
     size_t  cap
-
 
 #ifdef KINO_WANT_BYTEBUF_VTABLE
 KINO_BYTEBUF_VTABLE KINO_BYTEBUF = {
@@ -192,14 +215,21 @@ KINO_BYTEBUF_VTABLE KINO_BYTEBUF = {
     (kino_BB_cat_bb_t)kino_BB_cat_bb,
     (kino_BB_cat_i64_t)kino_BB_cat_i64,
     (kino_BB_to_i64_t)kino_BB_to_i64,
-    (kino_BB_grow_t)kino_BB_grow
+    (kino_BB_grow_t)kino_BB_grow,
+    (kino_BB_starts_with_t)kino_BB_starts_with,
+    (kino_BB_ends_with_str_t)kino_BB_ends_with_str
 };
 #endif /* KINO_WANT_BYTEBUF_VTABLE */
 
-#endif /* R_KINO_BB */
+#undef KINO_BYTEBUF_BOILERPLATE
+
+
+#endif /* R_KINO_BYTEBUF */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

@@ -3,16 +3,15 @@ use warnings;
 
 package KinoSearch::Search::QueryFilter;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
+use base qw( KinoSearch::Search::Filter );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        query => undef,
-        # members
-        cached_bits => undef,
-    );
-}
+our %instance_vars = (
+    # inherited
+    cached_bits => {},
+
+    # constructor params / members
+    query => undef,
+);
 
 use KinoSearch::Search::HitCollector;
 use KinoSearch::Util::BitVector;
@@ -24,32 +23,29 @@ sub init_instance {
 }
 
 sub bits {
-    my ( $self, $searcher ) = @_;
+    my ( $self, $reader ) = @_;
+
+    my $cached_bits = $self->fetch_cached_bits($reader);
 
     # fill the cache
-    if ( !defined $self->{cached_bits} ) {
-        $self->{cached_bits} = KinoSearch::Util::BitVector->new(
-            capacity => $searcher->max_doc );
+    if ( !defined $cached_bits ) {
+        $cached_bits = KinoSearch::Util::BitVector->new(
+            capacity => $reader->max_doc );
+        $self->store_cached_bits( $reader, $cached_bits );
 
         my $collector = KinoSearch::Search::HitCollector->new_bit_coll(
-            bit_vector => $self->{cached_bits} );
+            bit_vector => $cached_bits );
+
+        my $searcher = KinoSearch::Searcher->new( reader => $reader );
 
         # perform the search
-        $searcher->search_hit_collector(
-            weight        => $self->{query}->to_weight($searcher),
-            hit_collector => $collector,
+        $searcher->collect(
+            query     => $self->{query},
+            collector => $collector,
         );
     }
 
-    return $self->{cached_bits};
-}
-
-sub make_collector {
-    my ( $self, $inner_coll, $searcher ) = @_;
-    return KinoSearch::Search::HitCollector->new_filt_coll(
-        filter_bits   => $self->bits($searcher),
-        hit_collector => $inner_coll,
-    );
+    return $cached_bits;
 }
 
 1;

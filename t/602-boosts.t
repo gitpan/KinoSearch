@@ -6,7 +6,7 @@ package ControlSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     content  => 'KinoSearch::Schema::FieldSpec',
     category => 'KinoSearch::Schema::FieldSpec',
 );
@@ -21,7 +21,7 @@ package BoostedFieldSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     content  => 'KinoSearch::Schema::FieldSpec',
     category => 'BoostedField',
 );
@@ -84,18 +84,15 @@ $boosted_doc_invindexer->finish;
 
 my $searcher = KinoSearch::Searcher->new( invindex => $control_invindex, );
 my $hits     = $searcher->search( query            => 'a' );
-$hits->seek( 0, 1 );
-my $hit = $hits->fetch_hit_hashref;
+my $hit      = $hits->fetch_hit_hashref;
 is( $hit->{content}, "x a a a a", "best doc ranks highest with no boosting" );
 
 $searcher = KinoSearch::Searcher->new( invindex => $boosted_field_invindex, );
 $hits     = $searcher->search( query            => 'a' );
-$hits->seek( 0, 3 );
-$hit = $hits->fetch_hit_hashref;
+$hit      = $hits->fetch_hit_hashref;
 is( $hit->{content}, 'a b', "boost in Field spec works" );
 
 $searcher = KinoSearch::Searcher->new( invindex => $boosted_doc_invindex, );
 $hits     = $searcher->search( query            => 'a' );
-$hits->seek( 0, 3 );
-$hit = $hits->fetch_hit_hashref;
+$hit      = $hits->fetch_hit_hashref;
 is( $hit->{content}, 'a b', "boost from \$doc->set_boost works" );

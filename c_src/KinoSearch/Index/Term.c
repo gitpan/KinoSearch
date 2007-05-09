@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_TERM_VTABLE
@@ -59,7 +58,7 @@ Term_get_text(Term *self)
 }
 
 void
-Term_copy(Term *self, Term *other)
+Term_copy(Term *self, const Term *other)
 {
     BB_Copy_BB(self->field, other->field);
     BB_Copy_BB(self->text,  other->text);
@@ -76,7 +75,8 @@ Term_to_string(Term *self)
 {
     ByteBuf *const field = self->field;
     ByteBuf *const text  = self->text;
-    ByteBuf *retval = BB_new(field->len + text->len + 1);
+    u32_t len = field->len + text->len + 1;
+    ByteBuf *retval = BB_new(len);
     char *ptr = retval->ptr;
 
     memcpy(ptr, field->ptr, field->len);
@@ -85,6 +85,7 @@ Term_to_string(Term *self)
     memcpy(ptr, text->ptr, text->len);
     ptr += text->len;
     *ptr++ = '\0';
+    retval->len = len;
 
     return retval;
 }

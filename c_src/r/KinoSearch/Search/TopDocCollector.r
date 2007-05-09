@@ -10,38 +10,42 @@
 
  ***********************************************/
 
-#ifndef R_KINO_TDCOLL
-#define R_KINO_TDCOLL 1
+
+
+#ifndef R_KINO_TOPDOCCOLLECTOR
+#define R_KINO_TOPDOCCOLLECTOR 1
 
 #include "KinoSearch/Search/TopDocCollector.h"
+
+#define KINO_TOPDOCCOLLECTOR_BOILERPLATE
 
 typedef void
 (*kino_TDColl_destroy_t)(kino_TopDocCollector *self);
 
-#define Kino_TDColl_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_TDColl_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_TDColl_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_TDColl_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_TDColl_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_TDColl_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_TDColl_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_TDColl_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_TDColl_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_TDColl_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_TDColl_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_TDColl_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_TDColl_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_TDColl_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_TOPDOCCOLLECTOR_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -67,19 +71,17 @@ extern KINO_TOPDOCCOLLECTOR_VTABLE KINO_TOPDOCCOLLECTOR;
   #define TDColl_Is_A Kino_TDColl_Is_A
   #define TDColl_To_String Kino_TDColl_To_String
   #define TDColl_Serialize Kino_TDColl_Serialize
-  #define TOPDOCCOLLECTOR KINO_TOPDOCCOLLECTOR
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_TOPDOCCOLLECTOR_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     kino_HC_collect_t  collect; \
     kino_HC_release_t  release; \
     void * data; \
     float  min_score; \
-    kino_u32_t  num_hits; \
-    kino_u32_t  total_hits; \
+    chy_u32_t  num_hits; \
+    chy_u32_t  total_hits; \
     struct kino_HitQueue * hit_q
-
 
 #ifdef KINO_WANT_TOPDOCCOLLECTOR_VTABLE
 KINO_TOPDOCCOLLECTOR_VTABLE KINO_TOPDOCCOLLECTOR = {
@@ -97,10 +99,15 @@ KINO_TOPDOCCOLLECTOR_VTABLE KINO_TOPDOCCOLLECTOR = {
 };
 #endif /* KINO_WANT_TOPDOCCOLLECTOR_VTABLE */
 
-#endif /* R_KINO_TDCOLL */
+#undef KINO_TOPDOCCOLLECTOR_BOILERPLATE
+
+
+#endif /* R_KINO_TOPDOCCOLLECTOR */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

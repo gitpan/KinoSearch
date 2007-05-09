@@ -1,12 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 5;
 
-BEGIN { use_ok('KinoSearch::InvIndexer') }
-BEGIN { use_ok('KinoSearch::Store::RAMFolder') }
-BEGIN { use_ok('KinoSearch::Index::DocReader') }
-BEGIN { use_ok('KinoSearch::Index::CompoundFileReader') }
+package TestAnalyzer;
+use base qw( KinoSearch::Analysis::Analyzer );
+sub analyze_batch { $_[1] }
 
 package MySchema::textcomp;
 use base qw( KinoSearch::Schema::FieldSpec );
@@ -31,9 +30,8 @@ sub stored {0}
 
 package MySchema;
 use base qw( KinoSearch::Schema );
-use KinoSearch::Analysis::Analyzer;
 
-our %FIELDS = (
+our %fields = (
     text     => 'KinoSearch::Schema::FieldSpec',
     textcomp => 'MySchema::textcomp',
     bin      => 'MySchema::bin',
@@ -41,10 +39,17 @@ our %FIELDS = (
     unstored => 'MySchema::unstored',
 );
 
-sub analyzer { KinoSearch::Analysis::Analyzer->new }
+sub analyzer { TestAnalyzer->new }
 
 package main;
 use Encode qw( _utf8_on );
+
+use KinoSearch::InvIndexer;
+use KinoSearch::InvIndex;
+use KinoSearch::Store::RAMFolder;
+use KinoSearch::Index::DocReader;
+use KinoSearch::Index::SegInfos;
+use KinoSearch::Index::CompoundFileReader;
 
 # This valid UTF-8 string includes skull and crossbones, null byte -- however,
 # the binary value is not flagged as UTF-8.
@@ -70,7 +75,7 @@ $invindexer->add_doc(
 $invindexer->finish;
 
 my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
-$seg_infos->read_infos($folder);
+$seg_infos->read_infos( folder => $folder );
 my $seg_info = $seg_infos->get_info('_1');
 
 my $cf_reader = KinoSearch::Index::CompoundFileReader->new(

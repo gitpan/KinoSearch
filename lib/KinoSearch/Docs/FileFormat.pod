@@ -20,14 +20,14 @@ segment is made up of several subsections.
                 |
                 |-[segments]------|
                                   |--[seg _0]--|
-                                  |            |--[term list]
+                                  |            |--[lexicon]
                                   |            |--[postings]
                                   |            |--[documents]
                                   |            |--[term vectors]
                                   |            |--[deletions]
                                   |
                                   |--[seg _1]--|
-                                  |            |--[term list]
+                                  |            |--[lexicon]
                                   |            |--[postings]
                                   |            |--[documents]
                                   |            |--[term vectors]
@@ -80,7 +80,7 @@ Processes reserve an invindex by laying claim to the C<write.lock> file.
 
 =head1 A segment's component parts
 
-Each segment can be said to have five logical parts: term list, postings,
+Each segment can be said to have five logical parts: lexicon, postings,
 document storage, term vectors, and deletions.
 
 All segment files use non-human-readable binary formats, but they all adhere
@@ -88,28 +88,28 @@ to the same simple pattern: records stacked end-to-end-to-end.  Given
 unlimited memory, any segment file may be read into an array by running a
 single deserialization function against it over and over until the file ends.
 
-=head2 Term List
+=head2 Lexicon 
 
-A segment's Term List is spread out over several files: one primary file and
+A segment's Lexicon is spread out over several files: one primary file and
 one auxiliary file per indexed field.  
 
 =over
 
 =item *
 
-B<_XXX.tlYYY> - B<T>erm B<L>ist.  Enumerates all the indexed terms for a given
+B<_XXX.lexYYY> - B<LEX>icon.  Enumerates all the indexed terms for a given
 field in the segment.  Terms are sorted by lexical comparison of term text.
 
 =item *
 
-B<_XXX.tlxYYY> - B<T>erm B<L>ist IndeB<X>.  Houses periodic samples from the
-main term list -- typically, every 128th term.  Each entry is augmented by a
-file pointer into the main term list.
+B<_XXX.lexxYYY> - B<LEX>icon IndeB<X>.  Houses periodic samples from the
+main lexicon -- by default, every 128th term.  Each entry is augmented by a
+file pointer into the main lexicon.
 
 =back
 
 
-The files follow the naming pattern C<_XXX.tlYYY>, where "_XXX" is the
+The files follow the naming pattern C<_XXX.lexYYY>, where "_XXX" is the
 segment, and "YYY" is the field number.  So, if you were indexing plain text
 files and you had two fields, only one of which was indexed...
 
@@ -120,74 +120,45 @@ files and you had two fields, only one of which was indexed...
     
     package MySchema;
     use base qw( KinoSearch::Schema );
-    our %FIELDS  = (
+    our %fields  = (
         content  => 'KinoSearch::Schema::FieldSpec',
         filepath => 'MySchema::UnIndexed',
     );
 
-... there would only be 1 pair of term list files per segment, "_XXX.tl0" and
-"_XXX.tlx0", containing in this example the terms for the "content" field.
+... there would only be 1 pair of lexicon files per segment, "_XXX.lex0" and
+"_XXX.lexx0", containing in this example the terms for the "content" field.
 
 
-When a Searcher is launched, each .tlx file is decoded and cached as an
-in-memory array of Terms.  To locate a term in the main term list, first a
-binary search is performed against the term list index array.  The results of
-this search point to a small slice of the main on-disk term list file, which
+When a Searcher is launched, each .lexx file is decoded and cached as an
+in-memory array of Terms.  To locate a term in the main lexicon, first a
+binary search is performed against the lexicon-index array.  The results of
+this search point to a small slice of the main on-disk lexicon file, which
 is then scanned linearly.
 
 =head2 Postings
 
-"Posting" is a technical term from the field of information retrieval, defined
-as a single instance of a one term indexing one document.  If you are looking
-at the index in the back of a book, and you see that "freedom" is referenced
-on pages 8, 86, and 240, that would be three postings, which taken together
-form a "posting list".  The same terminology applies to an index in electronic
-form.
+L<Posting|KinoSearch::Posting> is a technical term from the field of
+L<information retrieval|KinoSearch::Docs::IRTheory>, defined as a single
+instance of a one term indexing one document.  If you are looking at the index
+in the back of a book, and you see that "freedom" is referenced on pages 8,
+86, and 240, that would be three postings, which taken together form a
+"posting list".  The same terminology applies to an index in electronic form.
 
 Each segment has one postings file per indexed field.  The file names follow
-the same pattern as the term list files, but with a "p": C<_XXX.pYYY>.
+the same pattern as the lexicon files, but with a "p": C<_XXX.pYYY>.
 
 When a search is performed for a single term, first that term is looked up in
-the term list.  If the term exists in a segment, the record in the term list
-will contain information about which postings file to look at and where to
-look.
+the lexicon.  If the term exists in a segment, the record in the lexicon will
+contain information about which postings file to look at and where to look.
 
-The first thing any Posting record tells you is a document number.  By
-iterating over all the Postings associated with a term, you can find all the
+The first thing any posting record tells you is a document number.  By
+iterating over all the postings associated with a term, you can find all the
 documents that match that term, a process which is analogous to looking up
-page numbers in a book's index.
-
-However, each Posting in KinoSearch typically contains other information in
-addition to document number.  
-
-=over 
-
-=item *
-
-B<doc_num> - Document number.
-
-=item *
-
-B<field_boost> A multiplier which applies to this term in this field, any
-position.  By default, each position's boost is calculated based on field
-length in combination with document boost and field boost.
-
-=item *
-
-B<freq> - The number of times the term appears in the document.
-
-=item *
-
-B<positions> - The positions, specified by token number, that a term appears
-at in the document.  If C<freq> is 9, that implies that there will be 9
-positions.
-
-=item *
-
-B<pos_boosts> - Optional. For some applications, it makes sense to store boost
-per-position rather than apply the same boost to each position.
-
-=back
+page numbers in a book's index.  However, each posting record typically
+contains other information in addition to document number, depending on what
+subclass of Posting the field is spec'd to use: the number of times the term
+appears within the field or "freq", the positions at which the term occurs
+within the field, etc.
 
 =head2 Documents
 
@@ -216,7 +187,7 @@ and deserializes the document.
 
 Not all information associated with the original document can be recovered at
 search-time.  For instance, if a field is spec'd as C<indexed> but not
-C<stored>, its terms will appear in the term list, but its original content
+C<stored>, its terms will appear in the lexicon, but its original content
 will I<not> be found along with the rest of the document in the relevant
 _XXX.ds file.
 
@@ -258,9 +229,9 @@ the deletions for segment "_aa".
 =head1 Compound File
 
 If you peer inside an index directory, you won't actually find any files with
-the extensions C<tlYYY>, C<tlxYYY>, C<pYYY>, C<ds>, or C<dsx>, unless there is
-a live indexing process underway.  What you will find is one file per segment
-named "_XXX.cf". (cf => B<C>ompound B<F>ile)
+the extensions C<lexYYY>, C<lexxYYY>, C<pYYY>, C<ds>, or C<dsx>, unless there
+is a live indexing process underway.  What you will find is one file per
+segment named "_XXX.cf". (cf => B<C>ompound B<F>ile)
 
 To minimize the need for file descriptors at search-time, KinoSearch
 concatenates all per-segment files onto each other at the close of each
@@ -286,15 +257,15 @@ a given segment plays out:
 
 =item 1
 
-The searcher asks the relevant TermListIndex file, "Do you know anything about
-'freedom'?"  TermListIndex replies, "Can't say for sure, but if the TermList
-file does, 'freedom' is probably somewhere around byte 21008".  
+The searcher asks the relevant Lexicon Index file, "Do you know anything about
+'freedom'?"  Lexicon Index replies, "Can't say for sure, but if the main
+Lexicon file does, 'freedom' is probably somewhere around byte 21008".  
 
 =item 2
 
-The TermList tells the searcher "One moment, let me scan our records... Yes,
-we have 2 documents which contain 'freedom'.  You'll find them in the _6.p2
-Postings file starting at byte 66991."
+The main Lexicon tells the searcher "One moment, let me scan our records...
+Yes, we have 2 documents which contain 'freedom'.  You'll find them in the
+_6.p2 Postings file starting at byte 66991."
 
 =item 3
 

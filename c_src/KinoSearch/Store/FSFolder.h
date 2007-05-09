@@ -20,52 +20,56 @@ struct kino_FSFolder {
     KINO_FOLDER_MEMBER_VARS;
 };
 
-KINO_FUNCTION(
 kino_FSFolder*
-kino_FSFolder_new(const struct kino_ByteBuf *path));
+kino_FSFolder_new(const struct kino_ByteBuf *path);
 
-KINO_METHOD("Kino_FSFolder_Destroy",
 void
-kino_FSFolder_destroy(kino_FSFolder *self));
+kino_FSFolder_destroy(kino_FSFolder *self);
+KINO_METHOD("Kino_FSFolder_Destroy");
 
-KINO_METHOD("Kino_FSFolder_Open_OutStream",
 struct kino_OutStream*
 kino_FSFolder_open_outstream(kino_FSFolder *self, 
-                             const struct kino_ByteBuf *filename));
+                             const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_FSFolder_Open_OutStream");
 
-KINO_METHOD("Kino_FSFolder_Open_InStream",
+struct kino_OutStream*
+kino_FSFolder_safe_open_outstream(kino_FSFolder *self, 
+                                  const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_FSFolder_Safe_Open_OutStream");
+
 struct kino_InStream*
 kino_FSFolder_open_instream(kino_FSFolder *self,   
-                            const struct kino_ByteBuf *filename));
+                            const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_FSFolder_Open_InStream");
 
-KINO_METHOD("Kino_FSFolder_List",
 struct kino_VArray*
-kino_FSFolder_list(kino_FSFolder *self));
+kino_FSFolder_list(kino_FSFolder *self);
+KINO_METHOD("Kino_FSFolder_List");
 
-KINO_METHOD("Kino_FSFolder_File_Exists",
-kino_bool_t
+chy_bool_t
 kino_FSFolder_file_exists(kino_FSFolder *self, 
-                          const struct kino_ByteBuf *filename));
+                          const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_FSFolder_File_Exists");
 
-KINO_METHOD("Kino_FSFolder_Rename_File",
 void
 kino_FSFolder_rename_file(kino_FSFolder *self, 
                           const struct kino_ByteBuf* from, 
-                          const struct kino_ByteBuf *to));
+                          const struct kino_ByteBuf *to);
+KINO_METHOD("Kino_FSFolder_Rename_File");
 
-KINO_METHOD("Kino_FSFolder_Delete_File",
 void
 kino_FSFolder_delete_file(kino_FSFolder *self, 
-                          const struct kino_ByteBuf *filename));
+                          const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_FSFolder_Delete_File");
 
-KINO_METHOD("Kino_FSFolder_Slurp_File",
 struct kino_ByteBuf*
 kino_FSFolder_slurp_file(kino_FSFolder *self, 
-                         const struct kino_ByteBuf *filename));
+                         const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_FSFolder_Slurp_File");
 
-KINO_METHOD("Kino_FSFolder_Close_F",
 void
-kino_FSFolder_close_f(kino_FSFolder *self));
+kino_FSFolder_close_f(kino_FSFolder *self);
+KINO_METHOD("Kino_FSFolder_Close_F");
 
 KINO_END_CLASS
 

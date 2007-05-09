@@ -5,8 +5,7 @@ package KinoSearch::Search::FieldDocCollator;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN { __PACKAGE__->init_instance_vars() }
-our %instance_vars;
+our %instance_vars = ();
 
 our %add_defaults = (
     sort_cache => undef,
@@ -24,7 +23,7 @@ MODULE = KinoSearch    PACKAGE = KinoSearch::Search::FieldDocCollator
 kino_FieldDocCollator*
 new(...)
 CODE:
-    KINO_UNUSED_VAR(items);
+    CHY_UNUSED_VAR(items);
     RETVAL = kino_FDocCollator_new();
 OUTPUT: RETVAL
 
@@ -35,7 +34,7 @@ PPCODE:
 {
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Search::FieldDocCollator::add_defaults");
-    kino_bool_t reverse = 0 != extract_iv(args_hash, SNL("reverse"));
+    chy_bool_t reverse = 0 != extract_iv(args_hash, SNL("reverse"));
     kino_IntMap *sort_cache = extract_obj(args_hash, SNL("sort_cache"),
         "KinoSearch::Util::IntMap");
     

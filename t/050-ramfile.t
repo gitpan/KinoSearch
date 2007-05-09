@@ -1,14 +1,12 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 8;
 
-BEGIN {
-    use_ok('KinoSearch::Store::FileDes');
-    use_ok('KinoSearch::Store::RAMFileDes');
-    use_ok('KinoSearch::Store::OutStream');
-    use_ok('KinoSearch::Store::InStream');
-}
+use KinoSearch::Store::FileDes;
+use KinoSearch::Store::RAMFileDes;
+use KinoSearch::Store::OutStream;
+use KinoSearch::Store::InStream;
 
 my ( $file_des, $outstream, $instream, $foo );
 
@@ -58,4 +56,3 @@ $instream = KinoSearch::Store::InStream->new($file_des);
 is( $instream->lu_read('a3'), 'foo', "OutStream write after sseek" );
 $instream->sseek(1024);
 is( $instream->lu_read('a3'), 'foo', "InStream sseek" );
-

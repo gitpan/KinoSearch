@@ -10,10 +10,14 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_RAMFOLDER
 #define R_KINO_RAMFOLDER 1
 
 #include "KinoSearch/Store/RAMFolder.h"
+
+#define KINO_RAMFOLDER_BOILERPLATE
 
 typedef void
 (*kino_RAMFolder_destroy_t)(kino_RAMFolder *self);
@@ -22,6 +26,10 @@ typedef struct kino_OutStream*
 (*kino_RAMFolder_open_outstream_t)(kino_RAMFolder *self, 
                               const struct kino_ByteBuf *filename);
 
+typedef struct kino_OutStream*
+(*kino_RAMFolder_safe_open_outstream_t)(kino_RAMFolder *self, 
+                                   const struct kino_ByteBuf *filename);
+
 typedef struct kino_InStream*
 (*kino_RAMFolder_open_instream_t)(kino_RAMFolder *self,   
                              const struct kino_ByteBuf *filename);
@@ -29,7 +37,7 @@ typedef struct kino_InStream*
 typedef struct kino_VArray*
 (*kino_RAMFolder_list_t)(kino_RAMFolder *self);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_RAMFolder_file_exists_t)(kino_RAMFolder *self, 
                            const struct kino_ByteBuf *filename);
 
@@ -49,63 +57,60 @@ typedef struct kino_ByteBuf*
 typedef void
 (*kino_RAMFolder_close_f_t)(kino_RAMFolder *self);
 
-#define Kino_RAMFolder_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_RAMFolder_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_RAMFolder_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_RAMFolder_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_RAMFolder_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_RAMFolder_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_RAMFolder_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_RAMFolder_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_RAMFolder_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_RAMFolder_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_RAMFolder_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_RAMFolder_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_RAMFolder_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_RAMFolder_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_RAMFolder_Open_OutStream(_self, _arg1) \
-    (_self)->_->open_outstream((kino_Folder*)_self, _arg1)
+#define Kino_RAMFolder_Open_OutStream(self, filename) \
+    (self)->_->open_outstream((kino_Folder*)self, filename)
 
-#define Kino_RAMFolder_Open_InStream(_self, _arg1) \
-    (_self)->_->open_instream((kino_Folder*)_self, _arg1)
+#define Kino_RAMFolder_Safe_Open_OutStream(self, filename) \
+    (self)->_->safe_open_outstream((kino_Folder*)self, filename)
 
-#define Kino_RAMFolder_List(_self) \
-    (_self)->_->list((kino_Folder*)_self)
+#define Kino_RAMFolder_Open_InStream(self, filename) \
+    (self)->_->open_instream((kino_Folder*)self, filename)
 
-#define Kino_RAMFolder_File_Exists(_self, _arg1) \
-    (_self)->_->file_exists((kino_Folder*)_self, _arg1)
+#define Kino_RAMFolder_List(self) \
+    (self)->_->list((kino_Folder*)self)
 
-#define Kino_RAMFolder_Rename_File(_self, _arg1, _arg2) \
-    (_self)->_->rename_file((kino_Folder*)_self, _arg1, _arg2)
+#define Kino_RAMFolder_File_Exists(self, filename) \
+    (self)->_->file_exists((kino_Folder*)self, filename)
 
-#define Kino_RAMFolder_Delete_File(_self, _arg1) \
-    (_self)->_->delete_file((kino_Folder*)_self, _arg1)
+#define Kino_RAMFolder_Rename_File(self, from, to) \
+    (self)->_->rename_file((kino_Folder*)self, from, to)
 
-#define Kino_RAMFolder_Slurp_File(_self, _arg1) \
-    (_self)->_->slurp_file((kino_Folder*)_self, _arg1)
+#define Kino_RAMFolder_Delete_File(self, filename) \
+    (self)->_->delete_file((kino_Folder*)self, filename)
 
-#define Kino_RAMFolder_Latest_Gen(_self, _arg1, _arg2) \
-    (_self)->_->latest_gen((kino_Folder*)_self, _arg1, _arg2)
+#define Kino_RAMFolder_Slurp_File(self, filename) \
+    (self)->_->slurp_file((kino_Folder*)self, filename)
 
-#define Kino_RAMFolder_Make_Lock(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->make_lock((kino_Folder*)_self, _arg1, _arg2, _arg3)
+#define Kino_RAMFolder_Latest_Gen(self, base, ext) \
+    (self)->_->latest_gen((kino_Folder*)self, base, ext)
 
-#define Kino_RAMFolder_Run_Locked(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    (_self)->_->run_locked((kino_Folder*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
-
-#define Kino_RAMFolder_Close_F(_self) \
-    (_self)->_->close_f((kino_Folder*)_self)
+#define Kino_RAMFolder_Close_F(self) \
+    (self)->_->close_f((kino_Folder*)self)
 
 struct KINO_RAMFOLDER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -116,6 +121,7 @@ struct KINO_RAMFOLDER_VTABLE {
     kino_Obj_to_string_t to_string;
     kino_Obj_serialize_t serialize;
     kino_Folder_open_outstream_t open_outstream;
+    kino_Folder_safe_open_outstream_t safe_open_outstream;
     kino_Folder_open_instream_t open_instream;
     kino_Folder_list_t list;
     kino_Folder_file_exists_t file_exists;
@@ -123,8 +129,6 @@ struct KINO_RAMFOLDER_VTABLE {
     kino_Folder_delete_file_t delete_file;
     kino_Folder_slurp_file_t slurp_file;
     kino_Folder_latest_gen_t latest_gen;
-    kino_Folder_make_lock_t make_lock;
-    kino_Folder_run_locked_t run_locked;
     kino_Folder_close_f_t close_f;
 };
 
@@ -136,6 +140,7 @@ extern KINO_RAMFOLDER_VTABLE KINO_RAMFOLDER;
   #define RAMFolder_new kino_RAMFolder_new
   #define RAMFolder_destroy kino_RAMFolder_destroy
   #define RAMFolder_open_outstream kino_RAMFolder_open_outstream
+  #define RAMFolder_safe_open_outstream kino_RAMFolder_safe_open_outstream
   #define RAMFolder_open_instream kino_RAMFolder_open_instream
   #define RAMFolder_list kino_RAMFolder_list
   #define RAMFolder_file_exists kino_RAMFolder_file_exists
@@ -151,6 +156,7 @@ extern KINO_RAMFOLDER_VTABLE KINO_RAMFOLDER;
   #define RAMFolder_To_String Kino_RAMFolder_To_String
   #define RAMFolder_Serialize Kino_RAMFolder_Serialize
   #define RAMFolder_Open_OutStream Kino_RAMFolder_Open_OutStream
+  #define RAMFolder_Safe_Open_OutStream Kino_RAMFolder_Safe_Open_OutStream
   #define RAMFolder_Open_InStream Kino_RAMFolder_Open_InStream
   #define RAMFolder_List Kino_RAMFolder_List
   #define RAMFolder_File_Exists Kino_RAMFolder_File_Exists
@@ -158,17 +164,13 @@ extern KINO_RAMFOLDER_VTABLE KINO_RAMFOLDER;
   #define RAMFolder_Delete_File Kino_RAMFolder_Delete_File
   #define RAMFolder_Slurp_File Kino_RAMFolder_Slurp_File
   #define RAMFolder_Latest_Gen Kino_RAMFolder_Latest_Gen
-  #define RAMFolder_Make_Lock Kino_RAMFolder_Make_Lock
-  #define RAMFolder_Run_Locked Kino_RAMFolder_Run_Locked
   #define RAMFolder_Close_F Kino_RAMFolder_Close_F
-  #define RAMFOLDER KINO_RAMFOLDER
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_RAMFOLDER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_ByteBuf * path; \
     struct kino_Hash * ram_files
-
 
 #ifdef KINO_WANT_RAMFOLDER_VTABLE
 KINO_RAMFOLDER_VTABLE KINO_RAMFOLDER = {
@@ -184,6 +186,7 @@ KINO_RAMFOLDER_VTABLE KINO_RAMFOLDER = {
     (kino_Obj_to_string_t)kino_Obj_to_string,
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_Folder_open_outstream_t)kino_RAMFolder_open_outstream,
+    (kino_Folder_safe_open_outstream_t)kino_RAMFolder_safe_open_outstream,
     (kino_Folder_open_instream_t)kino_RAMFolder_open_instream,
     (kino_Folder_list_t)kino_RAMFolder_list,
     (kino_Folder_file_exists_t)kino_RAMFolder_file_exists,
@@ -191,16 +194,19 @@ KINO_RAMFOLDER_VTABLE KINO_RAMFOLDER = {
     (kino_Folder_delete_file_t)kino_RAMFolder_delete_file,
     (kino_Folder_slurp_file_t)kino_RAMFolder_slurp_file,
     (kino_Folder_latest_gen_t)kino_Folder_latest_gen,
-    (kino_Folder_make_lock_t)kino_Folder_make_lock,
-    (kino_Folder_run_locked_t)kino_Folder_run_locked,
     (kino_Folder_close_f_t)kino_RAMFolder_close_f
 };
 #endif /* KINO_WANT_RAMFOLDER_VTABLE */
 
+#undef KINO_RAMFOLDER_BOILERPLATE
+
+
 #endif /* R_KINO_RAMFOLDER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

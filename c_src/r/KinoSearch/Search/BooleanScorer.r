@@ -10,69 +10,77 @@
 
  ***********************************************/
 
-#ifndef R_KINO_BOOLSCORER
-#define R_KINO_BOOLSCORER 1
+
+
+#ifndef R_KINO_BOOLEANSCORER
+#define R_KINO_BOOLEANSCORER 1
 
 #include "KinoSearch/Search/BooleanScorer.h"
+
+#define KINO_BOOLEANSCORER_BOILERPLATE
 
 typedef void
 (*kino_BoolScorer_destroy_t)(kino_BooleanScorer *self);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_BoolScorer_next_t)(kino_BooleanScorer *self);
 
-typedef kino_u32_t
+typedef chy_u32_t
 (*kino_BoolScorer_doc_t)(kino_BooleanScorer *self);
 
-typedef float
-(*kino_BoolScorer_score_t)(kino_BooleanScorer *self);
+typedef struct kino_Tally*
+(*kino_BoolScorer_tally_t)(kino_BooleanScorer *self);
+
+typedef chy_bool_t
+(*kino_BoolScorer_skip_to_t)(kino_BooleanScorer *self, chy_u32_t target);
 
 typedef void
 (*kino_BoolScorer_add_subscorer_t)(kino_BooleanScorer* self, 
-                              kino_Scorer* subscorer, char *occur);
+                              kino_Scorer* subscorer, 
+                              const struct kino_ByteBuf *occur);
 
-#define Kino_BoolScorer_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_BoolScorer_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_BoolScorer_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_BoolScorer_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_BoolScorer_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_BoolScorer_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_BoolScorer_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_BoolScorer_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_BoolScorer_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_BoolScorer_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_BoolScorer_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_BoolScorer_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_BoolScorer_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_BoolScorer_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_BoolScorer_Next(_self) \
-    (_self)->_->next((kino_Scorer*)_self)
+#define Kino_BoolScorer_Next(self) \
+    (self)->_->next((kino_Scorer*)self)
 
-#define Kino_BoolScorer_Doc(_self) \
-    (_self)->_->doc((kino_Scorer*)_self)
+#define Kino_BoolScorer_Doc(self) \
+    (self)->_->doc((kino_Scorer*)self)
 
-#define Kino_BoolScorer_Score(_self) \
-    (_self)->_->score((kino_Scorer*)_self)
+#define Kino_BoolScorer_Tally(self) \
+    (self)->_->tally((kino_Scorer*)self)
 
-#define Kino_BoolScorer_Skip_To(_self, _arg1) \
-    (_self)->_->skip_to((kino_Scorer*)_self, _arg1)
+#define Kino_BoolScorer_Skip_To(self, target) \
+    (self)->_->skip_to((kino_Scorer*)self, target)
 
-#define Kino_BoolScorer_Score_Batch(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    (_self)->_->score_batch((kino_Scorer*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
+#define Kino_BoolScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
+    (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
-#define Kino_BoolScorer_Add_Subscorer(_self, _arg1, _arg2) \
-    (_self)->_->add_subscorer((kino_BooleanScorer*)_self, _arg1, _arg2)
+#define Kino_BoolScorer_Add_Subscorer(self, subscorer, occur) \
+    (self)->_->add_subscorer((kino_BooleanScorer*)self, subscorer, occur)
 
 struct KINO_BOOLEANSCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -84,9 +92,9 @@ struct KINO_BOOLEANSCORER_VTABLE {
     kino_Obj_serialize_t serialize;
     kino_Scorer_next_t next;
     kino_Scorer_doc_t doc;
-    kino_Scorer_score_t score;
+    kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
-    kino_Scorer_score_batch_t score_batch;
+    kino_Scorer_collect_t collect;
     kino_BoolScorer_add_subscorer_t add_subscorer;
 };
 
@@ -99,7 +107,8 @@ extern KINO_BOOLEANSCORER_VTABLE KINO_BOOLEANSCORER;
   #define BoolScorer_destroy kino_BoolScorer_destroy
   #define BoolScorer_next kino_BoolScorer_next
   #define BoolScorer_doc kino_BoolScorer_doc
-  #define BoolScorer_score kino_BoolScorer_score
+  #define BoolScorer_tally kino_BoolScorer_tally
+  #define BoolScorer_skip_to kino_BoolScorer_skip_to
   #define BoolScorer_add_subscorer_t kino_BoolScorer_add_subscorer_t
   #define BoolScorer_add_subscorer kino_BoolScorer_add_subscorer
   #define BoolScorer_Clone Kino_BoolScorer_Clone
@@ -111,29 +120,25 @@ extern KINO_BOOLEANSCORER_VTABLE KINO_BOOLEANSCORER;
   #define BoolScorer_Serialize Kino_BoolScorer_Serialize
   #define BoolScorer_Next Kino_BoolScorer_Next
   #define BoolScorer_Doc Kino_BoolScorer_Doc
-  #define BoolScorer_Score Kino_BoolScorer_Score
+  #define BoolScorer_Tally Kino_BoolScorer_Tally
   #define BoolScorer_Skip_To Kino_BoolScorer_Skip_To
-  #define BoolScorer_Score_Batch Kino_BoolScorer_Score_Batch
+  #define BoolScorer_Collect Kino_BoolScorer_Collect
   #define BoolScorer_Add_Subscorer Kino_BoolScorer_Add_Subscorer
-  #define BOOLEANSCORER KINO_BOOLEANSCORER
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_BOOLEANSCORER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_Similarity * sim; \
-    struct kino_ByteBuf * raw_prox_bb; \
-    kino_u32_t * prox; \
-    kino_u32_t  num_prox; \
-    kino_u32_t  doc_num; \
-    kino_u32_t  end; \
-    kino_u32_t  max_coord; \
+    struct kino_Scorer * scorer; \
+    struct kino_Tally * tally; \
+    struct kino_VArray * and_scorers; \
+    struct kino_VArray * or_scorers; \
+    struct kino_VArray * not_scorers; \
+    chy_u32_t  max_coord; \
     float * coord_factors; \
-    kino_u32_t  required_mask; \
-    kino_u32_t  prohibited_mask; \
-    kino_u32_t  next_mask; \
-    kino_MatchBatch * mbatch; \
-    kino_BoolSubScorer * subscorers
-
+    kino_Scorer_next_t  do_next; \
+    kino_Scorer_skip_to_t  do_skip_to; \
+    chy_bool_t  first_time
 
 #ifdef KINO_WANT_BOOLEANSCORER_VTABLE
 KINO_BOOLEANSCORER_VTABLE KINO_BOOLEANSCORER = {
@@ -150,17 +155,22 @@ KINO_BOOLEANSCORER_VTABLE KINO_BOOLEANSCORER = {
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_Scorer_next_t)kino_BoolScorer_next,
     (kino_Scorer_doc_t)kino_BoolScorer_doc,
-    (kino_Scorer_score_t)kino_BoolScorer_score,
-    (kino_Scorer_skip_to_t)kino_Scorer_skip_to,
-    (kino_Scorer_score_batch_t)kino_Scorer_score_batch,
+    (kino_Scorer_tally_t)kino_BoolScorer_tally,
+    (kino_Scorer_skip_to_t)kino_BoolScorer_skip_to,
+    (kino_Scorer_collect_t)kino_Scorer_collect,
     (kino_BoolScorer_add_subscorer_t)kino_BoolScorer_add_subscorer
 };
 #endif /* KINO_WANT_BOOLEANSCORER_VTABLE */
 
-#endif /* R_KINO_BOOLSCORER */
+#undef KINO_BOOLEANSCORER_BOILERPLATE
+
+
+#endif /* R_KINO_BOOLEANSCORER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

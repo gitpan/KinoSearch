@@ -10,50 +10,57 @@
 
  ***********************************************/
 
-#ifndef R_KINO_TINFO
-#define R_KINO_TINFO 1
+
+
+#ifndef R_KINO_TERMINFO
+#define R_KINO_TERMINFO 1
 
 #include "KinoSearch/Index/TermInfo.h"
 
+#define KINO_TERMINFO_BOILERPLATE
+
 typedef kino_TermInfo*
 (*kino_TInfo_clone_t)(kino_TermInfo *self);
+
+typedef struct kino_ByteBuf*
+(*kino_TInfo_to_string_t)(kino_TermInfo *self);
 
 typedef void
 (*kino_TInfo_reset_t)(kino_TermInfo *self);
 
 typedef void
-(*kino_TInfo_copy_t)(kino_TermInfo *self, kino_TermInfo *other);
+(*kino_TInfo_copy_t)(kino_TermInfo *self, const kino_TermInfo *other);
 
-#define Kino_TInfo_Clone(_self) \
-    kino_TInfo_clone((kino_TermInfo*)_self)
+#define Kino_TInfo_Clone(self) \
+    kino_TInfo_clone((kino_TermInfo*)self)
 
-#define Kino_TInfo_Destroy(_self) \
-    kino_Obj_destroy((kino_Obj*)_self)
+#define Kino_TInfo_Destroy(self) \
+    kino_Obj_destroy((kino_Obj*)self)
 
-#define Kino_TInfo_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_TInfo_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_TInfo_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_TInfo_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_TInfo_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_TInfo_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_TInfo_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_TInfo_To_String(self) \
+    kino_TInfo_to_string((kino_TermInfo*)self)
 
-#define Kino_TInfo_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_TInfo_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_TInfo_Reset(_self) \
-    kino_TInfo_reset((kino_TermInfo*)_self)
+#define Kino_TInfo_Reset(self) \
+    kino_TInfo_reset((kino_TermInfo*)self)
 
-#define Kino_TInfo_Copy(_self, _arg1) \
-    kino_TInfo_copy((kino_TermInfo*)_self, _arg1)
+#define Kino_TInfo_Copy(self, other) \
+    kino_TInfo_copy((kino_TermInfo*)self, other)
 
 struct KINO_TERMINFO_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -75,6 +82,8 @@ extern KINO_TERMINFO_VTABLE KINO_TERMINFO;
   #define TInfo_new kino_TInfo_new
   #define TInfo_clone_t kino_TInfo_clone_t
   #define TInfo_clone kino_TInfo_clone
+  #define TInfo_to_string_t kino_TInfo_to_string_t
+  #define TInfo_to_string kino_TInfo_to_string
   #define TInfo_reset_t kino_TInfo_reset_t
   #define TInfo_reset kino_TInfo_reset
   #define TInfo_copy_t kino_TInfo_copy_t
@@ -88,17 +97,14 @@ extern KINO_TERMINFO_VTABLE KINO_TERMINFO;
   #define TInfo_Serialize Kino_TInfo_Serialize
   #define TInfo_Reset Kino_TInfo_Reset
   #define TInfo_Copy Kino_TInfo_Copy
-  #define TERMINFO KINO_TERMINFO
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_TERMINFO_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_i32_t  field_num; \
-    kino_i32_t  doc_freq; \
-    kino_u64_t  post_fileptr; \
-    kino_i32_t  skip_offset; \
-    kino_u64_t  index_fileptr
-
+    chy_u32_t  refcount; \
+    chy_i32_t  doc_freq; \
+    chy_u64_t  post_filepos; \
+    chy_u64_t  skip_filepos; \
+    chy_u64_t  index_filepos
 
 #ifdef KINO_WANT_TERMINFO_VTABLE
 KINO_TERMINFO_VTABLE KINO_TERMINFO = {
@@ -111,17 +117,22 @@ KINO_TERMINFO_VTABLE KINO_TERMINFO = {
     (kino_Obj_equals_t)kino_Obj_equals,
     (kino_Obj_hash_code_t)kino_Obj_hash_code,
     (kino_Obj_is_a_t)kino_Obj_is_a,
-    (kino_Obj_to_string_t)kino_Obj_to_string,
+    (kino_Obj_to_string_t)kino_TInfo_to_string,
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_TInfo_reset_t)kino_TInfo_reset,
     (kino_TInfo_copy_t)kino_TInfo_copy
 };
 #endif /* KINO_WANT_TERMINFO_VTABLE */
 
-#endif /* R_KINO_TINFO */
+#undef KINO_TERMINFO_BOILERPLATE
+
+
+#endif /* R_KINO_TERMINFO */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

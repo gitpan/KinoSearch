@@ -1,8 +1,9 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define KINO_WANT_FSFOLDER_VTABLE
 #include "KinoSearch/Store/FSFolder.r"
@@ -14,10 +15,12 @@
 static ByteBuf*
 full_path(FSFolder *self, const ByteBuf *filename);
 
+static OutStream*
+do_open_outstream(FSFolder *self, const ByteBuf *filename, int oflags);
+
 FSFolder*
 FSFolder_new(const ByteBuf *path) 
 {
-
     CREATE(self, FSFolder, FSFOLDER);
     
     /* copy path, strip trailing slash or equivalent */
@@ -35,14 +38,41 @@ FSFolder_destroy(FSFolder *self)
     free(self);
 }
 
+#ifdef O_LARGEFILE
+static const int base_write_flags 
+    = O_CREAT | O_TRUNC | O_RDWR | O_NONBLOCK | O_LARGEFILE; 
+static const int base_read_flags = O_RDONLY | O_NONBLOCK | O_LARGEFILE; 
+#else
+static const int base_write_flags = O_CREAT | O_TRUNC | O_RDWR | O_NONBLOCK;
+static const int base_read_flags = O_RDONLY | O_NONBLOCK; 
+#endif
+
 OutStream*
 FSFolder_open_outstream(FSFolder *self, const ByteBuf *filename)
 {
-    ByteBuf *path = full_path(self, filename);
-    FSFileDes *file_des = FSFileDes_new(path->ptr, "wb+");
-    OutStream *outstream = OutStream_new((FileDes*)file_des);
+    OutStream *outstream 
+        = do_open_outstream(self, filename, base_write_flags);
+    if (outstream == NULL) 
+        CONFESS("Can't open '%s': %s", filename->ptr, strerror(errno));
+    return outstream;
+}
 
-    /* clean up; leave 1 refcount in file_des's new owner, outstream */
+OutStream*
+FSFolder_safe_open_outstream(FSFolder *self, const ByteBuf *filename)
+{
+    return do_open_outstream(self, filename, base_write_flags | O_EXCL);
+}
+
+static OutStream*
+do_open_outstream(FSFolder *self, const ByteBuf *filename, int oflags)
+{
+    ByteBuf *path        = full_path(self, filename);
+    FSFileDes *file_des  = FSFileDes_new(path->ptr, oflags, 0600, "wb+");
+    OutStream *outstream = file_des == NULL
+        ? NULL
+        : OutStream_new((FileDes*)file_des);
+
+    /* leave 1 refcount in file_des's new owner, outstream */
     REFCOUNT_DEC(file_des);
     REFCOUNT_DEC(path);
 
@@ -52,13 +82,20 @@ FSFolder_open_outstream(FSFolder *self, const ByteBuf *filename)
 InStream*
 FSFolder_open_instream(FSFolder *self, const ByteBuf *filename)
 {
+    InStream *instream = NULL;
     ByteBuf *path = full_path(self, filename);
-    FSFileDes *file_des = FSFileDes_new(path->ptr, "rb");
-    InStream *const instream = InStream_new((FileDes*)file_des);
+    FSFileDes *file_des 
+        = FSFileDes_new(path->ptr, base_read_flags, 0600, "rb");
 
-    /* clean up; leave 1 refcount in file_des's new owner, outstream */
-    REFCOUNT_DEC(file_des);
     REFCOUNT_DEC(path);
+
+    if (file_des == NULL)
+        CONFESS("Can't open '%s': %s", filename->ptr, strerror(errno));
+    else
+        instream = InStream_new((FileDes*)file_des);
+
+    /* leave 1 refcount in file_des's new owner, instream */
+    REFCOUNT_DEC(file_des);
 
     return instream;
 }
@@ -95,13 +132,11 @@ FSFolder_list(FSFolder *self)
 bool_t
 FSFolder_file_exists(FSFolder *self, const ByteBuf *filename)
 {
+    struct stat sb;
     ByteBuf *path = full_path(self, filename);
     bool_t retval = false;
-    FILE *test = fopen(path->ptr, "rb");
-    if (test != NULL) {
-        fclose(test);
+    if (stat(path->ptr, &sb) != -1)
         retval = true;
-    }
     REFCOUNT_DEC(path);
     return retval;
 }
@@ -143,7 +178,7 @@ FSFolder_slurp_file(FSFolder *self, const ByteBuf *filename)
     int amount_read;
 
     if (f == NULL) {
-        CONFESS("Couldn't open file '%s'", path->ptr);
+        CONFESS("Couldn't open file '%s': %s", path->ptr, strerror(errno));
     }
 
     /* find length of file, allocate space */

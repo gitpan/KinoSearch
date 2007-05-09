@@ -10,10 +10,14 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_DELDOCS
 #define R_KINO_DELDOCS 1
 
 #include "KinoSearch/Index/DelDocs.h"
+
+#define KINO_DELDOCS_BOILERPLATE
 
 typedef void
 (*kino_DelDocs_destroy_t)(kino_DelDocs *self);
@@ -25,69 +29,84 @@ typedef void
 (*kino_DelDocs_write_deldocs_t)(kino_DelDocs *self);
 
 typedef struct kino_IntMap*
-(*kino_DelDocs_generate_doc_map_t)(kino_DelDocs *self, kino_i32_t offset);
+(*kino_DelDocs_generate_doc_map_t)(kino_DelDocs *self, chy_i32_t offset);
 
 typedef void
-(*kino_DelDocs_delete_by_term_docs_t)(kino_DelDocs *self, 
-                                 struct kino_TermDocs *term_docs);
+(*kino_DelDocs_delete_postinglist_t)(kino_DelDocs *self, 
+                                 struct kino_PostingList *plist);
 
-#define Kino_DelDocs_Clone(_self) \
-    kino_BitVec_clone((kino_BitVector*)_self)
+#define Kino_DelDocs_Clone(self) \
+    kino_BitVec_clone((kino_BitVector*)self)
 
-#define Kino_DelDocs_Destroy(_self) \
-    kino_DelDocs_destroy((kino_DelDocs*)_self)
+#define Kino_DelDocs_Destroy(self) \
+    kino_DelDocs_destroy((kino_DelDocs*)self)
 
-#define Kino_DelDocs_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_DelDocs_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_DelDocs_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_DelDocs_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_DelDocs_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_DelDocs_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_DelDocs_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_DelDocs_To_String(self) \
+    kino_Obj_to_string((kino_Obj*)self)
 
-#define Kino_DelDocs_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_DelDocs_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_DelDocs_Get(_self, _arg1) \
-    kino_BitVec_get((kino_BitVector*)_self, _arg1)
+#define Kino_DelDocs_Get(self, num) \
+    kino_BitVec_get((kino_BitVector*)self, num)
 
-#define Kino_DelDocs_Set(_self, _arg1) \
-    kino_BitVec_set((kino_BitVector*)_self, _arg1)
+#define Kino_DelDocs_Set(self, num) \
+    kino_BitVec_set((kino_BitVector*)self, num)
 
-#define Kino_DelDocs_Clear(_self, _arg1) \
-    kino_BitVec_clear((kino_BitVector*)_self, _arg1)
+#define Kino_DelDocs_Clear(self, num) \
+    kino_BitVec_clear((kino_BitVector*)self, num)
 
-#define Kino_DelDocs_Grow(_self, _arg1) \
-    kino_BitVec_grow((kino_BitVector*)_self, _arg1)
+#define Kino_DelDocs_Grow(self, capacity) \
+    kino_BitVec_grow((kino_BitVector*)self, capacity)
 
-#define Kino_DelDocs_Logical_And(_self, _arg1) \
-    kino_BitVec_logical_and((kino_BitVector*)_self, _arg1)
+#define Kino_DelDocs_And(self, other) \
+    kino_BitVec_and((kino_BitVector*)self, other)
 
-#define Kino_DelDocs_Count(_self) \
-    kino_BitVec_count((kino_BitVector*)_self)
+#define Kino_DelDocs_Or(self, other) \
+    kino_BitVec_or((kino_BitVector*)self, other)
 
-#define Kino_DelDocs_To_Array(_self) \
-    kino_BitVec_to_array((kino_BitVector*)_self)
+#define Kino_DelDocs_Xor(self, other) \
+    kino_BitVec_xor((kino_BitVector*)self, other)
 
-#define Kino_DelDocs_Read_Deldocs(_self) \
-    kino_DelDocs_read_deldocs((kino_DelDocs*)_self)
+#define Kino_DelDocs_And_Not(self, other) \
+    kino_BitVec_and_not((kino_BitVector*)self, other)
 
-#define Kino_DelDocs_Write_Deldocs(_self) \
-    kino_DelDocs_write_deldocs((kino_DelDocs*)_self)
+#define Kino_DelDocs_Flip(self, num) \
+    kino_BitVec_flip((kino_BitVector*)self, num)
 
-#define Kino_DelDocs_Generate_Doc_Map(_self, _arg1) \
-    kino_DelDocs_generate_doc_map((kino_DelDocs*)_self, _arg1)
+#define Kino_DelDocs_Flip_Range(self, from_tick, to_tick) \
+    kino_BitVec_flip_range((kino_BitVector*)self, from_tick, to_tick)
 
-#define Kino_DelDocs_Delete_By_Term_Docs(_self, _arg1) \
-    kino_DelDocs_delete_by_term_docs((kino_DelDocs*)_self, _arg1)
+#define Kino_DelDocs_Count(self) \
+    kino_BitVec_count((kino_BitVector*)self)
+
+#define Kino_DelDocs_To_Array(self) \
+    kino_BitVec_to_array((kino_BitVector*)self)
+
+#define Kino_DelDocs_Read_Deldocs(self) \
+    kino_DelDocs_read_deldocs((kino_DelDocs*)self)
+
+#define Kino_DelDocs_Write_Deldocs(self) \
+    kino_DelDocs_write_deldocs((kino_DelDocs*)self)
+
+#define Kino_DelDocs_Generate_Doc_Map(self, offset) \
+    kino_DelDocs_generate_doc_map((kino_DelDocs*)self, offset)
+
+#define Kino_DelDocs_Delete_PostingList(self, plist) \
+    kino_DelDocs_delete_postinglist((kino_DelDocs*)self, plist)
 
 struct KINO_DELDOCS_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -101,13 +120,18 @@ struct KINO_DELDOCS_VTABLE {
     kino_BitVec_set_t set;
     kino_BitVec_clear_t clear;
     kino_BitVec_grow_t grow;
-    kino_BitVec_logical_and_t logical_and;
+    kino_BitVec_and_t and;
+    kino_BitVec_or_t or;
+    kino_BitVec_xor_t xor;
+    kino_BitVec_and_not_t and_not;
+    kino_BitVec_flip_t flip;
+    kino_BitVec_flip_range_t flip_range;
     kino_BitVec_count_t count;
     kino_BitVec_to_array_t to_array;
     kino_DelDocs_read_deldocs_t read_deldocs;
     kino_DelDocs_write_deldocs_t write_deldocs;
     kino_DelDocs_generate_doc_map_t generate_doc_map;
-    kino_DelDocs_delete_by_term_docs_t delete_by_term_docs;
+    kino_DelDocs_delete_postinglist_t delete_postinglist;
 };
 
 extern KINO_DELDOCS_VTABLE KINO_DELDOCS;
@@ -124,8 +148,8 @@ extern KINO_DELDOCS_VTABLE KINO_DELDOCS;
   #define DelDocs_write_deldocs kino_DelDocs_write_deldocs
   #define DelDocs_generate_doc_map_t kino_DelDocs_generate_doc_map_t
   #define DelDocs_generate_doc_map kino_DelDocs_generate_doc_map
-  #define DelDocs_delete_by_term_docs_t kino_DelDocs_delete_by_term_docs_t
-  #define DelDocs_delete_by_term_docs kino_DelDocs_delete_by_term_docs
+  #define DelDocs_delete_postinglist_t kino_DelDocs_delete_postinglist_t
+  #define DelDocs_delete_postinglist kino_DelDocs_delete_postinglist
   #define DelDocs_Clone Kino_DelDocs_Clone
   #define DelDocs_Destroy Kino_DelDocs_Destroy
   #define DelDocs_Equals Kino_DelDocs_Equals
@@ -137,26 +161,28 @@ extern KINO_DELDOCS_VTABLE KINO_DELDOCS;
   #define DelDocs_Set Kino_DelDocs_Set
   #define DelDocs_Clear Kino_DelDocs_Clear
   #define DelDocs_Grow Kino_DelDocs_Grow
-  #define DelDocs_Logical_And Kino_DelDocs_Logical_And
+  #define DelDocs_And Kino_DelDocs_And
+  #define DelDocs_Or Kino_DelDocs_Or
+  #define DelDocs_Xor Kino_DelDocs_Xor
+  #define DelDocs_And_Not Kino_DelDocs_And_Not
+  #define DelDocs_Flip Kino_DelDocs_Flip
+  #define DelDocs_Flip_Range Kino_DelDocs_Flip_Range
   #define DelDocs_Count Kino_DelDocs_Count
   #define DelDocs_To_Array Kino_DelDocs_To_Array
   #define DelDocs_Read_Deldocs Kino_DelDocs_Read_Deldocs
   #define DelDocs_Write_Deldocs Kino_DelDocs_Write_Deldocs
   #define DelDocs_Generate_Doc_Map Kino_DelDocs_Generate_Doc_Map
-  #define DelDocs_Delete_By_Term_Docs Kino_DelDocs_Delete_By_Term_Docs
-  #define DELDOCS KINO_DELDOCS
+  #define DelDocs_Delete_PostingList Kino_DelDocs_Delete_PostingList
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_DELDOCS_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_u32_t  capacity; \
-    kino_u8_t * bits; \
-    kino_u32_t  count; \
-    kino_bool_t  count_is_valid; \
-    kino_i32_t  del_gen; \
+    chy_u32_t  refcount; \
+    chy_u32_t  cap; \
+    chy_u8_t * bits; \
+    chy_u32_t  count; \
+    chy_i32_t  del_gen; \
     struct kino_InvIndex * invindex; \
     struct kino_SegInfo * seg_info
-
 
 #ifdef KINO_WANT_DELDOCS_VTABLE
 KINO_DELDOCS_VTABLE KINO_DELDOCS = {
@@ -175,20 +201,30 @@ KINO_DELDOCS_VTABLE KINO_DELDOCS = {
     (kino_BitVec_set_t)kino_BitVec_set,
     (kino_BitVec_clear_t)kino_BitVec_clear,
     (kino_BitVec_grow_t)kino_BitVec_grow,
-    (kino_BitVec_logical_and_t)kino_BitVec_logical_and,
+    (kino_BitVec_and_t)kino_BitVec_and,
+    (kino_BitVec_or_t)kino_BitVec_or,
+    (kino_BitVec_xor_t)kino_BitVec_xor,
+    (kino_BitVec_and_not_t)kino_BitVec_and_not,
+    (kino_BitVec_flip_t)kino_BitVec_flip,
+    (kino_BitVec_flip_range_t)kino_BitVec_flip_range,
     (kino_BitVec_count_t)kino_BitVec_count,
     (kino_BitVec_to_array_t)kino_BitVec_to_array,
     (kino_DelDocs_read_deldocs_t)kino_DelDocs_read_deldocs,
     (kino_DelDocs_write_deldocs_t)kino_DelDocs_write_deldocs,
     (kino_DelDocs_generate_doc_map_t)kino_DelDocs_generate_doc_map,
-    (kino_DelDocs_delete_by_term_docs_t)kino_DelDocs_delete_by_term_docs
+    (kino_DelDocs_delete_postinglist_t)kino_DelDocs_delete_postinglist
 };
 #endif /* KINO_WANT_DELDOCS_VTABLE */
 
+#undef KINO_DELDOCS_BOILERPLATE
+
+
 #endif /* R_KINO_DELDOCS */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

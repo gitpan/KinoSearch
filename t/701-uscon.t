@@ -2,11 +2,11 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 18;
+use Test::More tests => 9;
 use File::Spec::Functions qw( catfile );
 use Carp;
 
-BEGIN { use_ok('KinoSearch::Searcher') }
+use KinoSearch::Searcher;
 
 use KinoTestUtils qw( path_for_test_invindex );
 use USConSchema;
@@ -29,8 +29,6 @@ my %searches = (
 
 while ( my ( $qstring, $num_expected ) = each %searches ) {
     my $hits = $searcher->search( query => $qstring );
-    isa_ok( $hits, 'KinoSearch::Search::Hits' );
-    $hits->seek( 0, 100 );
     is( $hits->total_hits, $num_expected, $qstring );
 }
 

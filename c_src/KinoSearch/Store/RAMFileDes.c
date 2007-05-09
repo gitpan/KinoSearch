@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <errno.h>
@@ -18,13 +17,13 @@ RAMFileDes_new(const char *path)
     self->pos          = 0;
     self->stream_count = 0;
     self->len          = 0;
-    self->mode         = strdup("");
 
     /* assign */
     self->path     = strdup(path);
 
     /* track number of live FileDes released into the wild */
-    FileDes_global_count++;
+    FileDes_object_count++;
+    FileDes_open_count++;
 
     return self;
 }
@@ -34,25 +33,26 @@ RAMFileDes_destroy(RAMFileDes *self)
 {
     REFCOUNT_DEC(self->buffers);
     free(self->path);
-    free(self->mode);
 
     /* decrement count of FileDes structs in existence */
-    FileDes_global_count--;
+    FileDes_object_count--;
 
     free(self);
 }
 
-void
+bool_t
 RAMFileDes_fdseek(RAMFileDes *self, u64_t target)
 {
     if (target > self->len) {
-        CONFESS("Attempt to seek past EOF: %d %d", (int)target,
-            (int)self->len);
+        Carp_set_kerror("Attempt to seek past EOF: %lu %lu",
+            (unsigned long)target, (unsigned long)self->len);
+        return false;
     }
     self->pos = target;
+    return true;
 }
 
-void
+bool_t
 RAMFileDes_fdread(RAMFileDes *self, char *dest, u32_t dest_offset, u32_t len)
 {
     VArray *const buffers = self->buffers;
@@ -60,9 +60,12 @@ RAMFileDes_fdread(RAMFileDes *self, char *dest, u32_t dest_offset, u32_t len)
     u32_t buf_num = self->pos / IO_STREAM_BUF_SIZE;
 
     if (self->pos + len > self->len) {
-        CONFESS("Attempt to read %lu bytes starting at %lu goes past EOF %lu",
+        Carp_set_kerror(
+            "Attempt to read %lu bytes starting at %lu goes past EOF %lu",
             (unsigned long)len, (unsigned long)self->pos, 
-            (unsigned long)self->len);
+            (unsigned long)self->len
+        );
+        return false;
     }
 
     dest += dest_offset;
@@ -83,10 +86,12 @@ RAMFileDes_fdread(RAMFileDes *self, char *dest, u32_t dest_offset, u32_t len)
         bytes_wanted -= bytes_to_copy;
         self->pos += bytes_to_copy;
     }
+
+    return true;
 } 
 
-void
-RAMFileDes_fdwrite(RAMFileDes *self, char* source, u32_t len) 
+bool_t
+RAMFileDes_fdwrite(RAMFileDes *self, const char *source, u32_t len) 
 {
     VArray *const buffers = self->buffers;
     u32_t bytes_left = len;
@@ -124,15 +129,17 @@ RAMFileDes_fdwrite(RAMFileDes *self, char* source, u32_t len)
     if (self->pos > self->len) {
         self->len = self->pos;
     }
+
+    return true;
 }
 
 ByteBuf*
 RAMFileDes_contents(RAMFileDes *self)
 {
-    ByteBuf *retval = BB_new(self->len);
-    VArray *buffers = self->buffers;
-    kino_u32_t i;
-    kino_u32_t bytes_left = self->len;
+    ByteBuf *retval     = BB_new(self->len);
+    VArray  *buffers    = self->buffers;
+    u32_t    bytes_left = self->len;
+    u32_t    i;
     
 
     for (i = 0; i < buffers->size; i++) {
@@ -154,10 +161,12 @@ RAMFileDes_fdlength(RAMFileDes *self)
     return self->len;
 }
 
-void
+bool_t
 RAMFileDes_fdclose(RAMFileDes *self)
 {
     UNUSED_VAR(self);
+    FileDes_open_count--;
+    return true;
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

@@ -10,44 +10,50 @@
 
  ***********************************************/
 
-#ifndef R_KINO_HITQ
-#define R_KINO_HITQ 1
+
+
+#ifndef R_KINO_HITQUEUE
+#define R_KINO_HITQUEUE 1
 
 #include "KinoSearch/Search/HitQueue.h"
 
-#define Kino_HitQ_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define KINO_HITQUEUE_BOILERPLATE
 
-#define Kino_HitQ_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
 
-#define Kino_HitQ_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
 
-#define Kino_HitQ_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_HitQ_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_HitQ_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_HitQ_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_HitQ_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_HitQ_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_HitQ_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_HitQ_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_HitQ_Insert(_self, _arg1) \
-    (_self)->_->insert((kino_PriorityQueue*)_self, _arg1)
+#define Kino_HitQ_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_HitQ_Pop(_self) \
-    (_self)->_->pop((kino_PriorityQueue*)_self)
+#define Kino_HitQ_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_HitQ_Peek(_self) \
-    (_self)->_->peek((kino_PriorityQueue*)_self)
+#define Kino_HitQ_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
+
+#define Kino_HitQ_Insert(self, element) \
+    (self)->_->insert((kino_PriorityQueue*)self, element)
+
+#define Kino_HitQ_Pop(self) \
+    kino_PriQ_pop((kino_PriorityQueue*)self)
+
+#define Kino_HitQ_Peek(self) \
+    kino_PriQ_peek((kino_PriorityQueue*)self)
 
 struct KINO_HITQUEUE_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -78,17 +84,15 @@ extern KINO_HITQUEUE_VTABLE KINO_HITQUEUE;
   #define HitQ_Insert Kino_HitQ_Insert
   #define HitQ_Pop Kino_HitQ_Pop
   #define HitQ_Peek Kino_HitQ_Peek
-  #define HITQUEUE KINO_HITQUEUE
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_HITQUEUE_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_u32_t  size; \
-    kino_u32_t  max_size; \
+    chy_u32_t  refcount; \
+    chy_u32_t  size; \
+    chy_u32_t  max_size; \
     void ** heap; \
-    kino_PriQ_less_than_t  less_than; \
-    kino_PriQ_free_elem_t  free_elem
-
+    kino_Obj_less_than_t  less_than; \
+    kino_Obj_free_elem_t  free_elem
 
 #ifdef KINO_WANT_HITQUEUE_VTABLE
 KINO_HITQUEUE_VTABLE KINO_HITQUEUE = {
@@ -109,10 +113,15 @@ KINO_HITQUEUE_VTABLE KINO_HITQUEUE = {
 };
 #endif /* KINO_WANT_HITQUEUE_VTABLE */
 
-#endif /* R_KINO_HITQ */
+#undef KINO_HITQUEUE_BOILERPLATE
+
+
+#endif /* R_KINO_HITQUEUE */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

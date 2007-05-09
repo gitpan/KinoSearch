@@ -5,13 +5,10 @@ package KinoSearch::Search::TopDocCollector;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::HitCollector );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args
-        size => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor args
+    size => undef,
+);
 
 use KinoSearch::Search::HitQueue;
 
@@ -31,10 +28,10 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Search::TopDocCollector::instance_vars");
-    kino_u32_t num_hits = extract_uv(args_hash, SNL("size"));
+    chy_u32_t num_hits = extract_uv(args_hash, SNL("size"));
 
     /* create object */
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_TDColl_new(num_hits);
 }
 OUTPUT: RETVAL

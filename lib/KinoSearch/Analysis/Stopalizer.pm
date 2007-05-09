@@ -5,12 +5,13 @@ package KinoSearch::Analysis::Stopalizer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        stoplist => undef,
-    );
-}
+our %instance_vars = (
+    # inherited
+    language => '',
+
+    # constructor params / members
+    stoplist => undef,
+);
 
 use Lingua::StopWords;
 
@@ -44,25 +45,24 @@ __XS__
 MODULE = KinoSearch   PACKAGE = KinoSearch::Analysis::Stopalizer
 
 SV*
-analyze(self_hash, batch)
+analyze_batch(self_hash, batch)
     HV *self_hash;
     kino_TokenBatch *batch;
 CODE:
 {
+    kino_TokenBatch *new_batch = kino_TokenBatch_new(NULL);
     SV *stoplist_ref = extract_sv(self_hash, SNL("stoplist"));
     HV  *stoplist_hv = (HV*)SvRV(stoplist_ref);
     kino_Token *token;
 
     while ((token = Kino_TokenBatch_Next(batch)) != NULL) {
-        if (hv_exists(stoplist_hv, token->text, token->len)) {
-            token->len = 0;
+        if (!hv_exists(stoplist_hv, token->text, token->len)) {
+            Kino_TokenBatch_Append(new_batch, token);
         }
     }
 
-    Kino_TokenBatch_Reset(batch);
-
-    SvREFCNT_inc( ST(1) );
-    RETVAL = ST(1);
+    RETVAL = kobj_to_pobj(new_batch);
+    REFCOUNT_DEC(new_batch);
 }
 OUTPUT: RETVAL
     
@@ -92,7 +92,7 @@ performance and relevance to block them.
     @token_texts = ('i', 'am', 'the', 'walrus');
     
     # after
-    @token_texts = ('',  '',   '',    'walrus');
+    @token_texts = ('walrus');
 
 =head1 CONSTRUCTOR
 

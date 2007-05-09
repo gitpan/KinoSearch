@@ -1,4 +1,5 @@
 #define KINO_USE_SHORT_NAMES
+#define CHY_USE_SHORT_NAMES
 
 #include <string.h>
 
@@ -42,7 +43,7 @@ Hash_new(u32_t proposed_capacity)
     if (proposed_capacity < 16)
         capacity = 16;
     else 
-	    capacity = proposed_capacity * 3/2;
+        capacity = proposed_capacity * 3/2;
 
     /* init */
     self->size = 0;
@@ -178,8 +179,11 @@ Hash_fetch_bb(Hash *self, const ByteBuf *key)
     if (*bucket != NULL) {
         HashEntry *entry = *bucket;
         for ( ; entry != NULL; entry = entry->next) {
-            if (Obj_Equals(key, (Obj*)entry->key))
+            if (   entry->hash_val == hash_val
+                && Obj_Equals(key, (Obj*)entry->key)
+            ) {
                 return entry->value;
+            }
         }
     }
 
@@ -310,6 +314,40 @@ Hash_iter_next(Hash *self, ByteBuf **key, Obj **value)
     *key = this_entry->key;
     *value = this_entry->value;
     return true;
+}
+
+ByteBuf*
+Hash_find_key(Hash *self, const ByteBuf *key)
+{
+    i32_t hash_val = Obj_Hash_Code(key);
+    HashEntry **bucket = self->buckets + (hash_val % self->num_buckets);
+
+    if (*bucket != NULL) {
+        HashEntry *entry = *bucket;
+        for ( ; entry != NULL; entry = entry->next) {
+            if (   entry->hash_val == hash_val
+                && Obj_Equals(key, (Obj*)entry->key)
+            ) {
+                return entry->key;
+            }
+        }
+    }
+
+    /* failed to find the key, so return NULL */
+    return NULL;
+}
+
+static Obj dummy_obj = { &OBJ, 1 };
+
+ByteBuf*
+Hash_add_key(Hash *self, const ByteBuf *key)
+{
+    ByteBuf *manufactured_key = Hash_Find_Key(self, key);
+    if (manufactured_key == NULL) {
+        Hash_Store_BB(self, key, &dummy_obj);
+        manufactured_key = Hash_Find_Key(self, key);
+    }
+    return manufactured_key;
 }
 
 /* declare external symbols */

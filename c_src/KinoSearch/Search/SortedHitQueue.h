@@ -14,9 +14,8 @@ struct kino_SortedHitQueue {
     KINO_HITQUEUE_MEMBER_VARS;
 };
 
-KINO_FUNCTION(
 kino_SortedHitQueue*
-kino_SortedHitQ_new(kino_u32_t max_size));
+kino_SortedHitQ_new(chy_u32_t max_size);
 
 KINO_END_CLASS
 

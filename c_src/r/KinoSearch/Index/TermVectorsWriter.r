@@ -10,10 +10,14 @@
 
  ***********************************************/
 
-#ifndef R_KINO_TVWRITER
-#define R_KINO_TVWRITER 1
+
+
+#ifndef R_KINO_TERMVECTORSWRITER
+#define R_KINO_TERMVECTORSWRITER 1
 
 #include "KinoSearch/Index/TermVectorsWriter.h"
+
+#define KINO_TERMVECTORSWRITER_BOILERPLATE
 
 typedef void
 (*kino_TVWriter_destroy_t)(kino_TermVectorsWriter *self);
@@ -22,48 +26,49 @@ typedef void
 (*kino_TVWriter_add_segment_t)(kino_TermVectorsWriter *self, 
                           struct kino_TermVectorsReader *tv_reader,
                           struct kino_IntMap *doc_map,
-                          kino_u32_t max_doc);
+                          chy_u32_t max_doc);
 
 typedef void
-(*kino_TVWriter_finish_t)(kino_TermVectorsWriter *self);
+(*kino_TVWriter_finish_t)(kino_TermVectorsWriter *self, 
+                     struct kino_IntMap *doc_remap);
 
 typedef struct kino_ByteBuf*
 (*kino_TVWriter_tv_string_t)(kino_TermVectorsWriter *self, 
                         struct kino_TokenBatch *batch);
 
-#define Kino_TVWriter_Clone(_self) \
-    kino_Obj_clone((kino_Obj*)_self)
+#define Kino_TVWriter_Clone(self) \
+    kino_Obj_clone((kino_Obj*)self)
 
-#define Kino_TVWriter_Destroy(_self) \
-    kino_TVWriter_destroy((kino_TermVectorsWriter*)_self)
+#define Kino_TVWriter_Destroy(self) \
+    kino_TVWriter_destroy((kino_TermVectorsWriter*)self)
 
-#define Kino_TVWriter_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_TVWriter_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_TVWriter_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_TVWriter_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_TVWriter_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_TVWriter_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_TVWriter_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_TVWriter_To_String(self) \
+    kino_Obj_to_string((kino_Obj*)self)
 
-#define Kino_TVWriter_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_TVWriter_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_TVWriter_Add_Segment(_self, _arg1, _arg2, _arg3) \
-    kino_TVWriter_add_segment((kino_TermVectorsWriter*)_self, _arg1, _arg2, _arg3)
+#define Kino_TVWriter_Add_Segment(self, tv_reader, doc_map, max_doc) \
+    kino_TVWriter_add_segment((kino_TermVectorsWriter*)self, tv_reader, doc_map, max_doc)
 
-#define Kino_TVWriter_Finish(_self) \
-    kino_TVWriter_finish((kino_TermVectorsWriter*)_self)
+#define Kino_TVWriter_Finish(self, doc_remap) \
+    kino_TVWriter_finish((kino_TermVectorsWriter*)self, doc_remap)
 
-#define Kino_TVWriter_TV_String(_self, _arg1) \
-    kino_TVWriter_tv_string((kino_TermVectorsWriter*)_self, _arg1)
+#define Kino_TVWriter_TV_String(self, batch) \
+    kino_TVWriter_tv_string((kino_TermVectorsWriter*)self, batch)
 
 struct KINO_TERMVECTORSWRITER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -102,16 +107,14 @@ extern KINO_TERMVECTORSWRITER_VTABLE KINO_TERMVECTORSWRITER;
   #define TVWriter_Add_Segment Kino_TVWriter_Add_Segment
   #define TVWriter_Finish Kino_TVWriter_Finish
   #define TVWriter_TV_String Kino_TVWriter_TV_String
-  #define TERMVECTORSWRITER KINO_TERMVECTORSWRITER
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_TERMVECTORSWRITER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_InvIndex * invindex; \
     struct kino_SegInfo * seg_info; \
     struct kino_OutStream * tv_out; \
     struct kino_OutStream * tvx_out
-
 
 #ifdef KINO_WANT_TERMVECTORSWRITER_VTABLE
 KINO_TERMVECTORSWRITER_VTABLE KINO_TERMVECTORSWRITER = {
@@ -132,10 +135,15 @@ KINO_TERMVECTORSWRITER_VTABLE KINO_TERMVECTORSWRITER = {
 };
 #endif /* KINO_WANT_TERMVECTORSWRITER_VTABLE */
 
-#endif /* R_KINO_TVWRITER */
+#undef KINO_TERMVECTORSWRITER_BOILERPLATE
+
+
+#endif /* R_KINO_TERMVECTORSWRITER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

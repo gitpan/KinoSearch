@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_TOPDOCCOLLECTOR_VTABLE
@@ -51,7 +50,7 @@ TDColl_collect(TopDocCollector *self, u32_t doc_num, float score)
     ) {
         return;
     }
-    else {
+    else if (self->num_hits > 0) {
         ScoreDoc *const score_doc = ScoreDoc_new(doc_num, score);
         HitQueue *const hit_q     = self->hit_q;
 

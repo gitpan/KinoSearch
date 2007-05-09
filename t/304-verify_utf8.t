@@ -6,7 +6,7 @@ package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
+our %fields = ( content => 'KinoSearch::Schema::FieldSpec' );
 
 sub analyzer { KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ ) }
 
@@ -14,9 +14,11 @@ package main;
 use Test::More tests => 16;
 use KinoSearch::InvIndexer;
 use KinoSearch::Searcher;
+use KinoSearch::Index::Term;
 use KinoSearch::QueryParser::QueryParser;
 use KinoSearch::InvIndex;
 use KinoSearch::Store::RAMFolder;
+use KinoSearch::Search::TermQuery;
 use KinoTestUtils qw( utf8_test_strings );
 
 my ( $smiley, $not_a_smiley, $frowny ) = utf8_test_strings();

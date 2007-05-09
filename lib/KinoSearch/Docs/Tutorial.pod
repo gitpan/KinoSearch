@@ -4,17 +4,16 @@ KinoSearch::Docs::Tutorial - Sample indexing and search applications.
 
 =head1 OVERVIEW 
 
-Most people start off with KinoSearch by copying the supplied sample
-applications for indexing and searching an HTML presentation of the US
-Constitution and adapting them to their needs.
-
-This tutorial explores how the sample apps work.  The materials can be found
-in the C<sample> directory at the root of the KinoSearch distribution:
+Most people start off by copying the sample applications found in the
+C<sample> directory at the root of the KinoSearch distribution and adapting
+them to their needs.
 
     sample/USConSchema.pm    # custom KinoSearch::Schema subclass
     sample/invindexer.plx    # indexing app
     sample/search.cgi        # search app
     sample/us_constitution   # html documents
+
+This tutorial explores how the sample apps work.
 
 =head1 Define the structure of your index in a subclass of KinoSearch::Schema
 
@@ -24,11 +23,11 @@ Setting this up is roughly analogous to the step of defining a table in SQL,
 and is accomplished by subclassing L<KinoSearch::Schema>.
 
 The most important thing a Schema tells you is what fields are present and how
-they're defined, information which is communicated via the C<%FIELDS> hash and
+they're defined, information which is communicated via the C<%fields> hash and
 subclasses of L<KinoSearch::Schema::FieldSpec>.  For our search of the US
 Constitution, we'll use three fields: C<title>, C<content>, and C<url>.
 
-    our %FIELDS = (
+    our %fields = (
         title   => 'KinoSearch::Schema::FieldSpec',
         content => 'KinoSearch::Schema::FieldSpec',
         url     => 'USConSchema::UnIndexedField',    # custom subclass
@@ -42,8 +41,7 @@ we think will help people find what they're looking for.
     use base qw( KinoSearch::Schema::FieldSpec );
     sub indexed {0}
 
-The Schema subclass itself, which follows the field definitions in
-USConSchema.pm, supplies an analyzer() subroutine:
+In addition to C<%fields>, USConSchema supplies an analyzer() subroutine:
 
     package USConSchema; 
     use base qw( KinoSearch::Schema );
@@ -72,16 +70,17 @@ sensitive information you wouldn't want a mis-configured server to reveal to
 potential attackers.
 
 Note: It's crucial that the Schema that you use at search-time be identical to
-the one used at index time.  KinoSearch will get very confused if you change
-up the list of fields, for example.
+the one used at index time -- otherwise, KinoSearch will misinterpret the
+data and either crash or produce incorrect results.
 
 =head1 Create an index and add content.
 
-Now that we've created an abstract set of rules defining how our index is
+Now that we've created a set of rules defining how our index is to be
 structured, we need to create an actual index and add documents to it.
 
 Since our collection is very small, we'll just overwrite the index every time,
-by choosing the Schema factory method C<clobber> (instead of C<open>):
+by choosing the Schema factory method C<clobber> (instead of C<open> or
+C<create>):
 
     my $invindexer = KinoSearch::InvIndexer->new(
         invindex => USConSchema->clobber('/path/to/invindex'),
@@ -135,7 +134,7 @@ Now Amendments should score higher than Articles most of the time.
 
 Try setting the C<url> field so that it gets C<indexed>.
 
-    our %FIELDS = (
+    our %fields = (
         title   => 'KinoSearch::Schema::FieldSpec',
         content => 'KinoSearch::Schema::FieldSpec',
         url     => 'KinoSearch::Schema::FieldSpec', # will be indexed, now

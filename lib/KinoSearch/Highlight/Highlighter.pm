@@ -5,64 +5,84 @@ package KinoSearch::Highlight::Highlighter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        fields         => undef,
-        analyzer       => undef,
-        formatter      => undef,
-        encoder        => undef,
-        terms          => [],
-        excerpt_length => 200,
-        token_re       => qr/\b\w+(?:'\w+)?\b/,
+our %instance_vars = (
+    # members
+    default_encoder   => undef,
+    default_formatter => undef,
+    specs             => [],
+    terms             => [],
+    limit             => undef,
+    token_re          => qr/\b\w+(?:'\w+)?\b/,
+);
 
-        # members
-        limit => undef,
-    );
-    __PACKAGE__->ready_get_set(qw( terms ));
-}
+BEGIN { __PACKAGE__->ready_get_set(qw( terms )) }
 
 use KinoSearch::Highlight::SimpleHTMLFormatter;
 use KinoSearch::Highlight::SimpleHTMLEncoder;
 
 sub init_instance {
     my $self = shift;
-    confess("Invalid value for required arg fields")
-        unless ( defined $self->{fields}
-        and reftype( $self->{fields} ) eq 'ARRAY' );
+
+    # create shared default encoder and formatter
+    $self->{default_encoder} = KinoSearch::Highlight::SimpleHTMLEncoder->new;
+    $self->{default_formatter}
+        = KinoSearch::Highlight::SimpleHTMLFormatter->new(
+        pre_tag  => '<strong>',
+        post_tag => '</strong>',
+        );
+}
+
+my %add_spec_defaults = (
+    field          => undef,
+    excerpt_length => 200,
+    formatter      => undef,
+    encoder        => undef,
+    name           => undef,
+);
+
+sub add_spec {
+    my $self = shift;
+    confess kerror() unless verify_args( \%add_spec_defaults, @_ );
+    my %spec = ( %add_spec_defaults, @_ );
+
+    confess("Missing required param 'field'")
+        unless defined $spec{field};
 
     # assume HTML
-    if ( !defined $self->{encoder} ) {
-        $self->{encoder} = KinoSearch::Highlight::SimpleHTMLEncoder->new;
+    if ( !defined $spec{encoder} ) {
+        $spec{encoder} = $self->{default_encoder};
     }
-    if ( !defined $self->{formatter} ) {
-        $self->{formatter} = KinoSearch::Highlight::SimpleHTMLFormatter->new(
-            pre_tag  => '<strong>',
-            post_tag => '</strong>',
-        );
+    if ( !defined $spec{formatter} ) {
+        $spec{formatter} = $self->{default_formatter};
     }
 
     # scoring window is 1.66 * excerpt_length, with the loc in the middle
-    $self->{limit} = int( $self->{excerpt_length} / 3 );
+    $spec{limit} = int( $spec{excerpt_length} / 3 );
+
+    # use field name as key unless specified
+    $spec{name} = $spec{field} unless defined $spec{name};
+
+    push @{ $self->{specs} }, \%spec;
 }
 
 sub generate_excerpts {
     my ( $self, $doc, $doc_vector ) = @_;
 
-    # create an excerpt for each field spec'd
+    # create an excerpt for each spec
     my %excerpts;
-    for my $field_name ( @{ $self->{fields} } ) {
-        $excerpts{$field_name}
-            = $self->_gen_excerpt( $doc, $doc_vector, $field_name );
+    for my $spec ( @{ $self->{specs} } ) {
+        $excerpts{ $spec->{name} }
+            = $self->_gen_excerpt( $doc, $doc_vector, $spec );
     }
 
     return \%excerpts;
 }
 
 sub _gen_excerpt {
-    my ( $self, $doc, $doc_vector, $excerpt_field ) = @_;
-    my $excerpt_length = $self->{excerpt_length};
-    my $limit          = $self->{limit};
+    my ( $self, $doc, $doc_vector, $spec ) = @_;
+    my $excerpt_field  = $spec->{field};
+    my $excerpt_length = $spec->{excerpt_length};
+    my $limit          = $spec->{limit};
     my $token_re       = $self->{token_re};
 
     # retrieve the text from the chosen field
@@ -74,7 +94,7 @@ sub _gen_excerpt {
 
     # determine the rough boundaries of the excerpt
     my $posits = $self->_starts_and_ends( $doc_vector, $excerpt_field );
-    my $best_location = $self->_calc_best_location($posits);
+    my $best_location = $self->_calc_best_location( $posits, $limit );
     my $top           = $best_location - $limit;
 
     # expand the excerpt if the best location is near the end
@@ -163,8 +183,8 @@ sub _gen_excerpt {
     }
 
     # insert highlight tags
-    my $formatter   = $self->{formatter};
-    my $encoder     = $self->{encoder};
+    my $formatter   = $spec->{formatter};
+    my $encoder     = $spec->{encoder};
     my $output_text = '';
     my ( $start, $end, $last_start, $last_end ) = ( undef, undef, 0, 0 );
     while (@relative_starts) {
@@ -194,6 +214,7 @@ sub _starts_and_ends {
 
 TERM: for my $term ( @{ $self->{terms} } ) {
         if ( a_isa_b( $term, 'KinoSearch::Index::Term' ) ) {
+            next if $term->get_field ne $excerpt_field;
             my $term_text = $term->get_text;
 
             next TERM if $done{$term_text};
@@ -212,6 +233,7 @@ TERM: for my $term ( @{ $self->{terms} } ) {
         # intersect positions for phrase terms
         else {
             # if not a Term, it's an array of Terms representing a phrase
+            next if $term->[0]->get_field ne $excerpt_field;
             my @term_texts = map { $_->get_text } @$term;
 
             my $phrase_text = join( ' ', @term_texts );
@@ -240,7 +262,7 @@ TERM: for my $term ( @{ $self->{terms} } ) {
                         grep    { $_ >= 0 }
                             map { $_ - $i } @{ $tv->get_positions }
                     );
-                    $posit_vec->logical_and($other_posit_vec);
+                    $posit_vec->AND($other_posit_vec);
                 }
                 $i++;
             }
@@ -283,8 +305,8 @@ TERM: for my $term ( @{ $self->{terms} } ) {
 
 # Select the character position representing the greatest keyword density.
 sub _calc_best_location {
-    my ( $self, $posits ) = @_;
-    my $window = $self->{limit} * 2;
+    my ( $self, $posits, $limit ) = @_;
+    my $window = $limit * 2;
 
     # if there aren't any keywords, take the excerpt from the top of the text
     return 0 unless @$posits;
@@ -329,14 +351,14 @@ KinoSearch::Highlight::Highlighter - Create and highlight excerpts.
 
 =head1 SYNOPSIS
 
-    my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        fields  => ['bodytext'],
-    );
+    my $highlighter = KinoSearch::Highlight::Highlighter->new;
+    $highlighter->add_spec( field => 'body' );
+
     $hits->create_excerpts( highlighter => $highlighter );
 
 =head1 DESCRIPTION
 
-KinoSearch's Highlighter can be used to select a relevant snippet from a
+KinoSearch's Highlighter can be used to select relevant snippets from a
 document, and to surround search terms with highlighting tags.  It handles
 both stems and phrases correctly and efficiently, using special-purpose data
 generated at index-time.  
@@ -345,36 +367,50 @@ generated at index-time.
 
 =head2 new
 
-    my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        fields         => ['content'], # required
+    my $highlighter = KinoSearch::Highlight::Highlighter->new;
+
+Constructor.  Takes no arguments.
+
+=head2 add_spec
+
+    $highlighter->add_spec(
+        field          => 'content',   # required
         excerpt_length => 150,         # default: 200
         formatter      => $formatter,  # default: SimpleHTMLFormatter
         encoder        => $encoder,    # default: SimpleHTMLEncoder
+        name           => 'blurb'      # default: value of field param
     );
 
-Constructor.  Takes hash-style parameters: 
+Add a spec for a single highlighted excerpt.  Takes hash-style parameters: 
 
 =over
 
 =item *
 
-B<fields> - the names of the fields from which to draw excerpts.  Each field
-in the list must be spec'd as C<vectorized>.
+B<field> - the name of the field from which to draw the excerpt.  The field
+must be C<vectorized> (which is the default -- see
+L<FieldSpec|KinoSearch::Schema::FieldSpec>).
 
 =item *
 
-B<excerpt_length> - the maximum length of each excerpt, in characters.
+B<excerpt_length> - the maximum length of the excerpt, in characters.
 
 =item *
 
-B<formatter> - an object which subclasses L<KinoSearch::Highlight::Formatter>,
-used to perform the actual highlighting.
+B<formatter> - an object which isa L<KinoSearch::Highlight::Formatter>.  Used
+to perform the actual highlighting.
 
 =item *
 
-B<encoder> - an object which subclasses L<KinoSearch::Highlight::Encoder>.
-All excerpt text gets passed through the encoder, including highlighted terms.
-By default, this is a SimpleHTMLEncoder, which encodes HTML entities.
+B<encoder> - an object which isa L<KinoSearch::Highlight::Encoder>.  All
+excerpt text gets passed through the encoder, including highlighted terms.  By
+default, this is a SimpleHTMLEncoder, which encodes HTML entities.
+
+=item *
+
+B<name> - the key which will identify the excerpt in the excerpts hash.
+Multiple excerpts with different specifications can be created from the same
+source field using different values for C<name>.
 
 =back
 

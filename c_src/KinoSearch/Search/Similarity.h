@@ -20,71 +20,69 @@ struct kino_Similarity {
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_Similarity* 
-kino_Sim_new(const char *class_name));
+kino_Sim_new(const char *class_name);
 
 /* Deserializer.
  */
-KINO_FUNCTION(
 kino_Similarity*
-kino_Sim_deserialize(struct kino_ViewByteBuf *serialized));
+kino_Sim_deserialize(struct kino_ViewByteBuf *serialized);
 
 /* Return a score factor based on the frequency of a term in a given document.
  * The default implementation is sqrt(freq).  Other implementations typically
  * produce ascending scores with ascending freqs, since the more times a doc
  * matches, the more relevant it is likely to be.
  */
-KINO_METHOD("Kino_Sim_TF",
 float  
-kino_Sim_tf(kino_Similarity *self, float freq));
+kino_Sim_tf(kino_Similarity *self, float freq);
+KINO_METHOD("Kino_Sim_TF");
 
 /* Calculate a score factor based on the number of terms which match. 
  */
-KINO_METHOD("Kino_Sim_Coord",
 float
-kino_Sim_coord(kino_Similarity *self, kino_u32_t overlap, 
-               kino_u32_t max_overlap));
+kino_Sim_coord(kino_Similarity *self, chy_u32_t overlap, 
+               chy_u32_t max_overlap);
+KINO_METHOD("Kino_Sim_Coord");
 
 /* encode_norm and decode_norm encode and decode between 32-bit IEEE floating
  * point numbers and a 5-bit exponent, 3-bit mantissa float.  The range
  * covered by the single-byte encoding is 7x10^9 to 2x10^-9.  The accuracy is
  * about one significant decimal digit.
  */
-KINO_METHOD("Kino_Sim_Encode_Norm",
-kino_u32_t 
-kino_Sim_encode_norm(kino_Similarity *self, float f));
+chy_u32_t 
+kino_Sim_encode_norm(kino_Similarity *self, float f);
+KINO_METHOD("Kino_Sim_Encode_Norm");
 
 /* See encode_norm.
  */
-KINO_METHOD("Kino_Sim_Decode_Norm",
 float
-kino_Sim_decode_norm(kino_Similarity *self, kino_u32_t input));
+kino_Sim_decode_norm(kino_Similarity *self, chy_u32_t input);
+KINO_METHOD("Kino_Sim_Decode_Norm");
 
 /* Return a boost based which rewards smaller distances between tokens in a
  * search match.
  */
-KINO_METHOD("Kino_Sim_Prox_Boost",
 float
-kino_Sim_prox_boost(kino_Similarity *self, kino_u32_t distance));
+kino_Sim_prox_boost(kino_Similarity *self, chy_u32_t distance);
+KINO_METHOD("Kino_Sim_Prox_Boost");
 
 /* Assess an array of positions and return a scoring multiplier based on how
  * clustered they are.  The assumption is that documents whose matches are
  * right next to each other deserve higher rank than documents whose matches
  * are spread out and presumably unrelated.
  */
-KINO_METHOD("Kino_Sim_Prox_Coord",
 float
-kino_Sim_prox_coord(kino_Similarity *self, kino_u32_t *prox, 
-                    kino_u32_t num_prox));
+kino_Sim_prox_coord(kino_Similarity *self, chy_u32_t *prox, 
+                    chy_u32_t num_prox);
+KINO_METHOD("Kino_Sim_Prox_Coord");
 
-KINO_METHOD("Kino_Sim_Destroy",
 void
-kino_Sim_destroy(kino_Similarity *self));
+kino_Sim_destroy(kino_Similarity *self);
+KINO_METHOD("Kino_Sim_Destroy");
 
-KINO_METHOD("Kino_Sim_Serialize",
 void
-kino_Sim_serialize(kino_Similarity *self, struct kino_ByteBuf *target));
+kino_Sim_serialize(kino_Similarity *self, struct kino_ByteBuf *target);
+KINO_METHOD("Kino_Sim_Serialize");
 
 KINO_END_CLASS
 

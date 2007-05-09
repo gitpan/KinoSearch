@@ -10,38 +10,42 @@
 
  ***********************************************/
 
-#ifndef R_KINO_FSPEC
-#define R_KINO_FSPEC 1
+
+
+#ifndef R_KINO_FIELDSPEC
+#define R_KINO_FIELDSPEC 1
 
 #include "KinoSearch/Schema/FieldSpec.h"
+
+#define KINO_FIELDSPEC_BOILERPLATE
 
 typedef void
 (*kino_FSpec_destroy_t)(kino_FieldSpec *self);
 
-#define Kino_FSpec_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_FSpec_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_FSpec_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_FSpec_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_FSpec_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_FSpec_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_FSpec_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_FSpec_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_FSpec_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_FSpec_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_FSpec_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_FSpec_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_FSpec_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_FSpec_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_FIELDSPEC_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -67,23 +71,18 @@ extern KINO_FIELDSPEC_VTABLE KINO_FIELDSPEC;
   #define FSpec_Is_A Kino_FSpec_Is_A
   #define FSpec_To_String Kino_FSpec_To_String
   #define FSpec_Serialize Kino_FSpec_Serialize
-  #define FIELDSPEC KINO_FIELDSPEC
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_FIELDSPEC_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     float  boost; \
-    kino_bool_t  indexed; \
-    kino_bool_t  stored; \
-    kino_bool_t  analyzed; \
-    kino_bool_t  vectorized; \
-    kino_bool_t  binary; \
-    kino_bool_t  compressed; \
-    kino_bool_t  store_field_boost; \
-    kino_bool_t  store_freq; \
-    kino_bool_t  store_position; \
-    kino_bool_t  store_pos_boost
-
+    chy_bool_t  indexed; \
+    chy_bool_t  stored; \
+    chy_bool_t  analyzed; \
+    chy_bool_t  vectorized; \
+    chy_bool_t  binary; \
+    chy_bool_t  compressed; \
+    struct kino_Posting * posting
 
 #ifdef KINO_WANT_FIELDSPEC_VTABLE
 KINO_FIELDSPEC_VTABLE KINO_FIELDSPEC = {
@@ -101,10 +100,15 @@ KINO_FIELDSPEC_VTABLE KINO_FIELDSPEC = {
 };
 #endif /* KINO_WANT_FIELDSPEC_VTABLE */
 
-#endif /* R_KINO_FSPEC */
+#undef KINO_FIELDSPEC_BOILERPLATE
+
+
+#endif /* R_KINO_FIELDSPEC */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

@@ -1,5 +1,91 @@
 Revision history for KinoSearch
 
+0.20_03 2007-05-08 
+
+  Highlights:
+
+    * Combining filters now possible using PolyFilter.
+    * Significantly improved indexing speed.
+    * Better NFS compatibility using LockFactory.
+
+  New public classes:
+
+    o KinoSearch::Index::IndexReader
+    o KinoSearch::Posting
+    o KinoSearch::Posting::ScorePosting
+    o KinoSearch::Posting::RichPosting
+    o KinoSearch::Search::PolyFilter
+    o KinoSearch::Store::Lock
+    o KinoSearch::Store::SharedLock
+    o KinoSearch::Store::LockFactory
+
+  New/updated documentation:
+
+    o KinoSearch::Docs::IRTheory
+    o KinoSearch::Docs::FileFormat
+
+  Removed:
+
+    * KinoSearch::Docs::NFS
+
+  Renamed:
+  
+    * KinoSearch::Contrib::LongFieldSim => KSx::Search::LongFieldSim
+
+  Classes with API changes:
+  
+    * KinoSearch::Schema
+      o %FIELDS must now be spelled %fields (resolving conflict with Perl core
+        pragmas base.pm and fields.pm).
+      o pre_sort() - Added. (experimental)
+
+    * KinoSearch::Schema::FieldSpec
+      o store_pos_boost() - Removed.
+      o posting_type() - Added. (experimental)
+
+    * KinoSearch::Analysis::Analyzer
+      o analyze() - Removed.
+      o analyze_batch() - Added.
+
+    * KinoSearch::Analysis::Stopalizer
+      o Now removes stopwords rather than turning them to empty strings.
+  
+    * KinoSearch::InvIndex
+      o get_folder() - Added.
+      o get_schema() - Added.
+  
+    * KinoSearch::InvIndexer
+      o new() - Parameters changed.
+        * host_id - Removed.
+        * lock_factory - Added.
+  
+    * KinoSearch::Highlight::Highlighter
+      o new() - All arguments removed.
+      o add_spec() - Added, making it possible to customize multiple excerpts.
+
+    * KinoSearch::Highlight::SimpleHTMLEncoder
+      o Now uses HTML::Entities::encode_entities, so more entities are
+        affected.
+
+    * KinoSearch::Searcher
+      o get_reader() - Added.
+      o set_prune_factor - Added. (experimental)
+
+    * KinoSearch::Search::Hits
+      o Now supports multiple highlighted excerpts per document.
+      o Excerpts now use key of "excerpts" rather than "excerpt".
+
+    * KinoSearch::Search::RangeFilter
+      o Now supports "open ended searches": all above or all below a bound.
+      o new() - Default values added.  
+
+  Credits:
+
+    * Chris Nandor was the driving force behind PolyFilter and Filter,
+      contributing code, tests, bug reports and bug fixes.
+    * Patches and failing test cases contributed by Edward Betts, Henry
+      Combrinck, Simon Cozens, and Peter Karman.
+
 0.20_02 2007-03-06
   * Rework Schema API.
     o Add instance method add_field(), facilitating dynamic schemas.

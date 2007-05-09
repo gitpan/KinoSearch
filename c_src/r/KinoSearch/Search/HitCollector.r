@@ -10,38 +10,42 @@
 
  ***********************************************/
 
-#ifndef R_KINO_HC
-#define R_KINO_HC 1
+
+
+#ifndef R_KINO_HITCOLLECTOR
+#define R_KINO_HITCOLLECTOR 1
 
 #include "KinoSearch/Search/HitCollector.h"
+
+#define KINO_HITCOLLECTOR_BOILERPLATE
 
 typedef void
 (*kino_HC_destroy_t)(kino_HitCollector *self);
 
-#define Kino_HC_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_HC_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_HC_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_HC_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_HC_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_HC_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_HC_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_HC_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_HC_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_HC_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_HC_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_HC_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_HC_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_HC_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_HITCOLLECTOR_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -71,15 +75,13 @@ extern KINO_HITCOLLECTOR_VTABLE KINO_HITCOLLECTOR;
   #define HC_Is_A Kino_HC_Is_A
   #define HC_To_String Kino_HC_To_String
   #define HC_Serialize Kino_HC_Serialize
-  #define HITCOLLECTOR KINO_HITCOLLECTOR
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_HITCOLLECTOR_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     kino_HC_collect_t  collect; \
     kino_HC_release_t  release; \
     void * data
-
 
 #ifdef KINO_WANT_HITCOLLECTOR_VTABLE
 KINO_HITCOLLECTOR_VTABLE KINO_HITCOLLECTOR = {
@@ -97,10 +99,15 @@ KINO_HITCOLLECTOR_VTABLE KINO_HITCOLLECTOR = {
 };
 #endif /* KINO_WANT_HITCOLLECTOR_VTABLE */
 
-#endif /* R_KINO_HC */
+#undef KINO_HITCOLLECTOR_BOILERPLATE
+
+
+#endif /* R_KINO_HITCOLLECTOR */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

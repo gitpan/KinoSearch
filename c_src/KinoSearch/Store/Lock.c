@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <errno.h>
@@ -9,16 +8,25 @@
 
 #include "KinoSearch/Store/Folder.r"
 #include "KinoSearch/Store/OutStream.r"
-#include "KinoSearch/Util/CClass.r"
 #include "KinoSearch/Util/YAML.h"
 
-#ifdef HAS_POSIX
-  #include <signal.h>
-  #include <unistd.h>
-#endif
+#include <signal.h> /* requires POSIX.  TODO: write alternative for MSVC */
+#include <unistd.h>
+
+/* Delete a given lock file which meets these conditions:
+ *    - lock name matches.
+ *    - agent id matches.
+ *
+ * If delete_mine is false, don't delete a lock file which
+ * matches this process's pid.  If delete_other is false, don't delete lock
+ * files which don't match this process's pid.
+ */
+static bool_t
+clear_file(Lock *self, const ByteBuf *filename, bool_t delete_mine, 
+           bool_t delete_other);
 
 Lock*
-Lock_new(Folder *folder, const ByteBuf *lock_name, const ByteBuf *lock_id, 
+Lock_new(Folder *folder, const ByteBuf *lock_name, const ByteBuf *agent_id, 
          i32_t timeout)
 {
     CREATE(self, Lock, LOCK);
@@ -28,7 +36,11 @@ Lock_new(Folder *folder, const ByteBuf *lock_name, const ByteBuf *lock_id,
     self->folder       = folder;
     self->timeout      = timeout;
     self->lock_name    = BB_CLONE(lock_name);
-    self->lock_id      = BB_CLONE(lock_id);
+    self->agent_id     = BB_CLONE(agent_id);
+
+    /* derive */
+    self->filename = BB_CLONE(lock_name);
+    BB_Cat_Str(self->filename, ".lock", 5);
 
     return self;
 }
@@ -37,20 +49,19 @@ void
 Lock_destroy(Lock *self)
 {
     REFCOUNT_DEC(self->folder);
-    REFCOUNT_DEC(self->lock_id);
+    REFCOUNT_DEC(self->agent_id);
     REFCOUNT_DEC(self->lock_name);
+    REFCOUNT_DEC(self->filename);
     free(self);
 }
 
 bool_t
 Lock_obtain(Lock *self)
 {
-    kino_i32_t sleep_count = self->timeout / LOCK_POLL_INTERVAL;
+    float sleep_count = self->timeout / LOCK_POLL_INTERVAL;
     bool_t locked = Lock_Do_Obtain(self);
     
-    while (!locked) {
-        if (sleep_count-- <= 0)
-            CONFESS("Couldn't get lock using %s", self->lock_name->ptr);
+    while (!locked && sleep_count-- > 0) {
         sleep(1);
         locked = Lock_Do_Obtain(self);
     }
@@ -61,44 +72,29 @@ Lock_obtain(Lock *self)
 bool_t
 Lock_do_obtain(Lock *self)
 {
-    Folder    *folder    = self->folder;
-    ByteBuf   *lock_name = self->lock_name;
-    OutStream *lock_stream;
+    OutStream *lock_stream = Folder_Safe_Open_OutStream(self->folder, 
+        self->filename);
+    Hash      *file_data; 
     ByteBuf   *yaml_buf;
-
-#ifdef HAS_POSIX
-    /* attempt to delete dead lock files */
-    if (Folder_File_Exists(folder, lock_name)) {
-        ByteBuf *file_contents = Folder_Slurp_File(folder, lock_name);
-        Hash *hash = (Hash*)YAML_parse_yaml(file_contents);
-        if ( hash != NULL && OBJ_IS_A(hash, HASH) ) {
-            ByteBuf *pid_bb     = (ByteBuf*)Hash_Fetch(hash, "pid", 3);
-            ByteBuf *lock_id_bb = (ByteBuf*)Hash_Fetch(hash, "lock_id", 7);
-            if (lock_id_bb != NULL
-                && BB_Equals(lock_id_bb, (Obj*)self->lock_id)
-                && pid_bb != NULL
-            ) {
-                int pid = strtol(pid_bb->ptr, NULL, 10);
-                if (kill(pid, 0) && errno == ESRCH)
-                    Folder_Delete_File(folder, lock_name);
-            }
-        }
-        REFCOUNT_DEC(hash);
-        REFCOUNT_DEC(file_contents);
-    }
-#endif /* HAS_POSIX */
+    ByteBuf   *pid_buf;
     
-    if (Folder_File_Exists(folder, lock_name))
+    if (lock_stream == NULL)
         return false;
 
-    /* write the pid and the host id to the lock file, using YAML */
-    lock_stream = Folder_Open_OutStream(folder, lock_name);
-    yaml_buf = BB_new(self->lock_id->len + 200);
-    yaml_buf->len = sprintf(yaml_buf->ptr, "lock_id: '%s'\npid: %d\n",
-        self->lock_id->ptr, getpid());
+    /* write pid, lock name, and agent id to the lock file as YAML */
+    pid_buf = BB_new_i64( getpid() );
+    file_data = Hash_new(3);
+    Hash_Store(file_data, "pid", 3, (Obj*)pid_buf);
+    Hash_Store(file_data, "agent_id", 8, (Obj*)self->agent_id);
+    Hash_Store(file_data, "lock_name", 9, (Obj*)self->lock_name);
+    yaml_buf = YAML_encode_yaml((Obj*)file_data);
     OutStream_Write_Bytes(lock_stream, yaml_buf->ptr, yaml_buf->len);
+
+    /* clean up */
     OutStream_SClose(lock_stream);
     REFCOUNT_DEC(lock_stream);
+    REFCOUNT_DEC(pid_buf);
+    REFCOUNT_DEC(file_data);
     REFCOUNT_DEC(yaml_buf);
 
     return true;
@@ -107,13 +103,76 @@ Lock_do_obtain(Lock *self)
 void
 Lock_release(Lock *self)
 {
-    Folder_Delete_File(self->folder, self->lock_name);
+    clear_file(self, self->filename, true, false);
 }
 
 bool_t
 Lock_is_locked(Lock *self)
 {
-    return Folder_File_Exists(self->folder, self->lock_name);
+    return Folder_File_Exists(self->folder, self->filename);
+}
+
+void
+Lock_clear_stale(Lock *self)
+{
+    VArray *files = Folder_List(self->folder);
+    u32_t i;
+    
+    /* take a stab at any file that begins with our lock_name */
+    for (i = 0; i < files->size; i++) {
+        ByteBuf *filename = (ByteBuf*)VA_Fetch(files, i);
+        if (BB_Starts_With(filename, self->lock_name)) {
+            clear_file(self, filename, false, true);
+        }
+    }
+
+    REFCOUNT_DEC(files);
+}
+
+static bool_t
+clear_file(Lock *self, const ByteBuf *filename, bool_t delete_mine, 
+           bool_t delete_other) 
+{
+    Folder *folder      = self->folder;
+    bool_t  success     = false;
+
+    /* only delete locks that start with our lock_name */
+    if ( !BB_Starts_With(filename, self->lock_name) ) 
+        return false;
+
+    /* attempt to delete dead lock file */
+    if (Folder_File_Exists(folder, filename)) {
+        ByteBuf *file_contents = Folder_Slurp_File(folder, filename);
+        Hash *hash = (Hash*)YAML_parse_yaml(file_contents);
+        if ( hash != NULL && OBJ_IS_A(hash, HASH) ) {
+            ByteBuf *pid_bb    = (ByteBuf*)Hash_Fetch(hash, "pid", 3);
+            ByteBuf *agent_id  = (ByteBuf*)Hash_Fetch(hash, "agent_id", 8);
+            ByteBuf *lock_name = (ByteBuf*)Hash_Fetch(hash, "lock_name", 9);
+
+            /* match agent id and lock name */
+            if (   agent_id != NULL  
+                && BB_Equals(agent_id, (Obj*)self->agent_id)
+                && lock_name != NULL
+                && BB_Equals(lock_name, (Obj*)self->lock_name)
+                && pid_bb != NULL
+            ) {
+                /* verify that pid is either mine or dead */
+                int pid = BB_To_I64(pid_bb);
+                         /* this process */
+                if (   ( delete_mine && pid == getpid() ) 
+                         /* dead pid */
+                    || ( delete_other && kill(pid, 0) && errno == ESRCH ) 
+                ) {
+                    Folder_Delete_File(folder, filename);
+                    success = true;
+                }
+            }
+        }
+        REFCOUNT_DEC(hash);
+        REFCOUNT_DEC(file_contents);
+    }
+
+    return success;
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

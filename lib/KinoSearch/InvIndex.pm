@@ -5,18 +5,17 @@ package KinoSearch::InvIndex;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params
-        schema => undef,
-        folder => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor params
+    schema => undef,
+    folder => undef,
+);
 
 use KinoSearch::Index::IndexFileNames
     qw( WRITE_LOCK_NAME WRITE_LOCK_TIMEOUT unused_files );
 use KinoSearch::Store::FSFolder;
+use KinoSearch::Index::SegInfos;
+use KinoSearch::Store::Lock;
 
 sub new { confess("InvIndex's constructors are create, clobber, and open") }
 
@@ -49,10 +48,15 @@ sub create {
     }
 
     # initialize the invindex
-    $folder->run_while_locked(
+    my $lock = KinoSearch::Store::Lock->new(
+        folder    => $folder,
+        agent_id  => "",
         lock_name => WRITE_LOCK_NAME,
         timeout   => WRITE_LOCK_TIMEOUT,
-        do_body   => sub {
+    );
+    $lock->clear_stale;
+    $lock->run_while_locked(
+        do_body => sub {
             # write empty segments data
             my $seg_infos
                 = KinoSearch::Index::SegInfos->new( schema => $schema );
@@ -89,10 +93,15 @@ sub clobber {
     # initialize the invindex directory
     my @all_files  = $folder->list;
     my @kino_files = unused_files( \@all_files );
-    $folder->run_while_locked(
+    my $lock       = KinoSearch::Store::Lock->new(
+        folder    => $folder,
+        agent_id  => "",
         lock_name => WRITE_LOCK_NAME,
         timeout   => WRITE_LOCK_TIMEOUT,
-        do_body   => sub {
+    );
+    $lock->clear_stale;
+    $lock->run_while_locked(
+        do_body => sub {
             # nuke existing index files
             $folder->delete_file($_) for @kino_files;
 
@@ -148,7 +157,7 @@ _new(class, schema, folder)
     kino_Schema *schema;
     kino_Folder *folder;
 CODE:
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_InvIndex_new(schema, folder);
 OUTPUT: RETVAL
 
@@ -258,6 +267,12 @@ that look like index files.
 
 Open an existing invindex for either reading or updating.
 
+=head1 METHODS
+
+=head2 get_folder get_invindex
+
+Getters for folder and invindex.
+
 =head1 COPYRIGHT
 
 Copyright 2007 Marvin Humphrey
@@ -267,4 +282,3 @@ Copyright 2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

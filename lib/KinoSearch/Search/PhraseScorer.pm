@@ -5,43 +5,15 @@ package KinoSearch::Search::PhraseScorer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Scorer );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params
-        weight         => undef,
-        term_docs      => [],
-        phrase_offsets => [],
-        slop           => 0,
-    );
-}
-our %instance_vars;
-
-sub new {
-    my $class = shift;
-    confess kerror() unless verify_args( \%instance_vars, @_ );
-    my %args = ( %instance_vars, @_ );
-
-    # set/derive some member vars
-    confess("Sloppy phrase matching not yet implemented")
-        unless $args{slop} == 0;    # TODO -- enable slop.
-
-    # sort terms by ascending frequency
-    confess("positions count doesn't match term count")
-        unless $#{ $args{term_docs} } == $#{ $args{phrase_offsets} };
-    my @by_size = sort { $a->[0]->get_doc_freq <=> $b->[0]->get_doc_freq }
-        map { [ $args{term_docs}[$_], $args{phrase_offsets}[$_] ] }
-        0 .. $#{ $args{term_docs} };
-    my @term_docs      = map { $_->[0] } @by_size;
-    my @phrase_offsets = map { $_->[1] } @by_size;
-
-    my $self = $class->_new(
-        \@term_docs, \@phrase_offsets,
-        $args{weight}->get_value,
-        @args{qw( similarity slop )}
-    );
-
-    return $self;
-}
+our %instance_vars = (
+    # constructor params
+    similarity     => undef,
+    weight         => undef,
+    weight_value   => undef,
+    posting_lists  => undef,
+    phrase_offsets => undef,
+    slop           => 0,
+);
 
 1;
 
@@ -52,34 +24,25 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::PhraseScorer
 
 kino_PhraseScorer*
-_new(class, term_docs_av, offsets_av, weight_val, sim, slop)
-    const classname_char *class;
-    AV *term_docs_av;
-    AV *offsets_av;
-    float weight_val;
-    kino_Similarity *sim;
-    kino_u32_t slop;
+new(...)
 CODE:
 {
-    kino_u32_t num_elements = av_len(term_docs_av) + 1;
-    kino_TermDocs **const term_docs 
-        = KINO_MALLOCATE(num_elements, kino_TermDocs*);
-    kino_u32_t *const phrase_offsets
-        = KINO_MALLOCATE(num_elements, kino_u32_t);
-    kino_u32_t i;
+    /* parse params */
+    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
+        "KinoSearch::Search::PhraseScorer::instance_vars");
+    kino_Similarity *sim = (kino_Similarity*)extract_obj(
+        args_hash, SNL("similarity"), "KinoSearch::Search::Similarity");
+    kino_VArray *plists = (kino_VArray*)extract_obj(
+        args_hash, SNL("posting_lists"), "KinoSearch::Util::VArray");
+    kino_VArray *phrase_offsets = (kino_VArray*)extract_obj(
+        args_hash, SNL("phrase_offsets"), "KinoSearch::Util::VArray");
+    SV *weight_sv    = extract_sv(args_hash, SNL("weight"));
+    float weight_val = extract_nv(args_hash, SNL("weight_value"));
+    chy_u32_t slop   = extract_uv(args_hash, SNL("slop"));
 
-    /* create an array of TermDocs* */
-    for(i = 0; i < num_elements; i++) {
-        SV **const term_docs_sv_ptr  = av_fetch(term_docs_av, i, 0);
-        SV **const offset_sv_ptr = av_fetch(offsets_av, i, 0);
-        const IV tmp = SvIV((SV*)SvRV( *term_docs_sv_ptr ));
-        kino_TermDocs *const td = INT2PTR(kino_TermDocs*, tmp);
-        term_docs[i] = td;
-        phrase_offsets[i] = SvIV( *offset_sv_ptr );
-    }
-    RETVAL = kino_PhraseScorer_new(num_elements, term_docs, phrase_offsets, 
-        weight_val, sim, slop);
-    KINO_UNUSED_VAR(class);
+    /* create object */
+    RETVAL = kino_PhraseScorer_new(sim, plists, phrase_offsets,
+        newSVsv(weight_sv), weight_val, slop);
 }
 OUTPUT: RETVAL
 

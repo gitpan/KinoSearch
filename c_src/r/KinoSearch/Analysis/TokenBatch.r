@@ -10,10 +10,14 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_TOKENBATCH
 #define R_KINO_TOKENBATCH 1
 
 #include "KinoSearch/Analysis/TokenBatch.h"
+
+#define KINO_TOKENBATCH_BOILERPLATE
 
 typedef void
 (*kino_TokenBatch_destroy_t)(kino_TokenBatch *self);
@@ -31,68 +35,68 @@ typedef void
 (*kino_TokenBatch_invert_t)(kino_TokenBatch *self);
 
 typedef struct kino_Token**
-(*kino_TokenBatch_next_cluster_t)(kino_TokenBatch *self, kino_u32_t *count);
+(*kino_TokenBatch_next_cluster_t)(kino_TokenBatch *self, chy_u32_t *count);
 
-#define Kino_TokenBatch_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_TokenBatch_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_TokenBatch_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_TokenBatch_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_TokenBatch_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_TokenBatch_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_TokenBatch_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_TokenBatch_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_TokenBatch_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_TokenBatch_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_TokenBatch_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_TokenBatch_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_TokenBatch_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_TokenBatch_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_TokenBatch_Push(_self, _arg1) \
-    (_self)->_->push((kino_VArray*)_self, _arg1)
+#define Kino_TokenBatch_Push(self, element) \
+    (self)->_->push((kino_VArray*)self, element)
 
-#define Kino_TokenBatch_Pop(_self) \
-    (_self)->_->pop((kino_VArray*)_self)
+#define Kino_TokenBatch_Pop(self) \
+    (self)->_->pop((kino_VArray*)self)
 
-#define Kino_TokenBatch_Unshift(_self, _arg1) \
-    (_self)->_->unshift((kino_VArray*)_self, _arg1)
+#define Kino_TokenBatch_Unshift(self, element) \
+    (self)->_->unshift((kino_VArray*)self, element)
 
-#define Kino_TokenBatch_Shift(_self) \
-    (_self)->_->shift((kino_VArray*)_self)
+#define Kino_TokenBatch_Shift(self) \
+    (self)->_->shift((kino_VArray*)self)
 
-#define Kino_TokenBatch_Grow(_self, _arg1) \
-    (_self)->_->grow((kino_VArray*)_self, _arg1)
+#define Kino_TokenBatch_Grow(self, capacity) \
+    (self)->_->grow((kino_VArray*)self, capacity)
 
-#define Kino_TokenBatch_Fetch(_self, _arg1) \
-    (_self)->_->fetch((kino_VArray*)_self, _arg1)
+#define Kino_TokenBatch_Fetch(self, num) \
+    (self)->_->fetch((kino_VArray*)self, num)
 
-#define Kino_TokenBatch_Store(_self, _arg1, _arg2) \
-    (_self)->_->store((kino_VArray*)_self, _arg1, _arg2)
+#define Kino_TokenBatch_Store(self, num, elem) \
+    (self)->_->store((kino_VArray*)self, num, elem)
 
-#define Kino_TokenBatch_Append(_self, _arg1) \
-    (_self)->_->append((kino_TokenBatch*)_self, _arg1)
+#define Kino_TokenBatch_Append(self, token) \
+    (self)->_->append((kino_TokenBatch*)self, token)
 
-#define Kino_TokenBatch_Next(_self) \
-    (_self)->_->next((kino_TokenBatch*)_self)
+#define Kino_TokenBatch_Next(self) \
+    (self)->_->next((kino_TokenBatch*)self)
 
-#define Kino_TokenBatch_Reset(_self) \
-    (_self)->_->reset((kino_TokenBatch*)_self)
+#define Kino_TokenBatch_Reset(self) \
+    (self)->_->reset((kino_TokenBatch*)self)
 
-#define Kino_TokenBatch_Invert(_self) \
-    (_self)->_->invert((kino_TokenBatch*)_self)
+#define Kino_TokenBatch_Invert(self) \
+    (self)->_->invert((kino_TokenBatch*)self)
 
-#define Kino_TokenBatch_Next_Cluster(_self, _arg1) \
-    (_self)->_->next_cluster((kino_TokenBatch*)_self, _arg1)
+#define Kino_TokenBatch_Next_Cluster(self, count) \
+    (self)->_->next_cluster((kino_TokenBatch*)self, count)
 
 struct KINO_TOKENBATCH_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -152,19 +156,17 @@ extern KINO_TOKENBATCH_VTABLE KINO_TOKENBATCH;
   #define TokenBatch_Reset Kino_TokenBatch_Reset
   #define TokenBatch_Invert Kino_TokenBatch_Invert
   #define TokenBatch_Next_Cluster Kino_TokenBatch_Next_Cluster
-  #define TOKENBATCH KINO_TOKENBATCH
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_TOKENBATCH_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     kino_Obj ** elems; \
-    kino_u32_t  size; \
-    kino_u32_t  cap; \
-    kino_u32_t  cur; \
-    kino_bool_t  inverted; \
-    kino_u32_t * cluster_counts; \
-    kino_u32_t  cluster_counts_size
-
+    chy_u32_t  size; \
+    chy_u32_t  cap; \
+    chy_u32_t  cur; \
+    chy_bool_t  inverted; \
+    chy_u32_t * cluster_counts; \
+    chy_u32_t  cluster_counts_size
 
 #ifdef KINO_WANT_TOKENBATCH_VTABLE
 KINO_TOKENBATCH_VTABLE KINO_TOKENBATCH = {
@@ -172,7 +174,7 @@ KINO_TOKENBATCH_VTABLE KINO_TOKENBATCH = {
     1,
     (KINO_OBJ_VTABLE*)&KINO_VARRAY,
     "KinoSearch::Analysis::TokenBatch",
-    (kino_Obj_clone_t)kino_Obj_clone,
+    (kino_Obj_clone_t)kino_VA_clone,
     (kino_Obj_destroy_t)kino_TokenBatch_destroy,
     (kino_Obj_equals_t)kino_Obj_equals,
     (kino_Obj_hash_code_t)kino_Obj_hash_code,
@@ -194,10 +196,15 @@ KINO_TOKENBATCH_VTABLE KINO_TOKENBATCH = {
 };
 #endif /* KINO_WANT_TOKENBATCH_VTABLE */
 
+#undef KINO_TOKENBATCH_BOILERPLATE
+
+
 #endif /* R_KINO_TOKENBATCH */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

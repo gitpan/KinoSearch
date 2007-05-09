@@ -10,13 +10,16 @@ BEGIN {
     if ( $^O =~ /mswin/i ) {
         plan( 'skip_all', "fork on Windows not supported by KS" );
     }
-    else {
-        plan( tests => 6 );
+    elsif ( $ENV{KINO_VALGRIND} ) {
+        plan( 'skip_all', "time outs cause probs under valgrind" );
     }
-    use_ok('KinoSearch::Search::SearchServer');
-    use_ok('KinoSearch::Search::SearchClient');
+    else {
+        plan( tests => 4 );
+    }
 }
 
+use KinoSearch::Search::SearchServer;
+use KinoSearch::Search::SearchClient;
 use KinoSearch::Searcher;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Search::MultiSearcher;
@@ -75,4 +78,3 @@ END {
     $searchclient->terminate if defined $searchclient;
     kill( TERM => $kid ) if $kid;
 }
-

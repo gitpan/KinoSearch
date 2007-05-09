@@ -7,10 +7,10 @@ use lib 'buildlib';
 # when an invindex created under TestSchema is opened/modified under
 # BiggerSchema.
 package BiggerSchema;
-use base qw( KinoSearch::Schema );
+use base qw( TestSchema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     content => 'KinoSearch::Schema::FieldSpec',
     aux     => 'KinoSearch::Schema::FieldSpec',
 );
@@ -18,15 +18,15 @@ our %FIELDS = (
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
 package main;
-use Test::More tests => 9;
+use Test::More tests => 7;
 use File::Spec::Functions qw( catfile tmpdir );
 use File::Path qw( rmtree );
 
-BEGIN {
-    use_ok('KinoSearch::InvIndexer');
-    use_ok('KinoSearch::Searcher');
-    use_ok('KinoSearch::Index::IndexReader');
-}
+use KinoSearch::InvIndexer;
+use KinoSearch::InvIndex;
+use KinoSearch::Searcher;
+use KinoSearch::Index::IndexReader;
+
 use TestSchema;
 use KinoTestUtils qw( create_invindex );
 
@@ -99,12 +99,12 @@ use KinoTestUtils qw( create_invindex );
 
     # Open an IndexReader, to prevent the deletion of files on Win32 and
     # verify the file purging mechanism.
-    my $ix_reader = KinoSearch::Index::IndexReader->new(
+    my $reader = KinoSearch::Index::IndexReader->open(
         invindex => BiggerSchema->open($invindex_loc) );
     $invindexer = KinoSearch::InvIndexer->new(
         invindex => BiggerSchema->open($invindex_loc) );
     $invindexer->finish( optimize => 1 );
-    $ix_reader->close;
+    $reader->close;
     $invindexer = KinoSearch::InvIndexer->new(
         invindex => BiggerSchema->open($invindex_loc) );
     $invindexer->finish( optimize => 1 );
@@ -116,11 +116,11 @@ use KinoTestUtils qw( create_invindex );
     is( scalar @cf_files, 1, "merged segment files successfully deleted" );
 
     undef $invindexer;
-    undef $ix_reader;
+    undef $reader;
 
     rmtree($invindex_loc);
 }
 
-is( KinoSearch::Store::FileDes::global_count(),
+is( KinoSearch::Store::FileDes::object_count(),
     0, "All FileDes objects have been cleaned up" );
-
+is( KinoSearch::Store::FileDes::open_count(), 0, "All FileDes closed" );

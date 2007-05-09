@@ -18,24 +18,24 @@ our @EXPORT_OK = qw(
     @COMPOUND_EXTENSIONS
     @SCRATCH_EXTENSIONS
 
+    READ_LOCK_TIMEOUT
     WRITE_LOCK_NAME
     WRITE_LOCK_TIMEOUT
+    COMMIT_LOCK_NAME
+    COMMIT_LOCK_TIMEOUT
 
     filename_from_gen
-    gen_from_file_name
+    gen_from_filename
     unused_files
 
     IXINFOS_FORMAT
     SEG_INFOS_FORMAT
     COMPOUND_FILE_FORMAT
     DOC_STORAGE_FORMAT
-    TERM_LIST_FORMAT
+    LEXICON_FORMAT
     POSTING_LIST_FORMAT
     DELDOCS_FORMAT
 );
-
-# base name of the index segments file
-use constant SEGMENTS => 'segments';
 
 # extension of the temporary file used by the SortExternal sort pool
 use constant SORTFILE_EXTENSION => '.srt';
@@ -43,24 +43,20 @@ use constant SORTFILE_EXTENSION => '.srt';
 # extension used by per-segment deletions file
 use constant DEL_EXTENSION => '.del';
 
-# Most, but not all of Lucene file extenstions. Missing are the ".p$num"
-# ".tl$num", and ".tlx$num" extensions.
-our @INDEX_EXTENSIONS = qw( cf ds dsx tv tvx del yaml );
+# Most, but not all file extenstions. Missing are the ".p$num" ".lex$num",
+# and ".lexx$num" extensions.
+our @INDEX_EXTENSIONS = qw( cf ds dsx tv tvx del skip yaml );
 
 # extensions for files which are subsumed into the cf compound file
-our @COMPOUND_EXTENSIONS = qw( ds dsx tv tvx );
+our @COMPOUND_EXTENSIONS = qw( ds dsx tv tvx skip );
 
-our @SCRATCH_EXTENSIONS = qw( srt );
+our @SCRATCH_EXTENSIONS = qw( srt ptemp lextemp tvxtemp dsxtemp );
 
-# names and constants for lockfiles
-use constant WRITE_LOCK_NAME    => 'write.lock';
-use constant WRITE_LOCK_TIMEOUT => 1000;
-
-sub gen_from_file_name {
+sub gen_from_filename {
     my $filename = shift;
     return 0 unless defined $filename;
-    return 0 unless $_[0] =~ /^.+_(\d+)/;
-    return $1;
+    return 0 unless $filename =~ /^.+_(\w+)/;
+    return from_base36($1);
 }
 
 my %extensions_hash;
@@ -71,41 +67,46 @@ for ( @INDEX_EXTENSIONS, @COMPOUND_EXTENSIONS, @SCRATCH_EXTENSIONS ) {
 # Determine which KinoSearch files in the InvIndex are not currently in use.
 # Leave non-KS files alone.
 sub unused_files {
-    my ( $files, $seg_infos ) = @_;
+    my ( $files, @seg_infoses ) = @_;
     my @unused;
+    my %keep;
+    my @generational_files;
 
-    # create a hash of seg names for quick look up.
+    # create hash of active segs, plus record which master files are in use
     my %active_segs;
-    if ( defined $seg_infos ) {
+    for my $seg_infos (@seg_infoses) {
         for ( $seg_infos->infos ) {
             $active_segs{ $_->get_seg_name } = 1;
         }
+        my $segments_file_name
+            = filename_from_gen( "segments", $seg_infos->get_generation,
+            '.yaml' );
+        $keep{$segments_file_name} = 1;
     }
 
-    my %generational_files;
     for (@$files) {
+        next if /\.lock$/;
+        next if $keep{$_};
+
         if (m{
-                ^(_[a-z0-9]+)     # seg name
+                ^(_[a-z0-9]+)         # seg name
                  (_[a-z0-9]+)?    # generation (optional)
-                 \.(.*)$          # extension
+                 \.(.*)$              # extension
             }x
             )
         {
             my ( $seg_name, $gen, $ext ) = ( $1, $2, $3 );
+
+            # if no seg infos, discard all index files
+            if ( !@seg_infoses ) {
+                push @unused, $_;
+                next;
+            }
+
+            # ensure that file has a recognized extension
             next
                 unless ( exists $extensions_hash{$ext}
-                or $ext =~ /^(p|tl|tlx)\d+$/ );
-            if ( defined $gen and bytes::length $gen ) {
-                if ( !defined $seg_infos ) {
-                    # if no seg_infos, discard all generational files too
-                    push @unused, $_;
-
-                }
-                else {
-                    # keep generational files around for testing later
-                    $generational_files{$_} = from_base36($gen);
-                }
-            }
+                or $ext =~ /^(?:p|lex|lexx)\d+$/ );
 
             # if it doesn't belong to a current segment, chuck it
             if ( !exists $active_segs{$seg_name} ) {
@@ -113,23 +114,23 @@ sub unused_files {
                 next;
             }
 
+            # if it's a .del file with a generation, defer decision
+            if ( defined $gen and bytes::length $gen ) {
+                push @generational_files, $_;
+                next;
+            }
         }
-        elsif (/^(segments|invindex)_(\w+).yaml$/) {
-            if ( defined $seg_infos ) {
-                $generational_files{$_} = from_base36($2);
-            }
-            else {
-                push @unused, $_;
-            }
+        elsif (/^segments_\w+\.yaml$/) {
+            push @unused, $_;
         }
     }
 
     # keep only the most recent generational files
-    my @sorted_gen_files
-        = sort { $generational_files{$a} <=> $generational_files{$b} }
-        keys %generational_files;
+    my @sorted_gen_files = map { $_->[0] }
+        sort { $b->[1] <=> $a->[1] }
+        map { [ $_, _seg_then_gen($_) ] } @generational_files;
     my $last_base = "";
-    for ( reverse @sorted_gen_files ) {
+    for (@sorted_gen_files) {
         my ($base) = /^(\w+)_\w+\./;
         if ( $base eq $last_base ) {
             push @unused, $_;
@@ -138,6 +139,13 @@ sub unused_files {
     }
 
     return @unused;
+}
+
+sub _seg_then_gen {
+    my $filename = shift;
+    $filename =~ /^_([a-z0-9])_([a-z0-9]+)/ or confess("no match: $filename");
+    my ( $seg_name, $gen ) = ( $1, $2 );
+    return sprintf( "%.12d%.12d", from_base36($seg_name), from_base36($gen) );
 }
 
 sub latest_gen {
@@ -171,7 +179,7 @@ OUTPUT: RETVAL
 SV*
 filename_from_gen(base, gen, ext)
     kino_ByteBuf base;
-    kino_i32_t   gen;
+    chy_i32_t    gen;
     kino_ByteBuf ext;
 CODE:
 {
@@ -208,9 +216,9 @@ CODE:
 OUTPUT: RETVAL
 
 IV
-TERM_LIST_FORMAT()
+LEXICON_FORMAT()
 CODE:
-    RETVAL = KINO_TERM_LIST_FORMAT;
+    RETVAL = KINO_LEXICON_FORMAT;
 OUTPUT: RETVAL
 
 IV
@@ -223,6 +231,36 @@ IV
 DELDOCS_FORMAT()
 CODE:
     RETVAL = KINO_DELDOCS_FORMAT;
+OUTPUT: RETVAL
+
+IV
+READ_LOCK_TIMEOUT()
+CODE:
+    RETVAL = KINO_READ_LOCK_TIMEOUT;
+OUTPUT: RETVAL
+
+const char*
+WRITE_LOCK_NAME()
+CODE:
+    RETVAL = KINO_WRITE_LOCK_NAME;
+OUTPUT: RETVAL
+
+IV
+WRITE_LOCK_TIMEOUT()
+CODE:
+    RETVAL = KINO_WRITE_LOCK_TIMEOUT;
+OUTPUT: RETVAL
+
+const char*
+COMMIT_LOCK_NAME()
+CODE:
+    RETVAL = KINO_COMMIT_LOCK_NAME;
+OUTPUT: RETVAL
+
+IV
+COMMIT_LOCK_TIMEOUT()
+CODE:
+    RETVAL = KINO_COMMIT_LOCK_TIMEOUT;
 OUTPUT: RETVAL
 
 

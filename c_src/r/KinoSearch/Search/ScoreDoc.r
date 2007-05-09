@@ -10,38 +10,42 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_SCOREDOC
 #define R_KINO_SCOREDOC 1
 
 #include "KinoSearch/Search/ScoreDoc.h"
 
+#define KINO_SCOREDOC_BOILERPLATE
+
 typedef void
 (*kino_ScoreDoc_serialize_t)(kino_ScoreDoc *self, struct kino_ByteBuf *target);
 
-#define Kino_ScoreDoc_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_ScoreDoc_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_ScoreDoc_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_ScoreDoc_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_ScoreDoc_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_ScoreDoc_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_ScoreDoc_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_ScoreDoc_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_ScoreDoc_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_ScoreDoc_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_ScoreDoc_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_ScoreDoc_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_ScoreDoc_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_ScoreDoc_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_SCOREDOC_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -68,14 +72,12 @@ extern KINO_SCOREDOC_VTABLE KINO_SCOREDOC;
   #define ScoreDoc_Is_A Kino_ScoreDoc_Is_A
   #define ScoreDoc_To_String Kino_ScoreDoc_To_String
   #define ScoreDoc_Serialize Kino_ScoreDoc_Serialize
-  #define SCOREDOC KINO_SCOREDOC
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SCOREDOC_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_u32_t  id; \
+    chy_u32_t  refcount; \
+    chy_u32_t  doc_num; \
     float  score
-
 
 #ifdef KINO_WANT_SCOREDOC_VTABLE
 KINO_SCOREDOC_VTABLE KINO_SCOREDOC = {
@@ -93,10 +95,15 @@ KINO_SCOREDOC_VTABLE KINO_SCOREDOC = {
 };
 #endif /* KINO_WANT_SCOREDOC_VTABLE */
 
+#undef KINO_SCOREDOC_BOILERPLATE
+
+
 #endif /* R_KINO_SCOREDOC */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

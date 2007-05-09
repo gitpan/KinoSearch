@@ -30,21 +30,20 @@ struct kino_ViewByteBuf {
 /* Return a pointer to a new "view" ByteBuf, offing a persective on the 
  * passed-in string.
  */
-KINO_FUNCTION(
 kino_ViewByteBuf*
-kino_ViewBB_new(char *ptr, size_t size));
+kino_ViewBB_new(char *ptr, size_t size);
 
 /* Assign the ptr and size members to the passed in values.  Downgrade the
  * ByteBuf to a "view" ByteBuf and free any existing assigned memory if
  * necessary.
  */
-KINO_METHOD("Kino_ViewBB_Assign",
 void
-kino_ViewBB_assign(kino_ViewByteBuf *self, char*ptr, size_t size));
+kino_ViewBB_assign(kino_ViewByteBuf *self, char*ptr, size_t size);
+KINO_METHOD("Kino_ViewBB_Assign");
 
-KINO_METHOD("Kino_ViewBB_Destroy",
 void
-kino_ViewBB_destroy(kino_ViewByteBuf *self));
+kino_ViewBB_destroy(kino_ViewByteBuf *self);
+KINO_METHOD("Kino_ViewBB_Destroy");
 
 KINO_END_CLASS
 

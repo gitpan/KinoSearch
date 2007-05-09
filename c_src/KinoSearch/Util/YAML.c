@@ -1,15 +1,8 @@
 #include <string.h>
 #include <ctype.h>
-
-#define KINO_USE_SHORT_NAMES
+#include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/YAML.h"
-
-#include "KinoSearch/Util/ByteBuf.r"
-#include "KinoSearch/Util/Hash.r"
-#include "KinoSearch/Util/MemManager.h"
-#include "KinoSearch/Util/Carp.h"
-#include "KinoSearch/Util/VArray.r"
 
 /* Break up a string at newlines.  Discard blank lines.
  */
@@ -73,29 +66,23 @@ unescape(ByteBuf *input);
 /* Dispatch to either encode_hash or encode_array.
  */
 static void
-encode_obj(Obj*obj, kino_u32_t indent, ByteBuf *output);
+encode_obj(Obj*obj, u32_t indent, ByteBuf *output);
 
 /* Encode a Hash as YAML, descending recursively.
  */
 static void
-encode_hash(Hash *hash, kino_u32_t indent, ByteBuf *output);
+encode_hash(Hash *hash, u32_t indent, ByteBuf *output);
 
 /* Encode a VArray as YAML, descending recursively.
  */
 static void
-encode_varray(VArray *varray, kino_u32_t indent, ByteBuf *output);
+encode_varray(VArray *varray, u32_t indent, ByteBuf *output);
 
 /* Check for invalid scalar input (e.g. newlines), quote and escape if
  * necessary.
  */
 static void
 encode_scalar(ByteBuf *scalar, ByteBuf *output);
-
-#define MAYBE_GROW_BB(_bb, _size) \
-    do { \
-        if (_bb->cap <= _size + 1) \
-            BB_Grow(_bb, _size); \
-    } while (0)
 
 Obj*
 YAML_parse_yaml(const ByteBuf *input)
@@ -439,7 +426,7 @@ unescape(ByteBuf *input)
 }
 
 static void
-encode_obj(Obj*obj, kino_u32_t indent, ByteBuf *output)
+encode_obj(Obj*obj, u32_t indent, ByteBuf *output)
 {
     if (OBJ_IS_A(obj, HASH)) {
         encode_hash((Hash*)obj, indent, output);
@@ -453,27 +440,27 @@ encode_obj(Obj*obj, kino_u32_t indent, ByteBuf *output)
 }
 
 static void
-append_spaces(ByteBuf *output, kino_u32_t num_spaces)
+append_spaces(ByteBuf *output, u32_t num_spaces)
 {
-    BB_Grow(output, output->len + num_spaces);
+    BB_GROW(output, output->len + num_spaces);
     memset(BBEND(output), ' ', num_spaces);
     output->len += num_spaces;
     *BBEND(output) = '\0';
 }
 
 static void
-encode_hash(Hash *hash, kino_u32_t indent, ByteBuf *output)
+encode_hash(Hash *hash, u32_t indent, ByteBuf *output)
 {
     kino_ByteBuf *key;
     kino_Obj     *val;
 
     /* ballpark extra space to minimize reallocations */
-    MAYBE_GROW_BB(output, output->len + (hash->size * (indent + 5)));
+    BB_GROW(output, output->len + (hash->size * (indent + 5)));
 
     Hash_Iter_Init(hash);
     while (Hash_Iter_Next(hash, &key, &val)) {
         /* append the key to the output */
-        MAYBE_GROW_BB(output, output->len + indent + key->len + 20);
+        BB_GROW(output, output->len + indent + key->len + 20);
         append_spaces(output, indent);
         encode_scalar(key, output);
         BB_Cat_Str(output, ": ", 2);
@@ -539,7 +526,7 @@ encode_scalar(ByteBuf *scalar, ByteBuf *output)
     if (space == 0)
         needs_quoting = true;
 
-    MAYBE_GROW_BB(output, output->len + space + 2);
+    BB_GROW(output, output->len + space + 3);
     if (needs_quoting) {
         char *dest = BBEND(output);
         space += 2;
@@ -560,17 +547,17 @@ encode_scalar(ByteBuf *scalar, ByteBuf *output)
 }
 
 static void
-encode_varray(VArray *varray, kino_u32_t indent, ByteBuf *output)
+encode_varray(VArray *varray, u32_t indent, ByteBuf *output)
 {
-    kino_u32_t i;
+    u32_t i;
 
     /* ballpark space */
-    MAYBE_GROW_BB(output, output->len + (varray->size * (indent + 5)));
+    BB_GROW(output, output->len + (varray->size * (indent + 5)));
 
     for (i = 0; i < varray->size; i++) {
         kino_Obj *elem = VA_Fetch(varray, i);
 
-        MAYBE_GROW_BB(output, output->len + indent + 5);
+        BB_GROW(output, output->len + indent + 5);
         append_spaces(output, indent);
         BB_Cat_Str(output, "- ", 2);
 

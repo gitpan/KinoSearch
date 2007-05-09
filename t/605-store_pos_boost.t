@@ -4,8 +4,9 @@ use lib 'buildlib';
 
 package MyTokenizer;
 use base qw( KinoSearch::Analysis::Analyzer );
+use KinoSearch::Analysis::TokenBatch;
 
-sub analyze {
+sub analyze_batch {
     my ( $self, $batch ) = @_;
     my $new_batch = KinoSearch::Analysis::TokenBatch->new;
 
@@ -36,9 +37,9 @@ sub analyze {
 
 package MySchema::boosted;
 use base qw( KinoSearch::Schema::FieldSpec );
+use KinoSearch::Posting::RichPosting;
 
-sub store_pos_boost   {1}
-sub store_field_boost {0}
+sub posting_type {'KinoSearch::Posting::RichPosting'}
 
 sub analyzer { MyTokenizer->new }
 
@@ -46,7 +47,7 @@ package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     plain   => 'KinoSearch::Schema::FieldSpec',
     boosted => 'MySchema::boosted',
 );
@@ -61,6 +62,7 @@ use Test::More tests => 2;
 use KinoSearch::Searcher;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::InvIndexer;
+use KinoSearch::InvIndex;
 use KinoSearch::Index::Term;
 use KinoSearch::Search::TermQuery;
 
@@ -86,13 +88,13 @@ $invindexer->finish;
 my $searcher = KinoSearch::Searcher->new( invindex => $invindex );
 
 my $q_for_plain = KinoSearch::Search::TermQuery->new(
-    term => KinoSearch::Index::Term->new( plain => 'a' ), );
+    term => KinoSearch::Index::Term->new( plain => 'a' ) );
 my $hits = $searcher->search( query => $q_for_plain );
 is( $hits->fetch_hit_hashref->{plain},
     $best, "verify that search on unboosted field returns best match" );
 
 my $q_for_boosted = KinoSearch::Search::TermQuery->new(
-    term => KinoSearch::Index::Term->new( boosted => 'a' ), );
+    term => KinoSearch::Index::Term->new( boosted => 'a' ) );
 $hits = $searcher->search( query => $q_for_boosted );
 is( $hits->fetch_hit_hashref->{boosted},
     $boosted, "artificially boosted token overrides better match" );
@@ -107,4 +109,3 @@ TODO: {
         "proximity helps boost scores"
     );
 }
-

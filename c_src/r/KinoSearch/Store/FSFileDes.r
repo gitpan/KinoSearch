@@ -10,69 +10,73 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_FSFILEDES
 #define R_KINO_FSFILEDES 1
 
 #include "KinoSearch/Store/FSFileDes.h"
 
+#define KINO_FSFILEDES_BOILERPLATE
+
 typedef void
 (*kino_FSFileDes_destroy_t)(kino_FSFileDes *self);
 
-typedef void
-(*kino_FSFileDes_fdseek_t)(kino_FSFileDes *self, kino_u64_t target);
+typedef chy_bool_t
+(*kino_FSFileDes_fdseek_t)(kino_FSFileDes *self, chy_u64_t target);
 
-typedef void
+typedef chy_bool_t
 (*kino_FSFileDes_fdread_t)(kino_FSFileDes *self, char *dest, 
-                      kino_u32_t dest_offset, kino_u32_t len);
+                      chy_u32_t dest_offset, chy_u32_t len);
 
-typedef void
-(*kino_FSFileDes_fdwrite_t)(kino_FSFileDes *self, char* buf, kino_u32_t len);
+typedef chy_bool_t
+(*kino_FSFileDes_fdwrite_t)(kino_FSFileDes *self, const char* buf, chy_u32_t len);
 
-typedef kino_u64_t
+typedef chy_u64_t
 (*kino_FSFileDes_fdlength_t)(kino_FSFileDes *self);
 
-typedef void
+typedef chy_bool_t
 (*kino_FSFileDes_fdclose_t)(kino_FSFileDes *self);
 
-#define Kino_FSFileDes_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_FSFileDes_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_FSFileDes_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_FSFileDes_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_FSFileDes_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_FSFileDes_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_FSFileDes_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_FSFileDes_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_FSFileDes_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_FSFileDes_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_FSFileDes_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_FSFileDes_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_FSFileDes_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_FSFileDes_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_FSFileDes_FDSeek(_self, _arg1) \
-    (_self)->_->fdseek((kino_FileDes*)_self, _arg1)
+#define Kino_FSFileDes_FDSeek(self, target) \
+    (self)->_->fdseek((kino_FileDes*)self, target)
 
-#define Kino_FSFileDes_FDRead(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->fdread((kino_FileDes*)_self, _arg1, _arg2, _arg3)
+#define Kino_FSFileDes_FDRead(self, dest, dest_offset, len) \
+    (self)->_->fdread((kino_FileDes*)self, dest, dest_offset, len)
 
-#define Kino_FSFileDes_FDWrite(_self, _arg1, _arg2) \
-    (_self)->_->fdwrite((kino_FileDes*)_self, _arg1, _arg2)
+#define Kino_FSFileDes_FDWrite(self, buf, len) \
+    (self)->_->fdwrite((kino_FileDes*)self, buf, len)
 
-#define Kino_FSFileDes_FDLength(_self) \
-    (_self)->_->fdlength((kino_FileDes*)_self)
+#define Kino_FSFileDes_FDLength(self) \
+    (self)->_->fdlength((kino_FileDes*)self)
 
-#define Kino_FSFileDes_FDClose(_self) \
-    (_self)->_->fdclose((kino_FileDes*)_self)
+#define Kino_FSFileDes_FDClose(self) \
+    (self)->_->fdclose((kino_FileDes*)self)
 
 struct KINO_FSFILEDES_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -113,17 +117,14 @@ extern KINO_FSFILEDES_VTABLE KINO_FSFILEDES;
   #define FSFileDes_FDWrite Kino_FSFileDes_FDWrite
   #define FSFileDes_FDLength Kino_FSFileDes_FDLength
   #define FSFileDes_FDClose Kino_FSFileDes_FDClose
-  #define FSFILEDES KINO_FSFILEDES
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_FSFILEDES_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     char * path; \
-    char * mode; \
-    kino_u64_t  pos; \
-    kino_i32_t  stream_count; \
+    chy_u64_t  pos; \
+    chy_i32_t  stream_count; \
     FILE * fhandle
-
 
 #ifdef KINO_WANT_FSFILEDES_VTABLE
 KINO_FSFILEDES_VTABLE KINO_FSFILEDES = {
@@ -146,10 +147,15 @@ KINO_FSFILEDES_VTABLE KINO_FSFILEDES = {
 };
 #endif /* KINO_WANT_FSFILEDES_VTABLE */
 
+#undef KINO_FSFILEDES_BOILERPLATE
+
+
 #endif /* R_KINO_FSFILEDES */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

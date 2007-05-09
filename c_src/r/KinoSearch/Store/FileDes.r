@@ -10,66 +10,70 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_FILEDES
 #define R_KINO_FILEDES 1
 
 #include "KinoSearch/Store/FileDes.h"
 
-typedef void
-(*kino_FileDes_fdseek_t)(kino_FileDes *self, kino_u64_t target);
+#define KINO_FILEDES_BOILERPLATE
 
-typedef void
-(*kino_FileDes_fdread_t)(kino_FileDes *self, char *dest, kino_u32_t dest_offset, 
-                    kino_u32_t len);
+typedef chy_bool_t
+(*kino_FileDes_fdseek_t)(kino_FileDes *self, chy_u64_t target);
 
-typedef void
-(*kino_FileDes_fdwrite_t)(kino_FileDes *self, char* buf, kino_u32_t len);
+typedef chy_bool_t
+(*kino_FileDes_fdread_t)(kino_FileDes *self, char *dest, chy_u32_t dest_offset, 
+                    chy_u32_t len);
 
-typedef kino_u64_t
+typedef chy_bool_t
+(*kino_FileDes_fdwrite_t)(kino_FileDes *self, const char* buf, chy_u32_t len);
+
+typedef chy_u64_t
 (*kino_FileDes_fdlength_t)(kino_FileDes *self);
 
-typedef void
+typedef chy_bool_t
 (*kino_FileDes_fdclose_t)(kino_FileDes *self);
 
-#define Kino_FileDes_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_FileDes_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_FileDes_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_FileDes_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_FileDes_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_FileDes_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_FileDes_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_FileDes_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_FileDes_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_FileDes_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_FileDes_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_FileDes_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_FileDes_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_FileDes_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_FileDes_FDSeek(_self, _arg1) \
-    (_self)->_->fdseek((kino_FileDes*)_self, _arg1)
+#define Kino_FileDes_FDSeek(self, target) \
+    (self)->_->fdseek((kino_FileDes*)self, target)
 
-#define Kino_FileDes_FDRead(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->fdread((kino_FileDes*)_self, _arg1, _arg2, _arg3)
+#define Kino_FileDes_FDRead(self, dest, dest_offset, len) \
+    (self)->_->fdread((kino_FileDes*)self, dest, dest_offset, len)
 
-#define Kino_FileDes_FDWrite(_self, _arg1, _arg2) \
-    (_self)->_->fdwrite((kino_FileDes*)_self, _arg1, _arg2)
+#define Kino_FileDes_FDWrite(self, buf, len) \
+    (self)->_->fdwrite((kino_FileDes*)self, buf, len)
 
-#define Kino_FileDes_FDLength(_self) \
-    (_self)->_->fdlength((kino_FileDes*)_self)
+#define Kino_FileDes_FDLength(self) \
+    (self)->_->fdlength((kino_FileDes*)self)
 
-#define Kino_FileDes_FDClose(_self) \
-    (_self)->_->fdclose((kino_FileDes*)_self)
+#define Kino_FileDes_FDClose(self) \
+    (self)->_->fdclose((kino_FileDes*)self)
 
 struct KINO_FILEDES_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -113,16 +117,13 @@ extern KINO_FILEDES_VTABLE KINO_FILEDES;
   #define FileDes_FDWrite Kino_FileDes_FDWrite
   #define FileDes_FDLength Kino_FileDes_FDLength
   #define FileDes_FDClose Kino_FileDes_FDClose
-  #define FILEDES KINO_FILEDES
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_FILEDES_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     char * path; \
-    char * mode; \
-    kino_u64_t  pos; \
-    kino_i32_t  stream_count
-
+    chy_u64_t  pos; \
+    chy_i32_t  stream_count
 
 #ifdef KINO_WANT_FILEDES_VTABLE
 KINO_FILEDES_VTABLE KINO_FILEDES = {
@@ -145,10 +146,15 @@ KINO_FILEDES_VTABLE KINO_FILEDES = {
 };
 #endif /* KINO_WANT_FILEDES_VTABLE */
 
+#undef KINO_FILEDES_BOILERPLATE
+
+
 #endif /* R_KINO_FILEDES */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

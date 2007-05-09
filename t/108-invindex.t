@@ -2,16 +2,14 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 10;
+use Test::More tests => 7;
 
 use File::Spec::Functions qw( tmpdir catdir catfile );
 use File::Path qw( rmtree );
 
-BEGIN {
-    use_ok('KinoSearch::InvIndex');
-    use_ok('KinoSearch::Store::RAMFolder');
-    use_ok('KinoSearch::Store::FSFolder');
-}
+use KinoSearch::InvIndex;
+use KinoSearch::Store::RAMFolder;
+use KinoSearch::Store::FSFolder;
 use KinoSearch::InvIndexer;
 use KinoSearch::Searcher;
 use TestSchema;
@@ -81,4 +79,3 @@ pass("clobber ignores existing files in a RAMFolder");
 
 # clean up
 rmtree($fs_invindex_loc);
-

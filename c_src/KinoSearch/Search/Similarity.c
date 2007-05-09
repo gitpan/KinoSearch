@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "math.h"
@@ -35,15 +34,19 @@ Sim_destroy(Similarity *self)
 void
 Sim_serialize(Similarity *self, ByteBuf *target)
 {
-    /* make room */
     const u32_t class_name_len = strlen(self->_->class_name);
     const u32_t new_len = target->len + sizeof(u32_t) + class_name_len;
-    BB_Grow(target, new_len);
+    char *ptr;
+
+    /* make room */
+    BB_GROW(target, new_len);
+    ptr = BBEND(target);
+    target->len = new_len;
 
     /* only the class name */
-    Math_encode_bigend_u32(class_name_len, BBEND(target));
-    target->len += sizeof(u32_t);
-    BB_Cat_Str(target, (char*)self->_->class_name, class_name_len);
+    MATH_ENCODE_U32(class_name_len, ptr);
+    ptr += sizeof(u32_t);
+    memcpy(ptr, (char*)self->_->class_name, class_name_len);
 }
 
 Similarity*
@@ -56,7 +59,7 @@ Sim_deserialize(ViewByteBuf *serialized)
     /* extract class name, sanity checking as we go */
     if (serialized->len < sizeof(u32_t))
         CONFESS("Not enough bytes: %u", serialized->len);
-    class_name_len = Math_decode_bigend_u32(serialized->ptr);
+    MATH_DECODE_U32(class_name_len, serialized->ptr);
     serialized->len -= sizeof(u32_t);
     serialized->ptr += sizeof(u32_t);
     if (serialized->len < class_name_len)

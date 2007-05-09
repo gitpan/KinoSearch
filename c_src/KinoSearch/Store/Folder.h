@@ -22,91 +22,77 @@ struct kino_Folder {
 
 /* Given a filename, return an OutStream object.
  */
-KINO_METHOD("Kino_Folder_Open_OutStream",
 struct kino_OutStream*
 kino_Folder_open_outstream(kino_Folder *self,  
-                           const struct kino_ByteBuf *filename));
+                           const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_Folder_Open_OutStream");
+
+/* Like Folder_Open_OutStream, but won't clobber an existing file and returns
+ * NULL rather than throwing an exception.
+ */
+struct kino_OutStream*
+kino_Folder_safe_open_outstream(kino_Folder *self,  
+                                const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_Folder_Safe_Open_OutStream");
 
 /* Given a filename, return an InStream object.
  */
-KINO_METHOD("Kino_Folder_Open_InStream",
 struct kino_InStream*
 kino_Folder_open_instream(kino_Folder *self,  
-                          const struct kino_ByteBuf *filename));
+                          const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_Folder_Open_InStream");
 
 /* Return a list of all the files in the Folder.  The elements in the VArray
  * are all ByteBuf*.
  */
-KINO_METHOD("Kino_Folder_List",
 struct kino_VArray*
-kino_Folder_list(kino_Folder *self));
+kino_Folder_list(kino_Folder *self);
+KINO_METHOD("Kino_Folder_List");
 
 /* Indicate whether the folder contains a file with the given filename.
  */
-KINO_METHOD("Kino_Folder_File_Exists",
-kino_bool_t
+chy_bool_t
 kino_Folder_file_exists(kino_Folder *self, 
-                        const struct kino_ByteBuf *filename));
+                        const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_Folder_File_Exists");
 
 /* Rename a file.
  */
-KINO_METHOD("Kino_Folder_Rename_File",
 void
 kino_Folder_rename_file(kino_Folder *self, 
                         const struct kino_ByteBuf *from,
-                        const struct kino_ByteBuf *to));
+                        const struct kino_ByteBuf *to);
+KINO_METHOD("Kino_Folder_Rename_File");
 
 /* Delete a file from the folder.
  */
-KINO_METHOD("Kino_Folder_Delete_File",
 void
 kino_Folder_delete_file(kino_Folder *self, 
-                        const struct kino_ByteBuf *filename));
+                        const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_Folder_Delete_File");
 
 /* Return a ByteBuf with the file's contents.  Only for small files, 
  * obviously.
  */
-KINO_METHOD("Kino_Folder_Slurp_File",
 struct kino_ByteBuf*
 kino_Folder_slurp_file(kino_Folder *self, 
-                       const struct kino_ByteBuf *filename));
+                       const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_Folder_Slurp_File");
 
 /* Scan the folder contents and return the latest "generation" of a
  * filename.
  */
-KINO_METHOD("Kino_Folder_Latest_Gen",
 struct kino_ByteBuf*
 kino_Folder_latest_gen(kino_Folder *self, 
                        const struct kino_ByteBuf *base, 
-                       const struct kino_ByteBuf *ext));
-
-/* Factory method for creating a KinoSearch::Store::Lock subclassed object.
- */
-KINO_METHOD("Kino_Folder_Make_Lock",
-struct kino_Lock*
-kino_Folder_make_lock(kino_Folder *self, 
-                      const struct kino_ByteBuf *lock_name,
-                      const struct kino_ByteBuf *lock_id,
-                      kino_i32_t timeout));
-
-/* Create a Lock object and obtain a lock.  Run the function specified by the
- * [func] parameter, passing it [arg]. (If more than one arg is needed, pass a
- * struct pointer.)  Release the lock and destroy the Lock object.  
- */
-KINO_METHOD("Kino_Folder_Run_Locked",
-void
-kino_Folder_run_locked(kino_Folder *self, 
-                       const struct kino_ByteBuf *lock_name,
-                       const struct kino_ByteBuf *lock_id,
-                       kino_i32_t timeout, 
-                       void(*func)(void *arg), 
-                       void *arg));
+                       const struct kino_ByteBuf *ext);
+KINO_METHOD("Kino_Folder_Latest_Gen");
 
 /* Close the folder and release implementation-specific resources.
  */
-KINO_METHOD("Kino_Folder_Close_F",
 void
-kino_Folder_close_f(kino_Folder *self));
+kino_Folder_close_f(kino_Folder *self);
+KINO_METHOD("Kino_Folder_Close_F");
 
 KINO_END_CLASS
 

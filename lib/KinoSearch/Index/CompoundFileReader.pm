@@ -5,14 +5,11 @@ package KinoSearch::Index::CompoundFileReader;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::Folder );    # !!
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # members / constructor params
-        invindex => undef,
-        seg_info => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor params
+    invindex => undef,
+    seg_info => undef,
+);
 
 1;
 

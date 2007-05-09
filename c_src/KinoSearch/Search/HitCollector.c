@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_HITCOLLECTOR_VTABLE
@@ -8,7 +7,7 @@
 #include "KinoSearch/Util/IntMap.r"
 
 typedef struct OffsCollData {
-    kino_u32_t    offset;
+    u32_t         offset;
     HitCollector *inner_coll;
 } OffsCollData;
 

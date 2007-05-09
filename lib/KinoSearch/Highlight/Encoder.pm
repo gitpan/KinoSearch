@@ -5,10 +5,6 @@ package KinoSearch::Highlight::Encoder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars();
-}
-
 sub encode { shift->abstract_death }
 
 1;
@@ -27,7 +23,7 @@ KinoSearch::Highlight::Encoder - Encode excerpted text.
 
 Encoder objects are invoked by Highlighter objects for every piece of text
 that makes it into an excerpt.  The archetypal implementation is
-KinoSearch::Highlight::SimpleHTMLEncoder.
+L<KinoSearch::Highlight::SimpleHTMLEncoder>.
 
 =head1 METHODS
 

@@ -19,14 +19,13 @@ struct kino_FieldDoc {
 
 /* Constructor
  */
-KINO_FUNCTION(
 kino_FieldDoc*
-kino_FieldDoc_new(kino_u32_t id, float score, 
-                  struct kino_FieldDocCollator *collator));
+kino_FieldDoc_new(chy_u32_t doc_num, float score, 
+                  struct kino_FieldDocCollator *collator);
 
-KINO_METHOD("Kino_FieldDoc_Destroy",
 void
-kino_FieldDoc_destroy(kino_FieldDoc *self));
+kino_FieldDoc_destroy(kino_FieldDoc *self);
+KINO_METHOD("Kino_FieldDoc_Destroy");
 
 KINO_END_CLASS
 

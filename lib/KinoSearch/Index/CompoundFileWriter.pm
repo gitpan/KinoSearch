@@ -5,16 +5,15 @@ package KinoSearch::Index::CompoundFileWriter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        invindex => undef,
-        seg_info => undef,
-        # members
-        entries => {},
-        merged  => 0,
-    );
-}
+our %instance_vars = (
+    # constructor params / members
+    invindex => undef,
+    seg_info => undef,
+
+    # members
+    entries => {},
+    merged  => 0,
+);
 
 use KinoSearch::Util::CClass qw( to_kino );
 use KinoSearch::Index::IndexFileNames qw( COMPOUND_FILE_FORMAT );

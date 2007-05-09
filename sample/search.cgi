@@ -31,10 +31,11 @@ my $hits = $searcher->search(
     offset     => $offset,
     num_wanted => $hits_per_page,
 );
+my $hit_count = $hits->total_hits;
 
 # arrange for highlighted excerpts to be created.
-my $highlighter
-    = KinoSearch::Highlight::Highlighter->new( fields => ['content'] );
+my $highlighter = KinoSearch::Highlight::Highlighter->new;
+$highlighter->add_spec( field => 'content' );
 $hits->create_excerpts( highlighter => $highlighter );
 
 # create result list
@@ -53,19 +54,19 @@ while ( my $hit = $hits->fetch_hit_hashref ) {
         |;
 }
 
-# generate paging links and hit count, print and exit
-$q =~ s/"/&quot;/g;
-my $paging_links = generate_paging_info( $q, $hits->total_hits );
-blast_out_content( $q, $report, $paging_links );
-exit;
-
 #--------------------------------------------------------------------------#
 # No KinoSearch tutorial material below this point - just html generation. #
 #--------------------------------------------------------------------------#
 
+# generate paging links and hit count, print and exit
+my $paging_links = generate_paging_info( $q, $hit_count );
+blast_out_content( $q, $report, $paging_links );
+exit;
+
 # Create html fragment with links for paging through results 10-at-a-time.
 sub generate_paging_info {
     my ( $query_string, $total_hits ) = @_;
+    $query_string = CGI::escapeHTML($query_string);
     my $paging_info;
     if ( !length $query_string ) {
         # no query, no display
@@ -137,6 +138,7 @@ sub generate_paging_info {
 # Print content to output.
 sub blast_out_content {
     my ( $query_string, $hit_list, $paging_info ) = @_;
+    $query_string = CGI::escapeHTML($query_string);
     print "Content-type: text/html\n\n";
     print <<END_HTML;
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"

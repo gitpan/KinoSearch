@@ -2,9 +2,9 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 8;
+use Test::More tests => 7;
 
-BEGIN { use_ok('KinoSearch::Search::Hits') }
+use KinoSearch::Search::Hits;
 use KinoSearch::Searcher;
 use KinoTestUtils qw( create_invindex );
 

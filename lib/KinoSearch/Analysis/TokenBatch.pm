@@ -5,8 +5,10 @@ package KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN { __PACKAGE__->init_instance_vars( text => undef ) }
-our %instance_vars;
+our %instance_vars = (
+    # params
+    text => undef
+);
 
 use KinoSearch::Analysis::Token;
 
@@ -60,7 +62,7 @@ add_many_tokens(self, string_sv, starts_av, ends_av, ...)
     AV              *ends_av;
 PPCODE:
 {
-    const kino_u32_t num_starts = av_len(starts_av) + 1;
+    const chy_u32_t num_starts  = av_len(starts_av) + 1;
     size_t len;
     char *string_top            = SvPV(string_sv, len);
     char *ptr                   = string_top;
@@ -105,13 +107,13 @@ PPCODE:
 
         /* scan to, or continue scanning to, the start and end offsets */
         for ( ; num_code_points < start_offset; num_code_points++) {
-            ptr += KINO_STRHELP_UTF8_SKIP[(kino_u8_t)*ptr];
+            ptr += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*ptr];
             if (ptr > limit)
                 CONFESS("scanned past end of '%s'", string_top);
         }
         token_start = ptr;
         for ( ; num_code_points < end_offset; num_code_points++) {
-            ptr += KINO_STRHELP_UTF8_SKIP[(kino_u8_t)*ptr];
+            ptr += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*ptr];
             if (ptr > limit)
                 CONFESS("scanned past end of '%s'", string_top);
         }
@@ -143,8 +145,8 @@ set_all_texts(self, texts_av)
     AV              *texts_av;
 PPCODE:
 {
-    kino_i32_t i;
-    const kino_i32_t max = av_len(texts_av);
+    chy_i32_t i;
+    const chy_i32_t max = av_len(texts_av);
 
     for (i = 0; i <= max; i++) {
         kino_Token *const token = (kino_Token*)Kino_TokenBatch_Fetch(self, i);
@@ -179,7 +181,7 @@ get_all_texts(self)
 PPCODE:
 {
     AV *const out_av = newAV();
-    kino_u32_t i;
+    chy_u32_t i;
 
     for (i = 0; i < self->size; i++) {
         kino_Token *const token = (kino_Token*)Kino_TokenBatch_Fetch(self, i);
@@ -312,7 +314,8 @@ Tack a Token onto the end of the batch.
 
 High efficiency method for adding multiple tokens to the batch with one call.
 The starts and ends, which must be specified in characters (not bytes), will
-be used to identify substrings of C<$string> to use as token texts.
+be used to identify substrings of C<$string> to supply as token texts to
+Token->new.
 
 (Note: boosts should be supplied only for fields which are set to
 C<store_pos_boost>.)
@@ -323,7 +326,7 @@ C<store_pos_boost>.)
         # ...
     }
 
-Return the next token in the TokenBatch, or undef if out of tokens.
+Return the next token in the TokenBatch, or C<undef> if out of tokens.
 
 =head2 reset
 
@@ -341,4 +344,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

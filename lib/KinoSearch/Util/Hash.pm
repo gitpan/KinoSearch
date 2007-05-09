@@ -5,13 +5,10 @@ package KinoSearch::Util::Hash;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args
-        capacity => 16,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # params
+    capacity => 16,
+);
 
 1;
 
@@ -28,7 +25,7 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Util::Hash::instance_vars");
-    kino_u32_t capacity = extract_uv(args_hash, SNL("capacity"));
+    chy_u32_t capacity = extract_uv(args_hash, SNL("capacity"));
 
     /* build object */
     RETVAL = kino_Hash_new(capacity);
@@ -79,13 +76,39 @@ CODE:
 }
 OUTPUT: RETVAL
 
+kino_ByteBuf*
+add_key(self, key)
+    kino_Hash *self;
+    kino_ByteBuf key;
+CODE:
+    RETVAL = Kino_Hash_Add_Key(self, &key);
+    REFCOUNT_INC(RETVAL);
+OUTPUT: RETVAL
+
+SV*
+find_key(self, key)
+    kino_Hash *self;
+    kino_ByteBuf key;
+CODE:
+{
+    kino_ByteBuf *found_key = Kino_Hash_Find_Key(self, &key);
+
+    if (found_key == NULL) {
+        RETVAL = newSV(0);
+    }
+    else {
+        RETVAL = kobj_to_pobj(found_key);
+    }
+}
+OUTPUT: RETVAL
+
 void
 clear(self)
     kino_Hash *self;
 PPCODE:
     Kino_Hash_Clear(self);
 
-kino_bool_t
+chy_bool_t
 delete(self, key)
     kino_Hash *self;
     kino_ByteBuf key;

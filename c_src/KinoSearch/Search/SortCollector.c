@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_SORTCOLLECTOR_VTABLE
@@ -54,7 +53,7 @@ SortColl_collect(SortCollector *self, u32_t doc_num, float score)
 
     /* bail if the doc doesn't sort higher than the current bubble */
     if (   self->total_hits > self->num_hits 
-        && ( !FDocCollator_Compare(self->collator, doc_num, score,
+        && ( FDocCollator_Compare(self->collator, doc_num, score,
               self->min_doc, self->min_score) )
     ) {
         return;
@@ -69,7 +68,7 @@ SortColl_collect(SortCollector *self, u32_t doc_num, float score)
         /* store the bubble score in a more accessible spot */
         if (hit_q->size == hit_q->max_size) {
             FieldDoc *const least = (FieldDoc*)SortedHitQ_Peek(hit_q);
-            self->min_doc   = least->id;
+            self->min_doc   = least->doc_num;
             self->min_score = least->score;
         }
     }

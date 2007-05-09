@@ -4,18 +4,19 @@ use lib 'buildlib';
 
 package PlainSchema;
 use base qw( KinoSearch::Schema );
-use KinoSearch::Analysis::PolyAnalyzer;
+use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
+our %fields = ( content => 'KinoSearch::Schema::FieldSpec' );
 
 sub analyzer { KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ ) }
 
 package StopSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::PolyAnalyzer;
+use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Analysis::Stopalizer;
 
-our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
+our %fields = ( content => 'KinoSearch::Schema::FieldSpec' );
 
 sub analyzer {
     my $whitespace_tokenizer
@@ -30,7 +31,7 @@ package MultiFieldSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     a => 'KinoSearch::Schema::FieldSpec',
     b => 'KinoSearch::Schema::FieldSpec',
 );
@@ -38,17 +39,17 @@ our %FIELDS = (
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
 package main;
-use Test::More tests => 211;
+use Test::More tests => 210;
 
-BEGIN { use_ok('KinoSearch::QueryParser::QueryParser') }
-
-use KinoTestUtils qw( create_invindex );
-
+use KinoSearch::QueryParser::QueryParser;
+use KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
 use KinoSearch::Searcher;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::Util::StringHelper qw( utf8_flag_on );
+
+use KinoTestUtils qw( create_invindex );
 
 my $folder       = KinoSearch::Store::RAMFolder->new;
 my $stop_folder  = KinoSearch::Store::RAMFolder->new;
@@ -168,22 +169,18 @@ while ( $i < @logical_tests ) {
 
     my $query = $OR_parser->parse($qstring);
     my $hits = $searcher->search( query => $query );
-    $hits->seek( 0, 50 );
     is( $hits->total_hits, $logical_tests[$i][0], "OR:    $qstring" );
 
     $query = $AND_parser->parse($qstring);
     $hits = $searcher->search( query => $query );
-    $hits->seek( 0, 50 );
     is( $hits->total_hits, $logical_tests[$i][1], "AND:   $qstring" );
 
     $query = $OR_stop_parser->parse($qstring);
     $hits = $stop_searcher->search( query => $query );
-    $hits->seek( 0, 50 );
     is( $hits->total_hits, $logical_tests[$i][2], "stoplist-OR:   $qstring" );
 
     $query = $AND_stop_parser->parse($qstring);
     $hits = $stop_searcher->search( query => $query );
-    $hits->seek( 0, 50 );
     is( $hits->total_hits, $logical_tests[$i][3],
         "stoplist-AND:   $qstring" );
 
@@ -239,4 +236,3 @@ is( $hits->total_hits, 1, "search finds 1 doc (prep for next text)" );
 $query = $analyzer_parser->parse('United States');
 $hits = $mf_searcher->search( query => $query );
 is( $hits->total_hits, 2, "QueryParser uses supplied Analyzer" );
-

@@ -28,7 +28,7 @@ use base qw( KinoSearch::Schema );
 
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     analyzed             => 'MySchema::analyzed',
     polyanalyzed         => 'MySchema::polyanalyzed',
     unanalyzed           => 'MySchema::unanalyzed',
@@ -42,6 +42,7 @@ package main;
 use Test::More tests => 10;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::InvIndexer;
+use KinoSearch::InvIndex;
 use KinoSearch::Searcher;
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Index::Term;

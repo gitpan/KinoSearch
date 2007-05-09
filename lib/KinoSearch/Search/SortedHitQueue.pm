@@ -5,8 +5,10 @@ package KinoSearch::Search::SortedHitQueue;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::HitQueue );
 
-BEGIN { __PACKAGE__->init_instance_vars() }
-our %instance_vars;
+our %instance_vars = (
+    # inherited
+    max_size => undef,
+);
 
 use KinoSearch::Search::FieldDoc;
 
@@ -25,7 +27,7 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Search::SortedHitQueue::instance_vars");
-    kino_u32_t max_size = extract_uv(args_hash, SNL("max_size"));
+    chy_u32_t max_size = extract_uv(args_hash, SNL("max_size"));
 
     /* create object */
     RETVAL = kino_SortedHitQ_new(max_size);

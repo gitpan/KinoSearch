@@ -16,10 +16,10 @@ BEGIN {
 }
 
 use lib 'buildlib';
-use KinoSearchBuild;
+use KinoSearch::Build;
 use File::Spec::Functions qw( curdir );
 
-if ( !$ENV{KINO_DEBUG} ) {
+if ( $conflict and !$ENV{KINO_DEBUG} ) {
     print <<END_WARNING;
 
 *** WARNING ***
@@ -33,7 +33,7 @@ END_WARNING
     exit unless $response;
 }
 
-my $builder        = KinoSearchBuild->new(
+my $builder        = KinoSearch::Build->new(
     module_name       => 'KinoSearch',
     license           => 'perl',
     dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',
@@ -43,6 +43,7 @@ my $builder        = KinoSearchBuild->new(
         'Lingua::Stem::Snowball' => 0.94,
         'Lingua::StopWords'      => 0.06,
         'Clone'                  => 0.18,
+        'HTML::Parser'           => 3,
     },
     build_requires => {
         'ExtUtils::CBuilder' => 0,

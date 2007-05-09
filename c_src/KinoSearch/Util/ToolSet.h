@@ -8,6 +8,9 @@
  * header files, so that the header files remain as sparse as possible.
  */
 
+#define KINO_USE_SHORT_NAMES
+#define CHY_USE_SHORT_NAMES
+
 #include "charmony.h"
 #include <limits.h>
 #include <stddef.h>
@@ -25,7 +28,7 @@
 #include "KinoSearch/Util/VArray.r"
 #include "KinoSearch/Util/Hash.r"
 
-#endif
+#endif /* H_KINO_TOOLSET */
 
 /* Copyright 2006-2007 Marvin Humphrey
  *

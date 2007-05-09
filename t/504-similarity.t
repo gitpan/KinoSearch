@@ -3,14 +3,14 @@ use warnings;
 
 package MySchema::LongField;
 use base qw( KinoSearch::Schema::FieldSpec );
-use KinoSearch::Contrib::LongFieldSim;
-sub similarity { KinoSearch::Contrib::LongFieldSim->new }
+use KSx::Search::LongFieldSim;
+sub similarity { KSx::Search::LongFieldSim->new }
 
 package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     title => 'KinoSearch::Schema::FieldSpec',
     body  => 'MySchema::LongField',
 );
@@ -18,12 +18,12 @@ our %FIELDS = (
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
 package main;
-use Test::More tests => 6;
+use Test::More tests => 5;
 
-BEGIN { use_ok('KinoSearch::Search::Similarity') }
-
+use KinoSearch::Search::Similarity;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::InvIndexer;
+use KinoSearch::InvIndex;
 use KinoSearch::Searcher;
 
 my $sim = KinoSearch::Search::Similarity->new;

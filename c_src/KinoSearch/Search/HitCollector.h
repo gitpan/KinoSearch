@@ -10,7 +10,7 @@ struct kino_BitVector;
 struct kino_IntMap;
 
 typedef void 
-(*kino_HC_collect_t)(kino_HitCollector*, kino_u32_t doc_num, float score);
+(*kino_HC_collect_t)(kino_HitCollector*, chy_u32_t doc_num, float score);
 
 typedef void
 (*kino_HC_release_t)(kino_HitCollector*);
@@ -37,46 +37,41 @@ struct kino_HitCollector {
  * just before the HitCollector struct is freed.  [data] can used to store
  * arbitrary data needed during the process of collecting hits.
  */
-KINO_FUNCTION(
 kino_HitCollector *
-kino_HC_new(kino_HC_collect_t collect, kino_HC_release_t release, void *data));
+kino_HC_new(kino_HC_collect_t collect, kino_HC_release_t release, void *data);
 
 /* Return a HitCollector which sets a set bit for each matching doc number
  * (scores are irrelevant).
  */
-KINO_FUNCTION(
 kino_HitCollector*
-kino_HC_new_bit_coll(struct kino_BitVector *bits));
+kino_HC_new_bit_coll(struct kino_BitVector *bits);
 
 /* Wrap another HitCollector, adding a constant offset to each document
  * number.  Useful when combining results from multiple independent indexes.
  */
-KINO_FUNCTION(
 kino_HitCollector*
-kino_HC_new_offset_coll(kino_HitCollector *inner_coll, kino_u32_t offset));
+kino_HC_new_offset_coll(kino_HitCollector *inner_coll, chy_u32_t offset);
 
 
 /* Wrap another HitCollector, only allowing the inner collector to "see"
  * doc_num/score pairs which make it through the filter.
  */
-KINO_FUNCTION(
 kino_HitCollector*
 kino_HC_new_filt_coll(kino_HitCollector *inner_coll, 
-                      struct kino_BitVector *bit_vec));
+                      struct kino_BitVector *bit_vec);
 
 /* Wrap another HitCollector, filtering out documents whose position in the
  * sort cache lies outside * the given range. The upper and lower bounds are
  * inclusive.
  */
-KINO_FUNCTION(
 kino_HitCollector*
 kino_HC_new_range_coll(kino_HitCollector *inner_coll, 
                        struct kino_IntMap *sort_cache,
-                       kino_i32_t lower_bound, kino_i32_t upper_bound));
+                       chy_i32_t lower_bound, chy_i32_t upper_bound);
 
-KINO_METHOD("Kino_HC_Destroy",
 void
-kino_HC_destroy(kino_HitCollector *self));
+kino_HC_destroy(kino_HitCollector *self);
+KINO_METHOD("Kino_HC_Destroy");
 
 KINO_END_CLASS
 

@@ -10,10 +10,14 @@
 
  ***********************************************/
 
-#ifndef R_KINO_SIM
-#define R_KINO_SIM 1
+
+
+#ifndef R_KINO_SIMILARITY
+#define R_KINO_SIMILARITY 1
 
 #include "KinoSearch/Search/Similarity.h"
+
+#define KINO_SIMILARITY_BOILERPLATE
 
 typedef void
 (*kino_Sim_destroy_t)(kino_Similarity *self);
@@ -25,64 +29,64 @@ typedef float
 (*kino_Sim_tf_t)(kino_Similarity *self, float freq);
 
 typedef float
-(*kino_Sim_coord_t)(kino_Similarity *self, kino_u32_t overlap, 
-               kino_u32_t max_overlap);
+(*kino_Sim_coord_t)(kino_Similarity *self, chy_u32_t overlap, 
+               chy_u32_t max_overlap);
 
-typedef kino_u32_t
+typedef chy_u32_t
 (*kino_Sim_encode_norm_t)(kino_Similarity *self, float f);
 
 typedef float
-(*kino_Sim_decode_norm_t)(kino_Similarity *self, kino_u32_t input);
+(*kino_Sim_decode_norm_t)(kino_Similarity *self, chy_u32_t input);
 
 typedef float
-(*kino_Sim_prox_boost_t)(kino_Similarity *self, kino_u32_t distance);
+(*kino_Sim_prox_boost_t)(kino_Similarity *self, chy_u32_t distance);
 
 typedef float
-(*kino_Sim_prox_coord_t)(kino_Similarity *self, kino_u32_t *prox, 
-                    kino_u32_t num_prox);
+(*kino_Sim_prox_coord_t)(kino_Similarity *self, chy_u32_t *prox, 
+                    chy_u32_t num_prox);
 
-#define Kino_Sim_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_Sim_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_Sim_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_Sim_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_Sim_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_Sim_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_Sim_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_Sim_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_Sim_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_Sim_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_Sim_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_Sim_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_Sim_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_Sim_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_Sim_TF(_self, _arg1) \
-    (_self)->_->tf((kino_Similarity*)_self, _arg1)
+#define Kino_Sim_TF(self, freq) \
+    (self)->_->tf((kino_Similarity*)self, freq)
 
-#define Kino_Sim_Coord(_self, _arg1, _arg2) \
-    (_self)->_->coord((kino_Similarity*)_self, _arg1, _arg2)
+#define Kino_Sim_Coord(self, overlap, max_overlap) \
+    (self)->_->coord((kino_Similarity*)self, overlap, max_overlap)
 
-#define Kino_Sim_Encode_Norm(_self, _arg1) \
-    (_self)->_->encode_norm((kino_Similarity*)_self, _arg1)
+#define Kino_Sim_Encode_Norm(self, f) \
+    (self)->_->encode_norm((kino_Similarity*)self, f)
 
-#define Kino_Sim_Decode_Norm(_self, _arg1) \
-    (_self)->_->decode_norm((kino_Similarity*)_self, _arg1)
+#define Kino_Sim_Decode_Norm(self, input) \
+    (self)->_->decode_norm((kino_Similarity*)self, input)
 
-#define Kino_Sim_Prox_Boost(_self, _arg1) \
-    (_self)->_->prox_boost((kino_Similarity*)_self, _arg1)
+#define Kino_Sim_Prox_Boost(self, distance) \
+    (self)->_->prox_boost((kino_Similarity*)self, distance)
 
-#define Kino_Sim_Prox_Coord(_self, _arg1, _arg2) \
-    (_self)->_->prox_coord((kino_Similarity*)_self, _arg1, _arg2)
+#define Kino_Sim_Prox_Coord(self, prox, num_prox) \
+    (self)->_->prox_coord((kino_Similarity*)self, prox, num_prox)
 
 struct KINO_SIMILARITY_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -134,14 +138,12 @@ extern KINO_SIMILARITY_VTABLE KINO_SIMILARITY;
   #define Sim_Decode_Norm Kino_Sim_Decode_Norm
   #define Sim_Prox_Boost Kino_Sim_Prox_Boost
   #define Sim_Prox_Coord Kino_Sim_Prox_Coord
-  #define SIMILARITY KINO_SIMILARITY
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SIMILARITY_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     float * norm_decoder; \
     float * prox_decoder
-
 
 #ifdef KINO_WANT_SIMILARITY_VTABLE
 KINO_SIMILARITY_VTABLE KINO_SIMILARITY = {
@@ -165,10 +167,15 @@ KINO_SIMILARITY_VTABLE KINO_SIMILARITY = {
 };
 #endif /* KINO_WANT_SIMILARITY_VTABLE */
 
-#endif /* R_KINO_SIM */
+#undef KINO_SIMILARITY_BOILERPLATE
+
+
+#endif /* R_KINO_SIMILARITY */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

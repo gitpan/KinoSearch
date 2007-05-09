@@ -2,11 +2,11 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 4;
+use Test::More tests => 3;
 
-BEGIN { use_ok('KinoSearch::Analysis::TokenBatch') }
-
+use KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Analysis::Token;
+
 use KinoTestUtils qw( utf8_test_strings );
 
 my $batch = KinoSearch::Analysis::TokenBatch->new;

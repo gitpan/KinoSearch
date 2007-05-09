@@ -2,14 +2,14 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 4;
+use Test::More tests => 3;
 use File::Spec::Functions qw( catfile );
 
-BEGIN { use_ok('KinoSearch::Search::PhraseQuery') }
-
-use KinoTestUtils qw( create_invindex );
+use KinoSearch::Search::PhraseQuery;
 use KinoSearch::Index::Term;
 use KinoSearch::Searcher;
+
+use KinoTestUtils qw( create_invindex );
 
 my $best_match = 'x a b c d a b c d';
 
@@ -31,7 +31,6 @@ for (qw( a b c d )) {
 }
 
 my $hits = $searcher->search( query => $phrase_query );
-$hits->seek( 0, 50 );
 is( $hits->total_hits, 3, "correct number of hits" );
 my $first_hit = $hits->fetch_hit_hashref;
 is( $first_hit->{content}, $best_match, 'best match appears first' );
@@ -39,4 +38,3 @@ is( $first_hit->{content}, $best_match, 'best match appears first' );
 my $second_hit = $hits->fetch_hit_hashref;
 ok( $first_hit->{score} > $second_hit->{score},
     "best match scores higher: $first_hit->{score} > $second_hit->{score}" );
-

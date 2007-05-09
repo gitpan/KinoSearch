@@ -5,13 +5,14 @@ package KinoSearch::Search::FieldDoc;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::ScoreDoc );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params
-        collator => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # inherited
+    doc_num => undef,
+    score   => undef,
+
+    # constructor params
+    collator => undef,
+);
 
 1;
 
@@ -28,13 +29,13 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Search::FieldDoc::instance_vars");
-    kino_u32_t id = extract_uv(args_hash, SNL("id"));
-    float score   = extract_nv(args_hash, SNL("score"));
+    chy_u32_t doc_num = extract_uv(args_hash, SNL("doc_num"));
+    float score       = extract_nv(args_hash, SNL("score"));
     kino_FieldDocCollator *collator = extract_obj(args_hash, SNL("collator"),
         "KinoSearch::Search::FieldDocCollator");
 
     /* build object */
-    RETVAL = kino_FieldDoc_new(id, score, collator);
+    RETVAL = kino_FieldDoc_new(doc_num, score, collator);
 }
 OUTPUT: RETVAL
 
@@ -61,4 +62,3 @@ See L<KinoSearch> version 0.20.
 =end devdocs
 
 =cut
-

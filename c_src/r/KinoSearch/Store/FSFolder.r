@@ -10,10 +10,14 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_FSFOLDER
 #define R_KINO_FSFOLDER 1
 
 #include "KinoSearch/Store/FSFolder.h"
+
+#define KINO_FSFOLDER_BOILERPLATE
 
 typedef void
 (*kino_FSFolder_destroy_t)(kino_FSFolder *self);
@@ -22,6 +26,10 @@ typedef struct kino_OutStream*
 (*kino_FSFolder_open_outstream_t)(kino_FSFolder *self, 
                              const struct kino_ByteBuf *filename);
 
+typedef struct kino_OutStream*
+(*kino_FSFolder_safe_open_outstream_t)(kino_FSFolder *self, 
+                                  const struct kino_ByteBuf *filename);
+
 typedef struct kino_InStream*
 (*kino_FSFolder_open_instream_t)(kino_FSFolder *self,   
                             const struct kino_ByteBuf *filename);
@@ -29,7 +37,7 @@ typedef struct kino_InStream*
 typedef struct kino_VArray*
 (*kino_FSFolder_list_t)(kino_FSFolder *self);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_FSFolder_file_exists_t)(kino_FSFolder *self, 
                           const struct kino_ByteBuf *filename);
 
@@ -49,63 +57,60 @@ typedef struct kino_ByteBuf*
 typedef void
 (*kino_FSFolder_close_f_t)(kino_FSFolder *self);
 
-#define Kino_FSFolder_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_FSFolder_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_FSFolder_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_FSFolder_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_FSFolder_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_FSFolder_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_FSFolder_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_FSFolder_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_FSFolder_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_FSFolder_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_FSFolder_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_FSFolder_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_FSFolder_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_FSFolder_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_FSFolder_Open_OutStream(_self, _arg1) \
-    (_self)->_->open_outstream((kino_Folder*)_self, _arg1)
+#define Kino_FSFolder_Open_OutStream(self, filename) \
+    (self)->_->open_outstream((kino_Folder*)self, filename)
 
-#define Kino_FSFolder_Open_InStream(_self, _arg1) \
-    (_self)->_->open_instream((kino_Folder*)_self, _arg1)
+#define Kino_FSFolder_Safe_Open_OutStream(self, filename) \
+    (self)->_->safe_open_outstream((kino_Folder*)self, filename)
 
-#define Kino_FSFolder_List(_self) \
-    (_self)->_->list((kino_Folder*)_self)
+#define Kino_FSFolder_Open_InStream(self, filename) \
+    (self)->_->open_instream((kino_Folder*)self, filename)
 
-#define Kino_FSFolder_File_Exists(_self, _arg1) \
-    (_self)->_->file_exists((kino_Folder*)_self, _arg1)
+#define Kino_FSFolder_List(self) \
+    (self)->_->list((kino_Folder*)self)
 
-#define Kino_FSFolder_Rename_File(_self, _arg1, _arg2) \
-    (_self)->_->rename_file((kino_Folder*)_self, _arg1, _arg2)
+#define Kino_FSFolder_File_Exists(self, filename) \
+    (self)->_->file_exists((kino_Folder*)self, filename)
 
-#define Kino_FSFolder_Delete_File(_self, _arg1) \
-    (_self)->_->delete_file((kino_Folder*)_self, _arg1)
+#define Kino_FSFolder_Rename_File(self, from, to) \
+    (self)->_->rename_file((kino_Folder*)self, from, to)
 
-#define Kino_FSFolder_Slurp_File(_self, _arg1) \
-    (_self)->_->slurp_file((kino_Folder*)_self, _arg1)
+#define Kino_FSFolder_Delete_File(self, filename) \
+    (self)->_->delete_file((kino_Folder*)self, filename)
 
-#define Kino_FSFolder_Latest_Gen(_self, _arg1, _arg2) \
-    (_self)->_->latest_gen((kino_Folder*)_self, _arg1, _arg2)
+#define Kino_FSFolder_Slurp_File(self, filename) \
+    (self)->_->slurp_file((kino_Folder*)self, filename)
 
-#define Kino_FSFolder_Make_Lock(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->make_lock((kino_Folder*)_self, _arg1, _arg2, _arg3)
+#define Kino_FSFolder_Latest_Gen(self, base, ext) \
+    (self)->_->latest_gen((kino_Folder*)self, base, ext)
 
-#define Kino_FSFolder_Run_Locked(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    (_self)->_->run_locked((kino_Folder*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
-
-#define Kino_FSFolder_Close_F(_self) \
-    (_self)->_->close_f((kino_Folder*)_self)
+#define Kino_FSFolder_Close_F(self) \
+    (self)->_->close_f((kino_Folder*)self)
 
 struct KINO_FSFOLDER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -116,6 +121,7 @@ struct KINO_FSFOLDER_VTABLE {
     kino_Obj_to_string_t to_string;
     kino_Obj_serialize_t serialize;
     kino_Folder_open_outstream_t open_outstream;
+    kino_Folder_safe_open_outstream_t safe_open_outstream;
     kino_Folder_open_instream_t open_instream;
     kino_Folder_list_t list;
     kino_Folder_file_exists_t file_exists;
@@ -123,8 +129,6 @@ struct KINO_FSFOLDER_VTABLE {
     kino_Folder_delete_file_t delete_file;
     kino_Folder_slurp_file_t slurp_file;
     kino_Folder_latest_gen_t latest_gen;
-    kino_Folder_make_lock_t make_lock;
-    kino_Folder_run_locked_t run_locked;
     kino_Folder_close_f_t close_f;
 };
 
@@ -136,6 +140,7 @@ extern KINO_FSFOLDER_VTABLE KINO_FSFOLDER;
   #define FSFolder_new kino_FSFolder_new
   #define FSFolder_destroy kino_FSFolder_destroy
   #define FSFolder_open_outstream kino_FSFolder_open_outstream
+  #define FSFolder_safe_open_outstream kino_FSFolder_safe_open_outstream
   #define FSFolder_open_instream kino_FSFolder_open_instream
   #define FSFolder_list kino_FSFolder_list
   #define FSFolder_file_exists kino_FSFolder_file_exists
@@ -151,6 +156,7 @@ extern KINO_FSFOLDER_VTABLE KINO_FSFOLDER;
   #define FSFolder_To_String Kino_FSFolder_To_String
   #define FSFolder_Serialize Kino_FSFolder_Serialize
   #define FSFolder_Open_OutStream Kino_FSFolder_Open_OutStream
+  #define FSFolder_Safe_Open_OutStream Kino_FSFolder_Safe_Open_OutStream
   #define FSFolder_Open_InStream Kino_FSFolder_Open_InStream
   #define FSFolder_List Kino_FSFolder_List
   #define FSFolder_File_Exists Kino_FSFolder_File_Exists
@@ -158,16 +164,12 @@ extern KINO_FSFOLDER_VTABLE KINO_FSFOLDER;
   #define FSFolder_Delete_File Kino_FSFolder_Delete_File
   #define FSFolder_Slurp_File Kino_FSFolder_Slurp_File
   #define FSFolder_Latest_Gen Kino_FSFolder_Latest_Gen
-  #define FSFolder_Make_Lock Kino_FSFolder_Make_Lock
-  #define FSFolder_Run_Locked Kino_FSFolder_Run_Locked
   #define FSFolder_Close_F Kino_FSFolder_Close_F
-  #define FSFOLDER KINO_FSFOLDER
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_FSFOLDER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_ByteBuf * path
-
 
 #ifdef KINO_WANT_FSFOLDER_VTABLE
 KINO_FSFOLDER_VTABLE KINO_FSFOLDER = {
@@ -183,6 +185,7 @@ KINO_FSFOLDER_VTABLE KINO_FSFOLDER = {
     (kino_Obj_to_string_t)kino_Obj_to_string,
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_Folder_open_outstream_t)kino_FSFolder_open_outstream,
+    (kino_Folder_safe_open_outstream_t)kino_FSFolder_safe_open_outstream,
     (kino_Folder_open_instream_t)kino_FSFolder_open_instream,
     (kino_Folder_list_t)kino_FSFolder_list,
     (kino_Folder_file_exists_t)kino_FSFolder_file_exists,
@@ -190,16 +193,19 @@ KINO_FSFOLDER_VTABLE KINO_FSFOLDER = {
     (kino_Folder_delete_file_t)kino_FSFolder_delete_file,
     (kino_Folder_slurp_file_t)kino_FSFolder_slurp_file,
     (kino_Folder_latest_gen_t)kino_Folder_latest_gen,
-    (kino_Folder_make_lock_t)kino_Folder_make_lock,
-    (kino_Folder_run_locked_t)kino_Folder_run_locked,
     (kino_Folder_close_f_t)kino_FSFolder_close_f
 };
 #endif /* KINO_WANT_FSFOLDER_VTABLE */
 
+#undef KINO_FSFOLDER_BOILERPLATE
+
+
 #endif /* R_KINO_FSFOLDER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

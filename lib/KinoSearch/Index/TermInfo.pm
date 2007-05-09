@@ -13,17 +13,16 @@ __XS__
 MODULE = KinoSearch   PACKAGE = KinoSearch::Index::TermInfo
 
 kino_TermInfo*
-new(class_sv, field_num, doc_freq, post_fileptr, skip_offset, index_fileptr)
+new(class_sv, doc_freq, post_filepos, skip_filepos, index_filepos)
     SV         *class_sv;
-    kino_i32_t  field_num;
-    kino_i32_t  doc_freq;
-    kino_u64_t  post_fileptr;
-    kino_i32_t  skip_offset;
-    kino_u64_t  index_fileptr;
+    chy_i32_t   doc_freq;
+    chy_u64_t   post_filepos;
+    chy_u64_t   skip_filepos;
+    chy_u64_t   index_filepos;
 CODE:
-    KINO_UNUSED_VAR(class_sv);
-    RETVAL = kino_TInfo_new(field_num, doc_freq, post_fileptr, skip_offset,
-        index_fileptr);
+    CHY_UNUSED_VAR(class_sv);
+    RETVAL = kino_TInfo_new(doc_freq, post_filepos, skip_filepos,
+        index_filepos);
 OUTPUT: RETVAL
 
 void
@@ -39,14 +38,12 @@ _set_or_get(self, ...)
 ALIAS:
     set_doc_freq      = 1
     get_doc_freq      = 2
-    set_post_fileptr  = 3
-    get_post_fileptr  = 4
-    set_skip_offset   = 5
-    get_skip_offset   = 6
-    set_index_fileptr = 7
-    get_index_fileptr = 8
-    set_field_num     = 9
-    get_field_num     = 10
+    set_post_filepos  = 3
+    get_post_filepos  = 4
+    set_skip_filepos  = 5
+    get_skip_filepos  = 6
+    set_index_filepos = 7
+    get_index_filepos = 8
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -57,28 +54,22 @@ PPCODE:
     case 2:  retval = newSViv(self->doc_freq);
              break;
 
-    case 3:  self->post_fileptr = SvNV(ST(1));
+    case 3:  self->post_filepos = SvNV(ST(1));
              break;
 
-    case 4:  retval = newSVnv(self->post_fileptr);
+    case 4:  retval = newSVnv(self->post_filepos);
              break;
 
-    case 5:  self->skip_offset = SvIV(ST(1));
+    case 5:  self->skip_filepos = SvNV(ST(1));
              break;
 
-    case 6:  retval = newSViv(self->skip_offset);
+    case 6:  retval = newSVnv(self->skip_filepos);
              break;
 
-    case 7:  self->index_fileptr = SvNV(ST(1));
+    case 7:  self->index_filepos = SvNV(ST(1));
              break;
 
-    case 8:  retval = newSVnv(self->index_fileptr);
-             break;
-
-    case 9:  self->field_num = SvIV(ST(1));
-             break;
-
-    case 10: retval = newSViv(self->field_num);
+    case 8:  retval = newSVnv(self->index_filepos);
              break;
 
     END_SET_OR_GET_SWITCH
@@ -95,20 +86,19 @@ KinoSearch::Index::TermInfo - Filepointer/statistical data for a Term.
 =head1 SYNOPSIS
 
     my $tinfo = KinoSearch::Index::TermInfo->new(
-        $field_num,
         $doc_freq,
-        $post_fileptr,
-        $skip_offset,
-        $index_fileptr
+        $post_filepos,
+        $skip_filepos,
+        $index_filepos
     );
 
 =head1 DESCRIPTION
 
-The TermInfo contains pointer data indicating where a term can be found in
-various files, plus the document frequency of the term.
+The TermInfo contains pointer data indicating where information about a term
+can be found in various files, plus the document frequency of the term.
 
-The index_fileptr member variable is only used if the TermInfo is part of the
-.tlx stream; it is a filepointer to a locations in the main .tl file.
+The index_filepos member variable is only used if the TermInfo is part of the
+.lexx stream; it is a filepointer to a locations in the main .lex file.
 
 =head1 METHODS
 

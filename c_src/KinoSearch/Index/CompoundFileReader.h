@@ -26,37 +26,36 @@ struct kino_CompoundFileReader {
     struct kino_InStream *instream;
 };
 
-KINO_FUNCTION(
 kino_CompoundFileReader*
 kino_CFReader_new(struct kino_InvIndex *invindex, 
-                  struct kino_SegInfo *seg_info));
+                  struct kino_SegInfo *seg_info);
 
-KINO_METHOD("Kino_CFReader_Open_InStream",
 struct kino_InStream*
 kino_CFReader_open_instream(kino_CompoundFileReader *self, 
-                            const struct kino_ByteBuf *filename));
+                            const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_CFReader_Open_InStream");
 
-KINO_METHOD("Kino_CFReader_Slurp_File",
 struct kino_ByteBuf*
 kino_CFReader_slurp_file(kino_CompoundFileReader *self,
-                         const struct kino_ByteBuf *filename));
+                         const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_CFReader_Slurp_File");
 
-KINO_METHOD("Kino_CFReader_File_Exists",
-kino_bool_t
+chy_bool_t
 kino_CFReader_file_exists(kino_CompoundFileReader *self,
-                          const struct kino_ByteBuf *filename));
+                          const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_CFReader_File_Exists");
 
-KINO_METHOD("Kino_CFReader_List",
 struct kino_VArray*
-kino_CFReader_list(kino_CompoundFileReader *self));
+kino_CFReader_list(kino_CompoundFileReader *self);
+KINO_METHOD("Kino_CFReader_List");
 
-KINO_METHOD("Kino_CFReader_Close_F",
 void
-kino_CFReader_close_f(kino_CompoundFileReader *self));
+kino_CFReader_close_f(kino_CompoundFileReader *self);
+KINO_METHOD("Kino_CFReader_Close_F");
 
-KINO_METHOD("Kino_CFReader_Destroy",
 void
-kino_CFReader_destroy(kino_CompoundFileReader *self));
+kino_CFReader_destroy(kino_CompoundFileReader *self);
+KINO_METHOD("Kino_CFReader_Destroy");
 
 KINO_END_CLASS
 

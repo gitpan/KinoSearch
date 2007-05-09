@@ -20,52 +20,56 @@ struct kino_RAMFolder {
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_RAMFolder*
-kino_RAMFolder_new(const struct kino_ByteBuf *path));
+kino_RAMFolder_new(const struct kino_ByteBuf *path);
 
-KINO_METHOD("Kino_RAMFolder_Destroy",
 void
-kino_RAMFolder_destroy(kino_RAMFolder *self));
+kino_RAMFolder_destroy(kino_RAMFolder *self);
+KINO_METHOD("Kino_RAMFolder_Destroy");
 
-KINO_METHOD("Kino_RAMFolder_Open_OutStream",
 struct kino_OutStream*
 kino_RAMFolder_open_outstream(kino_RAMFolder *self, 
-                              const struct kino_ByteBuf *filename));
+                              const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_RAMFolder_Open_OutStream");
 
-KINO_METHOD("Kino_RAMFolder_Open_InStream",
+struct kino_OutStream*
+kino_RAMFolder_safe_open_outstream(kino_RAMFolder *self, 
+                                   const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_RAMFolder_Safe_Open_OutStream");
+
 struct kino_InStream*
 kino_RAMFolder_open_instream(kino_RAMFolder *self,   
-                             const struct kino_ByteBuf *filename));
+                             const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_RAMFolder_Open_InStream");
 
-KINO_METHOD("Kino_RAMFolder_List",
 struct kino_VArray*
-kino_RAMFolder_list(kino_RAMFolder *self));
+kino_RAMFolder_list(kino_RAMFolder *self);
+KINO_METHOD("Kino_RAMFolder_List");
 
-KINO_METHOD("Kino_RAMFolder_File_Exists",
-kino_bool_t
+chy_bool_t
 kino_RAMFolder_file_exists(kino_RAMFolder *self, 
-                           const struct kino_ByteBuf *filename));
+                           const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_RAMFolder_File_Exists");
 
-KINO_METHOD("Kino_RAMFolder_Rename_File",
 void
 kino_RAMFolder_rename_file(kino_RAMFolder *self, 
                            const struct kino_ByteBuf* from, 
-                           const struct kino_ByteBuf *to));
+                           const struct kino_ByteBuf *to);
+KINO_METHOD("Kino_RAMFolder_Rename_File");
 
-KINO_METHOD("Kino_RAMFolder_Delete_File",
 void
 kino_RAMFolder_delete_file(kino_RAMFolder *self, 
-                           const struct kino_ByteBuf *filename));
+                           const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_RAMFolder_Delete_File");
 
-KINO_METHOD("Kino_RAMFolder_Slurp_File",
 struct kino_ByteBuf*
 kino_RAMFolder_slurp_file(kino_RAMFolder *self, 
-                          const struct kino_ByteBuf *filename));
+                          const struct kino_ByteBuf *filename);
+KINO_METHOD("Kino_RAMFolder_Slurp_File");
 
-KINO_METHOD("Kino_RAMFolder_Close_F",
 void
-kino_RAMFolder_close_f(kino_RAMFolder *self));
+kino_RAMFolder_close_f(kino_RAMFolder *self);
+KINO_METHOD("Kino_RAMFolder_Close_F");
 
 KINO_END_CLASS
 

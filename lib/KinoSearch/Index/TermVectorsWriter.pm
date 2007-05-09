@@ -5,23 +5,20 @@ package KinoSearch::Index::TermVectorsWriter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        #constructor params / members
-        invindex => undef,
-        seg_info => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor params / members
+    invindex => undef,
+    seg_info => undef,
+);
 
 sub add_doc_vec {
     my ( $self, $doc_vec ) = @_;
-    my $tv_out   = $self->_get_tv_out;
-    my $tvx_out  = $self->_get_tvx_out;
-    my @fields   = $doc_vec->get_field_names;
+    my $tv_out  = $self->_get_tv_out;
+    my $tvx_out = $self->_get_tvx_out;
+    my @fields  = $doc_vec->get_field_names;
 
-    # write file pointer
-    $tvx_out->lu_write( 'Q', $tv_out->stell );
+    # remember file pointer
+    my $filepos = $tv_out->stell;
 
     # write num_fields
     $tv_out->lu_write( 'V', scalar @fields );
@@ -31,6 +28,10 @@ sub add_doc_vec {
         $tv_out->lu_write( 'TT', $field_name,
             $doc_vec->field_string($field_name) );
     }
+
+    # write index data
+    my $len = $tv_out->stell - $filepos;
+    $tvx_out->lu_write( 'QQ', $filepos, $len );
 }
 
 sub add_segment {
@@ -87,7 +88,7 @@ _add_segment(self, tv_reader, doc_map, max_doc)
     kino_TermVectorsWriter *self;
     kino_TermVectorsReader *tv_reader;
     kino_IntMap *doc_map;
-    kino_u32_t max_doc;
+    chy_u32_t max_doc;
 PPCODE:
     kino_TVWriter_add_segment(self, tv_reader, doc_map, max_doc);
 
@@ -105,10 +106,16 @@ OUTPUT: RETVAL
     
 
 void
-finish(self);
+finish(self, doc_remap_sv) 
     kino_TermVectorsWriter *self;
+    SV *doc_remap_sv;
 PPCODE:
-    Kino_TVWriter_Finish(self);
+{
+    kino_IntMap *doc_remap = NULL;
+    MAYBE_EXTRACT_STRUCT(doc_remap_sv, doc_remap, kino_IntMap*,
+        "KinoSearch::Util::IntMap");
+    Kino_TVWriter_Finish(self, doc_remap);
+}
 
 __POD__
 
@@ -128,5 +135,3 @@ See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut
-
-

@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_FIELDDOC_VTABLE
@@ -7,12 +6,12 @@
 #include "KinoSearch/Search/FieldDocCollator.r"
 
 FieldDoc*
-FieldDoc_new(kino_u32_t id, float score, FieldDocCollator *collator)
+FieldDoc_new(u32_t doc_num, float score, FieldDocCollator *collator)
 {
     CREATE(self, FieldDoc, FIELDDOC);
 
     /* assign */
-    self->id       = id;
+    self->doc_num  = doc_num;
     self->score    = score;
     REFCOUNT_INC(collator);
     self->collator = collator;

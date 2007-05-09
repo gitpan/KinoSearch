@@ -5,21 +5,19 @@ package KinoSearch::Search::Scorer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj Exporter );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params
-        similarity => undef,
-    );
-}
+our %instance_vars = (
+    # constructor params
+    similarity => undef,
+);
 
-our @EXPORT_OK = qw( %score_batch_args );
+our @EXPORT_OK = qw( %collect_args );
 
-our %score_batch_args = (
-    hit_collector => undef,
-    start         => 0,
-    end           => 2**31,
-    prune_factor  => 2**31,
-    seg_starts    => undef,
+our %collect_args = (
+    collector    => undef,
+    start        => 0,
+    end          => 2**31,
+    hits_per_seg => 2**31,
+    seg_starts   => undef,
 );
 
 =begin comment
@@ -65,15 +63,6 @@ PPCODE:
     END_SET_OR_GET_SWITCH
 }
 
-
-float
-score(self)
-    kino_Scorer* self;
-CODE:
-    RETVAL = Kino_Scorer_Score(self);
-OUTPUT: RETVAL
-
-
 bool
 next(self)
     kino_Scorer* self;
@@ -84,43 +73,41 @@ OUTPUT: RETVAL
 
 =begin comment
 
-    $scorer->score_batch( 
-        hit_collector => $collector,
-        start         => $start,
-        end           => $end,
+    $scorer->collect( 
+        collector => $collector,
+        start     => $start,
+        end       => $end,
     );
 
 Execute the scoring number crunching, accumulating results via the 
-$hit_collector.
-
-TODO: Doesn't actually pay any attention to start/end at present.
+$collector.
 
 =end comment
 =cut
 
 void
-score_batch(self, ...)
+collect(self, ...)
     kino_Scorer *self;
 PPCODE:
 {
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Search::Scorer::score_batch_args");
+        "KinoSearch::Search::Scorer::collect_args");
     kino_HitCollector *hc = (kino_HitCollector*)extract_obj(
-        args_hash, SNL("hit_collector"), "KinoSearch::Search::HitCollector");
-    kino_u32_t start        = extract_uv(args_hash, SNL("start"));
-    kino_u32_t end          = extract_uv(args_hash, SNL("end"));
-    kino_u32_t prune_factor = extract_uv(args_hash, SNL("prune_factor"));
+        args_hash, SNL("collector"), "KinoSearch::Search::HitCollector");
+    chy_u32_t start         = extract_uv(args_hash, SNL("start"));
+    chy_u32_t end           = extract_uv(args_hash, SNL("end"));
+    chy_u32_t hits_per_seg  = extract_uv(args_hash, SNL("hits_per_seg"));
     kino_VArray *seg_starts = (kino_VArray*)maybe_extract_obj(args_hash, 
         SNL("seg_starts"), "KinoSearch::Util::VArray");
-    Kino_Scorer_Score_Batch(self, hc, start, end, prune_factor, seg_starts);
+    Kino_Scorer_Collect(self, hc, start, end, hits_per_seg, seg_starts);
 }
 
 
 bool
 skip_to(self, target_doc_num)
     kino_Scorer* self;
-    kino_u32_t target_doc_num;
+    chy_u32_t target_doc_num;
 CODE:
     RETVAL = Kino_Scorer_Skip_To(self, target_doc_num);
 OUTPUT: RETVAL

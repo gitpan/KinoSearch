@@ -5,29 +5,40 @@ package KinoSearch::Index::SegReader;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::IndexReader );
 
+our %instance_vars = (
+    # inherited params / members
+    invindex     => undef,
+    seg_infos    => undef,
+    lock_factory => undef,
+
+    # params / members
+    seg_info => undef,
+
+    # inherited members
+    sort_caches => {},
+    lex_caches  => {},
+    read_lock   => undef,
+    commit_lock => undef,
+
+    # members
+    schema           => undef,
+    comp_file_reader => undef,
+    lex_reader       => undef,
+    doc_reader       => undef,
+    tv_reader        => undef,
+    deldocs          => undef,
+    metadata         => undef,
+    deldocs_dirty    => 0,
+    delcount         => undef,
+);
+
 BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # params/members
-        seg_info => undef,
-
-        # members
-        schema           => undef,
-        comp_file_reader => undef,
-        tl_reader        => undef,
-        doc_reader       => undef,
-        tv_reader        => undef,
-        deldocs          => undef,
-        metadata         => undef,
-        deldocs_dirty    => 0,
-    );
-
     __PACKAGE__->ready_get(
         qw(
-            schema
             comp_file_reader
             seg_info
             doc_reader
-            tl_reader
+            lex_reader
             tv_reader
             deldocs
             )
@@ -36,15 +47,16 @@ BEGIN {
 
 use KinoSearch::Index::CompoundFileReader;
 use KinoSearch::Index::IndexFileNames
-    qw( filename_from_gen gen_from_file_name );
-use KinoSearch::Index::TermListReader;
-use KinoSearch::Index::SegTermList;
+    qw( filename_from_gen gen_from_filename );
+use KinoSearch::Index::LexReader;
+use KinoSearch::Index::SegLexicon;
 use KinoSearch::Index::TermVectorsReader;
 use KinoSearch::Index::DocReader;
 use KinoSearch::Index::SegInfos;
-use KinoSearch::Index::SegTermDocs;
+use KinoSearch::Index::SegPostingList;
 use KinoSearch::Index::DelDocs;
 use KinoSearch::Util::VArray;
+use KinoSearch::Util::Int;
 
 # use KinoSearch::Util::Class's new()
 # Note: can't inherit IndexReader's new() without recursion problems
@@ -77,8 +89,8 @@ sub init_instance {
         seg_info => $seg_info,
     );
 
-    # load TermLists
-    $self->{tl_reader} = KinoSearch::Index::TermListReader->new(
+    # load Lexicons
+    $self->{lex_reader} = KinoSearch::Index::LexReader->new(
         schema   => $schema,
         folder   => $comp_file_reader,
         seg_info => $seg_info,
@@ -98,14 +110,18 @@ sub max_doc { shift->{seg_info}->get_doc_count }
 
 sub num_docs {
     my $self = shift;
-    return $self->max_doc - $self->{deldocs}->get_num_deletions;
+    if ( !defined $self->{delcount} ) {
+        $self->{delcount} = $self->{deldocs}->get_num_deletions;
+    }
+    return $self->max_doc - $self->{delcount};
 }
 
 sub delete_docs_by_term {
     my ( $self, $term ) = @_;
-    my $term_docs = $self->term_docs($term);
-    $self->{deldocs}->delete_by_term_docs($term_docs);
+    my $plist = $self->posting_list( term => $term );
+    $self->{deldocs}->delete_posting_list($plist);
     $self->{deldocs_dirty} = 1;
+    undef $self->{delcount};
 }
 
 sub write_deletions {
@@ -115,10 +131,16 @@ sub write_deletions {
     $self->{deldocs}->write_deldocs;
 }
 
-sub field_terms       { $_[0]->{tl_reader}->field_terms( $_[1] ) }
-sub start_field_terms { $_[0]->{tl_reader}->start_field_terms( $_[1] ) }
-sub fetch_term_info   { $_[0]->{tl_reader}->fetch_term_info( $_[1] ) }
-sub get_skip_interval { $_[0]->{tl_reader}->get_skip_interval }
+sub has_deletions {
+    my $self = shift;
+    return 1 if ( $self->{deldocs_dirty} || $self->{delcount} );
+    return;
+}
+
+sub look_up_term      { $_[0]->{lex_reader}->look_up_term( $_[1] ) }
+sub look_up_field     { $_[0]->{lex_reader}->look_up_field( $_[1] ) }
+sub fetch_term_info   { $_[0]->{lex_reader}->fetch_term_info( $_[1] ) }
+sub get_skip_interval { $_[0]->{lex_reader}->get_skip_interval }
 
 sub doc_freq {
     my ( $self, $term ) = @_;
@@ -126,12 +148,28 @@ sub doc_freq {
     return defined $tinfo ? $tinfo->get_doc_freq : 0;
 }
 
-sub term_docs {
-    my ( $self, $term ) = @_;
-    my $term_docs
-        = KinoSearch::Index::SegTermDocs->new( seg_reader => $self, );
-    $term_docs->seek($term);
-    return $term_docs;
+sub posting_list {
+    my $self = shift;
+    confess kerror()
+        unless verify_args( { term => undef, field => undef, }, @_ );
+    my %args = @_;
+
+    # only return an object if we've got an indexed field
+    my ( $field, $term ) = @args{qw( field term )};
+    return unless ( defined $field or defined $term );
+    $field = $term->get_field unless defined $field;
+    my $fspec = $self->{invindex}->get_schema->fetch_fspec($field);
+    return unless defined $fspec;
+    return unless $fspec->indexed;
+
+    # create a PostingList and seek it if a Term was supplied
+    my $plist = KinoSearch::Index::SegPostingList->new(
+        seg_reader => $self,
+        field      => $field,
+    );
+    $plist->seek($term) if defined $term;
+
+    return $plist;
 }
 
 sub fetch_doc {
@@ -148,13 +186,21 @@ sub segreaders_to_merge {
     return;
 }
 
+sub get_seg_starts {
+    my $self = shift;
+    my $starts = KinoSearch::Util::VArray->new( capacity => 1 );
+    $starts->push( KinoSearch::Util::Int->new(0) );
+    return $starts;
+}
+
 sub close {
     my $self = shift;
     $self->{deldocs}->close;
     $self->{doc_reader}->close;
     $self->{tv_reader}->close;
-    $self->{tl_reader}->close;
+    $self->{lex_reader}->close;
     $self->{comp_file_reader}->close;
+    $self->SUPER::close;
 }
 
 1;
@@ -181,4 +227,3 @@ See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut
-

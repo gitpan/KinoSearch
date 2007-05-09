@@ -14,22 +14,29 @@ use KinoSearch::Schema::FieldSpec;
 # CLASS METHODS
 #-----------------------------------------------------------------------
 
-sub analyzer   { shift->abstract_death }
-sub similarity { KinoSearch::Search::Similarity->new }
+sub analyzer       { shift->abstract_death }
+sub similarity     { KinoSearch::Search::Similarity->new }
+sub index_interval {128}
+sub skip_interval  {16}
+sub pre_sort       { }
 
 sub new {
-    my ( $class, $folder ) = @_;
+    my $class = shift;
 
-    # get a primary Similarity and primary analyzer
+    # retrieve characteristics from perl-space
     my $main_sim         = $class->similarity;
     my $default_analyzer = $class->analyzer;
+    my $index_interval   = $class->index_interval;
+    my $skip_interval    = $class->skip_interval;
 
     # create object
-    my $self = $class->_new( $default_analyzer, {}, $main_sim );
+    my $self
+        = $class->_new( $default_analyzer, {}, $main_sim, $index_interval,
+        $skip_interval );
 
-    # register all the fields in %FIELDS
-    my $fields = _retrieve_FIELDS_hashref( $class . '::FIELDS' );
-    confess("Can't find \%$class\::FIELDS hash") unless defined $fields;
+    # register all the fields in %fields
+    my $fields = _retrieve_fields_hashref( $class . '::fields' );
+    confess("Can't find \%$class\::fields hash") unless defined $fields;
     while ( my ( $field_name, $fspec_class ) = each %$fields ) {
         $self->add_field( $field_name, $fspec_class );
     }
@@ -38,25 +45,28 @@ sub new {
 }
 
 sub create {
-    my ( $class, $path ) = @_;
+    my ( $either, $path ) = @_;
+    my $self = blessed $either ? $either : $either->new;
     return KinoSearch::InvIndex->create(
-        schema => $class->new,
+        schema => $self,
         folder => $path,
     );
 }
 
 sub clobber {
-    my ( $class, $path ) = @_;
+    my ( $either, $path ) = @_;
+    my $self = blessed $either ? $either : $either->new;
     return KinoSearch::InvIndex->clobber(
-        schema => $class->new,
+        schema => $self,
         folder => $path,
     );
 }
 
 sub open {
-    my ( $class, $path ) = @_;
+    my ( $either, $path ) = @_;
+    my $self = blessed $either ? $either : $either->new;
     return KinoSearch::InvIndex->open(
-        schema => $class->new,
+        schema => $self,
         folder => $path,
     );
 }
@@ -131,24 +141,27 @@ __XS__
 MODULE = KinoSearch     PACKAGE = KinoSearch::Schema
 
 kino_Schema*
-_new(class, analyzer, analyzers, sim)
+_new(class, analyzer, analyzers, sim, index_interval, skip_interval)
     const classname_char *class;
     SV *analyzer;
     SV *analyzers;
     kino_Similarity *sim;
+    chy_i32_t index_interval;
+    chy_i32_t skip_interval;
 CODE:
-    RETVAL = kino_Schema_new(class, analyzer, analyzers, sim);
+    RETVAL = kino_Schema_new(class, analyzer, analyzers, sim, index_interval,
+        skip_interval);
 OUTPUT: RETVAL
 
 SV*
-_retrieve_FIELDS_hashref(name)
-	const char *name;
+_retrieve_fields_hashref(name)
+    const char *name;
 CODE:
 {
-	HV* fields_hash = get_hv(name, 0);
-	RETVAL = fields_hash == NULL
-		? newSV(0)
-		: newRV_inc((SV*)fields_hash);
+    HV* fields_hash = get_hv(name, 0);
+    RETVAL = fields_hash == NULL
+        ? newSV(0)
+        : newRV_inc((SV*)fields_hash);
 }
 OUTPUT: RETVAL
 
@@ -212,15 +225,23 @@ PPCODE:
     Kino_Schema_Add_Field(self, &field_name, fspec);
 
 SV*
-fetch_sim(self, field_name)
+fetch_sim(self, ...)
     kino_Schema *self;
-    kino_ByteBuf field_name;
 CODE:
 {
-    kino_Similarity *sim = Kino_Schema_Fetch_Sim(self, &field_name);
-    RETVAL = sim == NULL
-        ? newSV(0)
-        : kobj_to_pobj(sim); 
+    kino_Similarity *sim = NULL;
+    
+    if (items > 1) {
+        if (SvOK( ST(1) )) {
+            kino_ByteBuf field_name;
+            SV_TO_TEMP_BB( ST(1), field_name );
+            sim = Kino_Schema_Fetch_Sim(self, &field_name); 
+        }
+    }
+
+    if (sim == NULL)
+        sim = self->sim;
+    RETVAL = kobj_to_pobj(sim); 
 }
 OUTPUT: RETVAL
 
@@ -242,18 +263,20 @@ all_fields(self)
     kino_Schema *self;
 PPCODE:
 {
-    kino_ByteBuf   *name;
-    kino_FieldSpec *field_spec;
-    const kino_u32_t num_fields = self->fspecs->size;
+    kino_VArray    *field_list = Schema_All_Fields(self);
+    const chy_u32_t num_fields = field_list->size;
+    chy_u32_t       i;
 
     EXTEND(SP, num_fields);
 
-    Kino_Hash_Iter_Init(self->fspecs);
-    while (Kino_Hash_Iter_Next(self->fspecs, &name, (kino_Obj**)&field_spec)
-    ) {
+    /* copy field list to Perl scalars on stack, return as list */
+    for (i = 0; i < num_fields; i++) {
+        kino_ByteBuf *name = (kino_ByteBuf*)Kino_VA_Fetch(field_list, i);
         SV *const field_name_sv = bb_to_sv(name);
         PUSHs( sv_2mortal(field_name_sv) );
     }
+    REFCOUNT_DEC(field_list);
+
     XSRETURN(num_fields);
 }
 
@@ -261,7 +284,7 @@ __POD__
 
 =head1 NAME
 
-KinoSearch::Schema -- User-created specification for an inverted index.
+KinoSearch::Schema - User-created specification for an inverted index.
 
 =head1 SYNOPSIS
 
@@ -272,7 +295,7 @@ of your inverted index.
     use base qw( KinoSearch::Schema );
     use KinoSearch::Analysis::PolyAnalyzer;
 
-    our %FIELDS = (
+    our %fields = (
         title   => 'KinoSearch::Schema::FieldSpec',
         content => 'KinoSearch::Schema::FieldSpec',
     );
@@ -298,7 +321,7 @@ Use it again at search-time...
 =head1 DESCRIPTION
 
 A Schema is a blueprint specifying how other entities should interpret the raw
-data in an invindex and interact with it.  It's akin to an SQL table
+data in an inverted index and interact with it.  It's akin to an SQL table
 definition, but implemented using only Perl code.
 
 =head2 Subclassing
@@ -306,7 +329,7 @@ definition, but implemented using only Perl code.
 KinoSearch::Schema is an abstract class.  To use it, you must provide your own
 subclass.
 
-Every Schema subclass must meet two requirements: it must declare a %FIELDS
+Every Schema subclass must meet two requirements: it must declare a %fields
 hash, and it must provide an implementation of analyzer().
 
 =head2 Always use the same Schema 
@@ -324,11 +347,11 @@ during subsequent indexing sessions.
 
 =head1 CLASS VARIABLES
 
-=head2 %FIELDS
+=head2 %fields
 
-Every Schema subclass must declare a C<%FIELDS> hash using C<our> (I<not>
-C<my>).  The keys of the hash are field names, and the values must be class
-names which identify either L<KinoSearch::Schema::FieldSpec> or a subclass.
+Every Schema subclass must declare a C<%fields> hash using C<our> (I<not>
+C<my>).  Each key in the hash is a field name, and each value must be a class
+name identifying a class which isa L<KinoSearch::Schema::FieldSpec>.
 
     package UnAnalyzedField;
     use base qw( KinoSearch::Schema::FieldSpec );
@@ -337,15 +360,15 @@ names which identify either L<KinoSearch::Schema::FieldSpec> or a subclass.
     package MySchema;
     use base qw( KinoSearch::Schema );
 
-    our %FIELDS = (
+    our %fields = (
         title   => 'KinoSearch::Schema::FieldSpec',
         content => 'KinoSearch::Schema::FieldSpec',
         url     => 'UnAnalyzedField',
     );
 
-new() uses %FIELDS as a base set when initializing each new object.
-Additional fields may be be added subsequently to individual objects using
-add_field().
+new() uses the contents of C<%fields> as a base set when initializing each new
+Schema object.  Additional fields may be be added subsequently to individual
+objects using add_field().
 
 =head1 CLASS METHODS
 
@@ -362,11 +385,24 @@ own analyzer().
 
 =head2 similarity
 
-    sub similarity { KinoSearch::Contrib::LongFieldSim->new }
+    sub similarity { KSx::Search::LongFieldSim->new }
 
-By default, returns a L<KinoSearch::Search::Similarity> object.  If you wish
-to change scoring behavior by supplying your own subclass of Similarity,
-override this method.
+Expert API.  By default, returns a L<KinoSearch::Search::Similarity> object.
+If you wish to change scoring behavior by supplying your own subclass of
+Similarity, override this method.
+
+=head2 pre_sort
+
+    sub pre_sort { 
+        my %spec  = ( field => 'price', reverse => 1 );
+        return \%spec;
+    }
+
+Expert, experimental API.  Used only in conjunction with
+Searcher->set_prune_factor.  Causes documents to be prioritized for scoring
+according to their value for the specified C<field>.  Ordinarily all documents
+are scored so the sort order is immaterial, but if you stop sooner -- that is,
+when search results are "pruned" -- the sort order matters.
 
 =head1 CONSTRUCTOR
 
@@ -391,11 +427,14 @@ need is an L<InvIndex|KinoSearch::InvIndex> built according to your Schema,
 whose content you can manipulate and search.
 
 These three factory methods return an InvIndex object representing an index on
-your file system at the filepath you specify.
+your file system at the filepath you specify.  If they are invoked as instance
+methods by Schema object, they use that object; when invoked as class methods,
+a new Schema instance is created.
 
 =head2 create 
 
     my $invindex = MySchema->create('/path/to/invindex');
+    my $invindex = $schema->create('/path/to/invindex');
 
 Create a directory and initialize a new invindex at the specified location.
 Fails if the directory already exists and contains files.  
@@ -403,6 +442,7 @@ Fails if the directory already exists and contains files.
 =head2 clobber
 
     my $invindex = MySchema->clobber('/path/to/invindex');
+    my $invindex = $schema->clobber('/path/to/invindex');
 
 Similar to create, but if the specified directory already exists, first
 attempts to delete any files within it that look like index files.  
@@ -410,6 +450,7 @@ attempts to delete any files within it that look like index files.
 =head2 open
 
     my $invindex = MySchema->open('/path/to/invindex');
+    my $invindex = $schema->open('/path/to/invindex');
 
 Open an existing invindex for either reading or updating.  All fields which
 have ever been defined for this invindex will be loaded/verified via

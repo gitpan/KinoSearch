@@ -23,7 +23,6 @@ use Scalar::Util qw(
 );
 use KinoSearch qw( K_DEBUG kdump );
 use KinoSearch::Util::VerifyArgs qw( verify_args kerror a_isa_b );
-use File::Spec::Functions qw();
 
 our @EXPORT = qw(
     carp
@@ -94,9 +93,8 @@ substituted.
                          looks_like_number 
                          );
     use KinoSearch qw( K_DEBUG kdump );
-    use KinoSearch::Util::VerifyArgs qw( verify_args a_isa_b );
+    use KinoSearch::Util::VerifyArgs qw( verify_args a_isa_b kerror );
     use KinoSearch::Util::MathUtils qw( ceil );
-    use File::Spec::Functions qw();
 
 Two issues deserve special attention.
 

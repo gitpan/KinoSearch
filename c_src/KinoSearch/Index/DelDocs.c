@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <math.h>
@@ -9,7 +8,7 @@
 #include "KinoSearch/InvIndex.r"
 #include "KinoSearch/Index/IndexFileNames.h"
 #include "KinoSearch/Index/SegInfo.r"
-#include "KinoSearch/Index/TermDocs.r"
+#include "KinoSearch/Index/PostingList.r"
 #include "KinoSearch/Util/IntMap.r"
 #include "KinoSearch/Store/Folder.r"
 #include "KinoSearch/Store/InStream.r"
@@ -36,7 +35,6 @@ DelDocs_new(InvIndex *invindex, SegInfo *seg_info)
                 (long)Hash_Fetch_I64(metadata, "format", 6));
         }
         self->del_gen = Hash_Fetch_I64(metadata, "del_gen", 7);
-        self->count = Hash_Fetch_I64(metadata, "num_deletions", 13);
     }
 
     /* assign */
@@ -70,11 +68,10 @@ DelDocs_read_deldocs(DelDocs *self)
         InStream *instream 
             = Folder_Open_InStream(self->invindex->folder, filename);
         size_t byte_size = InStream_SLength(instream);
+        u32_t  new_max  = byte_size * 8 - 1;
 
         /* allocate space */
-        self->capacity   = byte_size * 8;
-        free(self->bits);
-        self->bits = MALLOCATE(byte_size, u8_t);
+        DelDocs_Grow(self, new_max);
 
         /* read in bit vector */
         InStream_Read_Bytes(instream, (char*)self->bits, byte_size);
@@ -89,9 +86,10 @@ DelDocs_read_deldocs(DelDocs *self)
 void
 DelDocs_write_deldocs(DelDocs *self)
 {
-    Hash *metadata = Hash_new(0);
-    size_t byte_size = ceil( self->seg_info->doc_count / 8.0 );
-    ByteBuf ext = { &BYTEBUF, 0, ".del", 4, 0 };
+    Hash *metadata      = Hash_new(0);
+    size_t byte_size    = ceil( self->seg_info->doc_count / 8.0 );
+    u32_t  new_max      = byte_size * 8 - 1;
+    ByteBuf ext         = { &BYTEBUF, 0, ".del", 4, 0 };
     ByteBuf *filename;
     OutStream *outstream;
     
@@ -103,7 +101,7 @@ DelDocs_write_deldocs(DelDocs *self)
     REFCOUNT_DEC(filename);
 
     /* make sure that we have 1 bit for each doc in segment */
-    DelDocs_Grow(self, self->seg_info->doc_count);
+    DelDocs_Grow(self, new_max);
 
     /* write deletions data and clean up */
     OutStream_Write_Bytes(outstream, (char*)self->bits, byte_size);
@@ -138,11 +136,11 @@ DelDocs_generate_doc_map(DelDocs *self, i32_t offset)
 }
 
 void
-DelDocs_delete_by_term_docs(DelDocs* self, TermDocs* term_docs) 
+DelDocs_delete_postinglist(DelDocs* self, PostingList *plist) 
 {
-    /* iterate through term docs, marking each doc returned as deleted */
-    while (TermDocs_Next(term_docs)) {
-        i32_t doc = TermDocs_Get_Doc(term_docs);
+    /* iterate through postings, marking each doc as deleted */
+    while (PList_Next(plist)) {
+        i32_t doc = PList_Get_Doc_Num(plist);
         DelDocs_Set(self, doc);
     }
 }

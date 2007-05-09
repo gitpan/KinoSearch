@@ -10,44 +10,50 @@
 
  ***********************************************/
 
-#ifndef R_KINO_SORTEDHITQ
-#define R_KINO_SORTEDHITQ 1
+
+
+#ifndef R_KINO_SORTEDHITQUEUE
+#define R_KINO_SORTEDHITQUEUE 1
 
 #include "KinoSearch/Search/SortedHitQueue.h"
 
-#define Kino_SortedHitQ_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define KINO_SORTEDHITQUEUE_BOILERPLATE
 
-#define Kino_SortedHitQ_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
 
-#define Kino_SortedHitQ_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
 
-#define Kino_SortedHitQ_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_SortedHitQ_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_SortedHitQ_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_SortedHitQ_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_SortedHitQ_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_SortedHitQ_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_SortedHitQ_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_SortedHitQ_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_SortedHitQ_Insert(_self, _arg1) \
-    (_self)->_->insert((kino_PriorityQueue*)_self, _arg1)
+#define Kino_SortedHitQ_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_SortedHitQ_Pop(_self) \
-    (_self)->_->pop((kino_PriorityQueue*)_self)
+#define Kino_SortedHitQ_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_SortedHitQ_Peek(_self) \
-    (_self)->_->peek((kino_PriorityQueue*)_self)
+#define Kino_SortedHitQ_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
+
+#define Kino_SortedHitQ_Insert(self, element) \
+    (self)->_->insert((kino_PriorityQueue*)self, element)
+
+#define Kino_SortedHitQ_Pop(self) \
+    kino_PriQ_pop((kino_PriorityQueue*)self)
+
+#define Kino_SortedHitQ_Peek(self) \
+    kino_PriQ_peek((kino_PriorityQueue*)self)
 
 struct KINO_SORTEDHITQUEUE_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -78,17 +84,15 @@ extern KINO_SORTEDHITQUEUE_VTABLE KINO_SORTEDHITQUEUE;
   #define SortedHitQ_Insert Kino_SortedHitQ_Insert
   #define SortedHitQ_Pop Kino_SortedHitQ_Pop
   #define SortedHitQ_Peek Kino_SortedHitQ_Peek
-  #define SORTEDHITQUEUE KINO_SORTEDHITQUEUE
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SORTEDHITQUEUE_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_u32_t  size; \
-    kino_u32_t  max_size; \
+    chy_u32_t  refcount; \
+    chy_u32_t  size; \
+    chy_u32_t  max_size; \
     void ** heap; \
-    kino_PriQ_less_than_t  less_than; \
-    kino_PriQ_free_elem_t  free_elem
-
+    kino_Obj_less_than_t  less_than; \
+    kino_Obj_free_elem_t  free_elem
 
 #ifdef KINO_WANT_SORTEDHITQUEUE_VTABLE
 KINO_SORTEDHITQUEUE_VTABLE KINO_SORTEDHITQUEUE = {
@@ -109,10 +113,15 @@ KINO_SORTEDHITQUEUE_VTABLE KINO_SORTEDHITQUEUE = {
 };
 #endif /* KINO_WANT_SORTEDHITQUEUE_VTABLE */
 
-#endif /* R_KINO_SORTEDHITQ */
+#undef KINO_SORTEDHITQUEUE_BOILERPLATE
+
+
+#endif /* R_KINO_SORTEDHITQUEUE */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

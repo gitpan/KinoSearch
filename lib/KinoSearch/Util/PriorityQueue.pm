@@ -5,13 +5,10 @@ package KinoSearch::Util::PriorityQueue;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args
-        max_size => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # params
+    max_size => undef,
+);
 
 1;
 
@@ -28,14 +25,14 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Util::PriorityQueue::instance_vars");
-    kino_u32_t max_size = extract_uv(args_hash, SNL("max_size"));
+    chy_u32_t max_size = extract_uv(args_hash, SNL("max_size"));
 
     /* build object */
     RETVAL = kino_PriQ_new(max_size, less_than_sviv, kino_sv_free);
 }
 OUTPUT: RETVAL
 
-kino_bool_t
+chy_bool_t
 insert(self, element)
     kino_PriorityQueue *self;
     SV                 *element;
@@ -79,7 +76,7 @@ PPCODE:
     AV* out_av = newAV();
     
     if (self->size > 0) {
-        kino_i32_t i;
+        chy_i32_t i;
 
         /* map the queue nodes onto the array in reverse order */
         av_extend(out_av, self->size - 1);
@@ -146,4 +143,3 @@ See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut
-

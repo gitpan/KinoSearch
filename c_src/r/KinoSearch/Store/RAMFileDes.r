@@ -10,75 +10,80 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_RAMFILEDES
 #define R_KINO_RAMFILEDES 1
 
 #include "KinoSearch/Store/RAMFileDes.h"
 
+#define KINO_RAMFILEDES_BOILERPLATE
+
 typedef void
 (*kino_RAMFileDes_destroy_t)(kino_RAMFileDes *self);
 
-typedef void
-(*kino_RAMFileDes_fdseek_t)(kino_RAMFileDes *self, kino_u64_t target);
+typedef chy_bool_t
+(*kino_RAMFileDes_fdseek_t)(kino_RAMFileDes *self, chy_u64_t target);
 
-typedef void
+typedef chy_bool_t
 (*kino_RAMFileDes_fdread_t)(kino_RAMFileDes *self, char *dest, 
-                       kino_u32_t dest_offset, kino_u32_t len);
+                       chy_u32_t dest_offset, chy_u32_t len);
 
-typedef void
-(*kino_RAMFileDes_fdwrite_t)(kino_RAMFileDes *self, char* buf, kino_u32_t len);
+typedef chy_bool_t
+(*kino_RAMFileDes_fdwrite_t)(kino_RAMFileDes *self, const char* buf, 
+                        chy_u32_t len);
 
-typedef kino_u64_t
+typedef chy_u64_t
 (*kino_RAMFileDes_fdlength_t)(kino_RAMFileDes *self);
 
-typedef void
+typedef chy_bool_t
 (*kino_RAMFileDes_fdclose_t)(kino_RAMFileDes *self);
 
 typedef struct kino_ByteBuf*
 (*kino_RAMFileDes_contents_t)(kino_RAMFileDes *self);
 
-#define Kino_RAMFileDes_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_RAMFileDes_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_RAMFileDes_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_RAMFileDes_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_RAMFileDes_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_RAMFileDes_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_RAMFileDes_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_RAMFileDes_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_RAMFileDes_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_RAMFileDes_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_RAMFileDes_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_RAMFileDes_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_RAMFileDes_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_RAMFileDes_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_RAMFileDes_FDSeek(_self, _arg1) \
-    (_self)->_->fdseek((kino_FileDes*)_self, _arg1)
+#define Kino_RAMFileDes_FDSeek(self, target) \
+    (self)->_->fdseek((kino_FileDes*)self, target)
 
-#define Kino_RAMFileDes_FDRead(_self, _arg1, _arg2, _arg3) \
-    (_self)->_->fdread((kino_FileDes*)_self, _arg1, _arg2, _arg3)
+#define Kino_RAMFileDes_FDRead(self, dest, dest_offset, len) \
+    (self)->_->fdread((kino_FileDes*)self, dest, dest_offset, len)
 
-#define Kino_RAMFileDes_FDWrite(_self, _arg1, _arg2) \
-    (_self)->_->fdwrite((kino_FileDes*)_self, _arg1, _arg2)
+#define Kino_RAMFileDes_FDWrite(self, buf, len) \
+    (self)->_->fdwrite((kino_FileDes*)self, buf, len)
 
-#define Kino_RAMFileDes_FDLength(_self) \
-    (_self)->_->fdlength((kino_FileDes*)_self)
+#define Kino_RAMFileDes_FDLength(self) \
+    (self)->_->fdlength((kino_FileDes*)self)
 
-#define Kino_RAMFileDes_FDClose(_self) \
-    (_self)->_->fdclose((kino_FileDes*)_self)
+#define Kino_RAMFileDes_FDClose(self) \
+    (self)->_->fdclose((kino_FileDes*)self)
 
-#define Kino_RAMFileDes_Contents(_self) \
-    (_self)->_->contents((kino_RAMFileDes*)_self)
+#define Kino_RAMFileDes_Contents(self) \
+    (self)->_->contents((kino_RAMFileDes*)self)
 
 struct KINO_RAMFILEDES_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -123,18 +128,15 @@ extern KINO_RAMFILEDES_VTABLE KINO_RAMFILEDES;
   #define RAMFileDes_FDLength Kino_RAMFileDes_FDLength
   #define RAMFileDes_FDClose Kino_RAMFileDes_FDClose
   #define RAMFileDes_Contents Kino_RAMFileDes_Contents
-  #define RAMFILEDES KINO_RAMFILEDES
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_RAMFILEDES_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     char * path; \
-    char * mode; \
-    kino_u64_t  pos; \
-    kino_i32_t  stream_count; \
+    chy_u64_t  pos; \
+    chy_i32_t  stream_count; \
     struct kino_VArray * buffers; \
-    kino_u64_t  len
-
+    chy_u64_t  len
 
 #ifdef KINO_WANT_RAMFILEDES_VTABLE
 KINO_RAMFILEDES_VTABLE KINO_RAMFILEDES = {
@@ -158,10 +160,15 @@ KINO_RAMFILEDES_VTABLE KINO_RAMFILEDES = {
 };
 #endif /* KINO_WANT_RAMFILEDES_VTABLE */
 
+#undef KINO_RAMFILEDES_BOILERPLATE
+
+
 #endif /* R_KINO_RAMFILEDES */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

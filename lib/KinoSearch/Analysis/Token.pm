@@ -5,15 +5,13 @@ package KinoSearch::Analysis::Token;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        text         => undef,
-        start_offset => undef,
-        end_offset   => undef,
-        boost        => 1.0,
-        pos_inc      => 1,
-    );
-}
+our %instance_vars = (
+    text         => undef,
+    start_offset => undef,
+    end_offset   => undef,
+    boost        => 1.0,
+    pos_inc      => 1,
+);
 
 1;
 
@@ -32,10 +30,10 @@ CODE:
     SV *text_sv = extract_sv(args_hash, SNL("text"));
     STRLEN len;
     char *text = SvPVutf8(text_sv, len);
-    kino_u32_t start   = extract_uv(args_hash, SNL("start_offset"));
-    kino_u32_t end     = extract_uv(args_hash, SNL("end_offset"));
+    chy_u32_t start    = extract_uv(args_hash, SNL("start_offset"));
+    chy_u32_t end      = extract_uv(args_hash, SNL("end_offset"));
     float boost        = extract_nv(args_hash, SNL("boost"));
-    kino_i32_t pos_inc = extract_iv(args_hash, SNL("pos_inc"));
+    chy_i32_t pos_inc  = extract_iv(args_hash, SNL("pos_inc"));
 
     RETVAL = kino_Token_new(text, len, start, end, boost, pos_inc);
 }
@@ -146,23 +144,23 @@ top of the field.
 B<boost> - a per-token weight.  Use this when you want to assign more or less
 importance to a particular token, as you might for emboldened text within an
 HTML document, for example.  (Note: The field this token belongs to must be
-spec'd to C<store_pos_boost>.)
+spec'd to use a posting_type of L<KinoSearch::Posting::RichPosting>.)
 
 =item *
 
 B<pos_inc> - POSition INCrement, measured in Tokens.  This attribute, which
 defaults to 1, is a an advanced tool for manipulating phrase matching.
 Ordinarily, Tokens are assigned consecutive position numbers: 0, 1, and 2 for
-"three blind mice".  However, if you set the position increment for "blind"
+C<"three blind mice">.  However, if you set the position increment for "blind"
 to, say, 1000, then the three tokens will end up assigned to positions 0, 1,
-and 1001 -- and will no longer produce a phrase match for the query '"three
-blind mice"'.
+and 1001 -- and will no longer produce a phrase match for the query C<"three
+blind mice">.
 
 =back
 
 =head1 METHODS
 
-=head1 new
+=head2 new
 
     my $token = KinoSearch::Analysis::Token->new(
         text         => $text,          # required 

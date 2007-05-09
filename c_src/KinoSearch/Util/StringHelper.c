@@ -1,6 +1,7 @@
 #include <string.h>
 
 #define KINO_USE_SHORT_NAMES
+#define CHY_USE_SHORT_NAMES
 
 #include "KinoSearch/Util/StringHelper.h"
 
@@ -64,10 +65,48 @@ StrHelp_compare_strings(const char *a, const char *b,
     return comparison;
 }
 
+void
+StrHelp_add_indent(ByteBuf *bb, size_t amount)
+{
+    u32_t num_margins = 1;
+    size_t new_len; 
+    char *limit   = BBEND(bb);
+    char *source  = bb->ptr;
+    char *dest;
+
+    /* add a margin for every newline */
+    for ( ; source < limit; source++) {
+        if (*source == '\n')
+            num_margins++;
+    }
+
+    /* make space for 12-character margins */
+    new_len = bb->len + (num_margins * amount);
+    BB_GROW(bb, new_len);
+    source = BBEND(bb);
+    bb->len = new_len;
+    dest = BBEND(bb);
+    *dest-- = '\0';
+    source--;
+
+    while (source >= bb->ptr) {
+        if (*source == '\n') {
+            int i = amount;
+            while (i--) {
+                *dest-- = ' ';
+            }
+        }
+        *dest-- = *source--;
+    }
+    while (dest >= bb->ptr) {
+        *dest-- =  ' ';
+    }
+}
+
 static const char base36_chars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 ByteBuf*
-StrHelp_to_base36(kino_u32_t num) 
+StrHelp_to_base36(chy_u32_t num) 
 {
     char buffer[11];
     char *buf = buffer + 10;

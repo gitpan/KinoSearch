@@ -6,7 +6,7 @@ package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = ( content => 'KinoSearch::Schema::FieldSpec' );
+our %fields = ( content => 'KinoSearch::Schema::FieldSpec' );
 
 sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
@@ -14,7 +14,7 @@ package AltSchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     content => 'KinoSearch::Schema::FieldSpec',
     aux     => 'KinoSearch::Schema::FieldSpec',
 );
@@ -23,10 +23,10 @@ sub analyzer { KinoSearch::Analysis::Tokenizer->new }
 
 package main;
 use utf8;
-use Test::More tests => 6;
+use Test::More tests => 4;
 
-BEGIN { use_ok('KinoSearch::Index::DocVector') }
-BEGIN { use_ok('KinoSearch::Index::TermVector') }
+use KinoSearch::Index::DocVector;
+use KinoSearch::Index::TermVector;
 use KinoSearch::Searcher;
 use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
@@ -92,7 +92,7 @@ $invindexer->finish;
 
 $searcher = KinoSearch::Searcher->new( invindex => $alt_invindex );
 my $hits = $searcher->search( query => $hasta );
-my $hit_id = $hits->{score_docs}[0]->get_id;
+my $hit_id = $hits->{score_docs}[0]->get_doc_num;
 $doc_vec = $searcher->fetch_doc_vec($hit_id);
 $term_vector = $doc_vec->term_vector( 'content', 'mañana' );
 ok( defined $term_vector, "utf-8 term vector retrieved after merge" );

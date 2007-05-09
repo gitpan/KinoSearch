@@ -3,9 +3,8 @@
 
 #include <stddef.h>
 #include "KinoSearch/Util/Obj.r"
-#include "KinoSearch/Util/MergeSort.h"
+#include "KinoSearch/Util/MSort.h"
 
-typedef struct kino_SortExRun kino_SortExRun;
 typedef struct kino_SortExternal kino_SortExternal;
 typedef struct KINO_SORTEXTERNAL_VTABLE KINO_SORTEXTERNAL_VTABLE;
 
@@ -14,77 +13,95 @@ struct kino_InStream;
 struct kino_OutStream;
 struct kino_ByteBuf;
 struct kino_SegInfo;
+struct kino_SortExRun;
 
 #define KINO_SORTEX_DEFAULT_MEM_THRESHOLD 0x1000000
 
-KINO_FINAL_CLASS("KinoSearch::Util::SortExternal", "SortEx",
+KINO_CLASS("KinoSearch::Util::SortExternal", "SortEx",
     "KinoSearch::Util::Obj");
 
 struct kino_SortExternal {
     KINO_SORTEXTERNAL_VTABLE *_;
     KINO_OBJ_MEMBER_VARS;
-    struct kino_ByteBuf  **cache; /* item cache, incoming and outgoing */
-    kino_u32_t             cache_cap;   /* allocated limit for cache */
-    kino_u32_t             cache_elems; /* number of elems in cache */ 
-    kino_u32_t             cache_pos;   /* index of current element */
-    struct kino_ByteBuf  **scratch;     /* memory for use by mergesort */
-    kino_u32_t             scratch_cap;     /* allocated limit for scratch */
-    kino_u32_t             mem_threshold;   /* mem allowed for cache */
-    kino_u32_t             cache_bytes;     /* mem occupied by cache */
-    kino_u32_t             run_cache_limit; /* mem allowed each run cache */
-    kino_SortExRun       **runs;
-    kino_u32_t             num_runs;
-    struct kino_OutStream *outstream;
-    struct kino_InStream  *instream;
-    struct kino_InvIndex  *invindex;
-    struct kino_SegInfo   *seg_info;
+    kino_MSort_compare_t    compare;
+    kino_Obj               *context;
+    kino_Obj              **cache;    /* item cache, incoming and outgoing */
+    chy_u32_t               cache_cap;   /* allocated limit for cache */
+    chy_u32_t               cache_max;   /* number of elems in cache */ 
+    chy_u32_t               cache_tick;  /* index of current element */
+    kino_Obj              **scratch;     /* memory for use by mergesort */
+    chy_u32_t               scratch_cap; /* allocated limit for scratch */
+    chy_u32_t               mem_thresh;  /* mem allowed for cache elems */
+    chy_u32_t               consumed;    /* mem occupied by cache elems */
+    struct kino_SortExRun **runs;
+    chy_u32_t               num_runs;
+    chy_bool_t              flipped;      /* force flip before fetch */ 
 };
 
-/* Constructor. 
+/* Initialize members vars defined by the SortExternal struct.
  */
-KINO_FUNCTION(
-kino_SortExternal*
-kino_SortEx_new(struct kino_InvIndex *invindex, 
-                struct kino_SegInfo *seg_info, 
-                kino_u32_t mem_threshold));
-
-/* Create a new ByteBuf and feed it into the SortEx.
- */
-KINO_METHOD("Kino_SortEx_Feed",
 void
-kino_SortEx_feed(kino_SortExternal *self, char *ptr, kino_u32_t len));
+kino_SortEx_init_base(kino_SortExternal *self, chy_u32_t mem_thresh, 
+                      kino_MSort_compare_t compare);
 
-/* Add a ByteBuf to the sort pool.  The SortEx object takes control of the
- * actual ByteBuf rather than performing a copy op, so the ByteBuf should not
- * be modified post-feeding.
+/* Add an Obj to the sort pool.  The SortEx object takes control of the
+ * Obj, so it should not be modified post-feeding.
  */
-KINO_METHOD("Kino_SortEx_Feed_BB",
 void
-kino_SortEx_feed_bb(kino_SortExternal *self, struct kino_ByteBuf *bb));
+kino_SortEx_feed(kino_SortExternal *self, kino_Obj *obj, 
+                 chy_u32_t bytes_this_obj);
+KINO_METHOD("Kino_SortEx_Feed");
 
-/* Fetch the next sorted item from the sort pool.  sort_all() must be called
- * first.
+/* Abstract method.  Flip the sortex from write mode to read mode.
  */
-KINO_METHOD("Kino_SortEx_Fetch",
-struct kino_ByteBuf*
-kino_SortEx_fetch(kino_SortExternal *self));
+void
+kino_SortEx_flip(kino_SortExternal *self);
+KINO_METHOD("Kino_SortEx_Flip");
+
+/* Fetch the next sorted item from the sort pool.  SortEx_Flip must be called
+ * first.  Returns NULL when the sortex has been exhausted.
+ */
+struct kino_Obj*
+kino_SortEx_fetch(kino_SortExternal *self);
+KINO_METHOD("Kino_SortEx_Fetch");
+
+/* Preview the next item that Fetch will return, but don't pop it.
+ */
+struct kino_Obj*
+kino_SortEx_peek(kino_SortExternal *self);
+KINO_METHOD("Kino_SortEx_Peek");
 
 /* Sort all items currently in the main cache.
  */
-KINO_METHOD("Kino_SortEx_Sort_Cache",
 void
-kino_SortEx_sort_cache(kino_SortExternal *self));
+kino_SortEx_sort_cache(kino_SortExternal *self);
+KINO_METHOD("Kino_SortEx_Sort_Cache");
 
-/* Sort everything in memory and write the sorted elements to disk, creating a
- * SortExRun C object.
+/* Abstract method.  Flush all elements currently in the cache.  Presumably
+ * this entails sorting everything, then writing the sorted elements
+ * to disk and spawning an object which isa SortExRun to represent those
+ * elements.
  */
-KINO_METHOD("Kino_SortEx_Sort_Run",
 void
-kino_SortEx_sort_run(kino_SortExternal *self));
+kino_SortEx_flush(kino_SortExternal *self);
+KINO_METHOD("Kino_SortEx_Flush");
 
-KINO_METHOD("Kino_SortEx_Destroy",
+/* Release items currently held in the cache, if any.  Reset all cache
+ * variables (consumed, cache_max, etc).
+ */
 void
-kino_SortEx_destroy(kino_SortExternal *self));
+kino_SortEx_clear_cache(kino_SortExternal *self);
+KINO_METHOD("Kino_SortEx_Clear_Cache");
+
+/* Add a run to the sortex's collection.
+ */
+void
+kino_SortEx_add_run(kino_SortExternal *self, struct kino_SortExRun *run);
+KINO_METHOD("Kino_SortEx_Add_Run");
+
+void
+kino_SortEx_destroy(kino_SortExternal *self);
+KINO_METHOD("Kino_SortEx_Destroy");
 
 KINO_END_CLASS
 

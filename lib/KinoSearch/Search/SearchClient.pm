@@ -3,17 +3,18 @@ use warnings;
 
 package KinoSearch::Search::SearchClient;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Searcher );
+use base qw( KinoSearch::Search::Searchable );
 
 use Storable qw( nfreeze thaw );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # params/members
-        peer_address => undef,
-        password     => undef,
-    );
-}
+our %instance_vars = (
+    # inherited
+    schema => undef,
+
+    # params/members
+    peer_address => undef,
+    password     => undef,
+);
 
 use IO::Socket::INET;
 
@@ -68,20 +69,14 @@ sub _rpc {
     return thaw($serialized);
 }
 
-my %search_top_docs_args = (
-    query      => undef,
-    filter     => undef,
-    num_wanted => undef,
-    sort_spec  => undef,
-);
-
-sub search_top_docs {
-    my $self = shift;
-    confess kerror() unless verify_args( \%search_top_docs_args, @_ );
-    my %args = ( %search_top_docs_args, @_ );
+sub top_docs {
+    my $self          = shift;
+    my $top_docs_args = \%KinoSearch::Search::Searchable::top_docs_args;
+    confess kerror() unless verify_args( $top_docs_args, @_ );
+    my %args = ( %$top_docs_args, @_ );
     confess("remote filtered search not supported") if defined $args{filter};
 
-    return $self->_rpc( 'search_top_docs', \%args );
+    return $self->_rpc( 'top_docs', \%args );
 }
 
 sub terminate {
@@ -145,8 +140,8 @@ KinoSearch::Search::SearchClient - Connect to a remote SearchServer.
 
 =head1 DESCRIPTION
 
-SearchClient is a subclass of L<KinoSearch::Searcher> which can be used to
-search an index on a remote machine made accessible via
+SearchClient is a subclass of L<KinoSearch::Search::Searchable> which can be
+used to search an index on a remote machine made accessible via
 L<SearchServer|KinoSearch::Search::SearchServer>.
 
 =head1 METHODS
@@ -171,7 +166,8 @@ socket connection.
 
 =head1 LIMITATIONS
 
-Limiting search results with a QueryFilter is not supported.
+Limiting search results with a L<Filter|KinoSearch::Search::Filter> is not
+supported.
 
 =head1 COPYRIGHT
 
@@ -182,4 +178,3 @@ Copyright 2006-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

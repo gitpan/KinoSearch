@@ -10,35 +10,41 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_INT
 #define R_KINO_INT 1
 
 #include "KinoSearch/Util/Int.h"
 
-#define Kino_Int_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define KINO_INT_BOILERPLATE
 
-#define Kino_Int_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
 
-#define Kino_Int_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
 
-#define Kino_Int_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_Int_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_Int_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_Int_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_Int_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_Int_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_Int_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_Int_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
+
+#define Kino_Int_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
+
+#define Kino_Int_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
+
+#define Kino_Int_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_INT_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -63,13 +69,11 @@ extern KINO_INT_VTABLE KINO_INT;
   #define Int_Is_A Kino_Int_Is_A
   #define Int_To_String Kino_Int_To_String
   #define Int_Serialize Kino_Int_Serialize
-  #define INT KINO_INT
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_INT_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_i64_t  value
-
+    chy_u32_t  refcount; \
+    chy_i64_t  value
 
 #ifdef KINO_WANT_INT_VTABLE
 KINO_INT_VTABLE KINO_INT = {
@@ -87,10 +91,15 @@ KINO_INT_VTABLE KINO_INT = {
 };
 #endif /* KINO_WANT_INT_VTABLE */
 
+#undef KINO_INT_BOILERPLATE
+
+
 #endif /* R_KINO_INT */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

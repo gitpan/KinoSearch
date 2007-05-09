@@ -5,7 +5,7 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.20_02';
+our $VERSION = '0.20_03';
 
 use constant K_DEBUG => 0;
 
@@ -48,7 +48,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.20_02
+0.20_03
 
 =head1 EXTRA WARNING
 
@@ -75,7 +75,7 @@ First, plan out your index structure and describe it with a "schema".
     use base qw( KinoSearch::Schema );
     use KinoSearch::Analysis::PolyAnalyzer;
     
-    our %FIELDS = (
+    our %fields = (
         title   => 'KinoSearch::Schema::FieldSpec',
         content => 'KinoSearch::Schema::FieldSpec',
     );

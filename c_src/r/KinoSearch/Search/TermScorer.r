@@ -10,62 +10,69 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_TERMSCORER
 #define R_KINO_TERMSCORER 1
 
 #include "KinoSearch/Search/TermScorer.h"
 
+#define KINO_TERMSCORER_BOILERPLATE
+
 typedef void
 (*kino_TermScorer_destroy_t)(kino_TermScorer *self);
 
-typedef kino_bool_t
+typedef chy_bool_t
 (*kino_TermScorer_next_t)(kino_TermScorer* self);
 
-typedef kino_u32_t
+typedef chy_u32_t
 (*kino_TermScorer_doc_t)(kino_TermScorer* self);
 
-typedef float
-(*kino_TermScorer_score_t)(kino_TermScorer* self);
+typedef struct kino_Tally*
+(*kino_TermScorer_tally_t)(kino_TermScorer* self);
 
-#define Kino_TermScorer_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+typedef chy_bool_t
+(*kino_TermScorer_skip_to_t)(kino_TermScorer* self, chy_u32_t target);
 
-#define Kino_TermScorer_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_TermScorer_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_TermScorer_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_TermScorer_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_TermScorer_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_TermScorer_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_TermScorer_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_TermScorer_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_TermScorer_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_TermScorer_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_TermScorer_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_TermScorer_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_TermScorer_Next(_self) \
-    (_self)->_->next((kino_Scorer*)_self)
+#define Kino_TermScorer_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_TermScorer_Doc(_self) \
-    (_self)->_->doc((kino_Scorer*)_self)
+#define Kino_TermScorer_Next(self) \
+    (self)->_->next((kino_Scorer*)self)
 
-#define Kino_TermScorer_Score(_self) \
-    (_self)->_->score((kino_Scorer*)_self)
+#define Kino_TermScorer_Doc(self) \
+    (self)->_->doc((kino_Scorer*)self)
 
-#define Kino_TermScorer_Skip_To(_self, _arg1) \
-    (_self)->_->skip_to((kino_Scorer*)_self, _arg1)
+#define Kino_TermScorer_Tally(self) \
+    (self)->_->tally((kino_Scorer*)self)
 
-#define Kino_TermScorer_Score_Batch(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    (_self)->_->score_batch((kino_Scorer*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
+#define Kino_TermScorer_Skip_To(self, target) \
+    (self)->_->skip_to((kino_Scorer*)self, target)
+
+#define Kino_TermScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
+    (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
 struct KINO_TERMSCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -77,9 +84,9 @@ struct KINO_TERMSCORER_VTABLE {
     kino_Obj_serialize_t serialize;
     kino_Scorer_next_t next;
     kino_Scorer_doc_t doc;
-    kino_Scorer_score_t score;
+    kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
-    kino_Scorer_score_batch_t score_batch;
+    kino_Scorer_collect_t collect;
 };
 
 extern KINO_TERMSCORER_VTABLE KINO_TERMSCORER;
@@ -87,12 +94,11 @@ extern KINO_TERMSCORER_VTABLE KINO_TERMSCORER;
 #ifdef KINO_USE_SHORT_NAMES
   #define TermScorer kino_TermScorer
   #define TERMSCORER KINO_TERMSCORER
-  #define TermScorer_new kino_TermScorer_new
-  #define TermScorer_fill_score_cache kino_TermScorer_fill_score_cache
   #define TermScorer_destroy kino_TermScorer_destroy
   #define TermScorer_next kino_TermScorer_next
   #define TermScorer_doc kino_TermScorer_doc
-  #define TermScorer_score kino_TermScorer_score
+  #define TermScorer_tally kino_TermScorer_tally
+  #define TermScorer_skip_to kino_TermScorer_skip_to
   #define TermScorer_Clone Kino_TermScorer_Clone
   #define TermScorer_Destroy Kino_TermScorer_Destroy
   #define TermScorer_Equals Kino_TermScorer_Equals
@@ -102,34 +108,21 @@ extern KINO_TERMSCORER_VTABLE KINO_TERMSCORER;
   #define TermScorer_Serialize Kino_TermScorer_Serialize
   #define TermScorer_Next Kino_TermScorer_Next
   #define TermScorer_Doc Kino_TermScorer_Doc
-  #define TermScorer_Score Kino_TermScorer_Score
+  #define TermScorer_Tally Kino_TermScorer_Tally
   #define TermScorer_Skip_To Kino_TermScorer_Skip_To
-  #define TermScorer_Score_Batch Kino_TermScorer_Score_Batch
-  #define TERMSCORER KINO_TERMSCORER
+  #define TermScorer_Collect Kino_TermScorer_Collect
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_TERMSCORER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_Similarity * sim; \
-    struct kino_ByteBuf * raw_prox_bb; \
-    kino_u32_t * prox; \
-    kino_u32_t  num_prox; \
-    kino_u32_t  doc_num; \
-    struct kino_TermDocs*  term_docs; \
-    kino_u32_t  pointer; \
-    kino_u32_t  pointer_max; \
     float  weight_value; \
     float * score_cache; \
-    kino_u32_t * doc_nums; \
-    kino_u32_t * freqs; \
-    float * boosts; \
-    struct kino_ByteBuf * doc_nums_bb; \
-    struct kino_ByteBuf * field_boosts_bb; \
-    struct kino_ByteBuf * freqs_bb; \
-    struct kino_ByteBuf * boosts_bb; \
-    struct kino_ByteBuf * pos_boosts_bb; \
-    void * weight_ref
-
+    void * weight_ref; \
+    struct kino_Tally * tally; \
+    struct kino_PostingList * plist; \
+    struct kino_ByteBuf * postings; \
+    struct kino_Posting * posting
 
 #ifdef KINO_WANT_TERMSCORER_VTABLE
 KINO_TERMSCORER_VTABLE KINO_TERMSCORER = {
@@ -146,16 +139,21 @@ KINO_TERMSCORER_VTABLE KINO_TERMSCORER = {
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_Scorer_next_t)kino_TermScorer_next,
     (kino_Scorer_doc_t)kino_TermScorer_doc,
-    (kino_Scorer_score_t)kino_TermScorer_score,
-    (kino_Scorer_skip_to_t)kino_Scorer_skip_to,
-    (kino_Scorer_score_batch_t)kino_Scorer_score_batch
+    (kino_Scorer_tally_t)kino_TermScorer_tally,
+    (kino_Scorer_skip_to_t)kino_TermScorer_skip_to,
+    (kino_Scorer_collect_t)kino_Scorer_collect
 };
 #endif /* KINO_WANT_TERMSCORER_VTABLE */
 
+#undef KINO_TERMSCORER_BOILERPLATE
+
+
 #endif /* R_KINO_TERMSCORER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

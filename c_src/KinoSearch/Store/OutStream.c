@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_OUTSTREAM_VTABLE
@@ -38,32 +37,6 @@ OutStream_destroy(OutStream *self)
     free(self);
 }
 
-#define VINT_MAX_BYTES ((sizeof(u32_t) * 8 / 7) + 1)
-
-int
-OutStream_encode_vint(u32_t aU32, char *out_buf) 
-{
-    u8_t buf[VINT_MAX_BYTES];
-    u8_t *ptr = buf + sizeof(buf) - 1;
-    int num_bytes;
-
-    /* write last byte first, which has no continue bit */
-    *ptr = aU32 & 0x7f;
-    aU32 >>= 7;
-    
-    while (aU32) {
-        /* work backwards, writing bytes with continue bits set */
-        *--ptr = ((aU32 & 0x7f) | 0x80);
-        aU32 >>= 7;
-    }
-
-    num_bytes =  buf + sizeof(buf) - ptr;
-
-    memcpy(out_buf, ptr, num_bytes);
-
-    return num_bytes;
-}
-
 void 
 OutStream_absorb(OutStream *self, InStream *instream) 
 {
@@ -86,7 +59,8 @@ OutStream_sseek(OutStream *self, u64_t target)
     OutStream_SFlush(self);
     self->buf_start = target;
     if (self->file_des->pos != target) {
-        FileDes_FDSeek(self->file_des, target);
+        if (!FileDes_FDSeek(self->file_des, target))
+            CONFESS("Error: %s", Carp_kerror);
     }
 }
 
@@ -99,7 +73,9 @@ OutStream_stell(OutStream *self)
 void
 OutStream_sflush(OutStream *self) 
 {
-    FileDes_FDWrite(self->file_des, self->buf, self->buf_pos);
+    if ( !FileDes_FDWrite(self->file_des, self->buf, self->buf_pos) ) {
+        CONFESS("Error: %s", Carp_kerror);
+    }
     self->buf_start += self->buf_pos;
     self->buf_pos = 0;
 }
@@ -120,12 +96,13 @@ OutStream_write_byte(OutStream *self, char aChar)
 }
 
 void
-OutStream_write_bytes(OutStream *self, char *bytes, size_t len) 
+OutStream_write_bytes(OutStream *self, const char *bytes, size_t len) 
 {
     /* if this data is larger than the buffer size, flush and write */
     if (len >= KINO_IO_STREAM_BUF_SIZE) {
         OutStream_SFlush(self);
-        FileDes_FDWrite(self->file_des, bytes, len);
+        if ( !FileDes_FDWrite(self->file_des, bytes, len) ) 
+            CONFESS("Error: %s", Carp_kerror);
         self->buf_start += len;
     }
     /* if there's not enough room in the buffer, flush then add */
@@ -146,16 +123,21 @@ OutStream_write_bytes(OutStream *self, char *bytes, size_t len)
 void 
 OutStream_write_int(OutStream *self, u32_t aU32) 
 {
+#ifdef BIG_END
+    OutStream_Write_Bytes(self, (char*)&aU32, 4);
+#else 
     u8_t buf[4];
-    Math_encode_bigend_u32(aU32, buf);
+    MATH_ENCODE_U32(aU32, buf);
     OutStream_Write_Bytes(self, (char*)buf, 4);
+#endif
 }
 
 void
 OutStream_write_long(OutStream *self, u64_t aQuad) 
 {
-    /* derive the upper 4 bytes by truncating a quotient */
     u8_t buf[8];
+
+    /* store as big-endian */
     buf[0] = (aQuad >> 56) & 0xFF;
     buf[1] = (aQuad >> 48) & 0xFF;
     buf[2] = (aQuad >> 40) & 0xFF;
@@ -188,8 +170,6 @@ OutStream_write_vint(OutStream *self, u32_t aU32)
     OutStream_write_bytes(self, (char*)ptr, (buf + sizeof(buf)) - ptr);
 }
 
-#define VLONG_MAX_BYTES ((sizeof(u64_t) * 8 / 7) + 1)
-
 void
 OutStream_write_vlong(OutStream *self, u64_t aQuad) 
 {
@@ -210,7 +190,7 @@ OutStream_write_vlong(OutStream *self, u64_t aQuad)
 }
 
 void
-OutStream_write_string(OutStream *self, char *string, size_t len) 
+OutStream_write_string(OutStream *self, const char *string, size_t len) 
 {
     OutStream_write_vint(self, (u32_t)len);
     OutStream_write_bytes(self, string, len);
@@ -221,7 +201,10 @@ OutStream_sclose(OutStream *self)
 {
     OutStream_SFlush(self);
     if (--self->file_des->stream_count <= 0) {
-        FileDes_FDClose(self->file_des);
+        if ( !FileDes_FDClose(self->file_des) ) {
+            CONFESS("Error closing '%s': %s", self->file_des->path, 
+                Carp_kerror);
+        }
     }
     self->is_closed = true;
 }

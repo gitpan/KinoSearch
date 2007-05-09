@@ -5,18 +5,17 @@ package KinoSearch::Index::DocReader;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        folder   => undef,
-        schema   => undef,
-        seg_info => undef,
-        # members
-        ds_in  => undef,
-        dsx_in => undef,
-        size   => undef,
-    );
-}
+our %instance_vars = (
+    # constructor params / members
+    folder   => undef,
+    schema   => undef,
+    seg_info => undef,
+
+    # members
+    ds_in  => undef,
+    dsx_in => undef,
+    size   => undef,
+);
 
 use Compress::Zlib qw( uncompress );
 use KinoSearch::Util::StringHelper qw( utf8_flag_on );
@@ -37,7 +36,7 @@ sub init_instance {
     $self->{dsx_in} = $folder->open_instream("$seg_name.dsx");
 
     # derive the number of documents in the segment
-    $self->{size} = $self->{dsx_in}->slength / 8;
+    $self->{size} = $self->{dsx_in}->slength / 16;
 }
 
 # Return number of documents in segment.
@@ -47,20 +46,13 @@ sub read_record {
     my ( $self,   $doc_num ) = @_;
     my ( $dsx_in, $ds_in )   = @{$self}{ 'dsx_in', 'ds_in' };
 
-    # get to the right section of the variable length file
-    $dsx_in->sseek( $doc_num * 8 );
-    my $file_ptr = $dsx_in->lu_read('Q');
+    # find start and length of variable length record
+    $dsx_in->sseek( $doc_num * 16 );
+    my ( $file_ptr, $record_len ) = $dsx_in->lu_read('QQ');
     $ds_in->sseek($file_ptr);
 
-    # figure out the record length
-    my $next_file_ptr =
-          $doc_num == $self->{size} - 1
-        ? $ds_in->slength
-        : $dsx_in->lu_read('Q');
-
     # read in the record
-    my $record_len = $next_file_ptr - $file_ptr;
-    my $record     = $ds_in->lu_read("a$record_len");
+    my $record = $ds_in->lu_read("a$record_len");
     return \$record;
 }
 
@@ -72,7 +64,7 @@ sub fetch_doc {
     my %doc;
 
     # get data file pointer from index, read number of fields
-    $dsx_in->sseek( $doc_num * 8 );
+    $dsx_in->sseek( $doc_num * 16 );
     my $start = $dsx_in->lu_read('Q');
     $ds_in->sseek($start);
     my $num_fields = $ds_in->lu_read('V');

@@ -5,17 +5,16 @@ package KinoSearch::Search::SearchServer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # params/members
-        searchable => undef,
-        port       => undef,
-        password   => undef,
-        # members
-        sock => undef,
+our %instance_vars = (
+    # params / members
+    searchable => undef,
+    port       => undef,
+    password   => undef,
 
-    );
-}
+    # members
+    sock => undef,
+
+);
 
 use IO::Socket::INET;
 use IO::Select;
@@ -41,13 +40,13 @@ sub init_instance {
 }
 
 my %dispatch = (
-    max_doc         => \&do_max_doc,
-    doc_freq        => \&do_doc_freq,
-    doc_freqs       => \&do_doc_freqs,
-    search_top_docs => \&do_search_top_docs,
-    fetch_doc       => \&do_fetch_doc,
-    fetch_doc_vec   => \&do_fetch_doc_vec,
-    terminate       => undef,
+    max_doc       => \&do_max_doc,
+    doc_freq      => \&do_doc_freq,
+    doc_freqs     => \&do_doc_freqs,
+    top_docs      => \&do_top_docs,
+    fetch_doc     => \&do_fetch_doc,
+    fetch_doc_vec => \&do_fetch_doc_vec,
+    terminate     => undef,
 );
 
 sub serve {
@@ -120,11 +119,11 @@ sub do_doc_freqs {
     return $self->{searchable}->doc_freqs( $args->{terms} );
 }
 
-sub do_search_top_docs {
+sub do_top_docs {
     my ( $self, $args ) = @_;
     confess("remote filtered search not supported")
         if defined $args->{filter};
-    return $self->{searchable}->search_top_docs(%$args);
+    return $self->{searchable}->top_docs(%$args);
 }
 
 sub do_max_doc {
@@ -156,12 +155,12 @@ KinoSearch::Search::SearchServer - Make a Searcher remotely accessible.
     my $searcher = KinoSearch::Searcher->new(
         invindex => MySchema->open('path/to/invindex'),
     );
-    my $server = KinoSearch::Search::SearchServer->new(
+    my $search_server = KinoSearch::Search::SearchServer->new(
         searchable => $searcher,
         port       => 7890,
         password   => $pass,
     );
-    $server->serve;
+    $search_server->serve;
 
 =head1 DESCRIPTION 
 
@@ -178,13 +177,19 @@ across multiple nodes, each with its own, smaller index.
 
 =head2 new
 
+    my $search_server = KinoSearch::Search::SearchServer->new(
+        searchable => $searcher, # required
+        port       => 7890,      # required
+        password   => $pass,     # required
+    );
+
 Constructor.  Takes hash-style parameters.
 
 =over
 
 =item *
 
-B<searchable> - The L<Searcher|KinoSearch::Searcher> that the SearchServer
+B<searchable> - the L<Searcher|KinoSearch::Searcher> that the SearchServer
 will wrap.
 
 =item *
@@ -198,6 +203,8 @@ B<password> - a password which must be supplied by clients.
 =back
 
 =head2 serve
+
+    $search_server->serve;
 
 Open a listening socket on localhost and wait for SearchClients to connect.
 

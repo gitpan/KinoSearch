@@ -5,8 +5,6 @@ package KinoSearch::Index::Term;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN { __PACKAGE__->init_instance_vars() }
-
 1;
 
 __END__
@@ -21,7 +19,7 @@ new(class_name, field, text)
     kino_ByteBuf_utf8 field;
     kino_ByteBuf_utf8 text;
 CODE:
-    KINO_UNUSED_VAR(class_name);
+    CHY_UNUSED_VAR(class_name);
     RETVAL = kino_Term_new(&field, &text);
 OUTPUT: RETVAL
 
@@ -30,7 +28,7 @@ deserialize(either_sv, serialized)
     SV *either_sv;
     kino_ViewByteBuf serialized;
 CODE:
-    KINO_UNUSED_VAR(either_sv);
+    CHY_UNUSED_VAR(either_sv);
     RETVAL = kino_Term_deserialize(&serialized);
 OUTPUT: RETVAL
 
@@ -84,7 +82,7 @@ KinoSearch::Index::Term - String of text associated with a field.
 
 =head1 DESCRIPTION
 
-The Term is the unit of search.  It has two characteristics: a field name, and
+A Term is a unit of search.  It has two characteristics: a field name, and
 term text.  
 
 =head1 METHODS
@@ -102,6 +100,10 @@ Getters and setters.
 =head2 to_string
 
 Returns a string representation of the Term object.
+
+=head1 SEE ALSO
+
+L<KinoSearch::Docs::IRTheory>.
 
 =head1 COPYRIGHT
 

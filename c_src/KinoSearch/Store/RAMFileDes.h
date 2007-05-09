@@ -15,45 +15,45 @@ struct kino_RAMFileDes {
     KINO_RAMFILEDES_VTABLE *_;
     KINO_FILEDES_MEMBER_VARS;
     struct kino_VArray *buffers;
-    kino_u64_t len;
+    chy_u64_t len;
 };
 
 /* Return a ByteBuf whose string is a copy of the ram file's contents.
  */
-KINO_METHOD("Kino_RAMFileDes_Contents",
 struct kino_ByteBuf*
-kino_RAMFileDes_contents(kino_RAMFileDes *self));
+kino_RAMFileDes_contents(kino_RAMFileDes *self);
+KINO_METHOD("Kino_RAMFileDes_Contents");
 
-KINO_METHOD("Kino_RAMFileDes_Destroy",
 void
-kino_RAMFileDes_destroy(kino_RAMFileDes *self));
+kino_RAMFileDes_destroy(kino_RAMFileDes *self);
+KINO_METHOD("Kino_RAMFileDes_Destroy");
 
-KINO_METHOD("Kino_RAMFileDes_FDSeek",
-void
-kino_RAMFileDes_fdseek(kino_RAMFileDes *self, kino_u64_t target));
+chy_bool_t
+kino_RAMFileDes_fdseek(kino_RAMFileDes *self, chy_u64_t target);
+KINO_METHOD("Kino_RAMFileDes_FDSeek");
 
-KINO_METHOD("Kino_RAMFileDes_FDRead",
-void
+chy_bool_t
 kino_RAMFileDes_fdread(kino_RAMFileDes *self, char *dest, 
-                       kino_u32_t dest_offset, kino_u32_t len));
+                       chy_u32_t dest_offset, chy_u32_t len);
+KINO_METHOD("Kino_RAMFileDes_FDRead");
 
-KINO_METHOD("Kino_RAMFileDes_FDWrite",
-void
-kino_RAMFileDes_fdwrite(kino_RAMFileDes *self, char* buf, kino_u32_t len));
+chy_bool_t
+kino_RAMFileDes_fdwrite(kino_RAMFileDes *self, const char* buf, 
+                        chy_u32_t len);
+KINO_METHOD("Kino_RAMFileDes_FDWrite");
 
-KINO_METHOD("Kino_RAMFileDes_FDLength",
-kino_u64_t
-kino_RAMFileDes_fdlength(kino_RAMFileDes *self));
+chy_u64_t
+kino_RAMFileDes_fdlength(kino_RAMFileDes *self);
+KINO_METHOD("Kino_RAMFileDes_FDLength");
 
-KINO_METHOD("Kino_RAMFileDes_FDClose",
-void
-kino_RAMFileDes_fdclose(kino_RAMFileDes *self));
+chy_bool_t
+kino_RAMFileDes_fdclose(kino_RAMFileDes *self);
+KINO_METHOD("Kino_RAMFileDes_FDClose");
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_RAMFileDes*
-kino_RAMFileDes_new(const char *path));
+kino_RAMFileDes_new(const char *path);
 
 KINO_END_CLASS
 

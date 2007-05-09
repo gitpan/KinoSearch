@@ -4,36 +4,28 @@ use warnings;
 package KinoSearch::Schema::FieldSpec;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
+use KinoSearch::Posting::ScorePosting;
+use KinoSearch::Search::Similarity;
 
 use constant TRUE  => 1;
 use constant FALSE => 0;
 
-sub analyzer          { }
-sub similarity        { }
-sub boost             {1.0}
-sub indexed           {TRUE}
-sub stored            {TRUE}
-sub analyzed          {TRUE}
-sub vectorized        {TRUE}
-sub binary            {FALSE}
-sub compressed        {FALSE}
-sub store_field_boost {TRUE}
-sub store_freq        {TRUE}
-sub store_position    {TRUE}
-sub store_pos_boost   {FALSE}
-sub sortsub           { }
+sub analyzer     { }
+sub similarity   { }
+sub boost        {1.0}
+sub indexed      {TRUE}
+sub stored       {TRUE}
+sub analyzed     {TRUE}
+sub vectorized   {TRUE}
+sub binary       {FALSE}
+sub compressed   {FALSE}
+sub posting_type {'KinoSearch::Posting::ScorePosting'}
+sub sortsub      { }
 
 sub new {
     my $class = shift;
     $class = ref($class) || $class;
     my $self = $class->_new();
-
-    # sanity check
-    if ( $class->store_pos_boost ) {
-        if ( !$class->store_freq or !$class->store_position ) {
-            confess("store_pos_boost requires store_freq and store_position");
-        }
-    }
 
     # transfer values to C struct
     $self->_set_boost( $class->boost );
@@ -43,10 +35,9 @@ sub new {
     $self->_set_vectorized( $class->vectorized );
     $self->_set_binary( $class->binary );
     $self->_set_compressed( $class->compressed );
-    $self->_set_store_field_boost( $class->store_field_boost );
-    $self->_set_store_freq( $class->store_freq );
-    $self->_set_store_position( $class->store_position );
-    $self->_set_store_pos_boost( $class->store_pos_boost );
+    my $posting_class = $class->posting_type;
+    my $sim = $class->similarity || KinoSearch::Search::Similarity->new;
+    $self->_set_posting( $posting_class->new( similarity => $sim ) );
 
     return $self;
 }
@@ -89,10 +80,7 @@ ALIAS:
     _set_binary            = 11
     _get_binary            = 12
     _set_compressed        = 13
-    _set_store_field_boost = 15
-    _set_store_freq        = 17
-    _set_store_position    = 19
-    _set_store_pos_boost   = 21
+    _set_posting           = 15
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -120,17 +108,12 @@ PPCODE:
 
     case 13: self->compressed = SvTRUE( ST(1) );
              break;
-
-    case 15: self->store_field_boost = SvTRUE( ST(1) );
-             break;
-
-    case 17: self->store_freq = SvTRUE( ST(1) );
-             break;
-
-    case 19: self->store_position = SvTRUE( ST(1) );
-             break;
-
-    case 21: self->store_pos_boost = SvTRUE( ST(1) );
+    
+    case 15: if (self->posting != NULL)
+                REFCOUNT_DEC(self->posting);
+             EXTRACT_STRUCT( ST(1), self->posting, kino_Posting*, 
+                "KinoSearch::Posting");
+             REFCOUNT_INC(self->posting);
              break;
 
     END_SET_OR_GET_SWITCH
@@ -141,7 +124,7 @@ __POD__
 
 =head1 NAME 
 
-KinoSearch::Schema::FieldSpec -- Define a field's behavior.
+KinoSearch::Schema::FieldSpec - Define a field's behavior.
 
 =head1 SYNOPSIS
 
@@ -156,15 +139,16 @@ Then, arrange for your subclass of KinoSearch::Schema to load it.
     package MySchema;
     use base qw( KinoSearch::Schema );
 
-    our %FIELDS = (
+    our %fields = (
         name  => 'KinoSearch::Schema::FieldSpec',
         price => 'MySchema::UnAnalyzed',
     );
 
 =head1 DESCRIPTION
 
-A FieldSpec associates traits and behaviors with a field name.  If the default
-behaviors are not appropriate for a given field, FieldSpec may be subclassed.
+A FieldSpec defines a set of traits and behaviors which may be associated with
+one or more field names.  If the default behaviors are not appropriate for a
+given field, FieldSpec may be subclassed.
 
 =head1 CLASS METHODS
 
@@ -213,20 +197,20 @@ which isa L<KinoSearch::Analysis::Analyzer>.
 
 =head2 similarity
 
-As with analyzer(), this method returns nothing by default.  Override it if
-you want this field to use a custom subclass of
-L<KinoSearch::Search::Similarity>, rather than the Schema's default.
+I<Expert API.>  Returns nothing by default.  Override it if you want this
+field to use a custom subclass of L<KinoSearch::Search::Similarity>, rather
+than the Schema's default.
 
-=head2 store_pos_boost
+=head2 posting_type 
 
-TEMPORARY API - the capacity to store boosts per position is not going
-away, but the way which you will indicate it will change.
+EXPERIMENTAL - the capacity to specify different posting types is not going
+away, but the interface is likely to change.
 
-Returns a boolean indicating whether the index should store a scoring
-multiplier for each and every token in this field.  This is expensive, but can
-be useful if, for example, you want text which was emboldened or italicized in
-the source material to have greater weight than surrounding text.  See
-L<KinoSearch::Analysis::Token>.
+I<Expert API.>  Indicates what subclass of L<Posting|KinoSearch::Posting> the
+field should use.  The default is the general-purpose
+L<KinoSearch::Posting::ScorePosting>.  Boolean (true/false only) fields might
+use L<KinoSearch::Posting::MatchPosting>.  To override, supply a class name
+which isa KinoSearch::Posting.
 
 =head1 COPYRIGHT
 

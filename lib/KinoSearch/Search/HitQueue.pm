@@ -5,8 +5,10 @@ package KinoSearch::Search::HitQueue;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::PriorityQueue );
 
-BEGIN { __PACKAGE__->init_instance_vars() }
-our %instance_vars;
+our %instance_vars = (
+    # params
+    max_size => undef,
+);
 
 use KinoSearch::Search::ScoreDoc;
 
@@ -33,7 +35,7 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Search::HitQueue::instance_vars");
-    kino_u32_t max_size = extract_uv(args_hash, SNL("max_size"));
+    chy_u32_t max_size = extract_uv(args_hash, SNL("max_size"));
 
     /* create object */
     RETVAL = kino_HitQ_new(max_size);
@@ -41,7 +43,7 @@ CODE:
 OUTPUT: RETVAL
 
 
-kino_bool_t
+chy_bool_t
 insert(self, score_doc)
     kino_HitQueue *self;
     kino_ScoreDoc *score_doc;
@@ -74,7 +76,7 @@ PPCODE:
     AV* out_av = newAV();
     
     if (self->size > 0) {
-        kino_i32_t i;
+        chy_i32_t i;
 
         /* map the queue nodes onto the array in reverse order */
         av_extend(out_av, self->size - 1);

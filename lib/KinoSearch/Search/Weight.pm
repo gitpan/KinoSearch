@@ -5,42 +5,56 @@ package KinoSearch::Search::Weight;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args / members
-        parent   => undef,
-        searcher => undef,
-        # members
-        similarity   => undef,
-        value        => 0,
-        idf          => undef,
-        query_norm   => undef,
-        query_weight => undef,
-    );
-}
+our %instance_vars = (
+    # constructor arg (only!)
+    searcher => undef,
+
+    # constructor args / members
+    parent => undef,
+
+    # members
+    similarity => undef,
+);
 
 # Return the Query that the Weight was derived from.
 sub get_query { shift->{parent} }
 
-# Return the Weight's numerical value, now that it's been calculated.
-sub get_value { shift->{value} }
+# Return the Weight's numerical value.
+sub get_value { shift->abstract_death }
 
-# Return a damping/normalization factor for the Weight/Query.
-sub sum_of_squared_weights {
-    my $self = shift;
-    $self->{query_weight} = $self->{idf} * $self->{parent}->get_boost;
-    return ( $self->{query_weight}**2 );
+=begin comment
+
+Take a newly minted Weight object and apply query-specific normalization
+factors.  Once this method completes, the Weight is ready for use.  It
+should be called by every Weight subclass at the end of construction.
+
+For a TermQuery, the scoring forumla is approximately:
+
+   ( tf_d * idf_t / norm_d ) * ( tf_q * idf_t / norm_q ) 
+
+This routine is theoretically concerned with the second half of that formula;
+what it actually means depends on how the relevant Weight and Similarity
+methods are implemented.
+ 
+=end comment
+=cut 
+
+sub perform_query_normalization {
+    my ( $self, $searcher ) = @_;
+    my $sim = $self->{similarity};
+
+    my $factor = $self->sum_of_squared_weights;    # factor = ( tf_q * idf_t )
+    $factor = $sim->query_norm($factor);           # factor /= norm_q
+    $self->normalize($factor);                     # impact *= factor
 }
+
+# Compute and return a raw weighting factor for the Query, which is used as
+# part of the query normalization process.
+sub sum_of_squared_weights { shift->abstract_death }
 
 # Normalize the Weight/Query, so that it produces more comparable numbers in
 # context of other Weights/Queries.
-
-sub normalize {
-    my ( $self, $query_norm ) = @_;
-    $self->{query_norm} = $query_norm;
-    $self->{query_weight} *= $query_norm;
-    $self->{value} = $self->{query_weight} * $self->{idf};
-}
+sub normalize { shift->abstract_death }
 
 =begin comment
 
@@ -66,7 +80,7 @@ sub explain { shift->todo_death }
 
 sub to_string {
     my $self = shift;
-    return "weight(" . $self->{parent}->to_string . ")";
+    return "weight(" . $self->get_query->to_string . ")";
 }
 
 1;
@@ -83,12 +97,15 @@ KinoSearch::Search::Weight - Searcher-dependent transformation of a Query.
 
 =head1 DESCRIPTION
 
-In one sense, a Weight is the weight of a Query object.  Conceptually, a
-Query's "weight" ought to be a single number: a co-efficient... and indeed,
-eventually a Weight object gets turned into a $weight_value.
+The main purpose of Weight is to enable reuse of Query objects.  During the
+process of assembling a Scorer, different components may need to be assigned
+multipliers -- that is, weights.  Assigning these multipliers to Query objects
+directly could affect other, unrelated queries, so we create derivative
+objects to hold the weighted queries: Weights.
 
-However, since calculating that multiplier is rather complex, the calculations
-are encapsulated within a class.  
+In one sense, a Weight is the weight of a Query object.  Conceptually, a
+Query's "weight" ought to be a single number: a coefficient... and indeed,
+eventually a Weight object gets turned into a $weight_value.
 
 =head1 COPYRIGHT
 

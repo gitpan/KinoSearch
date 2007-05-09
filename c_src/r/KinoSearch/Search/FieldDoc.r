@@ -10,38 +10,42 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_FIELDDOC
 #define R_KINO_FIELDDOC 1
 
 #include "KinoSearch/Search/FieldDoc.h"
 
+#define KINO_FIELDDOC_BOILERPLATE
+
 typedef void
 (*kino_FieldDoc_destroy_t)(kino_FieldDoc *self);
 
-#define Kino_FieldDoc_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_FieldDoc_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_FieldDoc_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_FieldDoc_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_FieldDoc_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_FieldDoc_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_FieldDoc_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_FieldDoc_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_FieldDoc_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_FieldDoc_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_FieldDoc_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_FieldDoc_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_FieldDoc_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_FieldDoc_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_FIELDDOC_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -67,15 +71,13 @@ extern KINO_FIELDDOC_VTABLE KINO_FIELDDOC;
   #define FieldDoc_Is_A Kino_FieldDoc_Is_A
   #define FieldDoc_To_String Kino_FieldDoc_To_String
   #define FieldDoc_Serialize Kino_FieldDoc_Serialize
-  #define FIELDDOC KINO_FIELDDOC
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_FIELDDOC_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_u32_t  id; \
+    chy_u32_t  refcount; \
+    chy_u32_t  doc_num; \
     float  score; \
     struct kino_FieldDocCollator * collator
-
 
 #ifdef KINO_WANT_FIELDDOC_VTABLE
 KINO_FIELDDOC_VTABLE KINO_FIELDDOC = {
@@ -93,10 +95,15 @@ KINO_FIELDDOC_VTABLE KINO_FIELDDOC = {
 };
 #endif /* KINO_WANT_FIELDDOC_VTABLE */
 
+#undef KINO_FIELDDOC_BOILERPLATE
+
+
 #endif /* R_KINO_FIELDDOC */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_COMPOUNDFILEREADER_VTABLE
@@ -55,7 +54,7 @@ CFReader_destroy(CompoundFileReader *self)
 
 static void
 retrieve_offset_and_len(CompoundFileReader *self, const ByteBuf *filename,
-                        kino_u64_t *offset, kino_u64_t *len)
+                        u64_t *offset, u64_t *len)
 {
     Hash *entry = (Hash*)Hash_Fetch_BB(self->entries, filename);
     if (entry == NULL)
@@ -68,19 +67,19 @@ retrieve_offset_and_len(CompoundFileReader *self, const ByteBuf *filename,
 InStream*
 CFReader_open_instream(CompoundFileReader *self, const ByteBuf *filename)
 {
-    kino_u64_t len;
-    kino_u64_t offset;
+    u64_t len;
+    u64_t offset;
 
     retrieve_offset_and_len(self, filename, &offset, &len);
 
-    return InStream_Reopen(self->instream, offset, len);
+    return InStream_Reopen(self->instream, filename, offset, len);
 }
 
 ByteBuf*
 CFReader_slurp_file(CompoundFileReader *self, const ByteBuf *filename)
 {
-    kino_u64_t len;
-    kino_u64_t offset;
+    u64_t len;
+    u64_t offset;
     ByteBuf *retval;
 
     retrieve_offset_and_len(self, filename, &offset, &len);

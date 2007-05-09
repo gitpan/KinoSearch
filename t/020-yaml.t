@@ -1,14 +1,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 35;
-
-BEGIN { use_ok( "KinoSearch::Util::YAML" => 'encode_yaml', 'parse_yaml' ) }
-
-use KinoSearch::Util::ByteBuf;
-use KinoSearch::Util::Obj;
-use KinoSearch::Util::Hash;
-use KinoSearch::Util::VArray;
+use Test::More tests => 34;
+use KinoSearch::Util::YAML qw( encode_yaml parse_yaml );
 
 sub parse_and_deparse {
     my ( $scalar_input, $expected, $message ) = @_;

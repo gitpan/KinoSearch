@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_TOKEN_VTABLE
@@ -32,7 +31,7 @@ Token_compare(const void *va, const void *vb)
     Token *const a = *((Token**)va);
     Token *const b = *((Token**)vb);
     
-    int min_len = a->len < b->len ? a->len : b->len;
+    size_t min_len = a->len < b->len ? a->len : b->len;
 
     int comparison = memcmp(a->text, b->text, min_len); 
 

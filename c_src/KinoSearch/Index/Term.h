@@ -18,52 +18,49 @@ struct kino_Term {
     struct kino_ByteBuf *text;
 };
 
-KINO_FUNCTION(
 kino_Term*
 kino_Term_new(const struct kino_ByteBuf *field, 
-              const struct kino_ByteBuf *text));
+              const struct kino_ByteBuf *text);
 
 /* Constructor for internal use only.
  */
-KINO_FUNCTION(
 kino_Term*
-kino_Term_new_str(const char *field, const char *text));
+kino_Term_new_str(const char *field, const char *text);
 
-KINO_FUNCTION(
 kino_Term*
-kino_Term_deserialize(struct kino_ViewByteBuf *serialized));
+kino_Term_deserialize(struct kino_ViewByteBuf *serialized);
 
-KINO_METHOD("Kino_Term_Get_Field",
 struct kino_ByteBuf*
-kino_Term_get_field(kino_Term *self));
+kino_Term_get_field(kino_Term *self);
+KINO_METHOD("Kino_Term_Get_Field");
 
-KINO_METHOD("Kino_Term_Get_Text",
 struct kino_ByteBuf*
-kino_Term_get_text(kino_Term *self));
+kino_Term_get_text(kino_Term *self);
+KINO_METHOD("Kino_Term_Get_Text");
 
-KINO_METHOD("Kino_Term_Copy",
 void
-kino_Term_copy(kino_Term *self, kino_Term *other));
+kino_Term_copy(kino_Term *self, const kino_Term *other);
+KINO_METHOD("Kino_Term_Copy");
 
-KINO_METHOD("Kino_Term_To_String",
 struct kino_ByteBuf*
-kino_Term_to_string(kino_Term *self));
+kino_Term_to_string(kino_Term *self);
+KINO_METHOD("Kino_Term_To_String");
 
-KINO_METHOD("Kino_Term_Clone",
 kino_Term*
-kino_Term_clone(kino_Term *self));
+kino_Term_clone(kino_Term *self);
+KINO_METHOD("Kino_Term_Clone");
 
-KINO_METHOD("Kino_Term_Equals",
-kino_bool_t
-kino_Term_equals(kino_Term *self, kino_Term *other));
+chy_bool_t
+kino_Term_equals(kino_Term *self, kino_Term *other);
+KINO_METHOD("Kino_Term_Equals");
 
-KINO_METHOD("Kino_Term_Destroy",
 void
-kino_Term_destroy(kino_Term *self));
+kino_Term_destroy(kino_Term *self);
+KINO_METHOD("Kino_Term_Destroy");
 
-KINO_METHOD("Kino_Term_Serialize",
 void
-kino_Term_serialize(kino_Term *self, struct kino_ByteBuf *target));
+kino_Term_serialize(kino_Term *self, struct kino_ByteBuf *target);
+KINO_METHOD("Kino_Term_Serialize");
 
 KINO_END_CLASS
 

@@ -5,10 +5,6 @@ package KinoSearch::Highlight::Formatter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars();
-}
-
 sub highlight_term { shift->abstract_death }
 
 1;
@@ -34,8 +30,8 @@ excerpt.  The text might be a single term, or it might be a phrase.
 
     my $highlighted = $formatter->highlight($text);
 
-Highlight text by e.g. surrounding it with asterisks, or html "strong" tags,
-etc.
+Abstract method.  Highlight text -- by surrounding it with asterisks, html
+"strong" tags, etc.
 
 =head1 COPYRIGHT
 

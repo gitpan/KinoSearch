@@ -5,30 +5,39 @@ package KinoSearch::Analysis::Analyzer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        language => '',
-    );
-}
+our %instance_vars = (
+    # constructor params / members
+    language => '',
+);
 
 use KinoSearch::Analysis::TokenBatch;
 
-# usage: $token_batch = $analyzer->analyze($token_batch);
-sub analyze { return $_[1] }
+sub analyze_field {
+    my ( $self, $doc, $field_name ) = @_;
+    my $batch
+        = KinoSearch::Analysis::TokenBatch->new( text => $doc->{$field_name},
+        );
+    return $self->analyze_batch($batch);
+}
 
-# private convenience method -- skip the tokenbatch part
+# Kick off an analysis chain, creating a TokenBatch.  Occasionally optimized
+# to minimize string copies.
+sub analyze_text {
+    my $batch = KinoSearch::Analysis::TokenBatch->new( text => $_[1] );
+    return $_[0]->analyze_batch($batch);
+}
+
+# Must override in a subclass
+sub analyze_batch { shift->abstract_death }
+
+# Convenience method which takes text as input and returns a Perl array of
+# token texts.
 sub analyze_raw {
-    my ( $self, $text ) = @_;
-    my $batch = KinoSearch::Analysis::TokenBatch->new( text => $text );
-
-    $batch = $self->analyze($batch);
-
+    my $batch = $_[0]->analyze_text( $_[1] );
     my @out;
     while ( my $token = $batch->next ) {
         push @out, $token->get_text;
     }
-
     return @out;
 }
 
@@ -46,7 +55,7 @@ KinoSearch::Analysis::Analyzer - Base class for analyzers.
 
     package MyAnalyzer;
 
-    sub analyze {
+    sub analyze_batch {
         my ( $self, $token_batch ) = @_;
 
         while ( my $token = $token_batch->next ) {
@@ -71,13 +80,16 @@ might convert text to lowercase
 
 =head1 SUBCLASSING
 
-All Analyzer subclasses must provide an C<analyze> method.
+All Analyzer subclasses must provide an C<analyze_batch> method.
 
-=head2 analyze
+=head2 analyze_batch
 
-C<analyze()> takes a single L<TokenBatch|KinoSearch::Analysis::TokenBatch> as
-input, and it returns a TokenBatch, either the same one (presumably
-transformed in some way), or a new one.
+     $token_batch = $analyzer->analyze_batch($token_batch);
+
+Abstract method. C<analyze_batch()> takes a single
+L<TokenBatch|KinoSearch::Analysis::TokenBatch> as input, and it returns a
+TokenBatch, either the same one (presumably transformed in some way), or a new
+one.
 
 =head1 COPYRIGHT
 
@@ -88,4 +100,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

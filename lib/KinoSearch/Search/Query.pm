@@ -5,13 +5,23 @@ package KinoSearch::Search::Query;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        boost => 1,
-    );
-    __PACKAGE__->ready_get_set(qw( boost ));
-}
+our %instance_vars = (
+    # constructor params / members
+    boost => 1.0,
+);
+
+BEGIN { __PACKAGE__->ready_get_set(qw( boost )) }
+
+=begin comment
+
+    my $weight = $query->make_weight($searcher);
+
+Abstract factory method for turning a Query into a Weight.
+
+=end comment
+=cut
+
+sub make_weight { shift->abstract_death }
 
 =begin comment
 
@@ -27,17 +37,6 @@ match, the field will be included in the string.
 
 sub to_string { shift->abstract_death }
 
-# Derive a weight for a high-level query.
-sub to_weight {    # in Lucene, this method is simply "weight"
-    my ( $self, $searcher ) = @_;
-    my $weight = $self->create_weight($searcher);
-    my $sum    = $weight->sum_of_squared_weights;
-    my $sim    = $self->get_similarity($searcher);
-    my $norm   = $sim->query_norm($sum);
-    $weight->normalize($norm);
-    return $weight;
-}
-
 =begin comment
 
 my @terms = $query->extract_terms;
@@ -48,17 +47,6 @@ Return all the Terms within this query.
 =cut
 
 sub extract_terms { shift->abstract_death }
-
-# return the Similarity implementation used by the Query.
-sub get_similarity {
-    my ( $self, $searcher, $field_name ) = @_;
-    # This can be overriden in subclasses, allowing alternative Sims.
-    return defined $field_name
-        ? $searcher->get_similarity($field_name)
-        : $searcher->get_similarity;
-}
-
-sub clone { shift->todo_death }
 
 1;
 

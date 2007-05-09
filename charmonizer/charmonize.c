@@ -1,4 +1,4 @@
-/* charmonize.c -- write charmony.h config file.
+/* charmonize.c -- Create Charmony.
  */
 
 #include <stdio.h>
@@ -94,7 +94,6 @@ init(int argc, char **argv)
         chaz_Probe_set_verbosity(verbosity);
     }
     chaz_Probe_init(os_name, cc_command, cc_flags, NULL);
-    chaz_Probe_set_prefixes("KINO_", "kino_", "kino_");
 
     /* clean up */
     free(infile_str);

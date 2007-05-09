@@ -10,68 +10,91 @@
 
  ***********************************************/
 
-#ifndef R_KINO_SORTEX
-#define R_KINO_SORTEX 1
+
+
+#ifndef R_KINO_SORTEXTERNAL
+#define R_KINO_SORTEXTERNAL 1
 
 #include "KinoSearch/Util/SortExternal.h"
+
+#define KINO_SORTEXTERNAL_BOILERPLATE
 
 typedef void
 (*kino_SortEx_destroy_t)(kino_SortExternal *self);
 
 typedef void
-(*kino_SortEx_feed_t)(kino_SortExternal *self, char *ptr, kino_u32_t len);
+(*kino_SortEx_feed_t)(kino_SortExternal *self, kino_Obj *obj, 
+                 chy_u32_t bytes_this_obj);
 
 typedef void
-(*kino_SortEx_feed_bb_t)(kino_SortExternal *self, struct kino_ByteBuf *bb);
+(*kino_SortEx_flip_t)(kino_SortExternal *self);
 
-typedef struct kino_ByteBuf*
+typedef struct kino_Obj*
 (*kino_SortEx_fetch_t)(kino_SortExternal *self);
+
+typedef struct kino_Obj*
+(*kino_SortEx_peek_t)(kino_SortExternal *self);
 
 typedef void
 (*kino_SortEx_sort_cache_t)(kino_SortExternal *self);
 
 typedef void
-(*kino_SortEx_sort_run_t)(kino_SortExternal *self);
+(*kino_SortEx_flush_t)(kino_SortExternal *self);
 
-#define Kino_SortEx_Clone(_self) \
-    kino_Obj_clone((kino_Obj*)_self)
+typedef void
+(*kino_SortEx_clear_cache_t)(kino_SortExternal *self);
 
-#define Kino_SortEx_Destroy(_self) \
-    kino_SortEx_destroy((kino_SortExternal*)_self)
+typedef void
+(*kino_SortEx_add_run_t)(kino_SortExternal *self, struct kino_SortExRun *run);
 
-#define Kino_SortEx_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_SortEx_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_SortEx_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_SortEx_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_SortEx_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_SortEx_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_SortEx_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_SortEx_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_SortEx_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_SortEx_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_SortEx_Feed(_self, _arg1, _arg2) \
-    kino_SortEx_feed((kino_SortExternal*)_self, _arg1, _arg2)
+#define Kino_SortEx_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_SortEx_Feed_BB(_self, _arg1) \
-    kino_SortEx_feed_bb((kino_SortExternal*)_self, _arg1)
+#define Kino_SortEx_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_SortEx_Fetch(_self) \
-    kino_SortEx_fetch((kino_SortExternal*)_self)
+#define Kino_SortEx_Feed(self, obj, bytes_this_obj) \
+    (self)->_->feed((kino_SortExternal*)self, obj, bytes_this_obj)
 
-#define Kino_SortEx_Sort_Cache(_self) \
-    kino_SortEx_sort_cache((kino_SortExternal*)_self)
+#define Kino_SortEx_Flip(self) \
+    (self)->_->flip((kino_SortExternal*)self)
 
-#define Kino_SortEx_Sort_Run(_self) \
-    kino_SortEx_sort_run((kino_SortExternal*)_self)
+#define Kino_SortEx_Fetch(self) \
+    (self)->_->fetch((kino_SortExternal*)self)
+
+#define Kino_SortEx_Peek(self) \
+    (self)->_->peek((kino_SortExternal*)self)
+
+#define Kino_SortEx_Sort_Cache(self) \
+    (self)->_->sort_cache((kino_SortExternal*)self)
+
+#define Kino_SortEx_Flush(self) \
+    (self)->_->flush((kino_SortExternal*)self)
+
+#define Kino_SortEx_Clear_Cache(self) \
+    (self)->_->clear_cache((kino_SortExternal*)self)
+
+#define Kino_SortEx_Add_Run(self, run) \
+    (self)->_->add_run((kino_SortExternal*)self, run)
 
 struct KINO_SORTEXTERNAL_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -82,10 +105,13 @@ struct KINO_SORTEXTERNAL_VTABLE {
     kino_Obj_to_string_t to_string;
     kino_Obj_serialize_t serialize;
     kino_SortEx_feed_t feed;
-    kino_SortEx_feed_bb_t feed_bb;
+    kino_SortEx_flip_t flip;
     kino_SortEx_fetch_t fetch;
+    kino_SortEx_peek_t peek;
     kino_SortEx_sort_cache_t sort_cache;
-    kino_SortEx_sort_run_t sort_run;
+    kino_SortEx_flush_t flush;
+    kino_SortEx_clear_cache_t clear_cache;
+    kino_SortEx_add_run_t add_run;
 };
 
 extern KINO_SORTEXTERNAL_VTABLE KINO_SORTEXTERNAL;
@@ -93,19 +119,24 @@ extern KINO_SORTEXTERNAL_VTABLE KINO_SORTEXTERNAL;
 #ifdef KINO_USE_SHORT_NAMES
   #define SortExternal kino_SortExternal
   #define SORTEXTERNAL KINO_SORTEXTERNAL
-  #define SortEx_new kino_SortEx_new
-  #define SortEx_destroy_t kino_SortEx_destroy_t
+  #define SortEx_init_base kino_SortEx_init_base
   #define SortEx_destroy kino_SortEx_destroy
   #define SortEx_feed_t kino_SortEx_feed_t
   #define SortEx_feed kino_SortEx_feed
-  #define SortEx_feed_bb_t kino_SortEx_feed_bb_t
-  #define SortEx_feed_bb kino_SortEx_feed_bb
+  #define SortEx_flip_t kino_SortEx_flip_t
+  #define SortEx_flip kino_SortEx_flip
   #define SortEx_fetch_t kino_SortEx_fetch_t
   #define SortEx_fetch kino_SortEx_fetch
+  #define SortEx_peek_t kino_SortEx_peek_t
+  #define SortEx_peek kino_SortEx_peek
   #define SortEx_sort_cache_t kino_SortEx_sort_cache_t
   #define SortEx_sort_cache kino_SortEx_sort_cache
-  #define SortEx_sort_run_t kino_SortEx_sort_run_t
-  #define SortEx_sort_run kino_SortEx_sort_run
+  #define SortEx_flush_t kino_SortEx_flush_t
+  #define SortEx_flush kino_SortEx_flush
+  #define SortEx_clear_cache_t kino_SortEx_clear_cache_t
+  #define SortEx_clear_cache kino_SortEx_clear_cache
+  #define SortEx_add_run_t kino_SortEx_add_run_t
+  #define SortEx_add_run kino_SortEx_add_run
   #define SortEx_Clone Kino_SortEx_Clone
   #define SortEx_Destroy Kino_SortEx_Destroy
   #define SortEx_Equals Kino_SortEx_Equals
@@ -114,31 +145,30 @@ extern KINO_SORTEXTERNAL_VTABLE KINO_SORTEXTERNAL;
   #define SortEx_To_String Kino_SortEx_To_String
   #define SortEx_Serialize Kino_SortEx_Serialize
   #define SortEx_Feed Kino_SortEx_Feed
-  #define SortEx_Feed_BB Kino_SortEx_Feed_BB
+  #define SortEx_Flip Kino_SortEx_Flip
   #define SortEx_Fetch Kino_SortEx_Fetch
+  #define SortEx_Peek Kino_SortEx_Peek
   #define SortEx_Sort_Cache Kino_SortEx_Sort_Cache
-  #define SortEx_Sort_Run Kino_SortEx_Sort_Run
-  #define SORTEXTERNAL KINO_SORTEXTERNAL
+  #define SortEx_Flush Kino_SortEx_Flush
+  #define SortEx_Clear_Cache Kino_SortEx_Clear_Cache
+  #define SortEx_Add_Run Kino_SortEx_Add_Run
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SORTEXTERNAL_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    struct kino_ByteBuf ** cache; \
-    kino_u32_t  cache_cap; \
-    kino_u32_t  cache_elems; \
-    kino_u32_t  cache_pos; \
-    struct kino_ByteBuf ** scratch; \
-    kino_u32_t  scratch_cap; \
-    kino_u32_t  mem_threshold; \
-    kino_u32_t  cache_bytes; \
-    kino_u32_t  run_cache_limit; \
-    kino_SortExRun ** runs; \
-    kino_u32_t  num_runs; \
-    struct kino_OutStream * outstream; \
-    struct kino_InStream * instream; \
-    struct kino_InvIndex * invindex; \
-    struct kino_SegInfo * seg_info
-
+    chy_u32_t  refcount; \
+    kino_MSort_compare_t  compare; \
+    kino_Obj * context; \
+    kino_Obj ** cache; \
+    chy_u32_t  cache_cap; \
+    chy_u32_t  cache_max; \
+    chy_u32_t  cache_tick; \
+    kino_Obj ** scratch; \
+    chy_u32_t  scratch_cap; \
+    chy_u32_t  mem_thresh; \
+    chy_u32_t  consumed; \
+    struct kino_SortExRun ** runs; \
+    chy_u32_t  num_runs; \
+    chy_bool_t  flipped
 
 #ifdef KINO_WANT_SORTEXTERNAL_VTABLE
 KINO_SORTEXTERNAL_VTABLE KINO_SORTEXTERNAL = {
@@ -154,17 +184,25 @@ KINO_SORTEXTERNAL_VTABLE KINO_SORTEXTERNAL = {
     (kino_Obj_to_string_t)kino_Obj_to_string,
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_SortEx_feed_t)kino_SortEx_feed,
-    (kino_SortEx_feed_bb_t)kino_SortEx_feed_bb,
+    (kino_SortEx_flip_t)kino_SortEx_flip,
     (kino_SortEx_fetch_t)kino_SortEx_fetch,
+    (kino_SortEx_peek_t)kino_SortEx_peek,
     (kino_SortEx_sort_cache_t)kino_SortEx_sort_cache,
-    (kino_SortEx_sort_run_t)kino_SortEx_sort_run
+    (kino_SortEx_flush_t)kino_SortEx_flush,
+    (kino_SortEx_clear_cache_t)kino_SortEx_clear_cache,
+    (kino_SortEx_add_run_t)kino_SortEx_add_run
 };
 #endif /* KINO_WANT_SORTEXTERNAL_VTABLE */
 
-#endif /* R_KINO_SORTEX */
+#undef KINO_SORTEXTERNAL_BOILERPLATE
+
+
+#endif /* R_KINO_SORTEXTERNAL */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

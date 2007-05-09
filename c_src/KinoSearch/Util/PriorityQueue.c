@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <string.h>
@@ -11,11 +10,6 @@
  */
 static void
 put(PriorityQueue *self, void *element);
-
-/* Return the least item in the queue, or NULL if queue is empty. 
- */
-static void*
-top(PriorityQueue *self);
 
 /* Free all the elements in the heap and set size to 0.
  */
@@ -33,8 +27,8 @@ static void
 down_heap(PriorityQueue *self);
 
 PriorityQueue*
-PriQ_new(u32_t max_size, PriQ_less_than_t less_than, 
-         PriQ_free_elem_t free_elem)
+PriQ_new(u32_t max_size, Obj_less_than_t less_than, 
+         Obj_free_elem_t free_elem)
 {
     CREATE(self, PriorityQueue, PRIORITYQUEUE);
     PriQ_init_base(self, max_size, less_than, free_elem);
@@ -42,8 +36,8 @@ PriQ_new(u32_t max_size, PriQ_less_than_t less_than,
 }
 
 void
-PriQ_init_base(PriorityQueue *self, u32_t max_size, PriQ_less_than_t less_than, 
-               PriQ_free_elem_t free_elem)
+PriQ_init_base(PriorityQueue *self, u32_t max_size, 
+               Obj_less_than_t less_than, Obj_free_elem_t free_elem)
 {
     u32_t heap_size = max_size + 1;
 
@@ -70,7 +64,7 @@ PriQ_destroy(PriorityQueue *self)
 static void
 put(PriorityQueue *self, void *element) 
 {
-    /* extend heap */
+    /* increment size */
     if (self->size >= self->max_size) {
         CONFESS("PriorityQueue exceeded max_size: %d %d", self->size, 
             self->max_size);
@@ -94,7 +88,7 @@ PriQ_insert(PriorityQueue *self, void *element)
     }
     /* otherwise, compete for the slot */
     else {
-        void *scratch = top(self);
+        void *scratch = PriQ_Peek(self);
         if( self->size > 0 && !self->less_than(element, scratch)) {
             /* if the new element belongs in the queue, replace something */
             self->free_elem( self->heap[1] );
@@ -106,17 +100,6 @@ PriQ_insert(PriorityQueue *self, void *element)
             self->free_elem(element);
             return false;
         }
-    }
-}
-
-static void*
-top(PriorityQueue *self) 
-{
-    if (self->size > 0) {
-        return self->heap[1]; /* note: no refcount manip */
-    }
-    else {
-        return NULL;
     }
 }
 
@@ -169,12 +152,13 @@ clear(PriorityQueue *self)
 static void
 up_heap(PriorityQueue *self) 
 {
+    const Obj_less_than_t less_than = self->less_than;
     u32_t i = self->size;
     u32_t j = i >> 1;
     void *const node = self->heap[i]; /* save bottom node */
 
     while (    j > 0 
-            && self->less_than(node, self->heap[j])
+            && less_than(node, self->heap[j])
     ) {
         self->heap[i] = self->heap[j];
         i = j;
@@ -186,6 +170,7 @@ up_heap(PriorityQueue *self)
 static void
 down_heap(PriorityQueue *self) 
 {
+    const Obj_less_than_t less_than = self->less_than;
     u32_t i = 1;
     u32_t j = i << 1;
     u32_t k = j + 1;
@@ -193,20 +178,20 @@ down_heap(PriorityQueue *self)
 
     /* find smaller child */
     if (   k <= self->size 
-        && self->less_than(self->heap[k], self->heap[j])
+        && less_than(self->heap[k], self->heap[j])
     ) {
         j = k;
     }
 
     while (   j <= self->size 
-           && self->less_than(self->heap[j], node)
+           && less_than(self->heap[j], node)
     ) {
         self->heap[i] = self->heap[j];
         i = j;
         j = i << 1;
         k = j + 1;
         if (   k <= self->size 
-            && self->less_than(self->heap[k], self->heap[j])
+            && less_than(self->heap[k], self->heap[j])
         ) {
             j = k;
         }

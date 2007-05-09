@@ -10,10 +10,14 @@
 
  ***********************************************/
 
-#ifndef R_KINO_VIEWBB
-#define R_KINO_VIEWBB 1
+
+
+#ifndef R_KINO_VIEWBYTEBUF
+#define R_KINO_VIEWBYTEBUF 1
 
 #include "KinoSearch/Util/ViewByteBuf.h"
+
+#define KINO_VIEWBYTEBUF_BOILERPLATE
 
 typedef void
 (*kino_ViewBB_destroy_t)(kino_ViewByteBuf *self);
@@ -21,54 +25,60 @@ typedef void
 typedef void
 (*kino_ViewBB_assign_t)(kino_ViewByteBuf *self, char*ptr, size_t size);
 
-#define Kino_ViewBB_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_ViewBB_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_ViewBB_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_ViewBB_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_ViewBB_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_ViewBB_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_ViewBB_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_ViewBB_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_ViewBB_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_ViewBB_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_ViewBB_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_ViewBB_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_ViewBB_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_ViewBB_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_ViewBB_Copy_Str(_self, _arg1, _arg2) \
-    (_self)->_->copy_str((kino_ByteBuf*)_self, _arg1, _arg2)
+#define Kino_ViewBB_Copy_Str(self, ptr, size) \
+    (self)->_->copy_str((kino_ByteBuf*)self, ptr, size)
 
-#define Kino_ViewBB_Copy_BB(_self, _arg1) \
-    (_self)->_->copy_bb((kino_ByteBuf*)_self, _arg1)
+#define Kino_ViewBB_Copy_BB(self, other) \
+    (self)->_->copy_bb((kino_ByteBuf*)self, other)
 
-#define Kino_ViewBB_Cat_Str(_self, _arg1, _arg2) \
-    (_self)->_->cat_str((kino_ByteBuf*)_self, _arg1, _arg2)
+#define Kino_ViewBB_Cat_Str(self, ptr, size) \
+    (self)->_->cat_str((kino_ByteBuf*)self, ptr, size)
 
-#define Kino_ViewBB_Cat_BB(_self, _arg1) \
-    (_self)->_->cat_bb((kino_ByteBuf*)_self, _arg1)
+#define Kino_ViewBB_Cat_BB(self, other) \
+    (self)->_->cat_bb((kino_ByteBuf*)self, other)
 
-#define Kino_ViewBB_Cat_I64(_self, _arg1) \
-    (_self)->_->cat_i64((kino_ByteBuf*)_self, _arg1)
+#define Kino_ViewBB_Cat_I64(self, num) \
+    (self)->_->cat_i64((kino_ByteBuf*)self, num)
 
-#define Kino_ViewBB_To_I64(_self) \
-    (_self)->_->to_i64((kino_ByteBuf*)_self)
+#define Kino_ViewBB_To_I64(self) \
+    (self)->_->to_i64((kino_ByteBuf*)self)
 
-#define Kino_ViewBB_Grow(_self, _arg1) \
-    (_self)->_->grow((kino_ByteBuf*)_self, _arg1)
+#define Kino_ViewBB_Grow(self, new_size) \
+    (self)->_->grow((kino_ByteBuf*)self, new_size)
 
-#define Kino_ViewBB_Assign(_self, _arg1, _arg2) \
-    (_self)->_->assign((kino_ViewByteBuf*)_self, _arg1, _arg2)
+#define Kino_ViewBB_Starts_With(self, prefix) \
+    (self)->_->starts_with((kino_ByteBuf*)self, prefix)
+
+#define Kino_ViewBB_Ends_With_Str(self, postfix, postfix_len) \
+    (self)->_->ends_with_str((kino_ByteBuf*)self, postfix, postfix_len)
+
+#define Kino_ViewBB_Assign(self, ptr, size) \
+    (self)->_->assign((kino_ViewByteBuf*)self, ptr, size)
 
 struct KINO_VIEWBYTEBUF_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -85,6 +95,8 @@ struct KINO_VIEWBYTEBUF_VTABLE {
     kino_BB_cat_i64_t cat_i64;
     kino_BB_to_i64_t to_i64;
     kino_BB_grow_t grow;
+    kino_BB_starts_with_t starts_with;
+    kino_BB_ends_with_str_t ends_with_str;
     kino_ViewBB_assign_t assign;
 };
 
@@ -111,19 +123,19 @@ extern KINO_VIEWBYTEBUF_VTABLE KINO_VIEWBYTEBUF;
   #define ViewBB_Cat_I64 Kino_ViewBB_Cat_I64
   #define ViewBB_To_I64 Kino_ViewBB_To_I64
   #define ViewBB_Grow Kino_ViewBB_Grow
+  #define ViewBB_Starts_With Kino_ViewBB_Starts_With
+  #define ViewBB_Ends_With_Str Kino_ViewBB_Ends_With_Str
   #define ViewBB_Assign Kino_ViewBB_Assign
-  #define VIEWBYTEBUF KINO_VIEWBYTEBUF
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_VIEWBYTEBUF_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     char * ptr; \
     size_t  len; \
     size_t  cap; \
     char * ptr; \
     size_t  len; \
     size_t  cap
-
 
 #ifdef KINO_WANT_VIEWBYTEBUF_VTABLE
 KINO_VIEWBYTEBUF_VTABLE KINO_VIEWBYTEBUF = {
@@ -145,14 +157,21 @@ KINO_VIEWBYTEBUF_VTABLE KINO_VIEWBYTEBUF = {
     (kino_BB_cat_i64_t)kino_BB_cat_i64,
     (kino_BB_to_i64_t)kino_BB_to_i64,
     (kino_BB_grow_t)kino_BB_grow,
+    (kino_BB_starts_with_t)kino_BB_starts_with,
+    (kino_BB_ends_with_str_t)kino_BB_ends_with_str,
     (kino_ViewBB_assign_t)kino_ViewBB_assign
 };
 #endif /* KINO_WANT_VIEWBYTEBUF_VTABLE */
 
-#endif /* R_KINO_VIEWBB */
+#undef KINO_VIEWBYTEBUF_BOILERPLATE
+
+
+#endif /* R_KINO_VIEWBYTEBUF */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

@@ -5,31 +5,34 @@ package KinoSearch::InvIndexer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args / members
-        invindex => undef,
-        lock_id  => '',
+our %instance_vars = (
+    # constructor args / members
+    invindex     => undef,
+    lock_factory => undef,
 
-        # members
-        schema        => undef,
-        folder        => undef,
-        seg_info      => undef,
-        ix_reader     => undef,
-        seg_infos     => undef,
-        seg_writer    => undef,
-        write_lock    => undef,
-        has_deletions => 0,
-    );
-}
+    # members
+    schema        => undef,
+    folder        => undef,
+    seg_info      => undef,
+    reader        => undef,
+    seg_infos     => undef,
+    seg_writer    => undef,
+    write_lock    => undef,
+    has_deletions => 0,
+);
 
 use KinoSearch::Index::IndexReader;
 use KinoSearch::Index::SegInfo;
 use KinoSearch::Index::SegInfos;
 use KinoSearch::Index::SegWriter;
-use KinoSearch::Index::IndexFileNames
-    qw( WRITE_LOCK_NAME WRITE_LOCK_TIMEOUT unused_files );
+use KinoSearch::Index::IndexFileNames qw(
+    WRITE_LOCK_NAME
+    WRITE_LOCK_TIMEOUT
+    COMMIT_LOCK_NAME
+    COMMIT_LOCK_TIMEOUT
+    unused_files );
 use KinoSearch::Util::StringHelper qw( to_base36 );
+use KinoSearch::Store::LockFactory;
 
 sub init_instance {
     my $self = shift;
@@ -41,28 +44,44 @@ sub init_instance {
     my $folder = $self->{folder} = $invindex->get_folder;
     my $schema = $self->{schema} = $invindex->get_schema;
 
+    # confirm or create a lock factory
+    if ( defined $self->{lock_factory} ) {
+        confess("Not a LockFactory")
+            unless a_isa_b( $self->{lock_factory},
+            "KinoSearch::Store::LockFactory" );
+    }
+    else {
+        $self->{lock_factory} = KinoSearch::Store::LockFactory->new(
+            agent_id => '',
+            folder   => $folder,
+        );
+    }
+
     # get a write lock for this folder.
-    my $write_lock = $folder->make_lock(
+    my $write_lock = $self->{lock_factory}->make_lock(
         lock_name => WRITE_LOCK_NAME,
         timeout   => WRITE_LOCK_TIMEOUT,
-        lock_id   => $self->{lock_id},
     );
+    $write_lock->clear_stale;
     if ( $write_lock->obtain ) {
         # only assign if successful, otherwise DESTROY unlocks (bad!)
         $self->{write_lock} = $write_lock;
     }
     else {
-        confess( "folder locked: " . $write_lock->get_lock_name );
+        my $mess = "InvIndex is locked";
+        $mess .= " by " . $write_lock->get_filename
+            if $write_lock->can('get_filename');
+        confess($mess);
     }
 
     # read the segment infos
     my $seg_infos = $self->{seg_infos}
         = KinoSearch::Index::SegInfos->new( schema => $self->{schema} );
-    $seg_infos->read_infos($folder);
+    $seg_infos->read_infos( folder => $folder );
 
     # get an IndexReader if the invindex already has content
     if ( $seg_infos->size ) {
-        $self->{ix_reader} = KinoSearch::Index::IndexReader->new(
+        $self->{reader} = KinoSearch::Index::IndexReader->open(
             invindex  => $invindex,
             seg_infos => $seg_infos,
         );
@@ -88,7 +107,7 @@ sub add_doc {
     confess("First argument must be a hashref")
         unless reftype($doc) eq 'HASH';
     confess kerror() unless verify_args( \%add_doc_args, @_ );
-    my %args   = @_;
+    my %args = @_;
 
     # add doc to output segment
     my $boost = defined $args{boost} ? $args{boost} : 1.0;
@@ -97,7 +116,8 @@ sub add_doc {
 
 sub add_invindexes {
     my ( $self, @invindexes ) = @_;
-    my $schema = $self->{schema};
+    my $schema   = $self->{schema};
+    my $seg_info = $self->{seg_info};
 
     # all the invindexes must match our schema
     my $orig_class = ref($schema);
@@ -110,19 +130,19 @@ sub add_invindexes {
         for my $other_field ( $other_schema->all_fields ) {
             my $fspec_class = ref( $other_schema->fetch_fspec($other_field) );
             $schema->add_field( $other_field, $fspec_class );
+            $seg_info->add_field($other_field);
         }
     }
 
-    # get an ix_reader for each InvIndex
-    my @ix_readers
-        = map { KinoSearch::Index::IndexReader->new( invindex => $_ ) }
+    # get a reader for each InvIndex
+    my @readers
+        = map { KinoSearch::Index::IndexReader->open( invindex => $_ ) }
         @invindexes;
 
     # add all segments in each of the supplied invindexes
     my $seg_writer = $self->{seg_writer};
-    for my $ix_reader (@ix_readers) {
-        $seg_writer->add_segment($_)
-            for $ix_reader->segreaders_to_merge('all');
+    for my $reader (@readers) {
+        $seg_writer->add_segment($_) for $reader->segreaders_to_merge('all');
     }
 }
 
@@ -136,14 +156,14 @@ sub delete_by_term {
     my ( $self, $field_name, $term_text ) = @_;
 
     # bail if this is a new InvIndex
-    return unless $self->{ix_reader};
+    return unless $self->{reader};
 
     # raise exception if the field isn't indexed
     my $field_spec = $self->{schema}->fetch_fspec($field_name);
     confess("$field_name is not an indexed field")
         unless ( defined $field_spec and $field_spec->indexed );
 
-    # create a term, analyze it, and ask the ix_reader to delete docs with it
+    # create a term, analyze it, and ask the reader to delete docs with it
     my $term;
     if ( $field_spec->analyzed ) {
         my $analyzer = $self->{schema}->fetch_analyzer($field_name);
@@ -153,7 +173,7 @@ sub delete_by_term {
     else {
         $term = KinoSearch::Index::Term->new( $field_name, $term_text );
     }
-    $self->{ix_reader}->delete_docs_by_term($term);
+    $self->{reader}->delete_docs_by_term($term);
 
     # trigger write later
     $self->{has_deletions} = 1;
@@ -165,8 +185,8 @@ sub finish {
     my $self = shift;
     confess kerror() unless verify_args( \%finish_defaults, @_ );
     my %args = ( %finish_defaults, @_ );
-    my ( $folder, $seg_info, $seg_infos, $seg_writer, $ix_reader )
-        = @{$self}{qw( folder seg_info seg_infos seg_writer ix_reader )};
+    my ( $folder, $seg_info, $seg_infos, $seg_writer, $reader )
+        = @{$self}{qw( folder seg_info seg_infos seg_writer reader )};
 
     # safety check
     if ( !defined $self->{write_lock} ) {
@@ -174,14 +194,14 @@ sub finish {
     }
 
     # perform segment merging
-    my @to_merge = $ix_reader
-        ? $ix_reader->segreaders_to_merge( $args{optimize} )
+    my @to_merge = $reader
+        ? $reader->segreaders_to_merge( $args{optimize} )
         : ();
     $seg_writer->add_segment($_)                   for @to_merge;
     $seg_infos->delete_segment( $_->get_seg_name ) for @to_merge;
 
     # write out new deletions
-    $self->{ix_reader}->write_deletions if $self->{has_deletions};
+    $self->{reader}->write_deletions if $self->{has_deletions};
 
     # if docs were added, write a new segment
     if ( $seg_info->get_doc_count or @to_merge ) {
@@ -198,13 +218,11 @@ sub finish {
         $seg_infos->write_infos($folder);
     }
 
-    # close ix_reader, so that we can delete its files if appropriate
-    $ix_reader->close if defined $ix_reader;
+    # close reader, so that we can delete its files if appropriate
+    $reader->close if defined $reader;
 
     # purge obsolete files
-    my @file_list = $folder->list;
-    my @files_to_delete = unused_files( \@file_list, $seg_infos );
-    $self->_purge_unused(@files_to_delete);
+    $self->_purge_unused();
 
     # realease the write lock, invalidating the invindexer
     $self->_release_locks;
@@ -212,20 +230,57 @@ sub finish {
 
 # Delete unused files.
 sub _purge_unused {
-    my ( $self, @deletions ) = @_;
+    my $self   = shift;
     my $folder = $self->{folder};
 
-    # attempt to delete files -- if failure, no big deal, try again later
-    for my $deletion (@deletions) {
-        eval { $folder->delete_file($deletion) };
+    my $commit_lock = $self->{lock_factory}->make_lock(
+        lock_name => COMMIT_LOCK_NAME,
+        timeout   => COMMIT_LOCK_TIMEOUT,
+    );
+    $commit_lock->clear_stale;
+    my $got_lock = $commit_lock->obtain;
+
+    if ($got_lock) {
+        my @deletions = $self->_discover_unused_files;
+
+        # attempt to delete files -- if failure, no big deal, try again later
+        for my $deletion (@deletions) {
+            eval { $folder->delete_file($deletion) };
+        }
+        $commit_lock->release;
     }
+    else {
+        warn "Can't obtain commit lock, skipping deletion of obsolete files";
+    }
+}
+
+# Return a list of all index files not locked by readers.
+sub _discover_unused_files {
+    my $self = shift;
+    my ( $schema, $folder, $lock_factory )
+        = @{$self}{qw( schema folder lock_factory )};
+    my @files       = $folder->list;
+    my @seg_infoses = ( $self->{seg_infos} );
+    for my $filename (@files) {
+        next unless $filename =~ /^(segments_\w+).yaml$/;
+        my $lock_name = $1;
+        my $read_lock = $lock_factory->make_shared_lock(
+            lock_name => $lock_name,
+            timeout   => 0,
+        );
+        next unless $read_lock->is_locked;
+        my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
+        $seg_infos->read_infos( folder => $folder, filename => $filename );
+        push @seg_infoses, $seg_infos;
+    }
+    return unused_files( \@files, @seg_infoses );
 }
 
 # Release the write lock - if it's there.
 sub _release_locks {
     my $self = shift;
     if ( defined $self->{write_lock} ) {
-        $self->{write_lock}->release if $self->{write_lock}->is_locked;
+        $self->{write_lock}->release;
         undef $self->{write_lock};
     }
 }
@@ -278,11 +333,9 @@ inverted indexes, which may later be searched using L<KinoSearch::Searcher>.
 Only one InvIndexer may write to an invindex at a time.  If a write lock
 cannot be secured, new() will throw an exception.
 
-Indexes shared among multiple machines require special handling.  First, be
-sure to read L<KinoSearch::Docs::NFS> if you are considering locating an index
-on an NFS volume.  Second, it is essential that every machine writing to a
-shared index identify itself with a unique C<lock_id>, or the locking
-mechanism will malfunction.
+If an index is located on a shared volume, each writer application must
+identify itself by passing a L<LockFactory|KinoSearch::StoreLockFactory> to
+InvIndexer's constructor or index corruption will occur.
 
 =head1 METHODS
 
@@ -290,8 +343,8 @@ mechanism will malfunction.
 
     my $invindex = MySchema->clobber('/path/to/invindex');
     my $invindexer = KinoSearch::InvIndexer->new(
-        invindex    => $invindex,  # required
-        lock_id     => $hostname   # default: ''
+        invindex     => $invindex,  # required
+        lock_factory => $factory    # default: created internally 
     );
 
 Constructor.  Takes labeled parameters.
@@ -300,12 +353,11 @@ Constructor.  Takes labeled parameters.
 
 =item *
 
-B<invindex> - An object of type L<KinoSearch::InvIndex>.
+B<invindex> - An object which isa L<KinoSearch::InvIndex>.
 
 =item *
 
-B<lock_id> - a string which differentiates this machine from others which
-may try to write to the same invindex.
+B<lock_factory> - An object which isa L<KinoSearch::StoreLockFactory>.
 
 =back
 
@@ -325,7 +377,7 @@ After the hashref, labeled parameters are accepted.
 
 =item *
 
-<boost> - A scoring multiplier.  Setting boost to something other than 1
+B<boost> - A scoring multiplier.  Setting boost to something other than 1
 causes a document to score better or worse against a given query relative to
 other documents. 
 
@@ -342,12 +394,12 @@ same Schema as the invindex which was supplied to new().
 
     $invindexer->delete_by_term( $field_name, $term_text );
 
-Mark documents which contains the supplied term as deleted, so that they will
+Mark documents which contain the supplied term as deleted, so that they will
 be excluded from search results.  The change is not apparent to search apps
 until a new Searcher is opened I<after> finish() completes.
 
 If the field is associated with an analyzer, C<$term_text> will be
-processed automatically (so don't process it yourself).
+processed automatically (so don't pre-process it yourself).
 
 C<$field_name>  must identify an I<indexed> field, or an error will occur.
 

@@ -7,14 +7,14 @@ use base qw( KinoSearch::Util::BitVector );
 
 use KinoSearch::Util::IntMap;
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args
-        invindex => undef,
-        seg_info => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # inherited (ignored)
+    capacity => 0,
+
+    # constructor params
+    invindex => undef,
+    seg_info => undef,
+);
 
 sub close { }
 
@@ -55,7 +55,7 @@ write_deldocs(self)
 PPCODE:
     Kino_DelDocs_Write_Deldocs(self);
 
-kino_i32_t
+chy_i32_t
 get_num_deletions(self)
     kino_DelDocs *self;
 CODE:
@@ -65,17 +65,17 @@ OUTPUT: RETVAL
 kino_IntMap*
 generate_doc_map(self, offset);
     kino_DelDocs  *self;
-    kino_i32_t     offset;
+    chy_i32_t      offset;
 CODE:
     RETVAL = Kino_DelDocs_Generate_Doc_Map(self, offset);
 OUTPUT: RETVAL
 
 void
-delete_by_term_docs(self, term_docs)
+delete_posting_list(self, plist)
     kino_DelDocs *self;
-    kino_TermDocs *term_docs;
+    kino_PostingList *plist;
 PPCODE:
-    Kino_DelDocs_Delete_By_Term_Docs(self, term_docs);
+    Kino_DelDocs_Delete_PostingList(self, plist);
 
 
 __POD__

@@ -5,14 +5,11 @@ package KinoSearch::Search::ScoreDoc;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        id    => undef,
-        score => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor params
+    doc_num => undef,
+    score   => undef,
+);
 
 1;
 
@@ -29,11 +26,11 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Search::ScoreDoc::instance_vars");
-    kino_u32_t id = extract_uv(args_hash, SNL("id"));
+    chy_u32_t doc_num  = extract_uv(args_hash, SNL("doc_num"));
     float score   = extract_nv(args_hash, SNL("score"));
 
     /* build object */
-    RETVAL = kino_ScoreDoc_new(id, score);
+    RETVAL = kino_ScoreDoc_new(doc_num, score);
 }
 OUTPUT: RETVAL
 
@@ -41,18 +38,18 @@ void
 _set_or_get(self, ...)
     kino_ScoreDoc *self;
 ALIAS:
-    set_id      = 1
-    get_id      = 2
-    set_score   = 3
-    get_score   = 4
+    set_doc_num      = 1
+    get_doc_num      = 2
+    set_score        = 3
+    get_score        = 4
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
 
-    case 1:  self->id = SvIV(ST(1));
+    case 1:  self->doc_num = SvIV(ST(1));
              break;
 
-    case 2:  retval = newSViv(self->id);
+    case 2:  retval = newSViv(self->doc_num);
              break;
 
     case 3:  self->score = SvNV(ST(1));
@@ -98,4 +95,3 @@ See L<KinoSearch> version 0.20.
 =end devdocs
 
 =cut
-

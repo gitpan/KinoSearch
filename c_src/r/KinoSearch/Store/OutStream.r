@@ -10,46 +10,51 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_OUTSTREAM
 #define R_KINO_OUTSTREAM 1
 
 #include "KinoSearch/Store/OutStream.h"
 
+#define KINO_OUTSTREAM_BOILERPLATE
+
 typedef void
 (*kino_OutStream_destroy_t)(kino_OutStream *self);
 
 typedef void
-(*kino_OutStream_sseek_t)(kino_OutStream *self, kino_u64_t target);
+(*kino_OutStream_sseek_t)(kino_OutStream *self, chy_u64_t target);
 
-typedef kino_u64_t
+typedef chy_u64_t
 (*kino_OutStream_stell_t)(kino_OutStream *self);
 
 typedef void
 (*kino_OutStream_sflush_t)(kino_OutStream *self);
 
-typedef kino_u64_t
+typedef chy_u64_t
 (*kino_OutStream_slength_t)(kino_OutStream *self);
 
 typedef void
 (*kino_OutStream_write_byte_t)(kino_OutStream *self, char aChar);
 
 typedef void
-(*kino_OutStream_write_bytes_t)(kino_OutStream *self, char *buf, size_t len);
+(*kino_OutStream_write_bytes_t)(kino_OutStream *self, const char *buf, size_t len);
 
 typedef void
-(*kino_OutStream_write_int_t)(kino_OutStream *self, kino_u32_t);
+(*kino_OutStream_write_int_t)(kino_OutStream *self, chy_u32_t);
 
 typedef void
-(*kino_OutStream_write_long_t)(kino_OutStream *self, kino_u64_t);
+(*kino_OutStream_write_long_t)(kino_OutStream *self, chy_u64_t);
 
 typedef void
-(*kino_OutStream_write_vint_t)(kino_OutStream *self, kino_u32_t);
+(*kino_OutStream_write_vint_t)(kino_OutStream *self, chy_u32_t);
 
 typedef void
-(*kino_OutStream_write_vlong_t)(kino_OutStream *self, kino_u64_t);
+(*kino_OutStream_write_vlong_t)(kino_OutStream *self, chy_u64_t);
 
 typedef void
-(*kino_OutStream_write_string_t)(kino_OutStream *self, char *buf, size_t len);
+(*kino_OutStream_write_string_t)(kino_OutStream *self, const char *buf, 
+                            size_t len);
 
 typedef void
 (*kino_OutStream_absorb_t)(kino_OutStream *self, struct kino_InStream *instream);
@@ -57,69 +62,69 @@ typedef void
 typedef void
 (*kino_OutStream_sclose_t)(kino_OutStream *self);
 
-#define Kino_OutStream_Clone(_self) \
-    kino_Obj_clone((kino_Obj*)_self)
+#define Kino_OutStream_Clone(self) \
+    kino_Obj_clone((kino_Obj*)self)
 
-#define Kino_OutStream_Destroy(_self) \
-    kino_OutStream_destroy((kino_OutStream*)_self)
+#define Kino_OutStream_Destroy(self) \
+    kino_OutStream_destroy((kino_OutStream*)self)
 
-#define Kino_OutStream_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_OutStream_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_OutStream_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_OutStream_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_OutStream_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_OutStream_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_OutStream_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_OutStream_To_String(self) \
+    kino_Obj_to_string((kino_Obj*)self)
 
-#define Kino_OutStream_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_OutStream_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_OutStream_SSeek(_self, _arg1) \
-    kino_OutStream_sseek((kino_OutStream*)_self, _arg1)
+#define Kino_OutStream_SSeek(self, target) \
+    kino_OutStream_sseek((kino_OutStream*)self, target)
 
-#define Kino_OutStream_STell(_self) \
-    kino_OutStream_stell((kino_OutStream*)_self)
+#define Kino_OutStream_STell(self) \
+    kino_OutStream_stell((kino_OutStream*)self)
 
-#define Kino_OutStream_SFlush(_self) \
-    kino_OutStream_sflush((kino_OutStream*)_self)
+#define Kino_OutStream_SFlush(self) \
+    kino_OutStream_sflush((kino_OutStream*)self)
 
-#define Kino_OutStream_SLength(_self) \
-    kino_OutStream_slength((kino_OutStream*)_self)
+#define Kino_OutStream_SLength(self) \
+    kino_OutStream_slength((kino_OutStream*)self)
 
-#define Kino_OutStream_Write_Byte(_self, _arg1) \
-    kino_OutStream_write_byte((kino_OutStream*)_self, _arg1)
+#define Kino_OutStream_Write_Byte(self, aChar) \
+    kino_OutStream_write_byte((kino_OutStream*)self, aChar)
 
-#define Kino_OutStream_Write_Bytes(_self, _arg1, _arg2) \
-    kino_OutStream_write_bytes((kino_OutStream*)_self, _arg1, _arg2)
+#define Kino_OutStream_Write_Bytes(self, buf, len) \
+    kino_OutStream_write_bytes((kino_OutStream*)self, buf, len)
 
-#define Kino_OutStream_Write_Int(_self, _arg1) \
-    kino_OutStream_write_int((kino_OutStream*)_self, _arg1)
+#define Kino_OutStream_Write_Int(self, chy_u32_t) \
+    kino_OutStream_write_int((kino_OutStream*)self, chy_u32_t)
 
-#define Kino_OutStream_Write_Long(_self, _arg1) \
-    kino_OutStream_write_long((kino_OutStream*)_self, _arg1)
+#define Kino_OutStream_Write_Long(self, chy_u64_t) \
+    kino_OutStream_write_long((kino_OutStream*)self, chy_u64_t)
 
-#define Kino_OutStream_Write_VInt(_self, _arg1) \
-    kino_OutStream_write_vint((kino_OutStream*)_self, _arg1)
+#define Kino_OutStream_Write_VInt(self, chy_u32_t) \
+    kino_OutStream_write_vint((kino_OutStream*)self, chy_u32_t)
 
-#define Kino_OutStream_Write_VLong(_self, _arg1) \
-    kino_OutStream_write_vlong((kino_OutStream*)_self, _arg1)
+#define Kino_OutStream_Write_VLong(self, chy_u64_t) \
+    kino_OutStream_write_vlong((kino_OutStream*)self, chy_u64_t)
 
-#define Kino_OutStream_Write_String(_self, _arg1, _arg2) \
-    kino_OutStream_write_string((kino_OutStream*)_self, _arg1, _arg2)
+#define Kino_OutStream_Write_String(self, buf, len) \
+    kino_OutStream_write_string((kino_OutStream*)self, buf, len)
 
-#define Kino_OutStream_Absorb(_self, _arg1) \
-    kino_OutStream_absorb((kino_OutStream*)_self, _arg1)
+#define Kino_OutStream_Absorb(self, instream) \
+    kino_OutStream_absorb((kino_OutStream*)self, instream)
 
-#define Kino_OutStream_SClose(_self) \
-    kino_OutStream_sclose((kino_OutStream*)_self)
+#define Kino_OutStream_SClose(self) \
+    kino_OutStream_sclose((kino_OutStream*)self)
 
 struct KINO_OUTSTREAM_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -150,7 +155,6 @@ extern KINO_OUTSTREAM_VTABLE KINO_OUTSTREAM;
   #define OutStream kino_OutStream
   #define OUTSTREAM KINO_OUTSTREAM
   #define OutStream_new kino_OutStream_new
-  #define OutStream_encode_vint kino_OutStream_encode_vint
   #define OutStream_destroy_t kino_OutStream_destroy_t
   #define OutStream_destroy kino_OutStream_destroy
   #define OutStream_sseek_t kino_OutStream_sseek_t
@@ -199,17 +203,15 @@ extern KINO_OUTSTREAM_VTABLE KINO_OUTSTREAM;
   #define OutStream_Write_String Kino_OutStream_Write_String
   #define OutStream_Absorb Kino_OutStream_Absorb
   #define OutStream_SClose Kino_OutStream_SClose
-  #define OUTSTREAM KINO_OUTSTREAM
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_OUTSTREAM_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     char * buf; \
-    kino_u64_t  buf_start; \
-    kino_u32_t  buf_pos; \
+    chy_u64_t  buf_start; \
+    chy_u32_t  buf_pos; \
     struct kino_FileDes * file_des; \
-    kino_bool_t  is_closed
-
+    chy_bool_t  is_closed
 
 #ifdef KINO_WANT_OUTSTREAM_VTABLE
 KINO_OUTSTREAM_VTABLE KINO_OUTSTREAM = {
@@ -240,10 +242,15 @@ KINO_OUTSTREAM_VTABLE KINO_OUTSTREAM = {
 };
 #endif /* KINO_WANT_OUTSTREAM_VTABLE */
 
+#undef KINO_OUTSTREAM_BOILERPLATE
+
+
 #endif /* R_KINO_OUTSTREAM */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

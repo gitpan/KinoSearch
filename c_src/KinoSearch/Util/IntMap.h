@@ -11,26 +11,25 @@ KINO_CLASS("KinoSearch::Util::IntMap", "IntMap", "KinoSearch::Util::Obj");
 struct kino_IntMap {
     KINO_INTMAP_VTABLE *_;
     KINO_OBJ_MEMBER_VARS;
-    kino_i32_t *ints;
-    kino_i32_t size;
+    chy_i32_t    *ints;
+    chy_i32_t     size;
 };
 
 /* Return the number present at the index requested.  If the requested index 
  * is out of range, return -1.
  */
-KINO_METHOD("Kino_IntMap_Get",
-kino_i32_t 
-kino_IntMap_get(kino_IntMap *self, kino_i32_t num));
+chy_i32_t 
+kino_IntMap_get(kino_IntMap *self, chy_i32_t num);
+KINO_METHOD("Kino_IntMap_Get");
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_IntMap*
-kino_IntMap_new(kino_i32_t *ints, kino_i32_t size));
+kino_IntMap_new(chy_i32_t *ints, chy_i32_t size);
 
-KINO_METHOD("Kino_IntMap_Destroy",
 void
-kino_IntMap_destroy(kino_IntMap *self));
+kino_IntMap_destroy(kino_IntMap *self);
+KINO_METHOD("Kino_IntMap_Destroy");
 
 KINO_END_CLASS
 

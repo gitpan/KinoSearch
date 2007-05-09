@@ -10,10 +10,14 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_INSTREAM
 #define R_KINO_INSTREAM 1
 
 #include "KinoSearch/Store/InStream.h"
+
+#define KINO_INSTREAM_BOILERPLATE
 
 typedef kino_InStream*
 (*kino_InStream_clone_t)(kino_InStream *self);
@@ -22,9 +26,9 @@ typedef void
 (*kino_InStream_destroy_t)(kino_InStream *self);
 
 typedef void
-(*kino_InStream_sseek_t)(kino_InStream *self, kino_u64_t target);
+(*kino_InStream_sseek_t)(kino_InStream *self, chy_u64_t target);
 
-typedef kino_u64_t
+typedef chy_u64_t
 (*kino_InStream_stell_t)(kino_InStream *self);
 
 typedef char
@@ -34,90 +38,98 @@ typedef void
 (*kino_InStream_read_bytes_t)(kino_InStream *self, char *buf, size_t len);
 
 typedef void
-(*kino_InStream_read_chars_t)(kino_InStream *self, char *buf, size_t start, 
-                         size_t len);
+(*kino_InStream_read_byteso_t)(kino_InStream *self, char *buf, size_t start, 
+                          size_t len);
 
-typedef kino_u32_t
+typedef chy_u32_t
 (*kino_InStream_read_int_t)(kino_InStream *self);
 
-typedef kino_u64_t
+typedef chy_u64_t
 (*kino_InStream_read_long_t)(kino_InStream *self);
 
-typedef kino_u32_t
+typedef chy_u32_t
 (*kino_InStream_read_vint_t)(kino_InStream *self);
 
-typedef kino_u64_t
+typedef chy_u64_t
 (*kino_InStream_read_vlong_t)(kino_InStream *self);
 
-typedef kino_u64_t
+typedef int
+(*kino_InStream_read_raw_vlong_t)(kino_InStream *self, char *buf);
+
+typedef chy_u64_t
 (*kino_InStream_slength_t)(kino_InStream *self);
 
 typedef kino_InStream*
-(*kino_InStream_reopen_t)(kino_InStream *self, kino_u64_t offset, kino_u64_t len);
+(*kino_InStream_reopen_t)(kino_InStream *self, 
+                     const struct kino_ByteBuf *filename, 
+                     chy_u64_t offset, chy_u64_t len);
 
 typedef void
 (*kino_InStream_sclose_t)(kino_InStream *self);
 
-#define Kino_InStream_Clone(_self) \
-    kino_InStream_clone((kino_InStream*)_self)
+#define Kino_InStream_Clone(self) \
+    kino_InStream_clone((kino_InStream*)self)
 
-#define Kino_InStream_Destroy(_self) \
-    kino_InStream_destroy((kino_InStream*)_self)
+#define Kino_InStream_Destroy(self) \
+    kino_InStream_destroy((kino_InStream*)self)
 
-#define Kino_InStream_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_InStream_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_InStream_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_InStream_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_InStream_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_InStream_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_InStream_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_InStream_To_String(self) \
+    kino_Obj_to_string((kino_Obj*)self)
 
-#define Kino_InStream_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_InStream_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_InStream_SSeek(_self, _arg1) \
-    kino_InStream_sseek((kino_InStream*)_self, _arg1)
+#define Kino_InStream_SSeek(self, target) \
+    kino_InStream_sseek((kino_InStream*)self, target)
 
-#define Kino_InStream_STell(_self) \
-    kino_InStream_stell((kino_InStream*)_self)
+#define Kino_InStream_STell(self) \
+    kino_InStream_stell((kino_InStream*)self)
 
-#define Kino_InStream_Read_Byte(_self) \
-    kino_InStream_read_byte((kino_InStream*)_self)
+#define Kino_InStream_Read_Byte(self) \
+    kino_InStream_read_byte((kino_InStream*)self)
 
-#define Kino_InStream_Read_Bytes(_self, _arg1, _arg2) \
-    kino_InStream_read_bytes((kino_InStream*)_self, _arg1, _arg2)
+#define Kino_InStream_Read_Bytes(self, buf, len) \
+    kino_InStream_read_bytes((kino_InStream*)self, buf, len)
 
-#define Kino_InStream_Read_Chars(_self, _arg1, _arg2, _arg3) \
-    kino_InStream_read_chars((kino_InStream*)_self, _arg1, _arg2, _arg3)
+#define Kino_InStream_Read_BytesO(self, buf, start, len) \
+    kino_InStream_read_byteso((kino_InStream*)self, buf, start, len)
 
-#define Kino_InStream_Read_Int(_self) \
-    kino_InStream_read_int((kino_InStream*)_self)
+#define Kino_InStream_Read_Int(self) \
+    kino_InStream_read_int((kino_InStream*)self)
 
-#define Kino_InStream_Read_Long(_self) \
-    kino_InStream_read_long((kino_InStream*)_self)
+#define Kino_InStream_Read_Long(self) \
+    kino_InStream_read_long((kino_InStream*)self)
 
-#define Kino_InStream_Read_VInt(_self) \
-    kino_InStream_read_vint((kino_InStream*)_self)
+#define Kino_InStream_Read_VInt(self) \
+    kino_InStream_read_vint((kino_InStream*)self)
 
-#define Kino_InStream_Read_VLong(_self) \
-    kino_InStream_read_vlong((kino_InStream*)_self)
+#define Kino_InStream_Read_VLong(self) \
+    kino_InStream_read_vlong((kino_InStream*)self)
 
-#define Kino_InStream_SLength(_self) \
-    kino_InStream_slength((kino_InStream*)_self)
+#define Kino_InStream_Read_Raw_VLong(self, buf) \
+    kino_InStream_read_raw_vlong((kino_InStream*)self, buf)
 
-#define Kino_InStream_Reopen(_self, _arg1, _arg2) \
-    kino_InStream_reopen((kino_InStream*)_self, _arg1, _arg2)
+#define Kino_InStream_SLength(self) \
+    kino_InStream_slength((kino_InStream*)self)
 
-#define Kino_InStream_SClose(_self) \
-    kino_InStream_sclose((kino_InStream*)_self)
+#define Kino_InStream_Reopen(self, filename, offset, len) \
+    kino_InStream_reopen((kino_InStream*)self, filename, offset, len)
+
+#define Kino_InStream_SClose(self) \
+    kino_InStream_sclose((kino_InStream*)self)
 
 struct KINO_INSTREAM_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -131,11 +143,12 @@ struct KINO_INSTREAM_VTABLE {
     kino_InStream_stell_t stell;
     kino_InStream_read_byte_t read_byte;
     kino_InStream_read_bytes_t read_bytes;
-    kino_InStream_read_chars_t read_chars;
+    kino_InStream_read_byteso_t read_byteso;
     kino_InStream_read_int_t read_int;
     kino_InStream_read_long_t read_long;
     kino_InStream_read_vint_t read_vint;
     kino_InStream_read_vlong_t read_vlong;
+    kino_InStream_read_raw_vlong_t read_raw_vlong;
     kino_InStream_slength_t slength;
     kino_InStream_reopen_t reopen;
     kino_InStream_sclose_t sclose;
@@ -147,7 +160,6 @@ extern KINO_INSTREAM_VTABLE KINO_INSTREAM;
   #define InStream kino_InStream
   #define INSTREAM KINO_INSTREAM
   #define InStream_new kino_InStream_new
-  #define InStream_decode_vint kino_InStream_decode_vint
   #define InStream_clone_t kino_InStream_clone_t
   #define InStream_clone kino_InStream_clone
   #define InStream_destroy_t kino_InStream_destroy_t
@@ -160,8 +172,8 @@ extern KINO_INSTREAM_VTABLE KINO_INSTREAM;
   #define InStream_read_byte kino_InStream_read_byte
   #define InStream_read_bytes_t kino_InStream_read_bytes_t
   #define InStream_read_bytes kino_InStream_read_bytes
-  #define InStream_read_chars_t kino_InStream_read_chars_t
-  #define InStream_read_chars kino_InStream_read_chars
+  #define InStream_read_byteso_t kino_InStream_read_byteso_t
+  #define InStream_read_byteso kino_InStream_read_byteso
   #define InStream_read_int_t kino_InStream_read_int_t
   #define InStream_read_int kino_InStream_read_int
   #define InStream_read_long_t kino_InStream_read_long_t
@@ -170,6 +182,8 @@ extern KINO_INSTREAM_VTABLE KINO_INSTREAM;
   #define InStream_read_vint kino_InStream_read_vint
   #define InStream_read_vlong_t kino_InStream_read_vlong_t
   #define InStream_read_vlong kino_InStream_read_vlong
+  #define InStream_read_raw_vlong_t kino_InStream_read_raw_vlong_t
+  #define InStream_read_raw_vlong kino_InStream_read_raw_vlong
   #define InStream_slength_t kino_InStream_slength_t
   #define InStream_slength kino_InStream_slength
   #define InStream_reopen_t kino_InStream_reopen_t
@@ -187,27 +201,27 @@ extern KINO_INSTREAM_VTABLE KINO_INSTREAM;
   #define InStream_STell Kino_InStream_STell
   #define InStream_Read_Byte Kino_InStream_Read_Byte
   #define InStream_Read_Bytes Kino_InStream_Read_Bytes
-  #define InStream_Read_Chars Kino_InStream_Read_Chars
+  #define InStream_Read_BytesO Kino_InStream_Read_BytesO
   #define InStream_Read_Int Kino_InStream_Read_Int
   #define InStream_Read_Long Kino_InStream_Read_Long
   #define InStream_Read_VInt Kino_InStream_Read_VInt
   #define InStream_Read_VLong Kino_InStream_Read_VLong
+  #define InStream_Read_Raw_VLong Kino_InStream_Read_Raw_VLong
   #define InStream_SLength Kino_InStream_SLength
   #define InStream_Reopen Kino_InStream_Reopen
   #define InStream_SClose Kino_InStream_SClose
-  #define INSTREAM KINO_INSTREAM
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_INSTREAM_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_u64_t  offset; \
-    kino_u64_t  len; \
+    chy_u32_t  refcount; \
+    chy_u64_t  offset; \
+    chy_u64_t  len; \
     char * buf; \
-    kino_u64_t  buf_start; \
-    kino_u32_t  buf_len; \
-    kino_u32_t  buf_pos; \
+    chy_u64_t  buf_start; \
+    chy_u32_t  buf_len; \
+    chy_u32_t  buf_pos; \
+    struct kino_ByteBuf * filename; \
     struct kino_FileDes * file_des
-
 
 #ifdef KINO_WANT_INSTREAM_VTABLE
 KINO_INSTREAM_VTABLE KINO_INSTREAM = {
@@ -226,21 +240,27 @@ KINO_INSTREAM_VTABLE KINO_INSTREAM = {
     (kino_InStream_stell_t)kino_InStream_stell,
     (kino_InStream_read_byte_t)kino_InStream_read_byte,
     (kino_InStream_read_bytes_t)kino_InStream_read_bytes,
-    (kino_InStream_read_chars_t)kino_InStream_read_chars,
+    (kino_InStream_read_byteso_t)kino_InStream_read_byteso,
     (kino_InStream_read_int_t)kino_InStream_read_int,
     (kino_InStream_read_long_t)kino_InStream_read_long,
     (kino_InStream_read_vint_t)kino_InStream_read_vint,
     (kino_InStream_read_vlong_t)kino_InStream_read_vlong,
+    (kino_InStream_read_raw_vlong_t)kino_InStream_read_raw_vlong,
     (kino_InStream_slength_t)kino_InStream_slength,
     (kino_InStream_reopen_t)kino_InStream_reopen,
     (kino_InStream_sclose_t)kino_InStream_sclose
 };
 #endif /* KINO_WANT_INSTREAM_VTABLE */
 
+#undef KINO_INSTREAM_BOILERPLATE
+
+
 #endif /* R_KINO_INSTREAM */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

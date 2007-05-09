@@ -6,9 +6,9 @@ use base qw( KinoSearch::Util::Hash );
 
 package main;
 
-use Test::More tests => 5;
+use Test::More tests => 4;
 
-BEGIN { use_ok("KinoSearch::Util::DynVirtualTable") }
+use KinoSearch::Util::DynVirtualTable;
 
 use KinoSearch::Util::Hash;
 use KinoSearch::Util::ByteBuf;
@@ -40,4 +40,3 @@ $resurrected->store( "ooga", $booga );
 
 is( $resurrected->fetch("ooga")->to_string,
     "booga", "subclassed object still performs correctly at the C level" );
-

@@ -5,14 +5,15 @@ package KinoSearch::Store::RAMFolder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::Folder );
 
-BEGIN { __PACKAGE__->init_instance_vars() }
-our %instance_vars;
+our %instance_vars = (
+    # inherited
+    path => undef,
+);
 
 use KinoSearch::Store::FSFolder;
 use KinoSearch::Store::RAMFileDes;
 use KinoSearch::Store::InStream;
 use KinoSearch::Store::OutStream;
-use KinoSearch::Store::Lock;
 
 sub new {
     my $class = shift;
@@ -60,7 +61,7 @@ _new(class, path)
     const classname_char *class;
     kino_ByteBuf path;
 CODE:
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_RAMFolder_new(&path);
 OUTPUT: RETVAL
 
@@ -84,12 +85,13 @@ KinoSearch::Store::RAMFolder - In-memory Folder.
 =head1 SYNOPSIS
     
 
+    my $folder = KinoSearch::Store::RAMFolder->new;
+
+    # or sometimes...
     my $folder = KinoSearch::Store::RAMFolder->new(
         path   => '/path/to/folder',
     );
 
-    # or...
-    my $folder = KinoSearch::Store::RAMFolder->new;
 
 
 =head1 DESCRIPTION
@@ -104,13 +106,17 @@ size.
 
 Second, RAMFolder is handy for testing and development.
 
-=head1 CONSTRUCTOR
+=head1 METHODS
 
 =head2 new
 
-Create a RAMFolder object.  C<new> takes one optional parameter, C<path>. If
-C<path> is supplied, KinoSearch will try to read an FSFolder at that
-location into memory.
+    my $folder = KinoSearch::Store::RAMFolder->new(
+        path   => '/path/to/folder',   # optional
+    );
+
+Constructor. Takes one optional parameter, C<path>. If C<path> is supplied,
+KinoSearch will try to read an FSFolder at that location into memory;
+otherwise the Folder starts out empty.
 
 =head1 COPYRIGHT
 

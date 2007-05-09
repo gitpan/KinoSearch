@@ -18,50 +18,42 @@ struct kino_CClass {
 
 /* Constructor -- for testing only.
  */
-KINO_FUNCTION(
 kino_CClass*
-kino_CClass_new());
+kino_CClass_new();
 
 /* Invoke an object method in a void context.
  */
-KINO_FUNCTION(
 void
-kino_CClass_callback(struct kino_Obj *self, char *method, ...));
+kino_CClass_callback(struct kino_Obj *self, char *method, ...);
 
 /* Invoke an object method, expecting a string back in the form of a newly 
  * allocated ByteBuf*.
  */
-KINO_FUNCTION(
 struct kino_ByteBuf*
-kino_CClass_callback_bb(struct kino_Obj *self, char *method, ...));
+kino_CClass_callback_bb(struct kino_Obj *self, char *method, ...);
 
 /* Invoke an object method, expecting an integer.
  */
-KINO_FUNCTION(
-kino_i32_t
-kino_CClass_callback_i(struct kino_Obj *self, char *method, ...));
+chy_i32_t
+kino_CClass_callback_i(struct kino_Obj *self, char *method, ...);
 
 /* Invoke an object method, expecting a float.
  */
-KINO_FUNCTION(
 float
-kino_CClass_callback_f(struct kino_Obj *self, char *method, ...));
+kino_CClass_callback_f(struct kino_Obj *self, char *method, ...);
 
 /* Invoke an object method, expecting a CClass-derived object back.
  */
-KINO_FUNCTION(
 struct kino_Obj*
-kino_CClass_callback_obj(struct kino_Obj *self, char *method, ...));
+kino_CClass_callback_obj(struct kino_Obj *self, char *method, ...);
 
 /* Temporary wrappers for Perl's SvREFCNT_inc and SvREFCNT_dec, until all 
  * classes are C-based.
  */
-KINO_FUNCTION(
 void
-kino_CClass_svrefcount_inc(void *perlobj));
-KINO_FUNCTION(
+kino_CClass_svrefcount_inc(void *perlobj);
 void
-kino_CClass_svrefcount_dec(void *perlobj));
+kino_CClass_svrefcount_dec(void *perlobj);
 
 KINO_END_CLASS
 

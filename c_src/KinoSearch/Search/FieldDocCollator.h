@@ -14,44 +14,41 @@ KINO_CLASS("KinoSearch::Search::FieldDocCollator", "FDocCollator",
 struct kino_FieldDocCollator {
     KINO_FIELDDOCCOLLATOR_VTABLE *_;
     KINO_OBJ_MEMBER_VARS;
-    kino_u32_t                 cap;
-    kino_u32_t                 size;
+    chy_u32_t                  cap;
+    chy_u32_t                  size;
     struct kino_IntMap       **sort_caches;
-    kino_bool_t               *reversed;
+    chy_bool_t                *reversed;
 };
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_FieldDocCollator*
-kino_FDocCollator_new());
+kino_FDocCollator_new();
 
 /* Add a sort criteria.
  */
-KINO_FUNCTION(
 void
 kino_FDocCollator_add(kino_FieldDocCollator *self, 
                       struct kino_IntMap *sort_cache, 
-                      kino_bool_t reverse));
+                      chy_bool_t reverse);
 
 /* Compare two FieldDocs.
  */
-KINO_FUNCTION(
-kino_bool_t
-kino_FDocCollator_less_than(const void *va, const void *vb));
+chy_bool_t
+kino_FDocCollator_less_than(const void *va, const void *vb);
 
 /* Compare the components of two FieldDocs.
  */
-KINO_METHOD("Kino_FDocCollator_Compare",
-kino_bool_t
+chy_bool_t
 kino_FDocCollator_compare(kino_FieldDocCollator *self, 
-                          kino_u32_t doc_num_a, float score_a, 
-                          kino_u32_t doc_num_b, float score_b));
+                          chy_u32_t doc_num_a, float score_a, 
+                          chy_u32_t doc_num_b, float score_b);
+KINO_METHOD("Kino_FDocCollator_Compare");
 
 
-KINO_METHOD("Kino_FDocCollator_Destroy",
 void
-kino_FDocCollator_destroy(kino_FieldDocCollator *self));
+kino_FDocCollator_destroy(kino_FieldDocCollator *self);
+KINO_METHOD("Kino_FDocCollator_Destroy");
 
 KINO_END_CLASS
 

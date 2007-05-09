@@ -20,7 +20,7 @@ new(class, path)
     const classname_char *class;
     const char *path;
 CODE:
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_RAMFileDes_new(path);
 OUTPUT: RETVAL
 

@@ -5,7 +5,7 @@ package MySchema;
 use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
-our %FIELDS = (
+our %fields = (
     title => 'KinoSearch::Schema::FieldSpec',
     body  => 'KinoSearch::Schema::FieldSpec',
 );
@@ -21,6 +21,7 @@ use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::QueryParser::QueryParser;
+use KinoSearch::Analysis::Tokenizer;
 
 my $folder   = KinoSearch::Store::RAMFolder->new;
 my $invindex = KinoSearch::InvIndex->create(
@@ -81,4 +82,3 @@ test_qstring(
 );
 test_qstring( '+a +foo', 1,
     "required terms spread across disparate fields should match" );
-

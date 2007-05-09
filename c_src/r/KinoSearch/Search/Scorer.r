@@ -10,68 +10,72 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_SCORER
 #define R_KINO_SCORER 1
 
 #include "KinoSearch/Search/Scorer.h"
 
-typedef kino_bool_t
+#define KINO_SCORER_BOILERPLATE
+
+typedef chy_bool_t
 (*kino_Scorer_next_t)(kino_Scorer *self);
 
-typedef kino_u32_t
+typedef chy_u32_t
 (*kino_Scorer_doc_t)(kino_Scorer *self);
 
-typedef float
-(*kino_Scorer_score_t)(kino_Scorer *self);
+typedef struct kino_Tally*
+(*kino_Scorer_tally_t)(kino_Scorer *self);
 
-typedef kino_bool_t
-(*kino_Scorer_skip_to_t)(kino_Scorer*, kino_u32_t);
+typedef chy_bool_t
+(*kino_Scorer_skip_to_t)(kino_Scorer *self, chy_u32_t target);
 
 typedef void
-(*kino_Scorer_score_batch_t)(kino_Scorer *self, struct kino_HitCollector *hc, 
-                        kino_u32_t start, kino_u32_t end, 
-                        kino_u32_t prune_factor, 
-                        struct kino_VArray *seg_starts);
+(*kino_Scorer_collect_t)(kino_Scorer *self, struct kino_HitCollector *hc, 
+                    chy_u32_t start, chy_u32_t end, 
+                    chy_u32_t hits_per_seg, 
+                    struct kino_VArray *seg_starts);
 
-#define Kino_Scorer_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_Scorer_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_Scorer_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_Scorer_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_Scorer_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_Scorer_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_Scorer_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_Scorer_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_Scorer_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_Scorer_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_Scorer_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_Scorer_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_Scorer_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_Scorer_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_Scorer_Next(_self) \
-    (_self)->_->next((kino_Scorer*)_self)
+#define Kino_Scorer_Next(self) \
+    (self)->_->next((kino_Scorer*)self)
 
-#define Kino_Scorer_Doc(_self) \
-    (_self)->_->doc((kino_Scorer*)_self)
+#define Kino_Scorer_Doc(self) \
+    (self)->_->doc((kino_Scorer*)self)
 
-#define Kino_Scorer_Score(_self) \
-    (_self)->_->score((kino_Scorer*)_self)
+#define Kino_Scorer_Tally(self) \
+    (self)->_->tally((kino_Scorer*)self)
 
-#define Kino_Scorer_Skip_To(_self, _arg1) \
-    (_self)->_->skip_to((kino_Scorer*)_self, _arg1)
+#define Kino_Scorer_Skip_To(self, target) \
+    (self)->_->skip_to((kino_Scorer*)self, target)
 
-#define Kino_Scorer_Score_Batch(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    (_self)->_->score_batch((kino_Scorer*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
+#define Kino_Scorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
+    (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
 struct KINO_SCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -83,9 +87,9 @@ struct KINO_SCORER_VTABLE {
     kino_Obj_serialize_t serialize;
     kino_Scorer_next_t next;
     kino_Scorer_doc_t doc;
-    kino_Scorer_score_t score;
+    kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
-    kino_Scorer_score_batch_t score_batch;
+    kino_Scorer_collect_t collect;
 };
 
 extern KINO_SCORER_VTABLE KINO_SCORER;
@@ -97,12 +101,12 @@ extern KINO_SCORER_VTABLE KINO_SCORER;
   #define Scorer_next kino_Scorer_next
   #define Scorer_doc_t kino_Scorer_doc_t
   #define Scorer_doc kino_Scorer_doc
-  #define Scorer_score_t kino_Scorer_score_t
-  #define Scorer_score kino_Scorer_score
+  #define Scorer_tally_t kino_Scorer_tally_t
+  #define Scorer_tally kino_Scorer_tally
   #define Scorer_skip_to_t kino_Scorer_skip_to_t
   #define Scorer_skip_to kino_Scorer_skip_to
-  #define Scorer_score_batch_t kino_Scorer_score_batch_t
-  #define Scorer_score_batch kino_Scorer_score_batch
+  #define Scorer_collect_t kino_Scorer_collect_t
+  #define Scorer_collect kino_Scorer_collect
   #define Scorer_Clone Kino_Scorer_Clone
   #define Scorer_Destroy Kino_Scorer_Destroy
   #define Scorer_Equals Kino_Scorer_Equals
@@ -112,19 +116,14 @@ extern KINO_SCORER_VTABLE KINO_SCORER;
   #define Scorer_Serialize Kino_Scorer_Serialize
   #define Scorer_Next Kino_Scorer_Next
   #define Scorer_Doc Kino_Scorer_Doc
-  #define Scorer_Score Kino_Scorer_Score
+  #define Scorer_Tally Kino_Scorer_Tally
   #define Scorer_Skip_To Kino_Scorer_Skip_To
-  #define Scorer_Score_Batch Kino_Scorer_Score_Batch
-  #define SCORER KINO_SCORER
+  #define Scorer_Collect Kino_Scorer_Collect
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SCORER_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    struct kino_Similarity * sim; \
-    struct kino_ByteBuf * raw_prox_bb; \
-    kino_u32_t * prox; \
-    kino_u32_t  num_prox
-
+    chy_u32_t  refcount; \
+    struct kino_Similarity * sim
 
 #ifdef KINO_WANT_SCORER_VTABLE
 KINO_SCORER_VTABLE KINO_SCORER = {
@@ -141,16 +140,21 @@ KINO_SCORER_VTABLE KINO_SCORER = {
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_Scorer_next_t)kino_Scorer_next,
     (kino_Scorer_doc_t)kino_Scorer_doc,
-    (kino_Scorer_score_t)kino_Scorer_score,
+    (kino_Scorer_tally_t)kino_Scorer_tally,
     (kino_Scorer_skip_to_t)kino_Scorer_skip_to,
-    (kino_Scorer_score_batch_t)kino_Scorer_score_batch
+    (kino_Scorer_collect_t)kino_Scorer_collect
 };
 #endif /* KINO_WANT_SCORER_VTABLE */
 
+#undef KINO_SCORER_BOILERPLATE
+
+
 #endif /* R_KINO_SCORER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

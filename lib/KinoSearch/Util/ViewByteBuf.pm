@@ -25,7 +25,7 @@ CODE:
     dupe[len] = '\0';
     memcpy(dupe, ptr, len);
     RETVAL = kino_ViewBB_new(dupe, len);
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
 }
 OUTPUT: RETVAL
 

@@ -5,10 +5,10 @@ package KinoSearch::Store::FSFolder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::Folder );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars();
-}
-our %instance_vars;
+our %instance_vars = (
+    # inherited
+    path => undef,
+);
 
 1;
 
@@ -52,11 +52,15 @@ KinoSearch::Store::FSFolder - File System implementation of Folder.
 Implementation of KinoSearch::Store::Folder using a single file system 
 directory and multiple files.
 
-=head1 CONSTRUCTOR
+=head1 METHODS
 
 =head2 new
 
-C<new> takes one hash-style parameter:
+    my $folder = KinoSearch::Store::FSFolder->new(
+        path   => '/path/to/folder',
+    );
+
+Constructor. Takes one hash-style parameter.
 
 =over 
 

@@ -5,7 +5,7 @@ package KinoSearch::Search::Similarity;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN { __PACKAGE__->init_instance_vars(); }
+our %instance_vars = ();
 
 sub length_norm {
     my ( $self, $num_tokens ) = @_;
@@ -67,7 +67,7 @@ OUTPUT: RETVAL
 float
 tf(self, freq)
     kino_Similarity *self;
-    kino_u32_t  freq;
+    chy_u32_t  freq;
 CODE:
     RETVAL = Kino_Sim_TF(self, freq);
 OUTPUT: RETVAL
@@ -79,7 +79,7 @@ encode_norm(self, f)
     float f;
 CODE:
 {
-    const kino_u32_t byte = Kino_Sim_Encode_Norm(self, f);
+    const chy_u32_t byte = Kino_Sim_Encode_Norm(self, f);
     RETVAL = newSVuv(byte);
 }
 OUTPUT: RETVAL
@@ -87,7 +87,7 @@ OUTPUT: RETVAL
 float
 decode_norm(self, byte) 
     kino_Similarity *self;
-    kino_u32_t byte;
+    chy_u32_t byte;
 CODE:
     RETVAL = Kino_Sim_Decode_Norm(self, byte);
 OUTPUT: RETVAL
@@ -110,8 +110,8 @@ OUTPUT: RETVAL
 float
 coord(self, overlap, max_overlap)
     kino_Similarity *self;
-    kino_u32_t overlap;
-    kino_u32_t max_overlap;
+    chy_u32_t overlap;
+    chy_u32_t max_overlap;
 CODE:
     RETVAL = Kino_Sim_Coord(self, overlap, max_overlap);
 OUTPUT: RETVAL
@@ -143,7 +143,7 @@ KinoSearch::Search::Similarity - Calculate how closely two things match.
 
 KinoSearch uses a close approximation of boolean logic for determining which
 documents match a given query; then it uses a variant of the vector-space
-model for calculating scores.  Much of the match used when calculating these
+model for calculating scores.  Much of the math used when calculating these
 scores is encapsulated within the Similarity class.
 
 Similarity objects are are used internally by KinoSearch's indexing and
@@ -155,8 +155,8 @@ Only one method is publicly exposed at present.
 =head1 SUBCLASSING
 
 To build your own Similarity implmentation, provide a new implementation of
-length_norm() under a new class name.  The constructor will inherit the class
-name properly.  
+length_norm() under a new class name.  Similarity's internal constructor will
+inherit properly.  
 
 Similarity is implemented as a C-struct object, so you can't add any member
 variables to it.
@@ -169,7 +169,7 @@ variables to it.
 
 After a field is broken up into terms at index-time, each term must be
 assigned a weight.  One of the factors in calculating this weight is the
-number of tokens that the original field.
+number of tokens that the original field was broken into.
 
 Typically, we assume that the more tokens in a field, the less important any
 one of them is -- so that, e.g. 5 mentions of "Kafka" in a short article 
@@ -178,7 +178,7 @@ implementation of length_norm expresses this using an inverted square root.
 
 However, the inverted square root has a tendency to reward very short fields
 highly, which isn't always appropriate for fields you expect to have a lot of
-tokens on average.  See L<KinoSearch::Contrib::LongFieldSim> for a discussion.
+tokens on average.  See L<KSx::Search::LongFieldSim> for a discussion.
 
 =head1 COPYRIGHT
 

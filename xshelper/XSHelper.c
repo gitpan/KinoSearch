@@ -4,12 +4,12 @@
 #include "XSHelper.h"
 
 HV*
-build_args_hash(SV** stack, kino_i32_t start, kino_i32_t num_stack_elems, 
+build_args_hash(SV** stack, chy_i32_t start, chy_i32_t num_stack_elems, 
                 char* defaults_hash_name)
 {
     HV *defaults_hash = get_hv(defaults_hash_name, 0);
     HV *args_hash = (HV*)sv_2mortal( (SV*)newHV() );
-    kino_i32_t stack_pos = start;
+    chy_i32_t stack_pos = start;
 
     /* NOTE: the defaults hash must be declared using "our" */
     if (defaults_hash == NULL)
@@ -48,7 +48,7 @@ build_args_hash(SV** stack, kino_i32_t start, kino_i32_t num_stack_elems,
 
 
 SV* 
-extract_sv(HV* hash, char* key, kino_i32_t key_len) 
+extract_sv(HV* hash, char* key, chy_i32_t key_len) 
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
@@ -57,7 +57,7 @@ extract_sv(HV* hash, char* key, kino_i32_t key_len)
 }
 
 UV
-extract_uv(HV* hash, char* key, kino_i32_t key_len) 
+extract_uv(HV* hash, char* key, chy_i32_t key_len) 
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
@@ -66,7 +66,7 @@ extract_uv(HV* hash, char* key, kino_i32_t key_len)
 }
 
 IV
-extract_iv(HV* hash, char* key, kino_i32_t key_len) 
+extract_iv(HV* hash, char* key, chy_i32_t key_len) 
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
@@ -75,7 +75,7 @@ extract_iv(HV* hash, char* key, kino_i32_t key_len)
 }
 
 NV
-extract_nv(HV* hash, char* key, kino_i32_t key_len) 
+extract_nv(HV* hash, char* key, chy_i32_t key_len) 
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
@@ -125,7 +125,7 @@ derive_class(SV* either_sv)
         : SvPV_nolen(either_sv);
 }
 
-kino_bool_t
+chy_bool_t
 less_than_sviv(const void *a, const void *b) 
 {
     if ( SvIV((SV*)a) < SvIV((SV*)b) ) {
@@ -185,7 +185,7 @@ SV*
 karray_to_parray(kino_VArray *varray)
 {
     AV *perl_array = newAV();
-    kino_u32_t i;
+    chy_u32_t i;
 
     for (i = 0; i < varray->size; i++) {
         kino_Obj *val = Kino_VA_Fetch(varray, i);

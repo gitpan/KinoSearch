@@ -6,8 +6,10 @@
 typedef struct kino_PhraseScorer kino_PhraseScorer;
 typedef struct KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER_VTABLE;
 
-struct kino_TermDocs;
+struct kino_Tally;
 struct kino_ByteBuf;
+struct kino_Int;
+struct kino_PostingList;
 
 KINO_CLASS("KinoSearch::Search::PhraseScorer", "PhraseScorer", 
     "KinoSearch::Search::Scorer");
@@ -15,54 +17,56 @@ KINO_CLASS("KinoSearch::Search::PhraseScorer", "PhraseScorer",
 struct kino_PhraseScorer {
     KINO_PHRASESCORER_VTABLE *_;
     KINO_SCORER_MEMBER_VARS;
-    
-    kino_u32_t             doc_num;
-    kino_u32_t             slop;
-    kino_u32_t             num_elements;
-    struct kino_TermDocs **term_docs;
-    kino_u32_t            *phrase_offsets;
-    struct kino_ByteBuf   *anchor_set;
-    float                  phrase_freq;
-    float                  phrase_boost;
-    float                  weight_value;
-    kino_bool_t            first_time;
-    kino_bool_t            more;
+    chy_u32_t                  doc_num;
+    chy_u32_t                  slop;
+    chy_u32_t                  num_elements;
+    struct kino_Tally         *tally;
+    struct kino_PostingList  **plists;
+    chy_u32_t                 *phrase_offsets;
+    struct kino_ByteBuf       *anchor_set;
+    struct kino_ByteBuf       *raw_prox_bb;
+    float                      phrase_freq;
+    float                      phrase_boost;
+    void                      *weight_ref;
+    float                      weight_value;
+    chy_bool_t                 first_time;
+    chy_bool_t                 more;
 };
 
 /* Constructor
  */
-KINO_FUNCTION(
 kino_PhraseScorer*
-kino_PhraseScorer_new(kino_u32_t num_elements, 
-                      struct kino_TermDocs **term_docs, 
-                      kino_u32_t *phrase_offsets, float weight_val,
-                      struct kino_Similarity *sim, kino_u32_t slop));
+kino_PhraseScorer_new(struct kino_Similarity *sim,
+                      struct kino_VArray *plists, 
+                      struct kino_VArray *phrase_offsets,
+                      void *weight_ref, float weight_val,
+                      chy_u32_t slop);
 
-KINO_METHOD("Kino_PhraseScorer_Destroy",
 void
-kino_PhraseScorer_destroy(kino_PhraseScorer*));
+kino_PhraseScorer_destroy(kino_PhraseScorer *self);
+KINO_METHOD("Kino_PhraseScorer_Destroy");
 
-KINO_METHOD("Kino_PhraseScorer_Next",
-kino_bool_t
-kino_PhraseScorer_next(kino_PhraseScorer*));
+chy_bool_t
+kino_PhraseScorer_next(kino_PhraseScorer *self);
+KINO_METHOD("Kino_PhraseScorer_Next");
 
-KINO_METHOD("Kino_PhraseScorer_Skip_To",
-kino_bool_t
-kino_PhraseScorer_skip_to(kino_PhraseScorer *self, kino_u32_t target));
+chy_bool_t
+kino_PhraseScorer_skip_to(kino_PhraseScorer *self, chy_u32_t target);
+KINO_METHOD("Kino_PhraseScorer_Skip_To");
 
-KINO_METHOD("Kino_PhraseScorer_Doc",
-kino_u32_t 
-kino_PhraseScorer_doc(kino_PhraseScorer*));
+chy_u32_t 
+kino_PhraseScorer_doc(kino_PhraseScorer *self);
+KINO_METHOD("Kino_PhraseScorer_Doc");
 
-KINO_METHOD("Kino_PhraseScorer_Score",
-float
-kino_PhraseScorer_score(kino_PhraseScorer*));
+struct kino_Tally*
+kino_PhraseScorer_tally(kino_PhraseScorer *self);
+KINO_METHOD("Kino_PhraseScorer_Tally");
 
 /* Calculate how often the phrase occurs in the current document.
  */
-KINO_METHOD("Kino_PhraseScorer_Calc_Phrase_Freq",
 float
-kino_PhraseScorer_calc_phrase_freq(kino_PhraseScorer*));
+kino_PhraseScorer_calc_phrase_freq(kino_PhraseScorer *self);
+KINO_METHOD("Kino_PhraseScorer_Calc_Phrase_Freq");
 
 KINO_END_CLASS
 

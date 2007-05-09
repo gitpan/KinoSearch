@@ -10,46 +10,50 @@
 
  ***********************************************/
 
-#ifndef R_KINO_TVREADER
-#define R_KINO_TVREADER 1
+
+
+#ifndef R_KINO_TERMVECTORSREADER
+#define R_KINO_TERMVECTORSREADER 1
 
 #include "KinoSearch/Index/TermVectorsReader.h"
+
+#define KINO_TERMVECTORSREADER_BOILERPLATE
 
 typedef void
 (*kino_TVReader_destroy_t)(kino_TermVectorsReader *self);
 
 typedef void
 (*kino_TVReader_read_record_t)(kino_TermVectorsReader *self, 
-                          kino_i32_t doc_num,
+                          chy_i32_t doc_num,
                           struct kino_ByteBuf *buffer);
 
-#define Kino_TVReader_Clone(_self) \
-    kino_Obj_clone((kino_Obj*)_self)
+#define Kino_TVReader_Clone(self) \
+    kino_Obj_clone((kino_Obj*)self)
 
-#define Kino_TVReader_Destroy(_self) \
-    kino_TVReader_destroy((kino_TermVectorsReader*)_self)
+#define Kino_TVReader_Destroy(self) \
+    kino_TVReader_destroy((kino_TermVectorsReader*)self)
 
-#define Kino_TVReader_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_TVReader_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_TVReader_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_TVReader_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_TVReader_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_TVReader_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_TVReader_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_TVReader_To_String(self) \
+    kino_Obj_to_string((kino_Obj*)self)
 
-#define Kino_TVReader_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_TVReader_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_TVReader_Read_Record(_self, _arg1, _arg2) \
-    kino_TVReader_read_record((kino_TermVectorsReader*)_self, _arg1, _arg2)
+#define Kino_TVReader_Read_Record(self, doc_num, buffer) \
+    kino_TVReader_read_record((kino_TermVectorsReader*)self, doc_num, buffer)
 
 struct KINO_TERMVECTORSREADER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -80,17 +84,15 @@ extern KINO_TERMVECTORSREADER_VTABLE KINO_TERMVECTORSREADER;
   #define TVReader_To_String Kino_TVReader_To_String
   #define TVReader_Serialize Kino_TVReader_Serialize
   #define TVReader_Read_Record Kino_TVReader_Read_Record
-  #define TERMVECTORSREADER KINO_TERMVECTORSREADER
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_TERMVECTORSREADER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_Schema * schema; \
     struct kino_Folder * folder; \
     struct kino_SegInfo * seg_info; \
     struct kino_InStream * tv_in; \
     struct kino_InStream * tvx_in
-
 
 #ifdef KINO_WANT_TERMVECTORSREADER_VTABLE
 KINO_TERMVECTORSREADER_VTABLE KINO_TERMVECTORSREADER = {
@@ -109,10 +111,15 @@ KINO_TERMVECTORSREADER_VTABLE KINO_TERMVECTORSREADER = {
 };
 #endif /* KINO_WANT_TERMVECTORSREADER_VTABLE */
 
-#endif /* R_KINO_TVREADER */
+#undef KINO_TERMVECTORSREADER_BOILERPLATE
+
+
+#endif /* R_KINO_TERMVECTORSREADER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

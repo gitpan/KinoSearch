@@ -1,8 +1,8 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <errno.h>
 #include <stdio.h>
+#include <fcntl.h>
 
 #define KINO_WANT_FSFILEDES_VTABLE
 #include "KinoSearch/Store/FSFileDes.r"
@@ -16,11 +16,23 @@
         } \
     } while (0)
     
-
 FSFileDes*
-FSFileDes_new(const char *path, const char *mode) 
+FSFileDes_new(const char *path, int oflags, int fdmode, const char *fmode) 
 {
+    int fd;
     CREATE(self, FSFileDes, FSFILEDES);
+
+    /* open */
+    fd = open(path, oflags, fdmode);
+    if (fd == -1) {
+        free(self);
+        return NULL;
+    }
+    self->fhandle = fdopen(fd, fmode);
+    if (self->fhandle == NULL) {
+        free(self);
+        return NULL;
+    }
 
     /* init */
     self->pos          = 0;
@@ -28,16 +40,10 @@ FSFileDes_new(const char *path, const char *mode)
 
     /* assign */
     self->path     = strdup(path);
-    self->mode     = strdup(mode);
-
-    /* open */
-    self->fhandle = fopen(path, mode);
-    if (self->fhandle == NULL) {
-        CONFESS("Failed to open '%s': %s", path, strerror(errno));
-    }
 
     /* track number of live FileDes released into the wild */
-    FileDes_global_count++;
+    FileDes_object_count++;
+    FileDes_open_count++;
 
     return self;
 }
@@ -50,45 +56,52 @@ FSFileDes_destroy(FSFileDes *self)
     }
 
     free(self->path);
-    free(self->mode);
 
     /* decrement count of FileDes structs in existence */
-    FileDes_global_count--;
+    FileDes_object_count--;
 
     free(self);
 }
 
-void
+bool_t
 FSFileDes_fdseek(FSFileDes *self, u64_t target)
 {
     CHECK_IO_OP( fseeko64(self->fhandle, target, SEEK_SET) );
     self->pos = target;
+    return true;
 }
 
-void
+bool_t
 FSFileDes_fdread(FSFileDes *self, char *dest, u32_t dest_offset, u32_t len)
 {
     int check_val = fread(dest + dest_offset, sizeof(char), len,
         self->fhandle);
-    if (check_val < 0 || (u32_t)check_val != len) 
-        CONFESS("Tried to read %d bytes, got %d: %s", 
-            (int)len, check_val, strerror(errno));
+    if (check_val < 0 || (u32_t)check_val != len) {
+        Carp_set_kerror("Tried to read %lu bytes, got %d: %s", 
+            (unsigned long)len, check_val, strerror(errno));
+        return false;
+    }
 
     self->pos += len;
+
+    return true;
 }
 
-void
-FSFileDes_fdwrite(FSFileDes *self, char* buf, u32_t len) 
+bool_t
+FSFileDes_fdwrite(FSFileDes *self, const char* buf, u32_t len) 
 {
     size_t check_val = fwrite(buf, sizeof(char), len, self->fhandle);
     if (check_val != len) {
-        CONFESS("Attempted to write %lu bytes, but wrote %lu",
+        Carp_set_kerror("Attempted to write %lu bytes, but wrote %lu",
             (unsigned long)len, (unsigned long)check_val);
+        return false;
     }
 
     CHECK_IO_OP( fflush(self->fhandle) ); /* TODO -- kill this? */
 
     self->pos += len;
+
+    return true;
 }
 
 
@@ -106,16 +119,19 @@ FSFileDes_fdlength(FSFileDes *self)
     return len;
 }
 
-void
+bool_t
 FSFileDes_fdclose(FSFileDes *self)
 {
     if (self->fhandle != NULL) {
         if (fclose(self->fhandle)) {
-            CONFESS("Failed to close file '%s': %s", self->path,
-                strerror(errno));
+            Carp_set_kerror("Failed to close file: %s", strerror(errno));
+            return false;
         }
+        FileDes_open_count--;
         self->fhandle = NULL;
     }
+
+    return true;
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

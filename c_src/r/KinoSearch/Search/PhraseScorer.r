@@ -10,71 +10,75 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_PHRASESCORER
 #define R_KINO_PHRASESCORER 1
 
 #include "KinoSearch/Search/PhraseScorer.h"
 
+#define KINO_PHRASESCORER_BOILERPLATE
+
 typedef void
-(*kino_PhraseScorer_destroy_t)(kino_PhraseScorer*);
+(*kino_PhraseScorer_destroy_t)(kino_PhraseScorer *self);
 
-typedef kino_bool_t
-(*kino_PhraseScorer_next_t)(kino_PhraseScorer*);
+typedef chy_bool_t
+(*kino_PhraseScorer_next_t)(kino_PhraseScorer *self);
 
-typedef kino_u32_t
-(*kino_PhraseScorer_doc_t)(kino_PhraseScorer*);
+typedef chy_u32_t
+(*kino_PhraseScorer_doc_t)(kino_PhraseScorer *self);
+
+typedef struct kino_Tally*
+(*kino_PhraseScorer_tally_t)(kino_PhraseScorer *self);
+
+typedef chy_bool_t
+(*kino_PhraseScorer_skip_to_t)(kino_PhraseScorer *self, chy_u32_t target);
 
 typedef float
-(*kino_PhraseScorer_score_t)(kino_PhraseScorer*);
+(*kino_PhraseScorer_calc_phrase_freq_t)(kino_PhraseScorer *self);
 
-typedef kino_bool_t
-(*kino_PhraseScorer_skip_to_t)(kino_PhraseScorer *self, kino_u32_t target);
+#define Kino_PhraseScorer_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-typedef float
-(*kino_PhraseScorer_calc_phrase_freq_t)(kino_PhraseScorer*);
+#define Kino_PhraseScorer_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_PhraseScorer_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_PhraseScorer_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_PhraseScorer_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_PhraseScorer_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_PhraseScorer_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_PhraseScorer_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_PhraseScorer_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_PhraseScorer_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_PhraseScorer_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_PhraseScorer_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_PhraseScorer_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_PhraseScorer_Next(self) \
+    (self)->_->next((kino_Scorer*)self)
 
-#define Kino_PhraseScorer_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_PhraseScorer_Doc(self) \
+    (self)->_->doc((kino_Scorer*)self)
 
-#define Kino_PhraseScorer_Next(_self) \
-    (_self)->_->next((kino_Scorer*)_self)
+#define Kino_PhraseScorer_Tally(self) \
+    (self)->_->tally((kino_Scorer*)self)
 
-#define Kino_PhraseScorer_Doc(_self) \
-    (_self)->_->doc((kino_Scorer*)_self)
+#define Kino_PhraseScorer_Skip_To(self, target) \
+    (self)->_->skip_to((kino_Scorer*)self, target)
 
-#define Kino_PhraseScorer_Score(_self) \
-    (_self)->_->score((kino_Scorer*)_self)
+#define Kino_PhraseScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
+    (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
-#define Kino_PhraseScorer_Skip_To(_self, _arg1) \
-    (_self)->_->skip_to((kino_Scorer*)_self, _arg1)
-
-#define Kino_PhraseScorer_Score_Batch(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    (_self)->_->score_batch((kino_Scorer*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
-
-#define Kino_PhraseScorer_Calc_Phrase_Freq(_self) \
-    (_self)->_->calc_phrase_freq((kino_PhraseScorer*)_self)
+#define Kino_PhraseScorer_Calc_Phrase_Freq(self) \
+    (self)->_->calc_phrase_freq((kino_PhraseScorer*)self)
 
 struct KINO_PHRASESCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -86,9 +90,9 @@ struct KINO_PHRASESCORER_VTABLE {
     kino_Obj_serialize_t serialize;
     kino_Scorer_next_t next;
     kino_Scorer_doc_t doc;
-    kino_Scorer_score_t score;
+    kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
-    kino_Scorer_score_batch_t score_batch;
+    kino_Scorer_collect_t collect;
     kino_PhraseScorer_calc_phrase_freq_t calc_phrase_freq;
 };
 
@@ -101,7 +105,7 @@ extern KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER;
   #define PhraseScorer_destroy kino_PhraseScorer_destroy
   #define PhraseScorer_next kino_PhraseScorer_next
   #define PhraseScorer_doc kino_PhraseScorer_doc
-  #define PhraseScorer_score kino_PhraseScorer_score
+  #define PhraseScorer_tally kino_PhraseScorer_tally
   #define PhraseScorer_skip_to kino_PhraseScorer_skip_to
   #define PhraseScorer_calc_phrase_freq_t kino_PhraseScorer_calc_phrase_freq_t
   #define PhraseScorer_calc_phrase_freq kino_PhraseScorer_calc_phrase_freq
@@ -114,31 +118,29 @@ extern KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER;
   #define PhraseScorer_Serialize Kino_PhraseScorer_Serialize
   #define PhraseScorer_Next Kino_PhraseScorer_Next
   #define PhraseScorer_Doc Kino_PhraseScorer_Doc
-  #define PhraseScorer_Score Kino_PhraseScorer_Score
+  #define PhraseScorer_Tally Kino_PhraseScorer_Tally
   #define PhraseScorer_Skip_To Kino_PhraseScorer_Skip_To
-  #define PhraseScorer_Score_Batch Kino_PhraseScorer_Score_Batch
+  #define PhraseScorer_Collect Kino_PhraseScorer_Collect
   #define PhraseScorer_Calc_Phrase_Freq Kino_PhraseScorer_Calc_Phrase_Freq
-  #define PHRASESCORER KINO_PHRASESCORER
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_PHRASESCORER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_Similarity * sim; \
-    struct kino_ByteBuf * raw_prox_bb; \
-    kino_u32_t * prox; \
-    kino_u32_t  num_prox; \
-    kino_u32_t  doc_num; \
-    kino_u32_t  slop; \
-    kino_u32_t  num_elements; \
-    struct kino_TermDocs ** term_docs; \
-    kino_u32_t * phrase_offsets; \
+    chy_u32_t  doc_num; \
+    chy_u32_t  slop; \
+    chy_u32_t  num_elements; \
+    struct kino_Tally * tally; \
+    struct kino_PostingList ** plists; \
+    chy_u32_t * phrase_offsets; \
     struct kino_ByteBuf * anchor_set; \
+    struct kino_ByteBuf * raw_prox_bb; \
     float  phrase_freq; \
     float  phrase_boost; \
+    void * weight_ref; \
     float  weight_value; \
-    kino_bool_t  first_time; \
-    kino_bool_t  more
-
+    chy_bool_t  first_time; \
+    chy_bool_t  more
 
 #ifdef KINO_WANT_PHRASESCORER_VTABLE
 KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER = {
@@ -155,17 +157,22 @@ KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER = {
     (kino_Obj_serialize_t)kino_Obj_serialize,
     (kino_Scorer_next_t)kino_PhraseScorer_next,
     (kino_Scorer_doc_t)kino_PhraseScorer_doc,
-    (kino_Scorer_score_t)kino_PhraseScorer_score,
+    (kino_Scorer_tally_t)kino_PhraseScorer_tally,
     (kino_Scorer_skip_to_t)kino_PhraseScorer_skip_to,
-    (kino_Scorer_score_batch_t)kino_Scorer_score_batch,
+    (kino_Scorer_collect_t)kino_Scorer_collect,
     (kino_PhraseScorer_calc_phrase_freq_t)kino_PhraseScorer_calc_phrase_freq
 };
 #endif /* KINO_WANT_PHRASESCORER_VTABLE */
 
+#undef KINO_PHRASESCORER_BOILERPLATE
+
+
 #endif /* R_KINO_PHRASESCORER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

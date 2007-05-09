@@ -10,66 +10,68 @@
 
  ***********************************************/
 
-#ifndef R_KINO_POSTWRITER
-#define R_KINO_POSTWRITER 1
+
+
+#ifndef R_KINO_POSTINGSWRITER
+#define R_KINO_POSTINGSWRITER 1
 
 #include "KinoSearch/Index/PostingsWriter.h"
+
+#define KINO_POSTINGSWRITER_BOILERPLATE
 
 typedef void
 (*kino_PostWriter_destroy_t)(kino_PostingsWriter *self);
 
 typedef void
-(*kino_PostWriter_write_postings_t)(kino_PostingsWriter *self,
-                               struct kino_TermListWriter *tl_writer);
-
-typedef void
 (*kino_PostWriter_add_batch_t)(kino_PostingsWriter *self, 
                           struct kino_TokenBatch *batch, 
                           const struct kino_ByteBuf *field_name,
-                          kino_i32_t doc_num, 
+                          chy_i32_t doc_num, 
                           float doc_boost, 
                           float length_norm);
 
 typedef void
-(*kino_PostWriter_add_segment_t)(kino_PostingsWriter *self, 
-                            struct kino_TermListReader* tl_reader, 
-                            struct kino_SegTermDocs *term_docs, 
-                            struct kino_IntMap *doc_map,
-                            struct kino_IntMap *field_num_map);
+(*kino_PostWriter_add_seg_data_t)(kino_PostingsWriter *self, 
+                            struct kino_Folder  *other_folder,
+                            struct kino_SegInfo *other_seg_info,
+                            struct kino_IntMap  *doc_map);
 
-#define Kino_PostWriter_Clone(_self) \
-    kino_Obj_clone((kino_Obj*)_self)
+typedef void
+(*kino_PostWriter_finish_t)(kino_PostingsWriter *self);
 
-#define Kino_PostWriter_Destroy(_self) \
-    kino_PostWriter_destroy((kino_PostingsWriter*)_self)
+#define Kino_PostWriter_Clone(self) \
+    kino_Obj_clone((kino_Obj*)self)
 
-#define Kino_PostWriter_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_PostWriter_Destroy(self) \
+    kino_PostWriter_destroy((kino_PostingsWriter*)self)
 
-#define Kino_PostWriter_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_PostWriter_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_PostWriter_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_PostWriter_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_PostWriter_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_PostWriter_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_PostWriter_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_PostWriter_To_String(self) \
+    kino_Obj_to_string((kino_Obj*)self)
 
-#define Kino_PostWriter_Write_Postings(_self, _arg1) \
-    kino_PostWriter_write_postings((kino_PostingsWriter*)_self, _arg1)
+#define Kino_PostWriter_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_PostWriter_Add_Batch(_self, _arg1, _arg2, _arg3, _arg4, _arg5) \
-    kino_PostWriter_add_batch((kino_PostingsWriter*)_self, _arg1, _arg2, _arg3, _arg4, _arg5)
+#define Kino_PostWriter_Add_Batch(self, batch, field_name, doc_num, doc_boost, length_norm) \
+    kino_PostWriter_add_batch((kino_PostingsWriter*)self, batch, field_name, doc_num, doc_boost, length_norm)
 
-#define Kino_PostWriter_Add_Segment(_self, _arg1, _arg2, _arg3, _arg4) \
-    kino_PostWriter_add_segment((kino_PostingsWriter*)_self, _arg1, _arg2, _arg3, _arg4)
+#define Kino_PostWriter_Add_Seg_Data(self, other_folder, other_seg_info, doc_map) \
+    kino_PostWriter_add_seg_data((kino_PostingsWriter*)self, other_folder, other_seg_info, doc_map)
+
+#define Kino_PostWriter_Finish(self) \
+    kino_PostWriter_finish((kino_PostingsWriter*)self)
 
 struct KINO_POSTINGSWRITER_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -79,9 +81,9 @@ struct KINO_POSTINGSWRITER_VTABLE {
     kino_Obj_is_a_t is_a;
     kino_Obj_to_string_t to_string;
     kino_Obj_serialize_t serialize;
-    kino_PostWriter_write_postings_t write_postings;
     kino_PostWriter_add_batch_t add_batch;
-    kino_PostWriter_add_segment_t add_segment;
+    kino_PostWriter_add_seg_data_t add_seg_data;
+    kino_PostWriter_finish_t finish;
 };
 
 extern KINO_POSTINGSWRITER_VTABLE KINO_POSTINGSWRITER;
@@ -92,12 +94,12 @@ extern KINO_POSTINGSWRITER_VTABLE KINO_POSTINGSWRITER;
   #define PostWriter_new kino_PostWriter_new
   #define PostWriter_destroy_t kino_PostWriter_destroy_t
   #define PostWriter_destroy kino_PostWriter_destroy
-  #define PostWriter_write_postings_t kino_PostWriter_write_postings_t
-  #define PostWriter_write_postings kino_PostWriter_write_postings
   #define PostWriter_add_batch_t kino_PostWriter_add_batch_t
   #define PostWriter_add_batch kino_PostWriter_add_batch
-  #define PostWriter_add_segment_t kino_PostWriter_add_segment_t
-  #define PostWriter_add_segment kino_PostWriter_add_segment
+  #define PostWriter_add_seg_data_t kino_PostWriter_add_seg_data_t
+  #define PostWriter_add_seg_data kino_PostWriter_add_seg_data
+  #define PostWriter_finish_t kino_PostWriter_finish_t
+  #define PostWriter_finish kino_PostWriter_finish
   #define PostWriter_Clone Kino_PostWriter_Clone
   #define PostWriter_Destroy Kino_PostWriter_Destroy
   #define PostWriter_Equals Kino_PostWriter_Equals
@@ -105,18 +107,28 @@ extern KINO_POSTINGSWRITER_VTABLE KINO_POSTINGSWRITER;
   #define PostWriter_Is_A Kino_PostWriter_Is_A
   #define PostWriter_To_String Kino_PostWriter_To_String
   #define PostWriter_Serialize Kino_PostWriter_Serialize
-  #define PostWriter_Write_Postings Kino_PostWriter_Write_Postings
   #define PostWriter_Add_Batch Kino_PostWriter_Add_Batch
-  #define PostWriter_Add_Segment Kino_PostWriter_Add_Segment
-  #define POSTINGSWRITER KINO_POSTINGSWRITER
+  #define PostWriter_Add_Seg_Data Kino_PostWriter_Add_Seg_Data
+  #define PostWriter_Finish Kino_PostWriter_Finish
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_POSTINGSWRITER_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_InvIndex * invindex; \
     struct kino_SegInfo * seg_info; \
-    struct kino_SortExternal * sort_pool
-
+    struct kino_LexWriter * lex_writer; \
+    struct kino_PreSorter * pre_sorter; \
+    struct kino_VArray * post_pools; \
+    struct kino_MemoryPool * mem_pool; \
+    struct kino_SkipStepper * skip_stepper; \
+    struct kino_ByteBuf * lex_tempname; \
+    struct kino_ByteBuf * post_tempname; \
+    struct kino_OutStream * lex_outstream; \
+    struct kino_OutStream * post_outstream; \
+    struct kino_OutStream * skip_stream; \
+    struct kino_InStream * lex_instream; \
+    struct kino_InStream * post_instream; \
+    chy_u32_t  mem_thresh
 
 #ifdef KINO_WANT_POSTINGSWRITER_VTABLE
 KINO_POSTINGSWRITER_VTABLE KINO_POSTINGSWRITER = {
@@ -131,16 +143,21 @@ KINO_POSTINGSWRITER_VTABLE KINO_POSTINGSWRITER = {
     (kino_Obj_is_a_t)kino_Obj_is_a,
     (kino_Obj_to_string_t)kino_Obj_to_string,
     (kino_Obj_serialize_t)kino_Obj_serialize,
-    (kino_PostWriter_write_postings_t)kino_PostWriter_write_postings,
     (kino_PostWriter_add_batch_t)kino_PostWriter_add_batch,
-    (kino_PostWriter_add_segment_t)kino_PostWriter_add_segment
+    (kino_PostWriter_add_seg_data_t)kino_PostWriter_add_seg_data,
+    (kino_PostWriter_finish_t)kino_PostWriter_finish
 };
 #endif /* KINO_WANT_POSTINGSWRITER_VTABLE */
 
-#endif /* R_KINO_POSTWRITER */
+#undef KINO_POSTINGSWRITER_BOILERPLATE
+
+
+#endif /* R_KINO_POSTINGSWRITER */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

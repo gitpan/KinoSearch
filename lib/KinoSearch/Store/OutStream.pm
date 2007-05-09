@@ -18,7 +18,7 @@ new(class, file_des)
     const classname_char *class;
     kino_FileDes *file_des;
 CODE:
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_OutStream_new(file_des);
 OUTPUT: RETVAL
 
@@ -38,12 +38,12 @@ PPCODE:
 void
 sseek(self, target)
     kino_OutStream *self;
-    kino_u64_t      target;
+    chy_u64_t       target;
 PPCODE:
     Kino_OutStream_SSeek(self, target);
 
 
-kino_u64_t
+chy_u64_t
 stell(self)
     kino_OutStream *self;
 CODE:
@@ -51,7 +51,7 @@ CODE:
 OUTPUT: RETVAL
 
 
-kino_u64_t
+chy_u64_t
 slength(self)
     kino_OutStream *self;
 CODE:
@@ -116,8 +116,8 @@ PPCODE:
     int         repeat_count = 0; /* number of times to repeat sym */
     int         item_count   = 2; /* num elements in @_ processed */
     char        sym = '\0';       /* the current symbol in the template */
-    kino_i32_t  aI32;
-    kino_u32_t  aU32;
+    chy_i32_t   aI32;
+    chy_u32_t   aU32;
     SV         *aSV;
     char       *string;
     STRLEN      string_len;
@@ -214,7 +214,7 @@ PPCODE:
 
         case 'i': /* signed 32-bit integer */
             aI32 = SvIV( ST(item_count) );
-            Kino_OutStream_Write_Int(self, (kino_u32_t)aI32);
+            Kino_OutStream_Write_Int(self, (chy_u32_t)aI32);
             break;
             
 

@@ -67,16 +67,12 @@ chaz_DirSep_run(void)
     remove("_charm_test_dir_mod");
 
     if (dir_sep_is_valid) {
-        append_conf( "#define %sDIR_SEP \"%s\"\n",
-            macro_prefix, dir_sep
-        );
+        append_conf("#define CHY_DIR_SEP \"%s\"\n", dir_sep);
 
         /* shorten */
-        if (want_short_names) {
-            START_SHORT_NAMES;
-            shorten_macro("DIR_SEP");
-            END_SHORT_NAMES;
-        }
+        START_SHORT_NAMES;
+        shorten_macro("DIR_SEP");
+        END_SHORT_NAMES;
     }
 
     END_RUN;

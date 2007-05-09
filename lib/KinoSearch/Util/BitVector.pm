@@ -5,12 +5,10 @@ package KinoSearch::Util::BitVector;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params
-        capacity => 0,
-    );
-}
+our %instance_vars = (
+    # constructor params
+    capacity => 0,
+);
 
 1;
 
@@ -27,17 +25,17 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Util::BitVector::instance_vars");
-    kino_u32_t capacity = extract_uv(args_hash, SNL("capacity"));
+    chy_u32_t capacity = extract_uv(args_hash, SNL("capacity"));
 
     /* build object */
     RETVAL = kino_BitVec_new(capacity);
 }
 OUTPUT: RETVAL
 
-kino_bool_t
+chy_bool_t
 get(self, num)
     kino_BitVector  *self;
-    kino_u32_t       num;
+    chy_u32_t        num;
 CODE:
     RETVAL = Kino_BitVec_Get(self, num);
 OUTPUT: RETVAL
@@ -50,7 +48,7 @@ PPCODE:
 {
     I32 i;
     for (i = 1; i < items; i++) {
-        const kino_u32_t num = (kino_u32_t)( SvUV( ST(i) ) );
+        const chy_u32_t num = (chy_u32_t)( SvUV( ST(i) ) );
         Kino_BitVec_Set(self, num);
     }
 }
@@ -58,19 +56,55 @@ PPCODE:
 
 void
 clear(self, num)
-    kino_BitVector  *self;
-    kino_u32_t  num;
+    kino_BitVector *self;
+    chy_u32_t       num;
 PPCODE:
     Kino_BitVec_Clear(self, num);
 
 void
-logical_and(self, other)
+flip(self, num)
+    kino_BitVector *self;
+    chy_u32_t       num;
+PPCODE:
+    Kino_BitVec_Flip(self, num);
+
+void
+flip_range(self, from_tick, to_tick)
+    kino_BitVector *self;
+    chy_u32_t       from_tick;
+    chy_u32_t       to_tick;
+PPCODE:
+    Kino_BitVec_Flip_Range(self, from_tick, to_tick);
+
+void
+AND(self, other)
     kino_BitVector *self;
     kino_BitVector *other;
 PPCODE:
-    Kino_BitVec_Logical_And(self, other);
+    Kino_BitVec_And(self, other);
 
-kino_u32_t
+void
+OR(self, other)
+    kino_BitVector *self;
+    kino_BitVector *other;
+PPCODE:
+    Kino_BitVec_Or(self, other);
+
+void
+XOR(self, other)
+    kino_BitVector *self;
+    kino_BitVector *other;
+PPCODE:
+    Kino_BitVec_Xor(self, other);
+
+void
+AND_NOT(self, other)
+    kino_BitVector *self;
+    kino_BitVector *other;
+PPCODE:
+    Kino_BitVec_And_Not(self, other);
+
+chy_u32_t
 count(self)
     kino_BitVector *self;
 CODE:
@@ -82,10 +116,10 @@ to_arrayref(self)
     kino_BitVector *self;
 PPCODE:
 {
-    AV *const out_av  = newAV();
-    kino_u32_t count  = Kino_BitVec_Count(self);
-    kino_u32_t *array = Kino_BitVec_To_Array(self);
-    kino_u32_t *array_copy = array;
+    AV  *const out_av      = newAV();
+    chy_u32_t  count       = Kino_BitVec_Count(self);
+    chy_u32_t *array       = Kino_BitVec_To_Array(self);
+    chy_u32_t *array_copy  = array;
 
     while (count--) {  
         av_push( out_av, newSViv(*array) );
@@ -101,17 +135,17 @@ void
 _set_or_get(self, ...)
     kino_BitVector *self;
 ALIAS:
-    get_capacity = 2
+    get_cap      = 2 
     get_bits     = 4
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
 
-    case 2:  retval = newSVuv(self->capacity);
+    case 2:  retval = newSVuv(self->cap);
              break;
 
     case 4:  {
-                STRLEN len = ceil(self->capacity / 8.0);
+                STRLEN len = ceil(self->cap / 8.0);
                 retval = newSVpv((char*)self->bits, len);
              }
              break;
@@ -122,7 +156,7 @@ PPCODE:
 void
 _grow(self, size)
     kino_BitVector *self;
-    kino_u32_t size;
+    chy_u32_t size;
 PPCODE:
     Kino_BitVec_Grow(self, size);
 

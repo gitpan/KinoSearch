@@ -5,14 +5,13 @@ package KinoSearch::Index::PostingsWriter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        #constructor params / members
-        invindex => undef,
-        seg_info => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    #constructor params / members
+    invindex   => undef,
+    seg_info   => undef,
+    pre_sorter => undef,
+    mem_thresh => 0x1000000,    # 16 MiB
+);
 
 our %add_batch_vars = (
     token_batch => undef,
@@ -22,48 +21,30 @@ our %add_batch_vars = (
     length_norm => undef,
 );
 
-use KinoSearch::Index::IndexFileNames qw( POSTING_LIST_FORMAT );
 use KinoSearch::Index::TermInfo;
-use KinoSearch::Index::TermListWriter;
-use KinoSearch::Util::SortExternal;
+use KinoSearch::Index::LexWriter;
 
-# Bulk add all the postings in a segment to the sort pool.
-sub add_segment {
-    my ( $self, $seg_reader, $doc_map, $field_num_map ) = @_;
-    my $tl_reader = $seg_reader->get_tl_reader;
-    my $term_docs = $seg_reader->term_docs;
-    $self->_add_segment( $tl_reader, $term_docs, $doc_map, $field_num_map );
-}
+sub new {
+    my $ignore = shift;
+    confess kerror unless verify_args( \%instance_vars, @_ );
+    our %args = ( %instance_vars, @_ );
+    my ( $invindex, $seg_info ) = @args{qw( invindex seg_info )};
 
-=for comment
-
-Process all the postings in the sort pool.  Generate the freqs and positions
-files.  Hand off data to TermListWriter for the generating the term
-dictionaries.
-
-=cut
-
-sub write_postings {
-    my ( $self, $segment_metadata ) = @_;
-
-    # sort the serialized postings
-    my $sort_pool = $self->_get_sort_pool;
-    $sort_pool->sort_all;
-
-    # get a TermListWriter and write postings
-    my $tl_writer = KinoSearch::Index::TermListWriter->new(
-        invindex => $self->_get_invindex,
-        seg_info => $self->_get_seg_info,
+    my $lex_writer = KinoSearch::Index::LexWriter->new(
+        invindex => $invindex,
+        seg_info => $seg_info,
     );
-    $self->_write_postings($tl_writer);
-    $tl_writer->finish;
+
+    return _new( $invindex, $seg_info, $lex_writer,
+        @args{qw( pre_sorter mem_thresh )} );
 }
 
-sub finish {
-    my $self = shift;
-    my %metadata = ( format => POSTING_LIST_FORMAT );
-    $self->_get_seg_info->add_metadata( 'posting_list', \%metadata );
-    $self->_get_sort_pool()->close;
+# Bulk add all terms and postings in a segment.
+sub add_segment {
+    my ( $self, $seg_reader, $doc_map ) = @_;
+    my $other_seg_info = $seg_reader->get_seg_info;
+    my $other_folder   = $seg_reader->get_comp_file_reader;
+    $self->_add_seg_data( $other_folder, $other_seg_info, $doc_map );
 }
 
 1;
@@ -75,18 +56,19 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::PostingsWriter      
 
 kino_PostingsWriter*
-new(...)
+_new(invindex, seg_info, lex_writer, pre_sorter_sv, mem_thresh)
+    kino_InvIndex *invindex;
+    kino_SegInfo  *seg_info;
+    kino_LexWriter *lex_writer;
+    SV *pre_sorter_sv;
+    chy_u32_t mem_thresh;
 CODE:
 {
-    /* parse params */
-    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Index::PostingsWriter::instance_vars");
-    kino_InvIndex *invindex = (kino_InvIndex*)extract_obj(
-        args_hash, SNL("invindex"), "KinoSearch::InvIndex");
-    kino_SegInfo *seg_info = (kino_SegInfo*)extract_obj(
-        args_hash, SNL("seg_info"), "KinoSearch::Index::SegInfo");
-
-    RETVAL = kino_PostWriter_new(invindex, seg_info);
+    kino_PreSorter *pre_sorter = NULL;
+    MAYBE_EXTRACT_STRUCT(pre_sorter_sv, pre_sorter, kino_PreSorter*, 
+        "KinoSearch::Index::PreSorter");
+    RETVAL = kino_PostWriter_new(invindex, seg_info, lex_writer, 
+        pre_sorter, mem_thresh);
 }
 OUTPUT: RETVAL
 
@@ -94,32 +76,20 @@ void
 _set_or_get(self, ...)
     kino_PostingsWriter *self;
 ALIAS:
-    _get_sort_pool = 2
-    _get_invindex  = 4
-    _get_seg_info  = 6
+    _get_invindex  = 2
+    _get_seg_info  = 4
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
 
-    case 2:  retval = kobj_to_pobj(self->sort_pool);
+    case 2:  retval = kobj_to_pobj(self->invindex);
              break;
 
-    case 4:  retval = kobj_to_pobj(self->invindex);
-             break;
-
-    case 6:  retval = kobj_to_pobj(self->seg_info);
+    case 4:  retval = kobj_to_pobj(self->seg_info);
              break;
     
     END_SET_OR_GET_SWITCH
 }
-
-
-void
-_write_postings (self, tl_writer)
-    kino_PostingsWriter  *self;
-    kino_TermListWriter *tl_writer;
-PPCODE:
-    Kino_PostWriter_Write_Postings(self, tl_writer);
 
 =for comment
 
@@ -136,7 +106,7 @@ PPCODE:
         "KinoSearch::Index::PostingsWriter::add_batch_vars");
     kino_TokenBatch *batch = (kino_TokenBatch*)extract_obj( args_hash, 
         SNL("token_batch"), "KinoSearch::Analysis::TokenBatch");
-    kino_i32_t doc_num     = extract_iv( args_hash, SNL("doc_num") );
+    chy_i32_t  doc_num     = extract_iv( args_hash, SNL("doc_num") );
     float      doc_boost   = extract_nv( args_hash, SNL("doc_boost") );
     float      length_norm = extract_nv( args_hash, SNL("length_norm") );
     SV *field_name_sv      = extract_sv( args_hash, SNL("field_name") );
@@ -149,20 +119,19 @@ PPCODE:
 }
 
 void
-_add_segment(self, tl_reader, term_docs, doc_map, field_num_map_sv)
+_add_seg_data(self, other_folder, other_seg_info, doc_map)
     kino_PostingsWriter *self;
-    kino_TermListReader *tl_reader;
-    kino_SegTermDocs *term_docs;
-    kino_IntMap   *doc_map;
-    SV *field_num_map_sv;
+    kino_Folder         *other_folder;
+    kino_SegInfo        *other_seg_info;
+    kino_IntMap         *doc_map;
 PPCODE:
-{
-    kino_IntMap *field_num_map = NULL;
-    MAYBE_EXTRACT_STRUCT(field_num_map_sv, field_num_map, kino_IntMap*,
-        "KinoSearch::Util::IntMap");
-    Kino_PostWriter_Add_Segment(self, tl_reader, term_docs, doc_map,
-        field_num_map);
-}
+    Kino_PostWriter_Add_Seg_Data(self, other_folder, other_seg_info, doc_map);
+
+void
+finish(self)
+    kino_PostingsWriter *self;
+PPCODE:
+    Kino_PostWriter_Finish(self);
 
 __POD__
 
@@ -175,7 +144,7 @@ KinoSearch::Index::PostingsWriter - Write postings data to an InvIndex.
 =head1 DESCRIPTION
 
 PostingsWriter creates posting lists.  It writes the frequency and and
-positional data files, plus feeds data to TermListWriter.
+positional data files, plus feeds data to LexWriter.
 
 =head1 COPYRIGHT
 
@@ -187,4 +156,3 @@ See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut
-

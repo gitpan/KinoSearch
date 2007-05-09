@@ -10,38 +10,42 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_INVINDEX
 #define R_KINO_INVINDEX 1
 
 #include "KinoSearch/InvIndex.h"
 
+#define KINO_INVINDEX_BOILERPLATE
+
 typedef void
 (*kino_InvIndex_destroy_t)(kino_InvIndex *self);
 
-#define Kino_InvIndex_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_InvIndex_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_InvIndex_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_InvIndex_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_InvIndex_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_InvIndex_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_InvIndex_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_InvIndex_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_InvIndex_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_InvIndex_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_InvIndex_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_InvIndex_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_InvIndex_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_InvIndex_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_INVINDEX_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -67,14 +71,12 @@ extern KINO_INVINDEX_VTABLE KINO_INVINDEX;
   #define InvIndex_Is_A Kino_InvIndex_Is_A
   #define InvIndex_To_String Kino_InvIndex_To_String
   #define InvIndex_Serialize Kino_InvIndex_Serialize
-  #define INVINDEX KINO_INVINDEX
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_INVINDEX_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_Schema * schema; \
     struct kino_Folder * folder
-
 
 #ifdef KINO_WANT_INVINDEX_VTABLE
 KINO_INVINDEX_VTABLE KINO_INVINDEX = {
@@ -92,10 +94,15 @@ KINO_INVINDEX_VTABLE KINO_INVINDEX = {
 };
 #endif /* KINO_WANT_INVINDEX_VTABLE */
 
+#undef KINO_INVINDEX_BOILERPLATE
+
+
 #endif /* R_KINO_INVINDEX */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

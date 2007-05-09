@@ -5,19 +5,32 @@ package KinoSearch::Index::MultiReader;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::IndexReader );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # params / members
-        sub_readers => [],
-        # members
-        starts  => [],
-        max_doc => 0,
-    );
-}
+our %instance_vars = (
+    # inherited params / members
+    invindex     => undef,
+    seg_infos    => undef,
+    lock_factory => undef,
+
+    # params / members
+    sub_readers => [],
+
+    # inherited members
+    sort_caches => {},
+    lex_caches  => {},
+    read_lock   => undef,
+    commit_lock => undef,
+
+    # members
+    max_doc => 0,
+    starts  => [],
+);
 
 use KinoSearch::Index::SegReader;
-use KinoSearch::Index::MultiTermDocs;
-use KinoSearch::Index::MultiTermList;
+use KinoSearch::Index::MultiPostingList;
+use KinoSearch::Index::MultiPostingList;
+use KinoSearch::Index::MultiLexicon;
+use KinoSearch::Util::VArray;
+use KinoSearch::Util::Int;
 
 # use KinoSearch::Util::Class's new()
 # Note: can't inherit IndexReader's new() without recursion problems
@@ -52,36 +65,50 @@ sub num_docs {
     return $num_docs;
 }
 
-sub field_terms {
+sub look_up_term {
     my ( $self, $term ) = @_;
     return unless defined $term;
-    my $term_list = $self->start_field_terms( $term->get_field );
-    $term_list->seek($term);
-    return $term_list;
+    my $lexicon = $self->look_up_field( $term->get_field );
+    $lexicon->seek($term);
+    return $lexicon;
 }
 
-sub start_field_terms {
+sub look_up_field {
     my ( $self, $field ) = @_;
     return unless defined $field;
     my $fspec = $self->{invindex}->get_schema->fetch_fspec($field);
     return unless ( defined $fspec and $fspec->indexed );
-    my $term_list = KinoSearch::Index::MultiTermList->new(
+    my $lexicon = KinoSearch::Index::MultiLexicon->new(
         sub_readers => $self->{sub_readers},
         field       => $field,
-        tl_cache    => $self->{tl_caches}{$field},
+        lex_cache   => $self->{lex_caches}{$field},
     );
-    return $term_list;
+    return $lexicon;
 }
 
-sub term_docs {
-    my ( $self, $term ) = @_;
+sub posting_list {
+    my $self = shift;
+    confess kerror()
+        unless verify_args( { term => undef, field => undef, }, @_ );
+    my %args = @_;
 
-    my $term_docs = KinoSearch::Index::MultiTermDocs->new(
+    # only return an object if we've got an indexed field
+    my ( $field, $term ) = @args{qw( field term )};
+    return unless ( defined $field or defined $term );
+    $field = $term->get_field unless defined $field;
+    my $fspec = $self->{invindex}->get_schema->fetch_fspec($field);
+    return unless defined $fspec;
+    return unless $fspec->indexed;
+
+    # create a PostingList and seek it if a Term was supplied
+    my $plist = KinoSearch::Index::MultiPostingList->new(
         sub_readers => $self->{sub_readers},
-        starts      => $self->{starts},
+        starts      => $self->get_seg_starts,
+        field       => $field,
     );
-    $term_docs->seek($term);
-    return $term_docs;
+    $plist->seek($term) if defined $term;
+
+    return $plist;
 }
 
 sub doc_freq {
@@ -180,9 +207,20 @@ sub fibonacci {
     return $result;
 }
 
+sub get_seg_starts {
+    my $self       = shift;
+    my $num_starts = scalar @{ $self->{starts} };
+    my $starts     = KinoSearch::Util::VArray->new( capacity => $num_starts );
+    for my $start ( @{ $self->{starts} } ) {
+        $starts->push( KinoSearch::Util::Int->new($start) );
+    }
+    return $starts;
+}
+
 sub close {
     my $self = shift;
     $_->close for @{ $self->{sub_readers} };
+    $self->SUPER::close;
 }
 
 1;

@@ -5,12 +5,11 @@ package KinoSearch::Search::BooleanClause;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        occur => 'SHOULD',
-        query => undef,
-    );
-}
+our %instance_vars = (
+    # params / members
+    occur => 'SHOULD',
+    query => undef,
+);
 
 sub init_instance {
     my $self = shift;

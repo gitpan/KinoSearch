@@ -5,21 +5,20 @@ package KinoSearch::QueryParser::QueryParser;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args / members
-        schema         => undef,
-        default_boolop => 'OR',
-        fields         => undef,
-        analyzer       => undef,
-        # members
-        bool_groups   => {},
-        phrases       => {},
-        bool_group_re => undef,
-        phrase_re     => undef,
-        label_inc     => 0,
-    );
-}
+our %instance_vars = (
+    # constructor params / members
+    schema         => undef,
+    default_boolop => 'OR',
+    fields         => undef,
+    analyzer       => undef,
+
+    # members
+    bool_groups   => {},
+    phrases       => {},
+    bool_group_re => undef,
+    phrase_re     => undef,
+    label_inc     => 0,
+);
 
 use KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Analysis::Tokenizer;

@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_SEGINFO_VTABLE
@@ -152,50 +151,6 @@ SegInfo_field_num(SegInfo *self, const ByteBuf *field_name)
             return -1;
         return num->value;
     }
-}
-
-IntMap*
-SegInfo_generate_field_num_map(SegInfo *self, SegInfo *other)
-{
-    IntMap *map = NULL;
-    u32_t my_num_fields    = self->by_num->size;
-    u32_t their_num_fields = other->by_num->size;
-    bool_t must_build      = false;
-
-
-    /* don't build the map unless field lists differ */
-    if (their_num_fields != my_num_fields) {
-        must_build = true;
-    }
-    else {
-        u32_t i;
-        VArray *my_by_num     = self->by_num;
-        VArray *their_by_num  = other->by_num;
-        for (i = 0; i < my_num_fields; i++) {
-            ByteBuf *my_field_name = (ByteBuf*)VA_Fetch(my_by_num, i);
-            ByteBuf *their_field_name = (ByteBuf*)VA_Fetch(their_by_num, i);
-            if (!BB_Equals(my_field_name, (Obj*)their_field_name)) {
-                must_build = true;
-                break;
-            }
-        }
-    }
-
-    if (must_build) {
-        u32_t i;
-        i32_t *ints = MALLOCATE(their_num_fields, i32_t);
-
-        /* map from other's fields to mine */
-        for (i = 0; i < their_num_fields; i++) {
-            ByteBuf *field_name = (ByteBuf*)VA_Fetch(other->by_num, i);
-            const i32_t new_num = SegInfo_Field_Num(self, field_name);
-            ints[i] = new_num;
-        }
-
-        map = IntMap_new(ints, their_num_fields);
-    }
-
-    return map;
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

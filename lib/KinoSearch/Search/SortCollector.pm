@@ -5,13 +5,11 @@ package KinoSearch::Search::SortCollector;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::TopDocCollector );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        collator => undef,
-        size     => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # params
+    collator => undef,
+    size     => undef,
+);
 
 use KinoSearch::Search::SortedHitQueue;
 
@@ -29,7 +27,7 @@ CODE:
 {
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Search::SortCollector::instance_vars");
-    kino_u32_t size = extract_uv(args_hash, SNL("size"));
+    chy_u32_t size = extract_uv(args_hash, SNL("size"));
     kino_FieldDocCollator *collator = extract_obj(args_hash, SNL("collator"),
         "KinoSearch::Search::FieldDocCollator");
     RETVAL = kino_SortColl_new(collator, size);;

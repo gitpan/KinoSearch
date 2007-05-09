@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_TOKENBATCH_VTABLE
@@ -108,7 +107,7 @@ TokenBatch_invert(TokenBatch *self)
 {
     Token **tokens = (Token**)self->elems;
     Token **limit  = tokens + self->size;
-    kino_i32_t     token_pos = 0;
+    i32_t   token_pos = 0;
 
     /* thwart future attempts to append */
     if (self->inverted)

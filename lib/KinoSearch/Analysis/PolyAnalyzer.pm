@@ -5,13 +5,13 @@ package KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        analyzers => undef,
-        language  => undef,
-    );
-}
+our %instance_vars = (
+    # inherited
+    language => '',
+
+    # constructor params / members
+    analyzers => undef,
+);
 
 use KinoSearch::Analysis::LCNormalizer;
 use KinoSearch::Analysis::Tokenizer;
@@ -33,13 +33,32 @@ sub init_instance {
     }
 }
 
-sub analyze {
+sub analyze_batch {
     my ( $self, $token_batch ) = @_;
 
-    # iterate through each of the anayzers in order
-    $token_batch = $_->analyze($token_batch) for @{ $self->{analyzers} };
+    # iterate through each of the analyzers in order
+    $token_batch = $_->analyze_batch($token_batch)
+        for @{ $self->{analyzers} };
 
     return $token_batch;
+}
+
+sub analyze_text {
+    my $self      = $_[0];
+    my $analyzers = $self->{analyzers};
+
+    if ( !@$analyzers ) {
+        return KinoSearch::Analysis::TokenBatch->new( text => $_[1] );
+    }
+    elsif ( @$analyzers == 1 ) {
+        return $analyzers->[0]->analyze_text( $_[1] );
+    }
+    else {
+        my $batch = $analyzers->[0]->analyze_text( $_[1] );
+        $batch = $_->analyze_batch($batch)
+            for @{$analyzers}[ 1 .. $#$analyzers ];
+        return $batch;
+    }
 }
 
 1;
@@ -129,4 +148,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

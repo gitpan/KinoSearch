@@ -1,410 +1,308 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_SORTEXTERNAL_VTABLE
 #include "KinoSearch/Util/SortExternal.r"
 
-#include "KinoSearch/InvIndex.r"
-#include "KinoSearch/Index/SegInfo.r"
-#include "KinoSearch/Store/InStream.r"
-#include "KinoSearch/Store/Folder.r"
-#include "KinoSearch/Store/OutStream.r"
+#include "KinoSearch/Util/SortExRun.r"
 
-#define SortExRun kino_SortExRun
-struct SortExRun {
-    u64_t  start;
-    u64_t  file_pos;
-    u64_t  end;
-    struct ByteBuf **cache;
-    u32_t   cache_cap;
-    u32_t   cache_elems;
-    u32_t   cache_pos;
-    u32_t   slice_size;
-};
-
-/* Create a new SortExRun object.
- */
-static SortExRun*
-new_run(u64_t start, u64_t end);
-
-/* Destructor for a SortexRun.
- */
-static void
-destroy_run(SortExRun *run);
-    
-/* Allocate more memory to an array of pointers to pointers to ByteBufs, if
+/* Allocate more memory to an array of pointers to pointers to Objs, if
  * the current allocation isn't sufficient.
  */
 static void
-grow_bufbuf(ByteBuf ***bb_buf, u32_t current, u32_t desired);
-
-/* Recover sorted items from disk, up to the allowable memory limit. 
- */
-static u32_t 
-refill_run(SortExternal* self, SortExRun *run);
+grow_obj_buf(Obj ***bb_buf, u32_t current, u32_t desired);
 
 /* Refill the main cache, drawing from the caches of all runs.
  */
 static void
 refill_cache(SortExternal *self);
 
+/* Refill any runs which are currently empty.  Discard runs which are
+ * exhausted.
+ */
+static void
+refill_runs(SortExternal *self);
+
 /* Merge all the items which are "in-range" from all the Runs into the main
  * cache.
  */
 static void 
-merge_runs(SortExternal *self);
+merge_slices(SortExternal *self);
 
 /* Return a pointer to the item in one of the runs' caches which is 
  * the highest in sort order, but which we can guarantee is lower in sort
  * order than any item which has yet to enter a run cache. 
  */
-static ByteBuf*
+static Obj*
 find_endpost(SortExternal *self);
 
-/* Record the number of items in the run's cache which are lexically
- * less than or equal to the endpost.
- */
-static u32_t
-define_slice(SortExRun *run, ByteBuf *endpost);
-
-/* Empty the main cache.
- */
-static void
-clear_cache(SortExternal *self);
-
-/* Empty the cache belonging to a SortExRun.
- */
-static void
-clear_run_cache(SortExRun *run);
-
-#define PER_ITEM_OVERHEAD (sizeof(ByteBuf) + sizeof(ByteBuf*))
-
-SortExternal*
-SortEx_new(InvIndex *invindex, SegInfo *seg_info, u32_t mem_threshold)
+void
+SortEx_init_base(SortExternal *self, u32_t mem_thresh, 
+                 MSort_compare_t compare)
 {
-
-    ByteBuf *sortfile_name;
-    CREATE(self, SortExternal, SORTEXTERNAL);
-
     /* init */
-    self->cache           = MALLOCATE(100, ByteBuf*);
-    self->cache_cap       = 100;
-    self->cache_elems     = 0;
-    self->cache_pos       = 0;
-    self->runs            = MALLOCATE(1, SortExRun*);
+    self->cache           = NULL;
+    self->cache_cap       = 0;
+    self->cache_max       = 0;
+    self->cache_tick      = 0;
+    self->runs            = NULL;
     self->num_runs        = 0;
     self->scratch         = NULL;
     self->scratch_cap     = 0;
-    self->cache_bytes     = 0;
-    self->instream        = NULL;
+    self->consumed        = 0;
+    self->flipped         = false;
+    self->context         = NULL;
 
     /* assign */
-    REFCOUNT_INC(invindex);
-    REFCOUNT_INC(seg_info);
-    self->invindex      = invindex;
-    self->seg_info      = seg_info;
-    self->mem_threshold = mem_threshold == 0 
+    self->compare         = compare;
+    self->mem_thresh      = mem_thresh == 0 
         ? KINO_SORTEX_DEFAULT_MEM_THRESHOLD 
-        : mem_threshold;
-    
-    /* create outstream */
-    sortfile_name = BB_CLONE(seg_info->seg_name);
-    BB_Cat_Str(sortfile_name, ".srt", 4);
-    self->outstream = Folder_Open_OutStream(invindex->folder, sortfile_name); 
-    REFCOUNT_DEC(sortfile_name);
-
-    /* derive */
-    self->run_cache_limit = mem_threshold / 2;
-
-    return self;
+        : mem_thresh;
 }
 
-
-static SortExRun*
-new_run(u64_t start, u64_t end) 
-{
-    SortExRun *run = MALLOCATE(1, SortExRun);
-    
-    /* init */
-    run->cache        = MALLOCATE(100, ByteBuf*);
-    run->cache_cap    = 100;
-    run->cache_elems  = 0;
-    run->cache_pos    = 0;
-    run->slice_size   = 0;
-
-    /* assign */
-    run->start    = start;
-    run->file_pos = start;
-    run->end      = end;
-
-    return run;
-}
 
 void
 SortEx_destroy(SortExternal *self) 
 {
     u32_t i;
     
-    /* free individual members */
-    REFCOUNT_DEC(self->invindex);
-    REFCOUNT_DEC(self->outstream);
-    REFCOUNT_DEC(self->instream);
-    REFCOUNT_DEC(self->seg_info);
-
     /* free the cache and the scratch */
-    clear_cache(self);
+    SortEx_Clear_Cache(self);
     free(self->cache);
     free(self->scratch);
 
     /* free all of the runs and the array that held them */
     for (i = 0; i < self->num_runs; i++) {
-        destroy_run(self->runs[i]);
+        REFCOUNT_DEC(self->runs[i]);
     }
     free(self->runs);
+
+    /* free context */
+    REFCOUNT_DEC(self->context);
 
     /* free me */
     free(self);
 }
 
-static void
-destroy_run(SortExRun *run) 
-{
-    clear_run_cache(run);
-    free(run->cache);
-    free(run);
-}
-
 void
-SortEx_feed(SortExternal* self, char* ptr, u32_t len) 
+SortEx_clear_cache(SortExternal *self) 
 {
-    ByteBuf *const bb = BB_new_str(ptr, len);
-    SortEx_feed_bb(self, bb);
-    REFCOUNT_DEC(bb);
-}
+    Obj **cache  = self->cache + self->cache_tick;
+    Obj **limit  = self->cache + self->cache_max;
 
-void
-SortEx_feed_bb(SortExternal *self, ByteBuf *bb)
-{
-    REFCOUNT_INC(bb);
-
-    /* add room for more cache elements if needed */
-    if (self->cache_elems == self->cache_cap) {
-        /* add 100, plus 10% of the current capacity */
-        self->cache_cap = self->cache_cap + 100 + (self->cache_cap / 8);
-        self->cache = REALLOCATE(self->cache, self->cache_cap, ByteBuf*);
+    /* only blow away items that haven't been released */
+    for ( ;cache < limit; cache++) {
+        REFCOUNT_DEC(*cache);
     }
 
-    self->cache[ self->cache_elems ] = bb;
-    self->cache_elems++;
-        
-    /* track memory consumed */
-    self->cache_bytes += PER_ITEM_OVERHEAD;
-    self->cache_bytes += bb->len + 1;
-
-    /* check if it's time to flush the cache */
-    if (self->cache_bytes >= self->mem_threshold)
-        SortEx_Sort_Run(self);
+    self->consumed    = 0;
+    self->cache_max   = 0;
+    self->cache_tick  = 0;
 }
 
-ByteBuf*
+static void
+grow_obj_buf(Obj ***bb_buf, u32_t current, u32_t desired) 
+{
+    if (current < desired)
+        *bb_buf = REALLOCATE(*bb_buf, desired, Obj*); 
+}
+
+void
+SortEx_feed(SortExternal *self, Obj *obj, u32_t bytes_this_object)
+{
+    REFCOUNT_INC(obj);
+
+    /* add room for more cache elements if needed */
+    if (self->cache_max == self->cache_cap) {
+        /* add 100, plus 10% of the current capacity */
+        self->cache_cap = self->cache_cap + 100 + (self->cache_cap / 8);
+        self->cache = REALLOCATE(self->cache, self->cache_cap, Obj*);
+    }
+
+    self->cache[ self->cache_max ] = obj;
+    self->cache_max++;
+        
+    /* track memory consumed */
+    self->consumed += bytes_this_object;
+
+    /* check if it's time to flush the cache */
+    if (self->consumed >= self->mem_thresh) {
+        SortEx_Flush(self);
+    }
+}
+
+Obj*
 SortEx_fetch(SortExternal *self) 
 {
-    if (self->cache_pos >= self->cache_elems)
+    if (self->cache_tick >= self->cache_max) {
+        if (!self->flipped)
+            CONFESS("Fetch called before Flip");
         refill_cache(self);
+    }
 
-    if (self->cache_elems > 0) {
-        return self->cache[ self->cache_pos++ ];
+    if (self->cache_max > 0) {
+        return self->cache[ self->cache_tick++ ];
     }
     else {
         return NULL;
     }
 }
 
-static void
-grow_bufbuf(ByteBuf ***bb_buf, u32_t current, u32_t desired) 
+
+Obj*
+SortEx_peek(SortExternal *self) 
 {
-    if (current < desired)
-        *bb_buf = REALLOCATE(*bb_buf, desired, ByteBuf*); 
+    if (self->cache_tick >= self->cache_max) {
+        if (!self->flipped)
+            CONFESS("Fetch called before Flip");
+        refill_cache(self);
+    }
+
+    if (self->cache_max > 0) {
+        return self->cache[ self->cache_tick ];
+    }
+    else {
+        return NULL;
+    }
 }
 
 void
 SortEx_sort_cache(SortExternal *self) 
 {
-    grow_bufbuf(&self->scratch, self->scratch_cap, self->cache_elems);
+    grow_obj_buf(&self->scratch, self->scratch_cap, self->cache_max);
     MSort_mergesort(self->cache, self->scratch, 
-        self->cache_elems);
+        self->cache_max, self->compare, self->context);
 }
 
 void
-SortEx_sort_run(SortExternal *self) 
+SortEx_flush(SortExternal *self)
 {
-    OutStream  *outstream = self->outstream;
-    ByteBuf   **cache     = self->cache;
-    ByteBuf   **cache_end = cache + self->cache_elems;
-    u64_t       start, end;
-
-    /* bail if there's nothing in the cache */
-    if (self->cache_bytes == 0)
-        return;
-
-    /* allocate space for a new run */
-    self->num_runs++;
-    self->runs = REALLOCATE(self->runs, self->num_runs, SortExRun*);
-
-    /* mark start of run */
-    start = OutStream_STell(outstream);
-    
-    /* write sorted items to file */
-    SortEx_Sort_Cache(self);
-    for (cache = self->cache; cache < cache_end; cache++) {
-        ByteBuf *const bb = *cache;
-        OutStream_Write_VInt(outstream, bb->len);
-        OutStream_Write_Bytes(outstream, bb->ptr, bb->len);
-    }
-
-    /* clear the cache */
-    clear_cache(self);
-
-    /* mark end of run and build a new SortExRun object */
-    end = OutStream_STell(outstream);
-    self->runs[ self->num_runs - 1 ] = new_run(start, end);
-
-    /* recalculate the size allowed for each run's cache */
-    self->run_cache_limit = (self->mem_threshold / 2) / self->num_runs;
-    self->run_cache_limit = self->run_cache_limit < 65536
-        ? 65536 
-        : self->run_cache_limit;
+    ABSTRACT_DEATH(self, "SortEx_Flush");
 }
 
-static u32_t 
-refill_run(SortExternal* self, SortExRun *run) 
+void
+SortEx_flip(SortExternal *self)
 {
-    InStream *instream        = self->instream;
-    u32_t     run_cache_limit = self->run_cache_limit;
-    u64_t     end             = run->end;
-    u32_t     run_cache_bytes = 0;
-    u32_t     num_elems       = 0; /* number of items recovered */
-    u32_t     len;
-    ByteBuf  *bb;
+    ABSTRACT_DEATH(self, "SortEx_Flip");
+}
 
-    /* see if we actually need to refill */
-    if (run->cache_elems - run->cache_pos)
-        return run->cache_elems - run->cache_pos;
-    else 
-        clear_run_cache(run);
-
-    InStream_SSeek(instream, run->file_pos);
-
-    while (1) {
-        /* bail if we've read everything in this run */
-        if (InStream_STell(instream) >= end) {
-            /* make sure we haven't read too much */
-            if (InStream_STell(instream) > end) {
-                unsigned long pos = (unsigned long)InStream_STell(instream);
-                CONFESS("read past end of run: %lu %lu", pos, 
-                    (unsigned long)end);
-            }
-            break;
-        }
-
-        /* bail if we've hit the ceiling for this run's cache */
-        if (run_cache_bytes > run_cache_limit)
-            break;
-
-        /* retrieve and decode len; allocate a ByteBuf and recover the string */
-        len = InStream_Read_VInt(instream);
-        bb  = BB_new(len);
-        InStream_Read_Bytes(instream, bb->ptr, len);
-        bb->len = len;
-        *BBEND(bb) = '\0';
-
-        /* add to the run's cache */
-        if (num_elems == run->cache_cap) {
-            run->cache_cap = run->cache_cap + 100 + (run->cache_cap / 8);
-            run->cache = REALLOCATE(run->cache, (u32_t)run->cache_cap, ByteBuf*);
-        }
-        run->cache[ num_elems ] = bb;
-
-        /* track how much we've read so far */
-        num_elems++;
-        run_cache_bytes += len + 1 + PER_ITEM_OVERHEAD;
-    }
-
-    /* reset the cache array position and length; remember file pos */
-    run->cache_elems = num_elems;
-    run->cache_pos   = 0;
-    run->file_pos    = InStream_STell(instream);
-
-    return num_elems;
+void
+SortEx_add_run(SortExternal *self, SortExRun *run)
+{
+    self->num_runs++;
+    self->runs = REALLOCATE(self->runs, self->num_runs, SortExRun*);
+    self->runs[ self->num_runs - 1 ] = run;
+    REFCOUNT_INC(run);
 }
 
 static void
 refill_cache(SortExternal *self) 
 {
-    ByteBuf   *endpost;
-    u32_t i = 0;
-    u32_t total = 0;
+    Obj   *endpost;
+    u32_t  i;
+    u32_t  total = 0;
 
     /* free all the existing ByteBufs, as they've been fetched by now */
-    clear_cache(self);
+    SortEx_Clear_Cache(self);
     
+    /* bail if we've exhausted every element in every run */
+    refill_runs(self);
+    if (!self->num_runs)
+        return;
+
+    /* find all items in all runs which can be transferred to the cache */
+    endpost = find_endpost(self);
+    for (i = 0; i < self->num_runs; i++) {
+        total += SortExRun_Prepare_Slice(self->runs[i], endpost);
+    }
+
+    /* make sure we have enough room in both the main cache and the scratch */
+    grow_obj_buf(&self->cache,   self->cache_cap,   total);
+    grow_obj_buf(&self->scratch, self->scratch_cap, total);
+
+    /* absorb the run slices */
+    merge_slices(self);
+    self->cache_max = total;
+}
+
+static Obj*
+find_endpost(SortExternal *self) 
+{
+    const MSort_compare_t compare = self->compare;
+    void *const context           = self->context;
+    Obj        *endpost           = NULL;
+    u32_t       i;
+
+    for (i = 0; i < self->num_runs; i++) {
+        Obj *candidate;
+        /* get a run and retrieve the last item in its cache */
+        SortExRun *const run = self->runs[i];
+        candidate = SortExRun_Peek_Last(run);
+
+        /* if it's the first run, the item is automatically the new endpost */
+        if (i == 0) {
+            endpost = candidate;
+            continue;
+        }
+        /* if it's less than the current endpost, it's the new endpost */
+        else if (compare(context, &candidate, &endpost) < 0) {
+            endpost = candidate;
+        }
+    }
+
+    return endpost;
+}
+
+static void
+refill_runs(SortExternal *self)
+{
+    u32_t i = 0;
+
     /* make sure all runs have at least one item in the cache */
     while (i < self->num_runs) {
         SortExRun *const run = self->runs[i];
-        if (   (run->cache_elems > run->cache_pos)
-            || (refill_run(self, run)) 
-        ) {
+        if (SORTEXRUN_CACHE_COUNT(run) > 0 || SortExRun_Refill(run) > 0) {
+            /* run has some elements, so keep */
             i++;
         }
         else {
-            /* discard empty runs */
-            destroy_run(run);
+            /* splice out empty runs */
+            REFCOUNT_DEC(run);
             self->num_runs--;
             self->runs[i] = self->runs[ self->num_runs ];
             self->runs[ self->num_runs ] = NULL;
         }
     }
-
-    if (!self->num_runs)
-        return;
-
-    /* move as many items as possible into the sorting cache */
-    endpost = find_endpost(self);
-    for (i = 0; i < self->num_runs; i++) {
-        total += define_slice(self->runs[i], endpost);
-    }
-
-    /* make sure we have enough room in both the main cache and the scratch */
-    grow_bufbuf(&self->cache,   self->cache_cap,   total);
-    grow_bufbuf(&self->scratch, self->scratch_cap, total);
-
-    merge_runs(self);
-    self->cache_elems = total;
 }
 
 static void 
-merge_runs(SortExternal *self) 
+merge_slices(SortExternal *self) 
 {
-    ByteBuf  **cache        = self->cache;
-    ByteBuf ***slice_starts = MALLOCATE(self->num_runs, ByteBuf**);
-    u32_t     *slice_sizes  = MALLOCATE( self->num_runs, u32_t);
-    u32_t      i = 0, j = 0, num_slices = 0;
-
+    const MSort_compare_t compare  = self->compare;
+    void *const context            = self->context;
+    Obj       **cache              = self->cache;
+    Obj      ***slice_starts       = MALLOCATE(self->num_runs, Obj**);
+    u32_t      *slice_sizes        = MALLOCATE(self->num_runs, u32_t);
+    u32_t i = 0, j = 0, num_slices = 0;
 
     /* copy all the elements in range into the cache */
     for (i = 0; i < self->num_runs; i++) {
         SortExRun *const run = self->runs[i];
-        const u32_t slice_size  = run->slice_size;
+        u32_t slice_size;
+        Obj **slice = SortExRun_Pop_Slice(run, &slice_size);
+
+        /* skip slices that don't have any elements */
         if (slice_size == 0)
             continue;
 
+        /* copy slice content into our cache and track location */
         slice_sizes[j]  = slice_size;
         slice_starts[j] = cache;
-        memcpy(cache, (run->cache + run->cache_pos), 
-            (slice_size * sizeof(ByteBuf*)) );
+        memcpy(cache, slice, (slice_size * sizeof(Obj*)) );
         
-        run->cache_pos += slice_size;
+        /* advance pointer to interior of cache */
         cache += slice_size;
+
+        /* track number of slices */
         num_slices = ++j;
     }
 
@@ -419,11 +317,12 @@ merge_runs(SortExternal *self)
                 const u32_t slice_size = slice_sizes[i] + slice_sizes[i+1];
 
                 MSort_merge(slice_starts[i], slice_sizes[i],
-                    slice_starts[i+1], slice_sizes[i+1], self->scratch);
+                    slice_starts[i+1], slice_sizes[i+1], self->scratch,
+                    compare, context);
                 slice_sizes[j] = slice_size;
                 slice_starts[j] = slice_starts[i];
                 memcpy(slice_starts[j], self->scratch, 
-                    (slice_size * sizeof(ByteBuf*)) );
+                    (slice_size * sizeof(Obj*)) );
 
                 i += 2;
                 j += 1;
@@ -441,91 +340,6 @@ merge_runs(SortExternal *self)
 
     free(slice_starts);
     free(slice_sizes);
-}
-
-static ByteBuf*
-find_endpost(SortExternal *self) 
-{
-    u32_t  i;
-    ByteBuf    *endpost = NULL;
-
-    for (i = 0; i < self->num_runs; i++) {
-        ByteBuf *candidate;
-        /* get a run and verify no errors */
-        SortExRun *const run = self->runs[i];
-        if (run->cache_pos == run->cache_elems || run->cache_elems < 1)
-            CONFESS("find_endpost encountered an empty run cache");
-
-        /* get the last item in this run's cache */
-        candidate = run->cache[ run->cache_elems - 1 ];
-
-        /* if it's the first run, the item is automatically the new endpost */
-        if (i == 0) {
-            endpost = candidate;
-            continue;
-        }
-        /* if it's less than the current endpost, it's the new endpost */
-        else if (BB_compare(&candidate, &endpost) < 0) {
-            endpost = candidate;
-        }
-    }
-
-    return endpost;
-}
-
-static u32_t
-define_slice(SortExRun *run, ByteBuf *endpost) 
-{
-    /* operate on a slice of the cache */
-    i32_t lo   = run->cache_pos - 1;
-    i32_t hi   = run->cache_elems;
-    ByteBuf **cache = run->cache;
-
-    /* binary search */
-    while (hi - lo > 1) {
-        const i32_t mid   = (lo + hi) / 2;
-        const i32_t delta = BB_compare(&(cache[mid]), &endpost);
-        if (delta > 0) 
-            hi = mid;
-        else
-            lo = mid;
-    }
-
-    run->slice_size = lo == -1 
-        ? 0 
-        : (lo - run->cache_pos) + 1;
-    return run->slice_size;
-}
-
-static void
-clear_cache(SortExternal *self) 
-{
-    ByteBuf **cache     = self->cache + self->cache_pos;
-    ByteBuf **cache_end = self->cache + self->cache_elems;
-
-    /* only blow away items that haven't been released */
-    for ( ;cache < cache_end; cache++) {
-        REFCOUNT_DEC(*cache);
-    }
-
-    self->cache_bytes = 0;
-    self->cache_elems = 0;
-    self->cache_pos   = 0;
-}
-
-static void
-clear_run_cache(SortExRun *run) 
-{
-    ByteBuf **cache     = run->cache + run->cache_pos;
-    ByteBuf **cache_end = run->cache + run->cache_elems;
-
-    /* only destroy items which haven't been passed to the main cache */
-    for ( ;cache < cache_end; cache++) {
-        REFCOUNT_DEC(*cache);
-    }
-
-    run->cache_elems = 0;
-    run->cache_pos   = 0;
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

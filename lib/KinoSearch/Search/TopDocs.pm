@@ -5,13 +5,14 @@ package KinoSearch::Search::TopDocs;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+our %instance_vars = (
+    # constructor args / members
+    total_hits => undef,
+    score_docs => undef,
+    max_score  => undef,
+);
+
 BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args / members
-        total_hits => undef,
-        score_docs => undef,
-        max_score  => undef,
-    );
     __PACKAGE__->ready_get_set(qw( total_hits max_score score_docs ));
 }
 

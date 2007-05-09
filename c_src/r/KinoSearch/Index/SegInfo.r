@@ -10,10 +10,14 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_SEGINFO
 #define R_KINO_SEGINFO 1
 
 #include "KinoSearch/Index/SegInfo.h"
+
+#define KINO_SEGINFO_BOILERPLATE
 
 typedef void
 (*kino_SegInfo_destroy_t)(kino_SegInfo *self);
@@ -34,60 +38,54 @@ typedef kino_Obj*
                               size_t key_len);
 
 typedef struct kino_ByteBuf*
-(*kino_SegInfo_field_name_t)(kino_SegInfo *self, kino_i32_t field_num);
+(*kino_SegInfo_field_name_t)(kino_SegInfo *self, chy_i32_t field_num);
 
-typedef kino_i32_t
+typedef chy_i32_t
 (*kino_SegInfo_field_num_t)(kino_SegInfo *self, 
                        const struct kino_ByteBuf *field_name);
 
-typedef struct kino_IntMap*
-(*kino_SegInfo_generate_field_num_map_t)(kino_SegInfo *self, kino_SegInfo *other);
+#define Kino_SegInfo_Clone(self) \
+    kino_Obj_clone((kino_Obj*)self)
 
-#define Kino_SegInfo_Clone(_self) \
-    kino_Obj_clone((kino_Obj*)_self)
+#define Kino_SegInfo_Destroy(self) \
+    kino_SegInfo_destroy((kino_SegInfo*)self)
 
-#define Kino_SegInfo_Destroy(_self) \
-    kino_SegInfo_destroy((kino_SegInfo*)_self)
+#define Kino_SegInfo_Equals(self, other) \
+    kino_Obj_equals((kino_Obj*)self, other)
 
-#define Kino_SegInfo_Equals(_self, _arg1) \
-    kino_Obj_equals((kino_Obj*)_self, _arg1)
+#define Kino_SegInfo_Hash_Code(self) \
+    kino_Obj_hash_code((kino_Obj*)self)
 
-#define Kino_SegInfo_Hash_Code(_self) \
-    kino_Obj_hash_code((kino_Obj*)_self)
+#define Kino_SegInfo_Is_A(self, target_vtable) \
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_SegInfo_Is_A(_self, _arg1) \
-    kino_Obj_is_a((kino_Obj*)_self, _arg1)
+#define Kino_SegInfo_To_String(self) \
+    kino_Obj_to_string((kino_Obj*)self)
 
-#define Kino_SegInfo_To_String(_self) \
-    kino_Obj_to_string((kino_Obj*)_self)
+#define Kino_SegInfo_Serialize(self, target) \
+    kino_Obj_serialize((kino_Obj*)self, target)
 
-#define Kino_SegInfo_Serialize(_self, _arg1) \
-    kino_Obj_serialize((kino_Obj*)_self, _arg1)
+#define Kino_SegInfo_Add_Field(self, field_name) \
+    kino_SegInfo_add_field((kino_SegInfo*)self, field_name)
 
-#define Kino_SegInfo_Add_Field(_self, _arg1) \
-    kino_SegInfo_add_field((kino_SegInfo*)_self, _arg1)
+#define Kino_SegInfo_Add_Metadata(self, key, key_len, value) \
+    kino_SegInfo_add_metadata((kino_SegInfo*)self, key, key_len, value)
 
-#define Kino_SegInfo_Add_Metadata(_self, _arg1, _arg2, _arg3) \
-    kino_SegInfo_add_metadata((kino_SegInfo*)_self, _arg1, _arg2, _arg3)
+#define Kino_SegInfo_Get_Metadata(self) \
+    kino_SegInfo_get_metadata((kino_SegInfo*)self)
 
-#define Kino_SegInfo_Get_Metadata(_self) \
-    kino_SegInfo_get_metadata((kino_SegInfo*)_self)
+#define Kino_SegInfo_Extract_Metadata(self, key, key_len) \
+    kino_SegInfo_extract_metadata((kino_SegInfo*)self, key, key_len)
 
-#define Kino_SegInfo_Extract_Metadata(_self, _arg1, _arg2) \
-    kino_SegInfo_extract_metadata((kino_SegInfo*)_self, _arg1, _arg2)
+#define Kino_SegInfo_Field_Name(self, field_num) \
+    kino_SegInfo_field_name((kino_SegInfo*)self, field_num)
 
-#define Kino_SegInfo_Field_Name(_self, _arg1) \
-    kino_SegInfo_field_name((kino_SegInfo*)_self, _arg1)
-
-#define Kino_SegInfo_Field_Num(_self, _arg1) \
-    kino_SegInfo_field_num((kino_SegInfo*)_self, _arg1)
-
-#define Kino_SegInfo_Generate_Field_Num_Map(_self, _arg1) \
-    kino_SegInfo_generate_field_num_map((kino_SegInfo*)_self, _arg1)
+#define Kino_SegInfo_Field_Num(self, field_name) \
+    kino_SegInfo_field_num((kino_SegInfo*)self, field_name)
 
 struct KINO_SEGINFO_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -103,7 +101,6 @@ struct KINO_SEGINFO_VTABLE {
     kino_SegInfo_extract_metadata_t extract_metadata;
     kino_SegInfo_field_name_t field_name;
     kino_SegInfo_field_num_t field_num;
-    kino_SegInfo_generate_field_num_map_t generate_field_num_map;
 };
 
 extern KINO_SEGINFO_VTABLE KINO_SEGINFO;
@@ -126,8 +123,6 @@ extern KINO_SEGINFO_VTABLE KINO_SEGINFO;
   #define SegInfo_field_name kino_SegInfo_field_name
   #define SegInfo_field_num_t kino_SegInfo_field_num_t
   #define SegInfo_field_num kino_SegInfo_field_num
-  #define SegInfo_generate_field_num_map_t kino_SegInfo_generate_field_num_map_t
-  #define SegInfo_generate_field_num_map kino_SegInfo_generate_field_num_map
   #define SegInfo_Clone Kino_SegInfo_Clone
   #define SegInfo_Destroy Kino_SegInfo_Destroy
   #define SegInfo_Equals Kino_SegInfo_Equals
@@ -141,18 +136,15 @@ extern KINO_SEGINFO_VTABLE KINO_SEGINFO;
   #define SegInfo_Extract_Metadata Kino_SegInfo_Extract_Metadata
   #define SegInfo_Field_Name Kino_SegInfo_Field_Name
   #define SegInfo_Field_Num Kino_SegInfo_Field_Num
-  #define SegInfo_Generate_Field_Num_Map Kino_SegInfo_Generate_Field_Num_Map
-  #define SEGINFO KINO_SEGINFO
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SEGINFO_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     struct kino_ByteBuf * seg_name; \
-    kino_u32_t  doc_count; \
+    chy_u32_t  doc_count; \
     struct kino_Hash * by_name; \
     struct kino_VArray * by_num; \
     struct kino_Hash * metadata
-
 
 #ifdef KINO_WANT_SEGINFO_VTABLE
 KINO_SEGINFO_VTABLE KINO_SEGINFO = {
@@ -172,15 +164,19 @@ KINO_SEGINFO_VTABLE KINO_SEGINFO = {
     (kino_SegInfo_get_metadata_t)kino_SegInfo_get_metadata,
     (kino_SegInfo_extract_metadata_t)kino_SegInfo_extract_metadata,
     (kino_SegInfo_field_name_t)kino_SegInfo_field_name,
-    (kino_SegInfo_field_num_t)kino_SegInfo_field_num,
-    (kino_SegInfo_generate_field_num_map_t)kino_SegInfo_generate_field_num_map
+    (kino_SegInfo_field_num_t)kino_SegInfo_field_num
 };
 #endif /* KINO_WANT_SEGINFO_VTABLE */
 
+#undef KINO_SEGINFO_BOILERPLATE
+
+
 #endif /* R_KINO_SEGINFO */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

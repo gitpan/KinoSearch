@@ -5,13 +5,10 @@ package KinoSearch::Util::VArray;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args
-        capacity => undef,
-    );
-}
-our %instance_vars;
+our %instance_vars = (
+    # params
+    capacity => undef,
+);
 
 1;
 
@@ -28,7 +25,7 @@ CODE:
     /* parse params */
     HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Util::VArray::instance_vars");
-    kino_u32_t capacity = extract_uv(args_hash, SNL("capacity"));
+    chy_u32_t capacity = extract_uv(args_hash, SNL("capacity"));
 
     /* build object */
     RETVAL = kino_VA_new(capacity);
@@ -99,7 +96,7 @@ OUTPUT: RETVAL
 SV*
 fetch(self, num)
     kino_VArray *self;
-    kino_u32_t   num;
+    chy_u32_t    num;
 CODE:
 {
     kino_Obj *obj = Kino_VA_Fetch(self, num);
@@ -112,8 +109,8 @@ OUTPUT: RETVAL
 void
 store(self, num, elem)
     kino_VArray *self;
-    kino_u32_t num;
-    kino_Obj *elem;
+    chy_u32_t    num;
+    kino_Obj    *elem;
 PPCODE: 
     Kino_VA_Store(self, num, elem);
     

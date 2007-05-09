@@ -7,12 +7,13 @@ use base qw( KinoSearch::Analysis::Analyzer );
 
 our %supported_languages;
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        stemmifier => undef,
-    );
-}
+our %instance_vars = (
+    # inherited
+    language => '',
+
+    # members,
+    stemmifier => undef,
+);
 
 use Lingua::Stem::Snowball qw( stemmers );
 
@@ -34,7 +35,7 @@ sub init_instance {
     );
 }
 
-sub analyze {
+sub analyze_batch {
     my ( $self, $batch ) = @_;
 
     # replace terms with stemmed versions.
@@ -88,4 +89,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

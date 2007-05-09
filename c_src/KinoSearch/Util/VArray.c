@@ -1,6 +1,7 @@
 #include <string.h>
 
 #define KINO_USE_SHORT_NAMES
+#define CHY_USE_SHORT_NAMES
 
 #define KINO_WANT_VARRAY_VTABLE
 #include "KinoSearch/Util/VArray.r"
@@ -46,6 +47,30 @@ VA_destroy(VArray *self)
 
     free(self->elems);
     free(self);
+}
+
+VArray*
+VA_clone(VArray *self)
+{
+    u32_t i;
+    VArray *evil_twin;
+    Obj **elems;
+
+    /* block inheritance */
+    if (self->_ != &VARRAY)
+        CONFESS("Attempt to inherit VA_Clone by %s", self->_->class_name);
+
+    /* dupe, then increment refcounts */
+    evil_twin = VA_new(self->size);
+    elems = evil_twin->elems;
+    memcpy(elems, self->elems, self->size * sizeof(Obj*));
+    evil_twin->size = self->size;
+    for (i = 0; i < self->size; i++) {
+        if (elems[i] != NULL)
+            REFCOUNT_INC(elems[i]);
+    }
+
+    return evil_twin;
 }
 
 void
@@ -122,6 +147,8 @@ void
 VA_grow(VArray *self, u32_t capacity) 
 {
     if (capacity > self->cap) {
+        /* add an extra 10% */
+        capacity += capacity / 10;
         self->elems = REALLOCATE(self->elems, capacity, Obj*); 
         self->cap   = capacity;
         memset(self->elems + self->size, 0,

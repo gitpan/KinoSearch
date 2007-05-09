@@ -1,16 +1,13 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
-
-BEGIN {
-    use_ok('KinoSearch::Store::FSFileDes');
-    use_ok('KinoSearch::Store::OutStream');
-    use_ok('KinoSearch::Store::InStream');
-}
-
+use Test::More tests => 6;
 use Carp;
 use File::Spec::Functions qw( tmpdir catdir catfile );
+use KinoSearch::Store::FSFileDes;
+use KinoSearch::Store::OutStream;
+use KinoSearch::Store::InStream;
+use KinoSearch::Store::FSFolder;
 
 sub slurp_file {
     my $path = shift;
@@ -23,17 +20,17 @@ my $dir = catdir( tmpdir(), 'bogus_invindex' );
 if ( !-d $dir ) {
     mkdir $dir or die "Couldn't mkdir '$dir': $!";
 }
-my $filepath = catfile( $dir, 'hogus_bogus' );
+my $filename = 'hogus_bogus';
+my $filepath = catfile( $dir, $filename );
 my ( $outstream, $instream );
+my $folder = KinoSearch::Store::FSFolder->new( path => $dir );
 
 sub new_outstream {
-    my $out_file_des = KinoSearch::Store::FSFileDes->new( $filepath, "wb+" );
-    return KinoSearch::Store::OutStream->new($out_file_des);
+    return $folder->open_outstream($filename);
 }
 
 sub new_instream {
-    my $in_file_des = KinoSearch::Store::FSFileDes->new( $filepath, "rb" );
-    return KinoSearch::Store::InStream->new($in_file_des);
+    return $folder->open_instream($filename);
 }
 
 $outstream = new_outstream();
@@ -66,6 +63,5 @@ is( $instream->lu_read('a3'), 'foo', "OutStream write after sseek" );
 $instream->sseek(1024);
 is( $instream->lu_read('a3'), 'foo', "InStream sseek" );
 
-my $dupe = $instream->reopen( 1023, 4 );
+my $dupe = $instream->reopen( 'foo', 1023, 4 );
 is( $dupe->lu_read('a4'), 'afoo', "reopened instream" );
-

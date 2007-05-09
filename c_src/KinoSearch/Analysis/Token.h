@@ -13,29 +13,27 @@ struct kino_Token {
     KINO_OBJ_MEMBER_VARS;
     char       *text;
     size_t      len;
-    kino_u32_t  start_offset;
-    kino_u32_t  end_offset;
+    chy_u32_t   start_offset;
+    chy_u32_t   end_offset;
     float       boost;
-    kino_i32_t  pos_inc;
-    kino_i32_t  pos;
+    chy_i32_t   pos_inc;
+    chy_i32_t   pos;
 };
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_Token*
-kino_Token_new(const char *text, size_t len, kino_u32_t start_offset, 
-               kino_u32_t end_offset, float boost, kino_i32_t pos_inc));
+kino_Token_new(const char *text, size_t len, chy_u32_t start_offset, 
+               chy_u32_t end_offset, float boost, chy_i32_t pos_inc);
 
 /* qsort-compatible comparison routine.
  */
-KINO_FUNCTION(
 int
-kino_Token_compare(const void *va, const void *vb));
+kino_Token_compare(const void *va, const void *vb);
 
-KINO_METHOD("Kino_Token_Destroy",
 void 
-kino_Token_destroy(kino_Token *token));
+kino_Token_destroy(kino_Token *token);
+KINO_METHOD("Kino_Token_Destroy");
 
 KINO_END_CLASS
 

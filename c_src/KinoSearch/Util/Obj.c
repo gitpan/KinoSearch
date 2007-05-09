@@ -1,4 +1,5 @@
 #define KINO_USE_SHORT_NAMES
+#define CHY_USE_SHORT_NAMES
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,9 +24,15 @@ Obj_destroy(Obj *self)
     free(self);
 }
 
-#if (KINO_SIZEOF_PTR == 4)
+void
+Obj_dec_refcount(Obj *obj)
+{
+    REFCOUNT_DEC(obj);
+}
+
+#if (CHY_SIZEOF_PTR == 4)
   #define SPACE_FOR_MEMHEX sizeof("0xFFFFFFFF")
-#elif (KINO_SIZEOF_PTR == 8)
+#elif (CHY_SIZEOF_PTR == 8)
   #define SPACE_FOR_MEMHEX sizeof("0xFFFFFFFFFFFFFFFF")
 #endif
 
@@ -53,9 +60,8 @@ Obj_hash_code(Obj *self)
 Obj*
 Obj_clone(Obj *self)
 {
-    (void)self;
-    CONFESS("Obj_Clone is an abstract method");
-    return (Obj*)0;
+    ABSTRACT_DEATH(self, "Clone");
+    UNREACHABLE_RETURN(Obj*);
 }
 
 bool_t
@@ -81,10 +87,8 @@ Obj_equals(Obj *self, Obj *other)
 void
 Obj_serialize(Obj *self, struct kino_ByteBuf *target)
 {
-    UNUSED_VAR(self);
     UNUSED_VAR(target);
-    CONFESS("Obj_Serialize is an abstract method not implemented in %s",
-        self->_->class_name);
+    ABSTRACT_DEATH(self, "Serialize");
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

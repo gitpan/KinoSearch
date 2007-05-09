@@ -1,9 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 7;
 
-BEGIN { use_ok('KinoSearch::Util::PriorityQueue') }
+use KinoSearch::Util::PriorityQueue;
 
 my $pq = KinoSearch::Util::PriorityQueue->new( max_size => 5 );
 

@@ -5,51 +5,10 @@ package KinoSearch::Store::Folder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars( path => undef, );
-}
-
-our %make_lock_vars = (
-    lock_name => undef,
-    lock_id   => '',
-    timeout   => undef,
+our %instance_vars = (
+    # params
+    path => undef,
 );
-
-=begin comment
-
-    $folder->run_while_locked(
-        lock_name => $name,
-        timeout   => $timeout,  # milliseconds
-        do_body   => \&do_some_stuff,
-    );
-
-Create a Lock object and obtain a lock, run the subroutine specified by
-the do_body parameter, then release the lock and discard the Lock object.
-The hash-style argument labels include all the arguments to make_lock, plus
-do_body.
-
-=end comment
-=cut
-
-our %run_while_locked_vars = (
-    do_body   => undef,
-    lock_name => undef,
-    lock_id   => '',
-    timeout   => undef,
-);
-
-sub run_while_locked {
-    my ( $self, %args ) = @_;
-    my $do_body = delete $args{do_body};
-    my $lock    = $self->make_lock(%args);
-    my $locked;
-    eval {
-        $locked = $lock->obtain;
-        $do_body->();
-    };
-    $lock->release if $lock->is_locked;
-    confess $@     if $@;
-}
 
 1;
 
@@ -65,6 +24,21 @@ open_outstream(self, filename)
     kino_ByteBuf filename;
 CODE:
     RETVAL = Kino_Folder_Open_OutStream(self, &filename);
+OUTPUT: RETVAL
+
+SV*
+safe_open_outstream(self, filename)
+    kino_Folder *self;
+    kino_ByteBuf filename;
+CODE:
+{
+    kino_OutStream *outstream 
+        = Kino_Folder_Safe_Open_OutStream(self, &filename);
+    RETVAL = outstream == NULL
+        ? newSV(0)
+        : kobj_to_pobj(outstream);
+    REFCOUNT_DEC(outstream);
+}
 OUTPUT: RETVAL
 
 kino_InStream*
@@ -96,8 +70,8 @@ list(self)
 PPCODE:
 {
     kino_VArray *file_list = Kino_Folder_List(self);
-    kino_u32_t size = file_list->size;
-    kino_u32_t i;
+    chy_u32_t size = file_list->size;
+    chy_u32_t i;
 
     EXTEND(SP, size);
     
@@ -165,26 +139,6 @@ CODE:
 }
 OUTPUT: RETVAL
 
-kino_Lock*
-make_lock(self, ...)
-    kino_Folder *self;
-CODE:
-{
-    /* parse params */
-    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Store::Folder::make_lock_vars");
-    kino_i32_t timeout     = extract_iv(args_hash, SNL("timeout"));
-    SV *lock_name_sv       = extract_sv(args_hash, SNL("lock_name"));
-    SV *lock_id_sv         = extract_sv(args_hash, SNL("lock_id"));
-    kino_ByteBuf lock_name = KINO_BYTEBUF_BLANK;
-    kino_ByteBuf lock_id   = KINO_BYTEBUF_BLANK;
-    SV_TO_TEMP_BB(lock_name_sv, lock_name);
-    SV_TO_TEMP_BB(lock_id_sv, lock_id);
-    
-    RETVAL = Kino_Folder_Make_Lock(self, &lock_name, &lock_id, timeout);
-}
-OUTPUT: RETVAL
-
 void
 close(self)
     kino_Folder *self;
@@ -227,4 +181,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

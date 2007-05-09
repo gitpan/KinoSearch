@@ -4,7 +4,7 @@
 #include "KinoSearch/Util/BitVector.r"
 
 struct kino_ByteBuf;
-struct kino_TermDocs;
+struct kino_PostingList;
 struct kino_InvIndex;
 struct kino_SegInfo;
 struct kino_IntMap;
@@ -18,31 +18,30 @@ KINO_FINAL_CLASS("KinoSearch::Index::DelDocs", "DelDocs",
 struct kino_DelDocs {
     KINO_DELDOCS_VTABLE *_;
     KINO_BITVECTOR_MEMBER_VARS;
-    kino_i32_t            del_gen;
+    chy_i32_t             del_gen;
     struct kino_InvIndex *invindex;
     struct kino_SegInfo  *seg_info;
 };
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_DelDocs*
 kino_DelDocs_new(struct kino_InvIndex *invindex, 
-                 struct kino_SegInfo *seg_info));
+                 struct kino_SegInfo *seg_info);
 
 /* Read a segment's current deletions file.
  */
-KINO_METHOD("Kino_DelDocs_Read_Deldocs",
 void
-kino_DelDocs_read_deldocs(kino_DelDocs *self));
+kino_DelDocs_read_deldocs(kino_DelDocs *self);
+KINO_METHOD("Kino_DelDocs_Read_Deldocs");
 
 /* Write the deleted documents out to a .del file.
  */
-KINO_METHOD("Kino_DelDocs_Write_Deldocs",
 void
-kino_DelDocs_write_deldocs(kino_DelDocs *self));
+kino_DelDocs_write_deldocs(kino_DelDocs *self);
+KINO_METHOD("Kino_DelDocs_Write_Deldocs");
 
-/* Produce an array of kino_i32_t which wraps around deleted documents.  The
+/* Produce an array of chy_i32_t which wraps around deleted documents.  The
  * position in the array represents the original doc number, and the value
  * represents the new number.  Deleted docs are assigned -1.  So if you had 4
  * docs and doc 2 was deleted, the array would have the values...
@@ -51,20 +50,20 @@ kino_DelDocs_write_deldocs(kino_DelDocs *self));
  * [offset] is added to each valid document number, so with an offset of 1000,
  * the array in the previous example would be { 1000, -1, 1001, 1002 }.
  */
-KINO_METHOD("Kino_DelDocs_Generate_Doc_Map",
 struct kino_IntMap*
-kino_DelDocs_generate_doc_map(kino_DelDocs *self, kino_i32_t offset)); 
+kino_DelDocs_generate_doc_map(kino_DelDocs *self, chy_i32_t offset);
+KINO_METHOD("Kino_DelDocs_Generate_Doc_Map");
 
-/* Iterate over a TermDocs, deleting any document that wasn't already deleted.
+/* Delete all the documents represented by a PostingList.
  */
-KINO_METHOD("Kino_DelDocs_Delete_By_Term_Docs",
 void  
-kino_DelDocs_delete_by_term_docs(kino_DelDocs *self, 
-                                 struct kino_TermDocs *term_docs));
+kino_DelDocs_delete_postinglist(kino_DelDocs *self, 
+                                 struct kino_PostingList *plist);
+KINO_METHOD("Kino_DelDocs_Delete_PostingList");
 
-KINO_METHOD("Kino_DelDocs_Destroy",
 void
-kino_DelDocs_destroy(kino_DelDocs *self));
+kino_DelDocs_destroy(kino_DelDocs *self);
+KINO_METHOD("Kino_DelDocs_Destroy");
 
 KINO_END_CLASS
 

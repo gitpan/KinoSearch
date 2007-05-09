@@ -3,18 +3,20 @@ use warnings;
 
 package KinoSearch::Search::MultiSearcher;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Searcher );
+use base qw( KinoSearch::Search::Searchable );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # members / constructor args
-        searchables => undef,
-        # members
-        analyzers => undef,
-        starts    => undef,
-        max_doc   => undef,
-    );
-}
+our %instance_vars = (
+    # members / constructor args
+    searchables => undef,
+
+    # inherited members
+    schema => undef,
+
+    # members
+    analyzers => undef,
+    starts    => undef,
+    max_doc   => undef,
+);
 
 use KinoSearch::Search::HitCollector;
 
@@ -52,7 +54,7 @@ sub max_doc { shift->{max_doc} }
 
 sub close { }
 
-sub subsearcher {
+sub _subsearcher {
     my ( $self, $doc_num ) = @_;
     my $i = -1;
     for ( @{ $self->{starts} } ) {
@@ -71,7 +73,7 @@ sub doc_freq {
 
 sub fetch_doc {
     my ( $self, $doc_num ) = @_;
-    my $i          = $self->subsearcher($doc_num);
+    my $i          = $self->_subsearcher($doc_num);
     my $searchable = $self->{searchables}[$i];
     $doc_num -= $self->{starts}[$i];
     return $searchable->fetch_doc($doc_num);
@@ -79,24 +81,18 @@ sub fetch_doc {
 
 sub fetch_doc_vec {
     my ( $self, $doc_num ) = @_;
-    my $i          = $self->subsearcher($doc_num);
+    my $i          = $self->_subsearcher($doc_num);
     my $searchable = $self->{searchables}[$i];
     $doc_num -= $self->{starts}[$i];
     return $searchable->fetch_doc($doc_num);
 }
 
-my %search_top_docs_args = (
-    query      => undef,
-    filter     => undef,
-    sort_spec  => undef,
-    num_wanted => undef,
-);
-
-sub search_top_docs {
+sub top_docs {
     my $self = shift;
     my ( $searchables, $starts ) = @{$self}{qw( searchables starts )};
-    confess kerror() unless verify_args( \%search_top_docs_args, @_ );
-    my %args = ( %search_top_docs_args, @_ );
+    my $top_docs_args = \%KinoSearch::Search::Searchable::top_docs_args;
+    confess kerror() unless verify_args( $top_docs_args, @_ );
+    my %args = ( %$top_docs_args, @_ );
 
     # don't allow sort_spec until we fix the sort cache problem.
     confess("sort_spec not currently supported by MultiSearcher")
@@ -111,11 +107,11 @@ sub search_top_docs {
     for my $i ( 0 .. $#$searchables ) {
         my $searchable = $searchables->[$i];
         my $base       = $starts->[$i];
-        my $top_docs   = $searchable->search_top_docs(%args);
+        my $top_docs   = $searchable->top_docs(%args);
         $total_hits += $top_docs->get_total_hits;
         my $score_docs = $top_docs->get_score_docs;
         for my $score_doc (@$score_docs) {
-            $score_doc->set_id( $score_doc->get_id + $base );
+            $score_doc->set_doc_num( $score_doc->get_doc_num + $base );
             last unless $hit_q->insert_score_doc($score_doc);
         }
     }
@@ -133,28 +129,21 @@ sub search_top_docs {
     );
 }
 
-my %search_hit_collector_args = (
-    hit_collector => undef,
-    weight        => undef,
-    filter        => undef,
-    sort_spec     => undef,
-);
-
-sub search_hit_collector {
-    my $self = shift;
-    confess kerror() unless verify_args( \%search_hit_collector_args, @_ );
-    my %args = ( %search_hit_collector_args, @_ );
+sub collect {
+    my $self         = shift;
+    my $collect_args = \%KinoSearch::Search::Searchable::collect_args;
+    confess kerror() unless verify_args( $collect_args, @_ );
+    my %args = ( %$collect_args, @_ );
     my ( $searchables, $starts ) = @{$self}{qw( searchables starts )};
 
     for my $i ( 0 .. $#$searchables ) {
         my $searchable = $searchables->[$i];
         my $start      = $starts->[$i];
         my $collector  = KinoSearch::Search::HitCollector->new_offset_coll(
-            hit_collector => $args{hit_collector},
-            offset        => $start
+            collector => $args{collector},
+            offset    => $start
         );
-        $searchable->search_hit_collector( %args,
-            hit_collector => $collector );
+        $searchable->collect( %args, collector => $collector );
     }
 }
 
@@ -196,20 +185,21 @@ sub create_weight {
         schema       => $self->{schema},
     );
 
-    return $query->to_weight($cache_df_source);
+    return $query->make_weight($cache_df_source);
 }
 
 package KinoSearch::Search::CacheDFSource;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Searchable );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        doc_freq_map => {},
-        max_doc      => undef,
-    );
-    __PACKAGE__->ready_get(qw( max_doc ));
-}
+our %instance_vars = (
+    # inherited
+    schema => undef,
+
+    # params / members
+    doc_freq_map => {},
+    max_doc      => undef,
+);
 
 sub init_instance { }
 
@@ -270,8 +260,9 @@ cost of searching a large corpus over multiple machines.
 
 =head2 Limitations
 
-At present, SortSpec is not supported by MultiSearcher.  Also, note that
-QueryFilter is not supported by SearchClient.
+At present, L<SortSpec|KinoSearch::Search::SortSpec> is not supported by
+MultiSearcher.  Also, note that L<Filter|KinoSearch::Search::Filter> objects
+are not supported by SearchClient.
 
 =head1 METHODS
 
@@ -283,7 +274,7 @@ Constructor.  Takes two hash-style parameters, both of which are required.
 
 =item *
 
-B<schema> - an object which subclasses L<KinoSearch::KinoSearch::Schema>.
+B<schema> - an object which isa L<KinoSearch::Schema>.
 
 =item *
 

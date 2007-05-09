@@ -106,20 +106,24 @@ Truncated mean ($num_kept kept, $num_discarded discarded): $trunc_mean secs
 END_REPORT
 }
 
-package BenchSchema::title;
+package BenchSchema::unstored;
+use base qw( KinoSearch::Schema::FieldSpec );
+
+sub vectorized {0}
+sub stored     {0}
+
+package BenchSchema::unvectorized;
 use base qw( KinoSearch::Schema::FieldSpec );
 
 sub vectorized {0}
 
-package BenchSchema::body;
-use base qw( KinoSearch::Schema::FieldSpec );
-
 package BenchSchema;
 use base qw( KinoSearch::Schema );
+use KinoSearch::Analysis::Tokenizer;
 
-sub analyzer { ASCIIWhiteSpaceTokenizer->new }
+our %fields = ( title => 'BenchSchema::unvectorized' );
 
-# delay __PACKAGE__->init_fields
+sub analyzer { KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ ) }
 
 package BenchmarkingIndexer::KinoSearch;
 use base qw( BenchmarkingIndexer );
@@ -134,12 +138,14 @@ sub new {
     require KinoSearch::InvIndexer;
     require KinoSearch::Analysis::TokenBatch;
 
-    # hack to provide runtime flexibility
-    if ( !$self->{store} ) {
-        *BenchSchema::body::stored     = sub {0};
-        *BenchSchema::body::vectorized = sub {0};
+    # provide runtime flexibility
+    my $schema = $self->{schema} = BenchSchema->new;
+    if ( $self->{store} ) {
+        $schema->add_field( body => 'KinoSearch::Schema::FieldSpec' );
     }
-    BenchSchema->init_fields(qw( title body ));
+    else {
+        $schema->add_field( body => 'BenchSchema::unstored' );
+    }
 
     $self->{index_dir} = 'kinosearch_index';
     $self->{engine}    = 'KinoSearch';
@@ -153,10 +159,10 @@ sub init_indexer {
 
     my $invindex;
     if ( $count == 0 ) {
-        $invindex = BenchSchema->clobber( $self->{index_dir} );
+        $invindex = $self->{schema}->clobber( $self->{index_dir} );
     }
     else {
-        $invindex = BenchSchema->open( $self->{index_dir} );
+        $invindex = $self->{schema}->open( $self->{index_dir} );
     }
 
     return KinoSearch::InvIndexer->new( invindex => $invindex );
@@ -289,70 +295,5 @@ sub build_index {
     return ( $count, $secs );
 }
 
-package ASCIIWhiteSpaceTokenizer;
-use base qw( KinoSearch::Analysis::Analyzer );
-use Inline C => 'DATA';
-
-sub new { bless {}, __PACKAGE__ }
-
-my ( @starts, @ends );
-
-sub analyze {
-    my ( $self, $batch ) = @_;
-    my $new_batch = KinoSearch::Analysis::TokenBatch->new;
-
-    while ( my $token = $batch->next ) {
-        my $text = $token->get_text;
-        starts_and_ends( $text, \@starts, \@ends );
-        $new_batch->add_many_tokens( $text, \@starts, \@ends );
-    }
-
-    return $new_batch;
-}
-
 1;
 
-__DATA__
-
-__C__
-
-IV
-starts_and_ends(SV* text_sv, AV *starts, AV *ends) 
-{
-    STRLEN len;
-    unsigned char *ptr          = (unsigned char*)SvPV(text_sv, len);
-    unsigned char *limit        = (unsigned char*)SvEND(text_sv);
-    unsigned char *string_top   = ptr;
-    long i = 0;
-    bool inside_token = FALSE;
-
-    av_clear(starts);
-    av_clear(ends);
-
-    for ( ; ptr < limit; ptr++) {
-        /* turn non-ascii characters to question marks */
-        if (*ptr > 127)
-            *ptr = '?';
-
-        if (inside_token) {
-            if (isspace(*ptr)) {
-                SV *const end = newSViv(ptr - string_top); 
-                av_push(ends, end);
-                inside_token = FALSE;
-            }
-        }
-        else {
-            if (!isspace(*ptr)) {
-                SV *const start = newSViv(ptr - string_top); 
-                av_push(starts, start);
-                inside_token = TRUE;
-            }
-        }
-    }
-
-    /* finish the last token */
-    if (inside_token) {
-        SV *const end = newSViv(ptr - string_top); 
-        av_push(ends, end);
-    }
-}

@@ -10,44 +10,48 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_INTMAP
 #define R_KINO_INTMAP 1
 
 #include "KinoSearch/Util/IntMap.h"
 
+#define KINO_INTMAP_BOILERPLATE
+
 typedef void
 (*kino_IntMap_destroy_t)(kino_IntMap *self);
 
-typedef kino_i32_t
-(*kino_IntMap_get_t)(kino_IntMap *self, kino_i32_t num);
+typedef chy_i32_t
+(*kino_IntMap_get_t)(kino_IntMap *self, chy_i32_t num);
 
-#define Kino_IntMap_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_IntMap_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_IntMap_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_IntMap_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_IntMap_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_IntMap_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_IntMap_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_IntMap_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_IntMap_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_IntMap_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_IntMap_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_IntMap_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_IntMap_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_IntMap_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
-#define Kino_IntMap_Get(_self, _arg1) \
-    (_self)->_->get((kino_IntMap*)_self, _arg1)
+#define Kino_IntMap_Get(self, num) \
+    (self)->_->get((kino_IntMap*)self, num)
 
 struct KINO_INTMAP_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -77,14 +81,12 @@ extern KINO_INTMAP_VTABLE KINO_INTMAP;
   #define IntMap_To_String Kino_IntMap_To_String
   #define IntMap_Serialize Kino_IntMap_Serialize
   #define IntMap_Get Kino_IntMap_Get
-  #define INTMAP KINO_INTMAP
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_INTMAP_MEMBER_VARS \
-    kino_u32_t  refcount; \
-    kino_i32_t * ints; \
-    kino_i32_t  size
-
+    chy_u32_t  refcount; \
+    chy_i32_t * ints; \
+    chy_i32_t  size
 
 #ifdef KINO_WANT_INTMAP_VTABLE
 KINO_INTMAP_VTABLE KINO_INTMAP = {
@@ -103,10 +105,15 @@ KINO_INTMAP_VTABLE KINO_INTMAP = {
 };
 #endif /* KINO_WANT_INTMAP_VTABLE */
 
+#undef KINO_INTMAP_BOILERPLATE
+
+
 #endif /* R_KINO_INTMAP */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

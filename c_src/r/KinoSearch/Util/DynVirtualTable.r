@@ -10,38 +10,42 @@
 
  ***********************************************/
 
-#ifndef R_KINO_DYNVT
-#define R_KINO_DYNVT 1
+
+
+#ifndef R_KINO_DYNVIRTUALTABLE
+#define R_KINO_DYNVIRTUALTABLE 1
 
 #include "KinoSearch/Util/DynVirtualTable.h"
+
+#define KINO_DYNVIRTUALTABLE_BOILERPLATE
 
 typedef void
 (*kino_DynVT_destroy_t)(kino_DynVirtualTable *self);
 
-#define Kino_DynVT_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define Kino_DynVT_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_DynVT_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
+#define Kino_DynVT_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_DynVT_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
+#define Kino_DynVT_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_DynVT_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_DynVT_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_DynVT_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_DynVT_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_DynVT_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_DynVT_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_DynVT_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_DynVT_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_DYNVIRTUALTABLE_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -67,14 +71,12 @@ extern KINO_DYNVIRTUALTABLE_VTABLE KINO_DYNVIRTUALTABLE;
   #define DynVT_Is_A Kino_DynVT_Is_A
   #define DynVT_To_String Kino_DynVT_To_String
   #define DynVT_Serialize Kino_DynVT_Serialize
-  #define DYNVIRTUALTABLE KINO_DYNVIRTUALTABLE
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_DYNVIRTUALTABLE_MEMBER_VARS \
-    kino_u32_t  refcount; \
+    chy_u32_t  refcount; \
     KINO_OBJ_VTABLE * parent; \
     const char * class_name
-
 
 #ifdef KINO_WANT_DYNVIRTUALTABLE_VTABLE
 KINO_DYNVIRTUALTABLE_VTABLE KINO_DYNVIRTUALTABLE = {
@@ -92,10 +94,15 @@ KINO_DYNVIRTUALTABLE_VTABLE KINO_DYNVIRTUALTABLE = {
 };
 #endif /* KINO_WANT_DYNVIRTUALTABLE_VTABLE */
 
-#endif /* R_KINO_DYNVT */
+#undef KINO_DYNVIRTUALTABLE_BOILERPLATE
+
+
+#endif /* R_KINO_DYNVIRTUALTABLE */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

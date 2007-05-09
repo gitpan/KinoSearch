@@ -5,10 +5,10 @@ package KinoSearch::Util::IntMap;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars( ints => undef, );
-}
-our %instance_vars;
+our %instance_vars = (
+    # constructor params
+    ints => undef
+);
 
 1;
 
@@ -28,15 +28,15 @@ CODE:
         "KinoSearch::Util::IntMap::instance_vars");
     SV *map_sv = extract_sv(args_hash, SNL("ints"));
     STRLEN len;
-    char *map_ptr = SvPV(map_sv, len);
-    kino_i32_t size = len / sizeof(kino_i32_t); 
-    kino_i32_t *ints = KINO_MALLOCATE(size, kino_i32_t);
+    char *map_ptr   = SvPV(map_sv, len);
+    chy_i32_t size  = len / sizeof(chy_i32_t); 
+    chy_i32_t *ints = KINO_MALLOCATE(size, chy_i32_t);
 
     /* dupe the map, since we can't steal the SV's pv allocation. */
-    memcpy(ints, map_ptr, size * sizeof(kino_i32_t));
+    memcpy(ints, map_ptr, size * sizeof(chy_i32_t));
 
     /* build object */
-    KINO_UNUSED_VAR(class);
+    CHY_UNUSED_VAR(class);
     RETVAL = kino_IntMap_new(ints, size);
 }
 OUTPUT: RETVAL
@@ -51,13 +51,28 @@ would be the case if the index is out of range).
 SV *
 get(self, num)
     kino_IntMap *self;
-    kino_i32_t num;
+    chy_i32_t    num;
 CODE:
 {
-    kino_i32_t result = Kino_IntMap_Get(self, num);
+    chy_i32_t result = Kino_IntMap_Get(self, num);
     RETVAL = result == -1 ? newSV(0) : newSViv(result);
 }
 OUTPUT: RETVAL
+
+void
+_set_or_get(self, ...)
+    kino_IntMap *self;
+ALIAS:
+    get_size   = 2
+PPCODE:
+{
+    START_SET_OR_GET_SWITCH
+    
+    case 2:  retval = newSVuv(self->size);
+             break;
+
+    END_SET_OR_GET_SWITCH
+}
 
 __POD__
 

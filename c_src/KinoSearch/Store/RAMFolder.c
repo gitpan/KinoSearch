@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_RAMFOLDER_VTABLE
@@ -45,6 +44,20 @@ RAMFolder_open_outstream(RAMFolder *self, const ByteBuf *filename)
     Hash_Store_BB(self->ram_files, filename, (Obj*)file_des);
     REFCOUNT_DEC(file_des);
     return OutStream_new((FileDes*)file_des);
+}
+
+OutStream*
+RAMFolder_safe_open_outstream(RAMFolder *self, const ByteBuf *filename)
+{
+    if (Hash_Fetch_BB(self->ram_files, filename) != NULL) {
+        return NULL;
+    }
+    else {
+        RAMFileDes *file_des = RAMFileDes_new(filename->ptr);
+        Hash_Store_BB(self->ram_files, filename, (Obj*)file_des);
+        REFCOUNT_DEC(file_des);
+        return OutStream_new((FileDes*)file_des);
+    }
 }
 
 InStream*
@@ -112,7 +125,8 @@ RAMFolder_delete_file(RAMFolder *self, const ByteBuf *filename)
 ByteBuf*
 RAMFolder_slurp_file(RAMFolder *self, const ByteBuf *filename)
 {
-    RAMFileDes *file_des = (RAMFileDes*)Hash_Fetch_BB(self->ram_files, filename);
+    RAMFileDes *file_des 
+        = (RAMFileDes*)Hash_Fetch_BB(self->ram_files, filename);
     if (file_des == NULL) {
         CONFESS("File '%s' not loaded into RAM", filename->ptr);
     }

@@ -5,14 +5,16 @@ package KinoSearch::Search::BooleanQuery;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
+our %instance_vars = (
+    # inherited
+    boost => 1.0,
+
+    # members
+    clauses          => [],
+    max_clause_count => 1024,
+);
+
 BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor args / members
-        disable_coord => 0,
-        # members
-        clauses          => [],
-        max_clause_count => 1024,
-    );
     __PACKAGE__->ready_get(qw( clauses ));
 }
 
@@ -25,19 +27,12 @@ sub add_clause {
         @_ == 1
         ? shift
         : KinoSearch::Search::BooleanClause->new(@_);
-    push @{ $self->{clauses} }, $clause;
     confess("not a BooleanClause")
         unless a_isa_b( $clause, 'KinoSearch::Search::BooleanClause' );
     confess("Too many clauses")
         if @{ $self->{clauses} } > $self->{max_clause_count};
-}
 
-sub get_similarity {
-    my ( $self, $searcher ) = @_;
-    if ( $self->{disable_coord} ) {
-        confess "disable_coord not implemented yet";
-    }
-    return $searcher->get_similarity;
+    push @{ $self->{clauses} }, $clause;
 }
 
 sub extract_terms {
@@ -49,55 +44,47 @@ sub extract_terms {
     return @terms;
 }
 
-sub create_weight {
+sub make_weight {
     my ( $self, $searcher ) = @_;
     return KinoSearch::Search::BooleanWeight->new(
         parent   => $self,
         searcher => $searcher,
     );
-
-}
-
-sub clone {
-    my $self = shift;
-
-    # remove then restore clauses in case some queries aren't clone-safe.
-    my $clauses   = delete $self->{clauses};
-    my $evil_twin = Clone::clone($self);
-    $self->{clauses} = $clauses;
-
-    # clone each Clause in turn
-    my @cloned_clauses = map { $_->clone } @$clauses;
-    $evil_twin->{clauses} = \@cloned_clauses;
-
-    return $evil_twin;
 }
 
 package KinoSearch::Search::BooleanWeight;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # members
-        weights => [],
-    );
-}
+our %instance_vars = (
+    # inherited
+    searcher   => undef,
+    parent     => undef,
+    similarity => undef,
+
+    # members
+    sub_weights => [],
+);
 
 use KinoSearch::Search::BooleanScorer;
 
 sub init_instance {
     my $self = shift;
-    my ( $weights, $searcher ) = @{$self}{ 'weights', 'searcher' };
 
-    $self->{similarity} = $self->{parent}->get_similarity($searcher);
+    # don't keep searcher around; it interferes with serialization
+    my $searcher = delete $self->{searcher};
 
+    # use the Schema's main Similarity
+    $self->{similarity} = $searcher->get_schema->fetch_sim;
+
+    # iterate over the clauses, creating a Weight for each one
     for my $clause ( @{ $self->{parent}{clauses} } ) {
-        my $query = $clause->get_query;
-        push @$weights, $query->create_weight($searcher);
+        my $sub_query = $clause->get_query;
+        push @{ $self->{sub_weights} }, $sub_query->make_weight($searcher);
     }
 
-    undef $self->{searcher};    # don't want the baggage
+    # make final preparations
+    $self->perform_query_normalization($searcher);
 }
 
 sub get_value { shift->{parent}->get_boost }
@@ -106,7 +93,7 @@ sub sum_of_squared_weights {
     my $self = shift;
 
     my $sum = 0;
-    $sum += $_->sum_of_squared_weights for @{ $self->{weights} };
+    $sum += $_->sum_of_squared_weights for @{ $self->{sub_weights} };
 
     # compound the weight of each sub-Weight
     $sum *= $self->{parent}->get_boost**2;
@@ -115,12 +102,13 @@ sub sum_of_squared_weights {
 }
 
 sub normalize {
-    my ( $self, $query_norm ) = @_;
-    $_->normalize($query_norm) for @{ $self->{weights} };
+    my ( $self, $query_norm_factor ) = @_;
+    # override normalization performed by individual clauses
+    $_->normalize($query_norm_factor) for @{ $self->{sub_weights} };
 }
 
 sub scorer {
-    my ( $self, $ix_reader ) = @_;
+    my ( $self, $reader ) = @_;
 
     my $scorer = KinoSearch::Search::BooleanScorer->new(
         similarity => $self->{similarity}, );
@@ -128,9 +116,9 @@ sub scorer {
     # add all the subscorers one by one
     my $clauses = $self->{parent}{clauses};
     my $i       = 0;
-    for my $weight ( @{ $self->{weights} } ) {
+    for my $sub_weight ( @{ $self->{sub_weights} } ) {
         my $clause    = $clauses->[ $i++ ];
-        my $subscorer = $weight->scorer($ix_reader);
+        my $subscorer = $sub_weight->scorer($reader);
         if ( defined $subscorer ) {
             $scorer->add_subscorer( $subscorer, $clause->get_occur );
         }
@@ -231,4 +219,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

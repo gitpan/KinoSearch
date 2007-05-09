@@ -95,6 +95,23 @@ do_confess(SV *error_sv)
     LEAVE;
 }
 
+char *kino_Carp_kerror = "";
+static SV *kerror_sv = NULL;
+
+void
+kino_Carp_set_kerror(const char *pat, ...)
+{
+    va_list args;
+
+    if (kerror_sv == NULL)
+        kerror_sv = newSVpvn("", 0);
+
+    va_start(args, pat);
+    sv_vcatpvf(kerror_sv, pat, &args);
+    va_end(args);
+
+    kino_Carp_kerror = SvPV_nolen(kerror_sv);
+}
 
 
 /* Copyright 2006-2007 Marvin Humphrey

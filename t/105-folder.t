@@ -1,16 +1,15 @@
 use strict;
 use warnings;
 
-use Test::More tests => 22;
+use Test::More tests => 25;
 
 use File::Spec::Functions qw( tmpdir catdir catfile );
 use File::Path qw( rmtree );
 
-BEGIN {
-    use_ok('KinoSearch::Store::RAMFolder');
-    use_ok('KinoSearch::Store::FSFolder');
-    use_ok( 'KinoSearch::Index::IndexFileNames' => 'filename_from_gen' );
-}
+use KinoSearch::Store::RAMFolder;
+use KinoSearch::Store::FSFolder;
+use KinoSearch::Store::Lock;
+use KinoSearch::Index::IndexFileNames 'filename_from_gen';
 
 my $fs_invindex_loc = catdir( tmpdir(), 'bogus_invindex' );
 
@@ -40,36 +39,29 @@ for my $folder ( $fs_folder, $ram_folder ) {
     my $slurped = $folder->slurp_file('king_of_rock');
     is( $slurped, $king, "slurp_file works" );
 
-    my $lock = $folder->make_lock(
+    my $lock = KinoSearch::Store::Lock->new(
+        agent_id  => '',
+        folder    => $folder,
         lock_name => 'lock_robster',
         timeout   => 0,
     );
-    my $competing_lock = $folder->make_lock(
+    my $competing_lock = KinoSearch::Store::Lock->new(
+        agent_id  => '',
+        folder    => $folder,
         lock_name => 'lock_robster',
         timeout   => 0,
     );
 
     $lock->obtain;
-
-SKIP: {
-        if ( $ENV{KINO_VALGRIND} ) {
-            skip( "known leak", 1 );
-        }
-        else {
-            eval { $competing_lock->obtain };
-        }
-        like( $@, qr/get lock/, "shouldn't get lock on existing resource" );
-    }
-
     ok( $lock->is_locked, "lock is locked" );
+    ok( !$competing_lock->obtain, "shouldn't get lock on existing resource" );
+    ok( $lock->is_locked, "lock still locked after competing attempt" );
 
     $lock->release;
     ok( !$lock->is_locked, "release works" );
 
-    $folder->run_while_locked(
-        lock_name => 'lock_robster',
-        timeout   => 1000,
-        do_body   => sub {
+    $lock->run_while_locked(
+        do_body => sub {
             $folder->rename_file( 'king_of_rock', 'king_of_lock' );
         },
     );
@@ -79,6 +71,15 @@ SKIP: {
     );
     is( $folder->file_exists('king_of_lock'),
         1, "file successfully moved while locked" );
+
+    is( $folder->safe_open_outstream("king_of_lock"),
+        undef, "safe open outstream returns undef when file exists" );
+
+    isa_ok(
+        $folder->safe_open_outstream("lockit"),
+        "KinoSearch::Store::OutStream",
+        "safe open outstream succeeds when file doesn't exist"
+    );
 
     $folder->delete_file('king_of_lock');
     ok( !$folder->file_exists('king_of_lock'), "delete_file works" );

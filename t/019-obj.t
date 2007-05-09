@@ -1,9 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 17;
+use Test::More tests => 16;
 
-BEGIN { use_ok("KinoSearch::Util::Obj") }
+use KinoSearch::Util::Obj;
 
 my $object = KinoSearch::Util::Obj->_new;
 isa_ok( $object, "KinoSearch::Util::Obj" );
@@ -23,7 +23,7 @@ like(
 );
 
 eval { my $evil_twin = $object->clone };
-like( $@, qr/abstract/, "clone throws an abstract method exception" );
+like( $@, qr/abstract/i, "clone throws an abstract method exception" );
 
 my $other = KinoSearch::Util::Obj->_new;
 ok( $object->equals($object), "equals is true for the same object" );

@@ -1,11 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
-BEGIN {
-    use_ok('KinoSearch::Store::RAMFolder');
-}
+use KinoSearch::Store::RAMFolder;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my ( @items, $packed, $template );
@@ -38,3 +36,19 @@ for ( 0, 22, 300 ) {
     check_io( "50 strings", "T50", @items );
 }
 
+my $out = $folder->open_outstream('raw_vlongs');
+$out->lu_write( 'W', 10000 );
+$out->sclose;
+my $in = $folder->open_instream('raw_vlongs');
+my $raw;
+$in->read_raw_vlong($raw);
+my $correct = $folder->slurp_file('raw_vlongs');
+is( $raw, $correct, "read_raw_vlong" );
+
+$out = $folder->open_outstream('read_byteso');
+$out->lu_write( 'a4', "cute" );
+$out->sclose;
+$in = $folder->open_instream('read_byteso');
+my $buf = "buzz";
+$in->read_byteso( $buf, 4, 3 );
+is( $buf, "buzzcut", 'read_byteso' );

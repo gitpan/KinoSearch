@@ -10,35 +10,41 @@
 
  ***********************************************/
 
+
+
 #ifndef R_KINO_CCLASS
 #define R_KINO_CCLASS 1
 
 #include "KinoSearch/Util/CClass.h"
 
-#define Kino_CClass_Clone(_self) \
-    (_self)->_->clone((kino_Obj*)_self)
+#define KINO_CCLASS_BOILERPLATE
 
-#define Kino_CClass_Destroy(_self) \
-    (_self)->_->destroy((kino_Obj*)_self)
 
-#define Kino_CClass_Equals(_self, _arg1) \
-    (_self)->_->equals((kino_Obj*)_self, _arg1)
 
-#define Kino_CClass_Hash_Code(_self) \
-    (_self)->_->hash_code((kino_Obj*)_self)
+#define Kino_CClass_Clone(self) \
+    (self)->_->clone((kino_Obj*)self)
 
-#define Kino_CClass_Is_A(_self, _arg1) \
-    (_self)->_->is_a((kino_Obj*)_self, _arg1)
+#define Kino_CClass_Destroy(self) \
+    (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_CClass_To_String(_self) \
-    (_self)->_->to_string((kino_Obj*)_self)
+#define Kino_CClass_Equals(self, other) \
+    (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_CClass_Serialize(_self, _arg1) \
-    (_self)->_->serialize((kino_Obj*)_self, _arg1)
+#define Kino_CClass_Hash_Code(self) \
+    (self)->_->hash_code((kino_Obj*)self)
+
+#define Kino_CClass_Is_A(self, target_vtable) \
+    (self)->_->is_a((kino_Obj*)self, target_vtable)
+
+#define Kino_CClass_To_String(self) \
+    (self)->_->to_string((kino_Obj*)self)
+
+#define Kino_CClass_Serialize(self, target) \
+    (self)->_->serialize((kino_Obj*)self, target)
 
 struct KINO_CCLASS_VTABLE {
     KINO_OBJ_VTABLE *_;
-    kino_u32_t refcount;
+    chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
     const char *class_name;
     kino_Obj_clone_t clone;
@@ -70,12 +76,10 @@ extern KINO_CCLASS_VTABLE KINO_CCLASS;
   #define CClass_Is_A Kino_CClass_Is_A
   #define CClass_To_String Kino_CClass_To_String
   #define CClass_Serialize Kino_CClass_Serialize
-  #define CCLASS KINO_CCLASS
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_CCLASS_MEMBER_VARS \
-    kino_u32_t  refcount
-
+    chy_u32_t  refcount
 
 #ifdef KINO_WANT_CCLASS_VTABLE
 KINO_CCLASS_VTABLE KINO_CCLASS = {
@@ -93,10 +97,15 @@ KINO_CCLASS_VTABLE KINO_CCLASS = {
 };
 #endif /* KINO_WANT_CCLASS_VTABLE */
 
+#undef KINO_CCLASS_BOILERPLATE
+
+
 #endif /* R_KINO_CCLASS */
+
 
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
  */
+

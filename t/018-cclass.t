@@ -1,9 +1,11 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
-BEGIN { use_ok( "KinoSearch::Util::CClass", qw( to_perl to_kino ) ) }
+use Test::More tests => 8;
+
+use KinoSearch::Util::CClass qw( to_perl to_kino );
 use KinoSearch::Util::Hash;
+use KinoSearch::Util::ByteBuf;
 
 my $object = KinoSearch::Util::CClass->_new;
 isa_ok( $object, "KinoSearch::Util::CClass" );
@@ -11,7 +13,7 @@ isa_ok( $object, "KinoSearch::Util::CClass" );
 is( $object->_callback,    undef, "void callback" );
 is( $object->_callback_f,  4,     "float callback" );
 is( $object->_callback_i,  4,     "integer callback" );
-is( $object->_callback_bb, "4",   "ByteBuf callback" );
+is( $object->_callback_bb, "4",   "KinoSearch::Util::ByteBuf callback" );
 
 my $test_obj = $object->_callback_obj;
 isa_ok( $test_obj, "KinoSearch::Util::Obj" );

@@ -7,6 +7,7 @@ use Test::More tests => 9;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::InvIndexer;
+use KinoSearch::InvIndex;
 use KinoSearch::Searcher;
 
 my $schema   = TestSchema->new;
@@ -85,4 +86,3 @@ is_deeply( $top_hit, \%five_fields, "all fields stored successfully" );
 
 $hits = $searcher->search( query => 'x', num_wanted => 100 );
 is( $hits->total_hits, 5, "indexes successfully merged" );
-

@@ -30,30 +30,33 @@ struct kino_TermVectorsWriter {
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_TermVectorsWriter*
 kino_TVWriter_new(struct kino_InvIndex *invindex, 
-                  struct kino_SegInfo *seg_info));
+                  struct kino_SegInfo *seg_info);
 
-KINO_METHOD("Kino_TVWriter_Add_Segment",
 void
 kino_TVWriter_add_segment(kino_TermVectorsWriter *self, 
                           struct kino_TermVectorsReader *tv_reader,
                           struct kino_IntMap *doc_map,
-                          kino_u32_t max_doc));
-                          
-KINO_METHOD("Kino_TVWriter_Finish",
-void
-kino_TVWriter_finish(kino_TermVectorsWriter *self));
+                          chy_u32_t max_doc);
+KINO_METHOD("Kino_TVWriter_Add_Segment");
 
-KINO_METHOD("Kino_TVWriter_TV_String",
+/* Complete writing the segment.  If [doc_remap] is non-NULL, use it to remap
+ * document numbers.
+ */
+void
+kino_TVWriter_finish(kino_TermVectorsWriter *self, 
+                     struct kino_IntMap *doc_remap);
+KINO_METHOD("Kino_TVWriter_Finish");
+
 struct kino_ByteBuf*
 kino_TVWriter_tv_string(kino_TermVectorsWriter *self, 
-                        struct kino_TokenBatch *batch));
+                        struct kino_TokenBatch *batch);
+KINO_METHOD("Kino_TVWriter_TV_String");
 
-KINO_METHOD("Kino_TVWriter_Destroy",
 void
-kino_TVWriter_destroy(kino_TermVectorsWriter *self));
+kino_TVWriter_destroy(kino_TermVectorsWriter *self);
+KINO_METHOD("Kino_TVWriter_Destroy");
 
 KINO_END_CLASS
 

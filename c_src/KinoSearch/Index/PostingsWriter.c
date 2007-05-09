@@ -1,49 +1,85 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
-
-#include <stdio.h>
 
 #define KINO_WANT_POSTINGSWRITER_VTABLE
 #include "KinoSearch/Index/PostingsWriter.r"
 
-#include "KinoSearch/Analysis/Token.r"
-#include "KinoSearch/Analysis/TokenBatch.r"
-#include "KinoSearch/Schema/FieldSpec.r"
+#include "KinoSearch/Posting.r"
+#include "KinoSearch/Posting/RawPosting.r"
 #include "KinoSearch/Schema.r"
 #include "KinoSearch/InvIndex.r"
-#include "KinoSearch/Index/TermListReader.r"
-#include "KinoSearch/Index/SegTermList.r"
+#include "KinoSearch/Index/IndexFileNames.h"
+#include "KinoSearch/Index/PostingPool.r"
+#include "KinoSearch/Index/PostingPoolQueue.r"
+#include "KinoSearch/Index/PreSorter.r"
 #include "KinoSearch/Index/SegInfo.r"
+#include "KinoSearch/Index/SkipStepper.r"
 #include "KinoSearch/Index/Term.r"
-#include "KinoSearch/Index/SegTermDocs.r"
 #include "KinoSearch/Index/TermInfo.r"
-#include "KinoSearch/Index/TermListWriter.r"
-#include "KinoSearch/Search/Similarity.r"
+#include "KinoSearch/Index/LexWriter.r"
+#include "KinoSearch/Index/TermStepper.r"
 #include "KinoSearch/Store/Folder.r"
 #include "KinoSearch/Store/InStream.r"
 #include "KinoSearch/Store/OutStream.r"
 #include "KinoSearch/Util/IntMap.r"
-#include "KinoSearch/Util/SortExternal.r"
+#include "KinoSearch/Util/MemoryPool.r"
 
-/* Break up a serialized posting into its constituent parts.
+/* Initialize a PostingPool for this field.  If this is the field's first
+ * pool, create a VArray to hold this and subsequent pools.
+ */
+static void
+init_posting_pool(PostingsWriter *self, const ByteBuf *field_name);
+
+/* Flush at least 75% of the acculumulated RAM cache to disk.
  */
 static void 
-deserialize(ByteBuf *posting, ViewByteBuf *term_text, ViewByteBuf *positions, 
-            i32_t *field_num_ptr, u32_t *doc_num_ptr, u32_t *freq_ptr);
+flush_pools(PostingsWriter *self);
+
+/* Write terms and postings to outstreams -- possibly temp, possibly real.
+ */
+static void
+write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source, 
+                         OutStream *post_stream, OutStream *skip_stream);
 
 PostingsWriter*
-PostWriter_new(InvIndex *invindex, SegInfo *seg_info)
+PostWriter_new(InvIndex *invindex, SegInfo *seg_info, 
+               LexWriter *lex_writer, PreSorter *pre_sorter, 
+               chy_u32_t mem_thresh)
 {
+    u32_t arena_size = mem_thresh < 0x1000000 ? mem_thresh : 0x1000000;
+
     CREATE(self, PostingsWriter, POSTINGSWRITER);
 
     /* assign */
     REFCOUNT_INC(invindex)
     REFCOUNT_INC(seg_info);
-    self->invindex    = invindex;
-    self->seg_info    = seg_info;
+    REFCOUNT_INC(lex_writer);
+    if (pre_sorter != NULL)
+        REFCOUNT_INC(pre_sorter);
+    self->invindex      = invindex;
+    self->seg_info      = seg_info;
+    self->lex_writer    = lex_writer;
+    self->pre_sorter    = pre_sorter;
+    self->mem_thresh    = mem_thresh;
+
+    /* derive */
+    self->lex_tempname  =  BB_CLONE(seg_info->seg_name);
+    self->post_tempname =  BB_CLONE(seg_info->seg_name);
+    BB_Cat_Str(self->lex_tempname, ".lextemp", 8);
+    BB_Cat_Str(self->post_tempname, ".ptemp", 6);
 
     /* init */
-    self->sort_pool = SortEx_new(invindex, seg_info, 0);
+    self->post_pools    = VA_new(Schema_Num_Fields(invindex->schema));
+    self->skip_stream   = NULL;
+    self->skip_stepper  = SkipStepper_new();
+    self->mem_pool      = MemPool_new(arena_size);
+    self->lex_instream  = NULL;
+    self->post_instream = NULL;
+
+    /* open cache streams */
+    self->lex_outstream = Folder_Open_OutStream(self->invindex->folder, 
+        self->lex_tempname);
+    self->post_outstream = Folder_Open_OutStream(self->invindex->folder, 
+        self->post_tempname);
 
     return self;
 }
@@ -53,484 +89,390 @@ PostWriter_destroy(PostingsWriter *self)
 {
     REFCOUNT_DEC(self->invindex);
     REFCOUNT_DEC(self->seg_info);
-    REFCOUNT_DEC(self->sort_pool);
+    REFCOUNT_DEC(self->lex_writer);
+    REFCOUNT_DEC(self->pre_sorter);
+    REFCOUNT_DEC(self->mem_pool);
+    REFCOUNT_DEC(self->post_pools);
+    REFCOUNT_DEC(self->skip_stepper);
+    REFCOUNT_DEC(self->lex_tempname);
+    REFCOUNT_DEC(self->post_tempname);
+    REFCOUNT_DEC(self->lex_outstream);
+    REFCOUNT_DEC(self->post_outstream);
+    REFCOUNT_DEC(self->lex_instream);
+    REFCOUNT_DEC(self->post_instream);
+    REFCOUNT_DEC(self->skip_stream);
     free(self);
 }
 
-#define FIELD_NUM_LEN 2
-#define DOC_NUM_LEN 4
-#define FIELD_BOOST_LEN 1
-#define TEXT_LEN_LEN 2
-#define NULL_BYTE_LEN 1 
-#define MAX_VINT_LEN 5
-#define FREQ_MAX_LEN 5 /* same as max vint len */
+static void
+init_posting_pool(PostingsWriter *self, const ByteBuf *field_name)
+{
+    Schema      *schema     = self->invindex->schema;
+    i32_t        field_num  = SegInfo_Field_Num(self->seg_info, field_name);
+    VArray      *field_post_pools = (VArray*)VA_Fetch(self->post_pools, 
+        field_num);
+    TermStepper *term_stepper = TermStepper_new(field_name,
+        self->lex_writer->skip_interval, false);
+    IntMap      *pre_sort_remap = self->pre_sorter == NULL
+                                    ? NULL
+                                    : PreSorter_Gen_Remap(self->pre_sorter);
+    PostingPool *post_pool  = PostPool_new(schema, field_name, term_stepper, 
+        self->mem_pool, pre_sort_remap);
+    REFCOUNT_DEC(term_stepper);
+
+    if (field_post_pools == NULL) {
+        field_post_pools = VA_new(1);
+        VA_Store(self->post_pools, field_num, (Obj*)field_post_pools);
+        REFCOUNT_DEC(field_post_pools);
+    }
+
+    /* make sure the first pool in the array always has space */
+    VA_Unshift(field_post_pools, (Obj*)post_pool);
+
+    REFCOUNT_DEC(post_pool);
+}
 
 void
-PostWriter_add_batch(PostingsWriter *self, TokenBatch *batch, 
-                     const ByteBuf *field_name, kino_i32_t doc_num, 
+PostWriter_add_batch(PostingsWriter *self, struct kino_TokenBatch *batch, 
+                     const ByteBuf *field_name, i32_t doc_num, 
                      float doc_boost, float length_norm)
 {
-    Schema       *schema    = self->invindex->schema;
-    FieldSpec    *fspec     = Schema_Fetch_FSpec(schema, field_name);
-    SortExternal *sort_pool = self->sort_pool;
-    u16_t         field_num = SegInfo_Field_Num(self->seg_info, field_name);
-    Similarity   *sim = Schema_Fetch_Sim(schema, field_name);
-    float         field_boost = doc_boost * fspec->boost * length_norm;
-    char         doc_num_buf[4];
-    char         field_num_buf[2];
-    Token      **tokens;
-    u32_t        freq;
-    const bool_t store_field_boost = fspec->store_field_boost;
-    const bool_t store_pos_boost   = fspec->store_pos_boost;
-    const u8_t   field_boost_byte  = Sim_Encode_Norm(sim, field_boost);
-
-    /* cache serialized doc num and field num in anticipation of loop */
-    Math_encode_bigend_u32(doc_num, doc_num_buf);
-    Math_encode_bigend_u16(field_num, field_num_buf);
-
-    TokenBatch_Reset(batch);
-    while ( (tokens = TokenBatch_Next_Cluster(batch, &freq)) != NULL ) {
-        Token   *token = *tokens;
-        size_t len   = FIELD_NUM_LEN
-                     + token->len
-                     + NULL_BYTE_LEN
-                     + DOC_NUM_LEN
-                     + ( store_field_boost ? FIELD_BOOST_LEN : 0 )
-                     + FREQ_MAX_LEN
-                     + (MAX_VINT_LEN * freq) /* positions */
-                     + ( store_pos_boost ? (sizeof(u8_t) * freq) : 0 )
-                     + TEXT_LEN_LEN
-                     + NULL_BYTE_LEN;
-        ByteBuf *serialized_bb = BB_new(len);
-        char *dest = serialized_bb->ptr;
-        u32_t i;
-        u32_t last_prox = 0;
-
-        /* field number */
-        memcpy(dest, field_num_buf, FIELD_NUM_LEN);
-        dest += FIELD_NUM_LEN;
-
-        /* token text, plus null byte */
-        memcpy(dest, token->text, token->len);
-        dest += token->len;
-        *dest = '\0';
-        dest += NULL_BYTE_LEN;
-
-        /* doc num */
-        memcpy(dest, doc_num_buf, DOC_NUM_LEN);
-        dest += DOC_NUM_LEN;
-
-        /* freq */
-        dest += OutStream_encode_vint(freq, dest);
-
-        /* field_boost */
-        if (store_field_boost) {
-            *((u8_t*)dest) = field_boost_byte;
-            dest++;
-        }
-
-        /* positions and boosts */
-        for (i = 0; i < freq; i++) {
-            Token *const t = tokens[i];
-            const u32_t prox_delta = t->pos - last_prox;
-            const float boost = field_boost * t->boost;
-
-            dest += OutStream_encode_vint(prox_delta, dest);
-            last_prox = t->pos; 
-
-            if (store_pos_boost) {
-                *((u8_t*)dest) = Sim_Encode_Norm(sim, boost); 
-                dest++;
-            }
-        }
-
-        /* encode the length of the term text as a bigend u16 */
-        if (token->len > 65535) 
-            CONFESS("Maximum token length is 65535; got %d", token->len);
-        Math_encode_bigend_u16(token->len, dest);
-        dest += TEXT_LEN_LEN;
-
-        *dest = '\0';
-        serialized_bb->len = dest - serialized_bb->ptr;
-
-        SortEx_Feed_BB(sort_pool, serialized_bb);
-        REFCOUNT_DEC(serialized_bb);
+    i32_t         field_num  = SegInfo_Field_Num(self->seg_info, field_name);
+    PostingPool  *post_pool;
+    VArray       *field_post_pools;
+    
+    /* retrive the current PostingPool for this field */
+    field_post_pools = (VArray*)VA_Fetch(self->post_pools, field_num);
+    if (field_post_pools == NULL) {
+        init_posting_pool(self, field_name);
+        field_post_pools = (VArray*)VA_Fetch(self->post_pools, field_num);
     }
-}
+    post_pool = (PostingPool*)VA_Fetch(field_post_pools, 0);
 
-void
-PostWriter_write_postings(PostingsWriter *self, TermListWriter *tl_writer)
-{
-    Folder        *folder              = self->invindex->folder;
-    SortExternal  *sort_pool           = self->sort_pool;
-    ByteBuf       *seg_name            = self->seg_info->seg_name;
-    ByteBuf       *posting             = BB_new(40);
-    ViewByteBuf   *posboosts           = ViewBB_new(NULL, 0);
-    ViewByteBuf   *term_text           = ViewBB_new(NULL, 0);
-    ByteBuf       *last_term_text      = BB_new(40);
-    TermInfo      *tinfo               = TInfo_new(I32_MAX,0,0,0,0);
-    u32_t          last_doc_num        = 0;
-    i32_t          field_num           = 0;
-    u32_t          last_skip_doc       = 0;
-    u64_t          last_skip_post_ptr  = 0.0;
-    i32_t          iter                = 0;
-    u32_t         *skip_doc_data       = NULL;
-    u64_t         *skip_fileptr_data   = NULL;
-    u32_t          num_skips           = 0;
-    u32_t          skip_alloc          = 0;
-    OutStream     *outstream           = NULL;
-    ByteBuf       *filename            = BB_new(seg_name->len + 10);
+    /* add the TokenBatch to the PostingPool */
+    PostPool_Add_Batch(post_pool, batch, doc_num, doc_boost, length_norm);
 
-    /* each loop is one field, one term, one doc_num, many positions */
-    while (1) {
-        u32_t doc_num = 0;
-        u32_t freq    = 0;
-
-        /* retrieve the next posting from the sort pool */
-        REFCOUNT_DEC(posting);
-        posting = SortEx_Fetch(sort_pool);
-
-        /* SortExternal returns NULL when exhausted */
-        if (posting == NULL) {
-            goto FINAL_ITER;
-        }
-
-        /* each iter, add a doc to the doc_freq for a given term */
-        iter++;
-        tinfo->doc_freq++;    /* lags by 1 iter */
-
-        /* break up the serialized posting into its parts */
-        deserialize(posting, term_text, posboosts, &field_num, &doc_num, 
-            &freq);
-
-        if (field_num != tinfo->field_num) {
-            if (outstream != NULL) 
-                OutStream_SClose(outstream);
-            REFCOUNT_DEC(outstream);
-
-            filename->len = sprintf(filename->ptr, "%s.p%ld", seg_name->ptr, 
-                (long)field_num); 
-            outstream = Folder_Open_OutStream(folder, filename);
-        }
-
-        /* on the first iter, prime the "heldover" variables */
-        if (iter == 1) {
-            BB_Copy_BB(last_term_text, (ByteBuf*)term_text);
-            tinfo->doc_freq      = 0;
-            tinfo->post_fileptr  = OutStream_STell(outstream);
-            tinfo->skip_offset   = OutStream_STell(outstream);
-            tinfo->index_fileptr = 0;
-            tinfo->field_num     = field_num;
-        }
-
-
-        if ( iter == -1 ) { /* never true; can only get here via goto */
-            /* prepare to clear out buffers and exit loop */
-            FINAL_ITER: {
-                iter = -1;
-                REFCOUNT_DEC(term_text);
-                term_text = (ViewByteBuf*)BB_new(0);
-                tinfo->doc_freq++;
-            }
-        }
-
-        /* create skipdata */
-        if ( (tinfo->doc_freq + 1) % tl_writer->skip_interval == 0 ) {
-            u64_t post_ptr = OutStream_STell(outstream);
-
-            if (num_skips >= skip_alloc) {
-                skip_alloc = num_skips + 1;
-                skip_doc_data = REALLOCATE(skip_doc_data, skip_alloc, u32_t);
-                skip_fileptr_data = REALLOCATE(skip_fileptr_data, 
-                    skip_alloc, u64_t);
-            }
-
-            skip_doc_data[num_skips]     = last_doc_num - last_skip_doc;
-            skip_fileptr_data[num_skips] = post_ptr - last_skip_post_ptr;
-
-            last_skip_doc      = last_doc_num;
-            last_skip_post_ptr = post_ptr;
-            num_skips++;
-        }
-
-        /* if either the term or fieldnum changes, process the last term */
-        if (   field_num != tinfo->field_num
-            || BB_compare(&term_text, &last_term_text) 
-        ) {
-            /* take note of where we are for the term dictionary */
-            u64_t post_ptr = OutStream_STell(outstream);
-
-            /* write skipdata if there is any */
-            if (num_skips) {
-                /* kludge to compensate for doc_freq's 1-iter lag */
-                if (
-                    (tinfo->doc_freq + 1) % tl_writer->skip_interval == 0 
-                ) {
-                    /* remove 1 cycle of skip data */
-                    num_skips--;
-                }
-                if (num_skips) {
-                    u32_t i;
-
-                    /* tell tl_writer about the non-zero skip amount */
-                    tinfo->skip_offset = post_ptr - tinfo->post_fileptr;
-
-                    /* write out the skip data */
-                    for (i = 0; i < num_skips; i++) {
-                        OutStream_Write_VInt(outstream, skip_doc_data[i]);
-                        OutStream_Write_VLong(outstream, skip_fileptr_data[i]);
-                    }
-                    num_skips = 0;
-
-                    /* update the filepointer for the file we just wrote to */
-                    post_ptr = OutStream_STell(outstream);
-                }
-            }
-
-            /* init skip data in preparation for the next term */
-            last_skip_doc     = 0;
-            last_skip_post_ptr = post_ptr;
-
-            /* hand off to TermListWriter */
-            TLWriter_Add(tl_writer, last_term_text, tinfo);
-
-            /* start each term afresh */
-            tinfo->doc_freq      = 0;
-            tinfo->post_fileptr  = post_ptr;
-            tinfo->skip_offset   = 0;
-            tinfo->index_fileptr = 0;
-
-            /* Update the field num in the tinfo */
-            tinfo->field_num = field_num;
-
-            /* remember the term_text so we can write string diffs */
-            BB_Copy_BB(last_term_text, (ByteBuf*)term_text);
-
-            last_doc_num    = 0;
-        }
-
-        /* break out of loop on last iter before writing invalid data */
-        if (iter == -1)
-            break;
-
-        /* write freq data */
-        /* doc_code is delta doc_num, shifted left by 1. */
-        if (freq == 1) {
-            /* set low bit of doc_code to 1 to indicate freq of 1 */
-            const u32_t doc_code = ((doc_num - last_doc_num) << 1 ) + 1;
-            OutStream_Write_VInt(outstream, doc_code);
-        }
-        else {
-            const u32_t doc_code = (doc_num - last_doc_num) << 1;
-            /* leave low bit of doc_code at 0, record explicit freq */
-            OutStream_Write_VInt(outstream, doc_code);
-            OutStream_Write_VInt(outstream, freq);
-        }
-
-        /*  write positions and boost bytes */
-        OutStream_Write_Bytes(outstream, posboosts->ptr, posboosts->len);
-
-        /* remember last doc num because we need it for delta encoding */
-        last_doc_num = doc_num;
-    }
-
-    /* clean up */
-    if (outstream != NULL) {
-        OutStream_SClose(outstream);
-        REFCOUNT_DEC(outstream);
-    }
-    REFCOUNT_DEC(filename);
-    REFCOUNT_DEC(tinfo);
-    REFCOUNT_DEC(term_text);
-    REFCOUNT_DEC(last_term_text);
-    REFCOUNT_DEC(posboosts);
-    REFCOUNT_DEC(posting); 
-    free(skip_doc_data);
-    free(skip_fileptr_data);
-}
-
-void
-PostWriter_add_segment(PostingsWriter *self, TermListReader* tl_reader, 
-                       SegTermDocs *term_docs, IntMap *doc_map, 
-                       IntMap *field_num_map) 
-{
-    Schema       *schema     = self->invindex->schema;
-    SegInfo      *seg_info   = self->seg_info;
-    SortExternal *sort_pool  = self->sort_pool;
-    const i32_t   num_fields = field_num_map == NULL 
-        ? (i32_t)Schema_Num_Fields(schema)
-        : (i32_t)field_num_map->size;
-    i32_t         max_doc    = doc_map->size;
-    ByteBuf      *posting    = BB_new(FIELD_NUM_LEN);
-    SegTermList  *term_list  = NULL;
-    char doc_num_buf[4];
-    char text_len_buf[4];
-    i32_t orig_field_num = -1;
-    i32_t field_num      = -1;
-    bool_t store_field_boost = false;
-    bool_t store_pos_boost   = false;
-
-    /* seed term list iteration */
-    while (1) {
-        Term *term;
-        size_t common_len;
-
-        /* proceed to next term */
-        if (term_list == NULL || !SegTermList_Next(term_list)) {
-            ByteBuf   *field_name = NULL;
-            FieldSpec *field_spec = NULL;
-
-            /* get the term list for the next indexed field with content */
-            while (++orig_field_num < num_fields) {
-                REFCOUNT_DEC(term_list);
-                field_num = field_num_map == NULL
-                    ? orig_field_num
-                    : IntMap_Get(field_num_map, orig_field_num);
-                field_name = SegInfo_Field_Name(seg_info, field_num);
-                term_list = TLReader_Start_Field_Terms(tl_reader, field_name);
-                if (term_list != NULL && SegTermList_Next(term_list))
-                    break;
-            }
-
-            /* bail out of loop when all fields exhausted */
-            if (orig_field_num >= num_fields) {
-                REFCOUNT_DEC(term_list);
-                break;
-            }
-
-            /* start with field num */
-            Math_encode_bigend_u16(field_num, posting->ptr);
-
-            /* get field characteristics */
-            field_spec = Schema_Fetch_FSpec(schema, field_name);
-            store_pos_boost   = field_spec->store_pos_boost;
-            store_field_boost = field_spec->store_field_boost;
-            
-        }
-        term       = SegTermList_Get_Term(term_list);
-        common_len = term->text->len + FIELD_NUM_LEN;
-
-        /* continue with term text and null byte */
-        Math_encode_bigend_u16(term->text->len, text_len_buf);
-        posting->len = FIELD_NUM_LEN;
-        BB_Cat_BB(posting, term->text);
-        BB_Cat_Str(posting, "\0", NULL_BYTE_LEN);
-        common_len += NULL_BYTE_LEN;
-
-        SegTermDocs_Seek_TL(term_docs, (TermList*)term_list);
-        while (SegTermDocs_Next(term_docs)) {
-            i32_t doc_num          = SegTermDocs_Get_Doc(term_docs);
-            u32_t freq             = SegTermDocs_Get_Freq(term_docs);
-            ByteBuf *positions_bb  = SegTermDocs_Get_Positions(term_docs);
-            u32_t *positions       = (u32_t*)positions_bb->ptr;
-            ByteBuf *boosts_bb     = SegTermDocs_Get_Boosts(term_docs);
-            u8_t *boosts           = (u8_t*)boosts_bb->ptr;
-            size_t new_size        = 
-                  common_len         /* field num, term text, null byte */
-                + DOC_NUM_LEN 
-                + ( store_field_boost ? FIELD_BOOST_LEN : 0 )
-                + FREQ_MAX_LEN
-                + (MAX_VINT_LEN * freq) /* positions */
-                + ( store_pos_boost ? (sizeof(u8_t) * freq) : 0 )
-                + TEXT_LEN_LEN
-                + NULL_BYTE_LEN;
-            char *dest;
-            u32_t num_bytes;
-            u32_t i;
-            u32_t last_prox = 0;
-            
-            /* grow if necessary and get a pointer to write to */
-            BB_Grow(posting, new_size); /* crucial to allocate enough! */
-            dest = posting->ptr;
-
-            /* fast forward past field number and term text */
-            dest += common_len;
-
-            /* concat the remapped doc number */
-            if (doc_num == -1)
-                continue;
-            if (doc_num > max_doc) 
-                CONFESS("doc_num > max_doc: %d %d", doc_num, max_doc);
-            doc_num = IntMap_Get(doc_map, doc_num);
-            Math_encode_bigend_u32(doc_num, doc_num_buf);
-            memcpy(dest, doc_num_buf, DOC_NUM_LEN);
-            dest += DOC_NUM_LEN;
-
-            /* concat freq */
-            num_bytes = OutStream_encode_vint(freq, dest);
-            dest += num_bytes;
-
-            if (store_field_boost) {
-                *((u8_t*)dest) = TermDocs_Get_Field_Boost_Byte(term_docs);
-                dest++;
-            }
-
-            if (store_pos_boost) {
-                /* concat the positions and the boosts */
-                for (i = 0; i < freq; i++) {
-                    const u32_t prox_delta = *positions - last_prox;
-
-                    /* position */
-                    dest += OutStream_encode_vint(prox_delta, dest);
-                    last_prox = *positions++;
-
-                    /* boost byte */
-                    *((u8_t*)dest) = *boosts++;
-                    dest++;
-                }
-            }
-            else {
-                for (i = 0; i < freq; i++) {
-                    const u32_t prox_delta = *positions - last_prox;
-                    dest += OutStream_encode_vint(prox_delta, dest);
-                    last_prox = *positions++;
-                }
-            }
-
-            /* concat the term_length */
-            memcpy(dest, text_len_buf, TEXT_LEN_LEN);
-            dest += TEXT_LEN_LEN;
-
-            /* calc total len */
-            posting->len = dest - posting->ptr;
-
-            /* add the posting to the sortpool */
-            SortEx_Feed(sort_pool, posting->ptr, posting->len);
-        }
-    }
-    REFCOUNT_DEC(posting);
+    /* check if we've crossed the memory threshold and it's time to flush */
+    if (self->mem_pool->consumed > self->mem_thresh)
+        flush_pools(self);
 }
 
 static void 
-deserialize(ByteBuf *posting, ViewByteBuf *term_text, ViewByteBuf *positions, 
-            i32_t *field_num_ptr, u32_t *doc_num_ptr, u32_t *freq_ptr) 
+flush_pools(PostingsWriter *self)
 {
-    char    *ptr = posting->ptr;
-    size_t   len;
+    u32_t i;
+    VArray *const post_pools = self->post_pools;
 
-    /* extract field number */
-    *field_num_ptr = (i16_t)Math_decode_bigend_u16(ptr);
+    /* refresh remap used by PostingPool objects */
+    if (self->pre_sorter != NULL)
+        PreSorter_Gen_Remap(self->pre_sorter);
 
-    /* extract term_text_len, decoding packed 'n', assign term_text */
-    ptr += posting->len - TEXT_LEN_LEN;
-    term_text->len = Math_decode_bigend_u16(ptr);
-    ViewBB_Assign(term_text, posting->ptr + FIELD_NUM_LEN, 
-        term_text->len);
+    for (i = 0; i < self->post_pools->size; i++) {
+        VArray *field_post_pools = (VArray*)VA_Fetch(post_pools, i);
+        if (field_post_pools != NULL) {
+            /* the first pool in the array is the only active pool */
+            PostingPool *const post_pool 
+                = (PostingPool*)VA_Fetch(field_post_pools, 0);
 
-    /* extract and assign doc_num, decoding packed 'N' */
-    ptr = posting->ptr + FIELD_NUM_LEN + term_text->len + NULL_BYTE_LEN;
-    *doc_num_ptr  = Math_decode_bigend_u32(ptr);
+            if (post_pool->cache_max != post_pool->cache_tick) {
+                /* open a skip stream if it hasn't been already */
+                if (self->skip_stream == NULL) {
+                    ByteBuf *filename = BB_CLONE(self->seg_info->seg_name);
+                    BB_Cat_Str(filename, ".skip", 5);
+                    self->skip_stream = Folder_Open_OutStream(
+                        self->invindex->folder, filename);
+                    REFCOUNT_DEC(filename);
+                }
 
-    /* move ptr forward */
-    ptr = posting->ptr + FIELD_NUM_LEN + term_text->len + NULL_BYTE_LEN 
-        + DOC_NUM_LEN;
+                /* write to temp files */
+                LexWriter_Enter_Temp_Mode(self->lex_writer, 
+					self->lex_outstream);
+                post_pool->lex_start = OutStream_STell(self->lex_outstream);
+                post_pool->post_start = OutStream_STell(self->post_outstream);
+                PostPool_Sort_Cache(post_pool);
+                write_terms_and_postings(self, (Obj*)post_pool, 
+                    self->post_outstream, self->skip_stream);
+                post_pool->lex_end = OutStream_STell(self->lex_outstream);
+                post_pool->post_end = OutStream_STell(self->post_outstream);
+                LexWriter_Leave_Temp_Mode(self->lex_writer);
 
-    /* extract freq and move ptr forward */
-    *freq_ptr = InStream_decode_vint(&ptr);
+                /* store away this pool and start another */
+                init_posting_pool(self, post_pool->field_name);
+            }
+        }
+    }
 
-    /* make positions ByteBuf a view of the pos/boost data in the posting */
-    len = BBEND(posting) - ptr - TEXT_LEN_LEN;
-    ViewBB_Assign(positions, ptr, len);
+    /* now that we've flushed all RawPostings, release memory */
+    MemPool_Release_All(self->mem_pool);
+}
+
+typedef RawPosting*
+(*fetcher_t)(Obj *raw_post_source);
+
+static void
+write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source, 
+                         OutStream *post_stream, OutStream *skip_stream)
+{
+    TermInfo         *const tinfo           = TInfo_new(0,0,0,0);
+    SkipStepper      *const skip_stepper    = self->skip_stepper;
+    LexWriter        *const lex_writer      = self->lex_writer;
+    const i32_t       skip_interval         = lex_writer->skip_interval;
+    ByteBuf          *const last_term_text  = BB_new(0);
+    u32_t             last_doc_num          = 0;
+    u32_t             last_skip_doc         = 0;
+    u64_t             last_skip_filepos     = 0;
+    RawPosting       *posting               = NULL;
+    fetcher_t         fetch                 = NULL;
+    IntMap           *pre_sort_remap        = self->pre_sorter == NULL
+        ? NULL
+        :  PreSorter_Gen_Remap(self->pre_sorter);
+
+    /* cache fetch method (violates OO principles, but we'll deal) */
+    if (OBJ_IS_A(raw_post_source, POSTINGPOOL)) {
+        fetch = (fetcher_t)((PostingPool*)raw_post_source)->_->fetch_from_ram;
+    }
+    else if (OBJ_IS_A(raw_post_source, POSTINGPOOLQUEUE)) {
+        fetch = (fetcher_t)((PostingPoolQueue*)raw_post_source)->_->fetch;
+    }
+
+    /* prime heldover variables */
+    SkipStepper_Reset(skip_stepper, 0, 0);
+    posting = fetch(raw_post_source);
+    if (posting == NULL)
+        CONFESS("Failed to retrieve at least one posting");
+    BB_Copy_Str(last_term_text, posting->blob, posting->content_len);
+
+    while (1) {
+        bool_t same_text_as_last = true;
+
+        if (posting == NULL) {
+            /* on the last iter, use an empty string to make LexWriter DTRT */
+            posting = &RAWPOSTING_BLANK;
+            same_text_as_last = false;
+        }
+        else {
+            /* compare once */
+            if (   posting->content_len != last_term_text->len  
+                || memcmp(&posting->blob, last_term_text->ptr, 
+                    posting->content_len) != 0
+            ) {
+                same_text_as_last = false;
+            }
+
+            /* remap doc num if necessary */
+            if (pre_sort_remap != NULL)
+                posting->doc_num 
+                    = IntMap_Get(pre_sort_remap, posting->doc_num);
+
+            /*  write skip data */
+            if (   skip_stream != NULL
+                && same_text_as_last   
+                && tinfo->doc_freq % skip_interval == 0
+                && tinfo->doc_freq != 0
+            ) {
+                /* if first skip group, save skip stream pos for term info */
+                if (tinfo->doc_freq == skip_interval) {
+                    tinfo->skip_filepos = OutStream_STell(skip_stream); 
+                }
+                /* write deltas */
+                last_skip_doc         = skip_stepper->doc_num;
+                last_skip_filepos     = skip_stepper->filepos;
+                skip_stepper->doc_num = posting->doc_num;
+                skip_stepper->filepos = OutStream_STell(post_stream);
+                SkipStepper_Write_Record(skip_stepper, skip_stream,
+                     last_skip_doc, last_skip_filepos);
+            }
+        }
+
+        /* if the term text changes, process the last term */
+        if ( !same_text_as_last ) {
+            /* take note of where we are for the term dictionary */
+            u64_t post_filepos = OutStream_STell(post_stream);
+
+            /* hand off to LexWriter */
+            LexWriter_Add(lex_writer, last_term_text, tinfo);
+
+            /* start each term afresh */
+            tinfo->doc_freq      = 0;
+            tinfo->post_filepos  = post_filepos;
+            tinfo->skip_filepos  = 0;
+            tinfo->index_filepos = 0;
+
+            /* init skip data in preparation for the next term */
+            skip_stepper->doc_num = 0;
+            skip_stepper->filepos = post_filepos;
+            last_skip_doc         = 0;
+            last_skip_filepos     = post_filepos;
+
+            /* remember the term_text so we can write string diffs */
+            BB_Copy_Str(last_term_text, posting->blob, 
+                posting->content_len);
+
+            /* starting a new term, thus a new delta doc sequence at 0 */
+            last_doc_num    = 0;
+        }
+
+        /* bail on last iter before writing invalid posting data */
+        if (posting == &RAWPOSTING_BLANK)
+            break;
+
+        /* write posting data */
+        RawPost_Write_Record(posting, post_stream, last_doc_num);
+
+        /* remember last doc num because we need it for delta encoding */
+        last_doc_num = posting->doc_num;
+
+        /* retrieve the next posting from the sort pool */
+        /* REFCOUNT_DEC(posting); */ /* No!!  DON'T destroy!!!  */
+        posting = fetch(raw_post_source);
+
+        /* doc freq lags by one iter */
+        tinfo->doc_freq++;
+    }
+
+    /* clean up */
+    REFCOUNT_DEC(tinfo);
+    REFCOUNT_DEC(last_term_text);
+}
+
+static void
+finish_field(PostingsWriter *self, i32_t field_num)
+{
+    VArray *field_post_pools = (VArray*)VA_Fetch(self->post_pools, field_num);
+    PostingPoolQueue *pool_q;
+    IntMap      *pre_sort_remap = self->pre_sorter == NULL
+                                    ? NULL
+                                    : PreSorter_Gen_Remap(self->pre_sorter);
+    
+    if (field_post_pools == NULL)
+        return;
+    else
+        /* TODO: can reusing mem_thresh double ram footprint? */
+        pool_q = PostPoolQ_new(field_post_pools, self->lex_instream,
+            self->post_instream, pre_sort_remap, self->mem_thresh); 
+
+    /* don't bother unless there's actually content */
+    if (PostPoolQ_Peek(pool_q) != NULL) {
+        LexWriter        *lex_writer    = self->lex_writer;
+        Folder           *folder        = self->invindex->folder;
+        OutStream        *post_stream   = NULL;
+        OutStream        *skip_stream   = self->skip_stream;
+        ByteBuf          *filename      = BB_CLONE(self->seg_info->seg_name);
+
+        /* open posting stream */
+        BB_Cat_Str(filename, ".p", 2);
+        BB_Cat_I64(filename, (i64_t)field_num);
+        post_stream = Folder_Open_OutStream(folder, filename);
+    
+        /* open a skip stream if it hasn't been already */
+        if (self->skip_stream == NULL) {
+            ByteBuf *skip_filename = BB_CLONE(self->seg_info->seg_name);
+            BB_Cat_Str(skip_filename, ".skip", 5);
+            skip_stream = Folder_Open_OutStream(folder, skip_filename);
+            self->skip_stream = skip_stream;
+            REFCOUNT_DEC(skip_filename);
+        }
+
+        /* start LexWriter */
+        LexWriter_Start_Field(lex_writer, field_num);
+
+        /* write terms and postings */
+        write_terms_and_postings(self, (Obj*)pool_q, post_stream, 
+			skip_stream);
+
+        /* finish and clean up */
+        LexWriter_Finish_Field(self->lex_writer, field_num);
+        OutStream_SClose(post_stream);
+        REFCOUNT_DEC(post_stream);
+        REFCOUNT_DEC(filename);
+    }
+
+    /* clean up */
+    REFCOUNT_DEC(pool_q);
+}
+
+void
+PostWriter_add_seg_data(PostingsWriter *self, Folder *other_folder, 
+                        SegInfo *other_seg_info, IntMap *doc_map)
+{
+    u32_t      i;
+    VArray    *post_pools     = self->post_pools;
+    Schema    *schema         = self->invindex->schema;
+    SegInfo   *seg_info       = self->seg_info;
+    VArray    *all_fields     = Schema_All_Fields(schema);
+    IntMap    *pre_sort_remap = self->pre_sorter == NULL
+                                    ? NULL
+                                    : PreSorter_Gen_Remap(self->pre_sorter);
+
+    for (i = 0; i < all_fields->size; i++) {
+        ByteBuf *field_name = (ByteBuf*)VA_Fetch(all_fields, i);
+        i32_t old_field_num = SegInfo_Field_Num(other_seg_info, field_name);
+        i32_t new_field_num = SegInfo_Field_Num(seg_info, field_name);
+        VArray *field_post_pools   = NULL;
+        PostingPool *post_pool     = NULL;
+        TermStepper *stepper       = NULL;
+
+        /* sanity check */
+        if (old_field_num == -1)
+            continue; /* not in old segment */
+        if (new_field_num == -1)
+            CONFESS("Unrecognized field: %s", field_name->ptr);
+
+        /* init field if we've never seen it before */
+        field_post_pools = (VArray*)VA_Fetch(post_pools, new_field_num);
+        if (field_post_pools == NULL) {
+            init_posting_pool(self, field_name);
+            field_post_pools 
+                = (VArray*)VA_Fetch(self->post_pools, new_field_num);
+        }
+
+        /* create a pool and add it to the field's collection of pools */
+        stepper = TermStepper_new(field_name,
+            self->lex_writer->skip_interval, false);
+        post_pool = PostPool_new(schema, field_name, stepper, 
+            self->mem_pool, pre_sort_remap);
+        PostPool_Assign_Seg(post_pool, other_folder, other_seg_info, 
+            seg_info->doc_count, doc_map);
+        VA_Push(field_post_pools, (Obj*)post_pool);
+        REFCOUNT_DEC(stepper);
+        REFCOUNT_DEC(post_pool);
+    }
+
+    /* clean up */
+    REFCOUNT_DEC(all_fields);
+}
+
+void
+PostWriter_finish(PostingsWriter *self)
+{
+    Folder *folder = self->invindex->folder;
+    u32_t i;
+    Hash *metadata = Hash_new(0);
+
+    /* switch temp streams from write to read mode */
+    OutStream_SClose(self->lex_outstream);
+    OutStream_SClose(self->post_outstream);
+    self->lex_instream  = Folder_Open_InStream(folder, self->lex_tempname);
+    self->post_instream = Folder_Open_InStream(folder, self->post_tempname);
+
+    /* write postings for each field */
+    for (i = 0; i < self->post_pools->size; i++) {
+        finish_field(self, i);
+    }
+
+    /* close down */
+    if (self->skip_stream != NULL)
+        OutStream_SClose(self->skip_stream);
+    
+    /* generate and store metadata */
+    Hash_Store_I64(metadata, "format", 6, (i64_t)POSTING_LIST_FORMAT);
+    SegInfo_Add_Metadata(self->seg_info, "posting_list", 12, (Obj*)metadata); 
+
+    /* dispatch the LexWriter */
+    LexWriter_Finish(self->lex_writer);
+
+    /* clean up */
+    REFCOUNT_DEC(metadata);
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

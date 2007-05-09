@@ -5,15 +5,17 @@ package KinoSearch::Search::TermQuery;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
-use KinoSearch::Util::ToStringUtils qw( boost_to_string );
+our %instance_vars = (
+    # inherited
+    boost => 1.0,
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        term => undef,
-    );
-    __PACKAGE__->ready_get(qw( term ));
-}
+    # params / members
+    term => undef,
+);
+
+BEGIN { __PACKAGE__->ready_get(qw( term )) }
+
+use KinoSearch::Util::ToStringUtils qw( boost_to_string );
 
 sub init_instance {
     my $self = shift;
@@ -21,7 +23,7 @@ sub init_instance {
         unless a_isa_b( $self->{term}, 'KinoSearch::Index::Term' );
 }
 
-sub create_weight {
+sub make_weight {
     my ( $self, $searcher ) = @_;
     my $weight = KinoSearch::Search::TermWeight->new(
         parent   => $self,
@@ -37,16 +39,7 @@ sub to_string {
     my $string = $proposed_field eq $field ? '' : "$field:";
     $string .= $self->{term}->get_text . boost_to_string( $self->{boost} );
     return $string;
-
 }
-
-sub get_similarity {
-    my ( $self, $searcher ) = @_;
-    my $field_name = $self->{term}->get_field;
-    return $searcher->get_similarity($field_name);
-}
-
-sub equals { shift->todo_death }
 
 package KinoSearch::Search::TermWeight;
 use KinoSearch::Util::ToolSet;
@@ -54,38 +47,77 @@ use base qw( KinoSearch::Search::Weight );
 
 use KinoSearch::Search::TermScorer;
 
-our %instance_vars = __PACKAGE__->init_instance_vars();
+our %instance_vars = (
+    # inherited
+    searcher   => undef,
+    parent     => undef,
+    similarity => undef,
+
+    # members
+    idf               => undef,
+    raw_impact        => undef,
+    query_norm_factor => undef,
+    normalized_impact => undef,
+);
 
 sub init_instance {
-    my $self = shift;
+    my $self  = shift;
+    my $term  = $self->{parent}{term};
+    my $field = $term->get_field;
 
-    $self->{similarity}
-        = $self->{parent}->get_similarity( $self->{searcher} );
+    # don't keep searcher around; it interferes with serialization
+    my $searcher = delete $self->{searcher};
 
-    $self->{idf} = $self->{similarity}
-        ->idf( $self->{parent}->get_term, $self->{searcher} );
+    # retrieve the correct Similarity for the Term's field
+    my $sim = $self->{similarity} = $searcher->get_schema->fetch_sim($field);
 
-    # kill this because we don't want its baggage.
-    undef $self->{searcher};
+    # store IDF
+    my $idf = $self->{idf} = $sim->idf( $term, $searcher );
+
+    # The score of any document is approximately equal to:
+    #
+    #    ( tf_d * idf_t / norm_d ) * ( tf_q * idf_t / norm_q )
+    #
+    # Here we add in the first IDF, plus user-supplied boost.
+    #
+    # The second clause is factored in by the call to
+    # perform_query_normalization().
+    #
+    # tf_d and norm_d can only be added by the Scorer, since they are
+    # per-document.
+    $self->{raw_impact} = $idf * $self->{parent}->get_boost;
+
+    # make final preparations
+    $self->perform_query_normalization($searcher);
 }
+
+sub sum_of_squared_weights { shift->{raw_impact}**2 }
+
+sub normalize {
+    my ( $self, $query_norm_factor ) = @_;
+    $self->{query_norm_factor} = $query_norm_factor;
+
+    # Multiply raw impact by ( tf_q * idf_q / norm_q )
+    #
+    # Note: factoring in IDF a second time is correct.  See formula.
+    $self->{normalized_impact}
+        = $self->{raw_impact} * $self->{idf} * $query_norm_factor;
+}
+
+sub get_value { shift->{normalized_impact} }
 
 sub scorer {
-    my ( $self, $ix_reader ) = @_;
-    my $term      = $self->{parent}{term};
-    my $term_docs = $ix_reader->term_docs($term);
-    return unless defined $term_docs;
-    return unless $term_docs->get_doc_freq;
+    my ( $self, $reader ) = @_;
+    my $term = $self->{parent}{term};
+    my $plist = $reader->posting_list( term => $term );
+    return unless defined $plist;
+    return unless $plist->get_doc_freq;
 
-    return KinoSearch::Search::TermScorer->new(
-        weight     => $self,
-        term_docs  => $term_docs,
-        similarity => $self->{similarity},
+    return $plist->make_scorer(
+        similarity   => $self->{similarity},
+        weight       => $self,
+        weight_value => $self->get_value,
     );
-}
-
-sub to_string {
-    my $self = shift;
-    return "weight(" . $self->{parent}->to_string . ")";
 }
 
 1;
@@ -137,4 +169,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

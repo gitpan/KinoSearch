@@ -6,12 +6,15 @@ use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 use locale;
 
-BEGIN { __PACKAGE__->init_instance_vars(); }
+our %instance_vars = (
+    # inherited
+    language => '',
+);
 
 use KinoSearch::Analysis::Token;
 use KinoSearch::Analysis::TokenBatch;
 
-sub analyze {
+sub analyze_batch {
     my ( $self, $batch ) = @_;
 
     # lc all of the terms, one by one
@@ -21,6 +24,11 @@ sub analyze {
 
     $batch->reset;
     return $batch;
+}
+
+sub analyze_text {
+    my $batch = KinoSearch::Analysis::TokenBatch->new( text => lc( $_[1] ) );
+    return $_[0]->analyze_batch($batch);
 }
 
 1;
@@ -60,4 +68,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

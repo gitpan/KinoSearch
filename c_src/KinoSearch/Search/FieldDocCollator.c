@@ -1,4 +1,3 @@
-#define KINO_USE_SHORT_NAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #define KINO_WANT_FIELDDOCCOLLATOR_VTABLE
@@ -57,7 +56,8 @@ FDocCollator_less_than(const void *va, const void *vb)
     FieldDoc *const b = (FieldDoc*)vb;
     FieldDocCollator *const self = a->collator; /* extract self */
 
-    return FDocCollator_compare(self, a->id, a->score, b->id, b->score);
+    return FDocCollator_compare(self, a->doc_num, a->score, 
+                                      b->doc_num, b->score);
 }
 
 bool_t
@@ -85,8 +85,11 @@ FDocCollator_compare(FieldDocCollator *self, u32_t doc_num_a, float score_a,
         }
     }
 
-    /* sort by score last */
-    return score_a < score_b;
+    /* break ties by score, then by doc num, so sort is stable per reader */
+    if (score_a != score_b)
+        return score_a < score_b;
+    else 
+        return doc_num_a < doc_num_b;
 }
 
 /* Copyright 2007 Marvin Humphrey

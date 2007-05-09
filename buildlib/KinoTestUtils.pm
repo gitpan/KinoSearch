@@ -10,6 +10,7 @@ our @EXPORT_OK = qw(
     path_for_test_invindex
     get_uscon_docs
     utf8_test_strings
+    test_analyzer
 );
 
 use KinoSearch::InvIndex;
@@ -17,6 +18,10 @@ use KinoSearch::InvIndexer;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::Store::FSFolder;
 use KinoSearch::Analysis::Tokenizer;
+use KinoSearch::Index::PostingsWriter;
+
+# set mem_thesh to 1 kiB in order to expose problems with flushing
+$KinoSearch::Index::PostingsWriter::instance_vars{mem_thresh} = 0x400;
 
 use lib 'sample';
 
@@ -122,6 +127,29 @@ sub utf8_test_strings {
     my $frowny = $not_a_smiley;
     utf8::upgrade($frowny);
     return ( $smiley, $not_a_smiley, $frowny );
+}
+
+# Verify an Analyzer's analyze_batch, analyze_field, analyze_text, and analyze_raw methods.
+sub test_analyzer {
+    my ( $analyzer, $source, $expected, $message ) = @_;
+
+    my $batch = KinoSearch::Analysis::TokenBatch->new( text => $source );
+    $batch = $analyzer->analyze_batch($batch);
+    my @got;
+    while ( my $token = $batch->next ) {
+        push @got, $token->get_text;
+    }
+    Test::More::is_deeply( \@got, $expected, "analyze: $message" );
+
+    $batch = $analyzer->analyze_text($source);
+    @got   = ();
+    while ( my $token = $batch->next ) {
+        push @got, $token->get_text;
+    }
+    Test::More::is_deeply( \@got, $expected, "analyze_text: $message" );
+
+    @got = $analyzer->analyze_raw($source);
+    Test::More::is_deeply( \@got, $expected, "analyze_raw: $message" );
 }
 
 1;

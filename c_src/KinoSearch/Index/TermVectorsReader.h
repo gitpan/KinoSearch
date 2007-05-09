@@ -30,22 +30,21 @@ struct kino_TermVectorsReader {
 
 /* Constructor.
  */
-KINO_FUNCTION(
 kino_TermVectorsReader*
 kino_TVReader_new(struct kino_Schema *schema, struct kino_Folder *folder, 
-                  struct kino_SegInfo *seg_info));
+                  struct kino_SegInfo *seg_info);
 
 /* Return the raw bytes of an entry.
  */
-KINO_METHOD("Kino_TVReader_Read_Record",
 void
 kino_TVReader_read_record(kino_TermVectorsReader *self, 
-                          kino_i32_t doc_num,
-                          struct kino_ByteBuf *buffer));
+                          chy_i32_t doc_num,
+                          struct kino_ByteBuf *buffer);
+KINO_METHOD("Kino_TVReader_Read_Record");
 
-KINO_METHOD("Kino_TVReader_Destroy",
 void
-kino_TVReader_destroy(kino_TermVectorsReader *self));
+kino_TVReader_destroy(kino_TermVectorsReader *self);
+KINO_METHOD("Kino_TVReader_Destroy");
 
 KINO_END_CLASS
 

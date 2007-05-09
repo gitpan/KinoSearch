@@ -2,10 +2,9 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 4;
+use Test::More tests => 3;
 
-BEGIN { use_ok('KinoSearch::Search::MultiSearcher') }
-
+use KinoSearch::Search::MultiSearcher;
 use KinoSearch::Searcher;
 use KinoSearch::Analysis::Tokenizer;
 
@@ -29,4 +28,3 @@ is( $hits->total_hits, 1, "Find hit in second searcher" );
 
 $hits = $multi_searcher->search( query => 'c' );
 is( $hits->total_hits, 2, "Find hits in both searchers" );
-
