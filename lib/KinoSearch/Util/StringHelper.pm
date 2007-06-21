@@ -9,6 +9,7 @@ our @EXPORT_OK = qw(
     utf8_flag_off
     to_base36
     from_base36
+    utf8ify
 );
 
 1;
@@ -61,6 +62,19 @@ from_base36(str)
 CODE:
     RETVAL = strtol(str, NULL, 36);
 OUTPUT: RETVAL
+
+=for comment
+
+Upgrade a SV to UTF8, converting Latin1 if necessary. Equivalent to utf::upgrade().
+
+=cut
+
+void
+utf8ify(sv)
+    SV *sv;
+PPCODE:
+    sv_utf8_upgrade(sv);
+
 
 __POD__
 

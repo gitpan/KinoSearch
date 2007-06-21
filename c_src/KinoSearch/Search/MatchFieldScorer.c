@@ -6,11 +6,11 @@
 #include "KinoSearch/Search/HitCollector.r"
 #include "KinoSearch/Search/Similarity.r"
 #include "KinoSearch/Search/Tally.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 #include "KinoSearch/Util/IntMap.r"
 
 MatchFieldScorer*
-MatchFieldScorer_new(Similarity *sim, IntMap *sort_cache, void *weight_ref)
+MatchFieldScorer_new(Similarity *sim, IntMap *sort_cache, void *weight)
 {
     CREATE(self, MatchFieldScorer, MATCHFIELDSCORER);
 
@@ -19,7 +19,7 @@ MatchFieldScorer_new(Similarity *sim, IntMap *sort_cache, void *weight_ref)
     REFCOUNT_INC(sort_cache);
     self->sim           = sim;
     self->sort_cache    = sort_cache;
-    self->weight_ref    = weight_ref;
+    self->weight        = Native_new(weight);
 
     /* init */
     self->tally         = Tally_new();
@@ -34,8 +34,7 @@ MatchFieldScorer_destroy(MatchFieldScorer *self)
     REFCOUNT_DEC(self->sim);
     REFCOUNT_DEC(self->tally);
     REFCOUNT_DEC(self->sort_cache);
-    if (self->weight_ref != NULL)
-        CClass_svrefcount_dec(self->weight_ref);
+    REFCOUNT_DEC(self->weight);
     free(self);
 }
 

@@ -42,6 +42,10 @@ typedef struct kino_Posting*
 typedef chy_u32_t
 (*kino_Schema_num_fields_t)(kino_Schema *self);
 
+typedef chy_i32_t
+(*kino_Schema_field_num_t)(kino_Schema *self, 
+                      const struct kino_ByteBuf *field_name);
+
 typedef struct kino_VArray*
 (*kino_Schema_all_fields_t)(kino_Schema *self);
 
@@ -81,6 +85,9 @@ typedef struct kino_VArray*
 #define Kino_Schema_Num_Fields(self) \
     (self)->_->num_fields((kino_Schema*)self)
 
+#define Kino_Schema_Field_Num(self, field_name) \
+    (self)->_->field_num((kino_Schema*)self, field_name)
+
 #define Kino_Schema_All_Fields(self) \
     (self)->_->all_fields((kino_Schema*)self)
 
@@ -101,6 +108,7 @@ struct KINO_SCHEMA_VTABLE {
     kino_Schema_fetch_sim_t fetch_sim;
     kino_Schema_fetch_posting_t fetch_posting;
     kino_Schema_num_fields_t num_fields;
+    kino_Schema_field_num_t field_num;
     kino_Schema_all_fields_t all_fields;
 };
 
@@ -121,6 +129,8 @@ extern KINO_SCHEMA_VTABLE KINO_SCHEMA;
   #define Schema_fetch_posting kino_Schema_fetch_posting
   #define Schema_num_fields_t kino_Schema_num_fields_t
   #define Schema_num_fields kino_Schema_num_fields
+  #define Schema_field_num_t kino_Schema_field_num_t
+  #define Schema_field_num kino_Schema_field_num
   #define Schema_all_fields_t kino_Schema_all_fields_t
   #define Schema_all_fields kino_Schema_all_fields
   #define Schema_Clone Kino_Schema_Clone
@@ -135,6 +145,7 @@ extern KINO_SCHEMA_VTABLE KINO_SCHEMA;
   #define Schema_Fetch_Sim Kino_Schema_Fetch_Sim
   #define Schema_Fetch_Posting Kino_Schema_Fetch_Posting
   #define Schema_Num_Fields Kino_Schema_Num_Fields
+  #define Schema_Field_Num Kino_Schema_Field_Num
   #define Schema_All_Fields Kino_Schema_All_Fields
 #endif /* KINO_USE_SHORT_NAMES */
 
@@ -142,10 +153,12 @@ extern KINO_SCHEMA_VTABLE KINO_SCHEMA;
     chy_u32_t  refcount; \
     struct kino_Similarity * sim; \
     struct kino_Hash * fspecs; \
+    struct kino_Hash * by_name; \
+    struct kino_VArray * by_num; \
     struct kino_Hash * sims; \
     struct kino_Hash * postings; \
-    void * analyzers; \
-    void * analyzer; \
+    struct kino_Native * analyzers; \
+    struct kino_Native * analyzer; \
     chy_i32_t  index_interval; \
     chy_i32_t  skip_interval
 
@@ -167,6 +180,7 @@ KINO_SCHEMA_VTABLE KINO_SCHEMA = {
     (kino_Schema_fetch_sim_t)kino_Schema_fetch_sim,
     (kino_Schema_fetch_posting_t)kino_Schema_fetch_posting,
     (kino_Schema_num_fields_t)kino_Schema_num_fields,
+    (kino_Schema_field_num_t)kino_Schema_field_num,
     (kino_Schema_all_fields_t)kino_Schema_all_fields
 };
 #endif /* KINO_WANT_SCHEMA_VTABLE */

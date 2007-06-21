@@ -70,6 +70,13 @@ kino_Scorer_collect(kino_Scorer *self, struct kino_HitCollector *hc,
                     struct kino_VArray *seg_starts);
 KINO_METHOD("Kino_Scorer_Collect");
 
+/* Return the maximum number of subscorers that can match.  Used by
+ * BooleanScorer to calculate maximum coord bonus.  Returns 1 by default.
+ */
+chy_u32_t
+kino_Scorer_max_matchers(kino_Scorer *self);
+KINO_METHOD("Kino_Scorer_Max_Matchers");
+
 KINO_END_CLASS
 
 #endif /* H_KINO_SCORER */

@@ -25,12 +25,13 @@ __XS__
 MODULE = KinoSearch  PACKAGE = KinoSearch::Analysis::Tokenizer
 
 kino_TokenBatch*
-_do_analyze(self_hv, batch_or_text_sv)
+_do_analyze(self_hv, batch_or_text_sv, ...)
     HV *self_hv;
     SV *batch_or_text_sv;
 ALIAS:
     analyze_batch = 1
     analyze_text  = 2
+    analyze_field = 3
 CODE:
 {
     kino_TokenBatch *batch           = NULL;
@@ -39,11 +40,35 @@ CODE:
     REGEXP          *rx              = NULL;
     chy_u32_t        num_code_points = 0;
     SV              *wrapper         = sv_newmortal();
+    char            *string          = NULL;
+    STRLEN           string_len      = 0;
     RETVAL                           = kino_TokenBatch_new(NULL);
-
+    
     if (ix == 1) {
+        if (items != 2)
+            CONFESS("usage: $batch = $analyzer->analyze_batch($batch)");
         EXTRACT_STRUCT( batch_or_text_sv, batch, kino_TokenBatch*,
             "KinoSearch::Analysis::TokenBatch");
+    }
+    else if (ix == 2) {
+        if (items != 2)
+            CONFESS("usage: $batch = $analyzer->analyze_text($text)");
+        string = SvPVutf8( ST(1), string_len );
+    }
+    else if (ix == 3) {
+        STRLEN   len;
+        SV      *string_sv;
+        char    *field_name;
+
+        if (items != 3)
+            CONFESS("analyze_field() takes 2 arguments, got %d", items - 1);
+        if (!SvROK(batch_or_text_sv))
+            CONFESS("first argument to analyze_field() must be hash ref");
+            
+        field_name  = SvPV(ST(2), len);
+        string_sv   = extract_sv( (HV*)SvRV(batch_or_text_sv), 
+                        field_name, len);
+        string      = SvPVutf8(string_sv, string_len);
     }
 
     /* extract regexp struct from qr// entity */
@@ -63,7 +88,6 @@ CODE:
     SvUTF8_on(wrapper);
 
     while (1) {
-        STRLEN  len;
         char   *string_beg;
         char   *string_end;
         char   *string_arg;
@@ -72,20 +96,20 @@ CODE:
             kino_Token *token = Kino_TokenBatch_Next(batch);
             if (token == NULL)
                 break;
-            len          = token->len;
+            string_len   = token->len;
             string_beg   = token->text;
-            string_end   = string_beg + len;
+            string_end   = string_beg + string_len;
             string_arg   = string_beg;
         }
         else {
-            string_beg   = SvPVutf8( ST(1), len );
-            string_end   = string_beg + len;
+            string_beg   = string;
+            string_end   = string_beg + string_len;
             string_arg   = string_beg;
         }
 
         /* wrap the string in an SV to please the regex engine */
         SvPVX(wrapper) = string_beg;
-        SvCUR_set(wrapper, len);
+        SvCUR_set(wrapper, string_len);
         SvPOK_on(wrapper);
 
         while (
@@ -128,7 +152,7 @@ CODE:
             REFCOUNT_DEC(new_token);
         }
 
-        if (ix == 2) /* analyze_text only runs one loop iter */
+        if (ix > 1) /* analyze_text and analyze_field only run one loop iter */
             break;
     }
 }

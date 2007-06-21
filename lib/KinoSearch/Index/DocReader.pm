@@ -43,8 +43,8 @@ sub init_instance {
 sub get_size { $_[0]->{size} }
 
 sub read_record {
-    my ( $self,   $doc_num ) = @_;
-    my ( $dsx_in, $ds_in )   = @{$self}{ 'dsx_in', 'ds_in' };
+    my ( $self, $doc_num ) = @_;
+    my ( $dsx_in, $ds_in ) = @{$self}{ 'dsx_in', 'ds_in' };
 
     # find start and length of variable length record
     $dsx_in->sseek( $doc_num * 16 );

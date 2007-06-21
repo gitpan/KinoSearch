@@ -55,7 +55,7 @@ my $car = {
 
 my $folder   = KinoSearch::Store::RAMFolder->new;
 my $schema   = SortSchema->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => $folder,
     schema => $schema,
 );

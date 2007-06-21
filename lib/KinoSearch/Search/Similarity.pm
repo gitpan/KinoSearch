@@ -34,13 +34,6 @@ sub idf {
     return $idf;
 }
 
-# Normalize a Query's weight so that it is comparable to other Queries.
-sub query_norm {
-    my ( $self, $sum_of_squared_weights ) = @_;
-    return 0 if ( $sum_of_squared_weights == 0 );  # guard against div by zero
-    return ( 1 / sqrt($sum_of_squared_weights) );
-}
-
 1;
 
 __END__
@@ -90,6 +83,14 @@ decode_norm(self, byte)
     chy_u32_t byte;
 CODE:
     RETVAL = Kino_Sim_Decode_Norm(self, byte);
+OUTPUT: RETVAL
+
+float
+query_norm(self, sum_of_squared_weights)
+    kino_Similarity *self;
+    float sum_of_squared_weights;
+CODE:
+    RETVAL = Kino_Sim_Query_Norm(self, sum_of_squared_weights);
 OUTPUT: RETVAL
 
 =for comment

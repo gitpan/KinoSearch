@@ -10,7 +10,7 @@
 #include "KinoSearch/Store/InStream.r"
 #include "KinoSearch/Store/OutStream.r"
 #include "KinoSearch/Store/Folder.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 #include "KinoSearch/Util/IntMap.r"
 
 

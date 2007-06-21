@@ -34,7 +34,7 @@ use KinoSearch::Store::RAMFolder;
 
 my $schema   = MySchema->new;
 my $folder   = KinoSearch::Store::RAMFolder->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     schema => $schema,
     folder => $folder,
 );
@@ -47,12 +47,12 @@ for ( 'a b c foo foo bar', $hasta ) {
 $invindexer->finish;
 
 my $searcher = KinoSearch::Searcher->new( invindex => $invindex );
-my $doc_vec  = $searcher->fetch_doc_vec(0);
+my $doc_vec = $searcher->fetch_doc_vec(0);
 
 my $term_vector = $doc_vec->term_vector( "content", "foo" );
 ok( defined $term_vector, "successfully retrieved term vector" );
 
-$doc_vec     = $searcher->fetch_doc_vec(1);
+$doc_vec = $searcher->fetch_doc_vec(1);
 $term_vector = $doc_vec->term_vector( 'content', 'mañana' );
 
 ok( defined $term_vector, "utf-8 term vector retrieved" );
@@ -71,7 +71,7 @@ my $reopened   = KinoSearch::InvIndex->open(
 );
 
 my $alt_folder   = KinoSearch::Store::RAMFolder->new;
-my $alt_invindex = KinoSearch::InvIndex->create(
+my $alt_invindex = KinoSearch::InvIndex->clobber(
     schema => $alt_schema,
     folder => $alt_folder,
 );

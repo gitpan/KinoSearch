@@ -8,7 +8,7 @@ use KinoSearch::Search::Hits;
 use KinoSearch::Searcher;
 use KinoTestUtils qw( create_invindex );
 
-my @docs     = ( 'a b', 'a a b', 'a a a b', 'x' );
+my @docs = ( 'a b', 'a a b', 'a a a b', 'x' );
 my $invindex = create_invindex(@docs);
 
 my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );

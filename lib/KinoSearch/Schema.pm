@@ -44,15 +44,6 @@ sub new {
     return $self;
 }
 
-sub create {
-    my ( $either, $path ) = @_;
-    my $self = blessed $either ? $either : $either->new;
-    return KinoSearch::InvIndex->create(
-        schema => $self,
-        folder => $path,
-    );
-}
-
 sub clobber {
     my ( $either, $path ) = @_;
     my $self = blessed $either ? $either : $either->new;
@@ -66,6 +57,15 @@ sub open {
     my ( $either, $path ) = @_;
     my $self = blessed $either ? $either : $either->new;
     return KinoSearch::InvIndex->open(
+        schema => $self,
+        folder => $path,
+    );
+}
+
+sub read {
+    my ( $either, $path ) = @_;
+    my $self = blessed $either ? $either : $either->new;
+    return KinoSearch::InvIndex->read(
         schema => $self,
         folder => $path,
     );
@@ -179,7 +179,7 @@ PPCODE:
     case 2:  retval = kobj_to_pobj(self->fspecs);
              break;
 
-    case 4:  retval = newSVsv(self->analyzers);
+    case 4:  retval = newSVsv(self->analyzers->obj);
              break;
 
     case 6:  retval = kobj_to_pobj(self->sims);
@@ -197,7 +197,7 @@ CODE:
 
     /* get a registered analyzer if there is one */
     if (items == 2 && self->analyzers != NULL) {
-        HV *analyzers_hash = (HV*)SvRV((SV*)self->analyzers);
+        HV *analyzers_hash = (HV*)SvRV((SV*)self->analyzers->obj);
         HE *entry = hv_fetch_ent(analyzers_hash, ST(1), 0, 0);
         if (entry != NULL) {
             SV *const analyzer_sv = HeVAL(entry);
@@ -207,11 +207,11 @@ CODE:
         }
     }
 
-    /* get main analyzer if we didn't haven't got one yet */
+    /* return main analyzer if we haven't found one yet */
     if (RETVAL == NULL) { 
         RETVAL = self->analyzer == NULL
             ? newSV(0)
-            : newSVsv(self->analyzer);
+            : newSVsv(self->analyzer->obj);
     }
 }
 OUTPUT: RETVAL
@@ -255,6 +255,19 @@ CODE:
     RETVAL = field_spec == NULL
         ? newSV(0)
         : kobj_to_pobj(field_spec); 
+}
+OUTPUT: RETVAL
+
+SV*
+field_num(self, field_name)
+    kino_Schema *self;
+    kino_ByteBuf  field_name;
+CODE:
+{
+    chy_i32_t num = Kino_Schema_Field_Num(self, &field_name);
+    RETVAL = num == -1 
+        ? newSV(0)
+        : newSViv(num);
 }
 OUTPUT: RETVAL
 
@@ -315,7 +328,7 @@ Use it again at search-time...
 
     use MySchema;
     my $searcher = KinoSearch::Searcher->new( 
-        invindex => MySchema->open('/path/to/invindex')
+        invindex => MySchema->read('/path/to/invindex')
     );
 
 =head1 DESCRIPTION
@@ -372,7 +385,7 @@ objects using add_field().
 
 =head1 CLASS METHODS
 
-=head2 analzyer 
+=head2 analyzer 
 
     sub analyzer {
         return KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
@@ -410,7 +423,7 @@ when search results are "pruned" -- the sort order matters.
 
     my $schema = MySchema->new;
     my $folder = KinoSearch::RAMFolder->new;
-    my $invindex = KinoSearch::InvIndex->create(
+    my $invindex = KinoSearch::InvIndex->clobber(
         schema => $schema,
         folder => $folder,
     );
@@ -426,35 +439,37 @@ A Schema is just a blueprint, so it's not very useful on its own.  What you
 need is an L<InvIndex|KinoSearch::InvIndex> built according to your Schema,
 whose content you can manipulate and search.
 
-These three factory methods return an InvIndex object representing an index on
-your file system at the filepath you specify.  If they are invoked as instance
-methods by Schema object, they use that object; when invoked as class methods,
-a new Schema instance is created.
-
-=head2 create 
-
-    my $invindex = MySchema->create('/path/to/invindex');
-    my $invindex = $schema->create('/path/to/invindex');
-
-Create a directory and initialize a new invindex at the specified location.
-Fails if the directory already exists and contains files.  
+The following factory methods return an InvIndex object representing an index
+on your file system at the filepath you specify.  If they are invoked as
+instance methods by Schema object, they use that object; when invoked as class
+methods, a new Schema instance is created.
 
 =head2 clobber
 
     my $invindex = MySchema->clobber('/path/to/invindex');
     my $invindex = $schema->clobber('/path/to/invindex');
 
-Similar to create, but if the specified directory already exists, first
-attempts to delete any files within it that look like index files.  
+Create a directory and initialize a new invindex at the specified location.
+If the specified directory already exists, first attempts to delete any files
+within it that look like index files.  
 
 =head2 open
 
     my $invindex = MySchema->open('/path/to/invindex');
     my $invindex = $schema->open('/path/to/invindex');
 
-Open an existing invindex for either reading or updating.  All fields which
-have ever been defined for this invindex will be loaded/verified via
+Open an invindex for reading/writing, creating a new one if needed.  All fields
+which have ever been defined for this invindex will be loaded/verified via
 add_field().
+
+=head2 read 
+
+    my $invindex = MySchema->read('/path/to/invindex');
+    my $invindex = $schema->read('/path/to/invindex');
+
+Open an invindex for either reading or updating.  Fails if the invindex doesn't
+exist.  All fields which have ever been defined for this invindex will be
+loaded/verified via add_field().
 
 =head1 INSTANCE METHODS
 

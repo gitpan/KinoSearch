@@ -58,6 +58,9 @@ typedef struct kino_Tally*
 #define Kino_ScorePostScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_ScorePostScorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 struct KINO_SCOREPOSTINGSCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
     chy_u32_t refcount;
@@ -75,6 +78,7 @@ struct KINO_SCOREPOSTINGSCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
 };
 
 extern KINO_SCOREPOSTINGSCORER_VTABLE KINO_SCOREPOSTINGSCORER;
@@ -96,6 +100,7 @@ extern KINO_SCOREPOSTINGSCORER_VTABLE KINO_SCOREPOSTINGSCORER;
   #define ScorePostScorer_Tally Kino_ScorePostScorer_Tally
   #define ScorePostScorer_Skip_To Kino_ScorePostScorer_Skip_To
   #define ScorePostScorer_Collect Kino_ScorePostScorer_Collect
+  #define ScorePostScorer_Max_Matchers Kino_ScorePostScorer_Max_Matchers
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SCOREPOSTINGSCORER_MEMBER_VARS \
@@ -103,8 +108,9 @@ extern KINO_SCOREPOSTINGSCORER_VTABLE KINO_SCOREPOSTINGSCORER;
     struct kino_Similarity * sim; \
     float  weight_value; \
     float * score_cache; \
-    void * weight_ref; \
+    struct kino_Native * weight; \
     struct kino_Tally * tally; \
+    struct kino_ScoreProx * sprox; \
     struct kino_PostingList * plist; \
     struct kino_ByteBuf * postings; \
     struct kino_Posting * posting
@@ -126,7 +132,8 @@ KINO_SCOREPOSTINGSCORER_VTABLE KINO_SCOREPOSTINGSCORER = {
     (kino_Scorer_doc_t)kino_TermScorer_doc,
     (kino_Scorer_tally_t)kino_ScorePostScorer_tally,
     (kino_Scorer_skip_to_t)kino_TermScorer_skip_to,
-    (kino_Scorer_collect_t)kino_Scorer_collect
+    (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_Scorer_max_matchers
 };
 #endif /* KINO_WANT_SCOREPOSTINGSCORER_VTABLE */
 

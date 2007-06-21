@@ -17,55 +17,7 @@ use KinoSearch::Store::FSFolder;
 use KinoSearch::Index::SegInfos;
 use KinoSearch::Store::Lock;
 
-sub new { confess("InvIndex's constructors are create, clobber, and open") }
-
-sub create {
-    my $class = shift;
-    confess kerror() unless verify_args( \%instance_vars, @_ );
-    my %args   = ( %instance_vars, @_ );
-    my $schema = $args{schema};
-    my $folder = $args{folder};
-
-    # confirm Schema
-    confess("Missing required parameter 'schema'")
-        unless a_isa_b( $schema, "KinoSearch::Schema" );
-
-    # confirm or create a Folder object
-    if ( !defined $folder ) {
-        confess("Missing required parameter 'folder'");
-    }
-    elsif ( !a_isa_b( $folder, 'KinoSearch::Store::Folder' ) ) {
-        # create dir if necessary
-        if ( !-d $folder ) {
-            mkdir $folder or confess("Couldn't mkdir '$folder': $!");
-        }
-        $folder = KinoSearch::Store::FSFolder->new( path => $folder );
-    }
-
-    # verify that Folder is empty
-    if ( $folder->list ) {
-        confess("'$args{folder}' already exists and contains files");
-    }
-
-    # initialize the invindex
-    my $lock = KinoSearch::Store::Lock->new(
-        folder    => $folder,
-        agent_id  => "",
-        lock_name => WRITE_LOCK_NAME,
-        timeout   => WRITE_LOCK_TIMEOUT,
-    );
-    $lock->clear_stale;
-    $lock->run_while_locked(
-        do_body => sub {
-            # write empty segments data
-            my $seg_infos
-                = KinoSearch::Index::SegInfos->new( schema => $schema );
-            $seg_infos->write_infos($folder);
-        },
-    );
-
-    return $class->_new( $schema, $folder );
-}
+sub new { confess("InvIndex's constructors are clobber, open, and read") }
 
 sub clobber {
     my $class = shift;
@@ -134,10 +86,55 @@ sub open {
         $folder = KinoSearch::Store::FSFolder->new( path => $folder );
     }
 
-    # if an FS folder, confirm that index dir exists
+    # if an FS folder, confirm or create its index dir
     if ( $folder->isa('KinoSearch::Store::FSFolder') ) {
         my $path = $folder->get_path;
-        confess("Can't open '$path'") unless -d $path;
+        if ( !-d $path ) {
+            mkdir $path or confess("Can't mkdir '$path': $!");
+        }
+    }
+
+    # maybe initialize the invindex
+    my $most_recent_segs_file = $folder->latest_gen( "segments", "yaml" );
+    if ( !defined $most_recent_segs_file ) {
+        my $lock = KinoSearch::Store::Lock->new(
+            folder    => $folder,
+            agent_id  => "",
+            lock_name => WRITE_LOCK_NAME,
+            timeout   => WRITE_LOCK_TIMEOUT,
+        );
+        $lock->clear_stale;
+        $lock->run_while_locked(
+            do_body => sub {
+                # write empty segments data
+                my $seg_infos
+                    = KinoSearch::Index::SegInfos->new( schema => $schema );
+                $seg_infos->write_infos($folder);
+            },
+        );
+    }
+
+    return $class->_new( $schema, $folder );
+}
+
+sub read {
+    my $class = shift;
+    confess kerror() unless verify_args( \%instance_vars, @_ );
+    my %args   = ( %instance_vars, @_ );
+    my $schema = $args{schema};
+    my $folder = $args{folder};
+
+    # confirm Schema
+    confess("Missing required parameter 'schema'")
+        unless a_isa_b( $schema, "KinoSearch::Schema" );
+
+    # confirm or create a Folder object
+    if ( !defined $folder ) {
+        confess("Missing required parameter 'folder'");
+    }
+    elsif ( !a_isa_b( $folder, 'KinoSearch::Store::Folder' ) ) {
+        confess("Can't read invindex directory '$folder'") unless -d $folder;
+        $folder = KinoSearch::Store::FSFolder->new( path => $folder );
     }
 
     return $class->_new( $schema, $folder );
@@ -206,7 +203,7 @@ I/O capabilities for actually getting at the data and doing something with it.
 
 =head1 CONSTRUCTORS
 
-InvIndex provides three constructors: create(), clobber(), and open().  They
+InvIndex provides three constructors: clobber(), open(), and read().  They
 all take two hash-style params.
 
 =over
@@ -238,16 +235,6 @@ However, when called directly, InvIndex's constructors allow you more
 flexibility in supplying the C<folder> argument, so you can do things like
 supply a L<RAMFolder|KinoSearch::Store::RAMFolder>.
 
-=head2 create 
-
-    my $invindex = KinoSearch::InvIndex->create(
-        schema => MySchema->new,
-        folder => $path_or_folder_obj,
-    );
-
-Initialize a new invindex, creating a directory on the file system if
-appropriate.  Fails unless the Folder is empty.
-
 =head2 clobber
 
     my $invindex = KinoSearch::InvIndex->clobber(
@@ -255,8 +242,9 @@ appropriate.  Fails unless the Folder is empty.
         folder => $path_or_folder_obj,
     );
 
-Similar to create, but firsts attempts to delete any files within the Folder
-that look like index files.  
+Initialize a new invindex, creating a directory on the file system if
+appropriate. Attempts to delete any files within the Folder that look like
+index files.  
 
 =head2 open
 
@@ -265,7 +253,18 @@ that look like index files.
         folder => $path_or_folder_obj,
     );
 
-Open an existing invindex for either reading or updating.
+Open an invindex for reading/writing.  Initializes a new invindex if one does
+not already exist.
+
+=head2 read 
+
+    my $invindex = KinoSearch::InvIndex->read(
+        schema => MySchema->new,
+        folder => $path_or_folder_obj,
+    );
+
+Open an invindex for either reading or updating.  Fails if the invindex
+doesn't exist.
 
 =head1 METHODS
 

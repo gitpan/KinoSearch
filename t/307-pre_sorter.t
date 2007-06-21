@@ -45,7 +45,7 @@ is_deeply( \@got, [ 1, 2, 0, 3 ], "reverse sort" );
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = PreSortSchema->new;
 
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     schema => $schema,
     folder => $folder,
 );

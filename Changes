@@ -1,5 +1,38 @@
 Revision history for KinoSearch
 
+0.20_04 2007-06-20
+
+  Highlights: 
+
+     * Several bug fixes.
+
+  New public classes:
+
+     * KinoSearch::Simple.
+
+  Renamed:
+
+    * KinoSearch::QueryParser::QueryParser => KinoSearch::QueryParser
+
+  API Changes:
+
+    * KinoSearch::QueryParser 
+      o No longer recognizes 'field:term_text' construct by default.
+      o set_heed_colons() - Added.
+    * KinoSearch::InvIndex
+      o create() - Removed.
+      o read() - Added.
+      o open() - Behavior changed -- now creates an index if none detected.
+    * KinoSearch::Schema
+      o create() - Removed.
+      o read() - Added.
+      o open() - Behavior changed -- now creates an index if none detected.
+
+  Credits:
+
+    * Bug reports from Henry Combrinck, Chris Nandor, and Marco Barromeo.
+
+
 0.20_03 2007-05-08 
 
   Highlights:
@@ -10,19 +43,19 @@ Revision history for KinoSearch
 
   New public classes:
 
-    o KinoSearch::Index::IndexReader
-    o KinoSearch::Posting
-    o KinoSearch::Posting::ScorePosting
-    o KinoSearch::Posting::RichPosting
-    o KinoSearch::Search::PolyFilter
-    o KinoSearch::Store::Lock
-    o KinoSearch::Store::SharedLock
-    o KinoSearch::Store::LockFactory
+    * KinoSearch::Index::IndexReader
+    * KinoSearch::Posting
+    * KinoSearch::Posting::ScorePosting
+    * KinoSearch::Posting::RichPosting
+    * KinoSearch::Search::PolyFilter
+    * KinoSearch::Store::Lock
+    * KinoSearch::Store::SharedLock
+    * KinoSearch::Store::LockFactory
 
   New/updated documentation:
 
-    o KinoSearch::Docs::IRTheory
-    o KinoSearch::Docs::FileFormat
+    * KinoSearch::Docs::IRTheory
+    * KinoSearch::Docs::FileFormat
 
   Removed:
 

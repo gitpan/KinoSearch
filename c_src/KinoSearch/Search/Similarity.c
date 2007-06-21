@@ -130,6 +130,15 @@ Sim_decode_norm(Similarity *self, u32_t input)
 }
 
 float
+Sim_query_norm(Similarity *self, float sum_of_squared_weights)
+{
+    if (sum_of_squared_weights == 0.0f) /* guard against div by zero */
+        return 0;
+    else
+        return ( 1.0f / sqrt(sum_of_squared_weights) );
+}
+
+float
 Sim_prox_boost(Similarity *self, u32_t distance)
 {
     UNUSED_VAR(self);

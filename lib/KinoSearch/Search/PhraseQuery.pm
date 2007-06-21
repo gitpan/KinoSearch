@@ -38,8 +38,8 @@ sub add_term {
     confess("Mismatched fields in phrase query: '$self->{field}' '$field'")
         unless ( $field eq $self->{field} );
     if ( !defined $position ) {
-        $position =
-            @{ $self->{positions} }
+        $position
+            = @{ $self->{positions} }
             ? $self->{positions}[-1] + 1
             : 0;
     }
@@ -69,8 +69,8 @@ sub extract_terms { shift->{terms} }
 
 sub to_string {
     my ( $self, $proposed_field ) = @_;
-    my $string =
-        $proposed_field eq $self->{field}
+    my $string
+        = $proposed_field eq $self->{field}
         ? qq(")
         : qq($proposed_field:");
     $string .= ( $_->get_text . ' ' ) for @{ $self->{terms} };
@@ -136,8 +136,9 @@ sub scorer {
     # bail if there are no terms
     return unless $num_terms;
 
-    # bail unless the fields posting type supports positions
-    my $fspec         = $reader->get_schema->fetch_fspec( $query->{field} );
+    # bail unless the field is valid and its posting type supports positions
+    my $fspec = $reader->get_schema->fetch_fspec( $query->{field} );
+    return unless defined $fspec;
     my $posting_class = $fspec->posting_type;
     return unless $posting_class->isa("KinoSearch::Posting::ScorePosting");
 
@@ -148,6 +149,7 @@ sub scorer {
         my $plist = $reader->posting_list( term => $terms->[$i] );
 
         # bail if any one of the terms isn't in the index
+        return unless defined $plist;
         return unless $plist->get_doc_freq;
 
         $plists->push($plist);

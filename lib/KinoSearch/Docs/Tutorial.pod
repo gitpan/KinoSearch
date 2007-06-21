@@ -1,146 +1,72 @@
 =head1 NAME
 
-KinoSearch::Docs::Tutorial - Sample indexing and search applications.
+KinoSearch::Docs::Tutorial - Overview
 
-=head1 OVERVIEW 
+=head1 DESCRIPTION
 
-Most people start off by copying the sample applications found in the
-C<sample> directory at the root of the KinoSearch distribution and adapting
-them to their needs.
+KinoSearch is a flexible tool for building search applications.  This tutorial
+explores its basic functionality by starting with a minimalist CGI search app
+based on KinoSearch::Simple and transforming it, step by step, into a typical
+"advanced search" interface utilizing more flexible core modules like
+L<InvIndexer|KinoSearch::InvIndexer> and L<Searcher|KinoSearch::Searcher>.
+
+More advanced and esoteric subjects are covered in
+L<KinoSearch::Docs::Cookbook>.
+
+=head2 Chapters
+
+=over
+
+=item *
+
+L<KinoSearch::Docs::Tutorial::Simple> - build a bare-bones search app using
+KinoSearch::Simple.
+
+=item *
+
+L<KinoSearch::Docs::Tutorial::BeyondSimple> - rebuild the app using Schema,
+InvIndexer, Searcher and PolyAnalyzer instead of KinoSearch::Simple.
+
+=item *
+
+L<KinoSearch::Docs::Tutorial::Analysis> - how to choose and use various
+subclasses of Analyzer. [TODO]
+
+=item *
+
+L<KinoSearch::Docs::Tutorial::IncrementalIndexing> - modify the index by
+adding and deleting documents. [TODO]
+
+=item *
+
+L<KinoSearch::Docs::Tutorial::Highlighter> - augment your search results with
+highlighted excerpts. [TODO]
+
+=item *
+
+L<KinoSearch::Docs::Tutorial::QueryObjects> - unlock advanced search features
+by using Query objects instead of query strings. [TODO]
+
+=back
+
+=head2 Source materials
+
+The source materials used by the tutorial app -- an html presentation of the
+United States constitution -- can be found in the C<sample>
+directory at the root of the KinoSearch distribution, along with finished
+indexing and search apps.
 
     sample/USConSchema.pm    # custom KinoSearch::Schema subclass
     sample/invindexer.plx    # indexing app
     sample/search.cgi        # search app
     sample/us_constitution   # html documents
 
-This tutorial explores how the sample apps work.
+=head2 Conventions
 
-=head1 Define the structure of your index in a subclass of KinoSearch::Schema
+The user is expected to be familiar with OO Perl and basic CGI programming.
 
-Before KinoSearch can write to an index, or properly interpret the contents of
-an existing index, it needs to know how the index's data is structured.
-Setting this up is roughly analogous to the step of defining a table in SQL,
-and is accomplished by subclassing L<KinoSearch::Schema>.
-
-The most important thing a Schema tells you is what fields are present and how
-they're defined, information which is communicated via the C<%fields> hash and
-subclasses of L<KinoSearch::Schema::FieldSpec>.  For our search of the US
-Constitution, we'll use three fields: C<title>, C<content>, and C<url>.
-
-    our %fields = (
-        title   => 'KinoSearch::Schema::FieldSpec',
-        content => 'KinoSearch::Schema::FieldSpec',
-        url     => 'USConSchema::UnIndexedField',    # custom subclass
-    );
-
-C<title> and C<content> will be indexed (the default), so that they can be
-searched, but C<url> won't because our urls won't contain any information that
-we think will help people find what they're looking for.
-
-    package USConSchema::UnIndexedField;
-    use base qw( KinoSearch::Schema::FieldSpec );
-    sub indexed {0}
-
-In addition to C<%fields>, USConSchema supplies an analyzer() subroutine:
-
-    package USConSchema; 
-    use base qw( KinoSearch::Schema );
-    use KinoSearch::Analysis::PolyAnalyzer;
-
-    sub analyzer {
-        return KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
-    }
-
-An L<Analyzer|KinoSearch::Analysis::Analyzer> in KinoSearch is a object which
-transforms text from one form to another, possibly breaking it into smaller
-chunks, or performing additional filtering.  For USConSchema, we've selected a
-general-purpose L<PolyAnalyzer|KinoSearch::Analysis::PolyAnalyzer>, which
-breaks text into words, ignores all punctuation save apostrophes, lowercases
-everything so we get case-insensitive matching, and performs
-L<stemming|KinoSearch::Analysis::Stemmer> so that a search for "senator" will
-also match documents containing the plural form "senators".
-
-=head2 Locating USConSchema.pm
-
-USConSchema.pm needs to be placed in a location where both your indexing
-script and your search script can find it.  Putting it somewhere outside the
-cgi-bin directory is best, but if you run into permissions issues, dumping it
-into cgi-bin will work -- just don't leave it there if you ever add any
-sensitive information you wouldn't want a mis-configured server to reveal to
-potential attackers.
-
-Note: It's crucial that the Schema that you use at search-time be identical to
-the one used at index time -- otherwise, KinoSearch will misinterpret the
-data and either crash or produce incorrect results.
-
-=head1 Create an index and add content.
-
-Now that we've created a set of rules defining how our index is to be
-structured, we need to create an actual index and add documents to it.
-
-Since our collection is very small, we'll just overwrite the index every time,
-by choosing the Schema factory method C<clobber> (instead of C<open> or
-C<create>):
-
-    my $invindexer = KinoSearch::InvIndexer->new(
-        invindex => USConSchema->clobber('/path/to/invindex'),
-    );
-
-The bulk of the indexing script is dedicated to general tasks such as reading
-files and parsing html.  The KinoSearch code itself doesn't occupy a lot of
-space, and can be summed up, "create an InvIndexer, add documents to it, and
-call finish()".
-
-Note that a proper indexer for html documents would not rely on quick-n-dirty
-regular expressions for stripping tags as this one does for the sake of
-brevity -- it would use a dedicated parsing module such as L<HTML::Parser>.
-
-=head2 search.cgi
-
-At search-time, we C<open>, rather than C<clobber> our invindex:
-
-    my $searcher = KinoSearch::Searcher->new(
-        invindex => USConSchema->open('/path/to/invindex'),
-    );
-
-C<search.cgi> contains a fair amount of code, but as with C<invindexer.plx>,
-the KinoSearch portion only occupies a fraction of the space.
-
-=head1 Experiments
-
-=head2 Try a different analyzer
-
-Try swapping out the PolyAnalyzer in USConSchema for a Tokenizer:
-
-    package USConSchema;
-    use base qw( KinoSearch::Schema );
-    use KinoSearch::Analysis::Tokenizer;
-    sub analyzer { return KinoSearch::Analysis::Tokenizer->new }
-
-Regenerate the index, then try searching.  Note that searches are no longer
-case-insensitive, and that searches for "Senate", "Senator", and "Senators"
-all now return distinct result sets.
-
-=head2 Boost individual documents
-
-Modify invindexer.plx to use document boosts:
-
-    my $doc_boost = $url =~ /amend/ ? 1000 : 1;
-    $invindexer->add_doc( \%doc, boost => $doc_boost );
-
-Now Amendments should score higher than Articles most of the time.
-
-=head2 Change Field definition
-
-Try setting the C<url> field so that it gets C<indexed>.
-
-    our %fields = (
-        title   => 'KinoSearch::Schema::FieldSpec',
-        content => 'KinoSearch::Schema::FieldSpec',
-        url     => 'KinoSearch::Schema::FieldSpec', # will be indexed, now
-    );
-
-Now try a search for "html" or "us_constitution".
+This tutorial assumes you are using a Unix-flavored operating system and the
+Apache webserver, but it will work with minor modifications on other rigs.
 
 =head1 COPYRIGHT
 

@@ -90,3 +90,19 @@
    fun:perl_parse
    fun:main
 }
+{
+   local_closures
+   Memcheck:Leak
+   fun:malloc
+   fun:Perl_safesysmalloc
+   fun:Perl_savepvn
+   fun:Perl_gv_fetchpv
+   fun:Perl_gv_stashpvn
+   fun:Perl_gv_fetchmethod_autoload
+   fun:Perl_gv_fetchmethod
+   fun:S_method_common
+   fun:Perl_pp_method
+   fun:Perl_runops_debug
+   fun:S_run_body
+   fun:perl_run
+}

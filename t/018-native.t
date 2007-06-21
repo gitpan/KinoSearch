@@ -3,12 +3,13 @@ use warnings;
 
 use Test::More tests => 8;
 
-use KinoSearch::Util::CClass qw( to_perl to_kino );
+use KinoSearch::Util::Native qw( to_perl to_kino );
 use KinoSearch::Util::Hash;
 use KinoSearch::Util::ByteBuf;
 
-my $object = KinoSearch::Util::CClass->_new;
-isa_ok( $object, "KinoSearch::Util::CClass" );
+my $foo    = KinoSearch::Util::Native::Test->_new;
+my $object = KinoSearch::Util::Native->new($foo);
+isa_ok( $object, "KinoSearch::Util::Native" );
 
 is( $object->_callback,    undef, "void callback" );
 is( $object->_callback_f,  4,     "float callback" );

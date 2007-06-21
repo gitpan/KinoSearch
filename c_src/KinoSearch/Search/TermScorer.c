@@ -6,18 +6,19 @@
 #include "KinoSearch/Posting.r"
 #include "KinoSearch/Index/PostingList.r"
 #include "KinoSearch/Search/Similarity.r"
+#include "KinoSearch/Search/ScoreProx.r"
 #include "KinoSearch/Search/Tally.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 
 void
 TermScorer_destroy(TermScorer *self) 
 {
     REFCOUNT_DEC(self->sim);
     REFCOUNT_DEC(self->tally);
+    REFCOUNT_DEC(self->sprox);
     REFCOUNT_DEC(self->plist);
     REFCOUNT_DEC(self->postings);
-    if (self->weight_ref != NULL)
-        CClass_svrefcount_dec(self->weight_ref);
+    REFCOUNT_DEC(self->weight);
     free(self->score_cache);
     free(self);
 }

@@ -34,6 +34,9 @@ typedef struct kino_Tally*
 typedef chy_bool_t
 (*kino_ORScorer_skip_to_t)(kino_ORScorer *self, chy_u32_t target);
 
+typedef chy_u32_t
+(*kino_ORScorer_max_matchers_t)(kino_ORScorer *self);
+
 #define Kino_ORScorer_Clone(self) \
     (self)->_->clone((kino_Obj*)self)
 
@@ -70,6 +73,9 @@ typedef chy_bool_t
 #define Kino_ORScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_ORScorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 struct KINO_ORSCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
     chy_u32_t refcount;
@@ -87,6 +93,7 @@ struct KINO_ORSCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
 };
 
 extern KINO_ORSCORER_VTABLE KINO_ORSCORER;
@@ -100,6 +107,7 @@ extern KINO_ORSCORER_VTABLE KINO_ORSCORER;
   #define ORScorer_doc kino_ORScorer_doc
   #define ORScorer_tally kino_ORScorer_tally
   #define ORScorer_skip_to kino_ORScorer_skip_to
+  #define ORScorer_max_matchers kino_ORScorer_max_matchers
   #define ORScorer_Clone Kino_ORScorer_Clone
   #define ORScorer_Destroy Kino_ORScorer_Destroy
   #define ORScorer_Equals Kino_ORScorer_Equals
@@ -112,6 +120,7 @@ extern KINO_ORSCORER_VTABLE KINO_ORSCORER;
   #define ORScorer_Tally Kino_ORScorer_Tally
   #define ORScorer_Skip_To Kino_ORScorer_Skip_To
   #define ORScorer_Collect Kino_ORScorer_Collect
+  #define ORScorer_Max_Matchers Kino_ORScorer_Max_Matchers
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_ORSCORER_MEMBER_VARS \
@@ -141,7 +150,8 @@ KINO_ORSCORER_VTABLE KINO_ORSCORER = {
     (kino_Scorer_doc_t)kino_ORScorer_doc,
     (kino_Scorer_tally_t)kino_ORScorer_tally,
     (kino_Scorer_skip_to_t)kino_ORScorer_skip_to,
-    (kino_Scorer_collect_t)kino_Scorer_collect
+    (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_ORScorer_max_matchers
 };
 #endif /* KINO_WANT_ORSCORER_VTABLE */
 

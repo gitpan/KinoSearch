@@ -147,17 +147,21 @@ ANDScorer_skip_to(ANDScorer *self, u32_t target)
     const u32_t    num_subs   = self->num_subs;
     u32_t          highest    = 0;
 
+    /* first step: advance */
     if (self->first_time) {
+        /* scoot ALL subscorers and find the least doc they might agree on */
         if ( !delayed_init(self, target) )
             return invalidate(self);
         highest = highest_doc(subscorers, num_subs);
     }
     else {
+        /* advance first subscorer and use it's doc as a starting point */
         if ( !Scorer_Skip_To(subscorers[0], target) )
             return invalidate(self);
         highest = Scorer_Doc(subscorers[0]);
     }
 
+    /* second step: reconcile */
     while(1) {
         u32_t i;
         bool_t agreement = true;
@@ -167,18 +171,20 @@ ANDScorer_skip_to(ANDScorer *self, u32_t target)
             Scorer *const subscorer = subscorers[i];
             u32_t candidate = Scorer_Doc(subscorer);
 
-            /* maybe raise the bar */
+            /* if this subscorer is highest, others will need to catch up */
             if (highest < candidate)
                 highest = candidate;
+
+            /* if least doc scorers can agree on exceeds target, raise bar */
             if (target < highest)
                 target = highest;
 
-            /* scoot this scorer up */
+            /* scoot this scorer up if not already at highest */
             if (candidate < target) {
                 if ( !Scorer_Skip_To(subscorer, target) )
                     return invalidate(self);
 
-                /* if somebody's raised the bar, don't wait till next loop */
+                /* this scorer is definitely the highest right now */
                 highest = Scorer_Doc(subscorer);
             }
         }
@@ -224,6 +230,12 @@ ANDScorer_tally(ANDScorer *self)
     tally->score *= self->coord;
 
     return tally;
+}
+
+u32_t
+ANDScorer_max_matchers(ANDScorer *self)
+{
+    return self->num_subs;
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

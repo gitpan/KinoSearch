@@ -194,7 +194,8 @@ sub finish {
     }
 
     # perform segment merging
-    my @to_merge = $reader
+    my @to_merge
+        = $reader
         ? $reader->segreaders_to_merge( $args{optimize} )
         : ();
     $seg_writer->add_segment($_)                   for @to_merge;

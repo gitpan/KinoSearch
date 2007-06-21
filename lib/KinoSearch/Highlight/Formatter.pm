@@ -5,6 +5,8 @@ package KinoSearch::Highlight::Formatter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+our %instance_vars = ();
+
 sub highlight_term { shift->abstract_death }
 
 1;

@@ -18,7 +18,7 @@ _set_or_get(self, ...)
     kino_Tally *self;
 ALIAS:
     get_score   = 2
-    get_prox    = 4
+    get_sprox    = 4
 PPCODE:
 {
     START_SET_OR_GET_SWITCH
@@ -28,8 +28,9 @@ PPCODE:
     case 4:  {
                 AV *out_av = newAV();
                 chy_u32_t i;
-                for (i = 0; i < self->num_prox; i++) {
-                    av_push( out_av, newSVnv(self->prox[i]) );
+                for (i = 0; i < self->num_sproxen; i++) {
+                    SV *const sprox_sv = kobj_to_pobj(self->sproxen[i]);
+                    av_push(out_av, sprox_sv);
                 }
                 retval = newRV_noinc( (SV*)out_av );
              }

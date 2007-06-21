@@ -34,6 +34,9 @@ typedef struct kino_Tally*
 typedef chy_bool_t
 (*kino_ANDNOTScorer_skip_to_t)(kino_ANDNOTScorer *self, chy_u32_t target);
 
+typedef chy_u32_t
+(*kino_ANDNOTScorer_max_matchers_t)(kino_ANDNOTScorer *self);
+
 #define Kino_ANDNOTScorer_Clone(self) \
     (self)->_->clone((kino_Obj*)self)
 
@@ -70,6 +73,9 @@ typedef chy_bool_t
 #define Kino_ANDNOTScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_ANDNOTScorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 struct KINO_ANDNOTSCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
     chy_u32_t refcount;
@@ -87,6 +93,7 @@ struct KINO_ANDNOTSCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
 };
 
 extern KINO_ANDNOTSCORER_VTABLE KINO_ANDNOTSCORER;
@@ -100,6 +107,7 @@ extern KINO_ANDNOTSCORER_VTABLE KINO_ANDNOTSCORER;
   #define ANDNOTScorer_doc kino_ANDNOTScorer_doc
   #define ANDNOTScorer_tally kino_ANDNOTScorer_tally
   #define ANDNOTScorer_skip_to kino_ANDNOTScorer_skip_to
+  #define ANDNOTScorer_max_matchers kino_ANDNOTScorer_max_matchers
   #define ANDNOTScorer_Clone Kino_ANDNOTScorer_Clone
   #define ANDNOTScorer_Destroy Kino_ANDNOTScorer_Destroy
   #define ANDNOTScorer_Equals Kino_ANDNOTScorer_Equals
@@ -112,6 +120,7 @@ extern KINO_ANDNOTSCORER_VTABLE KINO_ANDNOTSCORER;
   #define ANDNOTScorer_Tally Kino_ANDNOTScorer_Tally
   #define ANDNOTScorer_Skip_To Kino_ANDNOTScorer_Skip_To
   #define ANDNOTScorer_Collect Kino_ANDNOTScorer_Collect
+  #define ANDNOTScorer_Max_Matchers Kino_ANDNOTScorer_Max_Matchers
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_ANDNOTSCORER_MEMBER_VARS \
@@ -138,7 +147,8 @@ KINO_ANDNOTSCORER_VTABLE KINO_ANDNOTSCORER = {
     (kino_Scorer_doc_t)kino_ANDNOTScorer_doc,
     (kino_Scorer_tally_t)kino_ANDNOTScorer_tally,
     (kino_Scorer_skip_to_t)kino_ANDNOTScorer_skip_to,
-    (kino_Scorer_collect_t)kino_Scorer_collect
+    (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_ANDNOTScorer_max_matchers
 };
 #endif /* KINO_WANT_ANDNOTSCORER_VTABLE */
 

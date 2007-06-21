@@ -4,6 +4,8 @@ use warnings;
 package KinoSearch::Util::Class;
 use KinoSearch::Util::ToolSet;
 
+our %instance_vars = ();
+
 use Clone 'clone';
 
 sub new {
@@ -11,22 +13,15 @@ sub new {
 
     # find a defaults hash and verify args
     $class = ref($class) || $class;
-    my $defaults;
-    {
-        no strict 'refs';
-        $defaults = \%{ $class . '::instance_vars' };
-    }
+    my $defaults = _retrieve_hashref("$class\::instance_vars");
 
-    if ( !verify_args( $defaults, @_ ) ) {
+    if ( !defined $defaults or !verify_args( $defaults, @_ ) ) {
         confess kerror() if $class =~ /^KinoSearch/;
 
         # if a user-based subclass, find KinoSearch parent class and verify.
         my $kinoclass = _traverse_at_isa($class);
         confess kerror() unless $kinoclass;
-        {
-            no strict 'refs';
-            $defaults = \%{ $kinoclass . '::instance_vars' };
-        }
+        $defaults = _retrieve_hashref("$kinoclass\::instance_vars");
         confess kerror() unless verify_args( $defaults, @_ );
     }
 
@@ -71,6 +66,13 @@ sub ready_get {
     }
 }
 
+sub CLONE {
+    my $package = shift;
+    confess(  "CLONE invoked by package '$package', indicating initiation of "
+            . "either threads or Win32 fork, but KinoSearch is not thread-safe"
+    );
+}
+
 sub ready_set {
     my $package = shift;
     no strict 'refs';
@@ -96,6 +98,24 @@ sub hash_code { refaddr(shift) }
 1;
 
 __END__
+
+__XS__
+
+MODULE = KinoSearch     PACKAGE = KinoSearch::Util::Class
+
+SV*
+_retrieve_hashref(name)
+    const char *name;
+CODE:
+{
+    HV* fields_hash = get_hv(name, 0);
+    RETVAL = fields_hash == NULL
+        ? newSV(0)
+        : newRV_inc((SV*)fields_hash);
+}
+OUTPUT: RETVAL
+
+__POD__
 
 =head1 NAME
 

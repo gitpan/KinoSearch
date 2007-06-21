@@ -60,7 +60,7 @@ for my $lower ( 0 .. 17 ) {
     }
 }
 
-my @set_1 = ( 1 .. 3,  10, 20, 30 );
+my @set_1 = ( 1 .. 3, 10, 20, 30 );
 my @set_2 = ( 2 .. 10, 25 .. 35 );
 
 $bit_vec = KinoSearch::Util::BitVector->new;

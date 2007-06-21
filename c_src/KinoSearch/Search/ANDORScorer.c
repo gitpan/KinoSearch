@@ -102,6 +102,13 @@ ANDORScorer_tally(ANDORScorer *self)
     }
 }
 
+u32_t
+ANDORScorer_max_matchers(ANDORScorer *self)
+{
+    return Scorer_Max_Matchers(self->or_scorer) 
+         + Scorer_Max_Matchers(self->and_scorer);
+}
+
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify

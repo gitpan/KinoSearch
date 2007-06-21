@@ -5,6 +5,8 @@ package KinoSearch::Highlight::SimpleHTMLEncoder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+our %instance_vars = ();
+
 use HTML::Entities qw( encode_entities );
 
 sub encode { return encode_entities( $_[1] ) }

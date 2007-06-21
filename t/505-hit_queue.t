@@ -26,7 +26,8 @@ my @score_docs = map {
 } @docs_and_scores;
 
 my @correct_order = sort {
-    $b->get_score <=> $a->get_score or $a->get_doc_num <=> $b->get_doc_num
+           $b->get_score <=> $a->get_score
+        or $a->get_doc_num <=> $b->get_doc_num
 } @score_docs;
 my @correct_docs   = map { $_->get_doc_num } @correct_order;
 my @correct_scores = map { $_->get_score } @correct_order;

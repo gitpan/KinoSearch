@@ -18,7 +18,7 @@ use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Analysis::Stemmer;
 
 sub init_instance {
-    my $self     = shift;
+    my $self = shift;
     my $language = $self->{language} = lc( $self->{language} );
 
     # create a default set of analyzers if language was specified
@@ -55,6 +55,24 @@ sub analyze_text {
     }
     else {
         my $batch = $analyzers->[0]->analyze_text( $_[1] );
+        $batch = $_->analyze_batch($batch)
+            for @{$analyzers}[ 1 .. $#$analyzers ];
+        return $batch;
+    }
+}
+
+sub analyze_field {
+    my $analyzers = $_[0]->{analyzers};
+
+    if ( !@$analyzers ) {
+        return KinoSearch::Analysis::TokenBatch->new(
+            text => $_[1]->{ $_[2] } );
+    }
+    elsif ( @$analyzers == 1 ) {
+        return $analyzers->[0]->analyze_field( $_[1], $_[2] );
+    }
+    else {
+        my $batch = $analyzers->[0]->analyze_field( $_[1], $_[2] );
         $batch = $_->analyze_batch($batch)
             for @{$analyzers}[ 1 .. $#$analyzers ];
         return $batch;

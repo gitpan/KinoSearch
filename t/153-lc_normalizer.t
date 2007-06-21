@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 use KinoTestUtils qw( test_analyzer );
 
 use KinoSearch::Analysis::LCNormalizer;

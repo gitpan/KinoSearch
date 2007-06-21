@@ -30,7 +30,7 @@ is_deeply(
 );
 
 1 while defined $pq->pop;    # empty queue;
-$pq          = KinoSearch::Util::PriorityQueue->new( max_size => 5 );
+$pq = KinoSearch::Util::PriorityQueue->new( max_size => 5 );
 @prioritized = ();
 
 $pq->insert($_) for ( 1 .. 10, -3, 1590 .. 1600, 5 );
@@ -50,4 +50,3 @@ while (@nums) {
     $pq->insert( splice( @nums, $tick, 1 ) );
 }
 is_deeply( $pq->pop_all, [ reverse 1 .. 100 ], "random order insertion" );
-

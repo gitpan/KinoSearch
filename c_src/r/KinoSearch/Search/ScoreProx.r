@@ -12,37 +12,37 @@
 
 
 
-#ifndef R_KINO_CCLASS
-#define R_KINO_CCLASS 1
+#ifndef R_KINO_SCOREPROX
+#define R_KINO_SCOREPROX 1
 
-#include "KinoSearch/Util/CClass.h"
+#include "KinoSearch/Search/ScoreProx.h"
 
-#define KINO_CCLASS_BOILERPLATE
+#define KINO_SCOREPROX_BOILERPLATE
 
 
 
-#define Kino_CClass_Clone(self) \
+#define Kino_ScoreProx_Clone(self) \
     (self)->_->clone((kino_Obj*)self)
 
-#define Kino_CClass_Destroy(self) \
+#define Kino_ScoreProx_Destroy(self) \
     (self)->_->destroy((kino_Obj*)self)
 
-#define Kino_CClass_Equals(self, other) \
+#define Kino_ScoreProx_Equals(self, other) \
     (self)->_->equals((kino_Obj*)self, other)
 
-#define Kino_CClass_Hash_Code(self) \
+#define Kino_ScoreProx_Hash_Code(self) \
     (self)->_->hash_code((kino_Obj*)self)
 
-#define Kino_CClass_Is_A(self, target_vtable) \
+#define Kino_ScoreProx_Is_A(self, target_vtable) \
     (self)->_->is_a((kino_Obj*)self, target_vtable)
 
-#define Kino_CClass_To_String(self) \
+#define Kino_ScoreProx_To_String(self) \
     (self)->_->to_string((kino_Obj*)self)
 
-#define Kino_CClass_Serialize(self, target) \
+#define Kino_ScoreProx_Serialize(self, target) \
     (self)->_->serialize((kino_Obj*)self, target)
 
-struct KINO_CCLASS_VTABLE {
+struct KINO_SCOREPROX_VTABLE {
     KINO_OBJ_VTABLE *_;
     chy_u32_t refcount;
     KINO_OBJ_VTABLE *parent;
@@ -56,37 +56,33 @@ struct KINO_CCLASS_VTABLE {
     kino_Obj_serialize_t serialize;
 };
 
-extern KINO_CCLASS_VTABLE KINO_CCLASS;
+extern KINO_SCOREPROX_VTABLE KINO_SCOREPROX;
 
 #ifdef KINO_USE_SHORT_NAMES
-  #define CClass kino_CClass
-  #define CCLASS KINO_CCLASS
-  #define CClass_new kino_CClass_new
-  #define CClass_callback kino_CClass_callback
-  #define CClass_callback_bb kino_CClass_callback_bb
-  #define CClass_callback_i kino_CClass_callback_i
-  #define CClass_callback_f kino_CClass_callback_f
-  #define CClass_callback_obj kino_CClass_callback_obj
-  #define CClass_svrefcount_inc kino_CClass_svrefcount_inc
-  #define CClass_svrefcount_dec kino_CClass_svrefcount_dec
-  #define CClass_Clone Kino_CClass_Clone
-  #define CClass_Destroy Kino_CClass_Destroy
-  #define CClass_Equals Kino_CClass_Equals
-  #define CClass_Hash_Code Kino_CClass_Hash_Code
-  #define CClass_Is_A Kino_CClass_Is_A
-  #define CClass_To_String Kino_CClass_To_String
-  #define CClass_Serialize Kino_CClass_Serialize
+  #define ScoreProx kino_ScoreProx
+  #define SCOREPROX KINO_SCOREPROX
+  #define ScoreProx_new kino_ScoreProx_new
+  #define ScoreProx_Clone Kino_ScoreProx_Clone
+  #define ScoreProx_Destroy Kino_ScoreProx_Destroy
+  #define ScoreProx_Equals Kino_ScoreProx_Equals
+  #define ScoreProx_Hash_Code Kino_ScoreProx_Hash_Code
+  #define ScoreProx_Is_A Kino_ScoreProx_Is_A
+  #define ScoreProx_To_String Kino_ScoreProx_To_String
+  #define ScoreProx_Serialize Kino_ScoreProx_Serialize
 #endif /* KINO_USE_SHORT_NAMES */
 
-#define KINO_CCLASS_MEMBER_VARS \
-    chy_u32_t  refcount
+#define KINO_SCOREPROX_MEMBER_VARS \
+    chy_u32_t  refcount; \
+    chy_i32_t  field_num; \
+    chy_u32_t  num_prox; \
+    chy_u32_t * prox
 
-#ifdef KINO_WANT_CCLASS_VTABLE
-KINO_CCLASS_VTABLE KINO_CCLASS = {
+#ifdef KINO_WANT_SCOREPROX_VTABLE
+KINO_SCOREPROX_VTABLE KINO_SCOREPROX = {
     (KINO_OBJ_VTABLE*)&KINO_VIRTUALTABLE,
     1,
     (KINO_OBJ_VTABLE*)&KINO_OBJ,
-    "KinoSearch::Util::CClass",
+    "KinoSearch::Search::ScoreProx",
     (kino_Obj_clone_t)kino_Obj_clone,
     (kino_Obj_destroy_t)kino_Obj_destroy,
     (kino_Obj_equals_t)kino_Obj_equals,
@@ -95,12 +91,12 @@ KINO_CCLASS_VTABLE KINO_CCLASS = {
     (kino_Obj_to_string_t)kino_Obj_to_string,
     (kino_Obj_serialize_t)kino_Obj_serialize
 };
-#endif /* KINO_WANT_CCLASS_VTABLE */
+#endif /* KINO_WANT_SCOREPROX_VTABLE */
 
-#undef KINO_CCLASS_BOILERPLATE
+#undef KINO_SCOREPROX_BOILERPLATE
 
 
-#endif /* R_KINO_CCLASS */
+#endif /* R_KINO_SCOREPROX */
 
 
 /* Copyright 2007 Marvin Humphrey

@@ -14,7 +14,7 @@ our %instance_vars = (
     metadata => undef,
 );
 
-use KinoSearch::Util::CClass qw( to_kino to_perl );
+use KinoSearch::Util::Native qw( to_kino to_perl );
 
 sub add_metadata {
     my ( $self, $key, $val ) = @_;

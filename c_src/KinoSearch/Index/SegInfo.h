@@ -71,8 +71,9 @@ struct kino_ByteBuf*
 kino_SegInfo_field_name(kino_SegInfo *self, chy_i32_t field_num);
 KINO_METHOD("Kino_SegInfo_Field_Name");
 
-/* Given a field name, return its field number for this segment.  Return -1 if
- * the field name can't be found.
+/* Given a field name, return its field number for this segment (which may
+ * differ from the number returned by other segments or by the Schema).
+ * Return -1 if the field name can't be found.  
  */
 chy_i32_t
 kino_SegInfo_field_num(kino_SegInfo *self, 

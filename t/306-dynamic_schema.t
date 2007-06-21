@@ -12,7 +12,7 @@ use KinoSearch::Searcher;
 
 my $schema   = TestSchema->new;
 my $folder   = KinoSearch::Store::RAMFolder->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     schema => $schema,
     folder => $folder,
 );
@@ -55,7 +55,7 @@ is_deeply( $top_hit, \%three_fields, "all fields stored successfully" );
 
 my $schema2   = TestSchema->new;
 my $folder2   = KinoSearch::Store::RAMFolder->new;
-my $invindex2 = KinoSearch::InvIndex->create(
+my $invindex2 = KinoSearch::InvIndex->clobber(
     schema => $schema2,
     folder => $folder2,
 );

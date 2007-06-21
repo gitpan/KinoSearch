@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.20_03
+version: 0.20_04
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -21,7 +21,7 @@ provides:
     file: lib/KSx/Search/LongFieldSim.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.20_03
+    version: 0.20_04
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:
@@ -126,6 +126,8 @@ provides:
     file: lib/KinoSearch/Posting/ScorePosting.pm
   KinoSearch::Posting::ScorePostingScorer:
     file: lib/KinoSearch/Posting/ScorePosting.pm
+  KinoSearch::QueryParser:
+    file: lib/KinoSearch/QueryParser.pm
   KinoSearch::QueryParser::QueryParser:
     file: lib/KinoSearch/QueryParser/QueryParser.pm
   KinoSearch::Schema:
@@ -218,6 +220,8 @@ provides:
     file: lib/KinoSearch/Search/Weight.pm
   KinoSearch::Searcher:
     file: lib/KinoSearch/Searcher.pm
+  KinoSearch::Simple:
+    file: lib/KinoSearch/Simple.pm
   KinoSearch::Store::FSFileDes:
     file: lib/KinoSearch/Store/FSFileDes.pm
   KinoSearch::Store::FSFolder:
@@ -246,8 +250,6 @@ provides:
     file: lib/KinoSearch/Util/BitVector.pm
   KinoSearch::Util::ByteBuf:
     file: lib/KinoSearch/Util/ByteBuf.pm
-  KinoSearch::Util::CClass:
-    file: lib/KinoSearch/Util/CClass.pm
   KinoSearch::Util::Class:
     file: lib/KinoSearch/Util/Class.pm
   KinoSearch::Util::DynVirtualTable:
@@ -260,6 +262,10 @@ provides:
     file: lib/KinoSearch/Util/IntMap.pm
   KinoSearch::Util::MemoryPool:
     file: lib/KinoSearch/Util/MemoryPool.pm
+  KinoSearch::Util::Native:
+    file: lib/KinoSearch/Util/Native.pm
+  KinoSearch::Util::Native::Test:
+    file: lib/KinoSearch/Util/Native.pm
   KinoSearch::Util::Obj:
     file: lib/KinoSearch/Util/Obj.pm
   KinoSearch::Util::PriorityQueue:
@@ -282,7 +288,7 @@ provides:
     file: lib/KinoSearch/Util/ViewByteBuf.pm
   KinoSearch::Util::YAML:
     file: lib/KinoSearch/Util/YAML.pm
-generated_by: Module::Build version 0.2807
+generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
   version: 1.2
@@ -399,6 +405,8 @@ no_index:
     - c_src/KinoSearch/Search/PhraseScorer.h
     - c_src/KinoSearch/Search/ScoreDoc.c
     - c_src/KinoSearch/Search/ScoreDoc.h
+    - c_src/KinoSearch/Search/ScoreProx.c
+    - c_src/KinoSearch/Search/ScoreProx.h
     - c_src/KinoSearch/Search/Scorer.c
     - c_src/KinoSearch/Search/Scorer.h
     - c_src/KinoSearch/Search/ScorerDocQueue.c
@@ -445,8 +453,6 @@ no_index:
     - c_src/KinoSearch/Util/BitVector.h
     - c_src/KinoSearch/Util/ByteBuf.c
     - c_src/KinoSearch/Util/ByteBuf.h
-    - c_src/KinoSearch/Util/CClass.c
-    - c_src/KinoSearch/Util/CClass.h
     - c_src/KinoSearch/Util/Carp.c
     - c_src/KinoSearch/Util/Carp.h
     - c_src/KinoSearch/Util/DynVirtualTable.c
@@ -464,6 +470,8 @@ no_index:
     - c_src/KinoSearch/Util/MemManager.h
     - c_src/KinoSearch/Util/MemoryPool.c
     - c_src/KinoSearch/Util/MemoryPool.h
+    - c_src/KinoSearch/Util/Native.c
+    - c_src/KinoSearch/Util/Native.h
     - c_src/KinoSearch/Util/Obj.c
     - c_src/KinoSearch/Util/Obj.h
     - c_src/KinoSearch/Util/PriorityQueue.c
@@ -533,6 +541,7 @@ no_index:
     - c_src/r/KinoSearch/Search/ORScorer.r
     - c_src/r/KinoSearch/Search/PhraseScorer.r
     - c_src/r/KinoSearch/Search/ScoreDoc.r
+    - c_src/r/KinoSearch/Search/ScoreProx.r
     - c_src/r/KinoSearch/Search/Scorer.r
     - c_src/r/KinoSearch/Search/ScorerDocQueue.r
     - c_src/r/KinoSearch/Search/Similarity.r
@@ -556,12 +565,12 @@ no_index:
     - c_src/r/KinoSearch/Util/BBSortExRun.r
     - c_src/r/KinoSearch/Util/BitVector.r
     - c_src/r/KinoSearch/Util/ByteBuf.r
-    - c_src/r/KinoSearch/Util/CClass.r
     - c_src/r/KinoSearch/Util/DynVirtualTable.r
     - c_src/r/KinoSearch/Util/Hash.r
     - c_src/r/KinoSearch/Util/Int.r
     - c_src/r/KinoSearch/Util/IntMap.r
     - c_src/r/KinoSearch/Util/MemoryPool.r
+    - c_src/r/KinoSearch/Util/Native.r
     - c_src/r/KinoSearch/Util/Obj.r
     - c_src/r/KinoSearch/Util/PriorityQueue.r
     - c_src/r/KinoSearch/Util/SortExRun.r
@@ -669,6 +678,7 @@ no_index:
     - lib/KinoSearch/Index/TermVector.pm
     - lib/KinoSearch/Index/TermVectorsReader.pm
     - lib/KinoSearch/Index/TermVectorsWriter.pm
+    - lib/KinoSearch/QueryParser/QueryParser.pm
     - lib/KinoSearch/Search/ANDNOTScorer.pm
     - lib/KinoSearch/Search/ANDORScorer.pm
     - lib/KinoSearch/Search/ANDScorer.pm
@@ -699,12 +709,12 @@ no_index:
     - lib/KinoSearch/Store/RAMFileDes.pm
     - lib/KinoSearch/Util/BitVector.pm
     - lib/KinoSearch/Util/ByteBuf.pm
-    - lib/KinoSearch/Util/CClass.pm
     - lib/KinoSearch/Util/DynVirtualTable.pm
     - lib/KinoSearch/Util/Hash.pm
     - lib/KinoSearch/Util/Int.pm
     - lib/KinoSearch/Util/IntMap.pm
     - lib/KinoSearch/Util/MemoryPool.pm
+    - lib/KinoSearch/Util/Native.pm
     - lib/KinoSearch/Util/Obj.pm
     - lib/KinoSearch/Util/PriorityQueue.pm
     - lib/KinoSearch/Util/SortExternal.pm
@@ -785,7 +795,7 @@ no_index:
     - t/015-sort_external.t
     - t/016-varray.t
     - t/017-hash.t
-    - t/018-cclass.t
+    - t/018-native.t
     - t/019-obj.t
     - t/020-yaml.t
     - t/021-dyn_virtual_table.t
@@ -834,6 +844,7 @@ no_index:
     - t/305-invindexer.t
     - t/306-dynamic_schema.t
     - t/307-pre_sorter.t
+    - t/308-simple.t
     - t/501-termquery.t
     - t/502-phrasequery.t
     - t/503-booleanquery.t
@@ -859,6 +870,7 @@ no_index:
     - t/604-simple_search.t
     - t/605-store_pos_boost.t
     - t/606-proximity.t
+    - t/607-queryparser_multi_field.t
     - t/701-uscon.t
     - t/999-remove_invindexes.t
     - t/pod-coverage.t

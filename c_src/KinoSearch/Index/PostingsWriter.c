@@ -263,25 +263,6 @@ write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
             if (pre_sort_remap != NULL)
                 posting->doc_num 
                     = IntMap_Get(pre_sort_remap, posting->doc_num);
-
-            /*  write skip data */
-            if (   skip_stream != NULL
-                && same_text_as_last   
-                && tinfo->doc_freq % skip_interval == 0
-                && tinfo->doc_freq != 0
-            ) {
-                /* if first skip group, save skip stream pos for term info */
-                if (tinfo->doc_freq == skip_interval) {
-                    tinfo->skip_filepos = OutStream_STell(skip_stream); 
-                }
-                /* write deltas */
-                last_skip_doc         = skip_stepper->doc_num;
-                last_skip_filepos     = skip_stepper->filepos;
-                skip_stepper->doc_num = posting->doc_num;
-                skip_stepper->filepos = OutStream_STell(post_stream);
-                SkipStepper_Write_Record(skip_stepper, skip_stream,
-                     last_skip_doc, last_skip_filepos);
-            }
         }
 
         /* if the term text changes, process the last term */
@@ -319,6 +300,28 @@ write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
         /* write posting data */
         RawPost_Write_Record(posting, post_stream, last_doc_num);
 
+        /* doc freq lags by one iter */
+        tinfo->doc_freq++;
+
+        /*  write skip data */
+        if (   skip_stream != NULL
+            && same_text_as_last   
+            && tinfo->doc_freq % skip_interval == 0
+            && tinfo->doc_freq != 0
+        ) {
+            /* if first skip group, save skip stream pos for term info */
+            if (tinfo->doc_freq == skip_interval) {
+                tinfo->skip_filepos = OutStream_STell(skip_stream); 
+            }
+            /* write deltas */
+            last_skip_doc         = skip_stepper->doc_num;
+            last_skip_filepos     = skip_stepper->filepos;
+            skip_stepper->doc_num = posting->doc_num;
+            skip_stepper->filepos = OutStream_STell(post_stream);
+            SkipStepper_Write_Record(skip_stepper, skip_stream,
+                 last_skip_doc, last_skip_filepos);
+        }
+
         /* remember last doc num because we need it for delta encoding */
         last_doc_num = posting->doc_num;
 
@@ -326,8 +329,6 @@ write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
         /* REFCOUNT_DEC(posting); */ /* No!!  DON'T destroy!!!  */
         posting = fetch(raw_post_source);
 
-        /* doc freq lags by one iter */
-        tinfo->doc_freq++;
     }
 
     /* clean up */

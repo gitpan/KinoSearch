@@ -84,14 +84,12 @@ BoolScorer_add_subscorer(BooleanScorer *self, Scorer *subscorer,
 {
     if (BB_Equals(occur, (Obj*)&must)) {
         VA_Push(self->and_scorers, (Obj*)subscorer); 
-        self->max_coord++;
     }
     else if (BB_Equals(occur, (Obj*)&must_not)) {
         VA_Push(self->not_scorers, (Obj*)subscorer); 
     }
     else if (BB_Equals(occur, (Obj*)&should)) {
         VA_Push(self->or_scorers, (Obj*)subscorer);
-        self->max_coord++;
     }
     else {
         CONFESS("Unrecognized value for 'occur': '%s'", occur->ptr);
@@ -115,16 +113,16 @@ compute_coord_factors(BooleanScorer *self)
 static bool_t
 next_first_time(BooleanScorer *self)
 {
-    compute_coord_factors(self);
     init_inner_scorer(self);
+    compute_coord_factors(self);
     return self->do_next(self->scorer);
 }
 
 static bool_t
 skip_to_first_time(BooleanScorer *self, u32_t target)
 {
-    compute_coord_factors(self);
     init_inner_scorer(self);
+    compute_coord_factors(self);
     return self->do_skip_to(self->scorer, target);
 }
 
@@ -159,9 +157,11 @@ init_inner_scorer(BooleanScorer *self)
     /* start the branching */
     if (self->and_scorers->size > 0) {
         init_some_required(self);
+        self->max_coord = Scorer_Max_Matchers(self->scorer);
     }
     else if (self->or_scorers->size > 0) {
         init_none_required(self);
+        self->max_coord = Scorer_Max_Matchers(self->scorer);
     }
     else {
         /* all prohibited */

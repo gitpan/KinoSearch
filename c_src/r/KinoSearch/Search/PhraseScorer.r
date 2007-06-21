@@ -73,6 +73,9 @@ typedef float
 #define Kino_PhraseScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_PhraseScorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 #define Kino_PhraseScorer_Calc_Phrase_Freq(self) \
     (self)->_->calc_phrase_freq((kino_PhraseScorer*)self)
 
@@ -93,6 +96,7 @@ struct KINO_PHRASESCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
     kino_PhraseScorer_calc_phrase_freq_t calc_phrase_freq;
 };
 
@@ -121,6 +125,7 @@ extern KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER;
   #define PhraseScorer_Tally Kino_PhraseScorer_Tally
   #define PhraseScorer_Skip_To Kino_PhraseScorer_Skip_To
   #define PhraseScorer_Collect Kino_PhraseScorer_Collect
+  #define PhraseScorer_Max_Matchers Kino_PhraseScorer_Max_Matchers
   #define PhraseScorer_Calc_Phrase_Freq Kino_PhraseScorer_Calc_Phrase_Freq
 #endif /* KINO_USE_SHORT_NAMES */
 
@@ -130,6 +135,7 @@ extern KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER;
     chy_u32_t  doc_num; \
     chy_u32_t  slop; \
     chy_u32_t  num_elements; \
+    struct kino_ScoreProx * sprox; \
     struct kino_Tally * tally; \
     struct kino_PostingList ** plists; \
     chy_u32_t * phrase_offsets; \
@@ -137,7 +143,7 @@ extern KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER;
     struct kino_ByteBuf * raw_prox_bb; \
     float  phrase_freq; \
     float  phrase_boost; \
-    void * weight_ref; \
+    struct kino_Native * weight; \
     float  weight_value; \
     chy_bool_t  first_time; \
     chy_bool_t  more
@@ -160,6 +166,7 @@ KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER = {
     (kino_Scorer_tally_t)kino_PhraseScorer_tally,
     (kino_Scorer_skip_to_t)kino_PhraseScorer_skip_to,
     (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_Scorer_max_matchers,
     (kino_PhraseScorer_calc_phrase_freq_t)kino_PhraseScorer_calc_phrase_freq
 };
 #endif /* KINO_WANT_PHRASESCORER_VTABLE */

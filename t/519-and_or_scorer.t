@@ -35,7 +35,7 @@ use KinoSearch::Search::Tally;
 use KinoSearch::Index::Term;
 use KinoSearch::Searcher;
 
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => KinoSearch::Store::RAMFolder->new,
     schema => MySchema->new,
 );
@@ -123,7 +123,7 @@ sub dig_out_doc_nums {
     my $score_docs = $hc->get_hit_queue->score_docs;
     my @by_score_then_num = map { $_->get_doc_num }
         sort {
-        $b->get_score <=> $a->get_score
+               $b->get_score <=> $a->get_score
             || $a->get_doc_num <=> $b->get_doc_num
         } @$score_docs;
     my @by_num = sort { $a <=> $b } @by_score_then_num;

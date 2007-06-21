@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 15;
+use Test::More tests => 20;
 
 use KinoTestUtils qw( test_analyzer );
 

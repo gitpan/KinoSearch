@@ -23,7 +23,7 @@ struct kino_MatchPostingScorer {
 kino_MatchPostingScorer*
 kino_MatchPostScorer_new(struct kino_Similarity *sim, 
                          struct kino_PostingList *plist, 
-                         void *weight_ref, float weight_value);
+                         void *weight, float weight_value);
 
 KINO_END_CLASS
 

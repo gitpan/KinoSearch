@@ -37,7 +37,7 @@ sub create_invindex {
     my @docs = @_;
 
     my $folder   = KinoSearch::Store::RAMFolder->new;
-    my $invindex = KinoSearch::InvIndex->create(
+    my $invindex = KinoSearch::InvIndex->clobber(
         schema => TestSchema->new,
         folder => $folder,
     );
@@ -90,7 +90,7 @@ sub path_for_test_invindex {
 }
 
 sub create_uscon_invindex {
-    my $invindex   = USConSchema->clobber( path_for_test_invindex() );
+    my $invindex = USConSchema->clobber( path_for_test_invindex() );
     my $invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
 
     $invindexer->add_doc( { content => "zz$_" } ) for ( 0 .. 10000 );
@@ -150,6 +150,13 @@ sub test_analyzer {
 
     @got = $analyzer->analyze_raw($source);
     Test::More::is_deeply( \@got, $expected, "analyze_raw: $message" );
+
+    $batch = $analyzer->analyze_field( { content => $source }, 'content' );
+    @got = ();
+    while ( my $token = $batch->next ) {
+        push @got, $token->get_text;
+    }
+    Test::More::is_deeply( \@got, $expected, "analyze_field: $message" );
 }
 
 1;

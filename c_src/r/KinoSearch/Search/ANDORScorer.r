@@ -34,6 +34,9 @@ typedef struct kino_Tally*
 typedef chy_bool_t
 (*kino_ANDORScorer_skip_to_t)(kino_ANDORScorer *self, chy_u32_t target);
 
+typedef chy_u32_t
+(*kino_ANDORScorer_max_matchers_t)(kino_ANDORScorer *self);
+
 #define Kino_ANDORScorer_Clone(self) \
     (self)->_->clone((kino_Obj*)self)
 
@@ -70,6 +73,9 @@ typedef chy_bool_t
 #define Kino_ANDORScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_ANDORScorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 struct KINO_ANDORSCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
     chy_u32_t refcount;
@@ -87,6 +93,7 @@ struct KINO_ANDORSCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
 };
 
 extern KINO_ANDORSCORER_VTABLE KINO_ANDORSCORER;
@@ -100,6 +107,7 @@ extern KINO_ANDORSCORER_VTABLE KINO_ANDORSCORER;
   #define ANDORScorer_doc kino_ANDORScorer_doc
   #define ANDORScorer_tally kino_ANDORScorer_tally
   #define ANDORScorer_skip_to kino_ANDORScorer_skip_to
+  #define ANDORScorer_max_matchers kino_ANDORScorer_max_matchers
   #define ANDORScorer_Clone Kino_ANDORScorer_Clone
   #define ANDORScorer_Destroy Kino_ANDORScorer_Destroy
   #define ANDORScorer_Equals Kino_ANDORScorer_Equals
@@ -112,6 +120,7 @@ extern KINO_ANDORSCORER_VTABLE KINO_ANDORSCORER;
   #define ANDORScorer_Tally Kino_ANDORScorer_Tally
   #define ANDORScorer_Skip_To Kino_ANDORScorer_Skip_To
   #define ANDORScorer_Collect Kino_ANDORScorer_Collect
+  #define ANDORScorer_Max_Matchers Kino_ANDORScorer_Max_Matchers
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_ANDORSCORER_MEMBER_VARS \
@@ -139,7 +148,8 @@ KINO_ANDORSCORER_VTABLE KINO_ANDORSCORER = {
     (kino_Scorer_doc_t)kino_ANDORScorer_doc,
     (kino_Scorer_tally_t)kino_ANDORScorer_tally,
     (kino_Scorer_skip_to_t)kino_ANDORScorer_skip_to,
-    (kino_Scorer_collect_t)kino_Scorer_collect
+    (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_ANDORScorer_max_matchers
 };
 #endif /* KINO_WANT_ANDORSCORER_VTABLE */
 

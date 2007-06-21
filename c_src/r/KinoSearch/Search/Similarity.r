@@ -39,6 +39,9 @@ typedef float
 (*kino_Sim_decode_norm_t)(kino_Similarity *self, chy_u32_t input);
 
 typedef float
+(*kino_Sim_query_norm_t)(kino_Similarity *self, float sum_of_squared_weights);
+
+typedef float
 (*kino_Sim_prox_boost_t)(kino_Similarity *self, chy_u32_t distance);
 
 typedef float
@@ -78,6 +81,9 @@ typedef float
 #define Kino_Sim_Decode_Norm(self, input) \
     (self)->_->decode_norm((kino_Similarity*)self, input)
 
+#define Kino_Sim_Query_Norm(self, sum_of_squared_weights) \
+    (self)->_->query_norm((kino_Similarity*)self, sum_of_squared_weights)
+
 #define Kino_Sim_Prox_Boost(self, distance) \
     (self)->_->prox_boost((kino_Similarity*)self, distance)
 
@@ -100,6 +106,7 @@ struct KINO_SIMILARITY_VTABLE {
     kino_Sim_coord_t coord;
     kino_Sim_encode_norm_t encode_norm;
     kino_Sim_decode_norm_t decode_norm;
+    kino_Sim_query_norm_t query_norm;
     kino_Sim_prox_boost_t prox_boost;
     kino_Sim_prox_coord_t prox_coord;
 };
@@ -121,6 +128,8 @@ extern KINO_SIMILARITY_VTABLE KINO_SIMILARITY;
   #define Sim_encode_norm kino_Sim_encode_norm
   #define Sim_decode_norm_t kino_Sim_decode_norm_t
   #define Sim_decode_norm kino_Sim_decode_norm
+  #define Sim_query_norm_t kino_Sim_query_norm_t
+  #define Sim_query_norm kino_Sim_query_norm
   #define Sim_prox_boost_t kino_Sim_prox_boost_t
   #define Sim_prox_boost kino_Sim_prox_boost
   #define Sim_prox_coord_t kino_Sim_prox_coord_t
@@ -136,6 +145,7 @@ extern KINO_SIMILARITY_VTABLE KINO_SIMILARITY;
   #define Sim_Coord Kino_Sim_Coord
   #define Sim_Encode_Norm Kino_Sim_Encode_Norm
   #define Sim_Decode_Norm Kino_Sim_Decode_Norm
+  #define Sim_Query_Norm Kino_Sim_Query_Norm
   #define Sim_Prox_Boost Kino_Sim_Prox_Boost
   #define Sim_Prox_Coord Kino_Sim_Prox_Coord
 #endif /* KINO_USE_SHORT_NAMES */
@@ -162,6 +172,7 @@ KINO_SIMILARITY_VTABLE KINO_SIMILARITY = {
     (kino_Sim_coord_t)kino_Sim_coord,
     (kino_Sim_encode_norm_t)kino_Sim_encode_norm,
     (kino_Sim_decode_norm_t)kino_Sim_decode_norm,
+    (kino_Sim_query_norm_t)kino_Sim_query_norm,
     (kino_Sim_prox_boost_t)kino_Sim_prox_boost,
     (kino_Sim_prox_coord_t)kino_Sim_prox_coord
 };

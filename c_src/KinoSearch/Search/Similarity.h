@@ -59,12 +59,20 @@ float
 kino_Sim_decode_norm(kino_Similarity *self, chy_u32_t input);
 KINO_METHOD("Kino_Sim_Decode_Norm");
 
+/* Normalize a Query's weight so that it is comparable to other Queries. 
+ */
+float
+kino_Sim_query_norm(kino_Similarity *self, float sum_of_squared_weights);
+KINO_METHOD("Kino_Sim_Query_Norm");
+
 /* Return a boost based which rewards smaller distances between tokens in a
  * search match.
  */
 float
 kino_Sim_prox_boost(kino_Similarity *self, chy_u32_t distance);
 KINO_METHOD("Kino_Sim_Prox_Boost");
+
+
 
 /* Assess an array of positions and return a scoring multiplier based on how
  * clustered they are.  The assumption is that documents whose matches are

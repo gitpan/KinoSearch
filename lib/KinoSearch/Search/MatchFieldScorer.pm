@@ -34,10 +34,10 @@ CODE:
         SNL("similarity"), "KinoSearch::Search::Similarity");
     kino_IntMap *sort_cache = (kino_IntMap*)extract_obj(args_hash,
         SNL("sort_cache"), "KinoSearch::Util::IntMap");
-    SV *weight_ref = extract_sv(args_hash, SNL("weight") );
+    SV *weight_sv = extract_sv(args_hash, SNL("weight") );
 
     /* create object */
-    RETVAL = kino_MatchFieldScorer_new(sim, sort_cache, newSVsv(weight_ref));
+    RETVAL = kino_MatchFieldScorer_new(sim, sort_cache, weight_sv);
 }
 OUTPUT: RETVAL
 

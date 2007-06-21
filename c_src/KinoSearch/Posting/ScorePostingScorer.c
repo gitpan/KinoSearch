@@ -6,11 +6,12 @@
 #include "KinoSearch/Posting/ScorePosting.r"
 #include "KinoSearch/Index/PostingList.r"
 #include "KinoSearch/Search/Similarity.r"
+#include "KinoSearch/Search/ScoreProx.r"
 #include "KinoSearch/Search/Tally.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 
 ScorePostingScorer*
-ScorePostScorer_new(Similarity *sim, PostingList *plist, void *weight_ref,
+ScorePostScorer_new(Similarity *sim, PostingList *plist, void *weight,
                     float weight_value)
 {
     u32_t i;
@@ -21,11 +22,13 @@ ScorePostScorer_new(Similarity *sim, PostingList *plist, void *weight_ref,
     REFCOUNT_INC(plist);
     self->sim           = sim;
     self->plist         = plist;
-    self->weight_ref    = weight_ref;
+    self->weight        = Native_new(weight);
     self->weight_value  = weight_value;
 
     /* init */
+    self->sprox          = ScoreProx_new();
     self->tally          = Tally_new();
+    Tally_Add_SProx(self->tally, self->sprox);
 
     /* start off postings blob with dummy posting */
     self->postings       = BB_new_str((char*)&POST_DUMMY, sizeof(Posting));
@@ -43,6 +46,7 @@ ScorePostScorer_new(Similarity *sim, PostingList *plist, void *weight_ref,
 Tally*
 ScorePostScorer_tally(ScorePostingScorer* self) 
 {
+    ScoreProx *const sprox      = self->sprox;
     Tally *const tally          = self->tally;
     ScorePosting *const posting = (ScorePosting*)self->posting;
     const u32_t  freq           = posting->freq;
@@ -56,8 +60,8 @@ ScorePostScorer_tally(ScorePostingScorer* self)
     tally->score *= posting->impact;
 
     /* set prox */
-    tally->num_prox = freq;
-    tally->prox     = posting->prox;
+    sprox->num_prox = freq;
+    sprox->prox     = posting->prox;
 
     return tally;
 }

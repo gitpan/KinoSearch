@@ -13,7 +13,7 @@ our %instance_vars = (
 BEGIN { __PACKAGE__->ready_get(qw( schema )) }
 
 use KinoSearch::Search::Hits;
-use KinoSearch::QueryParser::QueryParser;
+use KinoSearch::QueryParser;
 
 our %search_args = (
     query      => undef,
@@ -48,8 +48,8 @@ sub search {
 # Search for the query string against all indexed fields
 sub _prepare_simple_search {
     my ( $self, $query_string ) = @_;
-    my $query_parser = KinoSearch::QueryParser::QueryParser->new(
-        schema => $self->{schema}, );
+    my $query_parser
+        = KinoSearch::QueryParser->new( schema => $self->{schema}, );
     return $query_parser->parse($query_string);
 }
 

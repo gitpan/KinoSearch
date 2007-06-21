@@ -24,7 +24,7 @@ use KinoSearch::Posting::ScorePosting;
 sub new {
     my $class = shift;
     confess kerror() unless verify_args( \%instance_vars, @_ );
-    my %args       = ( %instance_vars, @_ );
+    my %args = ( %instance_vars, @_ );
     my $seg_reader = $args{seg_reader};
 
     my $self = $class->_new(
@@ -79,6 +79,33 @@ set_doc_base(self, doc_base);
     chy_u32_t doc_base
 PPCODE:
     Kino_SegPList_Set_Doc_Base(self, doc_base);
+
+	
+	
+=for comment
+
+Testing only.
+
+=cut
+
+void
+_set_or_get(self, ...)
+    kino_SegPostingList *self;
+ALIAS:
+    _get_post_stream = 2
+    _get_count       = 4
+PPCODE:
+{
+    START_SET_OR_GET_SWITCH
+
+    case 2:  retval = kobj_to_pobj(self->post_stream);
+             break;
+
+    case 4:  retval = newSViv(self->count);
+             break;
+    
+    END_SET_OR_GET_SWITCH
+}
 
 __POD__
 

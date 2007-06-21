@@ -169,8 +169,8 @@ void
 SortEx_sort_cache(SortExternal *self) 
 {
     grow_obj_buf(&self->scratch, self->scratch_cap, self->cache_max);
-    MSort_mergesort(self->cache, self->scratch, 
-        self->cache_max, self->compare, self->context);
+    MSort_mergesort(self->cache, self->scratch, self->cache_max, sizeof(Obj*),
+        self->compare, self->context);
 }
 
 void
@@ -316,9 +316,14 @@ merge_slices(SortExternal *self)
                 /* merge two consecutive slices */
                 const u32_t slice_size = slice_sizes[i] + slice_sizes[i+1];
 
-                MSort_merge(slice_starts[i], slice_sizes[i],
-                    slice_starts[i+1], slice_sizes[i+1], self->scratch,
-                    compare, context);
+                if (sizeof(Obj*) == 4)
+                    MSort_merge4(slice_starts[i], slice_sizes[i],
+                        slice_starts[i+1], slice_sizes[i+1], self->scratch,
+                        compare, context);
+                else 
+                    MSort_merge8(slice_starts[i], slice_sizes[i],
+                        slice_starts[i+1], slice_sizes[i+1], self->scratch,
+                        compare, context);
                 slice_sizes[j] = slice_size;
                 slice_starts[j] = slice_starts[i];
                 memcpy(slice_starts[j], self->scratch, 

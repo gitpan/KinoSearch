@@ -20,13 +20,14 @@ use KinoSearch::Searcher;
 use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
 use KinoSearch::Store::RAMFolder;
-use KinoSearch::QueryParser::QueryParser;
+use KinoSearch::QueryParser;
 use KinoSearch::Analysis::Tokenizer;
 
 my $folder   = KinoSearch::Store::RAMFolder->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $schema   = MySchema->new;
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => $folder,
-    schema => MySchema->new,
+    schema => $schema,
 );
 
 my $invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
@@ -46,11 +47,13 @@ $invindexer->finish;
 my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );
 
 my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
-my $or_parser = KinoSearch::QueryParser::QueryParser->new(
+my $or_parser = KinoSearch::QueryParser->new(
+    schema   => $schema,
     analyzer => $tokenizer,
     fields   => [ 'title', 'body', ],
 );
-my $and_parser = KinoSearch::QueryParser::QueryParser->new(
+my $and_parser = KinoSearch::QueryParser->new(
+    schema         => $schema,
     analyzer       => $tokenizer,
     fields         => [ 'title', 'body', ],
     default_boolop => 'AND',

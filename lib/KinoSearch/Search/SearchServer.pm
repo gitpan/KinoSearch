@@ -153,7 +153,7 @@ KinoSearch::Search::SearchServer - Make a Searcher remotely accessible.
 =head1 SYNOPSIS
 
     my $searcher = KinoSearch::Searcher->new(
-        invindex => MySchema->open('path/to/invindex'),
+        invindex => MySchema->read('path/to/invindex'),
     );
     my $search_server = KinoSearch::Search::SearchServer->new(
         searchable => $searcher,

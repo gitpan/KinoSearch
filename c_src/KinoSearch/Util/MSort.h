@@ -15,12 +15,10 @@ typedef int
 /* Perform a mergesort.  In addition to providing a contiguous array of
  * elements to be sorted and their count, the caller must also provide a
  * scratch buffer with room for at least as many elements as are to be sorted.
- * 
- * This is a wrapper function which calculates the necessary arguments and
- * immediately dispatches to MSort_do_sort.
  */
 void
-kino_MSort_mergesort(void *elems, void *scratch, chy_u32_t num_elems, 
+kino_MSort_mergesort(void *elems, void *scratch, 
+                     chy_u32_t num_elems, chy_u32_t bytes_per_elem,
                      kino_MSort_compare_t compare, void *context);
 
 /* Standard mergesort function.
@@ -34,26 +32,33 @@ kino_MSort_do_sort(void *elems, void *scratch,
  * algorithm, storing the result in [dest].
  * 
  * Most merge functions operate on a single contiguous array and copy the
- * merged results results back into the source array before returning.  This
- * one differs in that it is capable of operating on two discontiguous source
- * arrays.  It leaves the responsibility for copying the results back into the
- * source array to the caller.
+ * merged results results back into the source array before returning.  These
+ * two differs in that it is possible to operate on two discontiguous source
+ * arrays.  Copying the results back into the source array is the
+ * responsibility of the caller.
  * 
  * KinoSearch's external sort takes advantage of this when it is reading back
  * pre-sorted runs from disk and merging the streams into a consolidated
  * buffer.
+ * 
+ * merge4 merges elements which are 4 bytes in size; merge8 merges 8-byte
+ * elements.
  */
 void
-kino_MSort_merge(void *left_ptr,  chy_u32_t left_num_elems,
-                 void *right_ptr, chy_u32_t right_num_elems,
-                 void *dest, kino_MSort_compare_t compare, void *context);
+kino_MSort_merge4(void *left_ptr,  chy_u32_t left_num_elems,
+                  void *right_ptr, chy_u32_t right_num_elems,
+                  void *dest, kino_MSort_compare_t compare, void *context);
+void
+kino_MSort_merge8(void *left_ptr,  chy_u32_t left_num_elems,
+                  void *right_ptr, chy_u32_t right_num_elems,
+                  void *dest, kino_MSort_compare_t compare, void *context);
 
 
 #ifdef KINO_USE_SHORT_NAMES
   #define MSort_compare_t            kino_MSort_compare_t
   #define MSort_mergesort            kino_MSort_mergesort
-  #define MSort_do_sort              kino_MSort_do_sort
-  #define MSort_merge                kino_MSort_merge
+  #define MSort_merge4               kino_MSort_merge4
+  #define MSort_merge8               kino_MSort_merge8
 #endif
 
 #endif /* H_KINO_MSORT */

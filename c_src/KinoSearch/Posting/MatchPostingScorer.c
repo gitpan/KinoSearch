@@ -7,10 +7,10 @@
 #include "KinoSearch/Index/PostingList.r"
 #include "KinoSearch/Search/Similarity.r"
 #include "KinoSearch/Search/Tally.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 
 MatchPostingScorer*
-MatchPostScorer_new(Similarity *sim, PostingList *plist, void *weight_ref,
+MatchPostScorer_new(Similarity *sim, PostingList *plist, void *weight,
                     float weight_value)
 {
     CREATE(self, MatchPostingScorer, MATCHPOSTINGSCORER);
@@ -20,11 +20,12 @@ MatchPostScorer_new(Similarity *sim, PostingList *plist, void *weight_ref,
     REFCOUNT_INC(plist);
     self->sim           = sim;
     self->plist         = plist;
-    self->weight_ref    = weight_ref;
+    self->weight        = Native_new(weight);
     self->weight_value  = weight_value;
 
     /* init */
     self->tally          = Tally_new();
+    self->sprox          = NULL;
     self->score_cache    = NULL;
 
     /* start off postings blob with dummy posting */

@@ -8,14 +8,14 @@
 #include "KinoSearch/Index/PostingList.r"
 #include "KinoSearch/Search/Similarity.r"
 #include "KinoSearch/Search/Tally.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 
 RichPostingScorer*
-RichPostScorer_new(Similarity *sim, PostingList *plist, void *weight_ref,
+RichPostScorer_new(Similarity *sim, PostingList *plist, void *weight,
                    float weight_value)
 {
     RichPostingScorer *self = (RichPostingScorer*)ScorePostScorer_new(sim, 
-        plist, weight_ref, weight_value);
+        plist, weight, weight_value);
     self->_ = &RICHPOSTINGSCORER;  /* rebless */
     return self;
 }   

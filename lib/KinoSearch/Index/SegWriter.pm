@@ -3,6 +3,7 @@ use warnings;
 
 package KinoSearch::Index::SegWriter;
 use KinoSearch::Util::ToolSet;
+use KinoSearch::Util::StringHelper qw( utf8ify );
 use base qw( KinoSearch::Util::Class );
 
 our %instance_vars = (
@@ -91,7 +92,7 @@ sub add_doc {
 
         # upgrade fields that aren't binary to utf8
         if ( !$field_spec->binary ) {
-            utf8::upgrade( $doc->{$field_name} );
+            utf8ify( $doc->{$field_name} );
         }
 
         next unless $field_spec->indexed;
@@ -100,7 +101,7 @@ sub add_doc {
         my $token_batch;
         if ( $field_spec->analyzed ) {
             my $analyzer = $schema->fetch_analyzer($field_name);
-            $token_batch = $analyzer->analyze_text( $doc->{$field_name} );
+            $token_batch = $analyzer->analyze_field( $doc, $field_name );
         }
         else {
             $token_batch = KinoSearch::Analysis::TokenBatch->new(

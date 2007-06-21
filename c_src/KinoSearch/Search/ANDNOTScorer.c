@@ -144,6 +144,12 @@ ANDNOTScorer_tally(ANDNOTScorer *self)
     return Scorer_Tally(self->and_scorer);
 }
 
+u32_t
+ANDNOTScorer_max_matchers(ANDNOTScorer *self)
+{
+    return Scorer_Max_Matchers(self->and_scorer);
+}
+
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify

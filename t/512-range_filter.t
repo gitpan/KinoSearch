@@ -31,7 +31,7 @@ use KinoSearch::Store::RAMFolder;
 
 my $folder   = KinoSearch::Store::RAMFolder->new;
 my $schema   = RangeSchema->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => $folder,
     schema => $schema,
 );

@@ -155,6 +155,12 @@ ORScorer_tally(ORScorer *self)
     return self->tally;
 }
 
+u32_t
+ORScorer_max_matchers(ORScorer *self)
+{
+    return self->num_subs;
+}
+
 /* Copyright 2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify

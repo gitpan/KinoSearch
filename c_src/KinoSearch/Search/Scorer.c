@@ -105,6 +105,12 @@ Scorer_collect(Scorer *self, HitCollector *hc, u32_t start, u32_t end,
     } while (Scorer_Next(self));
 }
 
+u32_t 
+Scorer_max_matchers(Scorer *self)
+{
+    return 1;
+}
+
 /* Copyright 2006-2007 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify

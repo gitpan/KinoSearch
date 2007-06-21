@@ -105,6 +105,8 @@ c_src/KinoSearch/Search/PhraseScorer.c
 c_src/KinoSearch/Search/PhraseScorer.h
 c_src/KinoSearch/Search/ScoreDoc.c
 c_src/KinoSearch/Search/ScoreDoc.h
+c_src/KinoSearch/Search/ScoreProx.c
+c_src/KinoSearch/Search/ScoreProx.h
 c_src/KinoSearch/Search/Scorer.c
 c_src/KinoSearch/Search/Scorer.h
 c_src/KinoSearch/Search/ScorerDocQueue.c
@@ -153,8 +155,6 @@ c_src/KinoSearch/Util/ByteBuf.c
 c_src/KinoSearch/Util/ByteBuf.h
 c_src/KinoSearch/Util/Carp.c
 c_src/KinoSearch/Util/Carp.h
-c_src/KinoSearch/Util/CClass.c
-c_src/KinoSearch/Util/CClass.h
 c_src/KinoSearch/Util/DynVirtualTable.c
 c_src/KinoSearch/Util/DynVirtualTable.h
 c_src/KinoSearch/Util/Hash.c
@@ -170,6 +170,8 @@ c_src/KinoSearch/Util/MemoryPool.c
 c_src/KinoSearch/Util/MemoryPool.h
 c_src/KinoSearch/Util/MSort.c
 c_src/KinoSearch/Util/MSort.h
+c_src/KinoSearch/Util/Native.c
+c_src/KinoSearch/Util/Native.h
 c_src/KinoSearch/Util/Obj.c
 c_src/KinoSearch/Util/Obj.h
 c_src/KinoSearch/Util/PriorityQueue.c
@@ -239,6 +241,7 @@ c_src/r/KinoSearch/Search/MatchFieldScorer.r
 c_src/r/KinoSearch/Search/ORScorer.r
 c_src/r/KinoSearch/Search/PhraseScorer.r
 c_src/r/KinoSearch/Search/ScoreDoc.r
+c_src/r/KinoSearch/Search/ScoreProx.r
 c_src/r/KinoSearch/Search/Scorer.r
 c_src/r/KinoSearch/Search/ScorerDocQueue.r
 c_src/r/KinoSearch/Search/Similarity.r
@@ -262,12 +265,12 @@ c_src/r/KinoSearch/Util/BBSortEx.r
 c_src/r/KinoSearch/Util/BBSortExRun.r
 c_src/r/KinoSearch/Util/BitVector.r
 c_src/r/KinoSearch/Util/ByteBuf.r
-c_src/r/KinoSearch/Util/CClass.r
 c_src/r/KinoSearch/Util/DynVirtualTable.r
 c_src/r/KinoSearch/Util/Hash.r
 c_src/r/KinoSearch/Util/Int.r
 c_src/r/KinoSearch/Util/IntMap.r
 c_src/r/KinoSearch/Util/MemoryPool.r
+c_src/r/KinoSearch/Util/Native.r
 c_src/r/KinoSearch/Util/Obj.r
 c_src/r/KinoSearch/Util/PriorityQueue.r
 c_src/r/KinoSearch/Util/SortExRun.r
@@ -357,10 +360,13 @@ lib/KinoSearch/Analysis/Stopalizer.pm
 lib/KinoSearch/Analysis/Token.pm
 lib/KinoSearch/Analysis/TokenBatch.pm
 lib/KinoSearch/Analysis/Tokenizer.pm
+lib/KinoSearch/Docs/Cookbook.pod
 lib/KinoSearch/Docs/DevGuide.pod
 lib/KinoSearch/Docs/FileFormat.pod
 lib/KinoSearch/Docs/IRTheory.pod
 lib/KinoSearch/Docs/Tutorial.pod
+lib/KinoSearch/Docs/Tutorial/BeyondSimple.pod
+lib/KinoSearch/Docs/Tutorial/Simple.pod
 lib/KinoSearch/Highlight/Encoder.pm
 lib/KinoSearch/Highlight/Formatter.pm
 lib/KinoSearch/Highlight/Highlighter.pm
@@ -402,6 +408,7 @@ lib/KinoSearch/Posting.pm
 lib/KinoSearch/Posting/MatchPosting.pm
 lib/KinoSearch/Posting/RichPosting.pm
 lib/KinoSearch/Posting/ScorePosting.pm
+lib/KinoSearch/QueryParser.pm
 lib/KinoSearch/QueryParser/QueryParser.pm
 lib/KinoSearch/Schema.pm
 lib/KinoSearch/Schema/FieldSpec.pm
@@ -443,6 +450,7 @@ lib/KinoSearch/Search/TopDocCollector.pm
 lib/KinoSearch/Search/TopDocs.pm
 lib/KinoSearch/Search/Weight.pm
 lib/KinoSearch/Searcher.pm
+lib/KinoSearch/Simple.pm
 lib/KinoSearch/Store/FileDes.pm
 lib/KinoSearch/Store/Folder.pm
 lib/KinoSearch/Store/FSFileDes.pm
@@ -456,13 +464,13 @@ lib/KinoSearch/Store/RAMFolder.pm
 lib/KinoSearch/Store/SharedLock.pm
 lib/KinoSearch/Util/BitVector.pm
 lib/KinoSearch/Util/ByteBuf.pm
-lib/KinoSearch/Util/CClass.pm
 lib/KinoSearch/Util/Class.pm
 lib/KinoSearch/Util/DynVirtualTable.pm
 lib/KinoSearch/Util/Hash.pm
 lib/KinoSearch/Util/Int.pm
 lib/KinoSearch/Util/IntMap.pm
 lib/KinoSearch/Util/MemoryPool.pm
+lib/KinoSearch/Util/Native.pm
 lib/KinoSearch/Util/Obj.pm
 lib/KinoSearch/Util/PriorityQueue.pm
 lib/KinoSearch/Util/SortExternal.pm
@@ -549,7 +557,7 @@ t/013-bit_vector.t
 t/015-sort_external.t
 t/016-varray.t
 t/017-hash.t
-t/018-cclass.t
+t/018-native.t
 t/019-obj.t
 t/020-yaml.t
 t/021-dyn_virtual_table.t
@@ -598,6 +606,7 @@ t/304-verify_utf8.t
 t/305-invindexer.t
 t/306-dynamic_schema.t
 t/307-pre_sorter.t
+t/308-simple.t
 t/501-termquery.t
 t/502-phrasequery.t
 t/503-booleanquery.t
@@ -623,6 +632,7 @@ t/603-query_boosts.t
 t/604-simple_search.t
 t/605-store_pos_boost.t
 t/606-proximity.t
+t/607-queryparser_multi_field.t
 t/701-uscon.t
 t/999-remove_invindexes.t
 t/pod-coverage.t

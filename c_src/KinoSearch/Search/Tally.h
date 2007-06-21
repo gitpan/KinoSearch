@@ -7,8 +7,8 @@
  * directly, they may not edit them.
  *
  * As a minimum, a Tally returned by a Scorer contains a single aggregate
- * score.  If appropriate, an arrays of positions is also present,  with
- * [num_prox] indicating the number of elements in the array.
+ * score. It will also have one or more ScoreProx objects indicating which
+ * positions matched the current document, sorted by field number.  
  *
  * Existing Tally objects become invalid as soon as Scorer_Next() is called.
  */
@@ -21,11 +21,9 @@
 typedef struct kino_Tally kino_Tally;
 typedef struct KINO_TALLY_VTABLE KINO_TALLY_VTABLE;
 
-struct kino_ByteBuf;
-struct kino_Term;
-struct kino_Lexicon;
+struct kino_ScoreProx;
 
-KINO_CLASS("KinoSearch::Search::Tally", "Tally", 
+KINO_FINAL_CLASS("KinoSearch::Search::Tally", "Tally", 
     "KinoSearch::Util::Obj");
 
 struct kino_Tally {
@@ -33,14 +31,32 @@ struct kino_Tally {
     KINO_OBJ_MEMBER_VARS;
     float                   score;
     chy_u32_t               num_matchers;
-    chy_u32_t               num_prox;
-    chy_u32_t              *prox;
+    chy_u32_t               sprox_cap;
+    chy_u32_t               num_sproxen;
+    struct kino_ScoreProx **sproxen;
 };
 
 /* Constructor.
  */
 kino_Tally*
 kino_Tally_new();
+
+/* Add a ScoreProx object to the Tally.  The ScoreProx will not have its
+ * refcount affected, so the caller is responsible for cleanup.
+ */
+void
+kino_Tally_add_sprox(kino_Tally *self, struct kino_ScoreProx *sprox);
+KINO_METHOD("Kino_Tally_Add_SProx");
+
+/* Purge all ScoreProx objects.
+ */
+void
+kino_Tally_zap_sproxen(kino_Tally *self);
+KINO_METHOD("Kino_Tally_Zap_SProxen");
+
+void
+kino_Tally_destroy(kino_Tally *self);
+KINO_METHOD("Kino_Tally_Destroy");
 
 KINO_END_CLASS
 

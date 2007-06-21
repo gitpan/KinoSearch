@@ -12,7 +12,7 @@ use KinoTestUtils qw( path_for_test_invindex );
 use USConSchema;
 
 my $searcher = KinoSearch::Searcher->new(
-    invindex => USConSchema->open( path_for_test_invindex() ), );
+    invindex => USConSchema->read( path_for_test_invindex() ), );
 isa_ok( $searcher, 'KinoSearch::Searcher' );
 
 my %searches = (

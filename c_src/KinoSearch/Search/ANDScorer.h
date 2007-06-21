@@ -58,6 +58,10 @@ kino_ANDScorer_add_subscorer(kino_ANDScorer* self,
                               kino_Scorer* subscorer);
 KINO_METHOD("Kino_ANDScorer_Add_Subscorer");
 
+chy_u32_t
+kino_ANDScorer_max_matchers(kino_ANDScorer *self);
+KINO_METHOD("Kino_ANDScorer_Max_Matchers");
+
 KINO_END_CLASS
 
 #endif /* H_KINO_ANDSCORER */

@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 use KinoSearch::Analysis::Analyzer;
 use KinoTestUtils qw( utf8_test_strings test_analyzer );

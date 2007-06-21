@@ -19,7 +19,7 @@ push @docs, ('x') x 90;
 push @docs, ('c d x');
 my $invindex = create_invindex(@docs);
 
-my $searcher   = KinoSearch::Searcher->new( invindex => $invindex, );
+my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );
 my $similarity = KinoSearch::Search::Similarity->new;
 
 my $c_query = KinoSearch::Search::TermQuery->new(
@@ -96,4 +96,3 @@ sub dig_out_doc_nums {
     }
     return \@doc_nums;
 }
-

@@ -3,8 +3,8 @@
 #include "XSUB.h"
 #include "ppport.h"
 
-#define KINO_WANT_CCLASS_VTABLE
-#include "KinoSearch/Util/CClass.r"
+#define KINO_WANT_NATIVE_VTABLE
+#include "KinoSearch/Util/Native.r"
 
 #include "KinoSearch/Util/Obj.r"
 #include "KinoSearch/Util/ByteBuf.r"
@@ -12,33 +12,28 @@
 #include "KinoSearch/Util/MemManager.h"
 
 static SV*
-kobj_to_pobj(kino_Obj *obj);
+do_callback_sv(kino_Native *self, char *method, va_list args);
 
-static SV*
-do_callback_sv(kino_Obj *self, char *method, 
-    va_list args);
-
-kino_CClass*
-kino_CClass_new()
+kino_Native*
+kino_Native_new(void *nat_obj)
 {
-    KINO_CREATE(self, kino_CClass, KINO_CCLASS);
+    KINO_CREATE(self, kino_Native, KINO_NATIVE);
+    self->obj = newSVsv((SV*)nat_obj);
     return self;
 }
 
-static SV*
-kobj_to_pobj(kino_Obj *obj)
+void
+kino_Native_destroy(kino_Native *self)
 {
-    SV *perl_obj = newSV(0);
-    KINO_REFCOUNT_INC(obj);
-    sv_setref_pv(perl_obj, obj->_->class_name, obj);
-    return perl_obj;
+    SvREFCNT_dec((SV*)self->obj);
+    free(self);
 }
 
 void
-kino_CClass_callback(kino_Obj *self, char *method, ...) 
+kino_Native_callback(kino_Native *self, char *method, ...) 
 {
     dSP;
-    SV *object = kobj_to_pobj(self);
+    SV *object = newSVsv(self->obj);
     va_list args;
     kino_ByteBuf *bb;
     int count;
@@ -71,7 +66,7 @@ kino_CClass_callback(kino_Obj *self, char *method, ...)
 }
 
 kino_ByteBuf*
-kino_CClass_callback_bb(kino_Obj *self, char *method, ...) 
+kino_Native_callback_bb(kino_Native *self, char *method, ...) 
 {
     va_list args;
     SV *return_sv;
@@ -93,7 +88,7 @@ kino_CClass_callback_bb(kino_Obj *self, char *method, ...)
 }
 
 chy_i32_t
-kino_CClass_callback_i(kino_Obj *self, char *method, ...) 
+kino_Native_callback_i(kino_Native *self, char *method, ...) 
 {
     va_list args;
     SV *return_sv;
@@ -111,7 +106,7 @@ kino_CClass_callback_i(kino_Obj *self, char *method, ...)
 }
 
 float
-kino_CClass_callback_f(kino_Obj *self, char *method, ...) 
+kino_Native_callback_f(kino_Native *self, char *method, ...) 
 {
     va_list args;
     SV *return_sv;
@@ -129,7 +124,7 @@ kino_CClass_callback_f(kino_Obj *self, char *method, ...)
 }
 
 kino_Obj*
-kino_CClass_callback_obj(kino_Obj *self, char *method, ...) 
+kino_Native_callback_obj(kino_Native *self, char *method, ...) 
 {
     va_list args;
     SV *temp_retval;
@@ -152,10 +147,9 @@ kino_CClass_callback_obj(kino_Obj *self, char *method, ...)
 
 
 static SV*
-do_callback_sv(kino_Obj *self, char *method, 
-               va_list args) 
+do_callback_sv(kino_Native *self, char *method, va_list args) 
 {
-    SV *object = kobj_to_pobj(self);
+    SV *object = newSVsv(self->obj);
     SV* return_val;
     int num_returned;
     kino_ByteBuf *bb;
@@ -187,18 +181,6 @@ do_callback_sv(kino_Obj *self, char *method,
     PUTBACK;
 
     return return_val;
-}
-
-void
-kino_CClass_svrefcount_inc(void *perlobj)
-{
-    SvREFCNT_inc((SV*)perlobj);
-}
-
-void
-kino_CClass_svrefcount_dec(void *perlobj)
-{
-    SvREFCNT_dec((SV*)perlobj);
 }
 
 /* Copyright 2006-2007 Marvin Humphrey

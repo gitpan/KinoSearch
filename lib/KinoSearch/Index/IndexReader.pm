@@ -400,7 +400,7 @@ KinoSearch::Index::IndexReader - Read from an inverted index.
 =head1 SYNOPSIS
 
     my $reader = KinoSearch::Index::IndexReader->open(
-        invindex => MySchema->open('/path/to/invindex'),
+        invindex => MySchema->read('/path/to/invindex'),
     );
 
 =head1 DESCRIPTION
@@ -474,7 +474,7 @@ obsolete index data.
 =head2 open
 
     my $reader = KinoSearch::Index::IndexReader->open(
-        invindex     => MySchema->open('/path/to/invindex'),
+        invindex     => MySchema->read('/path/to/invindex'),
         lock_factory => $lock_factory,
     );
 

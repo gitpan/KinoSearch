@@ -235,7 +235,7 @@ SegPList_skip_to(SegPostingList *self, u32_t target)
          * yet, but we'll have already gone past 5 of the 16 skip docs --
          * ergo, the modulus in the following formula.
          */
-        i32_t num_skipped    = -1 - (self->count % self->skip_interval);
+        i32_t num_skipped = 0 - (self->count % self->skip_interval);
 
         /* see if there's anything to skip */
         while (target > skip_stepper->doc_num) {

@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Analysis::TokenBatch;
@@ -51,3 +51,13 @@ is_deeply(
     [ 'a', ' ', 'b', ' ', 'c' ],
     "no freakout when fed multiple tokens"
 );
+
+$batch->reset;
+$tokenizer = KinoSearch::Analysis::Tokenizer->new();
+$batch
+    = $tokenizer->analyze_field( { monroe => 'some like it hot' }, 'monroe' );
+@token_texts = ();
+while ( my $token = $batch->next ) {
+    push @token_texts, $token->get_text;
+}
+is_deeply( \@token_texts, [ 'some', 'like', 'it', 'hot' ], "analyze_field" );

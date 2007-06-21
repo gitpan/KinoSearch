@@ -6,10 +6,12 @@
 typedef struct kino_PhraseScorer kino_PhraseScorer;
 typedef struct KINO_PHRASESCORER_VTABLE KINO_PHRASESCORER_VTABLE;
 
+struct kino_ScoreProx;
 struct kino_Tally;
 struct kino_ByteBuf;
 struct kino_Int;
 struct kino_PostingList;
+struct kino_Native;
 
 KINO_CLASS("KinoSearch::Search::PhraseScorer", "PhraseScorer", 
     "KinoSearch::Search::Scorer");
@@ -20,6 +22,7 @@ struct kino_PhraseScorer {
     chy_u32_t                  doc_num;
     chy_u32_t                  slop;
     chy_u32_t                  num_elements;
+    struct kino_ScoreProx     *sprox;
     struct kino_Tally         *tally;
     struct kino_PostingList  **plists;
     chy_u32_t                 *phrase_offsets;
@@ -27,7 +30,7 @@ struct kino_PhraseScorer {
     struct kino_ByteBuf       *raw_prox_bb;
     float                      phrase_freq;
     float                      phrase_boost;
-    void                      *weight_ref;
+    struct kino_Native        *weight;
     float                      weight_value;
     chy_bool_t                 first_time;
     chy_bool_t                 more;
@@ -39,7 +42,7 @@ kino_PhraseScorer*
 kino_PhraseScorer_new(struct kino_Similarity *sim,
                       struct kino_VArray *plists, 
                       struct kino_VArray *phrase_offsets,
-                      void *weight_ref, float weight_val,
+                      void *weight, float weight_val,
                       chy_u32_t slop);
 
 void

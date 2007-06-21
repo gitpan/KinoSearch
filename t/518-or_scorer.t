@@ -55,7 +55,7 @@ for my $doc_num ( 0 .. 20 ) {
     push @docs, $doc;
 }
 
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => KinoSearch::Store::RAMFolder->new,
     schema => MySchema->new,
 );
@@ -83,7 +83,7 @@ perform_search( [] );
 perform_search( [ 'a' .. $_ ] ) for 'a' .. 'z';
 
 sub perform_search {
-    my $letters       = shift;
+    my $letters = shift;
     my $letter_string = join ' ', @$letters;
 
     my $subscorers
@@ -125,8 +125,7 @@ sub union_doc_num_sets {
         my @doc_nums = keys %{ $letters{$letter} };
         $counts{$_} += 1 for @doc_nums;
     }
-    my @by_count_then_num =
-        sort { $counts{$b} <=> $counts{$a} || $a <=> $b }
+    my @by_count_then_num = sort { $counts{$b} <=> $counts{$a} || $a <=> $b }
         keys %counts;
 
     my @by_num = sort { $a <=> $b } @by_count_then_num;
@@ -139,7 +138,7 @@ sub dig_out_doc_nums {
     my $score_docs = $hc->get_hit_queue->score_docs;
     my @by_score_then_num = map { $_->get_doc_num }
         sort {
-        $b->get_score <=> $a->get_score
+               $b->get_score <=> $a->get_score
             || $a->get_doc_num <=> $b->get_doc_num
         } @$score_docs;
     my @by_num = sort { $a <=> $b } @by_score_then_num;

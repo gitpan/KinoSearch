@@ -87,8 +87,8 @@ refill(InStream *self)
     else {
         const u64_t file_len = InStream_SLength(self);
         if (self->buf_start >= file_len) {
-            CONFESS("Read past EOF of %s (start: %"U64P " len %lu)",
-                self->filename->ptr, self->buf_start, 
+            CONFESS("Read past EOF of %s (start: %lu len %lu)",
+                self->filename->ptr, (unsigned long)self->buf_start, 
                 (unsigned long)file_len);
         }
         self->buf_len = file_len - self->buf_start;
@@ -166,10 +166,10 @@ InStream_read_bytes (InStream *self, char* buf, size_t len)
         if (len < KINO_IO_STREAM_BUF_SIZE) {
             refill(self);
             if (self->buf_len < len) {
-                CONFESS("Read past EOF of %s (start: %"U64P
+                CONFESS("Read past EOF of %s (start: %lu"
                     " len %lu req: %lu)", self->file_des->path, 
-                    self->buf_start, (unsigned long)self->buf_len, 
-                    (unsigned long)len
+                    (unsigned long)self->buf_start, 
+                    (unsigned long)self->buf_len, (unsigned long)len
                 );
             }
             memcpy(buf, (self->buf + self->buf_pos), len);
@@ -268,7 +268,15 @@ InStream_slength(InStream *self)
 InStream*
 InStream_clone(InStream *self)
 {
-    return InStream_Reopen(self, self->filename, self->offset, self->len);
+    InStream *evil_twin
+        = InStream_Reopen(self, self->filename, self->offset, self->len);
+
+    if (self->buf != NULL) {
+        evil_twin->buf = MALLOCATE(KINO_IO_STREAM_BUF_SIZE, char);
+        memcpy(evil_twin->buf, self->buf, KINO_IO_STREAM_BUF_SIZE);
+    }
+
+    return evil_twin;
 }
 
 void

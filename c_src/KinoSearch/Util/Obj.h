@@ -107,8 +107,10 @@ extern struct KINO_VIRTUALTABLE_VTABLE KINO_VIRTUALTABLE;
             Kino_Obj_Destroy(_self); \
     } while (0)
 
+/* Convenience macro for Obj_Is_A that adds a cast for the vtable.
+ */
 #define KINO_OBJ_IS_A(var, vtable) \
-    var->_->is_a((kino_Obj*)var, (KINO_OBJ_VTABLE*)&vtable)
+    (var)->_->is_a((kino_Obj*)(var), (KINO_OBJ_VTABLE*)&(vtable))
 
 /* Sentinel value indicating invalid document number.
  * 

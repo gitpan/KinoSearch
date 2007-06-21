@@ -50,7 +50,7 @@ use KinoSearch::Index::Term;
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = MySchema->new;
 
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => $folder,
     schema => $schema,
 );

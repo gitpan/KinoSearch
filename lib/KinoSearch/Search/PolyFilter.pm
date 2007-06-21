@@ -23,7 +23,7 @@ sub bits {
     # fill the cache
     if ( !defined $cached_bits ) {
         for my $filter ( @{ $self->{filters} } ) {
-            my $bits  = $filter->{filter}->bits($reader);
+            my $bits = $filter->{filter}->bits($reader);
             my $logic = uc( $filter->{logic} ) || 'AND';
 
             if ( !defined $cached_bits ) {

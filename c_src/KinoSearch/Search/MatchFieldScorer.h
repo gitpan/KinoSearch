@@ -9,6 +9,7 @@ typedef struct KINO_MATCHFIELDSCORER_VTABLE KINO_MATCHFIELDSCORER_VTABLE;
 struct kino_Tally;
 struct kino_Lexicon;
 struct kino_HitCollector;
+struct kino_Native;
 
 KINO_CLASS("KinoSearch::Search::MatchFieldScorer", "MatchFieldScorer", 
     "KinoSearch::Search::Scorer");
@@ -19,7 +20,7 @@ struct kino_MatchFieldScorer {
     struct kino_Tally    *tally;
     struct kino_IntMap   *sort_cache;
     chy_u32_t             doc_num;
-    void                 *weight_ref;
+    struct kino_Native   *weight;
 };
 
 /* Constructor. 
@@ -27,7 +28,7 @@ struct kino_MatchFieldScorer {
 kino_MatchFieldScorer*
 kino_MatchFieldScorer_new(struct kino_Similarity *sim, 
                           struct kino_IntMap *sort_cache,
-                          void *weight_ref);
+                          void *weight);
 
 void
 kino_MatchFieldScorer_destroy(kino_MatchFieldScorer *self);

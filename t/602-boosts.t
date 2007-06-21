@@ -40,15 +40,15 @@ use KinoSearch::InvIndexer;
 my $control_folder       = KinoSearch::Store::RAMFolder->new;
 my $boosted_doc_folder   = KinoSearch::Store::RAMFolder->new;
 my $boosted_field_folder = KinoSearch::Store::RAMFolder->new;
-my $control_invindex     = KinoSearch::InvIndex->create(
+my $control_invindex     = KinoSearch::InvIndex->clobber(
     schema => ControlSchema->new,
     folder => $control_folder,
 );
-my $boosted_field_invindex = KinoSearch::InvIndex->create(
+my $boosted_field_invindex = KinoSearch::InvIndex->clobber(
     schema => BoostedFieldSchema->new,
     folder => $boosted_field_folder,
 );
-my $boosted_doc_invindex = KinoSearch::InvIndex->create(
+my $boosted_doc_invindex = KinoSearch::InvIndex->clobber(
     schema => ControlSchema->new,
     folder => $boosted_doc_folder,
 );

@@ -42,7 +42,7 @@ CODE:
 
     /* create object */
     RETVAL = kino_PhraseScorer_new(sim, plists, phrase_offsets,
-        newSVsv(weight_sv), weight_val, slop);
+        weight_sv, weight_val, slop);
 }
 OUTPUT: RETVAL
 

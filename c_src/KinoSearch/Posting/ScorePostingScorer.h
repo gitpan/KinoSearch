@@ -19,7 +19,7 @@ struct kino_ScorePostingScorer {
 kino_ScorePostingScorer*
 kino_ScorePostScorer_new(struct kino_Similarity *sim, 
                          struct kino_PostingList *plist, 
-                         void *weight_ref, float weight_value);
+                         void *weight, float weight_value);
 
 struct kino_Tally*
 kino_ScorePostScorer_tally(kino_ScorePostingScorer* self);

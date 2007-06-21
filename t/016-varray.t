@@ -10,7 +10,7 @@ use KinoSearch::Util::ByteBuf;
 my ( $varray, @orig, @got );
 
 $varray = KinoSearch::Util::VArray->new( capacity => 0 );
-@orig   = 1 .. 10;
+@orig = 1 .. 10;
 
 $varray->push( KinoSearch::Util::ByteBuf->new($_) ) for @orig;
 is( $varray->get_size, 10, "get_size after pushing 10 elements" );

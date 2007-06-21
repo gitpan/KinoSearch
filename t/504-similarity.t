@@ -50,7 +50,7 @@ is_deeply( \@transformed, \@floats,
     "using the norm_decoder produces desired results" );
 
 my $folder   = KinoSearch::Store::RAMFolder->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => $folder,
     schema => MySchema->new,
 );
@@ -73,12 +73,19 @@ undef $invindexer;
 
 my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );
 
-my $hits = $searcher->search( query => 'title:spam' );
-
+my $hits = $searcher->search(
+    query => KinoSearch::Search::TermQuery->new(
+        term => KinoSearch::Index::Term->new( 'title', 'spam' )
+    )
+);
 is( $hits->fetch_hit_hashref->{'title'},
     'spam', "Default Similarity biased towards short fields" );
 
-$hits = $searcher->search( query => 'body:spam' );
-
+$hits = $searcher->search(
+    query => KinoSearch::Search::TermQuery->new(
+        term => KinoSearch::Index::Term->new( 'body', 'spam' )
+    )
+);
 is( $hits->fetch_hit_hashref->{'title'},
     'not spam', "LongFieldSim cancels short-field bias" );
+

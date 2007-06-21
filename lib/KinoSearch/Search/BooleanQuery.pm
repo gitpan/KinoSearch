@@ -22,9 +22,9 @@ use KinoSearch::Search::BooleanClause;
 
 # Add an subquery tagged with boolean characteristics.
 sub add_clause {
-    my $self   = shift;
-    my $clause =
-        @_ == 1
+    my $self = shift;
+    my $clause
+        = @_ == 1
         ? shift
         : KinoSearch::Search::BooleanClause->new(@_);
     confess("not a BooleanClause")
@@ -151,7 +151,7 @@ other Queries.
 
 One way of producing a BooleanQuery is to feed a query string along the lines
 of C<this AND NOT that> to a
-L<QueryParser|KinoSearch::QueryParser::QueryParser> object:
+L<QueryParser|KinoSearch::QueryParser> object:
     
     my $bool_query = $query_parser->parse( 'this AND NOT that' );
 

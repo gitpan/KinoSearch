@@ -14,7 +14,7 @@ use base qw( KinoSearch::Schema );
 our %fields = ( content => 'KinoSearch::Schema::FieldSpec' );
 
 package main;
-use Test::More tests => 10;
+use Test::More tests => 12;
 use TestSchema;
 
 my $schema;
@@ -29,6 +29,8 @@ $schema = TestSchema->new;
 $schema->add_field( new_field => 'KinoSearch::Schema::FieldSpec' );
 my $got = grep { $_ eq 'new_field' } $schema->all_fields;
 ok( $got, 'add_field works' );
+is( $schema->field_num('content'),   0, "field_num" );
+is( $schema->field_num('new_field'), 1, "new field_num" );
 
 $schema = TestSchema->new;
 eval { $schema->add_field( foo => 'NotAFieldSpec' ) };

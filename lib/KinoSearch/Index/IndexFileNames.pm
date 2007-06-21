@@ -7,7 +7,7 @@ use KinoSearch::Util::ToolSet;
 use base qw( Exporter );
 
 use KinoSearch::Util::StringHelper qw( to_base36 from_base36 );
-use KinoSearch::Util::CClass qw( to_kino );
+use KinoSearch::Util::Native qw( to_kino );
 
 our @EXPORT_OK = qw(
     SEGMENTS

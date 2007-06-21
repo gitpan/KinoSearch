@@ -60,7 +60,7 @@ for my $index_interval ( 1, 2, 3, 4, 7, 128, 1024 ) {
 
     my $folder   = KinoSearch::Store::RAMFolder->new;
     my $schema   = MySchema->new;
-    my $invindex = KinoSearch::InvIndex->create(
+    my $invindex = KinoSearch::InvIndex->clobber(
         folder => $folder,
         schema => $schema,
     );

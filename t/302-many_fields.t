@@ -25,7 +25,7 @@ for my $num_fields ( 1 .. 10 ) {
     $schema->add_field(
         "field$num_fields" => 'KinoSearch::Schema::FieldSpec' );
     my $folder   = KinoSearch::Store::RAMFolder->new;
-    my $invindex = KinoSearch::InvIndex->create(
+    my $invindex = KinoSearch::InvIndex->clobber(
         schema => $schema,
         folder => $folder,
     );

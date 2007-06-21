@@ -15,7 +15,7 @@ use Test::More tests => 16;
 use KinoSearch::InvIndexer;
 use KinoSearch::Searcher;
 use KinoSearch::Index::Term;
-use KinoSearch::QueryParser::QueryParser;
+use KinoSearch::QueryParser;
 use KinoSearch::InvIndex;
 use KinoSearch::Store::RAMFolder;
 use KinoSearch::Search::TermQuery;
@@ -29,7 +29,7 @@ utf8::upgrade($polished_turd);
 
 is( $turd, $polished_turd, "verify encoding acrobatics" );
 
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => KinoSearch::Store::RAMFolder->new,
     schema => MySchema->new,
 );
@@ -41,9 +41,8 @@ $invindexer->add_doc( { content => $not_a_smiley } );
 $invindexer->add_doc( { content => $turd } );
 $invindexer->finish;
 
-my $qparser
-    = KinoSearch::QueryParser::QueryParser->new( schema => MySchema->new );
-my $searcher = KinoSearch::Searcher->new( invindex => $invindex );
+my $qparser  = KinoSearch::QueryParser->new( schema => MySchema->new );
+my $searcher = KinoSearch::Searcher->new( invindex  => $invindex );
 
 my $hits = $searcher->search( query => $qparser->parse($smiley) );
 is( $hits->total_hits, 1 );

@@ -14,7 +14,7 @@ use Boilerplater::Method::Overridden;
 
 sub new {
     my $class_class = shift;
-    my $self = bless {
+    my $self        = bless {
         h_path            => undef,
         r_path            => undef,
         o_path            => undef,
@@ -204,7 +204,8 @@ sub _extract_methods_and_functions {
         }
 
         if ( defined $macro_name ) {
-            my $meth_class = $final
+            my $meth_class
+                = $final
                 ? 'Boilerplater::Method::Final'
                 : 'Boilerplater::Method';
             my $method = $meth_class->new(
@@ -297,7 +298,8 @@ sub write_if_modified {
 
         # either replace or insert just before include guard
         my $content = slurp_file($r_path);
-        my $bp      = "#define $bp_tag\n"
+        my $bp
+            = "#define $bp_tag\n"
             . $self->_gen_boilerplate
             . "\n#undef $bp_tag\n\n\n";
         if ( $content =~ /$bp_tag/ ) {
@@ -344,7 +346,8 @@ sub _gen_boilerplate {
     # define the methods that go in the virtual table declaration
     my $vtable_method_list = '';
     for my $method (@$methods) {
-        $vtable_method_list .= "    $prefix"
+        $vtable_method_list
+            .= "    $prefix"
             . $method->typedef . " "
             . $method->get_micro_name . ";\n";
     }
@@ -377,10 +380,11 @@ sub _gen_boilerplate {
     my $vtable_definition = $self->_vtable_definition;
 
     # make the spacing in the file a little more elegant
-    s/\s+$// for (
+    s/\s+$//
+        for (
         $method_typedefs, $method_macros,   $vtable_method_list,
         $short_names,     $member_vars_def, $vtable_definition
-    );
+        );
 
     # put the whole thing together
     return <<END_STUFF;

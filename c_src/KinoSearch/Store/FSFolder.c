@@ -108,7 +108,7 @@ FSFolder_list(FSFolder *self)
     VArray *dirlist = VA_new(0);
 
     if (dir == NULL) {
-        CONFESS("Couldn't opendir '%s'", self->path);
+        CONFESS("Couldn't opendir '%s'", self->path->ptr);
     }
     while ((entry = readdir(dir)) != NULL ) {
         size_t len = strlen(entry->d_name);

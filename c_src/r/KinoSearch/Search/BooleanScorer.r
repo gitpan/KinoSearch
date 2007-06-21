@@ -75,6 +75,9 @@ typedef void
 #define Kino_BoolScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_BoolScorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 #define Kino_BoolScorer_Add_Subscorer(self, subscorer, occur) \
     (self)->_->add_subscorer((kino_BooleanScorer*)self, subscorer, occur)
 
@@ -95,6 +98,7 @@ struct KINO_BOOLEANSCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
     kino_BoolScorer_add_subscorer_t add_subscorer;
 };
 
@@ -123,6 +127,7 @@ extern KINO_BOOLEANSCORER_VTABLE KINO_BOOLEANSCORER;
   #define BoolScorer_Tally Kino_BoolScorer_Tally
   #define BoolScorer_Skip_To Kino_BoolScorer_Skip_To
   #define BoolScorer_Collect Kino_BoolScorer_Collect
+  #define BoolScorer_Max_Matchers Kino_BoolScorer_Max_Matchers
   #define BoolScorer_Add_Subscorer Kino_BoolScorer_Add_Subscorer
 #endif /* KINO_USE_SHORT_NAMES */
 
@@ -158,6 +163,7 @@ KINO_BOOLEANSCORER_VTABLE KINO_BOOLEANSCORER = {
     (kino_Scorer_tally_t)kino_BoolScorer_tally,
     (kino_Scorer_skip_to_t)kino_BoolScorer_skip_to,
     (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_Scorer_max_matchers,
     (kino_BoolScorer_add_subscorer_t)kino_BoolScorer_add_subscorer
 };
 #endif /* KINO_WANT_BOOLEANSCORER_VTABLE */

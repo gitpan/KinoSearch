@@ -10,6 +10,9 @@ our %instance_vars = (
     path => undef,
 );
 
+use KinoSearch::Store::InStream;
+use KinoSearch::Store::OutStream;
+
 1;
 
 __END__

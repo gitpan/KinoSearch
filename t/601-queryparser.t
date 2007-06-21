@@ -27,27 +27,16 @@ sub analyzer {
         analyzers => [ $whitespace_tokenizer, $stopalizer, ], );
 }
 
-package MultiFieldSchema;
-use base qw( KinoSearch::Schema );
-use KinoSearch::Analysis::Tokenizer;
-
-our %fields = (
-    a => 'KinoSearch::Schema::FieldSpec',
-    b => 'KinoSearch::Schema::FieldSpec',
-);
-
-sub analyzer { KinoSearch::Analysis::Tokenizer->new }
-
 package main;
-use Test::More tests => 210;
+use Test::More tests => 207;
 
-use KinoSearch::QueryParser::QueryParser;
+use KinoSearch::QueryParser;
 use KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
 use KinoSearch::Searcher;
 use KinoSearch::Store::RAMFolder;
-use KinoSearch::Util::StringHelper qw( utf8_flag_on );
+use KinoSearch::Util::StringHelper qw( utf8_flag_on utf8ify );
 
 use KinoTestUtils qw( create_invindex );
 
@@ -55,11 +44,11 @@ my $folder       = KinoSearch::Store::RAMFolder->new;
 my $stop_folder  = KinoSearch::Store::RAMFolder->new;
 my $plain_schema = PlainSchema->new;
 my $stop_schema  = StopSchema->new;
-my $invindex     = KinoSearch::InvIndex->create(
+my $invindex     = KinoSearch::InvIndex->clobber(
     folder => $folder,
     schema => $plain_schema,
 );
-my $stop_invindex = KinoSearch::InvIndex->create(
+my $stop_invindex = KinoSearch::InvIndex->clobber(
     folder => $stop_folder,
     schema => $stop_schema,
 );
@@ -76,19 +65,21 @@ for (@docs) {
 $invindexer->finish;
 $stop_invindexer->finish;
 
-my $OR_parser
-    = KinoSearch::QueryParser::QueryParser->new( schema => $plain_schema, );
-my $AND_parser = KinoSearch::QueryParser::QueryParser->new(
+my $OR_parser = KinoSearch::QueryParser->new( schema => $plain_schema, );
+my $AND_parser = KinoSearch::QueryParser->new(
     schema         => $plain_schema,
     default_boolop => 'AND',
 );
+$OR_parser->set_heed_colons(1);
+$AND_parser->set_heed_colons(1);
 
-my $OR_stop_parser
-    = KinoSearch::QueryParser::QueryParser->new( schema => $stop_schema, );
-my $AND_stop_parser = KinoSearch::QueryParser::QueryParser->new(
+my $OR_stop_parser = KinoSearch::QueryParser->new( schema => $stop_schema, );
+my $AND_stop_parser = KinoSearch::QueryParser->new(
     schema         => $stop_schema,
     default_boolop => 'AND',
 );
+$OR_stop_parser->set_heed_colons(1);
+$AND_stop_parser->set_heed_colons(1);
 
 my $searcher      = KinoSearch::Searcher->new( invindex => $invindex );
 my $stop_searcher = KinoSearch::Searcher->new( invindex => $stop_invindex );
@@ -187,8 +178,8 @@ while ( $i < @logical_tests ) {
     $i++;
 }
 
-my $motorhead = "Mot\xC3\xB6rhead";
-utf8_flag_on($motorhead);
+my $motorhead = "Mot\xF6rhead";
+utf8ify($motorhead);
 my $unicode_invindex = create_invindex($motorhead);
 $searcher = KinoSearch::Searcher->new( invindex => $unicode_invindex, );
 
@@ -197,42 +188,8 @@ is( $hits->total_hits, 0, "Pre-test - indexing worked properly" );
 $hits = $searcher->search( query => $motorhead );
 is( $hits->total_hits, 1, "QueryParser parses UTF-8 strings correctly" );
 
-my $mf_folder   = KinoSearch::Store::RAMFolder->new;
-my $mf_schema   = MultiFieldSchema->new;
-my $mf_invindex = KinoSearch::InvIndex->create(
-    folder => $mf_folder,
-    schema => $mf_schema,
-);
+use KinoSearch::QueryParser::QueryParser;
+my $compat_parser
+    = KinoSearch::QueryParser::QueryParser->new( schema => PlainSchema->new );
+isa_ok( $compat_parser, 'KinoSearch::QueryParser' );
 
-my $mf_invindexer = KinoSearch::InvIndexer->new( invindex => $mf_invindex );
-$mf_invindexer->add_doc( { a => 'foo' } );
-$mf_invindexer->add_doc( { b => 'foo' } );
-$mf_invindexer->add_doc( { a => 'United States unit state' } );
-$mf_invindexer->add_doc( { a => 'unit state' } );
-$mf_invindexer->finish;
-
-my $mf_searcher = KinoSearch::Searcher->new( invindex => $mf_invindex );
-
-my $mf_parser = KinoSearch::QueryParser::QueryParser->new(
-    schema => $mf_schema,
-    fields => ['a'],
-);
-
-$hits = $mf_searcher->search( query => 'foo' );
-is( $hits->total_hits, 2, "Default search finds all fields" );
-
-my $query = $mf_parser->parse('foo');
-$hits = $mf_searcher->search( query => $query );
-is( $hits->total_hits, 1, "QueryParser fields param works" );
-
-my $analyzer_parser = KinoSearch::QueryParser::QueryParser->new(
-    schema   => $mf_schema,
-    analyzer => KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' ),
-);
-
-$hits = $mf_searcher->search( query => 'United States' );
-is( $hits->total_hits, 1, "search finds 1 doc (prep for next text)" );
-
-$query = $analyzer_parser->parse('United States');
-$hits = $mf_searcher->search( query => $query );
-is( $hits->total_hits, 2, "QueryParser uses supplied Analyzer" );

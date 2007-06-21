@@ -10,7 +10,7 @@
 #include "KinoSearch/InvIndex.r"
 #include "KinoSearch/Index/SegInfo.r"
 #include "KinoSearch/Index/TermVectorsReader.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 #include "KinoSearch/Util/IntMap.r"
 #include "KinoSearch/Store/Folder.r"
 #include "KinoSearch/Store/OutStream.r"

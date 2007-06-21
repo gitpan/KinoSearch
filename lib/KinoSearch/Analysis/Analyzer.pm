@@ -14,9 +14,8 @@ use KinoSearch::Analysis::TokenBatch;
 
 sub analyze_field {
     my ( $self, $doc, $field_name ) = @_;
-    my $batch
-        = KinoSearch::Analysis::TokenBatch->new( text => $doc->{$field_name},
-        );
+    my $batch = KinoSearch::Analysis::TokenBatch->new(
+        text => $doc->{$field_name} );
     return $self->analyze_batch($batch);
 }
 

@@ -14,7 +14,7 @@ use Boilerplater::Class::Final;
 
 sub new {
     my $ignore = shift;
-    my $self = bless {
+    my $self   = bless {
         base_dir => undef,    # the directory we begin reading files from
         dest_dir => undef,    # the directory we write files to
         tree     => {},       # the hierarchy, with Obj at its base
@@ -70,8 +70,9 @@ sub build {
             //msx
             )
         {
-            my $final       = defined $2;
-            my $class_class = $final
+            my $final = defined $2;
+            my $class_class
+                = $final
                 ? 'Boilerplater::Class::Final'
                 : 'Boilerplater::Class';
             my $class = $class_class->new(

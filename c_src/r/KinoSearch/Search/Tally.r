@@ -19,28 +19,41 @@
 
 #define KINO_TALLY_BOILERPLATE
 
+typedef void
+(*kino_Tally_destroy_t)(kino_Tally *self);
 
+typedef void
+(*kino_Tally_add_sprox_t)(kino_Tally *self, struct kino_ScoreProx *sprox);
+
+typedef void
+(*kino_Tally_zap_sproxen_t)(kino_Tally *self);
 
 #define Kino_Tally_Clone(self) \
-    (self)->_->clone((kino_Obj*)self)
+    kino_Obj_clone((kino_Obj*)self)
 
 #define Kino_Tally_Destroy(self) \
-    (self)->_->destroy((kino_Obj*)self)
+    kino_Tally_destroy((kino_Tally*)self)
 
 #define Kino_Tally_Equals(self, other) \
-    (self)->_->equals((kino_Obj*)self, other)
+    kino_Obj_equals((kino_Obj*)self, other)
 
 #define Kino_Tally_Hash_Code(self) \
-    (self)->_->hash_code((kino_Obj*)self)
+    kino_Obj_hash_code((kino_Obj*)self)
 
 #define Kino_Tally_Is_A(self, target_vtable) \
-    (self)->_->is_a((kino_Obj*)self, target_vtable)
+    kino_Obj_is_a((kino_Obj*)self, target_vtable)
 
 #define Kino_Tally_To_String(self) \
-    (self)->_->to_string((kino_Obj*)self)
+    kino_Obj_to_string((kino_Obj*)self)
 
 #define Kino_Tally_Serialize(self, target) \
-    (self)->_->serialize((kino_Obj*)self, target)
+    kino_Obj_serialize((kino_Obj*)self, target)
+
+#define Kino_Tally_Add_SProx(self, sprox) \
+    kino_Tally_add_sprox((kino_Tally*)self, sprox)
+
+#define Kino_Tally_Zap_SProxen(self) \
+    kino_Tally_zap_sproxen((kino_Tally*)self)
 
 struct KINO_TALLY_VTABLE {
     KINO_OBJ_VTABLE *_;
@@ -54,6 +67,8 @@ struct KINO_TALLY_VTABLE {
     kino_Obj_is_a_t is_a;
     kino_Obj_to_string_t to_string;
     kino_Obj_serialize_t serialize;
+    kino_Tally_add_sprox_t add_sprox;
+    kino_Tally_zap_sproxen_t zap_sproxen;
 };
 
 extern KINO_TALLY_VTABLE KINO_TALLY;
@@ -62,6 +77,12 @@ extern KINO_TALLY_VTABLE KINO_TALLY;
   #define Tally kino_Tally
   #define TALLY KINO_TALLY
   #define Tally_new kino_Tally_new
+  #define Tally_destroy_t kino_Tally_destroy_t
+  #define Tally_destroy kino_Tally_destroy
+  #define Tally_add_sprox_t kino_Tally_add_sprox_t
+  #define Tally_add_sprox kino_Tally_add_sprox
+  #define Tally_zap_sproxen_t kino_Tally_zap_sproxen_t
+  #define Tally_zap_sproxen kino_Tally_zap_sproxen
   #define Tally_Clone Kino_Tally_Clone
   #define Tally_Destroy Kino_Tally_Destroy
   #define Tally_Equals Kino_Tally_Equals
@@ -69,14 +90,17 @@ extern KINO_TALLY_VTABLE KINO_TALLY;
   #define Tally_Is_A Kino_Tally_Is_A
   #define Tally_To_String Kino_Tally_To_String
   #define Tally_Serialize Kino_Tally_Serialize
+  #define Tally_Add_SProx Kino_Tally_Add_SProx
+  #define Tally_Zap_SProxen Kino_Tally_Zap_SProxen
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_TALLY_MEMBER_VARS \
     chy_u32_t  refcount; \
     float  score; \
     chy_u32_t  num_matchers; \
-    chy_u32_t  num_prox; \
-    chy_u32_t * prox
+    chy_u32_t  sprox_cap; \
+    chy_u32_t  num_sproxen; \
+    struct kino_ScoreProx ** sproxen
 
 #ifdef KINO_WANT_TALLY_VTABLE
 KINO_TALLY_VTABLE KINO_TALLY = {
@@ -85,12 +109,14 @@ KINO_TALLY_VTABLE KINO_TALLY = {
     (KINO_OBJ_VTABLE*)&KINO_OBJ,
     "KinoSearch::Search::Tally",
     (kino_Obj_clone_t)kino_Obj_clone,
-    (kino_Obj_destroy_t)kino_Obj_destroy,
+    (kino_Obj_destroy_t)kino_Tally_destroy,
     (kino_Obj_equals_t)kino_Obj_equals,
     (kino_Obj_hash_code_t)kino_Obj_hash_code,
     (kino_Obj_is_a_t)kino_Obj_is_a,
     (kino_Obj_to_string_t)kino_Obj_to_string,
-    (kino_Obj_serialize_t)kino_Obj_serialize
+    (kino_Obj_serialize_t)kino_Obj_serialize,
+    (kino_Tally_add_sprox_t)kino_Tally_add_sprox,
+    (kino_Tally_zap_sproxen_t)kino_Tally_zap_sproxen
 };
 #endif /* KINO_WANT_TALLY_VTABLE */
 

@@ -25,7 +25,7 @@ use KinoSearch::Schema::FieldSpec;
 use KinoSearch::Schema;
 use KinoSearch::Index::IndexFileNames
     qw( filename_from_gen SEG_INFOS_FORMAT );
-use KinoSearch::Util::CClass qw( to_kino to_perl );
+use KinoSearch::Util::Native qw( to_kino to_perl );
 use KinoSearch::Util::YAML qw( encode_yaml parse_yaml );
 
 sub init_instance {
@@ -74,10 +74,10 @@ sub read_infos {
     my $schema = $self->{schema};
 
     confess kerror() unless verify_args( \%read_infos_args, @_ );
-    my %args     = ( %read_infos_args, @_ );
-    my $folder   = $args{folder};
-    my $filename =
-        defined $args{filename}
+    my %args = ( %read_infos_args, @_ );
+    my $folder = $args{folder};
+    my $filename
+        = defined $args{filename}
         ? $args{filename}
         : $folder->latest_gen( 'segments', '.yaml' );
 
@@ -101,6 +101,7 @@ sub read_infos {
     $self->{ks_modifier} = $segs_data->{ks_modifier};
 
     # Add any unknown fields to the Schema instance
+    $segs_data->{fields} ||= {};
     while ( my ( $field, $fspec_class ) = each %{ $segs_data->{fields} } ) {
         if ( !$fspec_class->isa("KinoSearch::Schema::FieldSpec") ) {
             confess(  "Attempted to load field '$field' assigned to "
@@ -133,13 +134,17 @@ sub write_infos {
     $self->{ks_modifier} = $KinoSearch::VERSION;
 
     # build a hash of field_name => fspec_class pairings
-    my %fields
+    my %fields_hash
         = map { $_ => ref( $schema->fetch_fspec($_) ) } $schema->all_fields;
+    my $fields
+        = scalar keys %fields_hash
+        ? \%fields_hash
+        : '';
 
     # create a YAML-izable data structure
     my %data = (
         format         => SEG_INFOS_FORMAT,
-        fields         => \%fields,
+        fields         => $fields,
         version        => $self->{version},
         ks_creator     => $self->{ks_creator},
         ks_modifier    => $self->{ks_modifier},

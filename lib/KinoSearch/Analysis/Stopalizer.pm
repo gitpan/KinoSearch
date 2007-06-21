@@ -16,7 +16,7 @@ our %instance_vars = (
 use Lingua::StopWords;
 
 sub init_instance {
-    my $self     = shift;
+    my $self = shift;
     my $language = $self->{language} = lc( $self->{language} );
 
     # verify a supplied stoplist
@@ -139,4 +139,3 @@ Copyright 2005-2007 Marvin Humphrey
 See L<KinoSearch> version 0.20.
 
 =cut
-

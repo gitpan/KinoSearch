@@ -109,9 +109,7 @@ CODE:
     kino_Similarity *sim = (kino_Similarity*)extract_obj(args_hash, 
         SNL("similarity"), "KinoSearch::Search::Similarity");
     float weight_val = extract_nv(args_hash, SNL("weight_value"));
-
-    RETVAL = Kino_PList_Make_Scorer(self, sim, newSVsv(weight_sv),
-        weight_val);
+    RETVAL = Kino_PList_Make_Scorer(self, sim, weight_sv, weight_val);
 }
 OUTPUT: RETVAL
 

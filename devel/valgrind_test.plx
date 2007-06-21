@@ -16,7 +16,8 @@ open( my $log_fh, '>', "valgrind_test.log" ) or die "Can't open file: $!";
 
 # iterate over all test files
 for my $t_file (@t_files) {
-    my $command = "KINO_VALGRIND=1 valgrind --leak-check=full "
+    my $command
+        = "KINO_VALGRIND=1 valgrind --leak-check=full "
         . "--show-reachable=yes --suppressions=../devel/p588_valgrind.supp "
         . "$^X -Mblib t/$t_file 2>&1";
     my $output = "\n\n" . ( scalar localtime(time) ) . "\n$command\n";

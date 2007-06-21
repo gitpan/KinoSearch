@@ -48,6 +48,10 @@ chy_u32_t
 kino_ANDNOTScorer_doc(kino_ANDNOTScorer *self);
 KINO_METHOD("Kino_ANDNOTScorer_Doc");
 
+chy_u32_t
+kino_ANDNOTScorer_max_matchers(kino_ANDNOTScorer *self);
+KINO_METHOD("Kino_ANDNOTScorer_Max_Matchers");
+
 KINO_END_CLASS
 
 #endif /* H_KINO_ANDNOTSCORER */

@@ -189,7 +189,7 @@ sub build_index {
 
             my %doc;
             $doc{title} = <$article_fh>;
-            $doc{body}  = do { local $/; <$article_fh> };
+            $doc{body} = do { local $/; <$article_fh> };
 
             $invindexer->add_doc( \%doc );
 
@@ -266,7 +266,7 @@ sub build_index {
             open( my $article_fh, '<', $article_filepath )
                 or die "Can't open file '$article_filepath'";
             my $title = <$article_fh>;
-            my $body  = do { local $/; <$article_fh> };
+            my $body = do { local $/; <$article_fh> };
 
             # add content to index
             my $doc = Plucene::Document->new;
@@ -296,4 +296,3 @@ sub build_index {
 }
 
 1;
-

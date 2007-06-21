@@ -14,7 +14,7 @@ use TestSchema;
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = TestSchema->new;
 
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     schema => TestSchema->new,
     folder => $folder,
 );

@@ -29,7 +29,7 @@ use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
 use KinoSearch::Store::RAMFolder;
 
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     schema => MySchema->new,
     folder => KinoSearch::Store::RAMFolder->new,
 );

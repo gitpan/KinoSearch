@@ -122,8 +122,8 @@ kino_PreSorter_gen_remap(kino_PreSorter *self)
     doc_remap->size = total_docs;
 
     /* sort to the scratch, then apply reverse to map */
-    MSort_mergesort(sorted, ints, total_docs,
-        self->compare, doc_vals);
+    MSort_mergesort(sorted, ints, total_docs, sizeof(i32_t), self->compare, 
+        doc_vals);
     for (i = 0; i < total_docs; i++) {
         ints[sorted[i]] = i;
     }

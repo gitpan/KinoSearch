@@ -58,6 +58,10 @@ chy_u32_t
 kino_ORScorer_doc(kino_ORScorer *self);
 KINO_METHOD("Kino_ORScorer_Doc");
 
+chy_u32_t
+kino_ORScorer_max_matchers(kino_ORScorer *self);
+KINO_METHOD("Kino_ORScorer_Max_Matchers");
+
 KINO_END_CLASS
 
 #endif /* H_KINO_ORSCORER */

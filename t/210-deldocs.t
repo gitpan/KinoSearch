@@ -73,7 +73,7 @@ is( $deldocs->get_cap, 8, "write_deldocs wrote correct number of bytes" );
 
 $folder   = KinoSearch::Store::RAMFolder->new;
 $schema   = TestSchema->new;
-$invindex = KinoSearch::InvIndex->create(
+$invindex = KinoSearch::InvIndex->clobber(
     folder => $folder,
     schema => $schema,
 );

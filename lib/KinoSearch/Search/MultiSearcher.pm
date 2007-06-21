@@ -117,8 +117,8 @@ sub top_docs {
     }
     my $score_docs = $hit_q->score_docs;
 
-    my $max_score =
-          @$score_docs
+    my $max_score
+        = @$score_docs
         ? $score_docs->[0]->get_score
         : 0;
 

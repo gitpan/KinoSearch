@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package KinoSearch::Util::CClass;
+package KinoSearch::Util::Native;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Obj Exporter );
 
@@ -53,13 +53,18 @@ sub to_perl {
     }
 }
 
+package KinoSearch::Util::Native::Test;
+
+sub _new { bless {}, __PACKAGE__ }
+
 sub _test { return scalar @_ }
 
 sub _test_obj {
-    if ( !defined $KinoSearch::Util::CClass::testobj ) {
-        $KinoSearch::Util::CClass::testobj = __PACKAGE__->_new;
+    if ( !defined $KinoSearch::Util::Native::Test::testobj ) {
+        $KinoSearch::Util::Native::Test::testobj
+            = KinoSearch::Util::Obj->_new;
     }
-    return $KinoSearch::Util::CClass::testobj;
+    return $KinoSearch::Util::Native::Test::testobj;
 }
 
 1;
@@ -68,7 +73,7 @@ __END__
 
 __XS__
 
-MODULE = KinoSearch     PACKAGE = KinoSearch::Util::CClass
+MODULE = KinoSearch     PACKAGE = KinoSearch::Util::Native
 
 =for comment
 
@@ -76,30 +81,31 @@ These are all for testing purposes only.
 
 =cut
 
-kino_CClass*
-_new(class)
+kino_Native*
+new(class, perl_obj)
     const classname_char *class;
+    SV *perl_obj;
 CODE:
-    RETVAL = kino_CClass_new();
+    RETVAL = kino_Native_new(perl_obj);
     CHY_UNUSED_VAR(class);
 OUTPUT: RETVAL
 
 void
 _callback(self)
-    kino_Obj *self;
+    kino_Native *self;
 PPCODE:
 {
     kino_ByteBuf bb = KINO_BYTEBUF_BLANK; 
-    kino_CClass_callback(self, "_test", &bb, &bb, &bb, NULL);
+    kino_Native_callback(self, "_test", &bb, &bb, &bb, NULL);
 }
 
 SV*
 _callback_bb(self);
-    kino_Obj *self;
+    kino_Native *self;
 CODE:
 {
     kino_ByteBuf bb = KINO_BYTEBUF_BLANK; 
-    kino_ByteBuf *val = kino_CClass_callback_bb(self, "_test", &bb, &bb, 
+    kino_ByteBuf *val = kino_Native_callback_bb(self, "_test", &bb, &bb, 
         &bb, NULL);
     RETVAL = bb_to_sv(val);
     REFCOUNT_DEC(val);
@@ -109,31 +115,31 @@ OUTPUT: RETVAL
     
 IV
 _callback_i(self)
-    kino_Obj *self;
+    kino_Native *self;
 CODE:
 {
     kino_ByteBuf bb = KINO_BYTEBUF_BLANK;
-    RETVAL = kino_CClass_callback_i(self, "_test", &bb, &bb, &bb, NULL);
+    RETVAL = kino_Native_callback_i(self, "_test", &bb, &bb, &bb, NULL);
 }
 OUTPUT: RETVAL
 
 float
 _callback_f(self)
-    kino_Obj *self;
+    kino_Native *self;
 CODE:
 {
     kino_ByteBuf bb = KINO_BYTEBUF_BLANK;
-    RETVAL = kino_CClass_callback_f(self, "_test", &bb, &bb, &bb, NULL);
+    RETVAL = kino_Native_callback_f(self, "_test", &bb, &bb, &bb, NULL);
 }
 OUTPUT: RETVAL
 
 SV*
 _callback_obj(self)
-    kino_Obj *self;
+    kino_Native *self;
 CODE: 
 {
     kino_ByteBuf bb = KINO_BYTEBUF_BLANK;
-    kino_Obj *other = kino_CClass_callback_obj( self, "_test_obj", &bb, 
+    kino_Obj *other = kino_Native_callback_obj( self, "_test_obj", &bb, 
         &bb, &bb, NULL);
     RETVAL = kobj_to_pobj(other);
 }
@@ -146,11 +152,7 @@ __POD__
 
 =head1 PRIVATE CLASS
 
-KinoSearch::Util::CClass - Callbacks to Perl from C.
-
-=head1 DESCRIPTION
-
-A framework for KinoSearch's C objects to use when calling back to Perl.
+KinoSearch::Util::Native - Wrap native objects.
 
 =head1 COPYRIGHT
 

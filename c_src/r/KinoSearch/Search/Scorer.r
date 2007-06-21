@@ -37,6 +37,9 @@ typedef void
                     chy_u32_t hits_per_seg, 
                     struct kino_VArray *seg_starts);
 
+typedef chy_u32_t
+(*kino_Scorer_max_matchers_t)(kino_Scorer *self);
+
 #define Kino_Scorer_Clone(self) \
     (self)->_->clone((kino_Obj*)self)
 
@@ -73,6 +76,9 @@ typedef void
 #define Kino_Scorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_Scorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 struct KINO_SCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
     chy_u32_t refcount;
@@ -90,6 +96,7 @@ struct KINO_SCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
 };
 
 extern KINO_SCORER_VTABLE KINO_SCORER;
@@ -107,6 +114,8 @@ extern KINO_SCORER_VTABLE KINO_SCORER;
   #define Scorer_skip_to kino_Scorer_skip_to
   #define Scorer_collect_t kino_Scorer_collect_t
   #define Scorer_collect kino_Scorer_collect
+  #define Scorer_max_matchers_t kino_Scorer_max_matchers_t
+  #define Scorer_max_matchers kino_Scorer_max_matchers
   #define Scorer_Clone Kino_Scorer_Clone
   #define Scorer_Destroy Kino_Scorer_Destroy
   #define Scorer_Equals Kino_Scorer_Equals
@@ -119,6 +128,7 @@ extern KINO_SCORER_VTABLE KINO_SCORER;
   #define Scorer_Tally Kino_Scorer_Tally
   #define Scorer_Skip_To Kino_Scorer_Skip_To
   #define Scorer_Collect Kino_Scorer_Collect
+  #define Scorer_Max_Matchers Kino_Scorer_Max_Matchers
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_SCORER_MEMBER_VARS \
@@ -142,7 +152,8 @@ KINO_SCORER_VTABLE KINO_SCORER = {
     (kino_Scorer_doc_t)kino_Scorer_doc,
     (kino_Scorer_tally_t)kino_Scorer_tally,
     (kino_Scorer_skip_to_t)kino_Scorer_skip_to,
-    (kino_Scorer_collect_t)kino_Scorer_collect
+    (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_Scorer_max_matchers
 };
 #endif /* KINO_WANT_SCORER_VTABLE */
 

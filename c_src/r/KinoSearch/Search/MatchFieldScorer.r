@@ -67,6 +67,9 @@ typedef struct kino_Tally*
 #define Kino_MatchFieldScorer_Collect(self, hc, start, end, hits_per_seg, seg_starts) \
     (self)->_->collect((kino_Scorer*)self, hc, start, end, hits_per_seg, seg_starts)
 
+#define Kino_MatchFieldScorer_Max_Matchers(self) \
+    (self)->_->max_matchers((kino_Scorer*)self)
+
 struct KINO_MATCHFIELDSCORER_VTABLE {
     KINO_OBJ_VTABLE *_;
     chy_u32_t refcount;
@@ -84,6 +87,7 @@ struct KINO_MATCHFIELDSCORER_VTABLE {
     kino_Scorer_tally_t tally;
     kino_Scorer_skip_to_t skip_to;
     kino_Scorer_collect_t collect;
+    kino_Scorer_max_matchers_t max_matchers;
 };
 
 extern KINO_MATCHFIELDSCORER_VTABLE KINO_MATCHFIELDSCORER;
@@ -108,6 +112,7 @@ extern KINO_MATCHFIELDSCORER_VTABLE KINO_MATCHFIELDSCORER;
   #define MatchFieldScorer_Tally Kino_MatchFieldScorer_Tally
   #define MatchFieldScorer_Skip_To Kino_MatchFieldScorer_Skip_To
   #define MatchFieldScorer_Collect Kino_MatchFieldScorer_Collect
+  #define MatchFieldScorer_Max_Matchers Kino_MatchFieldScorer_Max_Matchers
 #endif /* KINO_USE_SHORT_NAMES */
 
 #define KINO_MATCHFIELDSCORER_MEMBER_VARS \
@@ -116,7 +121,7 @@ extern KINO_MATCHFIELDSCORER_VTABLE KINO_MATCHFIELDSCORER;
     struct kino_Tally * tally; \
     struct kino_IntMap * sort_cache; \
     chy_u32_t  doc_num; \
-    void * weight_ref
+    struct kino_Native * weight
 
 #ifdef KINO_WANT_MATCHFIELDSCORER_VTABLE
 KINO_MATCHFIELDSCORER_VTABLE KINO_MATCHFIELDSCORER = {
@@ -135,7 +140,8 @@ KINO_MATCHFIELDSCORER_VTABLE KINO_MATCHFIELDSCORER = {
     (kino_Scorer_doc_t)kino_MatchFieldScorer_doc,
     (kino_Scorer_tally_t)kino_MatchFieldScorer_tally,
     (kino_Scorer_skip_to_t)kino_Scorer_skip_to,
-    (kino_Scorer_collect_t)kino_Scorer_collect
+    (kino_Scorer_collect_t)kino_Scorer_collect,
+    (kino_Scorer_max_matchers_t)kino_Scorer_max_matchers
 };
 #endif /* KINO_WANT_MATCHFIELDSCORER_VTABLE */
 

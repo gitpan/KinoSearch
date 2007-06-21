@@ -6,8 +6,9 @@
 #include "KinoSearch/Index/PostingList.r"
 #include "KinoSearch/Posting/ScorePosting.r"
 #include "KinoSearch/Search/Similarity.r"
+#include "KinoSearch/Search/ScoreProx.r"
 #include "KinoSearch/Search/Tally.r"
-#include "KinoSearch/Util/CClass.r"
+#include "KinoSearch/Util/Native.r"
 #include "KinoSearch/Util/Int.r"
 
 /* Mark this scorer as invalid/finished.
@@ -28,13 +29,15 @@ build_prox(PhraseScorer *self);
 
 PhraseScorer*
 PhraseScorer_new(Similarity *sim, VArray *plists, VArray *phrase_offsets,
-                 void *weight_ref, float weight_val, u32_t slop)
+                 void *weight, float weight_val, u32_t slop)
 {
     u32_t i;
     CREATE(self, PhraseScorer, PHRASESCORER);
 
     /* init */
     self->tally            = Tally_new();
+    self->sprox            = ScoreProx_new();
+    Tally_Add_SProx(self->tally, self->sprox);
     self->anchor_set       = BB_new(0);
     self->raw_prox_bb      = BB_new(0);
     self->phrase_freq      = 0.0;
@@ -60,7 +63,7 @@ PhraseScorer_new(Similarity *sim, VArray *plists, VArray *phrase_offsets,
     REFCOUNT_INC(sim);
     self->sim             = sim;
     self->weight_value    = weight_val;
-    self->weight_ref      = weight_ref;
+    self->weight          = Native_new(weight);
     self->slop            = slop;
 
     return self;
@@ -78,11 +81,12 @@ PhraseScorer_destroy(PhraseScorer *self)
     free(self->plists);
     free(self->phrase_offsets);
 
+    REFCOUNT_DEC(self->sprox);
     REFCOUNT_DEC(self->tally);
     REFCOUNT_DEC(self->raw_prox_bb);
     REFCOUNT_DEC(self->sim);
     REFCOUNT_DEC(self->anchor_set);
-    CClass_svrefcount_dec(self->weight_ref);
+    REFCOUNT_DEC(self->weight);
 
     free(self);
 }
@@ -202,20 +206,20 @@ PhraseScorer_skip_to(PhraseScorer *self, u32_t target)
 static void
 build_prox(PhraseScorer *self)
 {
-    Tally   *const tally      = self->tally;
+    ScoreProx *const sprox    = self->sprox;
     ByteBuf *const anchor_set = self->anchor_set;
     u32_t *anchors            = (u32_t*)anchor_set->ptr;
     u32_t *anchors_end        = (u32_t*)BBEND(anchor_set);
     u32_t *dest;
 
     /* set num_prox */
-    tally->num_prox = (anchor_set->len / sizeof(u32_t)) * self->num_elements;
+    sprox->num_prox = (anchor_set->len / sizeof(u32_t)) * self->num_elements;
     
     /* allocate space for the prox as needed and get a pointer to write to */
-    BB_GROW(self->raw_prox_bb, tally->num_prox * sizeof(u32_t));
-    self->raw_prox_bb->len = tally->num_prox * sizeof(u32_t);
+    BB_GROW(self->raw_prox_bb, sprox->num_prox * sizeof(u32_t));
+    self->raw_prox_bb->len = sprox->num_prox * sizeof(u32_t);
     dest = (u32_t*)self->raw_prox_bb->ptr;
-    tally->prox = dest;
+    sprox->prox = dest;
 
     /* create one group for each anchor */
     for (  ; anchors < anchors_end; anchors++) {

@@ -95,11 +95,11 @@ sub _gen_excerpt {
     # determine the rough boundaries of the excerpt
     my $posits = $self->_starts_and_ends( $doc_vector, $excerpt_field );
     my $best_location = $self->_calc_best_location( $posits, $limit );
-    my $top           = $best_location - $limit;
+    my $top = $best_location - $limit;
 
     # expand the excerpt if the best location is near the end
-    $top =
-          $text_length - $excerpt_length < $top
+    $top
+        = $text_length - $excerpt_length < $top
         ? $text_length - $excerpt_length
         : $top;
 

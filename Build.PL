@@ -33,7 +33,7 @@ END_WARNING
     exit unless $response;
 }
 
-my $builder        = KinoSearch::Build->new(
+my $builder = KinoSearch::Build->new(
     module_name       => 'KinoSearch',
     license           => 'perl',
     dist_author       => 'Marvin Humphrey <marvin at rectangular dot com>',

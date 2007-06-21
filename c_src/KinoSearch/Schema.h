@@ -9,6 +9,7 @@ struct kino_Hash;
 struct kino_Posting;
 struct kino_Similarity;
 struct kino_VArray;
+struct kino_Native;
 
 typedef struct kino_Schema kino_Schema;
 typedef struct KINO_SCHEMA_VTABLE KINO_SCHEMA_VTABLE;
@@ -20,10 +21,12 @@ struct kino_Schema {
     KINO_OBJ_MEMBER_VARS;
     struct kino_Similarity   *sim;
     struct kino_Hash         *fspecs;
+    struct kino_Hash         *by_name;
+    struct kino_VArray       *by_num;
     struct kino_Hash         *sims;
     struct kino_Hash         *postings;
-    void                     *analyzers;
-    void                     *analyzer;
+    struct kino_Native       *analyzers;
+    struct kino_Native       *analyzer;
     chy_i32_t                 index_interval;
     chy_i32_t                 skip_interval;
 };
@@ -60,9 +63,20 @@ kino_Schema_fetch_posting(kino_Schema *self,
                           const struct kino_ByteBuf *field_name);
 KINO_METHOD("Kino_Schema_Fetch_Posting");
 
+/* Return the number of fields currently defined.
+ */
 chy_u32_t
 kino_Schema_num_fields(kino_Schema *self);
 KINO_METHOD("Kino_Schema_Num_Fields");
+
+/* Given a field name, return its field number for this segment (which may
+ * differ from the number returned by indivindual SegInfo objects).
+ * Return -1 if the field name can't be found.  
+ */
+chy_i32_t
+kino_Schema_field_num(kino_Schema *self, 
+                      const struct kino_ByteBuf *field_name);
+KINO_METHOD("Kino_Schema_Field_Num");
 
 struct kino_VArray*
 kino_Schema_all_fields(kino_Schema *self);

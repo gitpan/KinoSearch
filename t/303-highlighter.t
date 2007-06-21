@@ -36,7 +36,7 @@ my $string = '1 2 3 4 5 ' x 20;    # 200 characters
 $string .= "$phi a b c d x y z h i j k ";
 $string .= '6 7 8 9 0 ' x 20;
 my $with_quotes = '"I see," said the blind man.';
-my $invindex    = KinoSearch::InvIndex->create(
+my $invindex    = KinoSearch::InvIndex->clobber(
     folder => KinoSearch::Store::RAMFolder->new,
     schema => MySchema->new,
 );

@@ -27,8 +27,12 @@ sub analyze_batch {
 }
 
 sub analyze_text {
-    my $batch = KinoSearch::Analysis::TokenBatch->new( text => lc( $_[1] ) );
-    return $_[0]->analyze_batch($batch);
+    return KinoSearch::Analysis::TokenBatch->new( text => lc( $_[1] ) );
+}
+
+sub analyze_field {
+    return KinoSearch::Analysis::TokenBatch->new(
+        text => lc( $_[1]->{ $_[2] } ) );
 }
 
 1;

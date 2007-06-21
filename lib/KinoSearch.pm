@@ -5,7 +5,7 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.20_03';
+our $VERSION = '0.20_04';
 
 use constant K_DEBUG => 0;
 
@@ -48,7 +48,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.20_03
+0.20_04
 
 =head1 EXTRA WARNING
 
@@ -107,7 +107,7 @@ Finally, search the index:
     use KinoSearch::Searcher;
     
     my $searcher = KinoSearch::Searcher->new(
-        invindex => MySchema->open('/path/to/invindex'),
+        invindex => MySchema->read('/path/to/invindex'),
     );
     
     my $hits = $searcher->search( query => "foo bar" );
@@ -158,7 +158,7 @@ Highly customizable query and indexing APIs.
 
 =item *
 
-Customizable Sorting.
+Customizable sorting.
 
 =item *
 
@@ -279,7 +279,7 @@ For creating complex queries, see L<KinoSearch::Search::Query> and its
 subclasses L<BooleanQuery|KinoSearch::Search::BooleanQuery>,
 L<TermQuery|KinoSearch::Search::TermQuery>, and
 L<PhraseQuery|KinoSearch::Search|PhraseQuery>, plus
-L<KinoSearch::QueryParser::QueryParser> and
+L<KinoSearch::QueryParser> and
 L<KinoSearch::Search::QueryFilter>.
 
 If PolyAnalyzer doesn't meet your needs, see the base class

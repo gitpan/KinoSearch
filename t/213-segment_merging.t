@@ -36,7 +36,7 @@ use KinoTestUtils qw( create_invindex );
 
     my $invindex_loc = catfile( tmpdir(), 'test_merging_invindex' );
     rmtree($invindex_loc);
-    TestSchema->create($invindex_loc);
+    TestSchema->clobber($invindex_loc);
 
     sub init_invindexer {
         undef $invindex;
@@ -58,7 +58,7 @@ use KinoTestUtils qw( create_invindex );
     }
 
     $searcher = KinoSearch::Searcher->new(
-        invindex => TestSchema->open($invindex_loc) );
+        invindex => TestSchema->read($invindex_loc) );
     $hits = $searcher->search( query => 'b' );
     is( $hits->total_hits, 10, "correct total_hits from merged invindex" );
     my @got;
@@ -89,7 +89,7 @@ use KinoTestUtils qw( create_invindex );
     $invindexer->finish;
 
     $searcher = KinoSearch::Searcher->new(
-        invindex => BiggerSchema->open($invindex_loc) );
+        invindex => BiggerSchema->read($invindex_loc) );
     $hits = $searcher->search( query => 'fish' );
     is( $hits->total_hits, 1, "correct total_hits after add_invindexes" );
     is( $hits->fetch_hit_hashref->{content},
@@ -100,7 +100,7 @@ use KinoTestUtils qw( create_invindex );
     # Open an IndexReader, to prevent the deletion of files on Win32 and
     # verify the file purging mechanism.
     my $reader = KinoSearch::Index::IndexReader->open(
-        invindex => BiggerSchema->open($invindex_loc) );
+        invindex => BiggerSchema->read($invindex_loc) );
     $invindexer = KinoSearch::InvIndexer->new(
         invindex => BiggerSchema->open($invindex_loc) );
     $invindexer->finish( optimize => 1 );

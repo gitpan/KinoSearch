@@ -73,7 +73,7 @@ my $boosted = "z x x a x x x x x x x x x";
 
 my $schema   = MySchema->new;
 my $folder   = KinoSearch::Store::RAMFolder->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     schema => $schema,
     folder => $folder,
 );

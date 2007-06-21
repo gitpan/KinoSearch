@@ -10,7 +10,7 @@ our @EXPORT_OK = qw( encode_yaml parse_yaml );
 use KinoSearch::Util::ByteBuf;
 use KinoSearch::Util::Hash;
 use KinoSearch::Util::VArray;
-use KinoSearch::Util::CClass qw( to_kino );
+use KinoSearch::Util::Native qw( to_kino );
 
 sub encode_yaml {
     my $input = shift;

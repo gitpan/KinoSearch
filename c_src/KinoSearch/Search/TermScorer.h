@@ -14,9 +14,11 @@ typedef struct kino_TermScorer kino_TermScorer;
 typedef struct KINO_TERMSCORER_VTABLE KINO_TERMSCORER_VTABLE;
 
 struct kino_Tally;
+struct kino_ScoreProx;
 struct kino_Posting;
 struct kino_PostingList;
 struct kino_HitCollector;
+struct kino_Native;
 
 #define KINO_TERMSCORER_SCORE_CACHE_SIZE 32
 #ifdef KINO_USE_SHORT_NAMES
@@ -31,8 +33,9 @@ struct kino_TermScorer {
     KINO_SCORER_MEMBER_VARS;
     float                     weight_value;
     float                    *score_cache;
-    void                     *weight_ref;
+    struct kino_Native       *weight;
     struct kino_Tally        *tally;
+    struct kino_ScoreProx    *sprox;
     struct kino_PostingList  *plist;
     struct kino_ByteBuf      *postings;
     struct kino_Posting      *posting;

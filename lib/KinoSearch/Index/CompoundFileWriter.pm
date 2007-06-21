@@ -15,7 +15,7 @@ our %instance_vars = (
     merged  => 0,
 );
 
-use KinoSearch::Util::CClass qw( to_kino );
+use KinoSearch::Util::Native qw( to_kino );
 use KinoSearch::Index::IndexFileNames qw( COMPOUND_FILE_FORMAT );
 
 # Add a file to the list of files-to-merge.

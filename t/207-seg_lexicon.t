@@ -29,11 +29,11 @@ use KinoSearch::Index::Term;
 use KinoSearch::Index::CompoundFileReader;
 use KinoSearch::Index::SegInfos;
 use KinoSearch::Util::YAML qw( parse_yaml );
-use KinoSearch::Util::CClass qw( to_kino );
+use KinoSearch::Util::Native qw( to_kino );
 
 my $folder   = KinoSearch::Store::RAMFolder->new;
 my $schema   = MySchema->new;
-my $invindex = KinoSearch::InvIndex->create(
+my $invindex = KinoSearch::InvIndex->clobber(
     folder => $folder,
     schema => $schema,
 );

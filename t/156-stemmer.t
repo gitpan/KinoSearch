@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 6;
+use Test::More tests => 8;
 use KinoTestUtils qw( test_analyzer );
 
 use KinoSearch::Analysis::Stemmer;

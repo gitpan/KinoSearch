@@ -4,11 +4,19 @@ use warnings;
 package KinoSearch::Store::FSFolder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Store::Folder );
+use File::Spec::Functions qw( rel2abs );
 
 our %instance_vars = (
     # inherited
     path => undef,
 );
+
+sub new {
+    my $class = shift;
+    my %args  = @_;
+    confess("Missing required parameter 'path'") unless defined $args{path};
+    return $class->_new( rel2abs( $args{path} ) );
+}
 
 1;
 
@@ -19,20 +27,12 @@ __XS__
 MODULE = KinoSearch    PACKAGE = KinoSearch::Store::FSFolder
 
 kino_FSFolder*
-new(...)
-CODE:
-{
-    /* parse params */
-    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Store::FSFolder::instance_vars");
+_new(classname, path)
+    const classname_char *classname;
     kino_ByteBuf path;
-    SV *path_sv =  extract_sv(args_hash, SNL("path"));
-    if (!SvOK(path_sv))
-        CONFESS("Missing required argument 'path'");
-    SV_TO_TEMP_BB(path_sv, path);
-    
+CODE:
     RETVAL = kino_FSFolder_new(&path);
-}
+    CHY_UNUSED_VAR(classname);
 OUTPUT: RETVAL
 
 __POD__
@@ -61,6 +61,10 @@ directory and multiple files.
     );
 
 Constructor. Takes one hash-style parameter.
+
+If the directory does not exist already, it will B<NOT> be created, in order
+to prevent misconfigured read applications from spawning bogus files -- so it
+may be necessary to create the directory yourself.
 
 =over 
 

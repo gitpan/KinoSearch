@@ -79,8 +79,8 @@ sub top_docs {
     );
     my $score_docs = $collector->get_hit_queue()->score_docs;
 
-    my $max_score =
-          @$score_docs
+    my $max_score
+        = @$score_docs
         ? $score_docs->[0]->get_score
         : 0;
 
@@ -95,7 +95,7 @@ sub collect {
     my $self         = shift;
     my $collect_args = \%KinoSearch::Search::Searchable::collect_args;
     confess kerror() unless verify_args( $collect_args, @_ );
-    my %args   = ( %$collect_args, @_ );
+    my %args = ( %$collect_args, @_ );
     my $reader = $self->{reader};
 
     # wrap the collector if there's a filter
@@ -155,7 +155,7 @@ KinoSearch::Searcher - Execute searches.
 =head1 SYNOPSIS
 
     my $searcher = KinoSearch::Searcher->new(
-        invindex => MySchema->open('/path/to/invindex'),
+        invindex => MySchema->read('/path/to/invindex'),
     );
     my $hits = $searcher->search( 
         query      => 'foo bar' 
@@ -192,7 +192,7 @@ Incremental updates.
 =head2 new
 
     my $searcher = KinoSearch::Searcher->new(
-        invindex => MySchema->open('/path/to/invindex'),
+        invindex => MySchema->read('/path/to/invindex'),
     );
     # or...
     my $searcher = KinoSearch::Searcher->new( reader => $reader );

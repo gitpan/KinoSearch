@@ -29,7 +29,7 @@ locations.
 =cut
 
 my $is_distro_not_devel = -e 'charmonizer';
-my $base_dir            = $is_distro_not_devel ? curdir() : updir();
+my $base_dir = $is_distro_not_devel ? curdir() : updir();
 
 my $METAQUOTE_EXE_PATH     = 'metaquote' . $Config{_exe};
 my $CHARMONIZE_EXE_PATH    = 'charmonize' . $Config{_exe};

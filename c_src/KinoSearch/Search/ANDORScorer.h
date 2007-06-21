@@ -49,6 +49,10 @@ chy_u32_t
 kino_ANDORScorer_doc(kino_ANDORScorer *self);
 KINO_METHOD("Kino_ANDORScorer_Doc");
 
+chy_u32_t
+kino_ANDORScorer_max_matchers(kino_ANDORScorer *self);
+KINO_METHOD("Kino_ANDORScorer_Max_Matchers");
+
 KINO_END_CLASS
 
 #endif /* H_KINO_ANDORSCORER */

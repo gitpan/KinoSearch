@@ -5,6 +5,8 @@ package KinoSearch::Highlight::Encoder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
+our %instance_vars = ();
+
 sub encode { shift->abstract_death }
 
 1;

@@ -33,6 +33,9 @@ FSFileDes_new(const char *path, int oflags, int fdmode, const char *fmode)
         free(self);
         return NULL;
     }
+    if (strcmp("wb+", fmode) == 0) {
+        setvbuf(self->fhandle, NULL, _IONBF, 0);
+    }
 
     /* init */
     self->pos          = 0;
@@ -90,14 +93,17 @@ FSFileDes_fdread(FSFileDes *self, char *dest, u32_t dest_offset, u32_t len)
 bool_t
 FSFileDes_fdwrite(FSFileDes *self, const char* buf, u32_t len) 
 {
-    size_t check_val = fwrite(buf, sizeof(char), len, self->fhandle);
+    size_t check_val;
+    
+    if (len == 0)
+        return true;
+
+    check_val = fwrite(buf, sizeof(char), len, self->fhandle);
     if (check_val != len) {
         Carp_set_kerror("Attempted to write %lu bytes, but wrote %lu",
             (unsigned long)len, (unsigned long)check_val);
         return false;
     }
-
-    CHECK_IO_OP( fflush(self->fhandle) ); /* TODO -- kill this? */
 
     self->pos += len;
 
