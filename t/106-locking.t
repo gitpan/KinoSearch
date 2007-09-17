@@ -36,24 +36,30 @@ Dead_locks_are_removed: {
     }
 
     # Fork a process that will create a lock and then exit
-    if ( fork() == 0 ) {    # child
-                            # double fork to daemonize
-        if ( fork() == 0 ) {    # sub child
-            make_lock();
-        }
+    my $pid = fork();
+    if ( $pid == 0 ) {    # child
+        make_lock();
         exit;
     }
-
-    # wait for the daemon to secure the lock, then a little longer for exit
-    for ( 0 .. 20 ) {
-        sleep .1 unless -e $lock_path;
+    else {
+        waitpid( $pid, 0 );
     }
-    sleep .1;
-    ok( -e $lock_path, "daemon secured lock" );
 
+    ok( -e $lock_path, "child secured lock" );
+
+    # The locking attempt will fail if the pid from the process that made the
+    # lock is active, so do the best we can to see whether another process
+    # started up with the child's pid (which would be weird).
+    my $pid_active = kill( 0, $pid );
     eval { make_lock() };
     warn $@ if $@;
-    ok( !$@, 'second lock attempt did not die' );
+    my $saved_err = $@;
+    $pid_active ||= kill( 0, $pid );
+    SKIP: {
+        skip( "Child's pid is active", 1 ) if $pid_active;
+        ok( !$saved_err,
+            'second lock attempt clobbered dead lock file and did not die' );
+    }
 }
 
 package MockIndex;

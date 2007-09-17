@@ -183,7 +183,7 @@ PREINIT:
     AV *out_av;
 PPCODE:
     out_av = Kino_BitVec_to_array(bit_vec);
-    XPUSHs(newRV_noinc( (SV*)out_av ));
+    XPUSHs( sv_2mortal(newRV_noinc( (SV*)out_av )) );
     XSRETURN(1);
     
 
@@ -604,11 +604,11 @@ Accessible from both C and Perl.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2006 Marvin Humphrey
+Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.16.
+See L<KinoSearch|KinoSearch> version 0.161.
 
 =end devdocs
 =cut
