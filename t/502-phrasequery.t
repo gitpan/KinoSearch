@@ -1,15 +1,14 @@
-use strict;
-use warnings;
-use lib 'buildlib';
+#!/usr/bin/perl
 
-use Test::More tests => 3;
+use lib 't';
+use Test::More tests => 5;
 use File::Spec::Functions qw( catfile );
 
-use KinoSearch::Search::PhraseQuery;
+BEGIN { use_ok('KinoSearch::Search::PhraseQuery') }
+
+use KinoSearchTestInvIndex qw( create_invindex );
 use KinoSearch::Index::Term;
 use KinoSearch::Searcher;
-
-use KinoTestUtils qw( create_invindex );
 
 my $best_match = 'x a b c d a b c d';
 
@@ -31,6 +30,7 @@ for (qw( a b c d )) {
 }
 
 my $hits = $searcher->search( query => $phrase_query );
+$hits->seek( 0, 50 );
 is( $hits->total_hits, 3, "correct number of hits" );
 my $first_hit = $hits->fetch_hit_hashref;
 is( $first_hit->{content}, $best_match, 'best match appears first' );
@@ -38,3 +38,12 @@ is( $first_hit->{content}, $best_match, 'best match appears first' );
 my $second_hit = $hits->fetch_hit_hashref;
 ok( $first_hit->{score} > $second_hit->{score},
     "best match scores higher: $first_hit->{score} > $second_hit->{score}" );
+
+$phrase_query = KinoSearch::Search::PhraseQuery->new( slop => 0 );
+for (qw( c a )) {
+    my $term = KinoSearch::Index::Term->new( 'content', $_ );
+    $phrase_query->add_term($term);
+}
+$hits = $searcher->search( query => $phrase_query );
+is( $hits->total_hits, 1, 'avoid underflow when subtracting offset' );
+

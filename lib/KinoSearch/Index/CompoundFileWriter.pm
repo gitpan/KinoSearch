@@ -1,27 +1,29 @@
+package KinoSearch::Index::CompoundFileWriter;
 use strict;
 use warnings;
-
-package KinoSearch::Index::CompoundFileWriter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = (
-    # constructor params / members
-    invindex => undef,
-    seg_info => undef,
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        invindex => undef,
+        filename => undef,
+        # members
+        entries => undef,
+        merged  => 0,
+    );
+}
 
-    # members
-    entries => {},
-    merged  => 0,
-);
-
-use KinoSearch::Util::Native qw( to_kino );
-use KinoSearch::Index::IndexFileNames qw( COMPOUND_FILE_FORMAT );
+sub init_instance {
+    my $self = shift;
+    $self->{entries} = {};
+}
 
 # Add a file to the list of files-to-merge.
 sub add_file {
     my ( $self, $filename ) = @_;
-    confess("filename '$filename' already added")
+    croak("filename '$filename' already added")
         if $self->{entries}{$filename};
     $self->{entries}{$filename} = 1;
 }
@@ -29,47 +31,48 @@ sub add_file {
 # Write a compound file.
 sub finish {
     my $self           = shift;
-    my $folder         = $self->{invindex}->get_folder;
-    my $seg_info       = $self->{seg_info};
+    my $invindex       = $self->{invindex};
     my @files_to_merge = keys %{ $self->{entries} };
-    confess('no entries defined') unless @files_to_merge;
+    croak('no entries defined') unless @files_to_merge;
 
-    # ensure that the file only gets written once
-    confess('merge already performed') if $self->{merged};
+    # ensure that the file only gets written once; open the outfile
+    croak('merge already performed') if $self->{merged};
     $self->{merged} = 1;
+    my $outstream = $invindex->open_outstream( $self->{filename} );
 
-    # copy files, recording metadata as we go.
-    my %sub_files;
-    my %metadata = (
-        sub_files => \%sub_files,
-        format    => COMPOUND_FILE_FORMAT,
-    );
-    my $outstream
-        = $folder->open_outstream( $seg_info->get_seg_name . '.cf' );
+    # write number of files, plus data_offset placeholders
+    my @to_write = map { ( 0, $_ ) } @files_to_merge;
+    unshift @to_write, scalar @files_to_merge;
+    my $template = 'V' . ( 'QT' x scalar @files_to_merge );
+    $outstream->lu_write( $template, @to_write );
+
+    # copy data
+    my @data_offsets;
+    my $out_fh = $outstream;
     for my $file (@files_to_merge) {
-        my $instream = $folder->open_instream($file);
-        my $offset   = $outstream->stell;
+        push @data_offsets, $outstream->tell;
+        my $instream = $invindex->open_instream($file);
         $outstream->absorb($instream);
-        my $len = $outstream->stell - $offset;
-        $sub_files{$file} = { offset => $offset, 'length' => $len };
     }
-    $outstream->sclose;
 
-    # store metadata
-    $seg_info->add_metadata( 'compound_file', \%metadata );
+    # rewrite number of files, plus real data offsets
+    $outstream->seek(0);
+    @to_write = map { ( shift @data_offsets, $_ ) } @files_to_merge;
+    unshift @to_write, scalar @files_to_merge;
+    $outstream->lu_write( $template, @to_write );
+
+    $outstream->close;
 }
 
 1;
 
 __END__
 
-__POD__
-
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Index::CompoundFileWriter - Consolidate InvIndex files.
+KinoSearch::Index::CompoundFileWriter - consolidate invindex files
 
 =head1 DESCRIPTION
 
@@ -80,11 +83,11 @@ original files are not deleted, so cleanup must be done externally.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =end devdocs
 =cut

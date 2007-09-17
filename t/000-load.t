@@ -1,3 +1,4 @@
+#!/usr/bin/perl 
 use strict;
 use warnings;
 
@@ -18,7 +19,7 @@ find(
 for (@modules) {
     s/^.*?KinoSearch/KinoSearch/;
     s/\.pm$//;
-    s/\W+/::/g;
+    s/[^a-zA-Z]+/::/g;
     eval "use_ok('" . $_ . "');";
 }
 

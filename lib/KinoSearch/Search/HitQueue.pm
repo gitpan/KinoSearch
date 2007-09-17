@@ -1,104 +1,97 @@
+package KinoSearch::Search::HitQueue;
 use strict;
 use warnings;
-
-package KinoSearch::Search::HitQueue;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::PriorityQueue );
 
-our %instance_vars = (
-    # params
-    max_size => undef,
-);
+BEGIN { __PACKAGE__->init_instance_vars() }
 
-use KinoSearch::Search::ScoreDoc;
+use KinoSearch::Search::Hit;
 
-# Create an array of ScoreDoc objects.
-sub score_docs { shift->pop_all }
+sub new {
+    my $either = shift;
+    my $self   = $either->SUPER::new(@_);
 
-sub insert_score_doc {
-    my ( $self, $score_doc ) = @_;
-    return $self->insert($score_doc);
+    $self->define_less_than;
+
+    return $self;
+}
+
+# Create an array of "empty" Hit objects -- they have scores and ids,
+# but the stored fields have yet to be retrieved.
+sub hits {
+    my ( $self, $start_offset, $num_wanted, $searcher ) = @_;
+    my @hits = @{ $self->pop_all };
+
+    if ( defined $start_offset and defined $num_wanted ) {
+        @hits = splice( @hits, $start_offset, $num_wanted );
+    }
+
+    @hits = map {
+        KinoSearch::Search::Hit->new(
+            id       => unpack( 'N', "$_" ),
+            score    => 0 + $_,
+            searcher => $searcher
+            )
+    } @hits;
+
+    return \@hits;
 }
 
 1;
 
 __END__
-
 __XS__
 
 MODULE = KinoSearch    PACKAGE = KinoSearch::Search::HitQueue
 
-kino_HitQueue*
-new(...)
-CODE:
-{
-    /* parse params */
-    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Search::HitQueue::instance_vars");
-    chy_u32_t max_size = extract_uv(args_hash, SNL("max_size"));
-
-    /* create object */
-    RETVAL = kino_HitQ_new(max_size);
-}
-OUTPUT: RETVAL
-
-
-chy_bool_t
-insert(self, score_doc)
-    kino_HitQueue *self;
-    kino_ScoreDoc *score_doc;
-CODE:
-    REFCOUNT_INC(score_doc);
-    RETVAL = Kino_HitQ_Insert(self, score_doc);
-OUTPUT: RETVAL
-
-SV*
-pop(self)
-    kino_HitQueue *self;
-CODE:
-{
-    kino_ScoreDoc *score_doc = (kino_ScoreDoc*)Kino_HitQ_Pop(self);
-    if (score_doc == NULL) {
-        RETVAL = &PL_sv_undef;
-    }
-    else {
-        RETVAL = kobj_to_pobj(score_doc);
-    }
-    REFCOUNT_DEC(score_doc);
-}
-OUTPUT: RETVAL
-
 void
-pop_all(self)
-    kino_HitQueue *self;
+define_less_than(hitq)
+    PriorityQueue *hitq;
 PPCODE:
-{
-    AV* out_av = newAV();
-    
-    if (self->size > 0) {
-        chy_i32_t i;
+    hitq->less_than = &Kino_HitQ_less_than;
 
-        /* map the queue nodes onto the array in reverse order */
-        av_extend(out_av, self->size - 1);
-        for (i = self->size - 1; i >= 0; i--) {
-            kino_ScoreDoc *const score_doc 
-                = (kino_ScoreDoc*)Kino_HitQ_Pop(self);
-            SV *const score_doc_sv = kobj_to_pobj(score_doc);
-            REFCOUNT_DEC(score_doc);
-            av_store(out_av, i, score_doc_sv);
-        }
+__H__
+
+#ifndef H_KINOSEARCH_SEARCH_HIT_QUEUE
+#define H_KINOSEARCH_SEARCH_HIT_QUEUE 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+
+bool Kino_HitQ_less_than(SV*, SV*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchSearchHitQueue.h"
+
+/* Compare the NV then the PV for two scalars. 
+ */
+bool
+Kino_HitQ_less_than(SV* a, SV* b) {
+    char *ptr_a, *ptr_b; 
+
+    if (SvNV(a) == SvNV(b)) {
+        ptr_a = SvPVX(a);
+        ptr_b = SvPVX(b);
+        /* sort by doc_num second */
+        return (bool) (memcmp(ptr_b, ptr_a, 4) < 0);
     }
-    XPUSHs( sv_2mortal(newRV_noinc( (SV*)out_av )) );
-    XSRETURN(1);
+    /* sort by score first */
+    return SvNV(a) < SvNV(b);
 }
+
 
 __POD__
 
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Search::HitQueue - Track highest scoring docs.
+KinoSearch::Search::HitQueue - track highest scoring docs
 
 =head1 DESCRIPTION 
 
@@ -112,11 +105,11 @@ The encoding algorithm is functionally equivalent to this:
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =end devdocs
 =cut

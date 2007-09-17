@@ -1,15 +1,15 @@
+package KinoSearch::Highlight::SimpleHTMLFormatter;
 use strict;
 use warnings;
-
-package KinoSearch::Highlight::SimpleHTMLFormatter;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Highlight::Formatter );
 
-our %instance_vars = (
-    # constructor params / members
-    pre_tag  => '<strong>',
-    post_tag => '</strong>',
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        pre_tag  => '<strong>',
+        post_tag => '</strong>',
+    );
+}
 
 sub highlight {
     my ( $self, $text ) = @_;
@@ -22,7 +22,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Highlight::SimpleHTMLFormatter - Surround highlight bits with tags.
+KinoSearch::Highlight::SimpleHTMLFormatter - surround highlight bits with tags
 
 =head1 SYNOPSIS
 
@@ -37,8 +37,9 @@ KinoSearch::Highlight::SimpleHTMLFormatter - Surround highlight bits with tags.
 
 =head1 DESCRIPTION
 
-This subclass of L<KinoSearch::Highlight::Formatter> highlights text by
-surrounding it with tags.
+This subclass of
+L<KinoSearch::Highlight::Formatter|KinoSearch::Highlight::Formatter>
+highlights text by surrounding it with HTML "strong" tags.
 
 =head1 METHODS
 
@@ -68,10 +69,10 @@ highlightable text.
 
 =head1 COPYRIGHT
 
-Copyright 2006-2007 Marvin Humphrey
+Copyright 2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =cut

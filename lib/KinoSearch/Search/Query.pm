@@ -1,27 +1,16 @@
+package KinoSearch::Search::Query;
 use strict;
 use warnings;
-
-package KinoSearch::Search::Query;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = (
-    # constructor params / members
-    boost => 1.0,
-);
-
-BEGIN { __PACKAGE__->ready_get_set(qw( boost )) }
-
-=begin comment
-
-    my $weight = $query->make_weight($searcher);
-
-Abstract factory method for turning a Query into a Weight.
-
-=end comment
-=cut
-
-sub make_weight { shift->abstract_death }
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        boost => 1,
+    );
+    __PACKAGE__->ready_get_set(qw( boost ));
+}
 
 =begin comment
 
@@ -39,6 +28,41 @@ sub to_string { shift->abstract_death }
 
 =begin comment
 
+    my $weight = $query->create_weight($searcher);
+
+Only low-level Queries which rewrite themselves implement this method.
+
+=end comment
+=cut
+
+sub create_weight { shift->abstract_death }
+
+# Derive a weight for a high-level query.
+sub to_weight {    # in Lucene, this method is simply "weight"
+    my ( $self, $searcher ) = @_;
+    my $rewritten_self = $searcher->rewrite($self);
+    my $weight         = $rewritten_self->create_weight($searcher);
+    my $sum            = $weight->sum_of_squared_weights;
+    my $sim            = $self->get_similarity($searcher);
+    my $norm           = $sim->query_norm($sum);
+    $weight->normalize($norm);
+    return $weight;
+}
+
+=begin comment
+
+    my $rewritten_query = $query->rewrite( $index_reader );
+
+Called by high-level Queries that wish to reformulate themselves as
+agglomerations of low-level queries.
+
+=end comment
+=cut
+
+sub rewrite { return shift }
+
+=begin comment
+
 my @terms = $query->extract_terms;
 
 Return all the Terms within this query.
@@ -48,13 +72,29 @@ Return all the Terms within this query.
 
 sub extract_terms { shift->abstract_death }
 
+# These will be needed by MultiSearcher if we add queries which rewrite
+# themselves.
+sub combine               { shift->todo_death }
+sub merge_boolean_queries { shift->todo_death }
+
+# return the Similarity implementation used by the Query.
+sub get_similarity {
+    my ( $self, $searcher, $field_name ) = @_;
+    # This can be overriden in subclasses, allowing alternative Sims.
+    return defined $field_name
+        ? $searcher->get_similarity($field_name)
+        : $searcher->get_similarity;
+}
+
+sub clone { shift->todo_death }
+
 1;
 
 __END__
 
 =head1 NAME
 
-KinoSearch::Search::Query - Base class for search queries.
+KinoSearch::Search::Query - base class for search queries
 
 =head1 SYNOPSIS
 
@@ -62,7 +102,7 @@ KinoSearch::Search::Query - Base class for search queries.
 
 =head1 DESCRIPTION
 
-Base class for queries to be performed against an InvIndex.
+Base class for queries to be performed against an invindex.
 L<TermQuery|KinoSearch::Search::TermQuery> is one example.
 
 =head1 METHODS
@@ -80,15 +120,21 @@ boost to a lower number decreases the contribution.
 =begin devdocs
 
 A Query in KinoSearch is a highly abstracted representation.  It must be
-transformed before the index is actually consulted to see how documents score
-against it.
+transformed in several ways before the index is actually consulted to see how
+documents score against it.
 
-First, a Weight must be derived from a Query.  The role of a Weight is to hold
+First, a Query must be "rewritten", a task that falls to the searcher.
+Rewriting something as simple as a TermQuery just means returning the original
+object; other more complex Queries, e.g. the as-yet-unimplemented SpanQueries,
+may get transformed into collections of simpler queries -- such as
+TermQueries.
+
+Next, a Weight must be derived from a Query.  The role of a Weight is to hold
 all data which changes as the search gets processed -- allowing still-pristine
 Query objects to be reused later.
 
-Next, the Weight object is used to derive a Scorer.  The scorer iterates over
-the documents which match the query, producing doc_num => score pairs.  These
+The Weight object is used to derive a Scorer.  The scorer iterates over the
+documents which match the query, producing doc_num => score pairs.  These
 pairs are are processed by a HitCollector.  
 
 Different types of HitCollectors yield different results.
@@ -102,10 +148,11 @@ Here's another way of looking at the divided responsibilities:
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =cut
+

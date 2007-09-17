@@ -1,7 +1,6 @@
+package KinoSearch::Util::ToolSet;
 use strict;
 use warnings;
-
-package KinoSearch::Util::ToolSet;
 use bytes;
 no bytes;
 
@@ -23,6 +22,7 @@ use Scalar::Util qw(
 );
 use KinoSearch qw( K_DEBUG kdump );
 use KinoSearch::Util::VerifyArgs qw( verify_args kerror a_isa_b );
+use KinoSearch::Util::MathUtils qw( ceil );
 
 our @EXPORT = qw(
     carp
@@ -43,10 +43,12 @@ our @EXPORT = qw(
 
     K_DEBUG
     kdump
+    kerror
 
     verify_args
     a_isa_b
-    kerror
+
+    ceil
 );
 
 1;
@@ -55,7 +57,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Util::ToolSet - Namespace pollution.
+KinoSearch::Util::ToolSet - namespace pollution
 
 =head1 PRIVATE CLASS
 
@@ -70,8 +72,8 @@ warning.  Do not use it on its own.
 
 KinoSearch::Util::ToolSet makes a slew of commonly needed symbols available to
 other modules in the KinoSearch suite.  At one time it was implemented using
-David Golden's L<ToolSet> module, but in keeping with the philosophy of
-minimizing non-core dependencies, a 90% solution based on Exporter has been
+David Golden's L<ToolSet|ToolSet> module, but in keeping with the philosophy
+of minimizing non-core dependencies, a 90% solution based on Exporter has been
 substituted.
 
     use KinoSearch::Util::ToolSet;
@@ -93,7 +95,7 @@ substituted.
                          looks_like_number 
                          );
     use KinoSearch qw( K_DEBUG kdump );
-    use KinoSearch::Util::VerifyArgs qw( verify_args a_isa_b kerror );
+    use KinoSearch::Util::VerifyArgs qw( verify_args a_isa_b );
     use KinoSearch::Util::MathUtils qw( ceil );
 
 Two issues deserve special attention.
@@ -103,16 +105,17 @@ bytes:: namespace, such as bytes::length, will be available, while still
 keeping character semantics enabled by default -- so regexes work as expected,
 etc.
 
-Second, the C<use KinoSearch> line does a LOT more than it appears to at first
-glance -- it loads ALL of the XS routines in the entire KinoSearch suite.  See
-L<KinoSearch::Docs::DevGuide> for an explanation.
+Second, the C<use KinoSearch> line does a LOT more than it appears to at
+first glance -- it loads ALL of the XS routines in the entire KinoSearch
+suite.  See L<KinoSearch::Docs::DevGuide|KinoSearch::Docs::DevGuide> for an
+explanation.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =cut

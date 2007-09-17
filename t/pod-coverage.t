@@ -1,5 +1,4 @@
-use strict;
-use warnings;
+#!perl -T
 
 use constant RUN_AUTHOR_ONLY_TESTS => 0;
 use Test::More;

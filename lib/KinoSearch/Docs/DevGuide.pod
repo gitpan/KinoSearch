@@ -1,6 +1,6 @@
 =head1 NAME
 
-KinoSearch::Docs::DevGuide - Hacking/debugging KinoSearch.
+KinoSearch::Docs::DevGuide - hacking/debugging KinoSearch
 
 =head1 SYNOPSIS
 
@@ -9,17 +9,23 @@ probably don't need to read this.
 
 =head1 Fundamental Classes
 
-Most of the Perl classes in KinoSearch rely on L<KinoSearch::Util::Class> and
-L<KinoSearch::Util::ToolSet>.
-
-At the C level, inheritance is implemented using the C<devel/boilerplater.pl>
-utility.  The base class is KinoSearch::Util::Obj.  If what's going on is not
-immediately apparent to you after spelunking a few files in the c_src
-directory, see boilerplater's documentation.
+Most of the classes in KinoSearch rely on 
+L<KinoSearch::Util::Class|KinoSearch::Util::Class> and
+L<KinoSearch::Util::ToolSet|KinoSearch::Util::ToolSet>, so you'll probably
+want to familiarize yourself with them.
 
 =head1 Object Oriented Design
 
-=head2 Access levels
+=head2 No public member variables.
+
+Multiple classes defined within a single source-code file, e.g. TermQuery and
+TermWeight, may use direct access to get at each others member variables.
+Everybody else has to use accessor methods.
+
+C-struct based classes such as TermInfo allow direct access to their members,
+but only from C (of course).
+
+=head2 Subroutine/method access levels
 
 There are three access levels in KinoSearch.  
 
@@ -31,36 +37,16 @@ B<public>: documented in "visible" pod.
 
 =item 2
 
-B<private>: Local to one source file.  Private subs are differentiated by
-prepending them with an _underscore, as per L<perlstyle> guidelines.
+B<private>: subs which are prepended with an _underscore may only be used
+within the package in which they reside -- as per L<perlstyle|perlstyle>
+guidelines -- and in only one source file.
 
 =item 3
 
-B<distro>: anything which doesn't fall into either category above may be used
-anywhere within the KinoSearch distribution.  If this were Java and all of KS
-was in the same Java package, we'd call this ACL "package-private", but since
-"package" already has a distinct meaning in Perl, we coin a new term.
+B<distro>: any sub which doesn't fall into either category above may be used
+anywhere within the KinoSearch distribution.  
 
 =back
-
-=head2 No public member variables.
-
-All Perl member variables are treated as private.  Multiple classes defined
-within a single source-code file may use direct access to get at each others
-member variables.  Everybody else has to use accessor methods.
-
-All C-struct member variables allow distro-level access.  C vars can have a
-more permissive scheme because C structs don't suffer from the problem of
-autovivification of misspelled names.  This does tend to encourage tight
-binding between classes, which is unfortunate but manageable so long as the
-bad designs are purely internal.  In the future, it may make sense to make
-C-vars private by default, but introduce voluntary conventions for identifying
-protected and distro-level members.
-
-=head2 Parameter Validation
-
-Hash-style argument lists are verified to ensure that no parameter label has
-been misspelled.  Stronger validation is performed ad hoc.
 
 =head1 Documentation Conventions
 
@@ -68,19 +54,21 @@ KinoSearch's public API is defined by what you get when you run the suite
 through a well-behaved pod-to-whatever converter.  Developer-only
 documentation is limited to comments and "invisible" =for/=begin POD blocks.
 
-=head1 Integration of XS code
+=head1 Integration of XS and C code
 
-XS code in KinoSearch is stored faux-L<Inline>-style, after an
-C<__END__> token, and delimited by C<__XS__>. and C<__POD__>.  A heavily
-customized Build.PL detects these code blocks and writes out hard files at
-install-time, so the inlining is mostly for convenience while editing: the XS
-code is often tightly coupled to the Perl code in a given module, and having
-everything in one place makes it easier to see what's going on and move things
-back and forth.
+XS and C code in KinoSearch is stored faux-L<Inline|Inline>-style, after an
+C<__END__> token, and delimited by either C<__XS__>, C<__H__>, or C<__C__>.  A
+heavily customized Build.PL detects these code blocks and writes out hard
+files at install-time, so the inlining is mostly for convenience while
+editing: the XS code is often tightly coupled to the Perl code in a given
+module, and having everything in one place makes it easier to see what's going
+on and move things back and forth.
 
-The content of KinoSearch.xs consists of the XS block from KinoSearch.pm,
-followed by all the other XS blocks in an undetermined order.  Ultimately,
-only a single compiled library gets installed along with the Perl modules.
+Build.PL writes out separate .h and .c files for each block it finds, but all
+the XS blocks are concatenated into a single file -- KinoSearch.xs.  The
+content of KinoSearch.xs consists of the XS block from KinoSearch.pm, followed
+by all the other XS blocks in an undetermined order.  Ultimately, only a
+single compiled library gets installed along with the Perl modules.
 
 At runtime, the only module which calls XSLoader::load is KinoSearch.  Because
 the KinoSearch C<MODULE> has many C<PACKAGE>s, C<use KinoSearch;> loads I<all>
@@ -104,7 +92,24 @@ KinoSearch.pm which did the same thing might look like this...
     
     # ...
 
+Since KinoSearch.xs is only generated/modified when Build.PL is run, an extra
+command line call to Build.PL has to be integrated into the development
+workflow when working on XS or C material.
+
+    % perl Build.PL; ./Build code; perl -Mblib t/some_test.t 
+
+Build.PL tracks modification times, using them to determine whether it needs
+to recompile anything. If only pure Perl modules have been edited, it won't
+force needless recompilation, and if only a limited number of .pm files
+containing XS/C/H code have been edited, it will recompile as little as it
+can.
+
 =head2 Divison of labor between Perl, XS, and C
+
+Technically, most or all of the C code in KinoSearch could be stuffed into XS
+functions.  However, the mechanics of moving data across the Perl/C boundary
+are complicated, and the added cruft tends to make what's going on in the C
+code more difficult to grok.
 
 To maximize clarity, when possible XS in KinoSearch is limited to "glue"
 code, while Perl and C do the heavy lifting.  Exceptions occur when XS
@@ -113,30 +118,164 @@ than one value.
 
 =head1 Relationship to Lucene
 
-Given pure-ASCII source material, KinoSearch 0.05 produced indexes that could
-be read by Java Lucene 1.4.3 and vice versa.  That was the high watermark for
-Lucene compatibility.
+=head2 API Differences, both public and private
 
-The file-format changed in version 0.06, the API was never that close, and
-KinoSearch 0.20 represents a further break both in terms of API and file
-format.  
+Since there is no method overloading by signature in Perl, it's impossible for
+KinoSearch to mimic Lucene's API exactly.  For a variety of other reasons,
+most of them performance-related, it's difficult or inadvisable to even try.
+The most crucial API distinction between KinoSearch and Lucene relates to
+indexing: KinoSearch, like its predecessor, Search::Kinosearch, forces you to
+specify field definitions in advance; in contrast, Lucene employs an elaborate
+apparatus behind the scenes which adapts field definitions on the fly.  If
+KinoSearch were to implement that apparatus, indexing would be substantially
+slower than it is.  
 
-It has turned out to be impossible to provide full Lucene compatibility
-without making extraordinary sacrifices in both performance and code
-complexity -- so we have moved on without looking back.
+Since KinoSearch could only muster a poor imitation of Lucene's API at best,
+it doesn't work very hard at imitating it -- it just tries to be a good,
+idiomatic Perl search API.  Here's a sampling of other ways in which
+KinoSearch and Lucene differ:
+
+=over 
+
+=item *
+
+In Lucene both IndexWriter and IndexReader can be used to modify an index,
+while in KinoSearch all index modifications are performed via the InvIndexer
+class.  
+
+=item *
+
+Since Perl's filehandles can be used to write to scalars, there's little
+benefit to having separate classes like RAMIndexOutput and FSIndexOutput, and
+KinoSearch only has two IO classes: InStream and OutStream.
+
+=item * 
+
+Certain classes have had their names transformed in KinoSearch, usually by
+shortening (SegmentTermDocs => SegTermDocs, Document => Doc), but sometimes
+arbitrarily (Directory => InvIndex).  
+
+=item *
+
+Other classes are specific to KinoSearch, e.g. PostingsWriter, PolyAnalyzer.
+These are either scavenged from Search::Kinosearch, or written from scratch.
+
+=item
+
+A lot of the common method names in Lucene are core keywords in Perl: length,
+close, seek, read, write.  Where it seemed important to disabiguate those,
+they have been changed -- e.g., for a Perl programmer accustomed to the
+passive behavior of CORE::close, having a close() method that triggers
+file-writes is counter-intutive, so such behaviors have typically been shunted
+into a method called finish().
+
+=back
+
+Nevertheless, developers who speak both Perl and Java shouldn't find it too
+difficult to move back and forth between Lucene and KinoSearch -- as long as
+what they want to do is within the scope of KinoSearch's leaner API.  At the
+time of this writing KinoSearch's public API is artificially small because
+some pieces aren't done, and it's a young library so preserving the
+flexibility to change the internal implementation is paramount.  But
+KinoSearch does not aspire to do all the things that  Lucene does -- only the
+things that can be done well, and maybe a few tricks of its own.
+
+=head2 Thematic architectural differences
+
+The relatively low object-oriented overhead of Java makes possible some
+architectures in Lucene which do not translate well to Perl.  For instance,
+arrays are often accumulated in Lucene by calling an iterator's next()
+method over and over.  Method calls in Perl, which are always dynamic, are
+more costly, making this technique impractical in areas which are both
+data-intensive and performance-critical.  Most often, KinoSearch solves the
+problem by moving the algorithm to a for/while loop in either Perl or C.  In a
+minority of cases, frequently called methods are emulated using either a
+globally exposed C function or C pointer-to-function.
+
+Lucene is also a profligate wastrel when it comes to creating and destroying
+objects -- it can afford to be, because Java objects come cheap.  For example,
+during the indexing phase Lucene creates a mini-inverted-index for each
+document, complete with its own FieldsWriter, DocumentWriter, and so on.
+Having Perl objects do the same thing in the same way yields disappointing
+execution speed.  Therefore, KinoSearch does the same thing, but in a
+different way: it uses a completely different merge model, based around
+serialization and external sorting, which makes it possible to
+write indexes by-the-segment rather than by-the document -- slashing 
+the OO requirements and largely offsetting the extra overhead.
+
+Similar architectural differences exist throughout KinoSearch.  While the
+file-format dictates certain algorithms, when idiomatic alternatives presented
+themselves or were already known, they were adopted.
+
+=head2 Search Logic
+
+KinoSearch's search logic differs from Lucene's.  In particular,
+very short fields do not contribute as much to a score, making it essential to
+assign a <boost> of greater than 1 to short but important fields, e.g.
+"title".  
+
+=head2 File Format
+
+Lucene's file format is a beautiful thing.  KinoSearch was retooled to use it
+because it didn't seem possible to improve on it more than superficially.
+It's somewhat hard to work with, and impossible to work with efficiently using
+only native Perl, but it has both data-compression and
+search-time-execution-speed nailed.
+
+Unfortunately, the way Lucene defines a String has a Java-centric quirk that
+deep-sixes prospects for 100% index compatibility, and the only realistic
+solutions involve changes to Lucene.  In theory, these changes (moving to
+bytecount-based Strings) should actually improve Lucene's performance, and the
+Lucene development community has expressed openness to them.  At some point,
+time may be found to write these win-win patches, but at present working on
+KinoSearch itself takes higher priority.
+
+Here's a list of the ways in which KinoSearch's file format differ's from
+Lucene's:
+
+=over
+
+=item *
+
+B<Strings> - Lucene's file format specifies that a String is a VInt count of
+the number of java chars a string occupies, followed by the character data
+encoded in Sun's "modified UTF-8" format (a misnamed, illegal variant,
+unsanctioned by the Unicode Consortium).  Dealing with this format in Perl has
+proven to be so fiddly and performance-killing as to be not worth the effort.
+At present, KinoSearch's String format is: a byte count, followed by arbitrary
+data.  
+
+=item *
+
+B<Field Numbers> - KinoSearch requires that field numbers correspond to
+lexically sorted order of field names; Lucene indexes are unlikely to have
+this property.  KinoSearch 0.05 had compatibility code which dealt with
+unordered field numbers, but that code was removed in 0.06.  It can be
+restored if need be.
+
+=item *
+
+B<Term Vectors> - KinoSearch groups term vector data with stored field data;
+Lucene uses separate files.  Keeping term vector data and field data together
+minimizes disk activity for common usage patterns.  It's also a little simpler
+to maintain.  However, if the String issue is resolved in a future version of
+Lucene, KinoSearch will likely switch to Lucene's format.
+
+=back
 
 =head1 Coding style
 
-When possible, KinoSearch's Perl code follows the recommendations set out in
-Damian Conway's book, "Perl Best Practices", and its XS/C code follows
-Apache's guidelines.
+The gist: when possible, KinoSearch's Perl code follows the recommendations
+set out in Damian Conway's book, "Perl Best Practices", and its XS/C code more
+or less (no tab characters allowed) emulates the style of the source
+code for Perl itself.
 
 Perl code is auto-formatted using a PerlTidy-based helper app called kinotidy,
 which is basically perltidy with a profile set up to use the PBP settings.  
 
 It would be nice if there were a formatter for XS and C code that was as good
 as PerlTidy.  Since there isn't, the code is manually set to look as though it
-had been, with one important difference: a bias towards maximum parenthetical
+was, with one important difference: a bias towards maximum parenthetical
 tightness.  
 
 In both Perl and XS/C, code is organized into commented paragraphs a few lines
@@ -144,16 +283,15 @@ in length, as per PBP recommendations.  Strong efforts are made to keep the
 comment to a single line.  Stupefyingly obvious "code narration" comments are
 used when something more literate doesn't present itself -- the goal is to
 be able to grok the intended flow of a function by scanning the first line of
-each "paragraph" -- especially when the paragraph-summarizing comments are set
-off by syntax highlighting in a programmer's text editor.
+each "paragraph".
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =cut
 

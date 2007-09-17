@@ -1,79 +1,72 @@
+package KinoSearch::Index::Term;
 use strict;
 use warnings;
-
-package KinoSearch::Index::Term;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Obj );
+use base qw( KinoSearch::Util::Class );
+
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        field => undef,
+        text  => undef,
+    );
+    __PACKAGE__->ready_get_set(qw( field text ));
+}
+
+sub new {
+    croak("usage: KinoSearch::Index::Term->new( field, text )")
+        unless @_ == 3;
+    return bless {
+        field => $_[1],
+        text  => $_[2],
+        },
+        __PACKAGE__;
+}
+
+# Alternate, internal constructor.
+sub new_from_string {
+    my ( $class, $termstring, $finfos ) = @_;
+    my $field_num = unpack( 'n', bytes::substr( $termstring, 0, 2, '' ) );
+    my $field_name = $finfos->field_name($field_num);
+    return __PACKAGE__->new( $field_name, $termstring );
+}
+
+# Return an encoded termstring. Requires a FieldInfos to discover fieldnum.
+sub get_termstring {
+    confess('usage: $term->get_termstring($finfos)')
+        unless @_ == 2;
+    my ( $self, $finfos ) = @_;
+    my $field_num = $finfos->get_field_num( $self->{field} );
+    return unless defined $field_num;
+    return pack( 'n', $field_num ) . $self->{text};
+}
+
+sub to_string {
+    my $self = shift;
+    return "$self->{field}:$self->{text}";
+}
 
 1;
 
 __END__
 
-__XS__
+__H__
 
-MODULE = KinoSearch   PACKAGE = KinoSearch::Index::Term
+#ifndef H_KINOSEARCH_INDEX_TERM
+#define H_KINOSEARCH_INDEX_TERM 1
 
-kino_Term*
-new(class_name, field, text)
-    const classname_char *class_name;
-    kino_ByteBuf_utf8 field;
-    kino_ByteBuf_utf8 text;
-CODE:
-    CHY_UNUSED_VAR(class_name);
-    RETVAL = kino_Term_new(&field, &text);
-OUTPUT: RETVAL
+/* Field Number Length -- the number of bytes occupied by the field number at
+ * the top of a TermString.  
+ */
 
-kino_Term*
-deserialize(either_sv, serialized)
-    SV *either_sv;
-    kino_ViewByteBuf serialized;
-CODE:
-    CHY_UNUSED_VAR(either_sv);
-    RETVAL = kino_Term_deserialize(&serialized);
-OUTPUT: RETVAL
+#define KINO_FIELD_NUM_LEN 2
 
-void
-_set_or_get(self, ...)
-    kino_Term *self;
-ALIAS:
-    set_field = 1
-    get_field = 2
-    set_text  = 3
-    get_text  = 4
-PPCODE:
-{
-    START_SET_OR_GET_SWITCH
-
-    case 1:  {
-                STRLEN len;
-                char *ptr = SvPVutf8( ST(1), len );
-                Kino_BB_Copy_Str(self->field, ptr, len);
-             }
-             break;
-
-    case 2:  retval = bb_to_sv(self->field);
-             SvUTF8_on(retval);
-             break;
-
-    case 3:  {
-                STRLEN len;
-                char *ptr = SvPVutf8( ST(1), len );
-                Kino_BB_Copy_Str(self->text, ptr, len);
-             }
-             break;
-
-    case 4:  retval = bb_to_sv(self->text);
-             SvUTF8_on(retval);
-             break;
-    
-    END_SET_OR_GET_SWITCH
-}
+#endif /* include guard */
 
 __POD__
 
 =head1 NAME
 
-KinoSearch::Index::Term - String of text associated with a field.
+KinoSearch::Index::Term - string of text associated with a field
 
 =head1 SYNOPSIS
 
@@ -82,7 +75,7 @@ KinoSearch::Index::Term - String of text associated with a field.
 
 =head1 DESCRIPTION
 
-A Term is a unit of search.  It has two characteristics: a field name, and
+The Term is the unit of search.  It has two characteristics: a field name, and
 term text.  
 
 =head1 METHODS
@@ -101,17 +94,13 @@ Getters and setters.
 
 Returns a string representation of the Term object.
 
-=head1 SEE ALSO
-
-L<KinoSearch::Docs::IRTheory>.
-
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =cut
 

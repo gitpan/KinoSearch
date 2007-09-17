@@ -4,65 +4,54 @@ use warnings;
 
 use KinoSearch::Index::IndexReader;
 
-# parse and validate command line args
-die "Usage: dump_index SCHEMA_CLASS INDEX_LOCATION" unless @ARGV == 2;
-my ( $schema_class, $where ) = @ARGV;
-die "Invalid schema class name: $schema_class"
-    unless $schema_class =~ /^\w+(::\w+)*$/;
-eval "use $schema_class";
-die $@ if $@;
-die "'$schema_class' isn't a KinoSearch::Schema"
-    unless $schema_class->isa("KinoSearch::Schema");
-die "Can't open '$where'" unless -d $where;
+my $where = shift @ARGV;
+if( !$where || ! -e $where ){
+    die "please specify an index location at the command line\n"; 
+}
 
-my $schema = $schema_class->new;
-my $r      = KinoSearch::Index::IndexReader->open(
-    invindex => $schema_class->open($where) );
+my $r = KinoSearch::Index::IndexReader->new( invindex => $where );
 
 my @readers = ref $r->{sub_readers} eq 'ARRAY' ? @{ $r->{sub_readers} } : $r;
-print "We have " . @readers . " readers\n";
+print "We have " . @readers . " readers\n"; 
 
 print "\n\nDocuments:\n";
 for my $reader (@readers) {
-    my $seg_info = $reader->get_seg_info;
     print "Segment "
-        . $reader->get_seg_name . " has "
-        . $reader->max_doc
-        . " docs\n";
+      . $reader->get_seg_name . " has "
+      . $reader->max_doc
+      . " docs\n"; 
+    my $finfos    = $reader->get_finfos;
+    my $term_enum = $reader->terms;
     print "Fields:\n";
-    for my $field_name ( sort $schema->all_fields ) {
-        my $field_spec = $schema->fetch_fspec($field_name);
-        my $field_num  = $seg_info->field_num($field_name);
-        print "\t$field_num: $field_name";
+    my %fields;
+    for my $field ( $finfos->get_infos ) {
+        $fields{ $field->get_field_num } = $field->get_name; 
+        print "\t" . $field->get_field_num . ": " . $field->get_name;
         my @info;
-        foreach
-            my $i (qw(indexed stored analyzed vectorized binary compressed))
+        foreach my $i (qw(indexed stored analyzed vectorized binary compressed))
         {
-            push @info, $i if ( $field_spec->$i );
+            my $method = "get_$i";
+            push @info, $i if ( $field->$method );
         }
         print " [" . join( ',', map { substr( $_, 0, 1 ) } sort @info ) . "]"
-            if (@info);
+          if (@info); 
         print "\n";
     }
     print "Terms:\n";
-    for my $field_name ( sort $schema->all_fields ) {
-        my $lexicon = $reader->look_up_field($field_name);
-        next unless defined $lexicon;
-        my $plist = $reader->posting_list( field => $field_name );
-        while ( $lexicon->next ) {
-            my $term = $lexicon->get_term;
-            print $term->to_string . "\n";
-            $plist->seek($term);
-            while ( $plist->next ) {
-                print "\t Doc "
-                    . $plist->get_doc_num . " ("
-                    . $plist->get_doc_freq
-                    . " occurrences)\n";
-            }
+    my $td = $reader->term_docs;
+    while ( $term_enum->next ) {
+        my $term = $term_enum->get_term;
+        print $term->to_string . "\n";
+        $td->seek($term);
+        while ( $td->next ) {
+            print "\t Doc "
+              . $td->get_doc . " (" 
+              . $td->get_doc_freq
+              . " occurrences)\n";
         }
     }
 }
-print "Total documents: " . $r->max_doc . " in " . @readers . " segments\n";
+print "Total documents: " . $r->max_doc . " in " . @readers . " segments\n"; 
 
 __END__
 
@@ -72,7 +61,7 @@ dump_index - dump the contents of an index
 
 =head1 SYNOPSIS
 
-	dump_index SCHEMA_CLASSNAME INDEX_LOCATION
+	perl dump_index $INDEX_LOCATION
 
 =head1 DESCRIPTION
 

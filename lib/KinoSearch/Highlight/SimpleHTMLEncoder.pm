@@ -1,15 +1,23 @@
+package KinoSearch::Highlight::SimpleHTMLEncoder;
 use strict;
 use warnings;
-
-package KinoSearch::Highlight::SimpleHTMLEncoder;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = ();
+BEGIN {
+    __PACKAGE__->init_instance_vars();
+}
 
-use HTML::Entities qw( encode_entities );
-
-sub encode { return encode_entities( $_[1] ) }
+sub encode {
+    my $text = $_[1];
+    for ($text) {
+        s/&/&amp;/g;
+        s/"/&quot;/g;
+        s/</&lt;/g;
+        s/>/&gt;/g;
+    }
+    return $text;
+}
 
 1;
 
@@ -17,7 +25,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Highlight::SimpleHTMLEncoder - Encode HTML entities.
+KinoSearch::Highlight::SimpleHTMLEncoder - encode a few HTML entities
 
 =head1 SYNOPSIS
 
@@ -26,15 +34,16 @@ KinoSearch::Highlight::SimpleHTMLEncoder - Encode HTML entities.
 
 =head1 DESCRIPTION
 
-Implementation of L<KinoSearch::Highlight::Encoder> which encodes HTML
-entities.  
+Implemetation of L<KinoSearch::Highlight::Encoder> which encodes HTML
+entities.  Currently, this module takes a minimal approach, encoding only
+'<', '>', '&', and '"'.  That is likely to change in the future.
 
 =head1 COPYRIGHT
 
-Copyright 2006-2007 Marvin Humphrey
+Copyright 2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =cut

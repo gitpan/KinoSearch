@@ -1,29 +1,27 @@
+package KinoSearch::Analysis::PolyAnalyzer;
 use strict;
 use warnings;
-
-package KinoSearch::Analysis::PolyAnalyzer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
-our %instance_vars = (
-    # inherited
-    language => '',
-
-    # constructor params / members
-    analyzers => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        analyzers => undef,
+    );
+}
 
 use KinoSearch::Analysis::LCNormalizer;
 use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Analysis::Stemmer;
 
 sub init_instance {
-    my $self = shift;
+    my $self     = shift;
     my $language = $self->{language} = lc( $self->{language} );
 
     # create a default set of analyzers if language was specified
     if ( !defined $self->{analyzers} ) {
-        confess("Must specify either 'language' or 'analyzers'")
+        croak("Must specify either 'language' or 'analyzers'")
             unless $language;
         $self->{analyzers} = [
             KinoSearch::Analysis::LCNormalizer->new( language => $language ),
@@ -33,50 +31,13 @@ sub init_instance {
     }
 }
 
-sub analyze_batch {
+sub analyze {
     my ( $self, $token_batch ) = @_;
 
-    # iterate through each of the analyzers in order
-    $token_batch = $_->analyze_batch($token_batch)
-        for @{ $self->{analyzers} };
+    # iterate through each of the anayzers in order
+    $token_batch = $_->analyze($token_batch) for @{ $self->{analyzers} };
 
     return $token_batch;
-}
-
-sub analyze_text {
-    my $self      = $_[0];
-    my $analyzers = $self->{analyzers};
-
-    if ( !@$analyzers ) {
-        return KinoSearch::Analysis::TokenBatch->new( text => $_[1] );
-    }
-    elsif ( @$analyzers == 1 ) {
-        return $analyzers->[0]->analyze_text( $_[1] );
-    }
-    else {
-        my $batch = $analyzers->[0]->analyze_text( $_[1] );
-        $batch = $_->analyze_batch($batch)
-            for @{$analyzers}[ 1 .. $#$analyzers ];
-        return $batch;
-    }
-}
-
-sub analyze_field {
-    my $analyzers = $_[0]->{analyzers};
-
-    if ( !@$analyzers ) {
-        return KinoSearch::Analysis::TokenBatch->new(
-            text => $_[1]->{ $_[2] } );
-    }
-    elsif ( @$analyzers == 1 ) {
-        return $analyzers->[0]->analyze_field( $_[1], $_[2] );
-    }
-    else {
-        my $batch = $analyzers->[0]->analyze_field( $_[1], $_[2] );
-        $batch = $_->analyze_batch($batch)
-            for @{$analyzers}[ 1 .. $#$analyzers ];
-        return $batch;
-    }
 }
 
 1;
@@ -85,7 +46,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Analysis::PolyAnalyzer - Multiple analyzers in series.
+KinoSearch::Analysis::PolyAnalyzer - multiple analyzers in series 
 
 =head1 SYNOPSIS
 
@@ -94,27 +55,24 @@ KinoSearch::Analysis::PolyAnalyzer - Multiple analyzers in series.
     );
     
     # or...
-
-    my $lc_normalizer = KinoSearch::Analysis::LCNormalizer->new;
-    my $tokenizer     = KinoSearch::Analysis::Tokenizer->new;
-    my $stemmer       = KinoSearch::Analysis::Stemmer->new( language => 'en' );
-    my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
+    my $analyzer = KinoSearch::Analysis::PolyAnalyzer->new(
         analyzers => [
             $lc_normalizer,
-            $whitespace_tokenizer,
-            $stemmer,
+            $custom_tokenizer,
+            $snowball_stemmer,
         ],
     );
 
 =head1 DESCRIPTION
 
 A PolyAnalyzer is a series of Analyzers -- objects which inherit from
-L<KinoSearch::Analysis::Analyzer> -- each of which will be called upon to
-"analyze" text in turn.  You can either provide the Analyzers yourself, or you
-can specify a supported language, in which case a PolyAnalyzer consisting of
-an L<LCNormalizer|KinoSearch::Analysis::LCNormalizer>, a
+L<KinoSearch::Analysis::Analyzer|KinoSearch::Analysis::Analyzer> -- each of
+which will be called upon to "analyze" text in turn.  You can either provide
+the Analyzers yourself, or you can specify a supported language, in which case
+a PolyAnalyzer consisting of an
+L<LCNormalizer|KinoSearch::Analysis::LCNormalizer>, a
 L<Tokenizer|KinoSearch::Analysis::Tokenizer>, and a
-L<Stemmer|KinoSearch::Analysis::Stemmer> will be generated for you.  
+L<Stemmer|KinoSearch::Analysis::Stemmer> will be generated for you.
 
 Supported languages:
 
@@ -131,14 +89,17 @@ Supported languages:
     ru => Russian,
     sv => Swedish,
 
-
-=head1 METHODS 
+=head1 CONSTRUCTOR
 
 =head2 new()
 
-Constructor.   Takes two possible hash-style parameters.  If the parameter
-C<analyzers> is specified, it will override C<language> and no attempt will be
-made to generate a default set of Analyzers.
+    my $analyzer = KinoSearch::Analysis::PolyAnalyzer->new(
+        language   => 'en',
+    );
+
+Construct a PolyAnalyzer object.  If the parameter C<analyzers> is specified,
+it will override C<language> and no attempt will be made to generate a default
+set of Analyzers.
 
 =over
 
@@ -159,10 +120,11 @@ sequence should be: normalize, tokenize, stopalize, stem.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =cut
+

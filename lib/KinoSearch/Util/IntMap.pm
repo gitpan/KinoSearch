@@ -1,14 +1,14 @@
+package KinoSearch::Util::IntMap;
 use strict;
 use warnings;
-
-package KinoSearch::Util::IntMap;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Obj );
+use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = (
-    # constructor params
-    ints => undef
-);
+sub new {
+    my ( $class, $map ) = @_;
+    $class = ref($class) || $class;
+    return bless $map, $class;
+}
 
 1;
 
@@ -18,81 +18,77 @@ __XS__
 
 MODULE = KinoSearch PACKAGE = KinoSearch::Util::IntMap
 
-kino_IntMap*
-new(class, ...)
-    const classname_char *class;
-CODE:
-{
-    /* parse params */
-    HV *const args_hash = build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Util::IntMap::instance_vars");
-    SV *map_sv = extract_sv(args_hash, SNL("ints"));
-    STRLEN len;
-    char *map_ptr   = SvPV(map_sv, len);
-    chy_i32_t size  = len / sizeof(chy_i32_t); 
-    chy_i32_t *ints = KINO_MALLOCATE(size, chy_i32_t);
-
-    /* dupe the map, since we can't steal the SV's pv allocation. */
-    memcpy(ints, map_ptr, size * sizeof(chy_i32_t));
-
-    /* build object */
-    CHY_UNUSED_VAR(class);
-    RETVAL = kino_IntMap_new(ints, size);
-}
-OUTPUT: RETVAL
-
 =for comment
 
-Return either the remapped number, or undef if the number is negative (as
-would be the case if the index is out of range).
+Return either the remapped number, or undef if orig has been removed.
 
 =cut
 
-SV *
-get(self, num)
-    kino_IntMap *self;
-    chy_i32_t    num;
+SV* 
+get(int_map_ref, orig);
+    SV  *int_map_ref;
+    I32  orig;
+PREINIT:
+    I32 result;
 CODE:
-{
-    chy_i32_t result = Kino_IntMap_Get(self, num);
-    RETVAL = result == -1 ? newSV(0) : newSViv(result);
-}
+    result = Kino_IntMap_get(int_map_ref, orig);
+    RETVAL = result == -1 
+        ? &PL_sv_undef
+        : newSViv(result);
 OUTPUT: RETVAL
 
-void
-_set_or_get(self, ...)
-    kino_IntMap *self;
-ALIAS:
-    get_size   = 2
-PPCODE:
-{
-    START_SET_OR_GET_SWITCH
-    
-    case 2:  retval = newSVuv(self->size);
-             break;
+__H__
 
-    END_SET_OR_GET_SWITCH
+#ifndef H_KINOSEARCH_INT_MAP
+#define H_KINOSEARCH_INT_MAP 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+
+I32 Kino_IntMap_get(SV*, I32);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchUtilIntMap.h"
+
+I32
+Kino_IntMap_get(SV* int_map_ref, I32 orig) {
+    SV     *int_map_sv;
+    I32    *map;
+    STRLEN  len;
+    
+    int_map_sv = SvRV(int_map_ref);
+    map = (I32*)SvPV(int_map_sv, len);
+    if (orig * sizeof(I32) > len) {
+        return -1;
+    }
+    return map[orig];
 }
 
 __POD__
 
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Util::IntMap - Compact array of integers.
+KinoSearch::Util::IntMap - compact array of integers
 
 =head1 DESCRIPTION
 
-An IntMap is a C array of i32_t, stored in a scalar.  
+An IntMap is a C array of I32, stored in a scalar.  The get() method returns
+either the number present at the index requested, or undef if either the index
+is out of range or the number at the index is -1.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =end devdocs
 =cut

@@ -1,36 +1,22 @@
+package KinoSearch::Index::MultiReader;
 use strict;
 use warnings;
-
-package KinoSearch::Index::MultiReader;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Index::IndexReader );
 
-our %instance_vars = (
-    # inherited params / members
-    invindex     => undef,
-    seg_infos    => undef,
-    lock_factory => undef,
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        invindex    => undef,
+        sub_readers => undef,
+        starts      => undef,
+        max_doc     => 0,
+        norms_cache => undef,
+    );
+}
 
-    # params / members
-    sub_readers => [],
-
-    # inherited members
-    sort_caches => {},
-    lex_caches  => {},
-    read_lock   => undef,
-    commit_lock => undef,
-
-    # members
-    max_doc => 0,
-    starts  => [],
-);
-
+use KinoSearch::Index::FieldInfos;
 use KinoSearch::Index::SegReader;
-use KinoSearch::Index::MultiPostingList;
-use KinoSearch::Index::MultiPostingList;
-use KinoSearch::Index::MultiLexicon;
-use KinoSearch::Util::VArray;
-use KinoSearch::Util::Int;
+use KinoSearch::Index::MultiTermDocs;
 
 # use KinoSearch::Util::Class's new()
 # Note: can't inherit IndexReader's new() without recursion problems
@@ -38,6 +24,9 @@ use KinoSearch::Util::Int;
 
 sub init_instance {
     my $self = shift;
+    $self->{sub_readers} ||= [];
+    $self->{starts}      ||= [];
+    $self->{norms_cache} ||= {};
 
     $self->_init_sub_readers;
 }
@@ -65,50 +54,15 @@ sub num_docs {
     return $num_docs;
 }
 
-sub look_up_term {
+sub term_docs {
     my ( $self, $term ) = @_;
-    return unless defined $term;
-    my $lexicon = $self->look_up_field( $term->get_field );
-    $lexicon->seek($term);
-    return $lexicon;
-}
 
-sub look_up_field {
-    my ( $self, $field ) = @_;
-    return unless defined $field;
-    my $fspec = $self->{invindex}->get_schema->fetch_fspec($field);
-    return unless ( defined $fspec and $fspec->indexed );
-    my $lexicon = KinoSearch::Index::MultiLexicon->new(
+    my $term_docs = KinoSearch::Index::MultiTermDocs->new(
         sub_readers => $self->{sub_readers},
-        field       => $field,
-        lex_cache   => $self->{lex_caches}{$field},
+        starts      => $self->{starts},
     );
-    return $lexicon;
-}
-
-sub posting_list {
-    my $self = shift;
-    confess kerror()
-        unless verify_args( { term => undef, field => undef, }, @_ );
-    my %args = @_;
-
-    # only return an object if we've got an indexed field
-    my ( $field, $term ) = @args{qw( field term )};
-    return unless ( defined $field or defined $term );
-    $field = $term->get_field unless defined $field;
-    my $fspec = $self->{invindex}->get_schema->fetch_fspec($field);
-    return unless defined $fspec;
-    return unless $fspec->indexed;
-
-    # create a PostingList and seek it if a Term was supplied
-    my $plist = KinoSearch::Index::MultiPostingList->new(
-        sub_readers => $self->{sub_readers},
-        starts      => $self->get_seg_starts,
-        field       => $field,
-    );
-    $plist->seek($term) if defined $term;
-
-    return $plist;
+    $term_docs->seek($term);
+    return $term_docs;
 }
 
 sub doc_freq {
@@ -125,21 +79,14 @@ sub fetch_doc {
     return $self->{sub_readers}[$reader_index]->fetch_doc($doc_num);
 }
 
-sub fetch_doc_vec {
-    my ( $self, $doc_num ) = @_;
-    my $reader_index = $self->_reader_index($doc_num);
-    $doc_num -= $self->{starts}[$reader_index];
-    return $self->{sub_readers}[$reader_index]->fetch_doc_vec($doc_num);
-}
-
 sub delete_docs_by_term {
     my ( $self, $term ) = @_;
     $_->delete_docs_by_term($term) for @{ $self->{sub_readers} };
 }
 
-sub write_deletions {
+sub commit_deletions {
     my $self = shift;
-    $_->write_deletions for @{ $self->{sub_readers} };
+    $_->commit_deletions for @{ $self->{sub_readers} };
 }
 
 # Determine which sub-reader a document resides in
@@ -166,6 +113,46 @@ sub _reader_index {
 
     }
     return $hi;
+}
+
+sub norms_reader {
+    # TODO refactor and minimize copying
+    my ( $self, $field_num ) = @_;
+    if ( exists $self->{norms_cache}{$field_num} ) {
+        return $self->{norms_cache}{$field_num};
+    }
+    else {
+        my $bytes = '';
+        for my $seg_reader ( @{ $self->{sub_readers} } ) {
+            my $seg_norms_reader = $seg_reader->norms_reader($field_num);
+            $bytes .= ${ $seg_norms_reader->get_bytes } if $seg_norms_reader;
+        }
+        my $norms_reader = $self->{norms_cache}{$field_num}
+            = KinoSearch::Index::NormsReader->new(
+            bytes   => $bytes,
+            max_doc => $self->max_doc,
+            );
+        return $norms_reader;
+    }
+}
+
+sub generate_field_infos {
+    my $self       = shift;
+    my $new_finfos = KinoSearch::Index::FieldInfos->new;
+    my @sub_finfos
+        = map { $_->generate_field_infos } @{ $self->{sub_readers} };
+    $new_finfos->consolidate(@sub_finfos);
+    return $new_finfos;
+}
+
+sub get_field_names {
+    my $self = shift;
+    my %field_names;
+    for my $sub_reader ( @{ $self->{sub_readers} } ) {
+        my $sub_field_names = $sub_reader->get_field_names;
+        @field_names{@$sub_field_names} = (1) x scalar @$sub_field_names;
+    }
+    return [ keys %field_names ];
 }
 
 sub segreaders_to_merge {
@@ -207,20 +194,10 @@ sub fibonacci {
     return $result;
 }
 
-sub get_seg_starts {
-    my $self       = shift;
-    my $num_starts = scalar @{ $self->{starts} };
-    my $starts     = KinoSearch::Util::VArray->new( capacity => $num_starts );
-    for my $start ( @{ $self->{starts} } ) {
-        $starts->push( KinoSearch::Util::Int->new($start) );
-    }
-    return $starts;
-}
-
 sub close {
     my $self = shift;
+    return unless $self->{close_invindex};
     $_->close for @{ $self->{sub_readers} };
-    $self->SUPER::close;
 }
 
 1;
@@ -229,9 +206,9 @@ __END__
 
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Index::MultiReader - Read from a multi-segment InvIndex.
+KinoSearch::Index::MultiReader - read from a multi-segment invindex
 
 =head1 DESCRIPTION 
 
@@ -239,11 +216,11 @@ Multi-segment implementation of IndexReader.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2006 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.16.
 
 =end devdocs
 =cut

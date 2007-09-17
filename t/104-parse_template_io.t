@@ -1,24 +1,26 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 
-use KinoSearch::Store::RAMFolder;
+BEGIN {
+    use_ok('KinoSearch::Store::RAMInvIndex');
+}
 
-my $folder = KinoSearch::Store::RAMFolder->new;
+my $invindex = KinoSearch::Store::RAMInvIndex->new;
 my ( @items, $packed, $template );
 
 sub check_io {
     my ( $filename, $tpt ) = ( shift, shift );
-    my $outstream = $folder->open_outstream($filename);
+    my $outstream = $invindex->open_outstream($filename);
     $outstream->lu_write( $tpt, @_ );
-    $outstream->sclose;
-    my $instream = $folder->open_instream($filename);
+    $outstream->close;
+    my $instream = $invindex->open_instream($filename);
     my @got      = $instream->lu_read($tpt);
     is_deeply( \@got, \@_, $filename );
 }
 
-my $outstream = $folder->open_outstream("fake_file");
+my $outstream = $invindex->open_outstream("fake_file");
 eval { $outstream->lu_write( 'u', 'foo' ); };
 like( $@, qr/illegal character/i, "Illegal symbol in template caught" );
 
