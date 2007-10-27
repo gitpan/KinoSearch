@@ -1,22 +1,38 @@
-package KinoSearch::Analysis::LCNormalizer;
 use strict;
 use warnings;
+
+package KinoSearch::Analysis::LCNormalizer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 use locale;
 
-BEGIN { __PACKAGE__->init_instance_vars(); }
+our %instance_vars = (
+    # inherited
+    language => '',
+);
 
-sub analyze {
+use KinoSearch::Analysis::Token;
+use KinoSearch::Analysis::TokenBatch;
+
+sub analyze_batch {
     my ( $self, $batch ) = @_;
 
     # lc all of the terms, one by one
-    while ( $batch->next ) {
-        $batch->set_text( lc( $batch->get_text ) );
+    while ( my $token = $batch->next ) {
+        $token->set_text( lc( $token->get_text ) );
     }
 
     $batch->reset;
     return $batch;
+}
+
+sub analyze_text {
+    return KinoSearch::Analysis::TokenBatch->new( text => lc( $_[1] ) );
+}
+
+sub analyze_field {
+    return KinoSearch::Analysis::TokenBatch->new(
+        text => lc( $_[1]->{ $_[2] } ) );
 }
 
 1;
@@ -25,7 +41,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Analysis::LCNormalizer - convert input to lower case
+KinoSearch::Analysis::LCNormalizer - Convert input to lower case.
 
 =head1 SYNOPSIS
 
@@ -53,7 +69,6 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.162.
+See L<KinoSearch> version 0.20.
 
 =cut
-

@@ -1,15 +1,14 @@
-#!/usr/bin/perl 
 use strict;
 use warnings;
+use lib 'buildlib';
 
-use lib 't';
 use Test::More tests => 4;
 use File::Spec::Functions qw( catfile );
-use KinoSearchTestInvIndex qw( 
+use KinoTestUtils qw( 
     working_dir
     create_working_dir
     remove_working_dir
-    create_persistent_test_invindex 
+    create_uscon_invindex 
     persistent_test_invindex_loc 
 );
 
@@ -26,13 +25,13 @@ else {
             . "' not owned exclusively by this user" );
 }
 
-create_persistent_test_invindex();
+create_uscon_invindex();
 
 my $path = persistent_test_invindex_loc();
 ok( -d $path, "created invindex directory" );
 opendir( my $test_invindex_dh, $path )
     or die "Couldn't opendir '$path': $!";
-my @cfs_files = grep {m/\.cfs$/} readdir $test_invindex_dh;
+my @cf_files = grep {m/\.cf$/} readdir $test_invindex_dh;
 closedir $test_invindex_dh or die "Couldn't closedir '$path': $!";
-cmp_ok( scalar @cfs_files, '>', 0, "at least one .cfs file exists" );
+cmp_ok( scalar @cf_files, '>', 0, "at least one .cf file exists" );
 

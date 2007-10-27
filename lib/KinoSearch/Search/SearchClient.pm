@@ -1,29 +1,29 @@
-package KinoSearch::Search::SearchClient;
 use strict;
 use warnings;
+
+package KinoSearch::Search::SearchClient;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Searcher );
+use base qw( KinoSearch::Search::Searchable );
 
 use Storable qw( nfreeze thaw );
 
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # params/members
-        analyzer     => undef,
-        peer_address => undef,
-        password     => undef,
-        # members
-        similarity => undef,
-    );
-}
+our %instance_vars = (
+    # inherited
+    schema => undef,
+
+    # params/members
+    peer_address => undef,
+    password     => undef,
+);
 
 use IO::Socket::INET;
 
 sub init_instance {
     my $self = shift;
 
-    $self->{similarity} ||= KinoSearch::Search::Similarity->new;
-    $self->{field_sims} = {};
+    # verify schema
+    confess("required parameter 'schema'")
+        unless a_isa_b( $self->{schema}, "KinoSearch::Schema" );
 
     # establish a connection
     my $sock = IO::Socket::INET->new(
@@ -69,39 +69,14 @@ sub _rpc {
     return thaw($serialized);
 }
 
-sub get_field_names {
-    my $self = shift;
-    return $self->_rpc( 'get_field_names', {} );
-}
-
-my %search_hit_collector_args = (
-    hit_collector => undef,
-    weight        => undef,
-    filter        => undef,
-    sort_spec     => undef,
-);
-
-sub search_hit_collector {
-    my $self = shift;
-    confess kerror() unless verify_args( \%search_hit_collector_args, @_ );
-    my %args = ( %search_hit_collector_args, @_ );
+sub top_docs {
+    my $self          = shift;
+    my $top_docs_args = \%KinoSearch::Search::Searchable::top_docs_args;
+    confess kerror() unless verify_args( $top_docs_args, @_ );
+    my %args = ( %$top_docs_args, @_ );
     confess("remote filtered search not supported") if defined $args{filter};
 
-    # replace the HitCollector with a size rather than serialize it
-    my $collector = delete $args{hit_collector};
-    if ( a_isa_b( $collector, "KinoSearch::Search::OffsetCollector" ) ) {
-        $args{num_wanted} = $collector->get_storage->get_max_size;
-    }
-    else {
-        $args{num_wanted} = $collector->get_max_size;
-    }
-
-    # Make the remote call, which returns a hashref of doc => score pairs.
-    # Accumulate hits into the HitCollector if the query is valid.
-    my $score_pairs = $self->_rpc( 'search_hit_collector', \%args );
-    while ( my ( $doc, $score ) = each %$score_pairs ) {
-        $collector->collect( $doc, $score );
-    }
+    return $self->_rpc( 'top_docs', \%args );
 }
 
 sub terminate {
@@ -112,6 +87,11 @@ sub terminate {
 sub fetch_doc {
     my ( $self, $doc_num ) = @_;
     return $self->_rpc( 'fetch_doc', { doc_num => $doc_num } );
+}
+
+sub fetch_doc_vec {
+    my ( $self, $doc_num ) = @_;
+    return $self->_rpc( 'fetch_doc_vec', { doc_num => $doc_num } );
 }
 
 sub max_doc {
@@ -148,21 +128,20 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Search::SearchClient - connect to a remote SearchServer
+KinoSearch::Search::SearchClient - Connect to a remote SearchServer.
 
 =head1 SYNOPSIS
 
     my $client = KinoSearch::Search::SearchClient->new(
         peer_address => 'searchserver1:7890',
         password     => $pass,
-        analyzer     => $analyzer,
     );
     my $hits = $client->search( query => $query );
 
 =head1 DESCRIPTION
 
-SearchClient is a subclass of L<KinoSearch::Searcher> which can be used to
-search an index on a remote machine made accessible via
+SearchClient is a subclass of L<KinoSearch::Search::Searchable> which can be
+used to search an index on a remote machine made accessible via
 L<SearchServer|KinoSearch::Search::SearchServer>.
 
 =head1 METHODS
@@ -183,16 +162,12 @@ attempt to connect to.
 B<password> - Password to be supplied to the SearchServer when initializing
 socket connection.
 
-=item *
-
-B<analyzer> - An object belonging to a subclass of
-L<KinoSearch::Analysis::Analyzer> 
-
 =back
 
 =head1 LIMITATIONS
 
-Limiting search results with a QueryFilter is not yet supported.
+Limiting search results with a L<Filter|KinoSearch::Search::Filter> is not
+supported.
 
 =head1 COPYRIGHT
 
@@ -200,7 +175,6 @@ Copyright 2006-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.162.
+See L<KinoSearch> version 0.20.
 
 =cut
-

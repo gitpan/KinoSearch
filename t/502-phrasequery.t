@@ -1,13 +1,14 @@
-#!/usr/bin/perl
+use strict;
+use warnings;
+use lib 'buildlib';
 
-use lib 't';
-use Test::More tests => 5;
+use Test::More tests => 8;
 
-BEGIN { use_ok('KinoSearch::Search::PhraseQuery') }
-
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoSearch::Search::PhraseQuery;
 use KinoSearch::Index::Term;
 use KinoSearch::Searcher;
+
+use KinoTestUtils qw( create_invindex );
 
 my $best_match = 'x a b c d a b c d';
 
@@ -29,7 +30,6 @@ for (qw( a b c d )) {
 }
 
 my $hits = $searcher->search( query => $phrase_query );
-$hits->seek( 0, 50 );
 is( $hits->total_hits, 3, "correct number of hits" );
 my $first_hit = $hits->fetch_hit_hashref;
 is( $first_hit->{content}, $best_match, 'best match appears first' );
@@ -46,3 +46,32 @@ for (qw( c a )) {
 $hits = $searcher->search( query => $phrase_query );
 is( $hits->total_hits, 1, 'avoid underflow when subtracting offset' );
 
+# "a b c"
+$phrase_query = KinoSearch::Search::PhraseQuery->new( slop => 0 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'a' ), 0 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'b' ), 1 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'c' ), 2 );
+$hits = $searcher->search( query => $phrase_query );
+is( $hits->total_hits, 3, 'offset starting from zero' );
+
+# "* * a b c"
+$phrase_query = KinoSearch::Search::PhraseQuery->new( slop => 0 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'a' ), 2 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'b' ), 3 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'c' ), 4 );
+$hits = $searcher->search( query => $phrase_query );
+is( $hits->total_hits, 2, 'offset starting from two' );
+
+# "* * * c d"
+$phrase_query = KinoSearch::Search::PhraseQuery->new( slop => 0 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'c' ), 3 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'd' ), 4 );
+$hits = $searcher->search( query => $phrase_query );
+is( $hits->total_hits, 2, 'offset starting from three' );
+
+# "a * c"
+$phrase_query = KinoSearch::Search::PhraseQuery->new( slop => 0 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'a' ), 0 );
+$phrase_query->add_term( KinoSearch::Index::Term->new( 'content', 'c' ), 2 );
+$hits = $searcher->search( query => $phrase_query );
+is( $hits->total_hits, 3, 'offsets with gap in middle' );

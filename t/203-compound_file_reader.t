@@ -1,36 +1,41 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
+use lib 'buildlib';
 
-use lib 't';
+use Test::More tests => 3;
 
-use Test::More tests => 5;
-use File::Spec::Functions qw( catfile );
+use KinoSearch::Index::CompoundFileReader;
+use KinoSearch::Index::SegInfos;
+use KinoSearch::Index::SegInfo;
+use KinoSearch::Util::Hash;
+use KinoSearch::Index::IndexFileNames qw( @COMPOUND_EXTENSIONS );
 
-BEGIN {
-    use_ok('KinoSearch::Index::CompoundFileReader');
-    use_ok( 'KinoSearch::Index::IndexFileNames', qw( @COMPOUND_EXTENSIONS ) );
-}
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoTestUtils qw( create_invindex );
 
-my $invindex   = create_invindex('a');
-my $cfs_reader = KinoSearch::Index::CompoundFileReader->new(
+my $invindex  = create_invindex('a');
+my $folder    = $invindex->get_folder;
+my $schema    = $invindex->get_schema;
+my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
+$seg_infos->read_infos( folder => $folder );
+my $seg_info  = $seg_infos->get_info('_1');
+my $cf_reader = KinoSearch::Index::CompoundFileReader->new(
     invindex => $invindex,
-    seg_name => '_1',
+    seg_info => $seg_info,
 );
 
-my $instream = $cfs_reader->open_instream('_1.tis');
+my $instream = $cf_reader->open_instream('_1.lex0');
 isa_ok( $instream, 'KinoSearch::Store::InStream' );
 
-my $tis_bytecount = $instream->length;
-is( $cfs_reader->slurp_file('_1.tis'),
-    $instream->lu_read("a$tis_bytecount"),
-    "slurp_file gets the right bytes"
-);
+my $lex_bytecount = $instream->slength;
+my $lex_content   = $instream->lu_read("a$lex_bytecount");
+my $slurped       = $cf_reader->slurp_file('_1.lex0');
+is( $slurped, $lex_content, "slurp_file gets the right bytes" );
 
-my @files = sort map {"_1.$_"} ( @COMPOUND_EXTENSIONS, 'f0' );
+my @files
+    = sort map {"_1.$_"} ( @COMPOUND_EXTENSIONS, "p0", "lex0", "lexx0" );
 
-my @cfs_entries = sort keys %{ $cfs_reader->{entries} };
+my $cf_metadata = $seg_info->extract_metadata('compound_file');
 
-is_deeply( \@cfs_entries, \@files, "get all the right files" );
+my @cf_entries = sort keys %{ $cf_metadata->{sub_files} };
 
+is_deeply( \@cf_entries, \@files, "get all the right files" );

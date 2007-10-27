@@ -1,0 +1,172 @@
+=head1 NAME
+
+KinoSearch::Docs::Tutorial::BeyondSimple - A more flexible app structure.
+
+=head1 DESCRIPTION
+
+
+=head2 Goal
+
+In this tutorial chapter, we'll refactor the apps we built in
+L<KinoSearch::Docs::Tutorial::Simple> so that they look exactly the same from
+the end user's point of view, but offer greater possibilites for expansion.  
+
+To achieve this, we'll ditch KinoSearch::Simple and replace it with the
+classes that it uses internally:
+
+=over
+
+=item *
+
+L<KinoSearch::Schema> - Plan out your index.
+
+=item *
+
+L<KinoSearch::Analysis::PolyAnalyzer> - A one-size-fits-all parser/tokenizer.
+
+=item *
+
+L<KinoSearch::InvIndexer> - Manipulate index content.
+
+=item *
+
+L<KinoSearch::Searcher> - Search an index.
+
+=item *
+
+L<KinoSearch::Search::Hits> - Iterate over hits returned by a Searcher.
+
+=back
+
+=head2 Schema
+
+The first item we're going need is a custom subclass of KinoSearch::Schema. 
+
+    # USConSchema.pm
+    package USConSchema;
+    use base 'KinoSearch::Schema';
+
+A Schema subclass is analogous to an SQL table definition.  It instructs other
+entities on how they should interpret the raw data in an inverted index and
+interact with it.  
+
+First and foremost, a Schema indicates what fields are available and how they're
+defined.  Declaring a hash named C<%fields> with C<our> is the first of two
+requirements for creating a valid subclass:
+
+    our %fields = (
+        title   => 'text',
+        content => 'text',
+        url     => 'text',
+    );
+
+The second is implementing an analyzer() class method, which must return an
+object which isa L<KinoSearch::Analysis::Analyzer>: 
+
+    use KinoSearch::Analysis::PolyAnalyzer;
+
+    sub analyzer { 
+        return KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
+    }
+
+Finish C<USConSchema.pm> off with the obligatory true value...
+
+    1; # end of USConSchema
+
+... put it in a place where both C<invindexer.pl> and C<search.cgi> will be
+able to C<use> it -- the cgi-bin directory will work -- and adjust file system
+permissions as needed.
+
+Open up C<conf.pl> and add a new variable called "lib" which will facilitate
+loading USConSchema.pm:
+
+    # Arrayref of library paths to add to @INC.
+    lib => ['/usr/local/apache2/cgi-bin'],
+
+Note: the same Schema subclass must, repeat B<must> be used at both index-time
+and search time -- otherwise the Searcher will misinterpret the data in the
+invindex.  
+
+=head2 Adaptations to invindexer.pl
+
+In the indexing app, we'll swap our KinoSearch::Simple object out for a
+KinoSearch::InvIndexer.  The substitution will be straightforward because
+Simple has merely been serving as a thin wrapper around an inner InvIndexer,
+and we'll just be peeling away the wrapper.
+
+Take the steps necessary to load all required classes...
+
+    use lib @{ $conf{lib} };
+    use USConSchema;
+    use KinoSearch::InvIndexer;
+
+... and replace the constructor:
+
+    my $invindexer = KinoSearch::InvIndexer->new(
+        invindex => USConSchema->read( $conf{path_to_invindex} ),
+    );
+
+Note that instead of giving InvIndexer a file path like we gave Simple, we're
+now having our Schema subclass C<read> from that file path.
+
+Next, have the C<$invindexer> object C<add_doc> where we were having the
+C<$simple> object C<add_doc> before:
+
+    foreach my $filename (@filenames) {
+        my $doc = slurp_and_parse_file($filename);
+        $invindexer->add_doc($doc);
+    }
+
+There's only one extra step required: at the end of the app, you must call
+finish() explicitly to close the indexing session and commit your changes.
+(KinoSearch::Simple calls finish() implicitly upon object destruction).
+
+    $invindexer->finish;
+
+=head2 Adaptations to search.cgi
+
+In our search app as in our indexing app, KinoSearch::Simple has served as a
+thin wrapper -- this time around L<KinoSearch::Searcher> and
+L<KinoSearch::Search::Hits>.  Swapping out Simple for these two classes is
+straightforward save for the differing values returned by
+C<< $simple->search >> and C<< $searcher->search >>.
+
+    use lib @{ $conf{lib} };
+    use USConSchema;
+    use KinoSearch::Searcher;
+
+    ...
+
+    my $searcher = KinoSearch::Searcher->new(
+        invindex => USConSchema->read($index_loc),
+    );
+    my $hits = $searcher->search(    # returns a Hits object, not a hit count
+        query      => $q,
+        offset     => $offset,
+        num_wanted => $hits_per_page,
+    );
+    my $hit_count = $hits->total_hits;  # get the hit count here
+
+    ...
+    
+    while ( my $hit = $hits->fetch_hit_hashref ) {
+        ...
+    }
+
+C<< $simple->search >> returns a hit count; in contrast, C<< $searcher->search
+>> returns a Hits object, from which you may obtain a hit count via the
+total_hits() method.
+
+=head2 Hooray!
+
+Congratulations!  Your apps do the same thing as before... but now they're a
+lot easier to customize.
+
+=head1 COPYRIGHT
+
+Copyright 2005-2007 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.20.
+

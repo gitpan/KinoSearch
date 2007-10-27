@@ -1,0 +1,138 @@
+#define CHAZ_USE_SHORT_NAMES
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+
+#include "Charmonizer/Core/Util.h"
+#include "Charmonizer/Core/OperSys.h"
+
+static void
+probe_devnull(OperSys *self);
+
+static void
+destroy(OperSys *self);
+
+static void
+remove_exe(OperSys *self, char *name);
+
+static void
+remove_obj(OperSys *self, char *name);
+
+static void
+run_local(OperSys *self, ...);
+
+chaz_OperSys*
+chaz_OS_new(const char *name) 
+{
+    OperSys *self = (OperSys*)malloc(sizeof(OperSys));
+
+    if (verbosity)
+        printf("Creating os object...\n");
+
+    /* assign */
+    self->name = strdup(name);
+
+    /* init */
+    self->buf        = NULL;
+    self->buf_len    = 0;
+    self->remove_obj = remove_obj;
+    self->remove_exe = remove_exe;
+    self->run_local  = run_local;
+    self->destroy    = destroy;
+
+    /* derive */
+    if (strcmp(name, "mswin32") == 0) {
+        self->obj_ext = strdup(".obj");
+        self->exe_ext = strdup(".exe");
+        self->local_command_start = strdup(".\\");
+        self->devnull = strdup("nul");
+    }
+    else {
+        self->obj_ext = strdup("");
+        self->exe_ext = strdup("");
+        self->local_command_start = strdup("./");
+        probe_devnull(self);
+    }
+
+    return self;
+}
+
+static void
+probe_devnull(OperSys *self)
+{
+    char *const devnull_options[] = {
+        "/dev/null", 
+        "/dev/nul", 
+        NULL
+    };
+    int i;
+
+    if (verbosity)
+        printf("Trying to find a bit-bucket a la /dev/null...\n");
+
+    /* iterate through names of possible devnulls trying to open them */
+    for (i = 0; devnull_options[i] != NULL; i++) {
+        if (can_open_file(devnull_options[i])) {
+            self->devnull = strdup(devnull_options[i]);
+            return;
+        }
+    }
+
+    /* bail out we couldn't find a devnull */
+    die("Couldn't find anything like /dev/null");
+}
+
+static void
+destroy(OperSys *self)
+{
+    free(self->buf);
+    free(self->name);
+    free(self->obj_ext);
+    free(self->exe_ext);
+    free(self->local_command_start);
+    free(self->devnull);
+    free(self);
+}
+
+static void
+remove_exe(OperSys *self, char *name)
+{
+    self->buf_len = join_strings(&(self->buf), self->buf_len, name, 
+        self->exe_ext, NULL);
+    remove(self->buf);
+}
+
+static void
+remove_obj(OperSys *self, char *name)
+{
+    self->buf_len = join_strings(&(self->buf), self->buf_len, name, 
+        self->obj_ext, NULL);
+    remove(self->buf);
+}
+
+static void
+run_local(OperSys *self, ...)
+{
+    va_list args;
+
+    /* start with "./", ".\", or whatever */
+    self->buf_len = join_strings(&(self->buf), self->buf_len,
+        self->local_command_start, NULL);
+
+    /* append all supplied texts */ 
+    va_start(args, self);
+    self->buf_len = vappend_strings(&(self->buf), self->buf_len, args);
+    va_end(args);
+
+    /* run the command */
+    system(self->buf);
+}
+
+
+/* Copyright 2006-2007 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

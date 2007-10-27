@@ -1,64 +1,68 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
 
-use Test::More tests => 12;
-use KinoSearch::Store::RAMInvIndex;
-use KinoSearch::Analysis::Tokenizer;
+package MySchema::analyzed;
+use base qw( KinoSearch::FieldSpec::text );
+
+package MySchema::polyanalyzed;
+use base qw( KinoSearch::FieldSpec::text );
 use KinoSearch::Analysis::PolyAnalyzer;
+sub analyzer { KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' ) }
+
+package MySchema::unanalyzed;
+use base qw( KinoSearch::FieldSpec::text );
+sub analyzed {0}
+sub analyzer { die "shouldn't get an analyzer for unanalyzed field" }
+
+package MySchema::unindexedbutanalyzed;
+use base qw( KinoSearch::FieldSpec::text );
+sub indexed {0}
+
+package MySchema::unanalyzedunindexed;
+use base qw( KinoSearch::FieldSpec::text );
+sub indexed  {0}
+sub analyzed {0}
+
+package MySchema;
+use base qw( KinoSearch::Schema );
+
+use KinoSearch::Analysis::Tokenizer;
+
+our %fields = (
+    analyzed             => 'MySchema::analyzed',
+    polyanalyzed         => 'MySchema::polyanalyzed',
+    unanalyzed           => 'MySchema::unanalyzed',
+    unindexedbutanalyzed => 'MySchema::unindexedbutanalyzed',
+    unanalyzedunindexed  => 'MySchema::unanalyzedunindexed',
+);
+
+sub analyzer { KinoSearch::Analysis::Tokenizer->new }
+
+package main;
+use Test::More tests => 10;
+use KinoSearch::Store::RAMFolder;
 use KinoSearch::InvIndexer;
+use KinoSearch::InvIndex;
 use KinoSearch::Searcher;
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Index::Term;
 
-my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
-my $polyanalyzer
-    = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
+my $folder = KinoSearch::Store::RAMFolder->new;
+my $schema = MySchema->new;
 
-my $invindex = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $invindexer = KinoSearch::InvIndexer->new(
-    invindex => $invindex,
-    analyzer => $tokenizer,
+my $invindex = KinoSearch::InvIndex->clobber(
+    folder => $folder,
+    schema => $schema,
 );
 
-$invindexer->spec_field( name => 'analyzed', );
-$invindexer->spec_field(
-    name     => 'polyanalyzed',
-    analyzer => $polyanalyzer,
-);
-$invindexer->spec_field(
-    name     => 'unanalyzed',
-    analyzed => 0,
-);
-$invindexer->spec_field(
-    name     => 'unpolyanalyzed',
-    analyzed => 0,
-    analyzer => $polyanalyzer,
-);
-$invindexer->spec_field(
-    name    => 'unindexed_but_analyzed',
-    indexed => 0,
-);
-$invindexer->spec_field(
-    name     => 'unanalyzed_unindexed',
-    analyzed => 0,
-    indexed  => 0,
-);
+my $invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
 
-sub add_a_doc {
-    my $field_name = shift;
-    my $doc        = $invindexer->new_doc;
-    $doc->set_value( $field_name => 'United States' );
-    $invindexer->add_doc($doc);
-}
-
-add_a_doc($_) for qw(
+$invindexer->add_doc( { $_ => 'United States' } ) for qw(
     analyzed
     polyanalyzed
     unanalyzed
-    unpolyanalyzed
-    unindexed_but_analyzed
-    unanalyzed_unindexed
+    unindexedbutanalyzed
+    unanalyzedunindexed
 );
 
 $invindexer->finish;
@@ -69,10 +73,7 @@ sub check {
     my $query = KinoSearch::Search::TermQuery->new(
         term => KinoSearch::Index::Term->new( $field_name, $query_text ), );
 
-    my $searcher = KinoSearch::Searcher->new(
-        invindex => $invindex,
-        analyzer => $tokenizer,    # doesn't matter - no QueryParser
-    );
+    my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );
 
     my $hits = $searcher->search( query => $query );
 
@@ -89,11 +90,10 @@ sub check {
     );
 }
 
-check( 'analyzed',               'States',        1 );
-check( 'polyanalyzed',           'state',         1 );
-check( 'unanalyzed',             'United States', 1 );
-check( 'unpolyanalyzed',         'United States', 1 );
-check( 'unindexed_but_analyzed', 'state',         0 );
-check( 'unindexed_but_analyzed', 'United States', 0 );
-check( 'unanalyzed_unindexed',   'state',         0 );
-check( 'unanalyzed_unindexed',   'United States', 0 );
+check( 'analyzed',             'States',        1 );
+check( 'polyanalyzed',         'state',         1 );
+check( 'unanalyzed',           'United States', 1 );
+check( 'unindexedbutanalyzed', 'state',         0 );
+check( 'unindexedbutanalyzed', 'United States', 0 );
+check( 'unanalyzedunindexed',  'state',         0 );
+check( 'unanalyzedunindexed',  'United States', 0 );

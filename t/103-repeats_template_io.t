@@ -1,21 +1,19 @@
 use strict;
 use warnings;
 
-use Test::More tests => 18;
+use Test::More tests => 17;
 
-BEGIN {
-    use_ok('KinoSearch::Store::RAMInvIndex');
-}
+use KinoSearch::Store::RAMFolder;
 
-my $invindex = KinoSearch::Store::RAMInvIndex->new;
+my $folder = KinoSearch::Store::RAMFolder->new;
 my ( @items, $packed, $template );
 
 sub check_io {
     my ( $filename, $tpt ) = ( shift, shift );
-    my $outstream = $invindex->open_outstream($filename);
+    my $outstream = $folder->open_outstream($filename);
     $outstream->lu_write( $tpt, @_ );
-    $outstream->close;
-    my $instream = $invindex->open_instream($filename);
+    $outstream->sclose;
+    my $instream = $folder->open_instream($filename);
     my @got      = $instream->lu_read($tpt);
     is_deeply( \@got, \@_, $filename );
 }
@@ -26,7 +24,7 @@ for ( -127, 2, 20, 127 ) {
     my $set = $_ + 129;
     $packed = pack( "c$set", @items );
     check_io( "b$set", "b$set", @items );
-    is( $invindex->slurp_file("b$set"),
+    is( $folder->slurp_file("b$set"),
         $packed, "pack and lu_write handle signed bytes identically" );
 }
 
@@ -35,7 +33,7 @@ for ( 2, 20, 127 ) {
     @items = ( 1 .. $_ );
     $packed = pack( "C$_", @items );
     check_io( "B$_", "B$_", @items );
-    is( $invindex->slurp_file("B$_"),
+    is( $folder->slurp_file("B$_"),
         $packed, "pack and lu_write handle unsigned bytes identically" );
 }
 
@@ -49,4 +47,3 @@ for my $num ( 2, 19, 101 ) {
     $template .= 'T';
     check_io( $template, $template, @items );
 }
-

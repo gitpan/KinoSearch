@@ -1,47 +1,59 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
+
+package MySchema;
+use base qw( KinoSearch::Schema );
+use KinoSearch::Analysis::Tokenizer;
+
+our %fields = (
+    title => 'text',
+    body  => 'text',
+);
+
+sub analyzer { KinoSearch::Analysis::Tokenizer->new }
+
+package main;
 
 use Test::More tests => 12;
 
 use KinoSearch::Searcher;
+use KinoSearch::InvIndex;
 use KinoSearch::InvIndexer;
-use KinoSearch::Store::RAMInvIndex;
+use KinoSearch::Store::RAMFolder;
+use KinoSearch::QueryParser;
 use KinoSearch::Analysis::Tokenizer;
-use KinoSearch::QueryParser::QueryParser;
 
-my $tokenizer  = KinoSearch::Analysis::Tokenizer->new;
-my $invindex   = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $invindexer = KinoSearch::InvIndexer->new(
-    analyzer => $tokenizer,
-    invindex => $invindex,
+my $folder   = KinoSearch::Store::RAMFolder->new;
+my $schema   = MySchema->new;
+my $invindex = KinoSearch::InvIndex->clobber(
+    folder => $folder,
+    schema => $schema,
 );
 
-$invindexer->spec_field( name => 'title' );
-$invindexer->spec_field( name => 'body' );
-
+my $invindexer = KinoSearch::InvIndexer->new( invindex => $invindex );
 my %docs = (
     'a' => 'foo',
     'b' => 'bar',
 );
-
 while ( my ( $title, $body ) = each %docs ) {
-    my $doc = $invindexer->new_doc;
-    $doc->set_value( title => $title );
-    $doc->set_value( body  => $body );
-    $invindexer->add_doc($doc);
+    $invindexer->add_doc(
+        {   title => $title,
+            body  => $body,
+        }
+    );
 }
 $invindexer->finish;
 
-my $searcher = KinoSearch::Searcher->new(
-    analyzer => $tokenizer,
-    invindex => $invindex,
-);
-my $or_parser = KinoSearch::QueryParser::QueryParser->new(
+my $searcher = KinoSearch::Searcher->new( invindex => $invindex, );
+
+my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
+my $or_parser = KinoSearch::QueryParser->new(
+    schema   => $schema,
     analyzer => $tokenizer,
     fields   => [ 'title', 'body', ],
 );
-my $and_parser = KinoSearch::QueryParser::QueryParser->new(
+my $and_parser = KinoSearch::QueryParser->new(
+    schema         => $schema,
     analyzer       => $tokenizer,
     fields         => [ 'title', 'body', ],
     default_boolop => 'AND',
@@ -73,4 +85,3 @@ test_qstring(
 );
 test_qstring( '+a +foo', 1,
     "required terms spread across disparate fields should match" );
-

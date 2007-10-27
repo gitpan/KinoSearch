@@ -1,0 +1,34 @@
+#define CHAZ_USE_SHORT_NAMES
+
+#include "Charmonizer/Core/ModHandler.h"
+#include "Charmonizer/Core/Util.h"
+#include "Charmonizer/Probe/UnusedVars.h"
+#include <string.h>
+#include <stdio.h>
+
+
+void
+chaz_UnusedVars_run(void) 
+{
+    START_RUN("UnusedVars");
+    
+    /* write the macros (no test, these are the same everywhere) */
+    append_conf("#define CHY_UNUSED_VAR(x) ((void)x)\n");
+    append_conf("#define CHY_UNREACHABLE_RETURN(type) return (type)0\n");
+
+    /* shorten */
+    START_SHORT_NAMES;
+    shorten_macro("UNUSED_VAR");
+    shorten_macro("UNREACHABLE_RETURN");
+    END_SHORT_NAMES;
+
+    END_RUN;
+}
+
+
+/* Copyright 2006-2007 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

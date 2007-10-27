@@ -1,8 +1,9 @@
-package KinoSearch::Index::TermInfo;
 use strict;
 use warnings;
+
+package KinoSearch::Index::TermInfo;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::CClass );
+use base qw( KinoSearch::Util::Obj );
 
 1;
 
@@ -11,212 +12,99 @@ __XS__
 
 MODULE = KinoSearch   PACKAGE = KinoSearch::Index::TermInfo
 
-TermInfo*
-new( class_sv, doc_freq, frq_fileptr, prx_fileptr, skip_offset, index_fileptr )
-    SV        *class_sv;
-    I32        doc_freq;
-    double     frq_fileptr;
-    double     prx_fileptr;
-    I32        skip_offset;
-    double     index_fileptr;
-PREINIT:
-    TermInfo *tinfo;
+kino_TermInfo*
+new(class_sv, doc_freq, post_filepos, skip_filepos, index_filepos)
+    SV         *class_sv;
+    chy_i32_t   doc_freq;
+    chy_u64_t   post_filepos;
+    chy_u64_t   skip_filepos;
+    chy_u64_t   index_filepos;
 CODE:
-    class_sv = NULL; /* suppress "unused variable" warning */
-    Kino_New(0, tinfo, 1, TermInfo);
-    tinfo->doc_freq      = doc_freq;
-    tinfo->frq_fileptr   = frq_fileptr;
-    tinfo->prx_fileptr   = prx_fileptr;
-    tinfo->skip_offset   = skip_offset;
-    tinfo->index_fileptr = index_fileptr;
-    RETVAL = tinfo;
+    CHY_UNUSED_VAR(class_sv);
+    RETVAL = kino_TInfo_new(doc_freq, post_filepos, skip_filepos,
+        index_filepos);
 OUTPUT: RETVAL
-
-
-=begin comment
-
-Duplicate a TermInfo object.
-
-=end comment
-=cut
-
-TermInfo*
-clone(tinfo)
-    TermInfo *tinfo;
-CODE:
-    RETVAL = Kino_TInfo_dupe(tinfo);
-OUTPUT: RETVAL
-
-=for comment
-Zero out the TermInfo object.
-
-=cut
 
 void
-reset(tinfo)
-    TermInfo *tinfo;
+reset(self)
+    kino_TermInfo *self;
 PPCODE:
-    Kino_TInfo_reset(tinfo);
+    Kino_TInfo_Reset(self);
 
 
-=begin comment
-
-Setters and getters.
-
-=end comment
-=cut
-
-SV*
-_set_or_get(tinfo, ...)
-    TermInfo *tinfo;
+void
+_set_or_get(self, ...)
+    kino_TermInfo *self;
 ALIAS:
     set_doc_freq      = 1
     get_doc_freq      = 2
-    set_frq_fileptr   = 3
-    get_frq_fileptr   = 4
-    set_prx_fileptr   = 5
-    get_prx_fileptr   = 6
-    set_skip_offset   = 7
-    get_skip_offset   = 8
-    set_index_fileptr = 9
-    get_index_fileptr = 10
-CODE:
+    set_post_filepos  = 3
+    get_post_filepos  = 4
+    set_skip_filepos  = 5
+    get_skip_filepos  = 6
+    set_index_filepos = 7
+    get_index_filepos = 8
+PPCODE:
 {
-    KINO_START_SET_OR_GET_SWITCH
+    START_SET_OR_GET_SWITCH
 
-    case 1:  tinfo->doc_freq = SvIV(ST(1));
-             /* fall through */
-    case 2:  RETVAL = newSViv(tinfo->doc_freq);
+    case 1:  self->doc_freq = SvIV(ST(1));
              break;
 
-    case 3:  tinfo->frq_fileptr = SvNV(ST(1));
-             /* fall through */
-    case 4:  RETVAL = newSVnv(tinfo->frq_fileptr);
+    case 2:  retval = newSViv(self->doc_freq);
              break;
 
-    case 5:  tinfo->prx_fileptr = SvNV(ST(1));
-             /* fall through */
-    case 6:  RETVAL = newSVnv(tinfo->prx_fileptr);
+    case 3:  self->post_filepos = SvNV(ST(1));
              break;
 
-    case 7:  tinfo->skip_offset = SvIV(ST(1));
-             /* fall through */
-    case 8:  RETVAL = newSViv(tinfo->skip_offset);
+    case 4:  retval = newSVnv(self->post_filepos);
              break;
 
-    case 9:  tinfo->index_fileptr = SvNV(ST(1));
-             /* fall through */
-    case 10: RETVAL = newSVnv(tinfo->index_fileptr);
+    case 5:  self->skip_filepos = SvNV(ST(1));
              break;
-        
-    KINO_END_SET_OR_GET_SWITCH
-}
-    OUTPUT: RETVAL
 
-void
-DESTROY(tinfo)
-    TermInfo* tinfo;
-CODE: 
-    Kino_Safefree(tinfo);
+    case 6:  retval = newSVnv(self->skip_filepos);
+             break;
 
-__H__
+    case 7:  self->index_filepos = SvNV(ST(1));
+             break;
 
-#ifndef H_KINOSEARCH_INDEX_TERM_INFO
-#define H_KINOSEARCH_INDEX_TERM_INFO 1
+    case 8:  retval = newSVnv(self->index_filepos);
+             break;
 
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-#include "KinoSearchUtilMemManager.h"
-
-typedef struct terminfo {
-    I32      doc_freq;
-    double   frq_fileptr;
-    double   prx_fileptr;
-    I32      skip_offset;
-    double   index_fileptr;
-} TermInfo;
-
-TermInfo* Kino_TInfo_new();
-TermInfo* Kino_TInfo_dupe(TermInfo*);
-void      Kino_TInfo_reset(TermInfo*);
-void      Kino_TInfo_destroy(TermInfo*);
-
-#endif /* include guard */
-
-
-__C__
-
-#include "KinoSearchIndexTermInfo.h"
-
-TermInfo*
-Kino_TInfo_new() {
-    TermInfo* tinfo;
-    Kino_New(0, tinfo, 1, TermInfo);
-    Kino_TInfo_reset(tinfo);
-    return tinfo;
-}
-
-/* Allocate and return a copy of the supplied TermInfo.  */
-TermInfo*
-Kino_TInfo_dupe(TermInfo *tinfo) {
-    TermInfo* new_tinfo;
-    
-    Kino_New(0, new_tinfo, 1, TermInfo);
-    new_tinfo->doc_freq      = tinfo->doc_freq;
-    new_tinfo->frq_fileptr   = tinfo->frq_fileptr;
-    new_tinfo->prx_fileptr   = tinfo->prx_fileptr;
-    new_tinfo->skip_offset   = tinfo->skip_offset;
-    new_tinfo->index_fileptr = tinfo->index_fileptr;
-
-    return new_tinfo;
-}
-
-void
-Kino_TInfo_reset(TermInfo *tinfo) {
-    tinfo->doc_freq      = 0;
-    tinfo->frq_fileptr   = 0.0;
-    tinfo->prx_fileptr   = 0.0;
-    tinfo->skip_offset   = 0;
-    tinfo->index_fileptr = 0.0;
-}
-
-void 
-Kino_TInfo_destroy(TermInfo *tinfo) {
-    Kino_Safefree(tinfo);
+    END_SET_OR_GET_SWITCH
 }
 
 __POD__
 
 =begin devdocs
 
-=head1 NAME
+=head1 PRIVATE CLASS
 
-KinoSearch::Index::TermInfo - filepointer/statistical data for a Term
+KinoSearch::Index::TermInfo - Filepointer/statistical data for a Term.
 
 =head1 SYNOPSIS
 
     my $tinfo = KinoSearch::Index::TermInfo->new(
         $doc_freq,
-        $frq_fileptr,
-        $prx_fileptr,
-        $skip_offset,
-        $index_fileptr
+        $post_filepos,
+        $skip_filepos,
+        $index_filepos
     );
 
 =head1 DESCRIPTION
 
-The TermInfo contains pointer data indicating where a term can be found in
-various files, plus the document frequency of the term.
+The TermInfo contains pointer data indicating where information about a term
+can be found in various files, plus the document frequency of the term.
 
-The index_fileptr member variable is only used if the TermInfo is part of the
-.tii stream; it is a filepointer to a locations in the main .tis file.
+The index_filepos member variable is only used if the TermInfo is part of the
+.lexx stream; it is a filepointer to a locations in the main .lex file.
 
 =head1 METHODS
 
 =head2 new
 
-Constructor.  All 5 arguments are required.
+Constructor.  All arguments are required.
 
 =head1 COPYRIGHT
 
@@ -224,7 +112,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.162.
+See L<KinoSearch> version 0.20.
 
 =end devdocs
 =cut
