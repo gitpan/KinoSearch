@@ -2,7 +2,6 @@ use strict;
 use warnings;
 
 use Test::More tests => 10;
-use File::Spec::Functions qw( catfile );
 
 BEGIN {
     use_ok('KinoSearch::Index::SegTermDocs');

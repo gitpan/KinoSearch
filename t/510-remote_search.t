@@ -2,7 +2,6 @@
 use strict;
 use warnings;
 
-use File::Spec::Functions qw( catfile );
 use Test::More;
 use Time::HiRes qw( sleep );
 use lib 't';

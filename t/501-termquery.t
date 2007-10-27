@@ -2,7 +2,6 @@
 
 use lib 't';
 use Test::More tests => 7;
-use File::Spec::Functions qw( catfile );
 
 BEGIN {
     use_ok('KinoSearch::Search::TermQuery');

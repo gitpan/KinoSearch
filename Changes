@@ -1,5 +1,9 @@
 Revision history for KinoSearch
 
+0.162 2007-10-27
+  * Eliminate insecure temp file creation during test suite. Reported by
+    Andreas Koenig as RT #28777.
+
 0.161 2007-09-16
   * Update ppport.h.
   * Fix copyright dates.

@@ -4,9 +4,14 @@ use warnings;
 use base qw( Exporter );
 
 our @EXPORT_OK = qw( 
+    working_dir
+    create_working_dir
+    remove_working_dir
     create_invindex 
-    create_test_invindex 
-    path_for_test_invindex
+    create_persistent_test_invindex 
+    init_test_invindex_loc
+    test_invindex_loc
+    persistent_test_invindex_loc
     get_uscon_docs
 );
 
@@ -17,6 +22,52 @@ use KinoSearch::Analysis::Tokenizer;
 use KinoSearch::Analysis::PolyAnalyzer;
 
 use File::Spec::Functions qw( catdir catfile tmpdir );
+use File::Path qw( rmtree );
+
+my $working_dir = catfile( tmpdir(), 'kinosearch_test' );
+
+# Return a directory within the system's temp directory where we will put all
+# testing scratch files.
+sub working_dir { $working_dir }
+
+sub create_working_dir {
+    mkdir( $working_dir, 0700 ) or die "Can't mkdir '$working_dir': $!";
+}
+
+# Verify that this user owns the working dir, then zap it.  Returns true upon
+# success.
+sub remove_working_dir {
+    my $mode = (stat $working_dir)[2];
+    return unless -d $working_dir;
+    $mode &= 07777;
+    return unless $mode == 0700;
+    rmtree $working_dir;
+    return 1;
+}
+
+# Return a location for a test invindex to be used by a single test file.  If
+# the test file crashes it cannot clean up after itself, so we put the cleanup
+# routine in a single test file to be run at or near the end of the test
+# suite.
+sub test_invindex_loc {
+    return catdir( $working_dir, 'test_invindex' );
+}
+
+# Return a location for a test invindex intended to be shared by multiple
+# test files.  It will be cleaned as above.
+sub persistent_test_invindex_loc {
+    return catdir( $working_dir, 'persistent_test_invindex' );
+}
+
+# Destroy anything left over in the test_invindex location, then create the
+# directory.  Finally, return the path.
+sub init_test_invindex_loc {
+    my $dir = test_invindex_loc();
+    rmtree $dir;
+    die "Can't clean up '$dir'" if -e $dir;
+    mkdir $dir or die "Can't mkdir '$dir': $!";
+    return $dir;
+}
 
 # Build a RAMInvIndex, using the supplied array of strings as source material.
 # The invindex will have a single field: "content".
@@ -80,17 +131,13 @@ sub get_uscon_docs {
     return \%docs;
 }
 
-sub path_for_test_invindex {
-    return catdir( tmpdir(), 'test_invindex' );
-}
-
-sub create_test_invindex {
+sub create_persistent_test_invindex {
     my $invindexer;
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
         language => 'en' );
 
     $invindexer = KinoSearch::InvIndexer->new(
-        invindex => path_for_test_invindex(),
+        invindex => persistent_test_invindex_loc(),
         create => 1,
         analyzer => $polyanalyzer,
     );
@@ -104,7 +151,7 @@ sub create_test_invindex {
     undef $invindexer;
 
     $invindexer = KinoSearch::InvIndexer->new(
-        invindex => path_for_test_invindex(),
+        invindex => persistent_test_invindex_loc(),
         analyzer => $polyanalyzer,
     );
     $invindexer->spec_field( name => 'content' );
@@ -118,7 +165,7 @@ sub create_test_invindex {
     undef $invindexer;
 
     $invindexer = KinoSearch::InvIndexer->new(
-        invindex => path_for_test_invindex(),
+        invindex => persistent_test_invindex_loc(),
         analyzer => $polyanalyzer,
     );
     $invindexer->spec_field( name => 'content' );

@@ -2,17 +2,20 @@
 use strict;
 use warnings;
 
+use lib 't';
 use Test::More tests => 22;
 
-use File::Spec::Functions qw( tmpdir catdir catfile );
+use File::Spec::Functions qw( catfile );
 use File::Path qw( rmtree );
+use Fcntl;
 
 BEGIN {
     use_ok('KinoSearch::Store::RAMInvIndex');
     use_ok('KinoSearch::Store::FSInvIndex');
 }
 
-my $fs_invindex_loc = catdir( tmpdir(), 'bogus_invindex' );
+use KinoSearchTestInvIndex qw( test_invindex_loc );
+my $fs_invindex_loc = test_invindex_loc();
 
 # clean up from previous tests if needed.
 rmtree($fs_invindex_loc);
@@ -92,7 +95,7 @@ my $foo_path = catfile( $fs_invindex_loc, 'foo' );
 my $cfs_path = catfile( $fs_invindex_loc, '_1.cfs' );
 
 for ( $foo_path, $cfs_path ) {
-    open( my $fh, '>', $_ )
+    sysopen( my $fh, $_, O_CREAT | O_EXCL | O_WRONLY )
         or die "Couldn't open '$_' for writing: $!";
     print $fh 'stuff';
 }

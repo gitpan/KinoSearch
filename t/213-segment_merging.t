@@ -3,7 +3,6 @@ use warnings;
 
 use lib 't';
 use Test::More tests => 9;
-use File::Spec::Functions qw( catfile tmpdir );
 use File::Path qw( rmtree );
 
 BEGIN {
@@ -12,9 +11,9 @@ BEGIN {
     use_ok('KinoSearch::Analysis::Tokenizer');
     use_ok('KinoSearch::Index::IndexReader');
 }
-use KinoSearchTestInvIndex qw( create_invindex );
+use KinoSearchTestInvIndex qw( create_invindex init_test_invindex_loc );
 
-my $invindex_loc = catfile( tmpdir(), 'test_merging_invindex' );
+my $invindex_loc = init_test_invindex_loc();
 my ( $invindexer, $searcher, $hits, $another_invindex,
     $yet_another_invindex );
 my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
@@ -87,4 +86,5 @@ closedir $invindex_dh, $invindex_loc
     or die "Couldn't closedir '$invindex_loc': $!";
 is( scalar @cfs_files, 1, "merged segment files successfully deleted" );
 
+# Clean up.
 rmtree($invindex_loc);

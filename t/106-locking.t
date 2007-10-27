@@ -4,6 +4,7 @@ use warnings;
 use Time::HiRes qw( sleep );
 use Test::More;
 
+
 BEGIN {
     if ( $^O =~ /mswin/i ) {
         plan( 'skip_all', "fork on Windows not supported by KS" );
@@ -15,9 +16,9 @@ BEGIN {
 }
 
 use KinoSearch::Store::FSInvIndex;
+my $lock_path = "$KinoSearch::Store::FSInvIndex::LOCK_DIR/test-foo";
 
 Dead_locks_are_removed: {
-    my $lock_path = "$KinoSearch::Store::FSInvIndex::LOCK_DIR/test-foo";
 
     # Remove any existing lockfile
     unlink $lock_path;
@@ -60,6 +61,9 @@ Dead_locks_are_removed: {
         ok( !$saved_err,
             'second lock attempt clobbered dead lock file and did not die' );
     }
+
+    # clean up
+    unlink $lock_path;
 }
 
 package MockIndex;

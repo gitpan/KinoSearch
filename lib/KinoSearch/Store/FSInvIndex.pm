@@ -7,6 +7,7 @@ use base qw( KinoSearch::Store::InvIndex );
 our $LOCK_DIR;    # used by FSLock
 
 use File::Spec::Functions qw( canonpath catfile catdir tmpdir no_upwards );
+use Fcntl;
 
 BEGIN {
     __PACKAGE__->init_instance_vars();
@@ -84,7 +85,7 @@ sub init_instance {
 sub open_outstream {
     my ( $self, $filename ) = @_;
     my $filepath = catfile( $self->{path}, $filename );
-    open( my $fh, "+>:unix", $filepath )    # clobbers
+    sysopen( my $fh, $filepath, O_CREAT | O_RDWR | O_NONBLOCK | O_EXCL )
         or confess("Couldn't open file '$filepath': $!");
     binmode($fh);
     return KinoSearch::Store::OutStream->new($fh);
@@ -196,6 +197,6 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.161.
+See L<KinoSearch|KinoSearch> version 0.162.
 
 =cut

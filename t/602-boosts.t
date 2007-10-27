@@ -5,7 +5,6 @@ use warnings;
 use lib 't';
 use Test::More 'no_plan';
 
-use KinoSearch qw( kdump );
 use KinoSearch::Store::RAMInvIndex;
 use KinoSearch::Searcher;
 use KinoSearch::InvIndexer;

@@ -3,13 +3,32 @@ use strict;
 use warnings;
 
 use lib 't';
-use Test::More tests => 2;
+use Test::More tests => 4;
 use File::Spec::Functions qw( catfile );
-use KinoSearchTestInvIndex qw( create_test_invindex path_for_test_invindex );
+use KinoSearchTestInvIndex qw( 
+    working_dir
+    create_working_dir
+    remove_working_dir
+    create_persistent_test_invindex 
+    persistent_test_invindex_loc 
+);
 
-create_test_invindex();
+remove_working_dir();
+ok( !-e working_dir(), "Working dir doesn't exist" );
 
-my $path = path_for_test_invindex();
+create_working_dir();
+my $mode = ( stat( working_dir() ) )[2] & 07777;
+if ( $mode == 0700 ) {
+    pass("Working dir successfully created  with correct permissions");
+}
+else {
+    BAIL_OUT( "Unsafe to continue: working dir '" . working_dir()
+            . "' not owned exclusively by this user" );
+}
+
+create_persistent_test_invindex();
+
+my $path = persistent_test_invindex_loc();
 ok( -d $path, "created invindex directory" );
 opendir( my $test_invindex_dh, $path )
     or die "Couldn't opendir '$path': $!";

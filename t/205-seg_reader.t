@@ -4,7 +4,6 @@ use warnings;
 
 use lib 't';
 use Test::More tests => 8;
-use File::Spec::Functions qw( catfile );
 
 BEGIN {
     use_ok('KinoSearch::Index::IndexReader');

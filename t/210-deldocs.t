@@ -3,7 +3,6 @@ use warnings;
 
 use lib 't';
 use Test::More tests => 11;
-use File::Spec::Functions qw( catfile );
 
 BEGIN { use_ok('KinoSearch::Index::DelDocs') }
 use KinoSearchTestInvIndex qw( create_invindex );

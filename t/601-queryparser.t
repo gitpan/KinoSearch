@@ -5,7 +5,6 @@ use warnings;
 use lib 't';
 use KinoSearch qw( kdump );
 use Test::More tests => 217;
-use File::Spec::Functions qw( catfile );
 
 BEGIN { use_ok('KinoSearch::QueryParser::QueryParser') }
 

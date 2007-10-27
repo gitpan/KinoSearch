@@ -5,6 +5,7 @@ use Module::Build;
 use File::Find qw( find );
 use Storable qw( store retrieve );
 use File::Spec::Functions qw( catfile );
+use Fcntl;
 
 =for comment
 
@@ -123,7 +124,8 @@ for my $outfilepath ( keys %needs_rewrite ) {
 END_AUTOGEN
 
     print "Writing $outfilepath\n";
-    open( my $fh, '>', $outfilepath )
+    unlink $outfilepath;
+    sysopen( my $fh, $outfilepath, O_CREAT | O_EXCL | O_WRONLY )
         or die "Couldn't open file '$outfilepath' for writing: $!";
     print $fh "$autogen_header$code{$outfilepath}"
         or die "Print to '$outfilepath' failed: $!";
@@ -199,7 +201,8 @@ END_OUTPUT
 
     # blast it out
     print "Writing typemap\n";
-    open( my $typemap_fh, '>', 'typemap' )
+    unlink 'typemap';
+    sysopen( my $typemap_fh, 'typemap', O_CREAT | O_WRONLY | O_EXCL )
         or die "Couldn't open 'typemap' for writing: $!";
     print $typemap_fh
         "# Auto-generated file.  See KinoSearch::Docs::DevGuide.\n\n"
