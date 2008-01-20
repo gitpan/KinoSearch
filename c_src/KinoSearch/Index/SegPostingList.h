@@ -81,9 +81,11 @@ chy_bool_t
 kino_SegPList_next(kino_SegPostingList *self);
 KINO_METHOD("Kino_SegPList_Next");
 
+/*
 chy_bool_t
 kino_SegPList_skip_to(kino_SegPostingList *self, chy_u32_t target);
 KINO_METHOD("Kino_SegPList_Skip_To");
+*/
 
 void
 kino_SegPList_seek(kino_SegPostingList *self, struct kino_Term *target);

@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.20_05
+version: 0.20_051
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -20,7 +20,7 @@ provides:
     file: lib/KSx/Search/LongFieldSim.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.20_05
+    version: 0.20_051
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::LCNormalizer:

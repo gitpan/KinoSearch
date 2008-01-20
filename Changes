@@ -1,5 +1,12 @@
 Revision history for KinoSearch
 
+0.20_051 2008-01-20
+
+  Bug Fixes:
+
+    * Occasionally incorrect search results fixed by disabling Skip_To
+      optimization.
+
 0.20_05 2007-10-27
 
   API Changes:

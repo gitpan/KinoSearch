@@ -5,7 +5,7 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.20_05';
+our $VERSION = '0.20_051';
 
 use constant K_DEBUG => 0;
 
@@ -48,7 +48,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.20_05
+0.20_051
 
 =head1 EXTRA WARNING
 

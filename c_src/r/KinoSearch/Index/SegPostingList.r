@@ -41,9 +41,6 @@ typedef void
 typedef chy_bool_t
 (*kino_SegPList_next_t)(kino_SegPostingList *self);
 
-typedef chy_bool_t
-(*kino_SegPList_skip_to_t)(kino_SegPostingList *self, chy_u32_t target);
-
 typedef struct kino_Scorer*
 (*kino_SegPList_make_scorer_t)(kino_SegPostingList *self, 
                           struct kino_Similarity *sim,
@@ -136,7 +133,6 @@ extern KINO_SEGPOSTINGLIST_VTABLE KINO_SEGPOSTINGLIST;
   #define SegPList_seek kino_SegPList_seek
   #define SegPList_seek_lex kino_SegPList_seek_lex
   #define SegPList_next kino_SegPList_next
-  #define SegPList_skip_to kino_SegPList_skip_to
   #define SegPList_make_scorer kino_SegPList_make_scorer
   #define SegPList_set_doc_base_t kino_SegPList_set_doc_base_t
   #define SegPList_set_doc_base kino_SegPList_set_doc_base
@@ -197,7 +193,7 @@ KINO_SEGPOSTINGLIST_VTABLE KINO_SEGPOSTINGLIST = {
     (kino_PList_seek_t)kino_SegPList_seek,
     (kino_PList_seek_lex_t)kino_SegPList_seek_lex,
     (kino_PList_next_t)kino_SegPList_next,
-    (kino_PList_skip_to_t)kino_SegPList_skip_to,
+    (kino_PList_skip_to_t)kino_PList_skip_to,
     (kino_PList_make_scorer_t)kino_SegPList_make_scorer,
     (kino_SegPList_set_doc_base_t)kino_SegPList_set_doc_base
 };
