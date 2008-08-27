@@ -1,19 +1,17 @@
+package KinoSearch::Analysis::Stemmer;
 use strict;
 use warnings;
-
-package KinoSearch::Analysis::Stemmer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
 our %supported_languages;
 
-our %instance_vars = (
-    # inherited
-    language => '',
-
-    # members,
-    stemmifier => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        stemmifier => undef,
+    );
+}
 
 use Lingua::Stem::Snowball qw( stemmers );
 
@@ -25,17 +23,14 @@ sub init_instance {
 
     # verify language param
     my $language = $self->{language} = lc( $self->{language} );
-    confess("Unsupported language: '$language'")
+    croak("Unsupported language: '$language'")
         unless $supported_languages{$language};
 
     # create instance of Snowball stemmer
-    $self->{stemmifier} = Lingua::Stem::Snowball->new(
-        lang     => $language,
-        encoding => 'UTF-8',
-    );
+    $self->{stemmifier} = Lingua::Stem::Snowball->new( lang => $language );
 }
 
-sub analyze_batch {
+sub analyze {
     my ( $self, $batch ) = @_;
 
     # replace terms with stemmed versions.
@@ -53,7 +48,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Analysis::Stemmer - Reduce related words to a shared root.
+KinoSearch::Analysis::Stemmer - reduce related words to a shared root
 
 =head1 SYNOPSIS
 
@@ -70,7 +65,7 @@ and "horsing" all become "hors" -- so that a search for 'horse' will also
 match documents containing 'horses' and 'horsing'.  
 
 This class is a wrapper around
-L<Lingua::Stem::Snowball>, so it supports the same
+L<Lingua::Stem::Snowball|Lingua::Stem::Snowball>, so it supports the same
 languages.  
 
 =head1 METHODS 
@@ -86,6 +81,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =cut
+

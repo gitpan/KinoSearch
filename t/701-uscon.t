@@ -1,18 +1,21 @@
 use strict;
 use warnings;
-use lib 'buildlib';
 
-use Test::More tests => 9;
-use Carp;
+use lib 't';
+use Test::More tests => 10;
 
-use KinoSearch::Searcher;
+BEGIN {
+    use_ok('KinoSearch::Searcher');
+    use_ok('KinoSearch::Analysis::PolyAnalyzer');
+}
 
-use KinoTestUtils qw( persistent_test_invindex_loc );
-use USConSchema;
+use KinoSearchTestInvIndex qw( persistent_test_invindex_loc );
 
+my $tokenizer = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
 my $searcher = KinoSearch::Searcher->new(
-    invindex => USConSchema->read( persistent_test_invindex_loc() ), );
-isa_ok( $searcher, 'KinoSearch::Searcher' );
+    invindex => persistent_test_invindex_loc(),
+    analyzer => $tokenizer,
+);
 
 my %searches = (
     'United'              => 34,
@@ -27,7 +30,8 @@ my %searches = (
 );
 
 while ( my ( $qstring, $num_expected ) = each %searches ) {
-    my $hits = $searcher->search( query => $qstring );
+    my $hits = $searcher->search($qstring);
+    $hits->seek( 0, 100 );
     is( $hits->total_hits, $num_expected, $qstring );
 }
 

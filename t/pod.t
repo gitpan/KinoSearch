@@ -1,5 +1,4 @@
-use strict;
-use warnings;
+#!perl -T
 
 use Test::More;
 eval "use Test::Pod 1.14";

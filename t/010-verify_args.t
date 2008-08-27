@@ -1,8 +1,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
-use KinoSearch::Util::VerifyArgs qw( kerror verify_args );
+use Test::More tests => 6;
+
+BEGIN { use_ok( 'KinoSearch::Util::VerifyArgs', qw( kerror verify_args ) ) }
 
 my %defaults = ( foo => 'FOO', bar => 'BAR' );
 

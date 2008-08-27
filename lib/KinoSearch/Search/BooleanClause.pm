@@ -1,20 +1,20 @@
+package KinoSearch::Search::BooleanClause;
 use strict;
 use warnings;
-
-package KinoSearch::Search::BooleanClause;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = (
-    # params / members
-    occur => 'SHOULD',
-    query => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        occur => 'SHOULD',
+        query => undef,
+    );
+}
 
 sub init_instance {
     my $self = shift;
 
-    confess("invalid value for 'occur': '$self->{occur}'")
+    croak("invalid value for 'occur': '$self->{occur}'")
         unless $self->{occur} =~ /^(?:MUST|MUST_NOT|SHOULD)$/;
 }
 
@@ -42,9 +42,9 @@ __END__
 
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Search::BooleanClause - Clause in a BooleanQuery.
+KinoSearch::Search::BooleanClause - clause in a BooleanQuery
 
 =head1 DESCRIPTION 
 
@@ -56,7 +56,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =end devdocs
 =cut

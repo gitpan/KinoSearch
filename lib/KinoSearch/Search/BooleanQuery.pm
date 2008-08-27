@@ -1,20 +1,17 @@
+package KinoSearch::Search::BooleanQuery;
 use strict;
 use warnings;
-
-package KinoSearch::Search::BooleanQuery;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Query );
 
-our %instance_vars = (
-    # inherited
-    boost => 1.0,
-
-    # members
-    clauses          => undef,
-    max_clause_count => 1024,
-);
-
 BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        disable_coord => 0,
+        # members
+        clauses          => undef,
+        max_clause_count => 1024,
+    );
     __PACKAGE__->ready_get(qw( clauses ));
 }
 
@@ -27,17 +24,24 @@ sub init_instance {
 
 # Add an subquery tagged with boolean characteristics.
 sub add_clause {
-    my $self = shift;
-    my $clause
-        = @_ == 1
+    my $self   = shift;
+    my $clause =
+        @_ == 1
         ? shift
         : KinoSearch::Search::BooleanClause->new(@_);
+    push @{ $self->{clauses} }, $clause;
     confess("not a BooleanClause")
         unless a_isa_b( $clause, 'KinoSearch::Search::BooleanClause' );
     confess("Too many clauses")
         if @{ $self->{clauses} } > $self->{max_clause_count};
+}
 
-    push @{ $self->{clauses} }, $clause;
+sub get_similarity {
+    my ( $self, $searcher ) = @_;
+    if ( $self->{disable_coord} ) {
+        confess "disable_coord not implemented yet";
+    }
+    return $searcher->get_similarity;
 }
 
 sub extract_terms {
@@ -49,48 +53,45 @@ sub extract_terms {
     return @terms;
 }
 
-sub make_weight {
+sub create_weight {
     my ( $self, $searcher ) = @_;
     return KinoSearch::Search::BooleanWeight->new(
         parent   => $self,
         searcher => $searcher,
     );
+
 }
 
+sub clone { shift->todo_death }
+
 package KinoSearch::Search::BooleanWeight;
+use strict;
+use warnings;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Search::Weight );
 
-our %instance_vars = (
-    # inherited
-    searcher   => undef,
-    parent     => undef,
-    similarity => undef,
-
-    # members
-    sub_weights => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members
+        weights => undef,
+    );
+}
 
 use KinoSearch::Search::BooleanScorer;
 
 sub init_instance {
     my $self = shift;
+    $self->{weights} = [];
+    my ( $weights, $searcher ) = @{$self}{ 'weights', 'searcher' };
 
-    # don't keep searcher around; it interferes with serialization
-    my $searcher = delete $self->{searcher};
+    $self->{similarity} = $self->{parent}->get_similarity($searcher);
 
-    # use the Schema's main Similarity
-    $self->{similarity} = $searcher->get_schema->fetch_sim;
-
-    # iterate over the clauses, creating a Weight for each one
-    $self->{sub_weights} = [];
     for my $clause ( @{ $self->{parent}{clauses} } ) {
-        my $sub_query = $clause->get_query;
-        push @{ $self->{sub_weights} }, $sub_query->make_weight($searcher);
+        my $query = $clause->get_query;
+        push @$weights, $query->create_weight($searcher);
     }
 
-    # make final preparations
-    $self->perform_query_normalization($searcher);
+    undef $self->{searcher}; # don't want the baggage
 }
 
 sub get_value { shift->{parent}->get_boost }
@@ -99,7 +100,7 @@ sub sum_of_squared_weights {
     my $self = shift;
 
     my $sum = 0;
-    $sum += $_->sum_of_squared_weights for @{ $self->{sub_weights} };
+    $sum += $_->sum_of_squared_weights for @{ $self->{weights} };
 
     # compound the weight of each sub-Weight
     $sum *= $self->{parent}->get_boost**2;
@@ -108,9 +109,8 @@ sub sum_of_squared_weights {
 }
 
 sub normalize {
-    my ( $self, $query_norm_factor ) = @_;
-    # override normalization performed by individual clauses
-    $_->normalize($query_norm_factor) for @{ $self->{sub_weights} };
+    my ( $self, $query_norm ) = @_;
+    $_->normalize($query_norm) for @{ $self->{weights} };
 }
 
 sub scorer {
@@ -122,9 +122,9 @@ sub scorer {
     # add all the subscorers one by one
     my $clauses = $self->{parent}{clauses};
     my $i       = 0;
-    for my $sub_weight ( @{ $self->{sub_weights} } ) {
+    for my $weight ( @{ $self->{weights} } ) {
         my $clause    = $clauses->[ $i++ ];
-        my $subscorer = $sub_weight->scorer($reader);
+        my $subscorer = $weight->scorer($reader);
         if ( defined $subscorer ) {
             $scorer->add_subscorer( $subscorer, $clause->get_occur );
         }
@@ -142,7 +142,7 @@ __END__
 
 =head1 NAME
 
-KinoSearch::Search::BooleanQuery - Match boolean combinations of Queries.
+KinoSearch::Search::BooleanQuery - match boolean combinations of Queries
 
 =head1 SYNOPSIS
 
@@ -157,7 +157,7 @@ other Queries.
 
 One way of producing a BooleanQuery is to feed a query string along the lines
 of C<this AND NOT that> to a
-L<QueryParser|KinoSearch::QueryParser> object:
+L<QueryParser|KinoSearch::QueryParser::QueryParser> object:
     
     my $bool_query = $query_parser->parse( 'this AND NOT that' );
 
@@ -207,7 +207,7 @@ Add a clause to the BooleanQuery.  Takes hash-style parameters:
 =item *
 
 B<query> - an object which belongs to a subclass of
-L<KinoSearch::Search::Query>.
+L<KinoSearch::Search::Query|KinoSearch::Search::Query>.
 
 =item *
 
@@ -222,6 +222,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =cut
+

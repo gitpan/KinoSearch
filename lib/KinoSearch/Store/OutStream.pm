@@ -1,9 +1,14 @@
+package KinoSearch::Store::OutStream;
 use strict;
 use warnings;
-
-package KinoSearch::Store::OutStream;
 use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Obj );
+use base qw( KinoSearch::Util::CClass );
+
+sub close {
+    my $self = shift;
+    $self->flush;
+    CORE::close $self->get_fh;
+}
 
 1;
 
@@ -13,79 +18,77 @@ __XS__
 
 MODULE = KinoSearch     PACKAGE = KinoSearch::Store::OutStream
 
-kino_OutStream*
-new(class, file_des)
-    const classname_char *class;
-    kino_FileDes *file_des;
+=for comment
+Constructor - takes one arg: a filehandle.
+
+=cut
+
+OutStream*
+new(class, fh_sv)
+    char *class;
+    SV   *fh_sv;
 CODE:
-    CHY_UNUSED_VAR(class);
-    RETVAL = kino_OutStream_new(file_des);
+    RETVAL = Kino_OutStream_new(class, fh_sv);
 OUTPUT: RETVAL
 
 void
-print(self, ...)
-    kino_OutStream *self;
+seek(outstream, target)
+    OutStream *outstream;
+    double     target;
 PPCODE:
-{
-    int i;
-    for (i = 1; i < items; i++) {
-        STRLEN len;
-        char *ptr = SvPV( ST(i), len);
-        Kino_OutStream_Write_Bytes(self, ptr, len);
-    }
-}
+    outstream->seek(outstream, target);
 
-
-chy_u64_t
-stell(self)
-    kino_OutStream *self;
+double
+tell(outstream)
+    OutStream *outstream;
 CODE:
-    RETVAL = Kino_OutStream_STell(self);
+    RETVAL = outstream->tell(outstream);
 OUTPUT: RETVAL
 
-
-chy_u64_t
-slength(self)
-    kino_OutStream *self;
+double
+length(outstream)
+    OutStream *outstream;
 CODE:
-    RETVAL = Kino_OutStream_SLength(self);
+    RETVAL = Kino_OutStream_length(outstream);
 OUTPUT: RETVAL
 
-
 void
-sflush(self)
-    kino_OutStream *self;
+flush(outstream);
+    OutStream *outstream;
 PPCODE:
-    Kino_OutStream_SFlush(self);
+    Kino_OutStream_flush(outstream);
+
+=for comment
+Write the entire contents of an instream to an outstream.
+
+=cut
 
 void
-sclose(self)
-    kino_OutStream *self;
+absorb(outstream, instream)
+    OutStream *outstream;
+    InStream  *instream;
 PPCODE:
-    Kino_OutStream_SClose(self);
+    Kino_OutStream_absorb(outstream, instream);
 
-
-void
-absorb(self, instream)
-    kino_OutStream *self;
-    kino_InStream  *instream;
-PPCODE:
-    Kino_OutStream_Absorb(self, instream);
-
-void
-_set_or_get(self, ...)
-    kino_OutStream *self;
+SV*
+_set_or_get(outstream, ...)
+    OutStream *outstream;
 ALIAS:
-    get_file_des = 2
-PPCODE:
+    set_fh       = 1
+    get_fh       = 2
+CODE:
 {
-    START_SET_OR_GET_SWITCH
+    KINO_START_SET_OR_GET_SWITCH
 
-    case 2:  retval = kobj_to_pobj(self->file_des);
+    case 1:  Kino_confess("Can't set_fh");
+             /* fall through */
+    case 2:  RETVAL = newSVsv(outstream->fh_sv);
              break;
     
-    END_SET_OR_GET_SWITCH
+    KINO_END_SET_OR_GET_SWITCH
 }
+OUTPUT: RETVAL
+
 
 =begin comment
 
@@ -98,26 +101,28 @@ specified by TEMPLATE.
 =cut
 
 void
-lu_write (self, template_sv, ...)
-    kino_OutStream *self;
-    SV *template_sv;
+lu_write (outstream, template_sv, ...)
+    OutStream *outstream;
+    SV        *template_sv;
+PREINIT:
+    STRLEN   tpt_len;      /* bytelength of template */
+    char    *template;     /* ptr to a spot in the template */
+    char    *tpt_end;      /* ptr to the end of the template */
+    int      repeat_count; /* number of times to repeat sym */
+    int      item_count;   /* current place in @_ */
+    char     sym;          /* the current symbol in the template */
+    char     countsym;     /* used when calculating repeat counts */
+    I32      aI32;
+    U32      aU32;
+    double   aDouble;
+    SV      *aSV;
+    char    *string;
+    STRLEN   string_len;
 PPCODE:
 {
-    STRLEN      tpt_len;          /* bytelength of template */
-    char       *template;         /* ptr to a spot in the template */
-    char       *tpt_end;          /* ptr to the end of the template */
-    int         repeat_count = 0; /* number of times to repeat sym */
-    int         item_count   = 2; /* num elements in @_ processed */
-    char        sym = '\0';       /* the current symbol in the template */
-    chy_i32_t   aI32;
-    chy_u32_t   aU32;
-    SV         *aSV;
-    char       *string;
-    STRLEN      string_len;
-
     /* require an object, a template, and at least 1 item */
     if (items < 2) {
-        CONFESS("lu_write error: too few arguments");
+        Kino_confess("lu_write error: too few arguments");
     }
 
     /* prepare the template and get pointers */
@@ -126,9 +131,13 @@ PPCODE:
 
     /* reject an empty template */
     if (tpt_len == 0) {
-        CONFESS("lu_write error: TEMPLATE cannot be empty string");
+        Kino_confess("lu_write error: TEMPLATE cannot be empty string");
     }
         
+    /* init counters */
+    repeat_count = 0;
+    item_count   = 2;
+
     while (1) {
         /* only process template if we're not in the midst of a repeat */
         if (repeat_count == 0) {
@@ -140,45 +149,41 @@ PPCODE:
             /* if we're done, return or throw error */
             if (template == tpt_end || item_count == items) {
                 if (item_count != items) {
-                    CONFESS( "Too many ITEMS, not enough TEMPLATE");
+                    Kino_confess(
+                      "lu_write error: Too many ITEMS, not enough TEMPLATE");
                 }
                 else if (template != tpt_end) {
-                    CONFESS("Too much TEMPLATE, not enough ITEMS");
+                    Kino_confess(
+                      "lu_write error: Too much TEMPLATE, not enough ITEMS");
                 }
                 else { /* success! */
                     break;
                 }
             }
 
-            /* derive the current symbol */
-            sym = *template++;
+            /* derive the current symbol and a possible digit repeat sym */
+            sym      = *template++;
+            countsym = *template;
 
             if (template == tpt_end) { /* sym is last char in template */
                 repeat_count = 1;
             }
-            else {
-                char countsym = *template;
-                if (countsym >= '0' && countsym <= '9') {
-                    /* calculate numerical repeat count */
-                    repeat_count = countsym - KINO_NUM_CHAR_OFFSET;
+            else if (countsym >= '0' && countsym <= '9') {
+                /* calculate numerical repeat count */
+                repeat_count = countsym - KINO_NUM_CHAR_OFFSET;
+                countsym = *(++template);
+                while (  template <= tpt_end 
+                      && countsym >= '0' 
+                      && countsym <= '9'
+                ) {
+                    repeat_count = (repeat_count * 10) 
+                        + (countsym - KINO_NUM_CHAR_OFFSET);
                     countsym = *(++template);
-                    while (  template <= tpt_end 
-                          && countsym >= '0' 
-                          && countsym <= '9'
-                    ) {
-                        repeat_count = (repeat_count * 10) 
-                            + (countsym - KINO_NUM_CHAR_OFFSET);
-                        countsym = *(++template);
-                    }
-                }
-                else { /* no numeric repeat count, so process sym only once */
-                    repeat_count = 1;
                 }
             }
-        }
-        /* sanity check */
-        else if (repeat_count < 0) {
-            CONFESS("invalid repeat_count: %d", repeat_count);
+            else { /* no numeric repeat count, so process sym only once */
+                repeat_count = 1;
+            }
         }
 
 
@@ -187,14 +192,15 @@ PPCODE:
         case 'a': /* arbitrary binary data */
             aSV  = ST(item_count);
             if (!SvOK(aSV)) {
-                CONFESS("Internal error: undef at lu_write 'a'");
+                Kino_confess("Internal error: undef at lu_write 'a'");
             }
-            string = SvPV(aSV, string_len);
-            if ((STRLEN)repeat_count != string_len) {
-                CONFESS("repeat_count != string_len: %d %d", repeat_count, 
-                string_len);
+            string     = SvPV(aSV, string_len);
+            if (repeat_count != string_len) {
+                Kino_confess(
+                    "lu_write error: repeat_count != string_len: %d %d", 
+                    repeat_count, string_len);
             }
-            Kino_OutStream_Write_Bytes(self, string, string_len);
+            Kino_OutStream_write_bytes(outstream, string, string_len);
             /* trigger next sym */
             repeat_count = 1; 
             break;
@@ -202,53 +208,43 @@ PPCODE:
         case 'b': /* signed byte */
         case 'B': /* unsigned byte */
             aI32 = SvIV( ST(item_count) );
-            Kino_OutStream_Write_Byte(self, (char)(aI32 & 0xff));
+            Kino_OutStream_write_byte(outstream, (char)(aI32 & 0xff));
             break;
 
         case 'i': /* signed 32-bit integer */
             aI32 = SvIV( ST(item_count) );
-            Kino_OutStream_Write_Int(self, (chy_u32_t)aI32);
+            Kino_OutStream_write_int(outstream, (U32)aI32);
             break;
             
 
         case 'I': /* unsigned 32-bit integer */
             aU32 = SvUV( ST(item_count) );
-            Kino_OutStream_Write_Int(self, aU32);
+            Kino_OutStream_write_int(outstream, aU32);
             break;
             
         case 'Q': /* unsigned "64-bit" integer */
-            {
-                SV *const this_sv = ST(item_count);
-                if (SvIOK(this_sv))
-                    Kino_OutStream_Write_Long(self, SvUV(this_sv));
-                else
-                    Kino_OutStream_Write_Long(self, SvNV(this_sv));
-            }
+            aDouble = SvNV( ST(item_count) );
+            Kino_OutStream_write_long(outstream, aDouble);
             break;
         
         case 'V': /* VInt */
             aU32 = SvUV( ST(item_count) );
-            Kino_OutStream_Write_VInt(self, aU32);
+            Kino_OutStream_write_vint(outstream, aU32);
             break;
 
         case 'W': /* VLong */
-            {
-                SV *const this_sv = ST(item_count);
-                if (SvIOK(this_sv))
-                    Kino_OutStream_Write_VLong(self, SvUV(this_sv));
-                else
-                    Kino_OutStream_Write_VLong(self, SvNV(this_sv));
-            }
+            aDouble = SvNV( ST(item_count) );
+            Kino_OutStream_write_vlong(outstream, aDouble);
             break;
 
         case 'T': /* string */
             aSV        = ST(item_count);
             string     = SvPV(aSV, string_len);
-            Kino_OutStream_Write_String(self, string, string_len);
+            Kino_OutStream_write_string(outstream, string, string_len);
             break;
 
         default: 
-            CONFESS("Illegal character in template: %c", sym);
+            Kino_confess("Illegal character in template: %c", sym);
         }
 
         /* use up one repeat_count and one item from the stack */
@@ -257,20 +253,281 @@ PPCODE:
     }
 }
 
+void
+DESTROY(outstream)
+    OutStream *outstream;
+PPCODE:
+    Kino_OutStream_destroy(outstream);
+
+__H__
+
+
+#ifndef H_KINOIO
+#define H_KINOIO 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchStoreInStream.h"
+#include "KinoSearchUtilCarp.h"
+#include "KinoSearchUtilMathUtils.h"
+
+typedef struct outstream {
+    PerlIO  *fh;
+    SV      *fh_sv;
+    char    *buf;
+    Off_t    buf_start;
+    int      buf_pos;
+    void   (*seek)        (struct outstream*, double);
+    double (*tell)        (struct outstream*);
+    void   (*write_byte)  (struct outstream*, char);
+    void   (*write_bytes) (struct outstream*, char*, STRLEN);
+    void   (*write_int)   (struct outstream*, U32);
+    void   (*write_long)  (struct outstream*, double);
+    void   (*write_vint)  (struct outstream*, U32);
+    void   (*write_vlong) (struct outstream*, double);
+    void   (*write_string)(struct outstream*, char*, STRLEN);
+} OutStream;
+
+OutStream* Kino_OutStream_new          (char*, SV*);
+void       Kino_OutStream_seek         (OutStream*, double);
+double     Kino_OutStream_tell         (OutStream*);
+double     Kino_OutStream_length       (OutStream*);
+void       Kino_OutStream_flush        (OutStream*);
+void       Kino_OutStream_absorb       (OutStream*, InStream*);
+void       Kino_OutStream_write_byte   (OutStream*, char);
+void       Kino_OutStream_write_bytes  (OutStream*, char*, STRLEN);
+void       Kino_OutStream_write_int    (OutStream*, U32);
+void       Kino_OutStream_write_long   (OutStream*, double);
+void       Kino_OutStream_write_vint   (OutStream*, U32);
+int        Kino_OutStream_encode_vint  (U32, char*);
+void       Kino_OutStream_write_vlong  (OutStream*, double);
+void       Kino_OutStream_write_string (OutStream*, char*, STRLEN);
+void       Kino_OutStream_destroy      (OutStream*);
+
+#endif /* include guard */
+
+
+__C__
+
+#include "KinoSearchStoreOutStream.h"
+
+OutStream*
+Kino_OutStream_new(char* class, SV* fh_sv) {
+    OutStream *outstream;
+
+    /* allocate */
+    Kino_New(0, outstream, 1, OutStream);
+
+    /* assign */
+    outstream->fh_sv       = newSVsv(fh_sv);
+    outstream->fh          = IoOFP( sv_2io(fh_sv) );
+
+    /* init buffer */
+    Kino_New(0, outstream->buf, KINO_IO_STREAM_BUF_SIZE, char);
+    outstream->buf_start = 0;
+    outstream->buf_pos   = 0;
+
+    /* assign methods */
+    outstream->seek         = Kino_OutStream_seek;
+    outstream->tell         = Kino_OutStream_tell;
+    outstream->write_byte   = Kino_OutStream_write_byte;
+    outstream->write_bytes  = Kino_OutStream_write_bytes;
+    outstream->write_int    = Kino_OutStream_write_int;
+    outstream->write_long   = Kino_OutStream_write_long;
+    outstream->write_vint   = Kino_OutStream_write_vint;
+    outstream->write_vlong  = Kino_OutStream_write_vlong;
+    outstream->write_string = Kino_OutStream_write_string;
+
+    return outstream;
+
+}
+
+void 
+Kino_OutStream_seek(OutStream *outstream, double target) {
+    Kino_OutStream_flush(outstream);
+    outstream->buf_start = target;
+    PerlIO_seek(outstream->fh, target, 0);
+}
+
+double
+Kino_OutStream_tell(OutStream *outstream) {
+    return outstream->buf_start + outstream->buf_pos;
+}
+
+double
+Kino_OutStream_length(OutStream *outstream) {
+    double len;
+
+    /* flush, go to end, note length, return to bookmark */
+    Kino_OutStream_flush(outstream);
+    PerlIO_seek(outstream->fh, 0, 2);
+    len = PerlIO_tell(outstream->fh);
+    PerlIO_seek(outstream->fh, outstream->buf_start, 0);
+
+    return len;
+}
+
+void
+Kino_OutStream_flush(OutStream *outstream) {
+    PerlIO_write(outstream->fh, outstream->buf, outstream->buf_pos);
+    outstream->buf_start += outstream->buf_pos;
+    outstream->buf_pos = 0;
+}
+
+void 
+Kino_OutStream_absorb(OutStream *outstream, InStream *instream) {
+    double  bytes_left, bytes_this_iter;
+    char   *buf;
+    int     check_val;
+
+    /* flush, then "borrow" the buffer */
+    Kino_OutStream_flush(outstream);
+    buf = outstream->buf;
+    
+    bytes_left = instream->len;
+
+    while (bytes_left > 0) {
+        bytes_this_iter = bytes_left < KINO_IO_STREAM_BUF_SIZE 
+            ? bytes_left 
+            : KINO_IO_STREAM_BUF_SIZE;
+        instream->read_bytes(instream, buf, bytes_this_iter);
+        check_val = PerlIO_write(outstream->fh, buf, bytes_this_iter);
+        if (check_val != bytes_this_iter) {
+            Kino_confess("outstream->absorb error: %"UVuf", %d", 
+                (UV)bytes_this_iter, check_val);
+        }
+        bytes_left -= bytes_this_iter;
+        outstream->buf_start += bytes_this_iter;
+    }
+}
+
+void
+Kino_OutStream_write_byte(OutStream *outstream, char aChar) {
+    if (outstream->buf_pos >= KINO_IO_STREAM_BUF_SIZE)
+        Kino_OutStream_flush(outstream);
+    outstream->buf[ outstream->buf_pos++ ] = aChar;
+}
+
+void
+Kino_OutStream_write_bytes(OutStream *outstream, char *bytes, STRLEN len) {
+    /* if this data is larger than the buffer size, flush and write */
+    if (len >= KINO_IO_STREAM_BUF_SIZE) {
+        int check_val;
+        Kino_OutStream_flush(outstream);
+        check_val = PerlIO_write(outstream->fh, bytes, len);
+        if (check_val != len) {
+            Kino_confess("Write error: tried to write %"UVuf", got %d", 
+                (UV)len, check_val);
+        }
+        outstream->buf_start += len;
+    }
+    /* if there's not enough room in the buffer, flush then add */
+    else if (outstream->buf_pos + len >= KINO_IO_STREAM_BUF_SIZE) {
+        Kino_OutStream_flush(outstream);
+        Copy(bytes, (outstream->buf + outstream->buf_pos), len, char);
+        outstream->buf_pos += len;
+    }
+    /* if there's room, just add these bytes to the buffer */
+    else {
+        Copy(bytes, (outstream->buf + outstream->buf_pos), len, char);
+        outstream->buf_pos += len;
+    }
+}
+
+void 
+Kino_OutStream_write_int(OutStream *outstream, U32 aU32) {
+    unsigned char buf[4];
+    Kino_encode_bigend_U32(aU32, buf);
+    outstream->write_bytes(outstream, (char*)buf, 4);
+}
+
+void
+Kino_OutStream_write_long(OutStream *outstream, double aDouble) {
+    unsigned char buf[8];
+    U32 aU32;
+
+    /* derive the upper 4 bytes by truncating a quotient */
+    aU32 = floor( ldexp( aDouble, -32 ) );
+    Kino_encode_bigend_U32(aU32, buf);
+    
+    /* derive the lower 4 bytes by taking a modulus against 2**32 */
+    aU32 = fmod(aDouble, (pow(2.0, 32.0)));
+    Kino_encode_bigend_U32(aU32, &buf[4]);
+
+    /* print encoded Long to the output handle */
+    outstream->write_bytes(outstream, (char*)buf, 8);
+}
+
+void
+Kino_OutStream_write_vint(OutStream *outstream, U32 aU32) {
+    char buf[5];
+    int num_bytes;
+    num_bytes = Kino_OutStream_encode_vint(aU32, buf);
+    outstream->write_bytes(outstream, buf, num_bytes);
+}
+
+/* Encode a VInt.  buf must have room for at 5 bytes. 
+ */
+int
+Kino_OutStream_encode_vint(U32 aU32, char *buf) {
+    int num_bytes = 0;
+
+    while ((aU32 & ~0x7f) != 0) {
+        buf[num_bytes++] = ( (aU32 & 0x7f) | 0x80 );
+        aU32 >>= 7;
+    }
+    buf[num_bytes++] = aU32 & 0x7f;
+
+    return num_bytes;
+}
+
+void
+Kino_OutStream_write_vlong(OutStream *outstream, double aDouble) {
+    unsigned char buf[10];
+    int num_bytes = 0;
+    U32 aU32;
+
+    while (aDouble > 127.0) {
+        /* take modulus of num against 128 */
+        aU32 = fmod(aDouble, 128);
+        buf[num_bytes++] = ( (aU32 & 0x7f) | 0x80 );
+        /* right shift for floating point! */
+        aDouble = floor( ldexp( aDouble, -7 ) );
+    }
+    buf[num_bytes++] = aDouble;
+
+    outstream->write_bytes(outstream, (char*)buf, num_bytes);
+}
+
+void
+Kino_OutStream_write_string(OutStream *outstream, char *string, STRLEN len) {
+    Kino_OutStream_write_vint(outstream, (U32)len);
+    Kino_OutStream_write_bytes(outstream, string, len);
+}
+
+void
+Kino_OutStream_destroy(OutStream *outstream) {
+    Kino_OutStream_flush(outstream);
+    SvREFCNT_dec(outstream->fh_sv);
+    Kino_Safefree(outstream->buf);
+    Kino_Safefree(outstream);
+}
+
 __POD__
 
 
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Store::OutStream - Filehandles for writing invindexes.
+KinoSearch::Store::OutStream - filehandles for writing invindexes
 
 =head1 SYNOPSIS
 
     # isa blessed filehandle
 
-    my $outstream = $folder->open_outstream( $filename );
+    my $outstream = $invindex->open_outstream( $filename );
     $outstream->lu_write( 'V8', @eight_vints );
 
 =head1 DESCRIPTION
@@ -280,11 +537,6 @@ akin to a narrowly-implemented, specialized IO::File.
 
 Unlike its counterpart InStream, OutStream cannot be assigned an arbitrary
 C<length> or C<offset>.
-
-=head2 Buffering
-
-OutStream objects maintain their own buffers and do not write their contents to
-disk on the same schedules as Perl filehandles.
 
 =head2 lu_write / lu_read template
 
@@ -339,7 +591,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =end devdocs
 =cut

@@ -14,7 +14,7 @@ To install this module, run the following commands:
 XS CODE
 
 KinoSearch is a Perl/XS distribution, despite the apparent lack of .xs files.  
-KinoSearch.xs gets written on the fly when 'perl Build.PL' is invoked.
+KinoSearch.xs gets written on the fly when 'perl Makefile.PL' is invoked.
 
 COPYRIGHT AND LICENCE
 

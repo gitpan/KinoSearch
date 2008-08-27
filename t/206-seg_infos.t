@@ -1,18 +1,14 @@
 use strict;
 use warnings;
-use lib 'buildlib';
 
+use lib 't';
 use Test::More tests => 1;
+use File::Spec::Functions qw( catfile );
 
-use KinoSearch::Index::SegInfos;
-use KinoTestUtils qw( create_invindex );
+BEGIN { use_ok('KinoSearch::Index::SegInfos') }
+use KinoSearchTestInvIndex qw( create_invindex );
 
-my $invindex = create_invindex( "a", "a b" );
+create_invindex( "a", "a b" );
 
-my $seg_infos
-    = KinoSearch::Index::SegInfos->new( schema => $invindex->get_schema );
-$seg_infos->read_infos( folder => $invindex->get_folder );
-$seg_infos->write_infos( $invindex->get_folder );
+my $sinfos = KinoSearch::Index::SegInfos->new;
 
-# there's not a lot we can test on SegInfos.
-pass("successfully read and wrote infos without crashing");

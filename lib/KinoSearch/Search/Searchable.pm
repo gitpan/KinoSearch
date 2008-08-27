@@ -1,111 +1,33 @@
+package KinoSearch::Search::Searchable;
 use strict;
 use warnings;
-
-package KinoSearch::Search::Searchable;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = (
-    # members
-    schema => undef,
-);
-
-BEGIN { __PACKAGE__->ready_get(qw( schema )) }
-
-use KinoSearch::Search::Hits;
-use KinoSearch::QueryParser;
-
-our %search_args = (
-    query      => undef,
-    filter     => undef,
-    sort_spec  => undef,
-    offset     => 0,
-    num_wanted => 10,
-);
-
-# Returns a Hits object containing the top scoring results
-sub search {
-    my $self = shift;
-    confess kerror() unless verify_args( \%search_args, @_ );
-    my %args = ( %search_args, @_ );
-
-    # turn a query string into a query against all fields
-    if ( !a_isa_b( $args{query}, 'KinoSearch::Search::Query' ) ) {
-        $args{query} = $self->_prepare_simple_search( $args{query} );
-    }
-
-    # run the search and collect the top matches
-    my $top_docs = $self->top_docs(
-        num_wanted => $args{num_wanted} + $args{offset},
-        query      => $args{query},
-        filter     => $args{filter},
-        sort_spec  => $args{sort_spec},
-    );
-
-    # create an object that contains those results
-    return KinoSearch::Search::Hits->new(
-        searcher => $self,
-        query    => $args{query},
-        top_docs => $top_docs,
-        offset   => $args{offset},
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # members
+        similarity => undef,
+        field_sims => undef, # {}
     );
 }
 
-# Search for the query string against all indexed fields
-sub _prepare_simple_search {
-    my ( $self, $query_string ) = @_;
-    my $query_parser
-        = KinoSearch::QueryParser->new( schema => $self->{schema}, );
-    return $query_parser->parse($query_string);
-}
+use KinoSearch::Search::Similarity;
 
 =begin comment
 
-    $searcher->collect(
-        num_wanted => $num_wanted,
-        collector  => $collector,
-        query      => $query,
-        filter     => $filter,
-    );
+    my $hits = $searchable->search($query_string);
 
-Iterate over hits, feeding them into a HitCollector.
+    my $hits = $searchable->search(
+        query     => $query,
+        filter    => $filter,
+        sort_spec => $sort_spec,
+    );
 
 =end comment
 =cut
 
-our %collect_args = (
-    collector  => undef,
-    query      => undef,
-    filter     => undef,
-    num_wanted => undef,
-);
-
-sub collect { shift->abstract_death }
-
-=begin  comment
-
-    my $top_docs = $searchable->top_docs(
-        query      => $query,
-        num_wanted => $num_wanted,
-        filter     => $filter,
-        sort_spec  => $sort_spec,
-    );
-
-Return a TopDocs object with up to num_wanted hits.
-
-Not all subclasses will allow the filter or the sort_spec.
-
-=end comment 
-=cut
-
-our %top_docs_args = (
-    query      => undef,
-    num_wanted => undef,
-    filter     => undef,
-    sort_spec  => undef,
-);
-
-sub top_docs { shift->abstract_death }
+sub search { shift->abstract_death }
 
 =begin comment
 
@@ -134,23 +56,12 @@ sub max_doc { shift->abstract_death }
 
     my $doc =  $searchable->fetch_doc($doc_num);
 
-Retrieve stored fields as a hashref.
+Generate a Doc object, retrieving the stored fields from the invindex.
 
 =end comment
 =cut
 
 sub fetch_doc { shift->abstract_death }
-
-=begin comment
-
-    my $doc_vector =  $searchable->fetch_doc_vec($doc_num);
-
-Generate a DocVector object from the relevant term vector files.
-
-=end comment
-=cut
-
-sub fetch_doc_vec { shift->abstract_death }
 
 =begin comment
 
@@ -164,16 +75,48 @@ Weights.
 
 sub doc_freq { shift->abstract_death }
 
+=begin comment
+
+    $searchable->set_similarity($sim);
+    $searchable->set_similarity( $field_name, $alternate_sim );
+
+    my $sim     = $searchable->get_similarity;
+    my $alt_sim = $searchable->get_similarity($field_name);
+
+Set or get Similarity.  If a field name is included, set/retrieve the 
+Similarity instance for that field only.
+
+=end comment
+=cut
+
+sub set_similarity {
+    if ( @_ == 3 ) {
+        my ( $self, $field_name, $sim ) = @_;
+        $self->{field_sims}{$field_name} = $sim;
+    }
+    else {
+        $_[0]->{similarity} = $_[1];
+    }
+}
+
+sub get_similarity {
+    my ( $self, $field_name ) = @_;
+    if ( defined $field_name and exists $self->{field_sims}{$field_name} ) {
+        return $self->{field_sims}{$field_name};
+    }
+    else {
+        return $self->{similarity};
+    }
+}
+
+# not sure these are needed (call $query->create_weight($searcher) instead)
+sub create_weight { shift->unimplemented_death }
+sub rewrite_query { shift->unimplemented_death }
+
 sub doc_freqs {
     my ( $self, $terms ) = @_;
     my @doc_freqs = map { $self->doc_freq($_) } @$terms;
     return \@doc_freqs;
-}
-
-# Factory method for turning a Query into a Weight.
-sub create_weight {
-    my ( $self, $query ) = @_;
-    return $query->make_weight($self);
 }
 
 sub close { }
@@ -182,25 +125,16 @@ sub close { }
 
 __END__
 
-=head1 Name
+=begin devdocs
 
-KinoSearch::Search::Searchable - Base class for searchers.
+=head1 NAME
 
-=head1 SYNOPSIS
-
-    # abstract base class
+KinoSearch::Search::Searchable - base class for searching an invindex
 
 =head1 DESCRIPTION 
 
-Abstract base class for objects which search.  Subclasses include
-L<KinoSearch::Searcher>, L<KinoSearch::Search::MultiSearcher>, and
-L<KinoSearch::Search::SearchClient>.
-
-=head1 METHODS
-
-=head2 search
-
-See L<KinoSearch::Searcher>'s API docs.
+Abstract base class for objects which search an invindex.  The most prominent
+subclass is KinoSearch::Searcher.
 
 =head1 COPYRIGHT
 
@@ -208,6 +142,8 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
+=end devdocs
 =cut
+

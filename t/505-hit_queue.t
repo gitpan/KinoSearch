@@ -1,10 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
+use Scalar::Util qw( dualvar );
 
-use KinoSearch::Search::HitQueue;
-use KinoSearch::Search::ScoreDoc;
+BEGIN { use_ok('KinoSearch::Search::HitQueue') }
 
 my $hq = KinoSearch::Search::HitQueue->new( max_size => 10 );
 
@@ -17,25 +17,20 @@ my @docs_and_scores = (
     [ 1.0, 2000 ],
 );
 
-my @score_docs = map {
-    KinoSearch::Search::ScoreDoc->new(
-        score   => $_->[0],
-        doc_num => $_->[1],
-        )
-} @docs_and_scores;
+my @scoredocs
+    = map { dualvar( $_->[0], pack( 'N', $_->[1] ) ) } @docs_and_scores;
 
-my @correct_order = sort {
-           $b->get_score <=> $a->get_score
-        or $a->get_doc_num <=> $b->get_doc_num
-} @score_docs;
-my @correct_docs   = map { $_->get_doc_num } @correct_order;
-my @correct_scores = map { $_->get_score } @correct_order;
+my @correct_order = sort { $b <=> $a or $a cmp $b } @scoredocs;
+my @correct_docs   = map { unpack( 'N', "$_" ) } @correct_order;
+my @correct_scores = map { 0 + $_ } @correct_order;
 
-$hq->insert($_) for @score_docs;
-my $got = $hq->score_docs;
+my $hit_docs;
+$hq->insert($_) for @scoredocs;
+$hit_docs = $hq->hits;
 
-my @scores = map { $_->get_score } @$got;
+my @scores = map { $_->get_score } @$hit_docs;
 is_deeply( \@scores, \@correct_scores, "rank by scores first" );
 
-my @doc_nums = map { $_->get_doc_num } @$got;
+my @doc_nums = map { $_->get_id } @$hit_docs;
 is_deeply( \@doc_nums, \@correct_docs, "rank by doc_num after score" );
+

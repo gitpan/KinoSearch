@@ -1,14 +1,15 @@
-use strict;
-use warnings;
-use lib 'buildlib';
+#!/usr/bin/perl
 
-use Test::More tests => 4;
+use lib 't';
+use Test::More tests => 7;
 
-use KinoSearch::Search::TermQuery;
-use KinoSearch::Index::Term;
-use KinoSearch::Searcher;
+BEGIN {
+    use_ok('KinoSearch::Search::TermQuery');
+    use_ok('KinoSearch::Index::Term');
+    use_ok('KinoSearch::Searcher');
+}
 
-use KinoTestUtils qw( create_invindex );
+use KinoSearchTestInvIndex qw( create_invindex );
 
 my $invindex = create_invindex( 'a', 'b', 'c c c d', 'c d', 'd' .. 'z', );
 
@@ -17,6 +18,7 @@ my $term_query = KinoSearch::Search::TermQuery->new( term => $term );
 my $searcher   = KinoSearch::Searcher->new( invindex      => $invindex );
 
 my $hits = $searcher->search( query => $term_query );
+$hits->seek( 0, 50 );
 is( $hits->total_hits, 2, "correct number of hits returned" );
 
 my $hashref = $hits->fetch_hit_hashref;
@@ -25,6 +27,7 @@ is( $hashref->{content}, 'c c c d', "most relevant doc is highest" );
 $hashref = $hits->fetch_hit_hashref;
 is( $hashref->{content}, 'c d', "second most relevant" );
 
-$hits->set_offset(1);
+$hits->seek( 1, 50 );
 $hashref = $hits->fetch_hit_hashref;
-is( $hashref->{content}, 'c d', "set offset and fetch again" );
+is( $hashref->{content}, 'c d', "fresh seek" );
+

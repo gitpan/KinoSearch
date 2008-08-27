@@ -1,143 +1,251 @@
+package KinoSearch::InvIndexer;
 use strict;
 use warnings;
-
-package KinoSearch::InvIndexer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Util::Class );
 
-our %instance_vars = (
-    # constructor args / members
-    invindex     => undef,
-    lock_factory => undef,
+use constant UNINITIALIZED => 0;
+use constant INITIALIZED   => 1;
+use constant FINISHED      => 2;
 
-    # members
-    schema        => undef,
-    folder        => undef,
-    seg_info      => undef,
-    reader        => undef,
-    seg_infos     => undef,
-    seg_writer    => undef,
-    write_lock    => undef,
-    has_deletions => 0,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor args / members
+        create   => undef,
+        invindex => undef,
+        analyzer => undef,
 
+        # members
+        reader       => undef,
+        analyzers    => undef,
+        sinfos       => undef,
+        finfos       => undef,
+        doc_template => undef,
+        frozen_doc   => undef,
+        similarity   => undef,
+        field_sims   => undef,
+        seg_writer   => undef,
+        write_lock   => undef,
+        state        => UNINITIALIZED,
+    );
+}
+
+use Storable qw( freeze thaw );
+use File::Spec::Functions qw( catfile tmpdir );
+
+use KinoSearch::Document::Doc;
+use KinoSearch::Document::Field;
+use KinoSearch::Analysis::Analyzer;
+use KinoSearch::Store::FSInvIndex;
+use KinoSearch::Index::FieldInfos;
+use KinoSearch::Index::FieldsReader;
 use KinoSearch::Index::IndexReader;
-use KinoSearch::Index::SegInfo;
 use KinoSearch::Index::SegInfos;
 use KinoSearch::Index::SegWriter;
-use KinoSearch::Index::IndexFileNames qw(
-    WRITE_LOCK_NAME
-    WRITE_LOCK_TIMEOUT
-    COMMIT_LOCK_NAME
-    COMMIT_LOCK_TIMEOUT
-    unused_files );
-use KinoSearch::Util::StringHelper qw( to_base36 );
-use KinoSearch::Store::LockFactory;
+use KinoSearch::Index::IndexFileNames
+    qw( WRITE_LOCK_NAME    COMMIT_LOCK_NAME
+    WRITE_LOCK_TIMEOUT COMMIT_LOCK_TIMEOUT );
+use KinoSearch::Search::Similarity;
 
 sub init_instance {
     my $self = shift;
+    $self->{analyzers}  = {};
+    $self->{field_sims} = {};
 
-    # confirm invindex and extract schema and Folder
-    my $invindex = $self->{invindex};
-    confess("Missing required arg 'invindex'")
-        unless a_isa_b( $invindex, "KinoSearch::InvIndex" );
-    my $folder = $self->{folder} = $invindex->get_folder;
-    my $schema = $self->{schema} = $invindex->get_schema;
+    # use a no-op Analyzer if not supplied
+    $self->{analyzer} ||= KinoSearch::Analysis::Analyzer->new;
 
-    # confirm or create a lock factory
-    if ( defined $self->{lock_factory} ) {
-        confess("Not a LockFactory")
-            unless a_isa_b( $self->{lock_factory},
-            "KinoSearch::Store::LockFactory" );
+    # create a few members
+    $self->{similarity}   = KinoSearch::Search::Similarity->new;
+    $self->{sinfos}       = KinoSearch::Index::SegInfos->new;
+    $self->{doc_template} = KinoSearch::Document::Doc->new;
+
+    # confirm or create an InvIndex object
+    my $invindex;
+    if ( blessed( $self->{invindex} )
+        and $self->{invindex}->isa('KinoSearch::Store::InvIndex') )
+    {
+        $invindex = $self->{invindex};
+        $self->{create} = $invindex->get_create
+            unless defined $self->{create};
     }
-    else {
-        $self->{lock_factory} = KinoSearch::Store::LockFactory->new(
-            agent_id => '',
-            folder   => $folder,
+    elsif ( defined $self->{invindex} ) {
+        $invindex = $self->{invindex} = KinoSearch::Store::FSInvIndex->new(
+            create => $self->{create},
+            path   => $self->{invindex},
         );
     }
+    else {
+        croak("Required parameter 'invindex' not supplied");
+    }
 
-    # get a write lock for this folder.
-    my $write_lock = $self->{lock_factory}->make_lock(
+    # get a write lock for this invindex.
+    my $write_lock = $invindex->make_lock(
         lock_name => WRITE_LOCK_NAME,
         timeout   => WRITE_LOCK_TIMEOUT,
     );
-    $write_lock->clear_stale;
     if ( $write_lock->obtain ) {
         # only assign if successful, otherwise DESTROY unlocks (bad!)
         $self->{write_lock} = $write_lock;
     }
     else {
-        my $mess = "InvIndex is locked";
-        $mess .= " by " . $write_lock->get_filename
-            if $write_lock->can('get_filename');
-        confess($mess);
+        croak( "invindex locked: " . $write_lock->get_lock_name );
     }
 
-    # read the segment infos
-    my $seg_infos = $self->{seg_infos}
-        = KinoSearch::Index::SegInfos->new( schema => $self->{schema} );
-    $seg_infos->read_infos( folder => $folder );
-
-    # get an IndexReader if the invindex already has content
-    if ( $seg_infos->size ) {
-        $self->{reader} = KinoSearch::Index::IndexReader->open(
-            invindex  => $invindex,
-            seg_infos => $seg_infos,
+    # read/write SegInfos
+    eval {
+        $invindex->run_while_locked(
+            lock_name => COMMIT_LOCK_NAME,
+            timeout   => COMMIT_LOCK_TIMEOUT,
+            do_body   => sub {
+                $self->{create}
+                    ? $self->{sinfos}->write_infos($invindex)
+                    : $self->{sinfos}->read_infos($invindex);
+            },
         );
+    };
+    if ($@) {
+        $self->{create}
+            ? croak("failed to create invindex: $@")
+            : croak("failed to open existing invindex: $@");
     }
 
-    # name a new segment, create a SegInfo and a SegWriter
-    my $seg_name = $self->_new_seg_name;
-    my $seg_info = $self->{seg_info} = KinoSearch::Index::SegInfo->new(
-        seg_name => $seg_name,
-        fspecs   => $schema->get_fspecs,
-    );
+    # get a finfos and maybe a reader
+    if ( $self->{create} ) {
+        $self->{finfos} = KinoSearch::Index::FieldInfos->new;
+    }
+    else {
+        $self->{reader}
+            = KinoSearch::Index::IndexReader->new( invindex => $invindex );
+        $self->{finfos} = $self->{reader}->generate_field_infos;
+    }
+
+    # more initialization is coming after fields are spec'd...
+}
+
+sub _delayed_init {
+    my $self = shift;
+    my ( $invindex, $finfos, $field_sims )
+        = @{$self}{qw( invindex finfos field_sims )};
+
+    confess("finish has been called")
+        if $self->{state} == FINISHED;
+    confess("internal error: already initialized")
+        if $self->{state} == INITIALIZED;
+    $self->{state} = INITIALIZED;
+
+    # create a cloning template
+    my $doc = $self->{doc_template};
+    for my $field ( $doc->get_fields ) {
+        $field->set_field_num( $finfos->get_field_num( $field->get_name ) );
+    }
+    $self->{frozen_doc} = freeze($doc);
+
+    # set sim for each field
+    my $main_sim = $self->{similarity};
+    for my $finfo ( $finfos->get_infos ) {
+        $field_sims->{ $finfo->get_name } ||= $main_sim;
+    }
+
+    # name a new segment and create a SegWriter
+    my $out_seg_name = $self->_new_seg_name;
     $self->{seg_writer} = KinoSearch::Index::SegWriter->new(
-        invindex => $invindex,
-        seg_info => $seg_info,
+        invindex   => $invindex,
+        seg_name   => $out_seg_name,
+        finfos     => $finfos->clone,
+        field_sims => $field_sims,
     );
 }
 
-my %add_doc_args = ( boost => undef, );
+sub spec_field {
+    my $self = shift;
+
+    # don't allow new fields to be spec'd once the seg is in motion
+    croak("Too late to spec field (new_doc has been called)")
+        unless $self->{state} == UNINITIALIZED;
+
+    # detect or define a Field object
+    my $field;
+    if ( blessed( $_[0] ) ) {
+        $field = shift;
+    }
+    else {
+        eval { $field = KinoSearch::Document::Field->new(@_) };
+        croak $@ if $@;
+    }
+
+    # cache fnm_bits and fdt_bits
+    $field->set_fnm_bits(
+        KinoSearch::Index::FieldInfos->encode_fnm_bits($field) );
+    $field->set_fdt_bits(
+        KinoSearch::Index::FieldsReader->encode_fdt_bits($field) );
+
+    # establish which analyzer will be used against the field
+    $self->{analyzers}{ $field->get_name }
+        = ( $field->get_analyzer || $self->{analyzer} );
+
+    # don't copy the analyzer into the template, so that it can be overridden
+    $field->set_analyzer(undef);
+
+    # add the field to the finfos and the template.
+    $self->{finfos}->add_field($field);
+    $self->{doc_template}->add_field($field);
+}
+
+sub new_doc {
+    my $self = shift;
+    $self->_delayed_init unless $self->{state} == INITIALIZED;
+    return thaw( $self->{frozen_doc} );
+}
+
+sub set_similarity {
+    if ( @_ == 3 ) {
+        my ( $self, $field_name, $sim ) = @_;
+        $self->{field_sims}{$field_name} = $sim;
+    }
+    else {
+        $_[0]->{similarity} = $_[1];
+    }
+}
 
 sub add_doc {
-    my $self = shift;
-    my $doc  = shift;
-    confess("First argument must be a hashref")
-        unless reftype($doc) eq 'HASH';
-    confess kerror() unless verify_args( \%add_doc_args, @_ );
-    my %args = @_;
+    my ( $self, $doc ) = @_;
+
+    # assign analyzers
+    for my $field ( $doc->get_fields ) {
+        if ( $field->get_analyzed ) {
+            next if $field->get_analyzer;
+            my $fieldname = $field->get_name;
+            $field->set_analyzer( $self->{analyzers}{$fieldname} );
+        }
+    }
 
     # add doc to output segment
-    my $boost = defined $args{boost} ? $args{boost} : 1.0;
-    $self->{seg_writer}->add_doc( $doc, $boost );
+    $self->{seg_writer}->add_doc($doc);
 }
 
 sub add_invindexes {
     my ( $self, @invindexes ) = @_;
-    my $schema   = $self->{schema};
-    my $seg_info = $self->{seg_info};
+    confess("Can't call add_invindexes after new_doc")
+        if $self->{state} == INITIALIZED;
 
-    # all the invindexes must match our schema
-    my $orig_class = ref($schema);
-    for my $invindex (@invindexes) {
-        my $other_schema = $invindex->get_schema;
-        my $other_class  = ref($other_schema);
-        if ( $other_class ne $orig_class ) {
-            confess("Schema class '$other_class' doesn't match $orig_class");
-        }
-        for my $other_field ( $other_schema->all_fields ) {
-            my $fspec_class = ref( $other_schema->fetch_fspec($other_field) );
-            $schema->add_field( $other_field, $fspec_class );
-            $seg_info->add_field($other_field);
+    # verify or obtain InvIndex objects
+    for (@invindexes) {
+        if ( !a_isa_b( $_, 'KinoSearch::Store::InvIndex' ) ) {
+            $_ = KinoSearch::Store::FSInvIndex->new( path => $_ );
         }
     }
 
-    # get a reader for each InvIndex
+    # get a reader for each invindex
     my @readers
-        = map { KinoSearch::Index::IndexReader->open( invindex => $_ ) }
+        = map { KinoSearch::Index::IndexReader->new( invindex => $_ ) }
         @invindexes;
+
+    # merge finfos and init
+    for my $reader (@readers) {
+        $self->{finfos}->consolidate( $reader->get_finfos );
+    }
+    $self->_delayed_init;
 
     # add all segments in each of the supplied invindexes
     my $seg_writer = $self->{seg_writer};
@@ -147,153 +255,157 @@ sub add_invindexes {
 }
 
 sub delete_docs_by_term {
-    confess(  "delete_docs_by_term() has been replaced by delete_by_term(), "
-            . "which has slightly different behavior -- see InvIndexer's docs"
-    );
-}
-
-sub delete_by_term {
-    my ( $self, $field_name, $term_text ) = @_;
-
-    # bail if this is a new InvIndex
-    return unless $self->{reader};
-
-    # raise exception if the field isn't indexed
-    my $field_spec = $self->{schema}->fetch_fspec($field_name);
-    confess("$field_name is not an indexed field")
-        unless ( defined $field_spec and $field_spec->indexed );
-
-    # create a term, analyze it, and ask the reader to delete docs with it
-    my $term;
-    if ( $field_spec->analyzed ) {
-        my $analyzer = $self->{schema}->fetch_analyzer($field_name);
-        my ($analyzed_text) = $analyzer->analyze_raw($term_text);
-        $term = KinoSearch::Index::Term->new( $field_name, $analyzed_text );
-    }
-    else {
-        $term = KinoSearch::Index::Term->new( $field_name, $term_text );
-    }
+    my ( $self, $term ) = @_;
+    confess("Not a KinoSearch::Index::Term")
+        unless a_isa_b( $term, 'KinoSearch::Index::Term' );
+    return               unless $self->{reader};
+    $self->_delayed_init unless $self->{state} == INITIALIZED;
     $self->{reader}->delete_docs_by_term($term);
 
-    # trigger write later
-    $self->{has_deletions} = 1;
 }
 
-our %finish_defaults = ( optimize => 0 );
+our %finish_defaults = ( optimize => 0, );
 
 sub finish {
     my $self = shift;
     confess kerror() unless verify_args( \%finish_defaults, @_ );
     my %args = ( %finish_defaults, @_ );
-    my ( $folder, $seg_info, $seg_infos, $seg_writer, $reader )
-        = @{$self}{qw( folder seg_info seg_infos seg_writer reader )};
 
-    # safety check
-    if ( !defined $self->{write_lock} ) {
-        confess("Can't call finish() more than once");
+    # if no changes were made to the index, don't write anything
+    if ( $self->{state} == UNINITIALIZED ) {
+        if ( !$args{optimize} ) {
+            return;
+        }
+        else {
+            $self->_delayed_init;
+        }
     }
+
+    my ( $invindex, $sinfos, $seg_writer )
+        = @{$self}{qw( invindex sinfos seg_writer )};
 
     # perform segment merging
-    my @to_merge
-        = $reader
-        ? $reader->segreaders_to_merge( $args{optimize} )
+    my @to_merge =
+          $self->{reader}
+        ? $self->{reader}->segreaders_to_merge( $args{optimize} )
         : ();
-    $seg_writer->add_segment($_)                   for @to_merge;
-    $seg_infos->delete_segment( $_->get_seg_name ) for @to_merge;
+    $seg_writer->add_segment($_)                for @to_merge;
+    $sinfos->delete_segment( $_->get_seg_name ) for @to_merge;
 
-    # write out new deletions
-    $self->{reader}->write_deletions if $self->{has_deletions};
+    # finish the segment
+    $seg_writer->finish;
 
-    # if docs were added, write a new segment
-    if ( $seg_info->get_doc_count or @to_merge ) {
-        # finish the segment and add its info to the 'segments' file
-        $seg_writer->finish;
-        $seg_infos->add_info( $seg_writer->get_seg_info );
+    # now that the seg is complete, write its info to the 'segments' file
+    my $doc_count = $seg_writer->get_doc_count;
+    if ($doc_count) {
+        $sinfos->add_info(
+            KinoSearch::Index::SegInfo->new(
+                seg_name  => $seg_writer->get_seg_name,
+                doc_count => $doc_count,
+                invindex  => $invindex,
+            )
+        );
     }
 
-    # write a new segments_XXX.yaml file if anything has changed
-    if (   $seg_info->get_doc_count
-        or $self->{has_deletions}
-        or @to_merge )
-    {
-        $seg_infos->write_infos($folder);
-    }
-
-    # close reader, so that we can delete its files if appropriate
-    $reader->close if defined $reader;
-
-    # purge obsolete files
-    $self->_purge_unused();
-
-    # realease the write lock, invalidating the invindexer
-    $self->_release_locks;
-}
-
-# Delete unused files.
-sub _purge_unused {
-    my $self   = shift;
-    my $folder = $self->{folder};
-
-    my $commit_lock = $self->{lock_factory}->make_lock(
+    # commit changes to the invindex
+    $invindex->run_while_locked(
         lock_name => COMMIT_LOCK_NAME,
         timeout   => COMMIT_LOCK_TIMEOUT,
+        do_body   => sub {
+            $self->{reader}->commit_deletions if defined $self->{reader};
+            $sinfos->write_infos($invindex);
+        },
     );
-    $commit_lock->clear_stale;
-    my $got_lock = $commit_lock->obtain;
 
-    if ($got_lock) {
-        my @deletions = $self->_discover_unused_files;
+    my @files_to_delete = $self->_generate_deletions_list( \@to_merge );
+    push @files_to_delete, $self->_read_delqueue;
 
-        # attempt to delete files -- if failure, no big deal, try again later
-        for my $deletion (@deletions) {
-            eval { $folder->delete_file($deletion) };
-        }
-        $commit_lock->release;
-    }
-    else {
-        warn "Can't obtain commit lock, skipping deletion of obsolete files";
-    }
+    # close reader, so that we can delete its files if appropriate
+    $self->{reader}->close if defined $self->{reader};
+
+    $self->_purge_merged(@files_to_delete);
+    $self->_release_locks;
+    $self->{state} = FINISHED;
 }
 
-# Return a list of all index files not locked by readers.
-sub _discover_unused_files {
-    my $self = shift;
-    my ( $schema, $folder, $lock_factory )
-        = @{$self}{qw( schema folder lock_factory )};
-    my @files       = $folder->list;
-    my @seg_infoses = ( $self->{seg_infos} );
-    for my $filename (@files) {
-        next unless $filename =~ /^(segments_\w+).yaml$/;
-        my $lock_name = $1;
-        my $read_lock = $lock_factory->make_shared_lock(
-            lock_name => $lock_name,
-            timeout   => 0,
-        );
-        next unless $read_lock->is_locked;
-        my $seg_infos = KinoSearch::Index::SegInfos->new( schema => $schema );
-        $seg_infos->read_infos( folder => $folder, filename => $filename );
-        push @seg_infoses, $seg_infos;
+# Given an array of SegReaders, return a list of their files.
+sub _generate_deletions_list {
+    my ( $self, $readers_to_merge ) = @_;
+    my $invindex      = $self->{invindex};
+    my @segs_to_merge = map { $_->get_seg_name } @$readers_to_merge;
+    my @deletions     = grep { $invindex->file_exists($_) }
+        map { ( "$_.cfs", "$_.del" ) } @segs_to_merge;
+    return @deletions;
+}
+
+# Retrieve a list of files that weren't successfully deleted before.
+sub _read_delqueue {
+    my ( $self, $readers_to_merge ) = @_;
+    my $invindex = $self->{invindex};
+    my @deletions;
+
+    if ( $invindex->file_exists('delqueue') ) {
+        my $instream     = $invindex->open_instream('delqueue');
+        my $num_in_queue = $instream->lu_read('i');
+        @deletions = $instream->lu_read("T$num_in_queue");
+        $instream->close;
     }
-    return unused_files( \@files, @seg_infoses );
+
+    return @deletions;
+}
+
+# Delete segments that have been folded into the new segment.
+sub _purge_merged {
+    my ( $self, @deletions ) = @_;
+    my $invindex = $self->{invindex};
+
+    my @delqueue;
+    for my $deletion (@deletions) {
+        eval { $invindex->delete_file($deletion) };
+        # Win32: if the deletion fails (because a reader is open), queue it
+        if ( $@ and $invindex->file_exists($deletion) ) {
+            push @delqueue, $deletion;
+        }
+    }
+
+    $self->_write_delqueue(@delqueue);
+}
+
+sub _write_delqueue {
+    my ( $self, @delqueue ) = @_;
+    my $invindex  = $self->{invindex};
+    my $num_files = scalar @delqueue;
+
+    if ($num_files) {
+        # we have files that weren't successfully deleted, so write list
+        my $outstream = $invindex->open_outstream('delqueue.new');
+        $outstream->lu_write( "iT$num_files", $num_files, @delqueue );
+        $outstream->close;
+        $invindex->rename_file( 'delqueue.new', 'delqueue' );
+    }
+    elsif ( $invindex->file_exists('delqueue') ) {
+        # no files to delete, so delete the delqueue file if it's there
+        $invindex->delete_file('delqueue');
+    }
 }
 
 # Release the write lock - if it's there.
 sub _release_locks {
     my $self = shift;
     if ( defined $self->{write_lock} ) {
-        $self->{write_lock}->release;
+        $self->{write_lock}->release if $self->{write_lock}->is_locked;
         undef $self->{write_lock};
     }
 }
 
-# Generate segment names.
+# Generate segment names (no longer Lucene compatible, as of 0.06).
 sub _new_seg_name {
     my $self = shift;
 
-    my $counter = $self->{seg_infos}->get_seg_counter;
-    $self->{seg_infos}->set_seg_counter( ++$counter );
+    my $counter = $self->{sinfos}->get_counter;
+    $self->{sinfos}->set_counter( ++$counter );
 
-    return '_' . to_base36($counter);
+    return "_$counter";
 }
 
 sub DESTROY { shift->_release_locks }
@@ -304,105 +416,174 @@ __END__
 
 =head1 NAME
 
-KinoSearch::InvIndexer - Build inverted indexes.
+KinoSearch::InvIndexer - build inverted indexes
+
+=head1 WARNING
+
+KinoSearch is alpha test software.  The API and the file format are subject to
+change.
 
 =head1 SYNOPSIS
 
     use KinoSearch::InvIndexer;
-    use MySchema;
+    use KinoSearch::Analysis::PolyAnalyzer;
+
+    my $analyzer
+        = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
 
     my $invindexer = KinoSearch::InvIndexer->new(
-        invindex => MySchema->clobber('/path/to/invindex'),
+        invindex => '/path/to/invindex',
+        create   => 1,
+        analyzer => $analyzer,
     );
 
-    while ( my ( $title, $content ) = each %source_docs ) {
-        $invindexer->add_doc({
-            title   => $title,
-            content => $content,
-        });
+    $invindexer->spec_field( 
+        name  => 'title' 
+        boost => 3,
+    );
+    $invindexer->spec_field( name => 'bodytext' );
+
+    while ( my ( $title, $bodytext ) = each %source_documents ) {
+        my $doc = $invindexer->new_doc($title);
+
+        $doc->set_value( title    => $title );
+        $doc->set_value( bodytext => $bodytext );
+
+        $invindexer->add_doc($doc);
     }
 
     $invindexer->finish;
 
 =head1 DESCRIPTION
 
-The InvIndexer class is KinoSearch's primary tool for managing the content of
-inverted indexes, which may later be searched using L<KinoSearch::Searcher>.
-
-=head2 Concurrency
-
-Only one InvIndexer may write to an invindex at a time.  If a write lock
-cannot be secured, new() will throw an exception.
-
-If an index is located on a shared volume, each writer application must
-identify itself by passing a L<LockFactory|KinoSearch::StoreLockFactory> to
-InvIndexer's constructor or index corruption will occur.
+The InvIndexer class is KinoSearch's primary tool for creating and
+modifying inverted indexes, which may be searched using
+L<KinoSearch::Searcher|KinoSearch::Searcher>.
 
 =head1 METHODS
 
 =head2 new
 
-    my $invindex = MySchema->clobber('/path/to/invindex');
     my $invindexer = KinoSearch::InvIndexer->new(
-        invindex     => $invindex,  # required
-        lock_factory => $factory    # default: created internally 
+        invindex => '/path/to/invindex',  # required
+        create   => 1,                    # default: 0
+        analyzer => $analyzer,            # default: no-op Analyzer
     );
 
-Constructor.  Takes labeled parameters.
+Create an InvIndexer object.  
 
 =over
 
 =item *
 
-B<invindex> - An object which isa L<KinoSearch::InvIndex>.
+B<invindex> - can be either a filepath, or an InvIndex subclass such as
+L<KinoSearch::Store::FSInvIndex|KinoSearch::Store::FSInvIndex> or 
+L<KinoSearch::Store::RAMInvIndex|KinoSearch::Store::RAMInvIndex>.
 
 =item *
 
-B<lock_factory> - An object which isa L<KinoSearch::StoreLockFactory>.
+B<create> - create a new invindex, clobbering an existing one if necessary.
+
+=item *
+
+B<analyzer> - an object which subclasses L<KinoSearch::Analysis::Analyzer>,
+such as a L<PolyAnalyzer|KinoSearch::Analysis::PolyAnalyzer>.
 
 =back
+
+=head2 spec_field
+
+    $invindexer->spec_field(
+        name       => 'url',      # required
+        boost      => 1,          # default: 1,
+        analyzer   => undef,      # default: analyzer spec'd in new()
+        indexed    => 0,          # default: 1
+        analyzed   => 0,          # default: 1
+        stored     => 1,          # default: 1
+        compressed => 0,          # default: 0
+        vectorized => 0,          # default: 1
+    );
+
+Define a field. 
+
+=over
+
+=item *
+
+B<name> - the field's name.
+
+=item *
+
+B<boost> - A multiplier which determines how much a field contributes
+to a document's score.  
+
+=item *
+
+B<analyzer> - By default, all indexed fields are analyzed using the analyzer
+that was supplied to new().  Supplying an alternate for a given field
+overrides the primary analyzer.
+
+=item *
+
+B<indexed> - index the field, so that it can be searched later.
+
+=item *
+
+B<analyzed> - analyze the field, using the relevant Analyzer.  Fields such as
+"category" or "product_number" might be indexed but not analyzed.
+
+=item *
+
+B<stored> - store the field, so that it can be retrieved when the document
+turns up in a search.
+
+=item *
+
+B<compressed> - compress the stored field, using the zlib compression algorithm.
+
+=item *
+
+B<vectorized> - store the field's "term vectors", which are required by
+L<KinoSearch::Highlight::Highlighter|KinoSearch::Highlight::Highlighter> for
+excerpt selection and search term highlighting.
+
+=back
+
+=head2 new_doc
+
+    my $doc = $invindexer->new_doc;
+
+Spawn an empty L<KinoSearch::Document::Doc|KinoSearch::Document::Doc> object,
+primed to accept values for the fields spec'd by spec_field.
 
 =head2 add_doc
 
-    $invindexer->add_doc( { field_name => $field_value } );
-    # or ...
-    $invindexer->add_doc( { field_name => $field_value }, boost => 2.5 );
+    $invindexer->add_doc($doc);
 
-Add a document to the invindex.  The first argument must be a reference to hash
-comprised of field_name => field_value pairs.  Ownership of the hash is assumed
-by the InvIndexer object.  
-
-After the hashref, labeled parameters are accepted.
-
-=over
-
-=item *
-
-B<boost> - A scoring multiplier.  Setting boost to something other than 1
-causes a document to score better or worse against a given query relative to
-other documents. 
-
-=back
+Add a document to the invindex.
 
 =head2 add_invindexes
 
+    my $invindexer = KinoSearch::InvIndexer->new( 
+        invindex => $invindex,
+        analyzer => $analyzer,
+    );
     $invindexer->add_invindexes( $another_invindex, $yet_another_invindex );
+    $invindexer->finish;
 
-Absorb existing invindexes into this one.  The other invindexes must use the
-same Schema as the invindex which was supplied to new().
+Absorb existing invindexes into this one.  May only be called once per
+InvIndexer.  add_invindexes() and add_doc() cannot be called on the same
+InvIndexer.
 
-=head2 delete_by_term
+=head2 delete_docs_by_term
 
-    $invindexer->delete_by_term( $field_name, $term_text );
+    my $term = KinoSearch::Index::Term->new( 'id', $unique_id );
+    $invindexer->delete_docs_by_term($term);
 
-Mark documents which contain the supplied term as deleted, so that they will
-be excluded from search results.  The change is not apparent to search apps
-until a new Searcher is opened I<after> finish() completes.
-
-If the field is associated with an analyzer, C<$term_text> will be
-processed automatically (so don't pre-process it yourself).
-
-C<$field_name>  must identify an I<indexed> field, or an error will occur.
+Mark any document which contains the supplied term as deleted, so that it will
+be excluded from search results.  For more info, see
+L<Deletions|KinoSearch::Docs::FileFormat/Deletions> in
+KinoSearch::Docs::FileFormat.
 
 =head2 finish 
 
@@ -410,22 +591,15 @@ C<$field_name>  must identify an I<indexed> field, or an error will occur.
         optimize => 1, # default: 0
     );
 
-Finish processing any changes made to the invindex and commit.  Until the
-commit happens near the end of the finish(), none of the changes made during
-an indexing session are permanent.
-
-Calling finish() invalidates the InvIndexer, so if you want to make more
-changes you'll need a new one.
-
-Takes one labeled parameter:
+Finish the invindex.  Invalidates the InvIndexer.  Takes one hash-style
+parameter.
 
 =over
 
 =item *
 
 B<optimize> - If optimize is set to 1, the invindex will be collapsed to its
-most compact form, a process which may take a while -- but which will yield
-the fastest queries at search time.
+most compact form, which will yield the fastest queries.
 
 =back
 
@@ -435,6 +609,8 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =cut
+
+

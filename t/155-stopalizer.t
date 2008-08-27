@@ -1,19 +1,25 @@
+#!/usr/bin/perl
 use strict;
 use warnings;
-use lib 'buildlib';
 
-use Test::More tests => 8;
-use KinoTestUtils qw( test_analyzer );
+use Test::More tests => 2;
 
-use KinoSearch::Analysis::Stopalizer;
+BEGIN { use_ok('KinoSearch::Analysis::Stopalizer') }
+use KinoSearch::Analysis::TokenBatch;
 use KinoSearch::Analysis::Tokenizer;
-use KinoSearch::Analysis::PolyAnalyzer;
+
+my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
+
+my $batch = KinoSearch::Analysis::TokenBatch->new;
+$batch->append( "i am the walrus", 0, 5 );
+$batch = $tokenizer->analyze($batch);
 
 my $stopalizer = KinoSearch::Analysis::Stopalizer->new( language => 'en' );
-test_analyzer( $stopalizer, 'the', [], "single stopword stopalized" );
+$batch = $stopalizer->analyze($batch);
 
-my $tokenizer    = KinoSearch::Analysis::Tokenizer->new;
-my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
-    analyzers => [ $tokenizer, $stopalizer ], );
-test_analyzer( $polyanalyzer, 'i am the walrus',
-    ['walrus'], "multiple stopwords stopalized" );
+my @token_texts;
+while ( $batch->next ) {
+    push @token_texts, $batch->get_text;
+}
+is_deeply( \@token_texts, [ '', '', '', 'walrus' ], "stopwords stopalized" );
+

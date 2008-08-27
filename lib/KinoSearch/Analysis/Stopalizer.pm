@@ -1,34 +1,35 @@
+package KinoSearch::Analysis::Stopalizer;
 use strict;
 use warnings;
-
-package KinoSearch::Analysis::Stopalizer;
 use KinoSearch::Util::ToolSet;
 use base qw( KinoSearch::Analysis::Analyzer );
 
-our %instance_vars = (
-    # inherited
-    language => '',
-
-    # constructor params / members
-    stoplist => undef,
-);
+BEGIN {
+    __PACKAGE__->init_instance_vars(
+        # constructor params / members
+        stoplist => undef,
+    );
+}
 
 use Lingua::StopWords;
 
 sub init_instance {
-    my $self = shift;
+    my $self     = shift;
     my $language = $self->{language} = lc( $self->{language} );
 
     # verify a supplied stoplist
     if ( defined $self->{stoplist} ) {
-        confess("stoplist must be a hashref")
+        croak("stoplist must be a hashref")
             unless reftype( $self->{stoplist} ) eq 'HASH';
     }
     else {
         # create a stoplist if language was supplied
-        if ( $language =~ /^(?:da|de|en|es|fi|fr|it|nl|no|pt|ru|sv)$/ ) {
-            $self->{stoplist}
-                = Lingua::StopWords::getStopWords( $language, 'UTF-8' );
+        if ( $language =~ /^(?:da|de|en|es|fr|it|nl|no|pt|ru|sv)$/ ) {
+            $self->{stoplist} = Lingua::StopWords::getStopWords($language);
+        }
+        # No Finnish stoplist, though we have a stemmmer.
+        elsif ( $language eq 'fi' ) {
+            $self->{stoplist} = {};
         }
         else {
             confess "Invalid language: '$language'";
@@ -45,32 +46,69 @@ __XS__
 MODULE = KinoSearch   PACKAGE = KinoSearch::Analysis::Stopalizer
 
 SV*
-analyze_batch(self_hash, batch)
+analyze(self_hash, batch_sv)
     HV *self_hash;
-    kino_TokenBatch *batch;
+    SV *batch_sv;
+PREINIT:
+    TokenBatch *batch;
 CODE:
-{
-    kino_TokenBatch *new_batch = kino_TokenBatch_new(NULL);
-    SV *stoplist_ref = extract_sv(self_hash, SNL("stoplist"));
-    HV  *stoplist_hv = (HV*)SvRV(stoplist_ref);
-    kino_Token *token;
+    Kino_extract_struct( batch_sv, batch, TokenBatch*,
+        "KinoSearch::Analysis::TokenBatch");
+    Kino_Stopalizer_analyze(self_hash, batch);
+    SvREFCNT_inc(batch_sv);
+    RETVAL = batch_sv;
+OUTPUT: RETVAL
+    
+__H__
 
-    while ((token = Kino_TokenBatch_Next(batch)) != NULL) {
-        if (!hv_exists(stoplist_hv, token->text, token->len)) {
-            Kino_TokenBatch_Append(new_batch, token);
+#ifndef H_KINOSEARCH_ANALYSIS_STOPALIZER
+#define H_KINOSEARCH_ANALYSIS_STOPALIZER 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchAnalysisToken.h"
+#include "KinoSearchAnalysisTokenBatch.h"
+#include "KinoSearchUtilVerifyArgs.h"
+
+TokenBatch* Kino_Stopalizer_analyze(HV*, TokenBatch*);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchAnalysisStopalizer.h"
+
+TokenBatch*
+Kino_Stopalizer_analyze(HV* self_hash, TokenBatch *batch) {
+    SV         **sv_ptr;
+    HV          *stoplist_hv;
+    Token       *token;
+
+    sv_ptr = hv_fetch(self_hash, "stoplist", 8, 0);
+    if (sv_ptr == NULL)
+        Kino_confess("no element 'stoplist'");
+    if (!SvROK(*sv_ptr))
+        Kino_confess("not a hashref");
+    stoplist_hv = (HV*)SvRV(*sv_ptr);
+    Kino_Verify_extract_arg(self_hash, "stoplist", 8);
+
+    while (Kino_TokenBatch_next(batch)) {
+        token = batch->current;
+        if (hv_exists(stoplist_hv, token->text, token->len)) {
+            token->len = 0;
         }
     }
 
-    RETVAL = kobj_to_pobj(new_batch);
-    REFCOUNT_DEC(new_batch);
+    Kino_TokenBatch_reset(batch);
+    return batch;
 }
-OUTPUT: RETVAL
     
 __POD__
 
 =head1 NAME
 
-KinoSearch::Analysis::Stopalizer - Suppress a "stoplist" of common words.
+KinoSearch::Analysis::Stopalizer - suppress a "stoplist" of common words
 
 =head1 SYNOPSIS
 
@@ -92,7 +130,7 @@ performance and relevance to block them.
     @token_texts = ('i', 'am', 'the', 'walrus');
     
     # after
-    @token_texts = ('walrus');
+    @token_texts = ('',  '',   '',    'walrus');
 
 =head1 CONSTRUCTOR
 
@@ -122,13 +160,13 @@ values set to 1.
 =item
 
 B<language> - must be the ISO code for a language.  Loads a default stoplist
-supplied by L<Lingua::StopWords>.
+supplied by L<Lingua::StopWords|Lingua::StopWords>.
 
 =back
 
 =head1 SEE ALSO
 
-L<Lingua::StopWords>
+L<Lingua::StopWords|Lingua::StopWords>
 
 =head1 COPYRIGHT
 
@@ -136,6 +174,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =cut
+

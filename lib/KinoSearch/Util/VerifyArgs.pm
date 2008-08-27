@@ -1,7 +1,6 @@
+package KinoSearch::Util::VerifyArgs;
 use strict;
 use warnings;
-
-package KinoSearch::Util::VerifyArgs;
 
 use Scalar::Util qw( blessed );
 use Carp;
@@ -59,13 +58,99 @@ sub a_isa_b {
 
 __END__
 
+
+__H__
+
+#ifndef H_KINO_VERIFY_ARGS
+#define H_KINO_VERIFY_ARGS 1
+
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+#include "KinoSearchUtilCarp.h"
+
+/* Return a mortalized hash, built using a defaults hash and @_.
+ */
+#define Kino_Verify_build_args_hash(args_hash, defaults_hash_name, stack_st)\
+    /* dXSARGS in the next function pops a stack marker, so we push one */  \
+    PUSHMARK(SP);                                                           \
+    args_hash = Kino_Verify_do_build_args_hash(defaults_hash_name, stack_st);
+
+HV* Kino_Verify_do_build_args_hash(char*, I32);
+SV* Kino_Verify_extract_arg(HV*, char*, I32);
+
+#endif /* include guard */
+
+__C__
+
+#include "KinoSearchUtilVerifyArgs.h"
+
+HV*
+Kino_Verify_do_build_args_hash(char* defaults_hash_name, I32 stack_st) {
+    HV     *defaults_hash, *args_hash;
+    char   *key;
+    I32     key_len;
+    STRLEN  len;
+    SV     *key_sv, *val_sv, *val_copy_sv;
+    I32     stack_pos;
+
+    dXSARGS;
+
+    /* create the args hash and mortalize it */
+    args_hash = newHV();
+    args_hash = (HV*)sv_2mortal( (SV*)args_hash );
+
+    /* NOTE: the defaults hash must be declared using "our" */
+    defaults_hash = get_hv(defaults_hash_name, 0);
+    if (defaults_hash == NULL)
+        Kino_confess("Can't find hash named %s", defaults_hash_name);
+
+    /* make the args hash a copy of the defaults hash */
+    (void)hv_iterinit(defaults_hash);
+    while ((val_sv = hv_iternextsv(defaults_hash, &key, &key_len))) {
+        val_copy_sv = newSVsv(val_sv);
+        hv_store(args_hash, key, key_len, val_copy_sv, 0);
+    }
+
+    /* verify and copy hash-style params into args hash from stack */
+    if ((items - stack_st) % 2 != 0)
+        Kino_confess("Expecting hash-style params, "
+            "got odd number of args");
+    stack_pos = stack_st;
+    while (stack_pos < items) {
+        key_sv = ST(stack_pos++);
+        key = SvPV(key_sv, len);
+        key_len = len;
+        if (!hv_exists(args_hash, key, key_len)) {
+            Kino_confess("Invalid parameter: '%s'", key);
+        }
+        val_sv = ST(stack_pos++);
+        val_copy_sv = newSVsv(val_sv);
+        hv_store(args_hash, key, key_len, val_copy_sv, 0);
+    }
+    
+    return args_hash;
+}
+
+
+SV* 
+Kino_Verify_extract_arg(HV* hash, char* key, I32 key_len) {
+    SV** sv_ptr;
+
+    sv_ptr = hv_fetch(hash, key, key_len, 0);
+    if (sv_ptr == NULL)
+        Kino_confess("Failed to retrieve hash entry '%s'", key);
+    return *sv_ptr;
+}
+
+
 __POD__
 
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Util::VerifyArgs - Some validation functions.
+KinoSearch::Util::VerifyArgs - some validation functions
 
 =head1 DESCRIPTION
 
@@ -77,7 +162,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =end devdocs
 =cut

@@ -1,7 +1,6 @@
+package KinoSearch::Util::ToStringUtils;
 use strict;
 use warnings;
-
-package KinoSearch::Util::ToStringUtils;
 use KinoSearch::Util::ToolSet;
 use base qw( Exporter );
 
@@ -19,9 +18,9 @@ __END__
 
 =begin devdocs
 
-=head1 PRIVATE CLASS
+=head1 NAME
 
-KinoSearch::Util::ToStringUtils - Common routines which aid stringification.
+KinoSearch::Util::ToStringUtils - common routines which aid stringification
 
 =head1 DESCRIPTION
 
@@ -33,7 +32,7 @@ Copyright 2005-2007 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch> version 0.20.
+See L<KinoSearch|KinoSearch> version 0.163.
 
 =end devdocs
 =cut
