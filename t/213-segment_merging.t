@@ -2,8 +2,10 @@ use strict;
 use warnings;
 
 use lib 't';
-use Test::More tests => 9;
+use Test::More tests => 10;
 use File::Path qw( rmtree );
+use File::Spec::Functions qw( catfile );
+use File::stat qw( stat );
 
 BEGIN {
     use_ok('KinoSearch::InvIndexer');
@@ -18,13 +20,21 @@ my ( $invindexer, $searcher, $hits, $another_invindex,
     $yet_another_invindex );
 my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
 
+my $fake_norm_file = catfile( $invindex_loc, '_4.f0' );
+
 sub init_invindexer {
+    my %args = @_;
     undef $invindexer;
     $invindexer = KinoSearch::InvIndexer->new(
         invindex => $invindex_loc,
         analyzer => $tokenizer,
-        @_,
+        %args,
     );
+    if ( $args{create} ) {
+        open( my $fh, '>', $fake_norm_file )
+            or die "can't open $fake_norm_file: $!";
+        print $fh "blah";
+    }
     $invindexer->spec_field( name => 'letters' );
 }
 
@@ -43,6 +53,8 @@ for my $num_letters ( reverse 1 .. 10 ) {
     }
     $invindexer->finish;
 }
+
+ok( !-f $fake_norm_file, "overwrote fake leftover norm file" );
 
 $searcher = KinoSearch::Searcher->new(
     invindex => $invindex_loc,

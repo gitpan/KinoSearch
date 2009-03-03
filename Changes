@@ -1,5 +1,8 @@
 Revision history for KinoSearch
 
+0.164 2009-03-03
+  * Recover from crashed indexed sessions more gracefully.
+
 0.163 2008-08-27
   * Fix bug affecting users who make frequent deletions.
   * Minor portability tweaks, mostly to prevent spurious test failures.

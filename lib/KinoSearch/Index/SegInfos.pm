@@ -77,8 +77,10 @@ sub read_infos {
 # Write "segments" file
 sub write_infos {
     my ( $self, $invindex ) = @_;
-    my $num_segs  = scalar keys %{ $self->{infos} };
-    my $outstream = $invindex->open_outstream('segments.new');
+    my $num_segs = scalar keys %{ $self->{infos} };
+    my $tempname = 'segments.new';
+    $invindex->delete_file($tempname) if $invindex->file_exists($tempname);
+    my $outstream = $invindex->open_outstream($tempname);
 
     # prepare header
     $self->{version}++;
@@ -96,7 +98,7 @@ sub write_infos {
     $outstream->close;
 
     # clobber the old segments file
-    $invindex->rename_file( "segments.new", "segments" );
+    $invindex->rename_file( $tempname, "segments" );
 }
 
 package KinoSearch::Index::SegInfo;
@@ -133,11 +135,11 @@ counter used to name new segments.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2009 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.163.
+See L<KinoSearch|KinoSearch> version 0.164.
 
 =end devdocs
 =cut

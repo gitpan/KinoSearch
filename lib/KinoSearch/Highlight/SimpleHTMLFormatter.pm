@@ -69,10 +69,10 @@ highlightable text.
 
 =head1 COPYRIGHT
 
-Copyright 2006-2007 Marvin Humphrey
+Copyright 2006-2009 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.163.
+See L<KinoSearch|KinoSearch> version 0.164.
 
 =cut

@@ -20,11 +20,13 @@ sub new {
     my $class = shift;
     confess kerror() unless verify_args( \%instance_vars, @_ );
     my %args = ( %instance_vars, @_ );
+    my $invindex = $args{invindex};
 
     # open an outstream
     my $suffix = $args{is_index} ? 'tii' : 'tis';
-    my $outstream
-        = $args{invindex}->open_outstream("$args{seg_name}.$suffix");
+    my $filename = "$args{seg_name}.$suffix";
+    $invindex->delete_file($filename) if $invindex->file_exists($filename);
+    my $outstream = $args{invindex}->open_outstream($filename);
 
     my $self = _new( $outstream,
         @args{qw( is_index index_interval skip_interval )} );
@@ -32,7 +34,7 @@ sub new {
     # create the tii doppelganger
     if ( !$args{is_index} ) {
         my $other = __PACKAGE__->new(
-            invindex => $args{invindex},
+            invindex => $invindex,
             seg_name => $args{seg_name},
             is_index => 1,
         );
@@ -340,11 +342,11 @@ Find the optimum TermIndexInterval.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2009 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.163.
+See L<KinoSearch|KinoSearch> version 0.164.
 
 =end devdocs
 =cut

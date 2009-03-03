@@ -18,14 +18,16 @@ sub new {
     my $class = shift;
     verify_args( \%instance_vars, @_ );
     my %args = ( %instance_vars, @_ );
+    my $invindex = $args{invindex};
 
     $class = ref($class) || $class;
 
-    my $outstream = $args{invindex}->open_outstream("$args{seg_name}.srt");
+    my $filename = "$args{seg_name}.srt";
+    $invindex->delete_file($filename) if $invindex->file_exists($filename);
+    my $outstream = $invindex->open_outstream($filename);
 
     return _new( $class, $outstream,
         @args{qw( invindex seg_name mem_threshold )} );
-
 }
 
 # Prepare to start fetching sorted results.
@@ -829,11 +831,11 @@ External sorting implementation, using lexical comparison.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2009 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.163.
+See L<KinoSearch|KinoSearch> version 0.164.
 
 =end devdocs
 =cut

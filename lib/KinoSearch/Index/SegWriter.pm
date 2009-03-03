@@ -37,8 +37,10 @@ sub init_instance {
     my @indexed_field_nums = map { $_->get_field_num }
         grep { $_->get_indexed } $finfos->get_infos;
     for my $field_num (@indexed_field_nums) {
-        $norm_outstreams->[$field_num]
-            = $invindex->open_outstream("$seg_name.f$field_num");
+        my $filename = "$seg_name.f$field_num";
+        $invindex->delete_file($filename)
+            if $invindex->file_exists($filename);
+        $norm_outstreams->[$field_num] = $invindex->open_outstream($filename);
     }
 
     # init FieldsWriter
@@ -161,6 +163,8 @@ sub finish {
     $self->{postings_writer}->write_postings;
 
     # write FieldInfos
+    my $fnm_file = "$seg_name.fnm";
+    $invindex->delete_file($fnm_file) if $invindex->file_exists($fnm_file);
     my $finfos_outstream = $invindex->open_outstream("$seg_name.fnm");
     $self->{finfos}->write_infos($finfos_outstream);
     $finfos_outstream->close;
@@ -270,11 +274,11 @@ its way to low-level writers such as FieldsWriter and TermInfosWriter.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2009 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.163.
+See L<KinoSearch|KinoSearch> version 0.164.
 
 =end devdocs
 =cut

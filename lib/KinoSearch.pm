@@ -4,7 +4,7 @@ use warnings;
 
 use 5.008003;
 
-our $VERSION = '0.163';
+our $VERSION = '0.164';
 
 use constant K_DEBUG => 0;
 
@@ -66,7 +66,7 @@ KinoSearch - search engine library
 
 =head1 VERSION
 
-0.163
+0.164
 
 =head1 BACKWARDS COMPATIBILITY POLICY 
 
@@ -255,7 +255,7 @@ L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=KinoSearch>.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2005-2008 Marvin Humphrey
+Copyright 2005-2009 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

@@ -17,13 +17,17 @@ BEGIN {
 use Compress::Zlib qw( compress );
 
 sub init_instance {
-    my $self = shift;
+    my $self     = shift;
+    my $invindex = $self->{invindex};
 
     # open an index stream and a data stream.
-    $self->{findex_stream}
-        = $self->{invindex}->open_outstream("$self->{seg_name}.fdx");
-    $self->{fdata_stream}
-        = $self->{invindex}->open_outstream("$self->{seg_name}.fdt");
+    my $fdx_file = "$self->{seg_name}.fdx";
+    my $fdt_file = "$self->{seg_name}.fdt";
+    for ( $fdx_file, $fdt_file, ) {
+        $invindex->delete_file($_) if $invindex->file_exists($_);
+    }
+    $self->{findex_stream} = $invindex->open_outstream($fdx_file);
+    $self->{fdata_stream}  = $invindex->open_outstream($fdt_file);
 }
 
 sub add_doc {
@@ -107,11 +111,11 @@ field index files.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2007 Marvin Humphrey
+Copyright 2005-2009 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.163.
+See L<KinoSearch|KinoSearch> version 0.164.
 
 =end devdocs
 =cut
