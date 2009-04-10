@@ -1,5 +1,8 @@
 Revision history for KinoSearch
 
+0.165 2009-04-09
+  * Fix char promotion issue on PowerPC architectures. (RT #39689 and #44896)
+
 0.164 2009-03-03
   * Recover from crashed indexed sessions more gracefully.
 
