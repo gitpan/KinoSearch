@@ -1,0 +1,75 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::NOTQuery - Invert the result set of another Query.
+
+=head1 SYNOPSIS
+
+    my $not_bar_query = KinoSearch::Search::NOTQuery->new( 
+        negated_query => $bar_query,
+    );
+    my $foo_and_not_bar_query = KinoSearch::Search::ANDQuery->new;
+    $foo_and_not_bar_query->add_child($foo_query);
+    $foo_and_not_bar_query->add_child($not_bar_query);
+    my $hits = $searcher->hits( query => $foo_and_not_bar_query );
+    ...
+
+
+
+=head1 DESCRIPTION
+
+A NOTQuery wraps another Query and matches against its inverse document
+set.  All matching docs recieve a score of 0.0.
+
+NOTQuery is often used in conjunction with ANDQuery to provide 
+"a AND NOT b" semantics.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $not_query = KinoSearch::Search::NOTQuery->new( 
+        negated_query => $query,
+    );
+
+=over
+
+=item *
+
+B<negated_query> - The Query whose result set should be inverted.
+
+=back
+
+
+
+=head1 METHODS
+
+=head2 get_negated_query()
+
+Accessor for the object's negated query.
+
+=head2 set_negated_query(negated_query)
+
+Setter for the object's negated query.
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::NOTQuery isa L<KinoSearch::Search::PolyQuery> isa L<KinoSearch::Search::Query> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

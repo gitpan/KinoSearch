@@ -1,0 +1,48 @@
+parcel KinoSearch cnick Kino;
+
+/** 
+ * Abstract encoder/decoder.
+ * 
+ * Many KinoSearch files consist of a single variable length record type
+ * repeated over and over.  A Stepper both reads and writes such a file.
+ * 
+ * Since the write algorithms for different Stepper types may require
+ * differing argument lists, it is left to the subclass to define the routine.
+ * 
+ * However, since all Stepper subclasses must implement Stepper_Read_Record,
+ * all of them may inherit the debugging aids Stepper_Dump and
+ * Stepper_Dump_To_File.
+ *
+ * Sometimes it is possible to change a file's format by changing only a
+ * Stepper.  In that case, a compatibility version of the old class may be
+ * squirreled away as a plugin, to be accessed only when reading files written
+ * to the old format.  This cuts down on special-case code in the most current
+ * version.
+ * 
+ * Furthermore, isolating I/O code within a Stepper typically clarifies the
+ * logic of the class which calls Stepper_Read_Record.
+ */
+
+class KinoSearch::Util::Stepper extends KinoSearch::Obj {
+
+    static Stepper*
+    init(Stepper *self);
+
+    /** Read the next record from the instream, storing state in [self].
+     */
+    abstract void
+    Read_Record(Stepper *self, InStream *instream);
+
+    /** Step through the file, writing Stepper_To_String() to the OutStream
+     * for each record until the stream's end is reached.
+     */
+    void
+    Dump_To_File(Stepper *self, InStream *instream, OutStream *outstream);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

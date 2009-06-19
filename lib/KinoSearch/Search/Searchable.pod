@@ -1,0 +1,165 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::Searchable - Base class for searchers.
+
+=head1 SYNOPSIS
+
+    # Abstract base class.
+
+
+
+=head1 DESCRIPTION
+
+Abstract base class for objects which search.  Core subclasses include
+L<KinoSearch::Searcher> and L<KinoSearch::Search::PolySearcher>.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    package MySearchable;
+    use base qw( KinoSearch::Search::Searchable );
+    sub new {
+        my $self = shift->SUPER::new;
+        ...
+        return $self;
+    }
+
+Abstract constructor.
+
+=over
+
+=item *
+
+B<schema> - A KinoSearch::Schema.
+
+=back
+
+
+
+=head1 METHODS
+
+=head2 hits( I<[labeled params]> )
+
+Return a Hits object containing the top results.
+
+=over
+
+=item *
+
+B<query> - Either a Query object or a query string.
+
+=item *
+
+B<offset> - The number of most-relevant hits to discard, typically
+used when "paging" through hits N at a time.  Setting
+C<< offset >> to 20 and C<< num_wanted >> to 10 retrieves
+hits 21-30, assuming that 30 hits can be found.
+
+=item *
+
+B<num_wanted> - The number of hits you would like to see after
+C<< offset >> is taken into account.
+
+=item *
+
+B<sort_spec> - A L<KinoSearch::Search::SortSpec>, which will affect
+how results are ranked and returned.
+
+=back
+
+=head2 glean_query(query)
+
+If the supplied object is a Query, return it; if it's a query string,
+create a QueryParser and parse it to produce a query against all
+indexed fields.
+
+=head2 get_schema()
+
+Accessor for the object's C<< schema >> member.
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 collect( I<[labeled params]> )
+
+Iterate over hits, feeding them into a
+L<HitCollector|KinoSearch::Search::HitCollector>.
+
+=over
+
+=item *
+
+B<query> - A Query.
+
+=item *
+
+B<collector> - A HitCollector.
+
+=back
+
+=head2 doc_max()
+
+Return the maximum number of docs in the collection represented by
+the Searchable, which is also the highest possible doc id.  Deleted
+docs are included in this count.
+
+=head2 doc_freq( I<[labeled params]> )
+
+Return the number of documents which contain the term in the given
+field.
+
+=over
+
+=item *
+
+B<field> - Field name.
+
+=item *
+
+B<term> - The term to look up.
+
+=back
+
+=head2 fetch_doc( I<[labeled params]> )
+
+Retrieve a document.  Throws an error if the doc id is out of range.
+
+=over
+
+=item *
+
+B<doc_id> - A document id.
+
+=item *
+
+B<score> - A floating point score.
+
+=item *
+
+B<offset> - Amount to be added to the doc_id if this Searchable is a
+subcomponent of another.
+
+=back
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::Searchable isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

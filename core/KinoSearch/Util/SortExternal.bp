@@ -1,0 +1,105 @@
+parcel KinoSearch cnick Kino;
+
+__C__
+#include <stddef.h>
+#include "KinoSearch/Obj.h"
+#include "KinoSearch/Util/MSort.h"
+
+#define KINO_SORTEX_DEFAULT_MEM_THRESHOLD 0x1000000
+#ifdef KINO_USE_SHORT_NAMES
+  #define SORTEX_DEFAULT_MEM_THRESHOLD KINO_SORTEX_DEFAULT_MEM_THRESHOLD
+#endif
+__END_C__
+
+/** External sorter.
+ */
+class KinoSearch::Util::SortExternal cnick SortEx
+    extends KinoSearch::Obj {
+
+    MSort_compare_t    compare;
+    Obj              **cache;    /* item cache, incoming and outgoing */
+    u32_t              cache_cap;   /* allocated limit for cache */
+    u32_t              cache_max;   /* number of elems in cache */ 
+    u32_t              cache_tick;  /* index of current element */
+    Obj              **scratch;     /* memory for use by mergesort */
+    u32_t              scratch_cap; /* allocated limit for scratch */
+    u32_t              mem_thresh;  /* mem allowed for cache elems */
+    u32_t              mem_consumed; /* mem occupied by cache elems */
+    SortExRun        **runs;
+    u32_t              num_runs;
+    bool_t             flipped;      /* force flip before fetch */ 
+
+    static SortExternal*
+    init(SortExternal *self, u32_t mem_thresh = 0x1000000,
+         MSort_compare_t compare);
+
+    /** Add an Obj to the sort pool.  The SortEx object takes control of the
+     * Obj, so it should not be modified post-feeding.
+     * 
+     * @param obj Item to add.
+     * @param bytes_this_obj Memory footprint of the object, for calculating
+     * progress towards flush threshold.
+     */
+    void
+    Feed(SortExternal *self, Obj *obj, u32_t bytes_this_obj);
+
+    /** Flip the sortex from write mode to read mode.
+     */
+    void
+    Flip(SortExternal *self);
+
+    /** Fetch the next sorted item from the sort pool.  Flip() must be
+     * called first.  Returns NULL when the sortex has been exhausted.
+     */
+    incremented Obj*
+    Fetch(SortExternal *self);
+
+    /** Preview the next item that Fetch will return, but don't pop it.
+     */
+    Obj*
+    Peek(SortExternal *self);
+
+    /** Sort all items currently in the main cache.
+     */
+    void
+    Sort_Cache(SortExternal *self);
+
+    /** Flush all elements currently in the cache.
+     *
+     * Presumably this entails sorting everything, then writing the sorted
+     * elements to disk and spawning an object which isa SortExRun to
+     * represent those elements.
+     */
+    abstract void
+    Flush(SortExternal *self);
+
+    /** Release items currently held in the cache, if any.  Reset all cache
+     * variables (mem_consumed, cache_max, etc).
+     */
+    void
+    Clear_Cache(SortExternal *self);
+
+    /** Add a run to the sortex's collection.
+     */
+    void
+    Add_Run(SortExternal *self, SortExRun *run);
+
+    void
+    Destroy(SortExternal *self);
+}
+
+__C__
+#define KINO_SORTEX_CACHE_COUNT(_self) \
+    (_self->cache_max - _self->cache_tick)
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define SORTEX_CACHE_COUNT(_self)     KINO_SORTEX_CACHE_COUNT(_self)
+#endif 
+__END_C__
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

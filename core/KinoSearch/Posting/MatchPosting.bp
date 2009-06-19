@@ -1,0 +1,71 @@
+parcel KinoSearch cnick Kino;
+
+/** Match but not score documents.
+ *
+ * Use MatchPosting for fields which only need to be matched, not scored.  For
+ * instance, if you need to determine that that a query matches a particular
+ * category, but don't want the match to contribute to the document score, use
+ * MatchPosting for the field.
+ */ 
+class KinoSearch::Posting::MatchPosting cnick MatchPost
+    extends KinoSearch::Posting {
+
+    Similarity *sim;
+    u32_t       freq;
+
+    static incremented MatchPosting*
+    new(Similarity *similarity);
+
+    static MatchPosting*
+    init(MatchPosting *self, Similarity *similarity);
+
+    void
+    Destroy(MatchPosting *self);
+
+    incremented MatchPosting*
+    Clone(MatchPosting *self);
+
+    void
+    Read_Record(MatchPosting *self, InStream *instream);
+
+    incremented RawPosting*
+    Read_Raw(MatchPosting *self, InStream *instream, i32_t last_doc_id, 
+             CharBuf *term_text, MemoryPool *mem_pool);
+
+    void
+    Add_Inversion_To_Pool(MatchPosting *self, PostingPool *post_pool, 
+                          Inversion *inversion, FieldType *type, 
+                          i32_t doc_id, float doc_boost, 
+                          float length_norm);
+
+    void
+    Reset(MatchPosting *self, i32_t doc_id);
+
+    public incremented MatchPostingScorer*
+    Make_Matcher(MatchPosting *self, Similarity *sim, PostingList *plist, 
+                 Compiler *compiler, bool_t need_score);
+
+}
+
+class KinoSearch::Posting::MatchPostingScorer cnick MatchPostScorer
+    extends KinoSearch::Search::TermScorer {
+
+    float *score_cache;
+
+    static MatchPostingScorer*
+    init(MatchPostingScorer *self, Similarity *similarity, 
+         PostingList *posting_list, Compiler *compiler);
+
+    public float
+    Score(MatchPostingScorer *self);
+
+    void
+    Destroy(MatchPostingScorer *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

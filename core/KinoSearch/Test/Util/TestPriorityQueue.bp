@@ -1,0 +1,23 @@
+parcel KinoSearch cnick Kino;
+
+class KinoSearch::Test::Util::NumPriorityQueue cnick NumPriQ
+    extends KinoSearch::Util::PriorityQueue {
+
+    static incremented NumPriorityQueue*
+    new(u32_t max_size);
+
+    public bool_t
+    Less_Than(NumPriorityQueue *self, Obj *a, Obj *b);
+}
+
+static class KinoSearch::Test::Util::TestPriorityQueue cnick TestPriQ {
+    static void
+    run_tests();
+}
+
+/* Copyright 2005-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

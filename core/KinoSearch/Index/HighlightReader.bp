@@ -1,0 +1,85 @@
+parcel KinoSearch cnick Kino;
+
+/** Read a segment's highlighting data.
+ *
+ * Read segment data used for creating highlighted excerpts.
+ */
+class KinoSearch::Index::HighlightReader cnick HLReader
+    extends KinoSearch::Index::DataReader {
+
+    static HighlightReader*
+    init(HighlightReader *self, Schema *schema = NULL, Folder *folder = NULL, 
+         Snapshot *snapshot = NULL, VArray *segments = NULL, 
+         i32_t seg_tick = -1);
+
+    /** Return the DocVector object for the given doc id.
+     */
+    public abstract incremented DocVector*
+    Fetch(HighlightReader *self, i32_t doc_id);
+
+    public incremented HighlightReader*
+    Aggregator(HighlightReader *self, VArray *readers, I32Array *offsets);
+}
+
+class KinoSearch::Index::PolyHighlightReader cnick PolyHLReader
+    extends KinoSearch::Index::HighlightReader {
+
+    VArray   *readers;
+    I32Array *offsets;
+
+    static incremented PolyHighlightReader*
+    new(VArray *readers, I32Array *offsets);
+
+    static PolyHighlightReader*
+    init(PolyHighlightReader *self, VArray *readers, I32Array *offsets);
+
+    public incremented DocVector*
+    Fetch(PolyHighlightReader *self, i32_t doc_id);
+
+    public void
+    Close(PolyHighlightReader *self);
+
+    void
+    Destroy(PolyHighlightReader *self);
+}
+
+class KinoSearch::Index::DefaultHighlightReader cnick DefHLReader
+    extends KinoSearch::Index::HighlightReader {
+
+    InStream *ix_in;
+    InStream *dat_in;
+
+    /* Constructors.
+     */
+    static incremented DefaultHighlightReader*
+    new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
+        i32_t seg_tick);
+
+    static DefaultHighlightReader*
+    init(DefaultHighlightReader *self, Schema *schema, Folder *folder, 
+         Snapshot *snapshot, VArray *segments, i32_t seg_tick);
+
+    /** Return the DocVector object for the given doc id.
+     */
+    public incremented DocVector*
+    Fetch(DefaultHighlightReader *self, i32_t doc_id);
+
+    /* Return the raw bytes of an entry.
+     */
+    void
+    Read_Record(DefaultHighlightReader *self, i32_t doc_id, 
+                ByteBuf *buffer);
+
+    public void
+    Close(DefaultHighlightReader *self);
+
+    void
+    Destroy(DefaultHighlightReader *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

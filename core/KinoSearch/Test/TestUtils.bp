@@ -1,0 +1,71 @@
+parcel KinoSearch cnick Kino;
+
+/** Test case object for QueryParser unit tests. 
+ */
+
+static class KinoSearch::Test::TestUtils  {
+
+    /** Testing-only CharBuf factory which uses strlen().
+     */
+    static incremented CharBuf* 
+    get_cb(const char *utf8);
+
+    /** Return a VArray of CharBufs, each representing the content for a
+     * document in the shared collection.
+     */
+    static incremented VArray*
+    doc_set();
+
+    /** Testing-only TermQuery factory.
+     */
+    static incremented TermQuery*
+    make_term_query(const char *field, const char *term);
+
+    /** Testing-only PhraseQuery factory.
+     */
+    static incremented PhraseQuery*
+    make_phrase_query(const char *field, ...);
+
+    /** Testing-only LeafQuery factory.
+     */
+    static incremented LeafQuery*
+    make_leaf_query(const char *field, const char *term);
+
+    /** Return a new NOTQuery, decrementing the refcount for
+     * <code>negated_query</code>.
+     */
+    static incremented NOTQuery*
+    make_not_query(Query *negated_query);
+
+    static incremented RangeQuery*
+    make_range_query(const char *field, const char *lower_term = NULL, 
+                     const char *upper_term = NULL, 
+                     bool_t include_lower = true, 
+                     bool_t include_upper = true);
+
+    /** Return either an ORQuery or an ANDQuery depending on the value of
+     * <code>boolop</code>.  Takes a NULL-terminated list of Query objects.
+     * Decrements the refcounts of all supplied children, under the assumption
+     * that they were created solely for inclusion within the aggregate query.
+     */
+    static incremented PolyQuery*
+    make_poly_query(u32_t boolop, ...);
+}
+
+__C__
+
+#define KINO_TESTUTILS_BOOLOP_OR  1
+#define KINO_TESTUTILS_BOOLOP_AND 2
+#ifdef KINO_USE_SHORT_NAMES
+  #define BOOLOP_OR        KINO_TESTUTILS_BOOLOP_OR
+  #define BOOLOP_AND       KINO_TESTUTILS_BOOLOP_AND
+#endif
+
+__END_C__
+
+/* Copyright 2005-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,131 @@
+parcel KinoSearch cnick Kino;
+
+/** Abstract class representing a directory.
+ * 
+ * The archetypal implementation of Folder,
+ * L<FSFolder|KinoSearch::Store::FSFolder>, is a single directory on the file
+ * system holding a collection of files.  However, to allow alternative
+ * implementations such as RAMFolder, i/o and file manipulation are abstracted
+ * out rather than executed directly by KinoSearch's classes.
+ * 
+ * A "file" within an folder might be a real file on disk -- or it might be a
+ * ram file.  Similarly, Delete() might delete a file from the file system, or
+ * a key-value pair from a hash, or something else.
+ */
+abstract class KinoSearch::Store::Folder extends KinoSearch::Obj {
+
+    CharBuf *path;
+
+    public static Folder*
+    init(Folder *self, const CharBuf *path);
+
+    /** Perform implementation-specific initialization.  For example: FSFolder
+     * creates its own directory.
+     */
+    public abstract void
+    Initialize(Folder *self);
+
+    /** Verify that operations may be performed on this Folder.
+     * 
+     * @return true on success.
+     */
+    public abstract bool_t 
+    Check(Folder *self);
+
+    /** Open an OutStream, or return NULL if the attempt fails.
+     *
+     * @param filepath A relative filepath.
+     * @return an OutStream.
+     */
+    abstract incremented OutStream*
+    Open_Out(Folder *self,  const CharBuf *filepath);
+
+    /** Open an InStream, or return NULL if the attempt fails.
+     * 
+     * @param filepath A relative filepath.
+     * @return an InStream, or NULL.
+     */
+    public incremented InStream*
+    Open_In(Folder *self, const CharBuf *filepath);
+
+    /** Open a FileDes for the given path.  
+     *
+     * @param filepath A relative filepath.
+     * @return a FileDes, or NULL if the opening attempt fails.
+     */
+    abstract incremented FileDes*
+    Open_FileDes(Folder *self, const CharBuf *filepath);
+
+    /** Create a directory.
+     * 
+     * @param path A relative path.
+     */
+    public abstract void
+    MkDir(Folder *self, const CharBuf *path);
+
+    /** Recursively list all files and directories in the Folder.
+     *
+     * @return an unsorted array of filepaths.
+     */
+    abstract incremented VArray*
+    List(Folder *self);
+
+    /** Indicate whether the folder contains <code>filepath</code>.
+     *
+     * @param filepath A relative filepath.
+     * @return true if <code>filepath</code> exists.
+     */
+    abstract bool_t
+    Exists(Folder *self, const CharBuf *filepath);
+
+    /** Rename a filepath.
+     *
+     * @param from The name to be changed.
+     * @param to The target name.
+     */
+    abstract void
+    Rename(Folder *self, const CharBuf *from, const CharBuf *to);
+
+    /** Delete an entry from the folder.
+     *
+     * @param filepath A relative filepath.
+     * @return true if the deletion was successful.
+     */
+    abstract bool_t
+    Delete(Folder *self, const CharBuf *filepath);
+
+    /** Read a file and return its contents.
+     *
+     * @param filepath A relative filepath.
+     * @param return the file's contents.
+     */
+    incremented ByteBuf*
+    Slurp_File(Folder *self, const CharBuf *filepath);
+
+    /** Perform any needed processing on new segment files before committing a
+     * new Snapshot.  Implemented as a no-op by default, but see
+     * CompoundFileWriter for an example of how FSFolder uses this method.
+     */
+    void
+    Finish_Segment(Folder *self, const CharBuf *seg_name);
+
+    /** Close the folder and release implementation-specific resources.
+     */
+    abstract void
+    Close(Folder *self);
+
+    /** Getter for <code>path</code> member var. 
+     */
+    public CharBuf*
+    Get_Path(Folder *self);
+
+    void
+    Destroy(Folder *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,351 @@
+=head1 NAME
+
+KinoSearch - Search engine library.
+
+=head1 VERSION
+
+0.30_01
+
+=head1 EXTRA WARNING
+
+This is a developer's release.  The new features and API modifications are
+being auditioned and may change.  
+
+=head1 WARNING
+
+KinoSearch 0.30 B<BREAKS BACKWARDS COMPATIBILITY> with earlier versions.  Both
+the API and the file format have changed.  Old applications must be tweaked,
+and old indexes cannot be read and must be recreated -- see the C<Changes> file
+for details.
+
+KinoSearch is still officially "alpha" software -- see 
+C<Backwards Compatibility Policy>, below.
+
+=head1 SYNOPSIS
+
+First, plan out your index structure, create the index, and add documents:
+
+    # indexer.pl
+    
+    use KinoSearch::Indexer;
+    use KinoSearch::Schema;
+    use KinoSearch::Analysis::PolyAnalyzer;
+    use KinoSearch::FieldType::FullTextType;
+    
+    # Create a Schema which defines index fields.
+    my $schema = KinoSearch::Schema->new;
+    my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
+        language => 'en',
+    );
+    my $type = KinoSearch::FieldType::FullTextType->new(
+        analyzer => $polyanalyzer,
+    );
+    $schema->spec_field( name => 'title',   type => $type );
+    $schema->spec_field( name => 'content', type => $type );
+    
+    # Create the index and add documents.
+    my $indexer = KinoSearch::Indexer->new(
+        schema => $schema,   
+        index  => '/path/to/index',
+        create => 1,
+    );
+    while ( my ( $title, $content ) = each %source_docs ) {
+        $indexer->add_doc({
+            title   => $title,
+            content => $content,
+        });
+    }
+    $indexer->commit;
+
+Then, search the index:
+
+    # search.pl
+    
+    use KinoSearch::Searcher;
+    
+    my $searcher = KinoSearch::Searcher->new( index => '/path/to/index' );
+    my $hits = $searcher->hits( query => "foo bar" );
+    while ( my $hit = $hits->next ) {
+        print "$hit->{title}\n";
+    }
+
+=head1 DESCRIPTION
+
+KinoSearch is a high-performance, modular search engine library.
+
+=head2 Features
+
+=over
+
+=item *
+
+Extremely fast.  A single machine can handle millions of documents.
+
+=item *
+
+Scalable to multiple machines.
+
+=item *
+
+Incremental indexing (addition/deletion of documents to/from an existing
+index).
+
+=item *
+
+UTF-8 support.
+
+=item *
+
+Support for boolean operators AND, OR, and AND NOT; parenthetical groupings;
+and prepended +plus and -minus.
+
+=item *
+
+Algorithmic selection of relevant excerpts and highlighting of search terms
+within excerpts.
+
+=item *
+
+Highly customizable query and indexing APIs.
+
+=item *
+
+Customizable sorting.
+
+=item *
+
+Phrase matching.
+
+=item *
+
+Stemming.
+
+=item *
+
+Stoplists.
+
+=back
+
+=head2 Getting Started
+
+L<KSx::Simple> provides a stripped down API which may suffice for many
+tasks.
+
+L<KinoSearch::Docs::Tutorial> demonstrates how to build a basic CGI search
+application.  
+
+The tutorial spends most of its time on these five classes:
+
+=over 
+
+=item *
+
+L<KinoSearch::Schema> - Plan out your index.
+
+=item *
+
+L<KinoSearch::FieldType> - Define index fields.
+
+=item *
+
+L<KinoSearch::Indexer> - Manipulate index content.
+
+=item *
+
+L<KinoSearch::Searcher> - Search an index.
+
+=item *
+
+L<KinoSearch::Analysis::PolyAnalyzer> - A one-size-fits-all parser/tokenizer.
+
+=back
+
+=head2 Supported Languages and Encodings
+
+As of version 0.20, KinoSearch supports Unicode in addition to Latin-1.  All
+output strings use Perl's internal Unicode encoding.  For use of KinoSearch
+with non-Latin-1 material, see L<Encode>.
+
+KinoSearch provides "native support" for 15 languages, meaning that
+PolyAnalyzer supports them.
+
+=over
+
+=item *
+
+Danish
+
+=item *
+
+Dutch
+
+=item *
+
+English
+
+=item *
+
+Finnish
+
+=item *
+
+French
+
+=item *
+
+German
+
+=item *
+
+Hungarian
+
+=item *
+
+Italian
+
+=item *
+
+Norwegian
+
+=item *
+
+Portuguese
+
+=item *
+
+Romanian
+
+=item *
+
+Russian
+
+=item *
+
+Spanish
+
+=item *
+
+Swedish
+
+=item *
+
+Turkish
+
+=back
+
+=head2 Delving Deeper
+
+L<KinoSearch::Docs::CookBook> augments the tutorial with more advanced
+recipes.
+
+For creating complex queries, see L<KinoSearch::Search::Query> and its
+subclasses L<TermQuery|KinoSearch::Search::TermQuery>,
+L<PhraseQuery|KinoSearch::Search|PhraseQuery>,
+L<ANDQuery|KinoSearch::Search|ANDQuery>,
+L<ORQuery|KinoSearch::Search|ORQuery>,
+L<NOTQuery|KinoSearch::Search|NOTQuery>,
+L<RequiredOptionalQuery|KinoSearch::Search|RequiredOptionalQuery>,
+L<MatchAllQuery|KinoSearch::Search|MatchAllQuery>, and
+L<NoMatchQuery|KinoSearch::Search|NoMatchQuery>, plus
+L<KinoSearch::QueryParser>.
+
+For distributed searching, see L<KSx::Remote::SearchServer>,
+L<KSx::Remote::SearchClient>, and L<KinoSearch::Search::PolySearcher>.
+
+=head2 Backwards Compatibility Policy
+
+Until version 1.0 is released, KinoSearch's API and file format are subject to
+change without relation to the version number.  Such changes are not
+undertaken lightly and hopefully none will be needed after the disruptions of
+0.30.  
+
+Starting with 1.0, the following policy will be put in place:
+
+    Search is a rapidly advancing field.  To stay current, KinoSearch
+    has adopted a policy of "continuity" rather than backwards
+    compatibility in perpetuity:
+
+    Starting with version 1.0, KinoSearch will support obsolete
+    features and files for one "extra" major revision.  API features
+    which are supported in 1.0 and deprecated in 1.x will be removed
+    no sooner than 3.0.  Indexes which are modified at least once
+    using 2.x will be readable at least until 4.0.
+
+    Rapid-fire incrementing of major version numbers is not
+    anticipated.  With luck, someone might even solve Perl5/CPAN's
+    versioning problem before the release of KinoSearch 2.0.
+
+=head1 SEE ALSO 
+
+The KinoSearch homepage, where you'll find links to the mailing list and so
+on, is L<http://www.rectangular.com/kinosearch>.
+
+The Lucene homepage is L<http://lucene.apache.org>.
+
+=head2 History 
+
+Search::Kinosearch 0.02x, now dead and removed from CPAN, was this suite's
+forerunner.  L<Plucene> is a pure-Perl port of Lucene 1.3. KinoSearch is a
+from-scratch project which attempts to draws on the lessons of both. 
+
+KinoSearch is named for Kino, the main character in John Steinbeck's novella,
+"The Pearl".
+
+=head1 SUPPORT
+
+Please direct support questions to the kinosearch mailing list: subscription
+information at L<http://www.rectangular.com/kinosearch>.
+
+=head1 AUTHORS
+
+Marvin Humphrey, E<lt>marvin at rectangular dot comE<gt>
+
+Apache Lucene by Doug Cutting et al.
+
+=head1 BUGS
+
+Not thread-safe.
+
+Some exceptions leak memory.
+
+Won't work on esoteric architectures where a char is more than one byte,
+or where floats don't conform to IEEE 754.
+
+Please report any other bugs or feature requests to
+C<bug-kinosearch@rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=KinoSearch>.
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2005-2009 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+Terms of usage for Apache Lucene, from which portions of KinoSearch are
+derived, are spelled out in the Apache License: see the file
+"ApacheLicense2.0.txt".
+
+=head1 DISCLAIMER OF WARRANTY
+
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR THE
+SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE
+STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE
+SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND
+PERFORMANCE OF THE SOFTWARE IS WITH YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE,
+YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY
+COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR REDISTRIBUTE THE
+SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE LIABLE TO YOU FOR DAMAGES,
+INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING
+OUT OF THE USE OR INABILITY TO USE THE SOFTWARE (INCLUDING BUT NOT LIMITED TO
+LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR
+THIRD PARTIES OR A FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER
+SOFTWARE), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+=cut
+

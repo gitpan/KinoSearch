@@ -1,0 +1,69 @@
+parcel KinoSearch cnick Kino;
+
+/** Unit of text.
+ *
+ * Token is the fundamental unit used by KinoSearch's Analyzer subclasses.
+ * Each Token has 5 attributes: <code>text</code>, <code>start_offset</code>,
+ * <code>end_offset</code>, <code>boost</code>, and <code>pos_inc</code>.
+ * 
+ * The <code>text</code> attribute is a Unicode string encoded as UTF-8.
+ * 
+ * <code>start_offset</code> is the start point of the token text, measured in
+ * Unicode code points from the top of the stored field;
+ * <code>end_offset</code> delimits the corresponding closing boundary.
+ * <code>start_offset</code> and <code>end_offset</code> locate the Token
+ * within a larger context, even if the Token's text attribute gets modified
+ * -- by stemming, for instance.  The Token for "beating" in the text "beating
+ * a dead horse" begins life with a start_offset of 0 and an end_offset of 7;
+ * after stemming, the text is "beat", but the start_offset is still 0 and the
+ * end_offset is still 7.  This allows "beating" to be highlighted correctly
+ * after a search matches "beat".
+ * 
+ * <code>boost</code> is a per-token weight.  Use this when you want to assign
+ * more or less importance to a particular token, as you might for emboldened
+ * text within an HTML document, for example.  (Note: The field this token
+ * belongs to must be spec'd to use a posting of type
+ * L<KinoSearch::Posting::RichPosting>.)
+ * 
+ * <code>pos_inc</code is the POSition INCrement, measured in Tokens.  This
+ * attribute, which defaults to 1, is a an advanced tool for manipulating
+ * phrase matching.  Ordinarily, Tokens are assigned consecutive position
+ * numbers: 0, 1, and 2 for <code>"three blind mice"</code>.  However, if you
+ * set the position increment for "blind" to, say, 1000, then the three tokens
+ * will end up assigned to positions 0, 1, and 1001 -- and will no longer
+ * produce a phrase match for the query <code>"three blind mice"</code>.
+ */
+class KinoSearch::Analysis::Token extends KinoSearch::Obj {
+
+    char   *text;
+    size_t  len;
+    u32_t   start_offset;
+    u32_t   end_offset;
+    float   boost;
+    i32_t   pos_inc;
+    i32_t   pos;
+
+    static incremented Token* 
+    new(const char *text, size_t len, u32_t start_offset, u32_t end_offset, 
+        float boost = 1.0, i32_t pos_inc = 1);
+
+    static Token* 
+    init(Token *self, const char *text, size_t len, 
+         u32_t start_offset, u32_t end_offset, 
+         float boost = 1.0, i32_t pos_inc = 1);
+
+    /** qsort-compatible comparison routine.
+     */
+    static int 
+    compare(const void *va, const void *vb);
+
+    void 
+    Destroy(Token *token);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

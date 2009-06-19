@@ -1,87 +1,65 @@
-package KinoSearch::Analysis::Stemmer;
-use strict;
-use warnings;
-use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Analysis::Analyzer );
-
-our %supported_languages;
-
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        stemmifier => undef,
-    );
-}
-
-use Lingua::Stem::Snowball qw( stemmers );
-
-# build a list of supported languages.
-$supported_languages{$_} = 1 for stemmers();
-
-sub init_instance {
-    my $self = shift;
-
-    # verify language param
-    my $language = $self->{language} = lc( $self->{language} );
-    croak("Unsupported language: '$language'")
-        unless $supported_languages{$language};
-
-    # create instance of Snowball stemmer
-    $self->{stemmifier} = Lingua::Stem::Snowball->new( lang => $language );
-}
-
-sub analyze {
-    my ( $self, $batch ) = @_;
-
-    # replace terms with stemmed versions.
-    my $all_texts = $batch->get_all_texts;
-    $self->{stemmifier}->stem_in_place($all_texts);
-    $batch->set_all_texts($all_texts);
-
-    $batch->reset;
-    return $batch;
-}
+use KinoSearch;
 
 1;
 
 __END__
 
-=head1 NAME
+__XS__
 
-KinoSearch::Analysis::Stemmer - reduce related words to a shared root
+MODULE = KinoSearch    PACKAGE = KinoSearch::Analysis::Stemmer
 
-=head1 SYNOPSIS
+void
+_copy_snowball_symbols()
+PPCODE:
+{
+    SV *sb_stemmer_new_sv = XSBind_extract_sv(PL_modglobal,
+        "Lingua::Stem::Snowball::sb_stemmer_new", 38);
+    SV *sb_stemmer_delete_sv = XSBind_extract_sv(PL_modglobal,
+        "Lingua::Stem::Snowball::sb_stemmer_delete", 41);
+    SV *sb_stemmer_stem_sv = XSBind_extract_sv(PL_modglobal,
+        "Lingua::Stem::Snowball::sb_stemmer_stem", 39);
+    SV *sb_stemmer_length_sv = XSBind_extract_sv(PL_modglobal,
+        "Lingua::Stem::Snowball::sb_stemmer_length", 41);
+    kino_Stemmer_sb_stemmer_new 
+        = (kino_Stemmer_sb_stemmer_new_t)SvIV(sb_stemmer_new_sv);
+    kino_Stemmer_sb_stemmer_delete 
+        = (kino_Stemmer_sb_stemmer_delete_t)SvIV(sb_stemmer_delete_sv);
+    kino_Stemmer_sb_stemmer_stem 
+        = (kino_Stemmer_sb_stemmer_stem_t)SvIV(sb_stemmer_stem_sv);
+    kino_Stemmer_sb_stemmer_length 
+        = (kino_Stemmer_sb_stemmer_length_t)SvIV(sb_stemmer_length_sv);
+}
 
+__AUTO_XS__
+
+my $synopsis = <<'END_SYNOPSIS';
     my $stemmer = KinoSearch::Analysis::Stemmer->new( language => 'es' );
     
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
-        analyzers => [ $lc_normalizer, $tokenizer, $stemmer ],
+        analyzers => [ $case_folder, $tokenizer, $stemmer ],
     );
 
-=head1 DESCRIPTION
+This class is a wrapper around L<Lingua::Stem::Snowball>, so it supports the
+same languages.  
+END_SYNOPSIS
 
-Stemming reduces words to a root form.  For instance, "horse", "horses",
-and "horsing" all become "hors" -- so that a search for 'horse' will also
-match documents containing 'horses' and 'horsing'.  
+my $constructor = <<'END_CONSTRUCTOR';
+    my $stemmer = KinoSearch::Analysis::Stemmer->new( language => 'es' );
+END_CONSTRUCTOR
 
-This class is a wrapper around
-L<Lingua::Stem::Snowball|Lingua::Stem::Snowball>, so it supports the same
-languages.  
+{   "KinoSearch::Analysis::Stemmer" => {
+        make_constructors => ["new"],
+        make_pod          => {
+            synopsis    => $synopsis,
+            constructor => { sample => $constructor }
+        },
+    },
+}
 
-=head1 METHODS 
-
-=head2 new
-
-Create a new stemmer.  Takes a single named parameter, C<language>, which must
-be an ISO two-letter code that Lingua::Stem::Snowball understands.
-
-=head1 COPYRIGHT
+__COPYRIGHT__
 
 Copyright 2005-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch|KinoSearch> version 0.165.
-
-=cut
+This program is free software; you can redistribute it and/or modify
+under the same terms as Perl itself
 

@@ -1,0 +1,108 @@
+parcel KinoSearch cnick Kino;
+
+/** 
+ * Interprocess mutex lock.
+ *
+ * The Lock class produces an interprocess mutex lock.  It does not rely on
+ * flock, but creates a lock "file".  What exactly constitutes that "file"
+ * depends on the Folder implementation.
+ * 
+ * Each lock must have a name which is unique per resource to be locked.  The
+ * filename for the lockfile will be derived from it, e.g. "write" will
+ * produce a file "write.lock".
+ *
+ * Each lock also has an "agent id", a string which should be unique per-host;
+ * it is used to help clear away stale lockfiles.
+ */
+
+class KinoSearch::Store::Lock extends KinoSearch::Obj {
+
+    Folder      *folder;    /* the Folder where the lock resides */
+    CharBuf     *lock_name; /* identifies the lock */
+    CharBuf     *filename;  /* name of actual lock file */
+    CharBuf     *agent_id;  /* identifies the host */
+    i32_t        timeout;   /* ms to continue retrying */
+
+    static const ZombieCharBuf *write_lock_name;
+    static const ZombieCharBuf *commit_lock_name;
+    static u32_t read_lock_timeout;
+    static u32_t write_lock_timeout;
+    static u32_t commit_lock_timeout;
+
+    static incremented Lock*
+    new(Folder *folder, const CharBuf *lock_name, const CharBuf *agent_id, 
+        i32_t timeout = 0);
+
+    /**
+     * @param folder The KinoSearch::Store::Folder where the lock file will
+     * reside.
+     * @param lock_name String identifying the resource to be locked.
+     * @param agent_id A per-machine identifier, usually the host name.
+     * @param timeout Time in milliseconds to keep retrying before abandoning
+     * the attempt to Obtain() a lock.
+     */
+    public static Lock*
+    init(Lock *self, Folder *folder, const CharBuf *lock_name, 
+         const CharBuf *agent_id, i32_t timeout = 0);
+
+    /** Attempt to aquire lock once per second until the timeout has been
+     * reached.
+     * 
+     * @return true on success, false otherwise.
+     */
+    public bool_t
+    Obtain(Lock *self);
+
+    /** Do the actual work to aquire the lock and return a boolean reflecting
+     * success/failure.
+     */
+    bool_t
+    Do_Obtain(Lock *self);
+
+    /** Release the lock.
+     */
+    public void
+    Release(Lock *self);
+
+    /** Indicate whether the resource identified by this lock's name is
+     * currently locked.
+     *
+     * @return true if the resource is locked, false otherwise.
+     */
+    public bool_t
+    Is_Locked(Lock *self);
+
+    /** Release all locks that meet the following three conditions: the lock
+     * name matches, the agent id matches, and the process id that the lock
+     * was created under no longer identifies an active process.
+     */
+    public void
+    Clear_Stale(Lock *self);
+
+    /** Accessor for object's filename attribute.
+     */
+    CharBuf*
+    Get_Filename(Lock *self);
+
+    void
+    Destroy(Lock *self);
+}
+
+__C__
+/** The frequency, in milliseconds, with which attempts to secure a lock will
+ * be made.
+ */
+#define KINO_LOCK_POLL_INTERVAL 1000
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define LOCK_POLL_INTERVAL KINO_LOCK_POLL_INTERVAL
+#endif
+
+__END_C__
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,64 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Index::PostingsReader - Read postings data.
+
+=head1 SYNOPSIS
+
+    my $postings_reader 
+        = $seg_reader->obtain("KinoSearch::Index::PostingsReader");
+    my $posting_list = $postings_reader->posting_list(
+        field => 'title', 
+        term  => 'foo',
+    );
+
+
+
+=head1 DESCRIPTION
+
+PostingsReaders produce L<PostingList|KinoSearch::Index::PostingList>
+objects which convey document matching information.
+
+
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 posting_list( I<[labeled params]> )
+
+Returns a PostingList, or undef if either C<< field >> is undef or
+C<< field >> is not present in any documents.
+
+=over
+
+=item *
+
+B<field> - A field name.
+
+=item *
+
+B<term> - If supplied, the PostingList will be pre-located to this
+term using seek().
+
+=back
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Index::PostingsReader isa L<KinoSearch::Index::DataReader> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

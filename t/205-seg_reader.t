@@ -1,42 +1,39 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
+use lib 'buildlib';
 
-use lib 't';
 use Test::More tests => 8;
+use KinoSearch::Test::TestUtils qw( create_index );
 
-BEGIN {
-    use_ok('KinoSearch::Index::IndexReader');
-    use_ok('KinoSearch::Index::Term');
-}
-
-use KinoSearchTestInvIndex qw( create_invindex );
-
-my $invindex = create_invindex(
+my $folder = create_index(
     "What's he building in there?",
     "What's he building in there?",
     "We have a right to know."
 );
+my $polyreader = KinoSearch::Index::IndexReader->open( index => $folder );
+my $reader = $polyreader->get_seg_readers->[0];
 
-my $reader = KinoSearch::Index::IndexReader->new( invindex => $invindex );
+isa_ok( $reader, 'KinoSearch::Index::SegReader' );
 
+is( $reader->doc_max, 3, "doc_max returns correct number" );
+
+my $lex_reader = $reader->fetch("KinoSearch::Index::LexiconReader");
 isa_ok(
-    $reader,
-    'KinoSearch::Index::SegReader',
-    "single segment indexes cause new to return a SegReader"
+    $lex_reader,
+    'KinoSearch::Index::LexiconReader',
+    "fetch() a component"
 );
-
-isa_ok( $reader->norms_reader('content'), 'KinoSearch::Index::NormsReader' );
-ok( !$reader->has_deletions, "has_deletions returns false if no deletions" );
-is( $reader->max_doc, 3, "max_doc returns correct number" );
-
-my $term = KinoSearch::Index::Term->new( 'content', 'building' );
-my $enum = $reader->terms($term);
+ok( !defined( $reader->fetch("nope") ),
+    "fetch() returns undef when component can't be found" );
+$lex_reader = $reader->obtain("KinoSearch::Index::LexiconReader");
 isa_ok(
-    $enum,
-    'KinoSearch::Index::SegTermEnum',
-    "terms returns a SegTermEnum"
+    $lex_reader,
+    'KinoSearch::Index::LexiconReader',
+    "obtain() a component"
 );
-my $tinfo = $enum->get_term_info;
-is( $tinfo->get_doc_freq, 2, "correct place in enum" );
+eval { $reader->obtain("boom."); };
+like( $@, qr/boom/, "obtain blows up when component can't be found" );
+
+is_deeply( $reader->seg_readers, [$reader], "seg_readers" );
+is_deeply( $reader->offsets,     [0],       "offsets" );
 

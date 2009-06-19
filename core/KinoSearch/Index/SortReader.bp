@@ -1,0 +1,55 @@
+parcel KinoSearch cnick Kino;
+
+/** Read a segment's sort caches.
+ */
+abstract class KinoSearch::Index::SortReader 
+    extends KinoSearch::Index::DataReader {
+
+    static SortReader*
+    init(SortReader *self, Schema *schema = NULL, Folder *folder = NULL,
+         Snapshot *snapshot = NULL, VArray *segments = NULL,
+         i32_t seg_tick = -1);
+
+    abstract SortCache*
+    Fetch_Sort_Cache(SortReader *self, const CharBuf *field);
+
+    /** Returns NULL, since multi-segment sort caches cannot be produced by
+     * the default implementation.
+     */
+    public incremented DataReader*
+    Aggregator(SortReader *self, VArray *readers, I32Array *offsets);
+    
+}
+
+class KinoSearch::Index::DefaultSortReader cnick DefSortReader 
+    extends KinoSearch::Index::SortReader {
+
+    Hash *caches;
+    Hash *counts;
+
+    /* Constructors.
+     */
+    static incremented DefaultSortReader*
+    new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
+        i32_t seg_tick);
+
+    static DefaultSortReader*
+    init(DefaultSortReader *self, Schema *schema, Folder *folder, 
+         Snapshot *snapshot, VArray *segments, i32_t seg_tick);
+
+    SortCache*
+    Fetch_Sort_Cache(DefaultSortReader *self, const CharBuf *field);
+
+    public void
+    Close(DefaultSortReader *self);
+
+    void
+    Destroy(DefaultSortReader *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

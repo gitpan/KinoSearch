@@ -1,0 +1,62 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Highlight::HeatMap - Density of relevant data in a string.
+
+=head1 SYNOPSIS
+
+    # TODO.
+
+
+
+=head1 DESCRIPTION
+
+A HeatMap stores a number for each location in a string, indicating the
+"heat" (density) of relevant data in areas which match a search query.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $heat_map = KinoSearch::Highlight::HeatMap->new(
+        spans  => \@highlight_spans,
+        window => 100,
+    );
+
+=over
+
+=item *
+
+B<spans> - An array of Spans, which need not be sorted and will not
+be modified.
+
+=item *
+
+B<window> - The greatest distance between which heat points may
+reinforce each other.
+
+=back
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Highlight::HeatMap isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

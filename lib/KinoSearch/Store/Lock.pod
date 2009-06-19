@@ -1,0 +1,112 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Store::Lock - Interprocess mutex lock.
+
+=head1 SYNOPSIS
+
+    my $lock = $lock_factory->make_lock(
+        lock_name => 'commit',
+        timeout   => 5000,
+    );
+    $lock->obtain or die "can't get lock on " . $lock->get_filename;
+    do_stuff();
+    $lock->release;
+
+
+
+=head1 DESCRIPTION
+
+The Lock class produces an interprocess mutex lock.  It does not rely on
+flock, but creates a lock "file".  What exactly constitutes that "file"
+depends on the Folder implementation.
+
+Each lock must have a name which is unique per resource to be locked.  The
+filename for the lockfile will be derived from it, e.g. "write" will
+produce a file "write.lock".
+
+Each lock also has an "agent id", a string which should be unique per-host;
+it is used to help clear away stale lockfiles.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $lock = KinoSearch::Store::Lock->new(
+        lock_name => 'commit',           # required
+        timeout   => 5000,               # default: 0
+        folder    => $folder,            # required
+        agent_id  => $hostname,          # required
+    );
+
+=over
+
+=item *
+
+B<folder> - The KinoSearch::Store::Folder where the lock file will
+reside.
+
+=item *
+
+B<lock_name> - String identifying the resource to be locked.
+
+=item *
+
+B<agent_id> - A per-machine identifier, usually the host name.
+
+=item *
+
+B<timeout> - Time in milliseconds to keep retrying before abandoning
+the attempt to obtain() a lock.
+
+=back
+
+
+
+=head1 METHODS
+
+=head2 obtain()
+
+Attempt to aquire lock once per second until the timeout has been
+reached.
+
+Returns: true on success, false otherwise.
+
+=head2 release()
+
+Release the lock.
+
+=head2 is_locked()
+
+Indicate whether the resource identified by this lock's name is
+currently locked.
+
+Returns: true if the resource is locked, false otherwise.
+
+=head2 clear_stale()
+
+Release all locks that meet the following three conditions: the lock
+name matches, the agent id matches, and the process id that the lock
+was created under no longer identifies an active process.
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Store::Lock isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

@@ -1,0 +1,69 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::PhraseQuery - Query matching an ordered list of terms.
+
+=head1 SYNOPSIS
+
+    my $phrase_query = KinoSearch::Search::PhraseQuery->new( 
+        field => 'content',
+        terms => [qw( the who )],
+    );
+    my $hits = $searcher->hits( query => $phrase_query );
+
+
+
+=head1 DESCRIPTION
+
+PhraseQuery is a subclass of L<KinoSearch::Search::Query> for matching
+against an ordered sequence of terms.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+=over
+
+=item *
+
+B<field> - The field that the phrase must occur in.
+
+=item *
+
+B<terms> - The ordered array of terms that must match.
+
+=back
+
+
+
+=head1 METHODS
+
+=head2 get_field()
+
+Accessor for object's field attribute.
+
+=head2 get_terms()
+
+Accessor for object's array of terms.
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::PhraseQuery isa L<KinoSearch::Search::Query> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

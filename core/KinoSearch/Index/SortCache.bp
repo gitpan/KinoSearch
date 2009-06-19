@@ -1,0 +1,65 @@
+parcel KinoSearch cnick Kino;
+
+/** Read a segment's sort caches.
+ */
+class KinoSearch::Index::SortCache extends KinoSearch::Obj {
+
+    FieldType *type;
+    InStream  *ord_in;
+    InStream  *ix_in;
+    InStream  *dat_in;
+    void      *ords;
+    i32_t      doc_max;
+    i32_t      num_uniq;
+    i32_t      width;
+    i64_t     *offsets;
+    i64_t     *offsets_limit;
+    char      *char_data;
+    char      *char_data_limit;
+
+    public static incremented SortCache*
+    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num);
+
+    public static SortCache*
+    init(SortCache *self, Schema *schema, Folder *folder, Segment *segment, 
+         i32_t field_num);
+
+    /** Assign the string for ordinal <code>ord</code> to <code>value</code>.
+     *
+     * @return either <code>value</code>, or NULL if the value for
+     * <code>doc_id</code> is NULL.
+     */
+    public ViewCharBuf*
+    Value(SortCache *self, i32_t ord, ViewCharBuf *value);
+
+    public void*
+    Get_Ords(SortCache *self);
+
+    public i32_t
+    Get_Num_Unique(SortCache *self);
+
+    public i32_t
+    Get_Width(SortCache *self);
+
+    public i32_t
+    Ordinal(SortCache *self, i32_t doc_id);
+
+    /** Attempt to find the ordinal of the supplied <code>term</code>.  If the
+     * term cannot be found, return the ordinal of the term that would appear
+     * immediately before it in sort order.
+     *
+     * @return an integer between -1 and the highest ordinal.
+     */
+    public i32_t
+    Find(SortCache *self, Obj *term = NULL);
+
+    void
+    Destroy(SortCache *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,42 @@
+parcel KinoSearch cnick Kino;
+
+/** Test case object for CharBuf unit tests. 
+ */
+
+class KinoSearch::Test::Util::TestCharBuf cnick TestCB
+    extends KinoSearch::Obj {
+
+    CharBuf *wanted;
+    CharBuf *got;
+
+    /** Note that unlike most KS constructors, this routine will consume one
+     * reference count each for <code>wanted</code>, and <code>got</code>.
+     */
+    static incremented TestCharBuf*
+    new(CharBuf *wanted = NULL, CharBuf *got = NULL);
+
+    static TestCharBuf*
+    init(TestCharBuf *self, CharBuf *wanted = NULL, CharBuf *got = NULL);
+
+    /** Return a VArray of TestCharBufs, each testing out a config for
+     * CB_VCatF().
+     */
+    static incremented VArray*
+    vcatf_tests();
+
+    CharBuf*
+    Get_Wanted(TestCharBuf *self);
+
+    CharBuf*
+    Get_Got(TestCharBuf *self);
+
+    void
+    Destroy(TestCharBuf *self);
+}
+
+/* Copyright 2005-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

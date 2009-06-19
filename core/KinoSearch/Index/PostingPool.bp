@@ -1,0 +1,93 @@
+parcel KinoSearch cnick Kino;
+
+class KinoSearch::Index::PostingPool cnick PostPool
+    extends KinoSearch::Util::SortExRun {
+
+    Schema            *schema;
+    CharBuf           *field;
+    FieldType         *type;
+    Posting           *posting;
+    LexStepper        *lex_stepper;
+    MemoryPool        *mem_pool;
+    InStream          *lex_instream;
+    InStream          *post_instream;
+    I32Array          *doc_map;
+    Obj              **scratch;
+    u32_t              scratch_cap;
+    i64_t              lex_start;
+    i64_t              post_start;
+    i64_t              lex_end;
+    i64_t              post_end;
+    u32_t              mem_thresh;
+    i32_t              doc_base;
+    i32_t              last_doc_id;
+    u32_t              post_count;
+    bool_t             flipped;
+    bool_t             from_seg;
+    MSort_compare_t    compare;
+
+    /* Constructors.
+     */
+    static incremented PostingPool*
+    new(Schema *schema, const CharBuf *field, MemoryPool *mem_pool);
+
+    static PostingPool*
+    init(PostingPool *self, Schema *schema, const CharBuf *field,
+         MemoryPool *mem_pool);
+
+    /* Add an element to the cache.  Multiple elements need not be added in
+     * sorted order.
+     */
+    void
+    Add_Elem(PostingPool *self, Obj *elem);
+
+    /* Add a field's inverted content.
+     */
+    void
+    Add_Inversion(PostingPool *self, Inversion *inversion, i32_t doc_id, 
+                  float doc_boost, float length_norm);
+
+    /* Dedicated this PostingPool to read back from existing segment content.
+     */
+    void
+    Assign_Seg(PostingPool *self, Folder *other_folder,
+               Segment *other_segment, i32_t doc_base, 
+               I32Array *doc_map = NULL);
+
+    /* Iterate through postings currently in RAM.  Used when flushing cache to
+     * disk.
+     */
+    RawPosting*
+    Fetch_From_RAM(PostingPool *self);
+
+    /** Zap the cache and scratch arrays to minimize RAM costs once a run has
+     * been written to disk.
+     */
+    void
+    Shrink(PostingPool *self);
+
+    /* Prepare to read back postings from disk.
+     */
+    void
+    Flip(PostingPool *self, InStream *lex_instream, InStream *post_instream,
+         u32_t mem_thresh);
+
+    void
+    Sort_Cache(PostingPool *self);
+
+    int
+    Compare(PostingPool *self, Obj **a, Obj **b);
+
+    u32_t
+    Refill(PostingPool *self);
+
+    void
+    Destroy(PostingPool *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,52 @@
+parcel KinoSearch cnick Kino;
+
+/** In-memory FileDes.
+ * 
+ * RAM-based subclass of FileDes.  "Files" pointed to by RAMFileDes objects
+ * are implemented using ragged arrays.
+ */ 
+
+class KinoSearch::Store::RAMFileDes extends KinoSearch::Store::FileDes {
+
+    VArray  *buffers;
+    u64_t    len;
+
+    static incremented RAMFileDes*
+    new(const CharBuf *path = NULL);
+
+    static RAMFileDes*
+    init(RAMFileDes *self, const CharBuf *path = NULL);
+
+    /** Return a ByteBuf whose string is a copy of the ram file's contents.
+     */
+    incremented ByteBuf*
+    Contents(RAMFileDes *self);
+
+    void
+    Destroy(RAMFileDes *self);
+
+    bool_t
+    Window(RAMFileDes *self, FileWindow *window, i64_t offset, i64_t len);
+
+    bool_t 
+    Release_Window(RAMFileDes *self, FileWindow *window);
+
+    bool_t
+    Read(RAMFileDes *self, char *dest, u64_t offset, u32_t len);
+
+    bool_t
+    Write(RAMFileDes *self, const void *buf, u32_t len);
+
+    u64_t
+    Length(RAMFileDes *self);
+
+    bool_t
+    Close(RAMFileDes *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

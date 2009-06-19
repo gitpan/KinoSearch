@@ -1,0 +1,110 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::Query - A specification for a search query.
+
+=head1 SYNOPSIS
+
+    # Query is an abstract base class.
+    package MyQuery;
+    use base qw( KinoSearch::Search::Query );
+    
+    sub make_compiler {
+        my $self = shift;
+        return MyCompiler->new( @_, parent => $self );
+    }
+    
+    package MyCompiler;
+    use base ( KinoSearch::Search::Compiler );
+    ...
+
+
+
+=head1 DESCRIPTION
+
+Query objects are simple containers which contain the minimum information
+necessary to define a search query.  
+
+The most common way to generate Query objects is to feed a search string
+such as 'foo AND bar' to a QueryParser's parse() method, which outputs an
+abstract syntax tree built up from various Query subclasses such as
+ANDQuery and TermQuery.  However, it is also possible to use custom Query
+objects to build a search specification which cannot be easily represented
+using a search string.
+
+Subclasses of Query must implement make_compiler(), which is the first step
+in compiling a Query down to a Matcher which can actually match and score
+documents.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $query = MyQuery->SUPER::new(
+        boost => 2.5,
+    );
+
+Abstract constructor.
+
+=over
+
+=item *
+
+B<boost> - A scoring multiplier, affecting the Query's relative
+contribution to each document's score.  Typically defaults to 1.0, but
+subclasses which do not contribute to document scores such as NOTQuery
+and MatchAllQuery default to 0.0 instead.
+
+=back
+
+
+
+=head1 METHODS
+
+=head2 set_boost(boost)
+
+Set the Query's boost.
+
+=head2 get_boost()
+
+Get the Query's boost.
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 make_compiler( I<[labeled params]> )
+
+Abstract factory method returning a Compiler derived from this Query.
+
+=over
+
+=item *
+
+B<searchable> - A Searchable.
+
+=item *
+
+B<boost> - A scoring multiplier. Defaults to the Query's own boost.
+
+=back
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::Query isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

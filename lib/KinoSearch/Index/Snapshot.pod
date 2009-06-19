@@ -1,0 +1,119 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Index::Snapshot - Point-in-time index file list.
+
+=head1 SYNOPSIS
+
+    my $snapshot = KinoSearch::Index::Snapshot->new;
+    $snapshot->read_file( folder => $folder );    # load most recent snapshot
+    my $files = $snapshot->list;
+    print "$_\n" for @$files;
+
+
+
+=head1 DESCRIPTION
+
+A Snapshot is list of index files.  Because index files, once written, are
+never modified, the list of files in a Snapshot defines a point-in-time
+view of the data in an index.
+
+IndexReader objects interpret the data associated with a single Snapshot.
+
+=head1 CONSTRUCTORS
+
+=head2 new()
+
+    my $snapshot = KinoSearch::Index::Snapshot->new;
+
+Constructor.  Takes no arguments.
+
+
+
+=head1 METHODS
+
+=head2 list()
+
+Return a list of all entries.
+
+=head2 num_entries()
+
+Return the number of entries (including directories).
+
+=head2 add_entry(entry)
+
+Add a filepath to the snapshot.
+
+=head2 delete_entry(entry)
+
+Delete a filepath from the snapshot.
+
+Returns: true if the entry existed and was successfully deleted, false
+otherwise.
+
+=head2 read_file( I<[labeled params]> )
+
+Decode a snapshot file and initialize the object to reflect its
+contents.
+
+=over
+
+=item *
+
+B<folder> - A Folder.
+
+=item *
+
+B<filename> - The name of the snapshot file.  If not supplied, the
+most recent snapshot file will be chosen.
+
+=back
+
+Returns: the object, allowing an assignment idiom.
+
+=head2 write_file( I<[labeled params]> )
+
+Write a snapshot file.  The caller must lock the index while this
+operation takes place, and the operation will fail if the file already
+exists.
+
+=over
+
+=item *
+
+B<folder> - A Folder.
+
+=item *
+
+B<filename> - The name of the file to write to.  If undef, a name will
+be chosen which supersedes the latest snapshot file in the index
+folder.
+
+=back
+
+=head2 get_filename()
+
+The name of the file that the Snapshot serves as a proxy for.
+Initially undef; updated by read_file() and write_file().
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Index::Snapshot isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

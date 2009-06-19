@@ -1,0 +1,112 @@
+parcel KinoSearch cnick Kino;
+
+/** Create Locks.
+ * 
+ * LockFactory spins off L<Lock|KinoSearch::Store::Lock> and
+ * L<SharedLock|KinoSearch::Store::SharedLock> objects at the request of other
+ * KinoSearch classes.  Normally, LockFactory is an internal class, quietly
+ * doing its work behind the scenes.  On shared volumes, however, the default
+ * locking mechanism fails, and manual intervention becomes necessary.
+ *
+ * Both reading and writing applications accessing an index on a shared volume
+ * need to identify themselves with a unique id, typically the hostname.
+ * Knowing the hostname makes it possible to tell which lockfiles belong to
+ * other machines and therefore must not be zapped when their pid can't be
+ * found.
+ * 
+ * At index-time, the problem is simply that multiple indexing processes from
+ * different machines can delete each others lock files and then attempt to
+ * modify the index at the same time, causing index corruption.  The
+ * search-time problem is more complex.  
+ * 
+ * When a file is no longer in use by an index, the Indexer attempts to delete
+ * it as part of a cleanup routine triggered by the call to commit().  It is
+ * possible that at the moment an indexer attempts to delete files that it no
+ * longer thinks are needed, a Searcher is in fact using them.  This is
+ * particularly likely in a persistent environment, where
+ * Searchers/IndexReaders are cached and reused.  
+ * 
+ * Ordinarily, the attempted deletions are not a problem.   On a typical Unix
+ * volume, the file will be deleted in name only: any process which holds an
+ * open filehandle against that file will continue to have access, and the
+ * file won't actually get vaporized until the last filehandle is cleared.
+ * Thanks to "delete on last close semantics", an Indexer can't truly
+ * delete the file out from underneath an active Searcher.   On Windows,
+ * KinoSearch will attempt the file deletion, but the attempt will fail if any
+ * process holds an open handle.  That's fine; the Indexer will just try again
+ * the next time around.
+ * 
+ * On NFS, however, the system breaks, because NFS allows files to be deleted
+ * out from underneath an active process.  Should this happen, the unlucky
+ * IndexReader will crash with a "Stale NFS filehandle" exception.
+ * 
+ * Under normal circumstances, it is neither necessary nor desirable for
+ * IndexReaders to secure read locks against an index, but for NFS we have to
+ * make an exception.  L<KinoSearch::Store::LockFactory> exists for this
+ * reason; supplying a LockFactory instance to IndexReader's constructor
+ * activates an internal locking mechanism and prevents concurrent indexing
+ * processes from deleting files that are needed by active readers.
+ * 
+ * LockFactory is implemented using lockfiles located in the index directory,
+ * so your reader applications must have write access.  Stale lock files from
+ * crashed processes are ordinarily cleared away the next time the same
+ * machine -- as identified by the C<agent_id> parameter supplied to
+ * LockFactory's constructor -- opens another IndexReader. (The classic
+ * technique of timing out lock files is not feasible because search processes
+ * may lie dormant indefinitely.) However, please be aware that if the last
+ * thing a given machine does is crash, lock files belonging to it may
+ * persist, preventing deletion of obsolete index data.
+ * 
+ */
+
+class KinoSearch::Store::LockFactory cnick LockFact
+    extends KinoSearch::Obj {
+
+    Folder  *folder;
+    CharBuf *agent_id;
+
+    /* Constructor. 
+     */
+    static incremented LockFactory*
+    new(Folder *folder, const CharBuf *agent_id);
+
+    /**
+     * @param folder A L<KinoSearch::Store::Folder>.
+     * @param agent_id An identifying string -- typically, the hostname.
+     */
+    public static LockFactory*
+    init(LockFactory *self, Folder *folder, const CharBuf *agent_id);
+
+    /** Return a Lock object, which, once Obtain() returns successfully,
+     * maintains an exclusive lock on a resource.  Supplied parameters are
+     * passed on to Lock's constructor.
+     *
+     * @param lock_name A file-system-friendly id which identifies the
+     * resource to be locked.
+     * @param timeout Timeout in milliseconds before exception is thrown.
+     */
+    public incremented Lock*
+    Make_Lock(LockFactory *self, const CharBuf *lock_name, i32_t timeout);
+
+    /** Return a SharedLock object, which, once Obtain() returns successfully,
+     * maintains an shared lock on a resource.  Supplied parameters are passed
+     * on to SharedLock's constructor.
+     *
+     * @param lock_name A file-system-friendly id which identifies the
+     * resource to be locked.
+     * @param timeout Timeout in milliseconds before exception is thrown.
+     */
+    public incremented SharedLock*
+    Make_Shared_Lock(LockFactory *self, const CharBuf *lock_name, 
+                     i32_t timeout);
+
+    void
+    Destroy(LockFactory *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

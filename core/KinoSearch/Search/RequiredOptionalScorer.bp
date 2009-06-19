@@ -1,0 +1,42 @@
+parcel KinoSearch cnick Kino;
+
+/** Intersect required and optional scorers.
+ */
+
+class KinoSearch::Search::RequiredOptionalScorer cnick ReqOptScorer
+    extends KinoSearch::Search::PolyMatcher {
+
+    Matcher      *req_matcher;
+    Matcher      *opt_matcher;
+    bool_t        opt_matcher_first_time;
+
+    static incremented RequiredOptionalScorer* 
+    new(Similarity *similarity, Matcher *required_matcher, 
+        Matcher *optional_matcher);
+
+    static RequiredOptionalScorer* 
+    init(RequiredOptionalScorer *self, Similarity *similarity, 
+         Matcher *required_matcher, Matcher *optional_matcher);
+
+    void
+    Destroy(RequiredOptionalScorer *self);
+
+    public i32_t
+    Next(RequiredOptionalScorer *self);
+
+    public i32_t
+    Advance(RequiredOptionalScorer *self, i32_t target);
+
+    public float
+    Score(RequiredOptionalScorer *self);
+
+    public i32_t 
+    Get_Doc_ID(RequiredOptionalScorer *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

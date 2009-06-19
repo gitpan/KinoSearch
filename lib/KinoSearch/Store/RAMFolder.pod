@@ -1,0 +1,68 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Store::RAMFolder - In-memory Folder implementation.
+
+=head1 SYNOPSIS
+
+    my $folder = KinoSearch::Store::RAMFolder->new;
+    
+    # or sometimes...
+    my $folder = KinoSearch::Store::RAMFolder->new(
+        path   => '/path/to/folder',
+    );
+
+
+
+=head1 DESCRIPTION
+
+RAMFolder is an entirely in-memory implementation of
+KinoSearch::Store::Folder.  It serves two main purposes.
+
+First, it's possible to load an existing FSFolder into memory, which can
+improve search-speed -- if you have that kind of RAM to spare.  Needless to
+say, any FSFolder you try to load this way should be appropriately modest in
+size.
+
+Second, RAMFolder is handy for testing and development.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $folder = KinoSearch::Store::RAMFolder->new(
+        path   => '/path/to/folder',   # optional
+    );
+
+=over
+
+=item *
+
+B<path> - If supplied, attempt to read an FSFolder at that location
+into memory; otherwise the Folder starts out empty.
+
+=back
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Store::RAMFolder isa L<KinoSearch::Store::Folder> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

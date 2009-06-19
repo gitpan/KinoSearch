@@ -1,0 +1,88 @@
+parcel KinoSearch cnick Kino;
+
+/** Abstract base class for reading index data.
+ * 
+ * DataReader is the companion class to DataWriter.  Every index
+ * component will implement one of each.
+ */
+
+class KinoSearch::Index::DataReader extends KinoSearch::Obj {
+
+    Schema      *schema;
+    Folder      *folder;
+    Snapshot    *snapshot;
+    VArray      *segments;
+    Segment     *segment;
+    i32_t        seg_tick;
+
+    /**
+     * @param schema A Schema.
+     * @param folder A Folder.
+     * @param snapshot A Snapshot.
+     * @param segments An array of Segments.
+     * @param seg_tick The array index of the Segment object within the
+     * <code>segments</code> array that this particular DataReader is assigned
+     * to, if any.  A value of -1 indicates that no Segment should be assigned.
+     */
+    public static DataReader*
+    init(DataReader *self, Schema *schema = NULL, Folder *folder = NULL,
+         Snapshot *snapshot = NULL, VArray *segments = NULL, 
+         i32_t seg_tick = -1);
+
+    /** Create a reader which aggregates the output of several lower level
+     * readers.
+     * 
+     * @param readers An array of DataReaders.
+     * @param offsets Doc id start offsets for each reader.
+     */
+    public abstract incremented DataReader*
+    Aggregator(DataReader *self, VArray *readers, I32Array *offsets);
+
+    /** Accessor for "schema" member var. 
+     */
+    public Schema*
+    Get_Schema(DataReader *self);
+
+    /** Accessor for "folder" member var. 
+     */
+    public Folder*
+    Get_Folder(DataReader *self);
+
+    /** Accessor for "snapshot" member var. 
+     */
+    public Snapshot*
+    Get_Snapshot(DataReader *self);
+
+    /** Accessor for "segments" member var. 
+     */
+    public VArray*
+    Get_Segments(DataReader *self);
+
+    /** Accessor for "segment" member var. 
+     */
+    public Segment*
+    Get_Segment(DataReader *self);
+
+    /** Accessor for "seg_tick" member var. 
+     */
+    public i32_t
+    Get_Seg_Tick(DataReader *self);
+
+    /** Release external resources, e.g. streams.  Implementations must be
+     * safe for multiple calls.  Once called, no other operations may be
+     * performed upon either the reader or any component subreaders other than
+     * object destruction.
+     */
+    public abstract void
+    Close(DataReader *self);
+
+    void
+    Destroy(DataReader *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

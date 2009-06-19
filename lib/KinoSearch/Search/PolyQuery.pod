@@ -1,0 +1,36 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::PolyQuery - Base class for composite Query objects.
+
+
+
+=head1 DESCRIPTION
+
+PolyQuery serves as a shared base class for ANDQuery, ORQuery, NOTQuery,
+and RequiredOptionalQuery.  All of these classes may serve as nodes in
+composite Query with a tree structure which may be walked.
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::PolyQuery isa L<KinoSearch::Search::Query> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

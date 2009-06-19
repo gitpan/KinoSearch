@@ -1,0 +1,91 @@
+parcel KinoSearch cnick Kino;
+
+/** Retrieve stored documents.
+ * 
+ * DocReader defines the interface by which documents (with all stored fields)
+ * are retrieved from the index.  The default implementation returns HitDoc
+ * objects.
+ */
+class KinoSearch::Index::DocReader extends KinoSearch::Index::DataReader {
+
+    static DocReader*
+    init(DocReader *self, Schema *schema = NULL, Folder *folder = NULL,
+         Snapshot *snapshot = NULL, VArray *segments = NULL, 
+         i32_t seg_tick = -1);
+
+    /** Returns the document identified by <code>doc_id</code>.
+     */
+    public abstract incremented Obj*
+    Fetch(DocReader *self, i32_t doc_id, float score = 0.0, i32_t offset = 0);
+
+    /** Returns a DocReader which divvies up requests to its sub-readers
+     * according to the offset range.
+     * 
+     * @param readers An array of DocReaders.
+     * @param offsets Doc id start offsets for each reader.
+     */
+    public incremented DocReader*
+    Aggregator(DocReader *self, VArray *readers, I32Array *offsets);
+}
+
+/** Aggregate multiple DocReaders. 
+ */
+class KinoSearch::Index::PolyDocReader extends KinoSearch::Index::DocReader {
+
+    VArray   *readers;
+    I32Array *offsets;
+
+    static incremented PolyDocReader*
+    new(VArray *readers, I32Array *offsets);
+
+    static PolyDocReader*
+    init(PolyDocReader *self, VArray *readers, I32Array *offsets);
+
+    public incremented Obj*
+    Fetch(PolyDocReader *self, i32_t doc_id, float score = 0.0, 
+          i32_t offset = 0);
+
+    public void
+    Close(PolyDocReader *self);
+
+    void
+    Destroy(PolyDocReader *self);
+}
+
+class KinoSearch::Index::DefaultDocReader cnick DefDocReader
+    extends KinoSearch::Index::DocReader {
+
+    InStream    *dat_in;
+    InStream    *ix_in;
+
+    static incremented DefaultDocReader*
+    new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
+        i32_t seg_tick);
+
+    static DefaultDocReader*
+    init(DefaultDocReader *self, Schema *schema, Folder *folder, 
+         Snapshot *snapshot, VArray *segments, i32_t seg_tick);
+
+    public incremented Obj*
+    Fetch(DefaultDocReader *self, i32_t doc_id, float score = 0.0, 
+          i32_t offset = 0);
+
+    /** Read the raw byte content for the specified doc into the supplied
+     * buffer.
+     */
+    void
+    Read_Record(DefaultDocReader *self, ByteBuf *buffer, i32_t doc_id);
+
+    public void
+    Close(DefaultDocReader *self);
+
+    void
+    Destroy(DefaultDocReader *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

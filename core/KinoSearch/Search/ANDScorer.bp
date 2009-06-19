@@ -1,0 +1,40 @@
+parcel KinoSearch cnick Kino;
+
+/** Intersect multiple required Matchers.
+ */
+
+class KinoSearch::Search::ANDScorer extends KinoSearch::Search::PolyMatcher {
+
+    Matcher     **kids;
+    size_t        cap;
+    bool_t        more;
+    bool_t        first_time;
+
+    static incremented ANDScorer* 
+    new(VArray *children, Similarity *sim);
+
+    static ANDScorer* 
+    init(ANDScorer *self, VArray *children, Similarity *similarity);
+
+    void
+    Destroy(ANDScorer *self);
+
+    public i32_t
+    Next(ANDScorer *self);
+
+    public i32_t
+    Advance(ANDScorer *self, i32_t target);
+
+    public float
+    Score(ANDScorer *self);
+
+    public i32_t 
+    Get_Doc_ID(ANDScorer *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

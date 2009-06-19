@@ -1,0 +1,39 @@
+parcel KinoSearch cnick Kino;
+
+/** File System FileDes.
+ */
+
+class KinoSearch::Store::FSFileDes extends KinoSearch::Store::FileDes {
+
+    void *fhandle;
+
+    /** Constructor.  Will return NULL if attempt to open the file fails.
+     */
+    static incremented FSFileDes* 
+    new(const CharBuf *path = NULL, const char *mode);
+
+    bool_t
+    Window(FSFileDes *self, FileWindow *window, i64_t offset, i64_t len);
+
+    bool_t 
+    Release_Window(FSFileDes *self, FileWindow *window);
+
+    bool_t
+    Read(FSFileDes *self, char *dest, u64_t offset, u32_t len);
+
+    bool_t
+    Write(FSFileDes *self, const void *buf, u32_t len);
+
+    u64_t
+    Length(FSFileDes *self);
+
+    bool_t
+    Close(FSFileDes *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

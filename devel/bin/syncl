@@ -1,0 +1,164 @@
+#!/usr/local/bin/perl
+use strict;
+use warnings;
+
+use Text::Diff qw( diff );
+use File::Find::Parallel;
+use File::Spec::Functions qw( catfile );
+use File::Slurp qw( slurp );
+use Getopt::Long;
+
+my ( $source_proj, $dest_proj );
+my ( $l2k, $k2l, $f2l, $l2f, $f2k, $k2f );
+GetOptions(
+    l2k => \$l2k,
+    k2l => \$k2l,
+    f2l => \$f2l,
+    l2f => \$l2f,
+    f2k => \$f2k,
+    k2f => \$k2f
+);
+
+if ( $l2k || $l2f ) {
+    $source_proj = 'Lucy';
+}
+elsif ( $k2l || $k2f ) {
+    $source_proj = 'KinoSearch';
+}
+elsif ( $f2k || $f2l ) {
+    $source_proj = 'Ferret';
+}
+else {
+    die "Must specify a conversion via --k2l, --f2k, etc ";
+}
+if ( $k2l || $f2l ) {
+    $dest_proj = 'Lucy';
+}
+elsif ( $l2k || $f2k ) {
+    $dest_proj = 'KinoSearch';
+}
+elsif ( $l2f || $k2f ) {
+    $dest_proj = 'Ferret';
+}
+die "usage: syncl --[conversion_spec] SOURCE_ROOT DEST_ROOT"
+    unless @ARGV == 2;
+
+my ( $source_root, $dest_root ) = @ARGV[ 0, 1 ];
+
+my %swaps = (
+    KinoSearch => { prefix => 'kino_', Prefix => 'Kino_', PREFIX => 'KINO_' },
+    Lucy       => { prefix => 'lucy_', Prefix => 'Lucy_', PREFIX => 'LUCY_' },
+    Ferret     => { prefix => 'frt_',  Prefix => 'Frt_',  PREFIX => 'FRT_' },
+);
+
+my $exclude = qr/(svn|cvs|(^|\/)\.[^.]|\.o$)/;
+
+my $file_finder = File::Find::Parallel->new( $source_root, $dest_root );
+my $iterator = $file_finder->any_iterator;
+FILE: while ( my $component = $iterator->() ) {
+    my $source_path =
+        -f $source_root
+        ? $source_root
+        : catfile( $source_root, $component );
+    my $dest_path =
+        -f $dest_root
+        ? $dest_root
+        : catfile( $dest_root, $component );
+
+    next if $component =~ $exclude;
+
+    # Warn and skip files that aren't common.
+    for ( $source_path, $dest_path ) {
+        if ( !-e $_ ) {
+            print("Don't have $_ ... skipping...\n");
+            next FILE;
+        }
+        next FILE unless -f $_;
+    }
+
+    # Generate a diff if there are changes, otherwise skip.
+    my $source_content = slurp($source_path);
+    my $dest_content   = slurp($dest_path);
+    my $edited         = modify( $source_content, $dest_content );
+
+    # Search and replace prefixes, project name.
+    my $source_swap = $swaps{$source_proj};
+    my $dest_swap   = $swaps{$dest_proj};
+    for ($edited) {
+        s/$source_proj/$dest_proj/g;
+        s/$source_swap->{prefix}/$dest_swap->{prefix}/g;
+        s/$source_swap->{Prefix}/$dest_swap->{Prefix}/g;
+        s/$source_swap->{PREFIX}/$dest_swap->{PREFIX}/g;
+    }
+
+    if ( $edited eq $dest_content ) {
+        print "No change to $component\n";
+        next;
+    }
+
+    # Confirm with user that the change worked as intended.
+    my $diff = diff( \$dest_content, \$edited );
+    print "\nFILE: $dest_path\n$diff\nApply? ";
+    my $response = <STDIN>;
+    next unless $response =~ /^y/i;
+
+    print "Applying edit...\n";
+    open( my $fh, ">", $dest_path )
+        or die "Couldn't open '$dest_path' for writing: $!";
+    print $fh $edited;
+    close $fh or die "Couldn't close '$dest_path': $!";
+}
+
+sub modify {
+    my ( $source_content, $dest_content ) = @_;
+
+    my ( $mod_source, $source_copyright )
+        = extract_copyright($source_content);
+    my ( $mod_dest, $dest_copyright ) = extract_copyright($dest_content);
+
+    $mod_source =~ s/COPYRIGHT_PLACEHOLDER/$dest_copyright/;
+
+    return $mod_source;
+}
+
+sub extract_copyright {
+    my $content = shift;
+    if ( $content =~ s#(^=head1 COPYRIGHT.*?)(?=^=)#COPYRIGHT_PLACEHOLDER#sm )
+    {
+        return ( $content, $1 );
+    }
+    if ( $content =~ s#(/\*[\s*]*Copyright.*?\*/)#COPYRIGHT_PLACEHOLDER#s ) {
+        return ( $content, $1 );
+    }
+    return ( $content, "" );
+}
+
+__END__
+
+=head1 NAME
+
+syncl -- Sync Lucy to KinoSearch or vice versa
+
+=head1 SYNOPSIS
+
+    syncl --k2l SOURCE_ROOT DEST_ROOT
+
+=head1 DESCRIPTION
+
+KinoSearch and Lucy have a lot of files that are exactly the same except for
+the copyright notice.  This utility facilitates syncronizing such files, by
+stripping out the copyright, prefixes, and project names; diffing; verifying
+with the user that the changes pass muster, then applying.
+
+=head1 AUTHOR
+
+Marvin Humphrey
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2007-2009 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut

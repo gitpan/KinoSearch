@@ -1,0 +1,69 @@
+parcel KinoSearch cnick Kino;
+
+/** Invert the result set of another Query.
+ * 
+ * A NOTQuery wraps another Query and matches against its inverse document
+ * set.  All matching docs recieve a score of 0.0.
+ *
+ * NOTQuery is often used in conjunction with ANDQuery to provide 
+ * "a AND NOT b" semantics.
+ */
+
+class KinoSearch::Search::NOTQuery extends KinoSearch::Search::PolyQuery 
+    : dumpable {
+
+    /**
+     * @param negated_query The Query to be inverted.
+     */
+    static incremented NOTQuery*
+    new(Query *negated_query);
+
+    /**
+     * @param negated_query The Query whose result set should be inverted.
+     */
+    public static NOTQuery*
+    init(NOTQuery *self, Query *negated_query);
+
+    /** Accessor for the object's negated query. */
+    public Query*
+    Get_Negated_Query(NOTQuery *self);
+
+    /** Setter for the object's negated query. */
+    public void
+    Set_Negated_Query(NOTQuery *self, Query *negated_query);
+
+    public incremented Compiler*
+    Make_Compiler(NOTQuery *self, Searchable *searchable, float boost);
+
+    public incremented CharBuf*
+    To_String(NOTQuery *self);
+
+    public bool_t
+    Equals(NOTQuery *self, Obj *other);
+}
+
+class KinoSearch::Search::NOTCompiler extends KinoSearch::Search::PolyCompiler {
+
+    static incremented NOTCompiler*
+    new(NOTQuery *parent, Searchable *searchable, float boost);
+
+    static NOTCompiler*
+    init(NOTCompiler *self, NOTQuery *parent, Searchable *searchable, float boost);
+
+    public incremented Matcher*
+    Make_Matcher(NOTCompiler *self, SegReader *reader, bool_t need_score);
+
+    public float
+    Sum_Of_Squared_Weights(NOTCompiler *self);
+
+    public incremented VArray*
+    Highlight_Spans(NOTCompiler *self, Searchable *searchable, 
+                    DocVector *doc_vec, const CharBuf *field);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

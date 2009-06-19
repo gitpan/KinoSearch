@@ -1,0 +1,40 @@
+parcel KinoSearch cnick Kino;
+
+/** Encode/decode JSON.
+ *
+ * Provides utility functions for encoding/decoding JSON.
+ */
+class KinoSearch::Util::Json extends KinoSearch::Obj {
+
+    /** Encode <code>dump</code> as JSON.
+     */
+    static incremented CharBuf* 
+    to_json(Obj *dump);
+
+    /** Decode the supplied JSON and return a data structure made
+     * of Hashes, VArrays, and CharBufs.
+     */
+    static incremented Obj* 
+    from_json(CharBuf *json);
+
+    /** Encode <code>dump</code> as JSON and attempt to write to the indicated
+     * file.  
+     * @return true if the write succeeds, false if it fails.
+     */
+    static bool_t
+    spew_json(Obj *dump, Folder *folder, const CharBuf *filename);
+
+    /** Decode the JSON in the indicated file and return a data structure made
+     * of Hashes, VArrays, and CharBufs.  Returns NULL if the file can't be
+     * can't be open or if the file doesn't contain valid JSON.
+     */
+    static incremented Obj* 
+    slurp_json(Folder *folder, const CharBuf *filename);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,64 @@
+parcel KinoSearch cnick Kino;
+
+/** Read from a compound file.
+ * 
+ * A CompoundFileReader provides access to the files contained within the
+ * compound file format written by CompoundFileWriter.  The InStream objects
+ * it spits out behave largely like InStreams opened against discrete files --
+ * e.g. Seek(0) seeks to the beginning of the sub-file, not the beginning of
+ * the compound file.  
+ * 
+ * Each of the InStreams spawned maintains its own memory buffer; however, they
+ * all share a single filehandle.  This allows KinoSearch to get around the
+ * limitations that many operating systems place on the number of available
+ * filehandles.
+ */
+
+class KinoSearch::Store::CompoundFileReader cnick CFReader
+    extends KinoSearch::Store::Folder {
+
+    CharBuf      *seg_name;
+    Hash         *entries;
+    InStream     *instream;
+
+    /* Constructor.  May return NULL if a compound file can't be found.
+     */
+    static incremented CompoundFileReader*
+    new(FSFolder *folder, const CharBuf *seg_name);
+
+    static CompoundFileReader*
+    init(CompoundFileReader *self, FSFolder *folder, const CharBuf *seg_name);
+
+    /** Remove the entry associated with a virtual file, rendering it
+     * inaccessible.
+     */
+    bool_t
+    Delete_Virtual(CompoundFileReader *self, const CharBuf *filepath);
+
+    /** Return the number of virtual files. 
+     */
+    i32_t
+    Get_Size(CompoundFileReader *self);
+
+    public incremented InStream*
+    Open_In(CompoundFileReader *self, const CharBuf *filepath);
+
+    bool_t
+    Exists(CompoundFileReader *self, const CharBuf *filepath);
+
+    incremented VArray*
+    List(CompoundFileReader *self);
+
+    void
+    Close(CompoundFileReader *self);
+
+    void
+    Destroy(CompoundFileReader *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

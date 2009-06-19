@@ -1,74 +1,113 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
 
-use lib 't';
-use KinoSearch qw( kdump );
-use Test::More tests => 217;
+use lib 'buildlib';
+use KinoSearch::Test;
 
-BEGIN { use_ok('KinoSearch::QueryParser::QueryParser') }
-
-use KinoSearch::InvIndexer;
-use KinoSearch::Searcher;
-use KinoSearch::Store::RAMInvIndex;
+package PlainSchema;
+use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
-use KinoSearch::Analysis::Stopalizer;
-use KinoSearch::Analysis::PolyAnalyzer;
 
-my $whitespace_tokenizer
-    = KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ );
-my $stopalizer
-    = KinoSearch::Analysis::Stopalizer->new( stoplist => { x => 1 } );
-my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
-    analyzers => [ $whitespace_tokenizer, $stopalizer, ], );
+sub new {
+    my $self = shift->SUPER::new(@_);
+    my $tokenizer = KinoSearch::Analysis::Tokenizer->new( pattern => '\S+' );
+    my $type
+        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer, );
+    $self->spec_field( name => 'content', type => $type );
+    return $self;
+}
+
+package StopSchema;
+use base qw( KinoSearch::Schema );
+
+sub new {
+    my $self = shift->SUPER::new(@_);
+    my $whitespace_tokenizer
+        = KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ );
+    my $stopalizer
+        = KinoSearch::Analysis::Stopalizer->new( stoplist => { x => 1 } );
+    my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
+        analyzers => [ $whitespace_tokenizer, $stopalizer, ], );
+    my $type
+        = KinoSearch::FieldType::FullTextType->new( analyzer => $polyanalyzer,
+        );
+    $self->spec_field( name => 'content', type => $type );
+    return $self;
+}
+
+package MyTermQuery;
+use base qw( KinoSearch::Search::TermQuery );
+
+package MyPhraseQuery;
+use base qw( KinoSearch::Search::PhraseQuery );
+
+package MyANDQuery;
+use base qw( KinoSearch::Search::ANDQuery );
+
+package MyORQuery;
+use base qw( KinoSearch::Search::ORQuery );
+
+package MyNOTQuery;
+use base qw( KinoSearch::Search::NOTQuery );
+
+package MyReqOptQuery;
+use base qw( KinoSearch::Search::RequiredOptionalQuery );
+
+package MyQueryParser;
+use base qw( KinoSearch::QueryParser );
+
+sub make_term_query    { shift; MyTermQuery->new(@_) }
+sub make_phrase_query  { shift; MyPhraseQuery->new(@_) }
+sub make_and_query     { shift; MyANDQuery->new( children => shift ) }
+sub make_or_query      { shift; MyORQuery->new( children => shift ) }
+sub make_not_query     { shift; MyNOTQuery->new( negated_query => shift ) }
+sub make_req_opt_query { shift; MyReqOptQuery->new(@_) }
+
+package main;
+use Test::More tests => 225;
+use KinoSearch::Util::StringHelper qw( utf8_flag_on utf8ify );
+use KinoSearch::Test::TestUtils qw( create_index );
+
+my $folder       = KinoSearch::Store::RAMFolder->new;
+my $stop_folder  = KinoSearch::Store::RAMFolder->new;
+my $plain_schema = PlainSchema->new;
+my $stop_schema  = StopSchema->new;
 
 my @docs = ( 'x', 'y', 'z', 'x a', 'x a b', 'x a b c', 'x foo a b c d', );
-my $invindex      = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $stop_invindex = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $invindexer    = KinoSearch::InvIndexer->new(
-    invindex => $invindex,
-    analyzer => $whitespace_tokenizer,
+my $indexer = KinoSearch::Indexer->new(
+    index  => $folder,
+    schema => $plain_schema,
 );
-my $stop_invindexer = KinoSearch::InvIndexer->new(
-    invindex => $stop_invindex,
-    analyzer => $polyanalyzer,
+my $stop_indexer = KinoSearch::Indexer->new(
+    index  => $stop_folder,
+    schema => $stop_schema,
 );
-$invindexer->spec_field( name      => 'content' );
-$stop_invindexer->spec_field( name => 'content' );
 
-for my $content_string (@docs) {
-    my $doc = $invindexer->new_doc;
-    $doc->set_value( content => $content_string );
-    $invindexer->add_doc($doc);
-    $doc = $stop_invindexer->new_doc;
-    $doc->set_value( content => $content_string );
-    $stop_invindexer->add_doc($doc);
+for (@docs) {
+    $indexer->add_doc( { content => $_ } );
+    $stop_indexer->add_doc( { content => $_ } );
 }
-$invindexer->finish;
-$stop_invindexer->finish;
+$indexer->commit;
+$stop_indexer->commit;
 
-my $OR_parser = KinoSearch::QueryParser::QueryParser->new(
-    analyzer      => $whitespace_tokenizer,
-    default_field => 'content',
-);
-my $AND_parser = KinoSearch::QueryParser::QueryParser->new(
-    analyzer       => $whitespace_tokenizer,
-    default_field  => 'content',
+my $OR_parser = KinoSearch::QueryParser->new( schema => $plain_schema, );
+my $AND_parser = KinoSearch::QueryParser->new(
+    schema         => $plain_schema,
     default_boolop => 'AND',
 );
+$OR_parser->set_heed_colons(1);
+$AND_parser->set_heed_colons(1);
 
-my $OR_stop_parser = KinoSearch::QueryParser::QueryParser->new(
-    analyzer      => $polyanalyzer,
-    default_field => 'content',
-);
-my $AND_stop_parser = KinoSearch::QueryParser::QueryParser->new(
-    analyzer       => $polyanalyzer,
-    default_field  => 'content',
+my $OR_stop_parser = KinoSearch::QueryParser->new( schema => $stop_schema, );
+my $AND_stop_parser = KinoSearch::QueryParser->new(
+    schema         => $stop_schema,
     default_boolop => 'AND',
 );
+$OR_stop_parser->set_heed_colons(1);
+$AND_stop_parser->set_heed_colons(1);
 
-my $searcher      = KinoSearch::Searcher->new( invindex => $invindex );
-my $stop_searcher = KinoSearch::Searcher->new( invindex => $stop_invindex );
+my $searcher      = KinoSearch::Searcher->new( index => $folder );
+my $stop_searcher = KinoSearch::Searcher->new( index => $stop_folder );
 
 my @logical_tests = (
 
@@ -110,7 +149,7 @@ my @logical_tests = (
     'x y'     => [ 6, 0, 1, 1, ],
     'x a d'   => [ 5, 1, 4, 1, ],
     'x "a d"' => [ 5, 0, 0, 0, ],
-    '"x a"'   => [ 3, 3, 3, 3, ],
+    '"x a"'   => [ 3, 3, 4, 4, ],
 
     'x AND y'     => [ 0, 0, 1, 1, ],
     'x OR y'      => [ 6, 6, 1, 1, ],
@@ -149,32 +188,44 @@ while ( $i < @logical_tests ) {
     $i++;
 
     my $query = $OR_parser->parse($qstring);
-    my $hits = $searcher->search( query => $query );
-    $hits->seek( 0, 50 );
+    my $hits = $searcher->hits( query => $query );
     is( $hits->total_hits, $logical_tests[$i][0], "OR:    $qstring" );
 
     $query = $AND_parser->parse($qstring);
-    $hits = $searcher->search( query => $query );
-    $hits->seek( 0, 50 );
+    $hits = $searcher->hits( query => $query );
     is( $hits->total_hits, $logical_tests[$i][1], "AND:   $qstring" );
 
     $query = $OR_stop_parser->parse($qstring);
-    $hits = $stop_searcher->search( query => $query );
-    $hits->seek( 0, 50 );
+    $hits = $stop_searcher->hits( query => $query );
     is( $hits->total_hits, $logical_tests[$i][2], "stoplist-OR:   $qstring" );
 
     $query = $AND_stop_parser->parse($qstring);
-    $hits = $stop_searcher->search( query => $query );
-    $hits->seek( 0, 50 );
+    $hits = $stop_searcher->hits( query => $query );
     is( $hits->total_hits, $logical_tests[$i][3],
         "stoplist-AND:   $qstring" );
 
     $i++;
-
-    $hits->{searcher} = undef;
-    $hits->{reader}   = undef;
-    $hits->{weight}   = undef;
-    #kdump($query);
-    #exit;
 }
 
+my $motorhead = "Mot\xF6rhead";
+utf8ify($motorhead);
+my $unicode_folder = create_index($motorhead);
+$searcher = KinoSearch::Searcher->new( index => $unicode_folder );
+
+my $hits = $searcher->hits( query => 'Mot' );
+is( $hits->total_hits, 0, "Pre-test - indexing worked properly" );
+$hits = $searcher->hits( query => $motorhead );
+is( $hits->total_hits, 1, "QueryParser parses UTF-8 strings correctly" );
+
+use KinoSearch::QueryParser::QueryParser;
+my $compat_parser
+    = KinoSearch::QueryParser::QueryParser->new( schema => PlainSchema->new );
+isa_ok( $compat_parser, 'KinoSearch::QueryParser' );
+
+my $custom_parser = MyQueryParser->new( schema => PlainSchema->new );
+isa_ok( $custom_parser->parse('foo'),         'MyTermQuery' );
+isa_ok( $custom_parser->parse('"foo bar"'),   'MyPhraseQuery' );
+isa_ok( $custom_parser->parse('foo AND bar'), 'MyANDQuery' );
+isa_ok( $custom_parser->parse('foo OR bar'),  'MyORQuery' );
+isa_ok( $custom_parser->tree('NOT foo'),      'MyNOTQuery' );
+isa_ok( $custom_parser->parse('+foo bar'),    'MyReqOptQuery' );

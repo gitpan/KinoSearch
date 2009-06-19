@@ -1,0 +1,94 @@
+parcel KinoSearch cnick Kino;
+
+/** Point-in-time index file list.
+ *
+ * A Snapshot is list of index files.  Because index files, once written, are
+ * never modified, the list of files in a Snapshot defines a point-in-time
+ * view of the data in an index.
+ *
+ * IndexReader objects interpret the data associated with a single Snapshot.
+ */
+
+class KinoSearch::Index::Snapshot extends KinoSearch::Obj {
+
+    Hash        *entries;
+    CharBuf     *filename;
+
+    static i32_t current_file_format;
+
+    public static incremented Snapshot* 
+    new();
+    
+    /**
+     * Constructor.  Takes no arguments.
+     */
+    public static Snapshot* 
+    init(Snapshot *self);
+
+    /** Return a list of all entries.
+     */
+    public incremented VArray*
+    List(Snapshot *self);
+
+    /** Return the number of entries (including directories).
+     */
+    public u32_t
+    Num_Entries(Snapshot *self);
+
+
+    /** Add a filepath to the snapshot. 
+     */
+    public void
+    Add_Entry(Snapshot *self, const CharBuf *entry);
+
+    /** Delete a filepath from the snapshot.
+     *
+     * @return true if the entry existed and was successfully deleted, false
+     * otherwise.
+     */
+    public bool_t
+    Delete_Entry(Snapshot *self, const CharBuf *entry);
+
+    /** Decode a snapshot file and initialize the object to reflect its
+     * contents.
+     *
+     * @param folder A Folder.
+     * @param filename The name of the snapshot file.  If not supplied, the
+     * most recent snapshot file will be chosen.
+     * @return the object, allowing an assignment idiom.
+     */
+    public Snapshot*
+    Read_File(Snapshot *self, Folder *folder, const CharBuf *filename = NULL);
+
+    /** Write a snapshot file.  The caller must lock the index while this
+     * operation takes place, and the operation will fail if the file already
+     * exists.
+     * 
+     * @param folder A Folder.
+     * @param filename The name of the file to write to.  If NULL, a name will
+     * be chosen which supersedes the latest snapshot file in the index
+     * folder.
+     */
+    public void
+    Write_File(Snapshot *self, Folder *folder, 
+               const CharBuf *filename = NULL);
+
+    void
+    Set_Filename(Snapshot *self, const CharBuf *filename);
+
+    /** The name of the file that the Snapshot serves as a proxy for.
+     * Initially NULL; updated by Read_File() and Write_File().
+     */
+    public CharBuf*
+    Get_Filename(Snapshot *self);
+
+    void 
+    Destroy(Snapshot *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

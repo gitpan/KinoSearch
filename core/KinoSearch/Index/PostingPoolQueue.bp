@@ -1,0 +1,34 @@
+parcel KinoSearch cnick Kino;
+
+/**
+ * External sorter for raw postings.
+ */
+
+class KinoSearch::Util::PostingPoolQueue cnick PostPoolQ
+    extends KinoSearch::Util::SortExternal {
+
+    /* Constructors.
+     */
+    static incremented PostingPoolQueue*
+    new(VArray *post_pools, InStream *lex_instream, InStream *post_stream,
+        u32_t mem_thresh);
+
+    static PostingPoolQueue*
+    init(PostingPoolQueue *self, VArray *post_pools, InStream *lex_instream,
+         InStream *post_stream, u32_t mem_thresh);
+
+    /* Compare two RawPosting** pointers.
+     */
+    static int
+    compare_rawp(void *context, const void *va, const void *vb);
+
+    void
+    Flip(PostingPoolQueue *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

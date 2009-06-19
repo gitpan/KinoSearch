@@ -1,0 +1,44 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::NoMatchQuery - Query which matches no documents.
+
+
+
+=head1 DESCRIPTION
+
+NoMatchQuery is a utility class representing a query which matches nothing.
+Typical usage might include e.g. returning a NoMatchQuery when a
+QueryParser is asked to parse an empty string.
+
+=head1 CONSTRUCTORS
+
+=head2 new()
+
+    my $no_match_query = KinoSearch::Search::NoMatchQuery->new;
+
+Constructor. Takes no arguments.
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::NoMatchQuery isa L<KinoSearch::Search::Query> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

@@ -1,0 +1,66 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::ORQuery - Union multiple result sets.
+
+=head1 SYNOPSIS
+
+    my $foo_or_bar_query = KinoSearch::Search::ORQuery->new(
+        children => [ $foo_query, $bar_query ],
+    );
+    my $hits = $searcher->hits( query => $foo_or_bar_query );
+    ...
+
+
+
+=head1 DESCRIPTION
+
+ORQuery matches when any of its children match, so its result set is
+the union of their result sets.  Matching documents recieve a summed
+score from all matching child Queries.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $foo_or_bar_query = KinoSearch::Search::ORQuery->new(
+        children => [ $foo_query, $bar_query ],
+    );
+
+=over
+
+=item *
+
+B<children> - An array of child Queries.
+
+=back
+
+
+
+=head1 METHODS
+
+=head2 add_child(query)
+
+Add a child Query node.
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::ORQuery isa L<KinoSearch::Search::PolyQuery> isa L<KinoSearch::Search::Query> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

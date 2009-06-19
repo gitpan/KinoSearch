@@ -1,0 +1,70 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::HitCollector - Process hits.
+
+=head1 SYNOPSIS
+
+    # Abstract base class.
+
+
+
+=head1 DESCRIPTION
+
+A HitCollector decides what to do with the hits that a Matcher iterates
+through, based on how the abstract collect() method is implemented.
+
+=head1 CONSTRUCTORS
+
+=head2 new()
+
+    package MyHitCollector;
+    use base qw( KinoSearch::Search::HitCollector );
+    our %foo;
+    sub new {
+        my $self = shift->SUPER::new;
+        my %args = @_;
+        $foo{$$self} = $args{foo};
+        return $self;
+    }
+
+Abstract constructor.  Takes no arguments.
+
+
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 collect(doc_id)
+
+Do something with a doc id.  (For instance, keep track of the docs
+with the ten highest scores.)
+
+=over
+
+=item *
+
+B<doc_id> - A document id.
+
+=back
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::HitCollector isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

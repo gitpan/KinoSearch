@@ -1,0 +1,195 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Indexer - Build inverted indexes.
+
+=head1 SYNOPSIS
+
+    my $indexer = KinoSearch::Indexer->new(
+        schema => $schema,
+        index  => '/path/to/index',
+        create => 1,
+    );
+    while ( my ( $title, $content ) = each %source_docs ) {
+        $indexer->add_doc({
+            title   => $title,
+            content => $content,
+        });
+    }
+    $indexer->commit;
+
+
+
+=head1 DESCRIPTION
+
+The Indexer class is KinoSearch's primary tool for managing the content of
+inverted indexes, which may later be searched using
+L<KinoSearch::Searcher>.
+
+Only one Indexer may write to an index at a time.  If a write lock cannot
+be secured, new() will throw an exception.
+
+If an index is located on a shared volume, each writer application must
+identify itself by passing a L<LockFactory|KinoSearch::Store::LockFactory>
+to Indexer's constructor or index corruption will occur.  See LockFactory's
+documentation for a detailed explanation.
+
+Note: at present, delete_by_term() and delete_by_query() only affect
+documents which had been previously committed to the index -- and not any
+documents added this indexing session but not yet committed.  This may
+change in a future update.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $indexer = KinoSearch::Indexer->new(
+        schema       => $schema,           # required
+        index        => '/path/to/index',  # required
+        create       => 1,                 # default: 0
+        truncate     => 1,                 # default: 0
+        lock_factory => $factory           # default: created internally 
+    );
+
+=over
+
+=item *
+
+B<schema> - A Schema.
+
+=item *
+
+B<index> - Either a filepath to an index or a Folder.
+
+=item *
+
+B<create> - If true and the index directory does not exist, attempt to create
+it.
+
+=item *
+
+B<truncate> - If true, proceed with the intention of discarding all previous
+indexing data.  The old data will remain intact and visible until commit() is
+called.
+
+=item *
+
+B<lock_factory> - A LockFactory.
+
+=back
+
+
+=head1 METHODS
+
+=head2 add_doc(...)
+
+    $indexer->add_doc($doc);
+    $indexer->add_doc( { field_name => $field_value } );
+    $indexer->add_doc(
+        doc   => { field_name => $field_value },
+        boost => 2.5,         #: default 1.0
+    );
+
+Add a document to the index.  Accepts either a single argument or labeled
+params.
+
+=over
+
+=item *
+
+B<doc> - Either a KinoSearch::Doc object, or a hashref (which will be
+attached to a KinoSearch::Doc object internally).
+
+=item *
+
+B<boost> - A floating point weight which affects how this document scores.  
+
+=back
+
+=head2 add_index(index)
+
+Absorb an existing index into this one.  The two indexes must
+have matching Schemas.
+
+=over
+
+=item *
+
+B<index> - Either an index path name or a Folder.
+
+=back
+
+=head2 optimize()
+
+Collapse the index to its most compact form.  This may take a while,
+but will yield the fastest queries at search time.
+
+=head2 commit()
+
+Commit any changes made to the index.  Until this is called, none of
+the changes made during an indexing session are permanent.
+
+Calling commit() invalidates the Indexer, so if you want to make more
+changes you'll need a new one.
+
+=head2 prepare_commit()
+
+Perform the expensive setup for commit() in advance, so that commit()
+completes quickly.  (If prepare_commit() is not called explicitly by
+the user, commit() will call it internally.)
+
+=head2 delete_by_term( I<[labeled params]> )
+
+Mark documents which contain the supplied term as deleted, so that
+they will be excluded from search results and eventually removed
+altogether.  The change is not apparent to search apps until after
+commit() is called.
+
+=over
+
+=item *
+
+B<field> - The name of an indexed field. (If it is not spec'd as
+C<< indexed >>, an error will occur.)
+
+=item *
+
+B<term> - The term which identifies docs to be marked as deleted.  If
+C<< field >> is associated with an Analyzer, C<< term >>
+will be processed automatically (so don't pre-process it yourself).
+
+=back
+
+=head2 delete_by_query(query)
+
+Mark documents which match the supplied Query as deleted.
+
+=over
+
+=item *
+
+B<query> - A L<Query|KinoSearch::Search::Query>.
+
+=back
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Indexer isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

@@ -1,53 +1,54 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
 
-use lib 't';
-use Test::More 'no_plan';
+use lib 'buildlib';
+use KinoSearch::Test;
 
-use KinoSearch::Store::RAMInvIndex;
-use KinoSearch::Searcher;
-use KinoSearch::InvIndexer;
-use KinoSearch::Analysis::Tokenizer;
+package ControlSchema;
+use base qw( KinoSearch::Schema );
 
-my $control_invindex = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $boosted_fields_invindex_a
-    = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $boosted_fields_invindex_b
-    = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $boosted_docs_invindex
-    = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $analyzer = KinoSearch::Analysis::Tokenizer->new( token_re => qr/\S+/ );
-
-my $control_invindexer = KinoSearch::InvIndexer->new(
-    invindex => $control_invindex,
-    analyzer => $analyzer,
-
-);
-my $boosted_fields_invindexer_a = KinoSearch::InvIndexer->new(
-    invindex => $boosted_fields_invindex_a,
-    analyzer => $analyzer,
-);
-my $boosted_fields_invindexer_b = KinoSearch::InvIndexer->new(
-    invindex => $boosted_fields_invindex_b,
-    analyzer => $analyzer,
-);
-my $boosted_docs_invindexer = KinoSearch::InvIndexer->new(
-    invindex => $boosted_docs_invindex,
-    analyzer => $analyzer,
-);
-
-for ( $control_invindexer, $boosted_fields_invindexer_b,
-    $boosted_docs_invindexer )
-{
-    $_->spec_field( name => 'content' );
-    $_->spec_field( name => 'category' );
+sub new {
+    my $self = shift->SUPER::new(@_);
+    my $type = KinoSearch::FieldType::FullTextType->new(
+        analyzer => KinoSearch::Analysis::Tokenizer->new );
+    $self->spec_field( name => 'content',  type => $type );
+    $self->spec_field( name => 'category', type => $type );
+    return $self;
 }
 
-$boosted_fields_invindexer_a->spec_field( name => 'content' );
-$boosted_fields_invindexer_a->spec_field(
-    name  => 'category',
-    boost => 100,
+package BoostedFieldSchema;
+use base qw( KinoSearch::Schema );
+
+sub new {
+    my $self      = shift->SUPER::new(@_);
+    my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
+    my $plain_type
+        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer );
+    my $boosted_type
+        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer );
+    $boosted_type->set_boost(100);
+    $self->spec_field( name => 'content',  type => $plain_type );
+    $self->spec_field( name => 'category', type => $boosted_type );
+    return $self;
+}
+
+package main;
+use Test::More tests => 3;
+
+my $control_folder       = KinoSearch::Store::RAMFolder->new;
+my $boosted_doc_folder   = KinoSearch::Store::RAMFolder->new;
+my $boosted_field_folder = KinoSearch::Store::RAMFolder->new;
+my $control_indexer      = KinoSearch::Indexer->new(
+    schema => ControlSchema->new,
+    index  => $control_folder,
+);
+my $boosted_field_indexer = KinoSearch::Indexer->new(
+    schema => BoostedFieldSchema->new,
+    index  => $boosted_field_folder,
+);
+my $boosted_doc_indexer = KinoSearch::Indexer->new(
+    schema => ControlSchema->new,
+    index  => $boosted_doc_folder,
 );
 
 my %source_docs = (
@@ -56,67 +57,33 @@ my %source_docs = (
     'a b'       => 'x a a',
 );
 
-while ( my ( $content, $category ) = each %source_docs ) {
-    my $doc = $control_invindexer->new_doc;
-    $doc->set_value( content  => $content );
-    $doc->set_value( category => $category );
-    $control_invindexer->add_doc($doc);
+while ( my ( $content, $cat ) = each %source_docs ) {
+    my %fields = (
+        content  => $content,
+        category => $cat,
+    );
+    $control_indexer->add_doc( \%fields );
+    $boosted_field_indexer->add_doc( \%fields );
 
-    $doc = $boosted_fields_invindexer_a->new_doc;
-    $doc->set_value( content  => $content );
-    $doc->set_value( category => $category );
-    $boosted_fields_invindexer_a->add_doc($doc);
-
-    $doc = $boosted_fields_invindexer_b->new_doc;
-    $doc->set_value( content  => $content );
-    $doc->set_value( category => $category );
-    $doc->boost_field( content => 5 ) if ( $content =~ 'b' );
-    $boosted_fields_invindexer_b->add_doc($doc);
-
-    $doc = $boosted_docs_invindexer->new_doc;
-    $doc->set_value( content  => $content );
-    $doc->set_value( category => $category );
-    $doc->set_boost(5) if ( $content =~ 'b' );
-    $boosted_docs_invindexer->add_doc($doc);
+    my $boost = $content =~ /b/ ? 2 : 1;
+    $boosted_doc_indexer->add_doc( doc => \%fields, boost => $boost );
 }
 
-$control_invindexer->finish;
-$boosted_fields_invindexer_a->finish;
-$boosted_fields_invindexer_b->finish;
-$boosted_docs_invindexer->finish;
+$control_indexer->commit;
+$boosted_field_indexer->commit;
+$boosted_doc_indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new(
-    invindex => $control_invindex,
-    analyzer => $analyzer,
-);
-my $hits = $searcher->search('a');
-$hits->seek( 0, 1 );
-my $hit = $hits->fetch_hit_hashref;
+my $searcher = KinoSearch::Searcher->new( index => $control_folder, );
+my $hits = $searcher->hits( query => 'a' );
+my $hit = $hits->next;
 is( $hit->{content}, "x a a a a", "best doc ranks highest with no boosting" );
 
-$searcher = KinoSearch::Searcher->new(
-    invindex => $boosted_fields_invindex_a,
-    analyzer => $analyzer,
-);
-$hits = $searcher->search('a');
-$hits->seek( 0, 3 );
-$hit = $hits->fetch_hit_hashref;
-is( $hit->{content}, 'a b', "boost from spec_field works" );
+$searcher = KinoSearch::Searcher->new( index => $boosted_field_folder, );
+$hits = $searcher->hits( query => 'a' );
+$hit = $hits->next;
+is( $hit->{content}, 'a b', "boost in FieldType works" );
 
-$searcher = KinoSearch::Searcher->new(
-    invindex => $boosted_fields_invindex_b,
-    analyzer => $analyzer,
-);
-$hits = $searcher->search('a');
-$hits->seek( 0, 1 );
-$hit = $hits->fetch_hit_hashref;
-is( $hit->{content}, 'a b', "boost from \$doc->boost_field works" );
-
-$searcher = KinoSearch::Searcher->new(
-    invindex => $boosted_docs_invindex,
-    analyzer => $analyzer,
-);
-$hits = $searcher->search('a');
-$hits->seek( 0, 1 );
-$hit = $hits->fetch_hit_hashref;
+$searcher = KinoSearch::Searcher->new( index => $boosted_doc_folder, );
+$hits = $searcher->hits( query => 'a' );
+$hit = $hits->next;
 is( $hit->{content}, 'a b', "boost from \$doc->set_boost works" );

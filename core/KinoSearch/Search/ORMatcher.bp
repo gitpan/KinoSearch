@@ -1,0 +1,92 @@
+parcel KinoSearch cnick Kino;
+
+__C__
+#include "KinoSearch/Search/Matcher.h"
+
+/* A wrapper for a Matcher which caches the result of Matcher_Get_Doc_ID().
+ */
+typedef struct kino_HeapedMatcherDoc {
+    kino_Matcher *matcher;
+    chy_i32_t     doc;
+} kino_HeapedMatcherDoc;
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define HeapedMatcherDoc              kino_HeapedMatcherDoc
+#endif
+
+__END_C__
+
+/** Matcher which unions the doc id sets of other Matchers using a priority
+ * queue.
+ */
+
+class KinoSearch::Search::ORMatcher extends KinoSearch::Search::PolyMatcher {
+
+    HeapedMatcherDoc **heap;
+    HeapedMatcherDoc **pool;    /* Pool of HMDs to minimize mallocs */
+    char              *blob;    /* single allocation for all HMDs */
+    HeapedMatcherDoc  *top_hmd; /* cached top elem */
+    u32_t              size;
+    u32_t              max_size;
+
+    static incremented ORMatcher*
+    new(VArray *children);
+
+    /** 
+     * @param children An array of Matchers.
+     */
+    static incremented ORMatcher*
+    init(ORMatcher *self, VArray *children);
+
+    void
+    Destroy(ORMatcher *self);
+
+    public i32_t
+    Next(ORMatcher *self);
+
+    public i32_t
+    Advance(ORMatcher *self, i32_t target);
+
+    public i32_t 
+    Get_Doc_ID(ORMatcher *self);
+}
+
+/**
+ * Union results of multiple Matchers.
+ * 
+ * ORScorer collates the output of multiple subscorers, summing their scores
+ * whenever they match the same document.
+ */
+class KinoSearch::Search::ORScorer extends KinoSearch::Search::ORMatcher {
+
+    float            *scores;
+    i32_t             doc_id;
+
+    static incremented ORScorer* 
+    new(VArray *children, Similarity *similarity);
+
+    static ORScorer* 
+    init(ORScorer *self, VArray *children, Similarity *similarity);
+
+    void
+    Destroy(ORScorer *self);
+
+    public i32_t
+    Next(ORScorer *self);
+
+    public i32_t
+    Advance(ORScorer *self, i32_t target);
+
+    public float
+    Score(ORScorer *self);
+
+    public i32_t 
+    Get_Doc_ID(ORScorer *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

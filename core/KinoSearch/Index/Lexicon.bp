@@ -1,0 +1,57 @@
+parcel KinoSearch cnick Kino;
+
+/** Iterator for a field's terms.
+ * 
+ * A Lexicon is an iterator which provides access to all the unique terms for a
+ * given field in sorted order.
+ * 
+ * If an index consists of two documents with a 'content' field holding "three
+ * blind mice" and "three musketeers" respectively, then iterating through the
+ * 'content' field's lexicon would produce this list:
+ * 
+ *     blind
+ *     mice
+ *     musketeers
+ *     three
+ */
+
+class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Obj {
+
+    CharBuf *field;
+
+    public static Lexicon*
+    init(Lexicon *self);
+
+    /** Seek the Lexicon to the first iterator state which is greater than or
+     * equal to <code>target</code>.  If <code>target</code> is NULL,
+     * reset the iterator.
+     */
+    public abstract void
+    Seek(Lexicon *self, Obj *target = NULL);
+
+    /** Proceed to the next term.  
+     * 
+     * @return true until the iterator is exhausted, then false.
+     */
+    public abstract bool_t
+    Next(Lexicon *self);
+
+    /** Reset the iterator.  Next() must be called to proceed to the first
+     * element.
+     */
+    public abstract void
+    Reset(Lexicon *self);
+
+    /** Return the current term, or NULL if the iterator is not in a valid
+     * state.
+     */
+    public abstract Obj*
+    Get_Term(Lexicon *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,62 @@
+parcel KinoSearch cnick Kino;
+
+/** Posting with per-position boost.
+ *
+ * RichPosting is similar to L<ScorePosting|KinoSearch::Posting::ScorePosting>,
+ * but weighting is per-position rather than per-field.  To exploit this, you need a
+ * custom L<Analyzer|KinoSearch::Analysis::Analyzer> which assigns varying
+ * boosts to individual L<Token|KinoSearch::Analysis::Token> objects.
+ * 
+ * A typical application for RichPosting is an HTMLAnalyzer which assigns
+ * boost based on the visual size and weight of the marked up text: H1
+ * blocks get the greatest weight, H2 blocks almost as much, etc.
+ */ 
+class KinoSearch::Posting::RichPosting cnick RichPost
+    extends KinoSearch::Posting::ScorePosting {
+
+    float  *prox_boosts;
+
+    static incremented RichPosting*
+    new(Similarity *similarity);
+
+    static RichPosting*
+    init(RichPosting *self, Similarity *similarity);
+
+    void
+    Destroy(RichPosting *self);
+
+    incremented RichPosting*
+    Clone(RichPosting *self);
+
+    void
+    Read_Record(RichPosting *self, InStream *instream);
+
+    incremented RawPosting*
+    Read_Raw(RichPosting *self, InStream *instream, i32_t last_doc_id, 
+             CharBuf *term_text, MemoryPool *mem_pool);
+
+    void
+    Add_Inversion_To_Pool(RichPosting *self, PostingPool *post_pool, 
+                          Inversion *inversion, FieldType *type, 
+                          i32_t doc_id, float doc_boost, 
+                          float length_norm);
+
+    public incremented RichPostingScorer*
+    Make_Matcher(RichPosting *self, Similarity *sim, PostingList *plist, 
+                 Compiler *compiler, bool_t need_score);
+}
+
+class KinoSearch::Posting::RichPostingScorer cnick RichPostScorer
+    extends KinoSearch::Posting::ScorePostingScorer {
+
+    static RichPostingScorer*
+    init(RichPostingScorer *self, Similarity *similarity, 
+         PostingList *posting_list, Compiler *compiler);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

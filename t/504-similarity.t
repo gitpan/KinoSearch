@@ -1,25 +1,97 @@
-#!/usr/bin/perl
+use strict;
+use warnings;
 
-use Test::More tests => 5;
+package MockSearchable;
+use base qw( KinoSearch::Search::Searchable );
 
-BEGIN {
-    use_ok('KinoSearch::Search::Similarity');
+our %doc_freqs;
+
+sub new {
+    my ( $class, %args ) = @_;
+    my $doc_freqs = delete $args{doc_freqs};
+    my $self      = $class->SUPER::new(%args);
+    $doc_freqs{$$self} = $doc_freqs;
+    return $self;
 }
 
-use KinoSearch::Store::RAMInvIndex;
+sub DESTROY {
+    my $self = shift;
+    delete $doc_freqs{$$self};
+    $self->SUPER::DESTROY;
+}
+
+sub doc_freq {
+    my ( $self, %args ) = @_;
+    return $doc_freqs{$$self}{ $args{term} };
+}
+
+sub doc_max {100}
+
+package MySchema::LongTextField;
+use base qw( KinoSearch::FieldType::FullTextType );
+use KSx::Search::LongFieldSim;
+
+sub make_similarity { KSx::Search::LongFieldSim->new }
+
+package MySchema;
+use base qw( KinoSearch::Schema );
 use KinoSearch::Analysis::Tokenizer;
-use KinoSearch::InvIndexer;
-use KinoSearch::Searcher;
 
-my $sim = KinoSearch::Search::Similarity->new;
+sub new {
+    my $self     = shift->SUPER::new(@_);
+    my $analyzer = KinoSearch::Analysis::Tokenizer->new;
+    my $plain_type
+        = KinoSearch::FieldType::FullTextType->new( analyzer => $analyzer, );
+    my $long_field_type
+        = MySchema::LongTextField->new( analyzer => $analyzer, );
+    $self->spec_field( name => 'title', type => $plain_type );
+    $self->spec_field( name => 'body',  type => $long_field_type );
+    return $self;
+}
 
-my @bytes = map { pack( 'C', $_ ) } ( 100, 110, 120, 130, 140 );
+package main;
+use Test::More tests => 9;
+use KinoSearch::Test;
+use bytes;
+no bytes;
+
+my $sim       = KinoSearch::Search::Similarity->new;
+my $evil_twin = $sim->load( $sim->dump );
+ok( $sim->equals($evil_twin), "Dump/Load" );
+
+cmp_ok( $sim->tf(10) - $sim->tf(9), '<', 1, "TF is damped" );
+
+my $mock_searchable = MockSearchable->new(
+    schema    => MySchema->new,
+    doc_freqs => {
+        foo => 3,
+        bar => 200,
+    },
+);
+my $foo_idf = $sim->idf(
+    searchable => $mock_searchable,
+    field      => 'title',
+    term       => 'foo'
+);
+my $bar_idf = $sim->idf(
+    searchable => $mock_searchable,
+    field      => 'title',
+    term       => 'bar'
+);
+cmp_ok( $foo_idf, '>', $bar_idf, 'Rarer terms have higher IDF' );
+
+my $less_coordinated = $sim->coord( overlap => 2, max_overlap => 5 );
+my $more_coordinated = $sim->coord( overlap => 3, max_overlap => 5 );
+cmp_ok( $less_coordinated, '<', $more_coordinated,
+    "greater overlap means bigger coord bonus" );
+
+my @bytes  = ( 100,      110,     120, 130, 140 );
 my @floats = ( 0.015625, 0.09375, 0.5, 3.0, 16.0 );
 my @transformed = map { $sim->decode_norm($_) } @bytes;
 is_deeply( \@floats, \@transformed,
     "decode_norm more or less matches Java Lucene behavior" );
 
-@bytes       = map { pack( 'C', $_ ) } 0 .. 255;
+@bytes       = 0 .. 255;
 @floats      = map { $sim->decode_norm($_) } @bytes;
 @transformed = map { $sim->encode_norm($_) } @floats;
 is_deeply( \@transformed, \@bytes,
@@ -34,40 +106,42 @@ for ( 0 .. 255 ) {
 is_deeply( \@transformed, \@floats,
     "using the norm_decoder produces desired results" );
 
-my $invindex   = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $tokenizer  = KinoSearch::Analysis::Tokenizer->new;
-my $invindexer = KinoSearch::InvIndexer->new(
-    analyzer => $tokenizer,
-    invindex => $invindex,
+my $folder  = KinoSearch::Store::RAMFolder->new;
+my $indexer = KinoSearch::Indexer->new(
+    index  => $folder,
+    schema => MySchema->new,
 );
-$invindexer->spec_field( name => 'body' );
-$invindexer->spec_field(
-    name  => 'title',
-    boost => 2,
-);
-my $title_sim = KinoSearch::Search::TitleSimilarity->new;
-$invindexer->set_similarity( title => $title_sim );
 
 my %source_docs = (
-    'spam spam spam spam' => 'a load of spam',
-    'not spam'            => 'not spam not even close to spam',
+    'spam'     => 'spam spam',
+    'not spam' => 'not spam not even close to spam no spam here',
 );
 while ( my ( $title, $body ) = each %source_docs ) {
-    my $doc = $invindexer->new_doc;
-    $doc->set_value( title => $title );
-    $doc->set_value( body  => $body );
-    $invindexer->add_doc($doc);
+    $indexer->add_doc(
+        {   title => $title,
+            body  => $body,
+        }
+    );
 }
-$invindexer->finish;
-undef $invindexer;
+$indexer->commit;
+undef $indexer;
 
-my $searcher = KinoSearch::Searcher->new(
-    invindex => $invindex,
-    analyzer => $tokenizer,
+my $searcher = KinoSearch::Searcher->new( index => $folder );
+
+my $hits = $searcher->hits(
+    query => KinoSearch::Search::TermQuery->new(
+        field => 'title',
+        term  => 'spam',
+    )
 );
-$searcher->set_similarity( title => $title_sim );
+is( $hits->next->{'title'},
+    'spam', "Default Similarity biased towards short fields" );
 
-my $hits = $searcher->search( query => 'spam' );
-
-is( $hits->fetch_hit_hashref->{'title'},
-    'not spam', "TitleSimilarity works well on title fields" );
+$hits = $searcher->hits(
+    query => KinoSearch::Search::TermQuery->new(
+        field => 'body',
+        term  => 'spam',
+    )
+);
+is( $hits->next->{'title'},
+    'not spam', "LongFieldSim cancels short-field bias" );

@@ -1,0 +1,51 @@
+parcel KinoSearch cnick Kino;
+
+/** Query which matches no documents.
+ *
+ * NoMatchQuery is a utility class representing a query which matches nothing.
+ * Typical usage might include e.g. returning a NoMatchQuery when a
+ * QueryParser is asked to parse an empty string.
+ */
+class KinoSearch::Search::NoMatchQuery extends KinoSearch::Search::Query
+    : dumpable {
+
+    static incremented NoMatchQuery*
+    new();
+
+    /** Constructor. Takes no arguments.
+     */
+    public static NoMatchQuery*
+    init(NoMatchQuery *self);
+
+    public bool_t
+    Equals(NoMatchQuery *self, Obj *other);
+
+    public incremented CharBuf*
+    To_String(NoMatchQuery *self);
+
+    public incremented Compiler*
+    Make_Compiler(NoMatchQuery *self, Searchable *searchable, float boost);
+}
+
+class KinoSearch::Search::NoMatchCompiler extends KinoSearch::Search::Compiler {
+
+    static incremented NoMatchCompiler*
+    new(NoMatchQuery *parent, Searchable *searchable, float boost);
+
+    static NoMatchCompiler*
+    init(NoMatchCompiler *self, NoMatchQuery *parent,
+         Searchable *searchable, float boost);
+
+    public incremented Matcher*
+    Make_Matcher(NoMatchCompiler *self, SegReader *reader, bool_t need_score);
+    
+    public incremented NoMatchCompiler*
+    Deserialize(NoMatchCompiler *self, InStream *instream);
+}
+
+/* Copyright 2008-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

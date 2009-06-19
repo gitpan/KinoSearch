@@ -1,0 +1,41 @@
+parcel KinoSearch cnick Kino;
+
+/** Memory-mapped FileDes.
+ */
+class KinoSearch::Store::MMapFileDes extends KinoSearch::Store::FileDes {
+
+    int    fd;
+    i64_t  len;
+    i64_t  page_size;
+    char  *buf;
+
+    /** Constructor.  Will return NULL if attempt to open the file fails.
+     */
+    static incremented MMapFileDes* 
+    new(const CharBuf *path = NULL);
+
+    static MMapFileDes* 
+    init(MMapFileDes *self, const CharBuf *path = NULL);
+
+    bool_t
+    Window(MMapFileDes *self, FileWindow *window, i64_t offset, i64_t len);
+
+    bool_t
+    Release_Window(MMapFileDes *self, FileWindow *window);
+
+    bool_t
+    Read(MMapFileDes *self, char *dest, u64_t offset, u32_t len);
+
+    u64_t
+    Length(MMapFileDes *self);
+
+    bool_t
+    Close(MMapFileDes *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

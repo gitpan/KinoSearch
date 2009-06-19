@@ -1,0 +1,63 @@
+parcel KinoSearch cnick Kino;
+
+/** Execute searches against a single index.
+ * 
+ * Use the Searcher class to perform search queries against an index.  (For
+ * searching multiple indexes at once, see
+ * L<PolySearcher|KinoSearch::Search::PolySearcher>).
+ */
+class KinoSearch::Searcher extends KinoSearch::Search::Searchable {
+
+    IndexReader       *reader;
+    DocReader         *doc_reader;
+    HighlightReader   *hl_reader;
+    VArray            *seg_readers;
+    I32Array          *seg_starts;
+
+    static incremented Searcher*
+    new(Obj *index);
+
+    /** 
+     * @param index Either a string filepath, a Folder, or an IndexReader.
+     */
+    public static Searcher*
+    init(Searcher *self, Obj *index);
+
+    void
+    Destroy(Searcher *self);
+
+    public i32_t
+    Doc_Max(Searcher *self);
+
+    public u32_t
+    Doc_Freq(Searcher *self, const CharBuf *field, Obj *term);
+
+    public void
+    Collect(Searcher *self, Query *query, HitCollector *collector);
+
+    incremented TopDocs*
+    Top_Docs(Searcher *self, Query *query, u32_t num_wanted,
+             SortSpec *sort_spec = NULL);
+
+    public incremented Obj*
+    Fetch_Doc(Searcher *self, i32_t doc_id, float score = 0.0, 
+              i32_t offset = 0);
+
+    incremented DocVector*
+    Fetch_Doc_Vec(Searcher *self, i32_t doc_id);
+
+    /** Accessor for the object's <code>reader</code> member.
+     */
+    public IndexReader*
+    Get_Reader(Searcher *self);
+
+    void
+    Close(Searcher *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

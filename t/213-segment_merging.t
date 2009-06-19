@@ -1,102 +1,161 @@
 use strict;
 use warnings;
 
-use lib 't';
-use Test::More tests => 10;
-use File::Path qw( rmtree );
-use File::Spec::Functions qw( catfile );
-use File::stat qw( stat );
+use lib 'buildlib';
+use KinoSearch::Test;
 
-BEGIN {
-    use_ok('KinoSearch::InvIndexer');
-    use_ok('KinoSearch::Searcher');
-    use_ok('KinoSearch::Analysis::Tokenizer');
-    use_ok('KinoSearch::Index::IndexReader');
+package NonMergingIndexManager;
+use base qw( KinoSearch::Index::IndexManager );
+
+sub segreaders_to_merge {
+    return KinoSearch::Util::VArray->new( capacity => 0 );
 }
-use KinoSearchTestInvIndex qw( create_invindex init_test_invindex_loc );
 
-my $invindex_loc = init_test_invindex_loc();
-my ( $invindexer, $searcher, $hits, $another_invindex,
-    $yet_another_invindex );
-my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
+# BiggerSchema is like TestSchema, but it has an extra field named "aux".
+# Because "aux" sorts before "content", it forces a remapping of field numbers
+# when an index created under TestSchema is opened/modified under
+# BiggerSchema.
+package BiggerSchema;
+use base qw( KinoSearch::Test::TestSchema );
 
-my $fake_norm_file = catfile( $invindex_loc, '_4.f0' );
-
-sub init_invindexer {
-    my %args = @_;
-    undef $invindexer;
-    $invindexer = KinoSearch::InvIndexer->new(
-        invindex => $invindex_loc,
-        analyzer => $tokenizer,
-        %args,
+sub new {
+    my $self = shift->SUPER::new(@_);
+    my $type = KinoSearch::FieldType::FullTextType->new(
+        analyzer      => KinoSearch::Analysis::Tokenizer->new,
+        highlightable => 1,
     );
-    if ( $args{create} ) {
-        open( my $fh, '>', $fake_norm_file )
-            or die "can't open $fake_norm_file: $!";
-        print $fh "blah";
-    }
-    $invindexer->spec_field( name => 'letters' );
+    $self->spec_field( name => 'content', type => $type );
+    $self->spec_field( name => 'aux',     type => $type );
+    return $self;
 }
 
-my $create = 1;
+package main;
+use Test::More tests => 8;
+use KinoSearch::Test::TestSchema;
+use KinoSearch::Test::TestUtils qw( create_index init_test_index_loc );
+use File::Find qw( find );
+
+my $index_loc = init_test_index_loc();
+
+my $num_reps;
+{
+    # Verify that optimization truly cuts down on the number of segments.
+    my $schema = KinoSearch::Test::TestSchema->new;
+    for ( $num_reps = 1;; $num_reps++ ) {
+        my $indexer = KinoSearch::Indexer->new(
+            index  => $index_loc,
+            schema => $schema,
+        );
+        my $num_cf_files = num_cf_files($index_loc);
+        if ( $num_reps > 2 and $num_cf_files > 1 ) {
+            $indexer->optimize;
+            $indexer->commit;
+            $num_cf_files = num_cf_files($index_loc);
+            is( $num_cf_files, 1, 'commit after optimize' );
+            last;
+        }
+        else {
+            $indexer->add_doc( { content => $_ } ) for 1 .. 5;
+            $indexer->commit;
+        }
+    }
+}
+
+init_test_index_loc();
+
 my @correct;
 for my $num_letters ( reverse 1 .. 10 ) {
-    init_invindexer( create => $create );
-    $create = 0;
-    for my $letter ( 'a' .. 'b' ) {
-        my $doc     = $invindexer->new_doc;
-        my $content = ( "$letter " x $num_letters ) . 'z';
+    my $truncate = $num_letters == 10 ? 1 : 0;
+    my $indexer = KinoSearch::Indexer->new(
+        schema   => KinoSearch::Test::TestSchema->new,
+        index    => $index_loc,
+        truncate => $truncate,
+    );
 
-        $doc->set_value( letters => $content );
-        $invindexer->add_doc($doc);
+    for my $letter ( 'a' .. 'b' ) {
+        my $content = ( "$letter " x $num_letters ) . ( 'z ' x 50 );
+        $indexer->add_doc( { content => $content } );
         push @correct, $content if $letter eq 'b';
     }
-    $invindexer->finish;
+    $indexer->commit;
 }
 
-ok( !-f $fake_norm_file, "overwrote fake leftover norm file" );
+{
+    my $searcher = KinoSearch::Searcher->new( index => $index_loc );
+    my $hits = $searcher->hits( query => 'b' );
+    is( $hits->total_hits, 10, "correct total_hits from merged index" );
+    my @got;
+    push @got, $hits->next->{content} for 1 .. $hits->total_hits;
+    is_deeply( \@got, \@correct,
+        "correct top scoring hit from merged index" );
+}
 
-$searcher = KinoSearch::Searcher->new(
-    invindex => $invindex_loc,
-    analyzer => $tokenizer,
-);
-$hits = $searcher->search( query => 'b' );
-is( $hits->total_hits, 10, "correct total_hits from merged invindex" );
-my @got;
-push @got, $hits->fetch_hit_hashref->{letters} for 1 .. $hits->total_hits;
-is_deeply( \@got, \@correct, "correct top scoring hit from merged invindex" );
+{
+    # Reopen index under BiggerSchema and add some content.
+    my $schema  = BiggerSchema->new;
+    my $folder  = KinoSearch::Store::FSFolder->new( path => $index_loc );
+    my $indexer = KinoSearch::Indexer->new(
+        schema  => $schema,
+        index   => $folder,
+        manager => NonMergingIndexManager->new( folder => $folder ),
+    );
+    $indexer->add_doc( { aux => 'foo', content => 'bar' } );
 
-init_invindexer();
-$another_invindex = create_invindex( "atlantic ocean", "fresh fish" );
-$yet_another_invindex = create_invindex("bonus");
-$invindexer->add_invindexes( $another_invindex, $yet_another_invindex );
-$invindexer->finish;
-$searcher = KinoSearch::Searcher->new(
-    invindex => $invindex_loc,
-    analyzer => $tokenizer,
-);
-$hits = $searcher->search( query => 'fish' );
-is( $hits->total_hits, 1, "correct total_hits after add_invindexes" );
-is( $hits->fetch_hit_hashref->{content},
-    'fresh fish', "other invindexes successfully absorbed" );
-undef $searcher;
-undef $hits;
+    # Now add some indexes.
+    my $another_folder = create_index( "atlantic ocean", "fresh fish" );
+    my $yet_another_folder = create_index("bonus");
+    $indexer->add_index($another_folder);
+    $indexer->add_index($yet_another_folder);
+    $indexer->commit;
+    cmp_ok( num_cf_files($index_loc),
+        '>', 1, "non-merging Indexer should produce multi-seg index" );
+}
 
-# Open an IndexReader, to prevent the deletion of files on Win32 and verify
-# the deletequeue mechanism.
-my $reader
-    = KinoSearch::Index::IndexReader->new( invindex => $invindex_loc, );
-init_invindexer();
-$invindexer->finish( optimize => 1 );
-$reader->close;
-init_invindexer();
-$invindexer->finish( optimize => 1 );
-opendir( my $invindex_dh, $invindex_loc )
-    or die "Couldn't opendir '$invindex_loc': $!";
-my @cfs_files = grep {m/\.cfs$/} readdir $invindex_dh;
-closedir $invindex_dh, $invindex_loc
-    or die "Couldn't closedir '$invindex_loc': $!";
-is( scalar @cfs_files, 1, "merged segment files successfully deleted" );
+{
+    my $searcher = KinoSearch::Searcher->new( index => $index_loc );
+    my $hits = $searcher->hits( query => 'fish' );
+    is( $hits->total_hits, 1, "correct total_hits after add_index" );
+    is( $hits->next->{content},
+        'fresh fish', "other indexes successfully absorbed" );
+}
 
-# Clean up.
-rmtree($invindex_loc);
+{
+    # Open an IndexReader, to prevent the deletion of files on Windows and
+    # verify the file purging mechanism.
+    my $schema  = BiggerSchema->new;
+    my $folder  = KinoSearch::Store::FSFolder->new( path => $index_loc );
+    my $reader  = KinoSearch::Index::IndexReader->open( index => $folder );
+    my $indexer = KinoSearch::Indexer->new(
+        schema => $schema,
+        index  => $folder,
+    );
+    $indexer->optimize;
+    $indexer->commit;
+    $reader->close;
+    undef $reader;
+    $indexer = KinoSearch::Indexer->new(
+        schema => $schema,
+        index  => $folder,
+    );
+    $indexer->optimize;
+    $indexer->commit;
+}
+
+is( num_cf_files($index_loc), 1,
+    "merged segment files successfully deleted" );
+
+is( KinoSearch::Store::FileDes::object_count(),
+    0, "All FileDes objects have been cleaned up" );
+
+sub num_cf_files {
+    my $dir          = shift;
+    my $num_cf_files = 0;
+    find(
+        {   no_chdir => 1,
+            wanted =>
+                sub { $num_cf_files++ if $File::Find::name =~ /cf\.dat/ },
+        },
+        $dir,
+    );
+    return $num_cf_files;
+}

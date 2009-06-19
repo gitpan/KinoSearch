@@ -1,99 +1,87 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
 
-use Test::More tests => 12;
-use KinoSearch::Store::RAMInvIndex;
-use KinoSearch::Analysis::Tokenizer;
-use KinoSearch::Analysis::PolyAnalyzer;
-use KinoSearch::InvIndexer;
-use KinoSearch::Searcher;
-use KinoSearch::Search::TermQuery;
-use KinoSearch::Index::Term;
+use KinoSearch::Test;
 
-my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
-my $polyanalyzer
-    = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
+package PolyAnalyzerSpec;
+use base qw( KinoSearch::FieldType::FullTextType );
+sub analyzer { KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' ) }
 
-my $invindex = KinoSearch::Store::RAMInvIndex->new( create => 1 );
-my $invindexer = KinoSearch::InvIndexer->new(
-    invindex => $invindex,
-    analyzer => $tokenizer,
-);
+package MySchema;
+use base qw( KinoSearch::Schema );
 
-$invindexer->spec_field( name => 'analyzed', );
-$invindexer->spec_field(
-    name     => 'polyanalyzed',
-    analyzer => $polyanalyzer,
-);
-$invindexer->spec_field(
-    name     => 'unanalyzed',
-    analyzed => 0,
-);
-$invindexer->spec_field(
-    name     => 'unpolyanalyzed',
-    analyzed => 0,
-    analyzer => $polyanalyzer,
-);
-$invindexer->spec_field(
-    name    => 'unindexed_but_analyzed',
-    indexed => 0,
-);
-$invindexer->spec_field(
-    name     => 'unanalyzed_unindexed',
-    analyzed => 0,
-    indexed  => 0,
-);
-
-sub add_a_doc {
-    my $field_name = shift;
-    my $doc        = $invindexer->new_doc;
-    $doc->set_value( $field_name => 'United States' );
-    $invindexer->add_doc($doc);
+sub new {
+    my $self      = shift->SUPER::new(@_);
+    my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
+    my $polyanalyzer
+        = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
+    my $plain
+        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer, );
+    my $polyanalyzed = KinoSearch::FieldType::FullTextType->new(
+        analyzer => $polyanalyzer );
+    my $string_spec          = KinoSearch::FieldType::StringType->new;
+    my $unindexedbutanalyzed = KinoSearch::FieldType::FullTextType->new(
+        analyzer => $tokenizer,
+        indexed  => 0,
+    );
+    my $unanalyzedunindexed
+        = KinoSearch::FieldType::StringType->new( indexed => 0, );
+    $self->spec_field( name => 'analyzed',     type => $plain );
+    $self->spec_field( name => 'polyanalyzed', type => $polyanalyzed );
+    $self->spec_field( name => 'string',       type => $string_spec );
+    $self->spec_field(
+        name => 'unindexedbutanalyzed',
+        type => $unindexedbutanalyzed
+    );
+    $self->spec_field(
+        name => 'unanalyzedunindexed',
+        type => $unanalyzedunindexed
+    );
+    return $self;
 }
 
-add_a_doc($_) for qw(
+package main;
+use Test::More tests => 10;
+
+my $folder  = KinoSearch::Store::RAMFolder->new;
+my $schema  = MySchema->new;
+my $indexer = KinoSearch::Indexer->new(
+    index  => $folder,
+    schema => $schema,
+);
+
+$indexer->add_doc( { $_ => 'United States' } ) for qw(
     analyzed
     polyanalyzed
-    unanalyzed
-    unpolyanalyzed
-    unindexed_but_analyzed
-    unanalyzed_unindexed
+    string
+    unindexedbutanalyzed
+    unanalyzedunindexed
 );
 
-$invindexer->finish;
+$indexer->commit;
 
 sub check {
-    my ( $field_name, $query_text, $expected_num_hits ) = @_;
-
+    my ( $field, $query_text, $expected_num_hits ) = @_;
     my $query = KinoSearch::Search::TermQuery->new(
-        term => KinoSearch::Index::Term->new( $field_name, $query_text ), );
-
-    my $searcher = KinoSearch::Searcher->new(
-        invindex => $invindex,
-        analyzer => $tokenizer,    # doesn't matter - no QueryParser
+        field => $field,
+        term  => $query_text,
     );
+    my $searcher = KinoSearch::Searcher->new( index => $folder );
+    my $hits = $searcher->hits( query => $query );
 
-    my $hits = $searcher->search( query => $query );
+    is( $hits->total_hits, $expected_num_hits, "$field correct num hits " );
 
-    is( $hits->total_hits, $expected_num_hits,
-        "$field_name correct num hits " );
-
-    # don't check the contents of the hit if there aren't any
+    # Don't check the contents of the hit if there aren't any.
     return unless $expected_num_hits;
 
-    my $hit = $hits->fetch_hit_hashref;
-    is( $hit->{$field_name},
-        'United States',
-        "$field_name correct doc returned"
-    );
+    my $hit = $hits->next;
+    is( $hit->{$field}, 'United States', "$field correct doc returned" );
 }
 
-check( 'analyzed',               'States',        1 );
-check( 'polyanalyzed',           'state',         1 );
-check( 'unanalyzed',             'United States', 1 );
-check( 'unpolyanalyzed',         'United States', 1 );
-check( 'unindexed_but_analyzed', 'state',         0 );
-check( 'unindexed_but_analyzed', 'United States', 0 );
-check( 'unanalyzed_unindexed',   'state',         0 );
-check( 'unanalyzed_unindexed',   'United States', 0 );
+check( 'analyzed',             'States',        1 );
+check( 'polyanalyzed',         'state',         1 );
+check( 'string',               'United States', 1 );
+check( 'unindexedbutanalyzed', 'state',         0 );
+check( 'unindexedbutanalyzed', 'United States', 0 );
+check( 'unanalyzedunindexed',  'state',         0 );
+check( 'unanalyzedunindexed',  'United States', 0 );

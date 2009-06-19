@@ -1,0 +1,51 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Analysis::CaseFolder - Normalize case, facilitating case-insensitive search.
+
+=head1 SYNOPSIS
+
+    my $case_folder = KinoSearch::Analysis::CaseFolder->new;
+
+    my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
+        analyzers => [ $case_folder, $tokenizer, $stemmer ],
+    );
+
+
+
+=head1 DESCRIPTION
+
+CaseFolder normalizes text according to Unicode case-folding rules, so that
+searches will be case insensitive.
+
+=head1 CONSTRUCTORS
+
+=head2 new()
+
+    my $case_folder = KinoSearch::Analysis::CaseFolder->new;
+
+Constructor.  Takes no arguments.
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Analysis::CaseFolder isa L<KinoSearch::Analysis::Analyzer> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

@@ -1,112 +1,57 @@
-package KinoSearch::Store::Lock;
-use strict;
-use warnings;
-use KinoSearch::Util::ToolSet;
-use base qw( KinoSearch::Util::Class );
-
-BEGIN {
-    __PACKAGE__->init_instance_vars(
-        # constructor params / members
-        invindex  => undef,
-        lock_name => undef,
-        timeout   => 0,
-    );
-}
-
-use constant LOCK_POLL_INTERVAL => 1000;
-
-# Attempt to aquire lock once per second until the timeout has been reached.
-sub obtain {
-    my $self = shift;
-
-    # calculate maximum seconds to sleep
-    my $sleepcount = $self->{timeout} / LOCK_POLL_INTERVAL;
-
-    # keep trying to obtain lock until timeout is reached
-    my $locked = $self->do_obtain;
-    while ( !$locked ) {
-        croak("Couldn't get lock using '$self->{lock_name}'")
-            if $sleepcount-- <= 0;
-        sleep 1;
-        $locked = $self->do_obtain;
-    }
-
-    return $locked;
-}
-
-=begin comment
-
-    my $locked = $lock->do_obtain;
-
-Do the actual work to aquire the lock and return a boolean reflecting
-success/failure.
-
-=end comment
-=cut
-
-sub do_obtain { shift->abstract_death }
-
-=begin comment
-
-    $lock->release;
-
-Release the lock.
-
-=end comment
-=cut
-
-sub release { shift->abstract_death }
-
-=begin comment
-
-    my $locked_or_not = $lock->is_locked;
-
-Return true if the resource is locked, false otherwise.
-
-=end comment
-=cut
-
-sub is_locked { shift->abstract_death }
-
-# Getter for lock_name.
-sub get_lock_name { shift->{lock_name} }
+use KinoSearch;
 
 1;
 
 __END__
 
-=begin devdocs
+__XS__
 
-=head1 NAME
+MODULE = KinoSearch  PACKAGE = KinoSearch::Store::Lock
 
-KinoSearch::Store::Lock - mutex lock on an invindex
+void
+set_commit_lock_timeout(value);
+    chy_u32_t value;
+PPCODE:
+    kino_Lock_commit_lock_timeout = value;
 
-=head1 SYNOPSIS
+__AUTO_XS__
 
-    # abstract base class, but here's typical usage:
-    
-    my $lock = $invindex->make_lock(
-        lock_name => COMMIT_LOCK_NAME,
+my $synopsis = <<'END_SYNOPSIS';
+    my $lock = $lock_factory->make_lock(
+        lock_name => 'commit',
         timeout   => 5000,
     );
+    $lock->obtain or die "can't get lock on " . $lock->get_filename;
+    do_stuff();
+    $lock->release;
+END_SYNOPSIS
 
-=head1 DESCRIPTION
+my $constructor = <<'END_CONSTRUCTOR';
+    my $lock = KinoSearch::Store::Lock->new(
+        lock_name => 'commit',           # required
+        timeout   => 5000,               # default: 0
+        folder    => $folder,            # required
+        agent_id  => $hostname,          # required
+    );
+END_CONSTRUCTOR
 
-The Lock class produces an interprocess mutex lock.  It does not rely on
-flock.
+{   "KinoSearch::Store::Lock" => {
+        bind_methods =>
+            [qw( Obtain Do_Obtain Is_Locked Release Clear_Stale )],
+        make_getters => [qw( folder timeout lock_name agent_id filename )],
+        make_constructors => ["new"],
+        make_pod          => {
+            synopsis    => $synopsis,
+            constructor => { sample => $constructor },
+            methods     => [qw( obtain release is_locked clear_stale )]
+        },
+    }
+}
 
-Lock must be subclassed, and instances must be constructed using the
-C<make_lock> factory method of KinoSearch::Store::InvIndex.
-
-=head1 COPYRIGHT
+__COPYRIGHT__
 
 Copyright 2005-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch|KinoSearch> version 0.165.
-
-=end devdocs
-=cut
-
+This program is free software; you can redistribute it and/or modify
+under the same terms as Perl itself.
 

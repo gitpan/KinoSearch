@@ -1,0 +1,34 @@
+parcel KinoSearch cnick Kino;
+
+__C__
+#include "Charmonizer/Test.h"
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define TestBatch                    chaz_TestBatch
+  #define Test_new_batch               chaz_Test_new_batch
+  #define PLAN                         CHAZ_TEST_PLAN
+  #define PASS                         CHAZ_TEST_PASS
+  #define FAIL                         CHAZ_TEST_FAIL
+  #define ASSERT_TRUE                  CHAZ_TEST_ASSERT_TRUE
+  #define ASSERT_FALSE                 CHAZ_TEST_ASSERT_FALSE
+  #define ASSERT_STR_EQ                CHAZ_TEST_ASSERT_STR_EQ
+  #define ASSERT_STR_NEQ               CHAZ_TEST_ASSERT_STR_NEQ
+  #define ASSERT_INT_EQ                CHAZ_TEST_ASSERT_INT_EQ
+  #define ASSERT_FLOAT_EQ              CHAZ_TEST_ASSERT_FLOAT_EQ
+#endif
+  
+__END_C__
+
+/** Tests for logical structure of Query objects output by QueryParser.
+ */
+
+static class KinoSearch::Test { 
+    
+}
+
+/* Copyright 2005-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

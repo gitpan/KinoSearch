@@ -1,0 +1,28 @@
+parcel KinoSearch cnick Kino;
+
+class KinoSearch::Obj::Undefined extends KinoSearch::Obj {
+
+    u32_t
+    Get_RefCount(Undefined* self);
+
+    public incremented Undefined*
+    Inc_RefCount(Undefined* self);
+
+    u32_t 
+    Dec_RefCount(Undefined* self);
+}
+
+__C__
+extern kino_Undefined* KINO_UNDEF;
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define UNDEF KINO_UNDEF
+#endif
+__END_C__
+
+/* Copyright 2008-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,63 @@
+parcel KinoSearch cnick Kino;
+
+/** Single-segment Lexicon.
+ */
+
+class KinoSearch::Index::SegLexicon cnick SegLex
+    extends KinoSearch::Index::Lexicon {
+
+    Segment         *segment;
+    LexStepper      *lex_stepper;
+    InStream        *instream;
+    LexIndex        *lex_index;
+    i32_t            field_num;
+    i32_t            size;
+    i32_t            term_num;
+    i32_t            skip_interval;
+    i32_t            index_interval;
+
+    /** 
+     * @param schema A Schema.
+     * @param folder A Folder.
+     * @param segment A Segment.
+     * @param field The field whose terms the Lexicon will iterate over.
+     */
+    static incremented SegLexicon*
+    new(Schema *schema, Folder *folder, Segment *segment, 
+        const CharBuf *field);
+
+    static SegLexicon*
+    init(SegLexicon *self, Schema *schema, Folder *folder, Segment *segment,
+         const CharBuf *field);
+
+    TermInfo*
+    Get_Term_Info(SegLexicon *self);
+
+    i32_t
+    Get_Field_Num(SegLexicon *self);
+
+    Segment* 
+    Get_Segment(SegLexicon *self);
+
+    void
+    Destroy(SegLexicon *self);
+
+    public void
+    Seek(SegLexicon*self, Obj *target = NULL);
+
+    public void
+    Reset(SegLexicon* self);
+
+    public Obj*
+    Get_Term(SegLexicon *self);
+
+    public bool_t
+    Next(SegLexicon *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,116 @@
+parcel KinoSearch cnick Kino;
+
+/** 
+ * Error handling.
+ */
+
+static class KinoSearch::Util::Err {
+
+    /** Print an error message to stderr with some C contextual information.
+     * Usually invoked via the WARN(pattern, ...) macro.
+     */
+    static void
+    warn_at(const char *file, int line, const char *func, 
+            const char *pattern, ...);
+
+    /** Die with a Perl stack trace and C contextual information. Usually
+     * invoked via the THROW(pattern, ...) macro.
+     */
+    static void
+    throw_at(const char *file, int line, const char *func,
+               const char *pattern, ...);
+
+    /** Invoke host exception handling.  Clean up the supplied message by
+     * decrementing its refcount.
+     *
+     * @param message Error message, to be output verbatim.
+     */
+    static void
+    throw_mess(decremented CharBuf *message);
+
+    /** Invoke host warning mechanism.  Clean up the supplied message by
+     * decrementing its refcount.
+     *
+     * @param message Error message, to be output verbatim.
+     */
+    static void
+    warn_mess(decremented CharBuf *message);
+
+    /** Create a formatted error message.  Ususally invoked via the MAKE_MESS
+     * macro.
+     */
+    static CharBuf*
+    make_mess(const char *file, int line, const char *func,
+              const char *pattern, ...);
+
+    /** Test that <code>obj</code> belongs to the class represented by
+     * <code>vtable</code>, and throw an error if it's not.
+     * 
+     * @return the object.
+     */
+    static Obj*
+    assert_is_a(Obj *obj, VTable *vtable, const char *file, int line, 
+                const char *func);
+}
+
+__C__
+#ifdef CHY_HAS_FUNC_MACRO
+ #define KINO_ERR_FUNC_MACRO CHY_FUNC_MACRO
+#else
+ #define KINO_ERR_FUNC_MACRO NULL
+#endif
+
+/* Macro version of kino_Err_throw_at which inserts contextual information
+ * automatically, provided that the compiler supports the necessary features.
+ */
+#ifdef CHY_HAS_VARIADIC_MACROS
+ #ifdef CHY_HAS_ISO_VARIADIC_MACROS
+  #define KINO_THROW(...) \
+    kino_Err_throw_at(__FILE__, __LINE__, KINO_ERR_FUNC_MACRO, \
+        __VA_ARGS__)
+  #define KINO_WARN(...) \
+    kino_Err_warn_at(__FILE__, __LINE__, KINO_ERR_FUNC_MACRO, __VA_ARGS__)
+  #define KINO_MAKE_MESS(...) \
+    kino_Err_make_mess(__FILE__, __LINE__, KINO_ERR_FUNC_MACRO, \
+        __VA_ARGS__)
+ #elif defined(CHY_HAS_GNUC_VARIADIC_MACROS)
+  #define KINO_THROW(args...) \
+    kino_Err_throw_at(__FILE__, __LINE__, KINO_ERR_FUNC_MACRO, ##args)
+  #define KINO_WARN(args...) \
+    kino_Err_warn_at(__FILE__, __LINE__, KINO_ERR_FUNC_MACRO, ##args)
+  #define KINO_MAKE_MESS(args...) \
+    kino_Err_make_mess(__FILE__, __LINE__, KINO_ERR_FUNC_MACRO, ##args)
+ #endif
+#else
+  void 
+  KINO_THROW(char* format, ...);
+  void 
+  KINO_WARN(char* format, ...);
+  void 
+  KINO_MAKE_MESS(char* format, ...);
+#endif
+
+#define KINO_ABSTRACT_DEATH(self, method) \
+    KINO_THROW("Abstract method '" method "' not defined by %o", \
+        Kino_Obj_Get_Class_Name(self));
+
+#define KINO_ASSERT_IS_A(_obj, _vtable) \
+    kino_Err_assert_is_a((kino_Obj*)_obj, (kino_VTable*)&(_vtable), \
+        __FILE__, __LINE__, KINO_ERR_FUNC_MACRO)
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define THROW             KINO_THROW
+  #define ABSTRACT_DEATH    KINO_ABSTRACT_DEATH  
+  #define WARN              KINO_WARN
+  #define MAKE_MESS         KINO_MAKE_MESS
+  #define ERR_FUNC_MACRO    KINO_ERR_FUNC_MACRO
+  #define ASSERT_IS_A       KINO_ASSERT_IS_A
+#endif
+__END_C__
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

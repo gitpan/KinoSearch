@@ -1,0 +1,34 @@
+parcel KinoSearch cnick Kino;
+
+/** Delete obsolete index files.
+ */
+
+class KinoSearch::Index::FilePurger extends KinoSearch::Obj {
+
+    Folder      *folder;
+    Snapshot    *snapshot;
+    LockFactory *lock_factory;
+
+    static incremented FilePurger* 
+    new(Folder *folder, Snapshot *snapshot = NULL, 
+        LockFactory *lock_factory = NULL);
+
+    static FilePurger* 
+    init(FilePurger *self, Folder *folder, Snapshot *snapshot = NULL,
+         LockFactory *lock_factory = NULL);
+
+    /** Purge obsolete files from the index.
+     */
+    void
+    Purge(FilePurger *self);
+
+    void 
+    Destroy(FilePurger *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,93 @@
+parcel KinoSearch cnick Kino;
+
+/** Define a field's behavior. 
+ * 
+ * FieldType is an abstract class defining a set of traits and behaviors which
+ * may be associated with one or more field names. 
+ */
+abstract class KinoSearch::FieldType cnick FType extends KinoSearch::Obj {
+
+    float         boost;
+    bool_t        indexed;
+    bool_t        stored;
+    bool_t        sortable;
+
+    static FieldType* 
+    init(FieldType *self);
+
+    static FieldType* 
+    init2(FieldType *self, float boost = 1.0, bool_t indexed = false, 
+          bool_t stored = false, bool_t sortable = false);
+
+    /** Set a multiplier which determines how much a field contributes to a
+     * document's score.  Default 1.0.
+     */
+    public void
+    Set_Boost(FieldType *self, float boost);
+
+    /** Accessor for "boost".
+     */
+    public float
+    Get_Boost(FieldType *self);
+
+    /** Indicate whether the field should be indexed (so that it can be
+     * searched). 
+     */
+    public void
+    Set_Indexed(FieldType *self, bool_t indexed);
+
+    /** Accessor for "indexed" property.
+     */
+    public bool_t
+    Indexed(FieldType *self);
+
+    /** Indicate whether to store the raw field value, so that it can be
+     * retrieved when a document turns up in a search.
+     */
+    public void
+    Set_Stored(FieldType *self, bool_t stored);
+
+    /** Accessor for "stored" property.
+     */
+    public bool_t
+    Stored(FieldType *self);
+
+    /** Indicate whether search results should be sortable based on the
+     * contents of this field.
+     */
+    public void
+    Set_Sortable(FieldType *self, bool_t sortable);
+
+    /** Accessor for "sortable" property.
+     */
+    public bool_t
+    Sortable(FieldType *self);
+
+    /** Indicate whether the field contains binary data.
+     */
+    public bool_t
+    Binary(FieldType *self);
+
+    /** Compare two values for the field.  The default implementation calls
+     * Compare_To() after checking for NULLs.  NULL values are considered
+     * "greater than" defined values, so that NULLs sort towards the end.
+     * 
+     * @return a negative number if a is "less than" b, 0 if they are "equal",
+     * and a positive number if a is "greater than" b.
+     */
+    public i64_t
+    Compare_Values(FieldType *self, Obj *a = NULL, Obj *b = NULL);
+
+    abstract incremented Hash*
+    Dump_For_Schema(FieldType *self);
+
+    public bool_t
+    Equals(FieldType *self, Obj *other);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

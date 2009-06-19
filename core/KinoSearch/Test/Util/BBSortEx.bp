@@ -1,0 +1,28 @@
+parcel KinoSearch cnick Kino;
+
+/** SortExternal for ByteBufs.
+ */
+
+class KinoSearch::Test::Util::BBSortEx extends KinoSearch::Util::SortExternal {
+
+    static BBSortEx*
+    init(BBSortEx *self, u32_t mem_thresh = 0x1000000);
+
+    /** Wrapper around BB_compare which allows (superfluous) context argument.
+     */
+    static int
+    compare_bbs(void *context, const void *va, const void *vb);
+
+    void
+    Flush(BBSortEx *self);
+
+    void
+    Flip(BBSortEx *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -1,0 +1,53 @@
+parcel KinoSearch cnick Kino;
+
+/** Multi-segment Lexicon. 
+ *
+ * Interleaves the output of multiple SegLexicons.
+ */
+
+class KinoSearch::Index::PolyLexicon cnick PolyLex
+    extends KinoSearch::Index::Lexicon {
+
+    Obj            *term;
+    SegLexQueue    *lex_q;
+    VArray         *seg_lexicons;
+    i32_t           size;
+
+    static incremented PolyLexicon*
+    new(const CharBuf *field, VArray *sub_readers);
+
+    static PolyLexicon*
+    init(PolyLexicon *self, const CharBuf *field, VArray *sub_readers);
+
+    public void
+    Seek(PolyLexicon *self, Obj *target = NULL);
+
+    public bool_t
+    Next(PolyLexicon *self);
+
+    public void 
+    Reset(PolyLexicon *self);
+
+    public Obj* 
+    Get_Term(PolyLexicon *self);
+
+    void
+    Destroy(PolyLexicon *self);
+}
+
+class KinoSearch::Index::SegLexQueue cnick SegLexQ
+    extends KinoSearch::Util::PriorityQueue {
+
+    static incremented SegLexQueue*
+    new(u32_t max_size);
+
+    bool_t
+    Less_Than(SegLexQueue *self, Obj *a, Obj *b);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

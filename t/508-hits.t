@@ -1,45 +1,50 @@
-#!/usr/bin/perl
 use strict;
 use warnings;
+use lib 'buildlib';
 
-use lib 't';
-use Test::More tests => 4;
-
-BEGIN { use_ok('KinoSearch::Search::Hits') }
-use KinoSearch::Searcher;
-use KinoSearch::Analysis::Tokenizer;
-use KinoSearchTestInvIndex qw( create_invindex );
+use Test::More tests => 9;
+use KinoSearch::Test;
+use KinoSearch::Test::TestUtils qw( create_index );
 
 my @docs     = ( 'a b', 'a a b', 'a a a b', 'x' );
-my $invindex = create_invindex(@docs);
+my $folder   = create_index(@docs);
+my $searcher = KinoSearch::Searcher->new( index => $folder );
 
-my $searcher = KinoSearch::Searcher->new(
-    invindex => $invindex,
-    analyzer => KinoSearch::Analysis::Tokenizer->new,
+my $hits = $searcher->hits(
+    query      => 'a',
+    offset     => 0,
+    num_wanted => 1,
 );
+is( $hits->total_hits, 3, "total_hits" );
+my $hit = $hits->next;
+cmp_ok( $hit->get_score, '>', 0.0, "score field added" );
+is( $hits->next, undef, "hits exhausted" );
 
-my $hits = $searcher->search( query => 'a' );
-my @ids;
+$hits->next;
+is( $hits->next, undef, "hits exhausted" );
+
 my @retrieved;
-while ( my $hit = $hits->fetch_hit ) {
-    push @ids, $hit->get_id;
-    my $doc = $hit->get_doc;
-    push @retrieved, $doc->get_value('content');
-}
-is_deeply( \@ids, [ 2, 1, 0 ], "get_id()" );
-is_deeply(
-    \@retrieved,
-    [ @docs[ 2, 1, 0 ] ],
-    "correct content via fetch_hit() and get_doc()"
+@retrieved = ();
+$hits      = $searcher->hits(
+    query      => 'a',
+    offset     => 0,
+    num_wanted => 100,
 );
+is( $hits->total_hits, 3, "total_hits still correct" );
+while ( my $hit = $hits->next ) {
+    push @retrieved, $hit->{content};
+}
+is_deeply( \@retrieved, [ @docs[ 2, 1, 0 ] ], "correct content via next()" );
 
 @retrieved = ();
-$hits = $searcher->search( query => 'a' );
-while ( my $hashref = $hits->fetch_hit_hashref ) {
-    push @retrieved, $hashref->{content};
-}
-is_deeply(
-    \@retrieved,
-    [ @docs[ 2, 1, 0 ] ],
-    "correct content via fetch_hit_hashref()"
+$hits      = $searcher->hits(
+    query      => 'a',
+    offset     => 1,
+    num_wanted => 100,
 );
+is( $hits->total_hits, 3, "total_hits correct with offset" );
+while ( my $hit = $hits->next ) {
+    push @retrieved, $hit->{content};
+}
+is( scalar @retrieved, 2, "number retrieved with offset" );
+is_deeply( \@retrieved, [ @docs[ 1, 0 ] ], "correct content with offset" );

@@ -1,0 +1,42 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Analysis::Analyzer - Tokenize/modify/filter text.
+
+=head1 SYNOPSIS
+
+    # Abstract base class.
+
+
+
+=head1 DESCRIPTION
+
+An Analyzer is a filter which processes text, transforming it from one form
+into another.  For instance, an analyzer might break up a long text into
+smaller pieces (L<Tokenizer|KinoSearch::Analysis::Tokenizer>), or it might
+perform case folding to facilitate case-insensitive search
+(L<CaseFolder|KinoSearch::Analysis::CaseFolder>).
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Analysis::Analyzer isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

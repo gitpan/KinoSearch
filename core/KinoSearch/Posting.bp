@@ -1,0 +1,54 @@
+parcel KinoSearch cnick Kino;
+
+/** Vessel holding statistical data for a posting.
+ *
+ * A Posting, in KinoSearch, is a vessel which stores information about a
+ * term-document match.  (See L<KinoSearch::Docs::IRTheory> for the
+ * academic definition of "posting".)
+ * 
+ * Subclasses include L<MatchPosting|KinoSearch::Posting::MatchPosting>, the
+ * simplest posting format, and
+ * L<ScorePosting|KinoSearch::Posting::ScorePosting>, the default.
+ */
+class KinoSearch::Posting cnick Post extends KinoSearch::Util::Stepper {
+
+    i32_t doc_id;
+
+    public static Posting*
+    init(Posting *self);
+
+    /** Create a RawPosting object, suitable for index-time sorting.  
+     *
+     * Updates the state of the document id, but nothing else.
+     */
+    abstract incremented RawPosting*
+    Read_Raw(Posting *self, InStream *instream, i32_t last_doc_id, 
+             CharBuf *term_text, MemoryPool *mem_pool);
+
+    /** Process an Inversion into RawPosting objects and add them all to the
+     * supplied PostingPool.
+     */
+    abstract void
+    Add_Inversion_To_Pool(Posting *self, PostingPool *post_pool, 
+                          Inversion *inversion, FieldType *type, 
+                          i32_t doc_id, float doc_boost, 
+                          float length_norm);
+
+    /** Prepare the posting to start reading after a seek.
+     */
+    abstract void
+    Reset(Posting *self, i32_t doc_id);
+
+    /** Factory method for creating a Matcher.
+     */
+    abstract incremented Matcher*
+    Make_Matcher(Posting *self, Similarity *sim, PostingList *plist, 
+                 Compiler *compiler, bool_t need_score);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

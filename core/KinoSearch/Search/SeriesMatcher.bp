@@ -1,0 +1,40 @@
+parcel KinoSearch cnick Kino;
+
+/** Concatenates multiple Matcher iterators.
+ */
+class KinoSearch::Search::SeriesMatcher extends KinoSearch::Search::Matcher {
+
+    I32Array  *offsets;
+    VArray    *matchers;
+    Matcher   *current_matcher;
+    i32_t      doc_id;
+    i32_t      tick;
+    i32_t      num_matchers;
+    i32_t      current_offset;
+    i32_t      next_offset;
+
+    public static incremented SeriesMatcher*
+    new(VArray *matchers, I32Array *offsets);
+
+    public static SeriesMatcher*
+    init(SeriesMatcher *self, VArray *matchers, I32Array *offsets);
+
+    public i32_t
+    Next(SeriesMatcher *self);
+
+    public i32_t
+    Advance(SeriesMatcher *self, i32_t target);
+
+    public i32_t
+    Get_Doc_ID(SeriesMatcher *self);
+
+    void
+    Destroy(SeriesMatcher *self);
+}
+
+/* Copyright 2008-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

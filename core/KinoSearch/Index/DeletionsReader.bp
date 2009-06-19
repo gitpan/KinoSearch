@@ -1,0 +1,88 @@
+parcel KinoSearch cnick Kino;
+
+class KinoSearch::Index::DeletionsReader cnick DelReader
+    extends KinoSearch::Index::DataReader {
+
+    static DeletionsReader*
+    init(DeletionsReader *self, Schema *schema = NULL, Folder *folder = NULL,
+         Snapshot *snapshot = NULL, VArray *segments = NULL, 
+         i32_t seg_tick = -1);
+    
+    /** Return the number of docs which have been marked as deleted in this
+     * segment.
+     */
+    abstract i32_t 
+    Del_Count(DeletionsReader *self);
+
+    /** Return a Matcher which iterates over the set of all deleted doc nums
+     * for this segment.
+     */
+    abstract incremented Matcher*
+    Iterator(DeletionsReader *self);
+
+    public incremented DeletionsReader*
+    Aggregator(DeletionsReader *self, VArray *readers, I32Array *offsets);
+}
+
+class KinoSearch::Index::PolyDeletionsReader cnick PolyDelReader
+    extends KinoSearch::Index::DeletionsReader {
+
+    VArray   *readers;
+    I32Array *offsets;
+    i32_t     del_count;
+
+    static incremented PolyDeletionsReader*
+    new(VArray *readers, I32Array *offsets);
+
+    static PolyDeletionsReader*
+    init(PolyDeletionsReader *self, VArray *readers, I32Array *offsets);
+
+    i32_t 
+    Del_Count(PolyDeletionsReader *self);
+
+    incremented Matcher*
+    Iterator(PolyDeletionsReader *self);
+
+    public void
+    Close(PolyDeletionsReader *self);
+
+    void
+    Destroy(PolyDeletionsReader *self);
+}
+
+class KinoSearch::Index::DefaultDeletionsReader cnick DefDelReader
+    extends KinoSearch::Index::DeletionsReader {
+
+    BitVector *deldocs;
+    i32_t      del_count;
+
+    static incremented DefaultDeletionsReader*
+    new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
+        i32_t seg_tick);
+
+    static DefaultDeletionsReader*
+    init(DefaultDeletionsReader *self, Schema *schema, Folder *folder,
+         Snapshot *snapshot, VArray *segments, i32_t seg_tick);
+
+    i32_t 
+    Del_Count(DefaultDeletionsReader *self);
+
+    incremented Matcher*
+    Iterator(DefaultDeletionsReader *self);
+
+    BitVector*
+    Read_Deletions(DefaultDeletionsReader *self);
+
+    public void
+    Close(DefaultDeletionsReader *self);
+
+    void
+    Destroy(DefaultDeletionsReader *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

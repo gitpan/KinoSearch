@@ -25,8 +25,8 @@
       chdir $cwd or die "Cannot chdir() back to $cwd: $!";
     }
     eval "use Module::Build::Compat 0.02; 1" or die $@;
-    
+    use lib 'buildlib';
     Module::Build::Compat->run_build_pl(args => \@ARGV);
     exit(0) unless(-e 'Build'); # cpantesters convention
-    require Module::Build;
-    Module::Build::Compat->write_makefile(build_class => 'Module::Build');
+    require KinoSearch::Build;
+    Module::Build::Compat->write_makefile(build_class => 'KinoSearch::Build');

@@ -1,0 +1,45 @@
+parcel KinoSearch cnick Kino;
+
+/** 
+ * Consolidate segment files.
+ *
+ * CompoundFileWriter combines all the data files in a segment into a single
+ * large "compound" file ending with a ".cf" extension.  Metadata describing
+ * filename and filepointer information is stored in a ".cfmeta" JSON file.
+ *
+ * Any given segment may only be consolidated once.  
+ */
+
+class KinoSearch::Store::CompoundFileWriter cnick CFWriter
+    extends KinoSearch::Obj {
+
+    FSFolder      *folder;
+    CharBuf       *seg_name;
+
+    static i32_t current_file_format;
+
+    static incremented CompoundFileWriter*
+    new(FSFolder *folder, const CharBuf *seg_name);
+
+    static CompoundFileWriter*
+    init(CompoundFileWriter *self, FSFolder *folder, const CharBuf *seg_name);
+
+    /** Perform the consolidation operation, building the .cf and .cfmeta files.
+     *
+     * The commit point is a rename op, where a .cfmetatemp file gets renamed to
+     * the .cfmeta file.  After the commit completes, the source files are
+     * deleted.
+     */
+    void
+    Consolidate(CompoundFileWriter *self);
+
+    void
+    Destroy(CompoundFileWriter *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

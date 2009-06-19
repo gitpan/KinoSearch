@@ -1,0 +1,77 @@
+parcel KinoSearch cnick Kino;
+
+/** Single-segment PostingList.
+ */
+
+class KinoSearch::Index::SegPostingList cnick SegPList
+    extends KinoSearch::Index::PostingList {
+
+    PostingsReader *post_reader;
+    CharBuf        *field;
+    Posting        *posting;
+    InStream       *post_stream;
+    InStream       *skip_stream;
+    SkipStepper    *skip_stepper;
+    i32_t           skip_interval;
+    i32_t           doc_base;
+    u32_t           count;
+    u32_t           doc_freq;
+    u32_t           skip_count;
+    u32_t           num_skips;
+    i32_t           field_num;
+
+    /* Constructor.
+     */
+    static incremented SegPostingList*
+    new(PostingsReader *postings_reader, const CharBuf *field);
+
+    static SegPostingList*
+    init(SegPostingList *self, PostingsReader *postings_reader, 
+         const CharBuf *field);
+
+    /* Set a base which will be added to the document id of all postings.
+     * 
+     * This should not be called after Seek.
+     */
+    void
+    Set_Doc_Base(SegPostingList *self, i32_t doc_base);
+
+    void
+    Destroy(SegPostingList *self);
+
+    public u32_t
+    Get_Doc_Freq(SegPostingList *self);
+
+    public i32_t
+    Get_Doc_ID(SegPostingList *self);
+
+    Posting*
+    Get_Posting(SegPostingList *self);
+
+    public i32_t
+    Next(SegPostingList *self);
+
+    /* 
+    i32_t
+    Advance(SegPostingList *self, i32_t target);
+    */
+
+    public void
+    Seek(SegPostingList *self, Obj *target);
+
+    /** Optimized version of Seek(), designed to speed sequential access.
+     */
+    void
+    Seek_Lex(SegPostingList *self, Lexicon *lexicon);
+
+    Matcher*
+    Make_Matcher(SegPostingList *self, Similarity *similarity,
+                 Compiler *compiler, bool_t need_score);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

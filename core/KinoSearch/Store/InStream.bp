@@ -1,0 +1,168 @@
+parcel KinoSearch cnick Kino;
+
+/** Filehandle for reading index files.
+ * 
+ * The InStream class abstracts out all input operations to KinoSearch.  It is
+ * similar to a filehandle.  
+ * 
+ * Each InStream maintains its own memory buffer.
+ */
+ 
+final class KinoSearch::Store::InStream extends KinoSearch::Obj {
+
+    i64_t       offset;
+    i64_t       len;
+    char       *buf;          
+    char       *limit;
+    CharBuf    *filename; 
+    FileDes    *file_des;
+    FileWindow *window;
+
+    static incremented InStream* 
+    new(FileDes *file_des);
+
+    static InStream* 
+    init(InStream *instream, FileDes *file_des);
+
+    /** Clone the instream, but specify a new offset, length, and possibly
+     * filename.  Initial file position will be set to the top of the file
+     * (taking <code>offset</code> into account).
+     */
+    incremented InStream* 
+    Reopen(InStream *self, const CharBuf *filename = NULL, i64_t offset, 
+           i64_t len);
+
+    /** Clone the InStream. Clones start at the same file position, but are
+     * able to seek and read independently.
+     */
+    incremented InStream* 
+    Clone(InStream *self);
+
+    /** Decrement the number of streams using the underlying FileDes.  When
+     * the number drops to zero, possibly release system resources.
+     */
+    void 
+    Close(InStream *self);
+
+    void 
+    Destroy(InStream *self);
+
+    /** Seek to target plus the object's start offset.
+     */
+    void 
+    Seek(InStream *self, i64_t target);
+
+    /** Return the filehandle's position minus the offset.
+     */
+    i64_t 
+    Tell(InStream *self);
+
+    /** Return the length of the "file" in bytes.
+     */
+    i64_t 
+    Length(InStream *self);
+
+    /** Fill the InStream's buffer, letting the FileDes decide how many bytes
+     * of data to fill it with.
+     */
+    void
+    Refill(InStream *self);
+
+    /** Pour an exact number of bytes into the InStream's buffer.
+     */
+    void
+    Fill(InStream *self, i64_t amount);
+
+    /** Get the InStream's buffer.  Check to see whether <code>request</code>
+     * bytes are already in the buffer.  If not, fill the buffer with either
+     * <code>request</code> bytes or the number of bytes remaining before EOF,
+     * whichever is smaller.
+     * 
+     * @param request Advisory byte size request.
+     * @return Pointer to the InStream's internal buffer.
+     */
+    char*
+    Buf(InStream *self, size_t request);
+
+    /** Set the buf to a new value, checking for overrun.  The idiom is for
+     * the caller to call Buf(), use no more bytes than requested, then use
+     * Advance_Buf() to update the InStream object.
+     */
+    void
+    Advance_Buf(InStream *self, char *buf);
+
+    /** Read [len] bytes from into [buf]. 
+     */
+    void 
+    Read_Bytes(InStream *self, char *buf, size_t len);
+
+    /** Read [len] bytes into [buf] starting at [offset].
+     */
+    void 
+    Read_BytesO(InStream *self, char *buf, size_t start, size_t len);
+
+    /** Read one byte from the instream and return it as a char.
+     */
+    i8_t 
+    Read_I8(InStream *self);
+
+    /** Read one byte from the instream and return it as an unsigned char.
+     */
+    u8_t 
+    Read_U8(InStream *self);
+
+    /** Read a signed 32-bit integer from the InStream.
+     */
+    i32_t 
+    Read_I32(InStream *self);
+
+    /** Read an unsigned 32-bit integer from the InStream.
+     */
+    u32_t 
+    Read_U32(InStream *self);
+
+    /** Read a signed 64-bit integer from the InStream.
+     */
+    i64_t 
+    Read_I64(InStream *self);
+
+    /** Read an unsigned 64-bit integer from the InStream.
+     */
+    u64_t 
+    Read_U64(InStream *self);
+
+    /** Decode an IEEE 764 big-endian float from the InStream and return it.
+     */
+    float 
+    Read_Float(InStream *self);
+
+    /** Read in a compressed 32-bit unsigned integer, stored in 1-5 bytes.
+     */
+    u32_t 
+    Read_C32(InStream *self);
+
+    /** Read 64-bit integer from the instream, using the same encoding as a
+     * C32 but possibly occupying as many as 10 bytes.
+     */
+    u64_t 
+    Read_C64(InStream *self);
+
+    /** Read the bytes for a C32/C64 into [buf].  Return the number of bytes
+     * read.  The caller must ensure that sufficient space exists in [buf]
+     * (worst case is 10 bytes).
+     */
+    int 
+    Read_Raw_C64(InStream *self, char *buf);
+
+    /** Accessor for filename member. 
+     */
+    CharBuf*
+    Get_Filename(InStream *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

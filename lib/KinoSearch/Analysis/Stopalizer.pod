@@ -1,0 +1,86 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Analysis::Stopalizer - Suppress a "stoplist" of common words.
+
+=head1 SYNOPSIS
+
+    my $stopalizer = KinoSearch::Analysis::Stopalizer->new(
+        language => 'fr',
+    );
+    my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
+        analyzers => [ $case_folder, $tokenizer, $stopalizer, $stemmer ],
+    );
+
+This class uses Lingua::StopWords for its default stoplists, so it supports
+the same set of languages.
+
+
+
+=head1 DESCRIPTION
+
+A "stoplist" is collection of "stopwords": words which are common enough to be
+of little value when determining search results.  For example, so many
+documents in English contain "the", "if", and "maybe" that it may improve both
+performance and relevance to block them.
+
+Before filtering stopwords:
+
+    ( "i", "am", "the", "walrus" ) 
+    
+After filtering stopwords:
+
+    ( "walrus" );
+
+Stopalizer provides default stoplists for several languages, courtesy of
+the Snowball project (<http://snowball.tartarus.org>), or you may supply
+your own.
+
+=head1 CONSTRUCTORS
+
+=head2 new( I<[labeled params]> )
+
+    my $stopalizer = KinoSearch::Analysis::Stopalizer->new(
+        language => 'de',
+    );
+    
+    # or...
+    my $stopalizer = KinoSearch::Analysis::Stopalizer->new(
+        stoplist => \%stoplist,
+    );
+
+=over
+
+=item *
+
+B<stoplist> - A hash with stopwords as the keys.
+
+=item *
+
+B<language> - The ISO code for a supported language.
+
+=back
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Analysis::Stopalizer isa L<KinoSearch::Analysis::Analyzer> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

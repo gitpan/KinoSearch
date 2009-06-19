@@ -1,0 +1,60 @@
+parcel KinoSearch cnick Kino;
+
+/** Write postings data to an index.
+ * 
+ * PostingsWriter creates posting lists.  It writes the frequency and and
+ * positional data files, plus feeds data to LexiconWriter.
+ */ 
+
+class KinoSearch::Index::PostingsWriter cnick PostWriter
+    extends KinoSearch::Index::DataWriter {
+
+    LexiconWriter   *lex_writer;
+    VArray          *post_pools;
+    MemoryPool      *mem_pool;
+    SkipStepper     *skip_stepper;
+    CharBuf         *lex_tempname;
+    CharBuf         *post_tempname;
+    OutStream       *lex_outstream;
+    OutStream       *post_outstream;
+    OutStream       *skip_stream;
+    InStream        *lex_instream;
+    InStream        *post_instream;
+    u32_t            mem_thresh;
+
+    static i32_t current_file_format;
+
+    static incremented PostingsWriter*
+    new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader, 
+        LexiconWriter *lex_writer); 
+
+    static PostingsWriter*
+    init(PostingsWriter *self, Snapshot *snapshot, Segment *segment,
+         PolyReader *polyreader, LexiconWriter *lex_writer);
+
+    public void
+    Add_Inverted_Doc(PostingsWriter *self, Inverter *inverter, i32_t doc_id);
+
+    public void
+    Add_Segment(PostingsWriter *self, SegReader *reader,
+                I32Array *doc_map = NULL);
+
+    public void
+    Delete_Segment(PostingsWriter *self, SegReader *reader);
+
+    public void
+    Finish(PostingsWriter *self);
+
+    public i32_t 
+    Format(PostingsWriter *self);
+
+    void
+    Destroy(PostingsWriter *self);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

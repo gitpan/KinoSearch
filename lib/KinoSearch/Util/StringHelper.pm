@@ -1,95 +1,103 @@
-package KinoSearch::Util::StringHelper;
+use KinoSearch;
 
 1;
 
 __END__
 
-__H__
+__XS__
 
-#ifndef H_KINO_STRING_HELPER
-#define H_KINO_STRING_HELPER 1
+MODULE = KinoSearch   PACKAGE = KinoSearch::Util::StringHelper
 
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-#include "KinoSearchUtilCarp.h"
+=for comment 
 
-I32 Kino_StrHelp_string_diff(char*, char*, STRLEN, STRLEN);
-I32 Kino_StrHelp_compare_strings(char*, char*, STRLEN, STRLEN);
-I32 Kino_StrHelp_compare_svs(SV*, SV*);
+Turn an SV's UTF8 flag on.  Equivalent to Encode::_utf8_on, but we don't have
+to load Encode.
 
-#endif /* include guard */
+=cut
 
-__C__
+void
+utf8_flag_on(sv)
+    SV *sv;
+PPCODE:
+    SvUTF8_on(sv);
 
-#include "KinoSearchUtilStringHelper.h"
+=for comment
 
-/* return the number of bytes that two strings have in common */
+Turn an SV's UTF8 flag off.
 
-I32
-Kino_StrHelp_string_diff(char *str1, char *str2, STRLEN len1, STRLEN len2) {
-    STRLEN i, len;
+=cut
 
-    len = len1 <= len2 ? len1 : len2;
+void
+utf8_flag_off(sv)
+    SV *sv;
+PPCODE:
+    SvUTF8_off(sv);
 
-    for (i = 0; i < len; i++) {
-        if (*str1++ != *str2++) 
-            break;
-    }
-    return i;
+SV*
+to_base36(num)
+    chy_u32_t num;
+CODE:
+{
+    kino_CharBuf *buf = kino_StrHelp_to_base36(num);
+    RETVAL = XSBind_cb_to_sv(buf);
+    KINO_DECREF(buf);
 }
+OUTPUT: RETVAL
 
-/* memcmp, but with lengths for both pointers, not just one */
-I32
-Kino_StrHelp_compare_strings(char *a, char *b, STRLEN a_len, STRLEN b_len) {
+IV
+from_base36(str)
+    char *str;
+CODE:
+    RETVAL = strtol(str, NULL, 36);
+OUTPUT: RETVAL
+
+=for comment
+
+Upgrade a SV to UTF8, converting Latin1 if necessary. Equivalent to utf::upgrade().
+
+=cut
+
+void
+utf8ify(sv)
+    SV *sv;
+PPCODE:
+    sv_utf8_upgrade(sv);
+
+chy_bool_t
+utf8_valid(sv)
+    SV *sv;
+CODE:
+{
     STRLEN len;
-    I32 comparison = 0;
+    char *ptr = SvPV(sv, len);
+    RETVAL = kino_StrHelp_utf8_valid(ptr, len);
+}
+OUTPUT: RETVAL
 
-    if (a == NULL  || b == NULL)
-        Kino_confess("Internal error: can't compare unallocated pointers");
-    
-    len = a_len < b_len? a_len : b_len;
-    if (len > 0)
-        comparison = memcmp(a, b, len);
+=for comment
 
-    /* if a is a substring of b, it's less than b, so return a neg num */
-    if (comparison == 0) 
-        comparison = a_len - b_len;
+Concatenate one scalar onto the end of the other, ignoring UTF-8 status of the
+second scalar.  This is necessary because $not_utf8 . $utf8 results in a
+scalar which has been infected by the UTF-8 flag of the second argument.
 
-    return comparison;
+=cut
+
+void
+cat_bytes(sv, catted)
+    SV *sv;
+    SV *catted;
+PPCODE:
+{
+    STRLEN len;
+    char *ptr = SvPV(catted, len);
+    if (SvUTF8(sv)) { KINO_THROW("Can't cat_bytes onto a UTF-8 SV"); }
+    sv_catpvn(sv, ptr, len);
 }
 
-/* compare the PVs of two scalars */
-I32
-Kino_StrHelp_compare_svs(SV *sva, SV *svb) {
-    char   *a, *b;
-    STRLEN  a_len, b_len;
-
-    a = SvPV(sva, a_len);
-    b = SvPV(svb, b_len);
-
-    return Kino_StrHelp_compare_strings(a, b, a_len, b_len);
-}
-
-__POD__
-
-=begin devdocs
-
-=head1 NAME
-
-KinoSearch::Util::StringHelper - String related utilities
-
-=head1 DESCRIPTION
-
-String related utilities, e.g. string comparison functions.
-
-=head1 COPYRIGHT
+__COPYRIGHT__
 
 Copyright 2005-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS etc.
+This program is free software; you can redistribute it and/or modify
+under the same terms as Perl itself.
 
-See L<KinoSearch|KinoSearch> version 0.165.
-
-=end devdocs
-=cut

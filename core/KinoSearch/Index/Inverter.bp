@@ -1,0 +1,161 @@
+parcel KinoSearch cnick Kino;
+
+/** Invert documents.
+ *
+ * Inverter's role is to prepare the content of a Doc for addition to various
+ * DataWriters, by associating fields with FieldTypes, inverting their
+ * content when appropriate, and marshalling them into an iterable form.
+ */
+
+class KinoSearch::Index::Inverter extends KinoSearch::Obj {
+
+    Schema        *schema;
+    Segment       *segment;
+    Doc           *doc;
+    VArray        *entries;    /* Entries for the current Doc. */
+    VArray        *entry_pool; /* Cached entry per field. */
+    InverterEntry *current;    /* Current entry while iterating. */
+    InverterEntry *blank;      /* Used when iterator is exhausted. */
+    float          boost;
+    i32_t          tick;
+    bool_t         sorted;
+
+    static incremented Inverter*
+    new(Schema *schema, Segment *segment);
+
+    static Inverter*
+    init(Inverter *self, Schema *schema, Segment *segment);
+
+    /** Invert the document, first calling Set_Doc(), then Add_Field() for
+     * each field in the Doc.
+     */
+    public void
+    Invert_Doc(Inverter *self, Doc *doc);
+
+    /** Set the object's <code>doc</code> member.  Calls Clear() as side effect.
+     */
+    public void
+    Set_Doc(Inverter *self, Doc *doc);
+
+    /** Set the object's <code>boost</code> member.
+     */
+    public void
+    Set_Boost(Inverter *self, float boost);
+
+    /** Add a field to the Inverter.  If the field is indexed/analyzed,
+     * invert it.
+     */
+    void
+    Add_Field(Inverter *self, InverterEntry *entry, Obj *value);
+
+    /** Remove the cached Doc and everything derived from it.
+     */
+    public void
+    Clear(Inverter *self);
+
+    /** Reset the iterator and prepare to cycle through any fields that have
+     * been added.
+     * 
+     * @return the number of fields which will be iterated over.
+     */
+    public u32_t 
+    Iter_Init(Inverter *self);
+
+    /** Proceed to the next field.  Fields are iterated in order of Segment
+     * field number.
+     */
+    public i32_t
+    Next(Inverter *self);
+
+    /** Return the current doc, or NULL if there isn't one.
+     */
+    public Doc*
+    Get_Doc(Inverter *self);
+
+    /** Return the current boost.
+     */
+    public float
+    Get_Boost(Inverter *self);
+
+    /** Return the current field's name, or NULL if the iterator is exhausted.
+     */
+    public CharBuf*
+    Get_Field_Name(Inverter *self);
+
+    /** Return the current field's value, or NULL if the iterator is exhausted.
+     */
+    public ViewCharBuf*
+    Get_Value(Inverter *self);
+
+    /** Return the FieldType for the current field, or NULL if the iterator is
+     * exhausted.
+     */
+    public FieldType*
+    Get_Type(Inverter *self);
+
+    /** Return the Analyzer for the current field, or NULL if the iterator is
+     * exhausted.
+     */
+    public Analyzer*
+    Get_Analyzer(Inverter *self);
+
+    /** Return the Analyzer for the current field, or NULL if the iterator is
+     * exhausted.
+     */
+    public Similarity*
+    Get_Similarity(Inverter *self);
+
+    /** Return the Inversion for the current field, provided that that field
+     * is indexed; return NULL if the iterator is exhausted.
+     */
+    public Inversion*
+    Get_Inversion(Inverter *self);
+
+    void
+    Destroy(Inverter *self);
+}
+
+/** Cached information about fields.
+ * 
+ * Inverter needs to check certain field characteristics frequently.  Since
+ * field definitions are unchanging, we cache them in an InverterEntry object.
+ */
+private final class KinoSearch::Index::Inverter::InverterEntry cnick InvEntry
+    extends KinoSearch::Obj {
+
+    i32_t        field_num;
+    CharBuf     *field;
+    ViewCharBuf *value;
+    Inversion   *inversion;
+    FieldType   *type;
+    Analyzer    *analyzer;
+    Similarity  *sim;
+    bool_t       indexed;
+    bool_t       highlightable;
+    bool_t       binary;
+
+    static incremented InverterEntry*
+    new(Schema *schema = NULL, const CharBuf *field_name, i32_t field_num);
+
+    static InverterEntry*
+    init(InverterEntry *self = NULL, Schema *schema, 
+         const CharBuf *field_name, i32_t field_num);
+
+    public i32_t 
+    Compare_To(InverterEntry *self, Obj *other);
+
+    /** Expunge all transient data.
+     */
+    void
+    Clear(InverterEntry *self);
+
+    void
+    Destroy(InverterEntry *self);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

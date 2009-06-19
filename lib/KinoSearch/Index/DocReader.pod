@@ -1,0 +1,66 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Index::DocReader - Retrieve stored documents.
+
+=head1 SYNOPSIS
+
+    my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
+    my $doc        = $doc_reader->fetch($doc_id);
+
+
+
+=head1 DESCRIPTION
+
+DocReader defines the interface by which documents (with all stored fields)
+are retrieved from the index.  The default implementation returns HitDoc
+objects.
+
+
+
+=head1 METHODS
+
+=head2 aggregator( I<[labeled params]> )
+
+Returns a DocReader which divvies up requests to its sub-readers
+according to the offset range.
+
+=over
+
+=item *
+
+B<readers> - An array of DocReaders.
+
+=item *
+
+B<offsets> - Doc id start offsets for each reader.
+
+=back
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 fetch( I<[labeled params]> )
+
+Returns the document identified by C<< doc_id >>.
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Index::DocReader isa L<KinoSearch::Index::DataReader> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

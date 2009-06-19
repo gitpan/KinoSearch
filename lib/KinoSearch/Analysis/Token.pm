@@ -1,116 +1,85 @@
-package KinoSearch::Analysis::Token;
+use KinoSearch;
 
 1;
 
 __END__
 
-__H__
+__XS__
 
-#ifndef H_KINOSEARCH_ANALYSIS_TOKEN
-#define H_KINOSEARCH_ANALYSIS_TOKEN 1
+MODULE = KinoSearch    PACKAGE = KinoSearch::Analysis::Token
 
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
-#include "KinoSearchUtilMemManager.h"
-
-typedef struct Token Token;
-
-struct Token {
-    char   *text;
-    STRLEN  len;
-    I32     start_offset;
-    I32     end_offset;
-    I32     pos_inc;
-    Token  *next;
-    Token  *prev;
-};
-
-Token* Kino_Token_new(char* text, STRLEN len, I32 start_offset, 
-                      I32 end_offset, I32 pos_inc);
-void Kino_Token_destroy(Token*);
-
-#endif /* include guard */
-
-__C__
-
-#include "KinoSearchAnalysisToken.h"
-
-Token*
-Kino_Token_new(char* text, STRLEN len, I32 start_offset, I32 end_offset, 
-               I32 pos_inc) {
-    Token *token;
-
-    /* allocate */
-    Kino_New(0, token, 1, Token);
-
-    /* allocate and assign */
-    token->text = Kino_savepvn(text, len);
-
-    /* assign */
-    token->len          = len;
-    token->start_offset = start_offset;
-    token->end_offset   = end_offset;
-    token->pos_inc      = pos_inc;
-
-    /* init */
-    token->next = NULL;
-    token->prev = NULL;
-
-    return token;
+SV*
+new(class_name, ...)
+    kino_ClassNameBuf class_name;
+CODE:
+{
+    kino_VTable *vtable 
+        = kino_VTable_singleton((kino_CharBuf*)&class_name, NULL);
+    STRLEN len;
+    HV *const args_hash    = XSBind_build_args_hash( &(ST(0)), 1, items,
+            "KinoSearch::Analysis::Token::new_PARAMS");
+    SV *text_sv         = XSBind_extract_sv(args_hash, SNL("text"));
+    char *text          = SvPV(text_sv, len);
+    chy_u32_t start_off = XSBind_extract_uv(args_hash, SNL("start_offset"));
+    chy_u32_t end_off   = XSBind_extract_uv(args_hash, SNL("end_offset"));
+    chy_i32_t pos_inc   = XSBind_extract_iv(args_hash, SNL("pos_inc"));
+    float boost         = (float)XSBind_extract_nv(args_hash, SNL("boost"));
+    kino_Token *self    = (kino_Token*)Kino_VTable_Make_Obj(vtable);
+    kino_Token_init(self, text, len, start_off, end_off, boost, 
+        pos_inc);
+    KOBJ_TO_SV_NOINC(self, RETVAL);
 }
-
+OUTPUT: RETVAL
 
 void
-Kino_Token_destroy(Token *token) {
-    Kino_Safefree(token->text);
-    Kino_Safefree(token);
+_set_or_get2(self, ...)
+    kino_Token *self;
+ALIAS:
+    set_text         = 1
+    get_text         = 2
+PPCODE:
+{
+    START_SET_OR_GET_SWITCH
+
+    case 1:  free(self->text);
+             {
+                 STRLEN len;
+                 char *str = SvPVutf8( ST(1), len);
+                 self->text = kino_StrHelp_strndup(str, len);
+                 self->len = len;
+             }
+
+    case 2:  retval = newSVpvn(self->text, self->len);
+             SvUTF8_on(retval);
+             break;
+
+    END_SET_OR_GET_SWITCH
+}
+
+__AUTO_XS__
+
+{   "KinoSearch::Analysis::Token" => {
+        make_getters      => [qw( start_offset end_offset boost pos_inc )],
+    }
 }
 
 __POD__
 
 =head1 NAME
 
-KinoSearch::Analysis::Token - unit of text
+KinoSearch::Analysis::Token - Redacted.
 
-=head1 SYNOPSIS
+=head1 REDACTED
 
-    # private class - no public API
-
-=head1 PRIVATE CLASS
-
-You can't actually instantiate a Token object at the Perl level -- however,
-you can affect individual Tokens within a TokenBatch by way of TokenBatch's
-(experimental) API.
-
-=head1 DESCRIPTION
-
-Token is the fundamental unit used by KinoSearch's Analyzer subclasses.  Each
-Token has 4 attributes: text, start_offset, end_offset, and pos_inc (for
-position increment).
-
-The text of a token is a string.
-
-A Token's start_offset and end_offset locate it within a larger text, even if
-the Token's text attribute gets modified -- by stemming, for instance.  The
-Token for "beating" in the text "beating a dead horse" begins life with a
-start_offset of 0 and an end_offset of 7; after stemming, the text is "beat",
-but the end_offset is still 7. 
-
-The position increment, which defaults to 1, is a an advanced tool for
-manipulating phrase matching.  Ordinarily, Tokens are assigned consecutive
-position numbers: 0, 1, and 2 for "three blind mice".  However, if you set the
-position increment for "blind" to, say, 1000, then the three tokens will end
-up assigned to positions 0, 1, and 1001 -- and will no longer produce a phrase
-match for the query '"three blind mice"'.
+Token's public API has been redacted.
 
 =head1 COPYRIGHT
 
-Copyright 2006-2009 Marvin Humphrey
+Copyright 2005-2009 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 
-See L<KinoSearch|KinoSearch> version 0.165.
+See L<KinoSearch> version 0.30.
 
 =cut
 

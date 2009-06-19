@@ -1,13 +1,11 @@
-#!/usr/bin/perl
+use strict;
+use warnings;
+use lib 'buildlib';
 
-use lib 't';
-use Test::More tests => 5;
-
-BEGIN { use_ok('KinoSearch::Search::PhraseQuery') }
-
-use KinoSearchTestInvIndex qw( create_invindex );
-use KinoSearch::Index::Term;
-use KinoSearch::Searcher;
+use Test::More tests => 9;
+use Storable qw( freeze thaw );
+use KinoSearch::Test;
+use KinoSearch::Test::TestUtils qw( create_index );
 
 my $best_match = 'x a b c d a b c d';
 
@@ -19,30 +17,53 @@ my @docs = (
     $best_match, 'a' .. 'z',
 );
 
-my $invindex = create_invindex(@docs);
-my $searcher = KinoSearch::Searcher->new( invindex => $invindex );
+my $folder = create_index(@docs);
+my $searcher = KinoSearch::Searcher->new( index => $folder );
 
-my $phrase_query = KinoSearch::Search::PhraseQuery->new( slop => 0 );
-for (qw( a b c d )) {
-    my $term = KinoSearch::Index::Term->new( 'content', $_ );
-    $phrase_query->add_term($term);
-}
+my $phrase_query = KinoSearch::Search::PhraseQuery->new(
+    field => 'content',
+    terms => [],
+);
+is( $phrase_query->to_string, 'content:""', "empty PhraseQuery to_string" );
+$phrase_query = KinoSearch::Search::PhraseQuery->new(
+    field => 'content',
+    terms => [qw( a b c d )],
+);
+is( $phrase_query->to_string, 'content:"a b c d"', "to_string" );
 
-my $hits = $searcher->search( query => $phrase_query );
-$hits->seek( 0, 50 );
+my $hits = $searcher->hits( query => $phrase_query );
 is( $hits->total_hits, 3, "correct number of hits" );
-my $first_hit = $hits->fetch_hit_hashref;
+my $first_hit = $hits->next;
 is( $first_hit->{content}, $best_match, 'best match appears first' );
 
-my $second_hit = $hits->fetch_hit_hashref;
-ok( $first_hit->{score} > $second_hit->{score},
-    "best match scores higher: $first_hit->{score} > $second_hit->{score}" );
+my $second_hit = $hits->next;
+ok( $first_hit->get_score > $second_hit->get_score,
+    "best match scores higher: "
+        . $first_hit->get_score . " > "
+        . $second_hit->get_score
+);
 
-$phrase_query = KinoSearch::Search::PhraseQuery->new( slop => 0 );
-for (qw( c a )) {
-    my $term = KinoSearch::Index::Term->new( 'content', $_ );
-    $phrase_query->add_term($term);
-}
-$hits = $searcher->search( query => $phrase_query );
+$phrase_query = KinoSearch::Search::PhraseQuery->new(
+    field => 'content',
+    terms => [qw( c a )],
+);
+$hits = $searcher->hits( query => $phrase_query );
 is( $hits->total_hits, 1, 'avoid underflow when subtracting offset' );
 
+# "a b c"
+$phrase_query = KinoSearch::Search::PhraseQuery->new(
+    field => 'content',
+    terms => [qw( a b c )],
+);
+$hits = $searcher->hits( query => $phrase_query );
+is( $hits->total_hits, 3, 'offset starting from zero' );
+
+my $frozen = freeze($phrase_query);
+my $thawed = thaw($frozen);
+$hits = $searcher->hits( query => $thawed );
+is( $hits->total_hits, 3, 'freeze/thaw' );
+
+my $phrase_compiler = $phrase_query->make_compiler( searchable => $searcher );
+$frozen = freeze($phrase_compiler);
+$thawed = thaw($frozen);
+ok( $phrase_compiler->equals($thawed), "freeze/thaw compiler" );

@@ -1,0 +1,45 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Search::MatchAllQuery - Query which matches all documents.
+
+
+
+=head1 DESCRIPTION
+
+MatchAllQuery is a utility class which matches all documents.  Each match
+is assigned a score of 0.0, so that in composite queries, any document
+which matches against another part of the query will be ranked higher than
+a document which matches only via the MatchAllQuery.
+
+=head1 CONSTRUCTORS
+
+=head2 new()
+
+    my $match_all_query = KinoSearch::Search::MatchAllQuery->new;
+
+Constructor.  Takes no arguments.
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Search::MatchAllQuery isa L<KinoSearch::Search::Query> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+
