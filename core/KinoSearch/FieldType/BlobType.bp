@@ -26,6 +26,12 @@ class KinoSearch::FieldType::BlobType extends KinoSearch::FieldType
     public void
     Set_Sortable(BlobType *self, bool_t sortable);
 
+    ViewByteBuf*
+    Make_Blank(BlobType *self);
+
+    i8_t
+    Primitive_ID(BlobType *self);
+
     incremented Hash*
     Dump_For_Schema(BlobType *self);
 

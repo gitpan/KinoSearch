@@ -46,8 +46,8 @@ test_Store_and_Fetch(TestBatch *batch)
 
     for (i = 0; i < 100; i++) {
         CharBuf *cb = CB_newf("%i32", i);
-        Hash_Store(hash, cb, (Obj*)cb);
-        Hash_Store(dupe, cb, INCREF(cb));
+        Hash_Store(hash, (Obj*)cb, (Obj*)cb);
+        Hash_Store(dupe, (Obj*)cb, INCREF(cb));
         VA_Push(expected, INCREF(cb));
     }
     ASSERT_TRUE(batch, Hash_Equals(hash, (Obj*)dupe), "Equals");
@@ -56,7 +56,7 @@ test_Store_and_Fetch(TestBatch *batch)
         "Initial capacity sufficient (no rebuilds)");
 
     for (i = 0; i < 100; i++) {
-        CharBuf *key = (CharBuf*)VA_Fetch(expected, i);
+        Obj *key  = VA_Fetch(expected, i);
         Obj *elem = Hash_Fetch(hash, key);
         VA_Push(got, (Obj*)INCREF(elem));
     }
@@ -66,31 +66,31 @@ test_Store_and_Fetch(TestBatch *batch)
     ASSERT_INT_EQ(batch, Hash_Get_Size(hash), 100, 
         "size incremented properly by Hash_Store");
 
-    ASSERT_TRUE(batch, Hash_Fetch(hash, (CharBuf*)&foo) == NULL, 
+    ASSERT_TRUE(batch, Hash_Fetch(hash, (Obj*)&foo) == NULL, 
         "Fetch against non-existent key returns NULL");
 
-    Hash_Store(hash, (CharBuf*)&forty, INCREF(&foo));
-    ASSERT_TRUE(batch, Hash_Equals(&foo, Hash_Fetch(hash, (CharBuf*)&forty)),
+    Hash_Store(hash, (Obj*)&forty, INCREF(&foo));
+    ASSERT_TRUE(batch, Hash_Equals(&foo, Hash_Fetch(hash, (Obj*)&forty)),
         "Hash_Store replaces existing value");
     ASSERT_FALSE(batch, Hash_Equals(hash, (Obj*)dupe), 
         "replacement value spoils equals");
     ASSERT_INT_EQ(batch, Hash_Get_Size(hash), 100, 
         "size unaffected after value replaced");
 
-    ASSERT_TRUE(batch, Hash_Delete(hash, (CharBuf*)&forty) == (Obj*)&foo, 
+    ASSERT_TRUE(batch, Hash_Delete(hash, (Obj*)&forty) == (Obj*)&foo, 
         "Delete returns value");
     DECREF(&foo);
     ASSERT_INT_EQ(batch, Hash_Get_Size(hash), 99, 
         "size decremented by successful Delete");
-    ASSERT_TRUE(batch, Hash_Delete(hash, (CharBuf*)&forty) == NULL, 
+    ASSERT_TRUE(batch, Hash_Delete(hash, (Obj*)&forty) == NULL, 
         "Delete returns NULL when key not found");
     ASSERT_INT_EQ(batch, Hash_Get_Size(hash), 99, 
         "size not decremented by unsuccessful Delete");
-    DECREF(Hash_Delete(dupe, (CharBuf*)&forty));
+    DECREF(Hash_Delete(dupe, (Obj*)&forty));
     ASSERT_TRUE(batch, VA_Equals(got, (Obj*)expected), "Equals after Delete");
 
     Hash_Clear(hash);
-    ASSERT_TRUE(batch, Hash_Fetch(hash, (CharBuf*)&twenty) == NULL, "Clear");
+    ASSERT_TRUE(batch, Hash_Fetch(hash, (Obj*)&twenty) == NULL, "Clear");
     ASSERT_TRUE(batch, Hash_Get_Size(hash) == 0, "size is 0 after Clear");
 
     DECREF(hash);
@@ -110,30 +110,30 @@ test_Keys_Values_Iter(TestBatch *batch)
 
     for (i = 0; i < 500; i++) {
         CharBuf *cb = CB_newf("%u32", i);
-        Hash_Store(hash, cb, (Obj*)cb);
+        Hash_Store(hash, (Obj*)cb, (Obj*)cb);
         VA_Push(expected, INCREF(cb));
     }
 
-    VA_Sort(expected, NULL);
+    VA_Sort(expected, NULL, NULL);
 
     /* Overwrite for good measure. */
     for (i = 0; i < 500; i++) {
         CharBuf *cb = (CharBuf*)VA_Fetch(expected, i);
-        Hash_Store(hash, cb, INCREF(cb));
+        Hash_Store(hash, (Obj*)cb, INCREF(cb));
     }
 
     keys   = Hash_Keys(hash);
     values = Hash_Values(hash);
-    VA_Sort(keys, NULL);
-    VA_Sort(values, NULL);
+    VA_Sort(keys, NULL, NULL);
+    VA_Sort(values, NULL, NULL);
     ASSERT_TRUE(batch, VA_Equals(keys, (Obj*)expected), "Keys");
     ASSERT_TRUE(batch, VA_Equals(values, (Obj*)expected), "Values");
     VA_Clear(keys);
     VA_Clear(values);
     
     {
-        CharBuf *key;
-        Obj     *value;
+        Obj *key;
+        Obj *value;
         Hash_Iter_Init(hash);
         while (Hash_Iter_Next(hash, &key, &value)) {
             VA_Push(keys, INCREF(key));
@@ -141,18 +141,17 @@ test_Keys_Values_Iter(TestBatch *batch)
         }
     }
 
-    VA_Sort(keys, NULL);
-    VA_Sort(values, NULL);
+    VA_Sort(keys, NULL, NULL);
+    VA_Sort(values, NULL, NULL);
     ASSERT_TRUE(batch, VA_Equals(keys, (Obj*)expected), "Keys from Iter");
     ASSERT_TRUE(batch, VA_Equals(values, (Obj*)expected), "Values from Iter");
 
     {
         ZombieCharBuf forty = ZCB_make_str("40", 2);
         ZombieCharBuf nope  = ZCB_make_str("nope", 4);
-        CharBuf *key 
-            = Hash_Find_Key(hash, (CharBuf*)&forty, ZCB_Hash_Code(&forty));
-        ASSERT_TRUE(batch, CB_Equals(key, (Obj*)&forty), "Find_Key");
-        key = Hash_Find_Key(hash, (CharBuf*)&nope, ZCB_Hash_Code(&nope)),
+        Obj *key = Hash_Find_Key(hash, (Obj*)&forty, ZCB_Hash_Code(&forty));
+        ASSERT_TRUE(batch, Obj_Equals(key, (Obj*)&forty), "Find_Key");
+        key = Hash_Find_Key(hash, (Obj*)&nope, ZCB_Hash_Code(&nope)),
         ASSERT_TRUE(batch, key == NULL, 
             "Find_Key returns NULL for non-existent key");
     }

@@ -11,19 +11,14 @@
 #include "KinoSearch/Util/I32Array.h"
 
 DataWriter*
-DataWriter_init(DataWriter *self, Snapshot *snapshot, Segment *segment, 
-                PolyReader *polyreader)
+DataWriter_init(DataWriter *self, Schema *schema, Snapshot *snapshot,
+                Segment *segment, PolyReader *polyreader)
 {
-    Schema   *schema   = PolyReader_Get_Schema(polyreader);
-    Folder   *folder   = PolyReader_Get_Folder(polyreader);
-
-    /* Assign. */
     self->snapshot   = (Snapshot*)INCREF(snapshot);
     self->segment    = (Segment*)INCREF(segment);
     self->polyreader = (PolyReader*)INCREF(polyreader);
     self->schema     = (Schema*)INCREF(schema);
-    self->folder     = (Folder*)INCREF(folder);
-
+    self->folder     = (Folder*)INCREF(PolyReader_Get_Folder(polyreader));
     ABSTRACT_CLASS_CHECK(self, DATAWRITER);
     return self;
 }

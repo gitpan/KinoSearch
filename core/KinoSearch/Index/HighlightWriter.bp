@@ -12,11 +12,12 @@ class KinoSearch::Index::HighlightWriter cnick HLWriter
     static i32_t current_file_format;
 
     static incremented HighlightWriter*
-    new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader);
+    new(Schema *schema, Snapshot *snapshot, Segment *segment,
+        PolyReader *polyreader);
 
     static HighlightWriter*
-    init(HighlightWriter *self, Snapshot *snapshot, Segment *segment,
-         PolyReader *polyreader);
+    init(HighlightWriter *self, Schema *schema, Snapshot *snapshot,
+         Segment *segment, PolyReader *polyreader);
 
     incremented ByteBuf*
     TV_Buf(HighlightWriter *self, Inversion *inversion);

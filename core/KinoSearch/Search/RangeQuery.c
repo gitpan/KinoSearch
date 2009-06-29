@@ -103,7 +103,7 @@ RangeQuery_to_string(RangeQuery *self)
 void
 RangeQuery_serialize(RangeQuery *self, OutStream *outstream)
 {
-    OutStream_Write_Float(outstream, self->boost);
+    OutStream_Write_F32(outstream, self->boost);
     CB_Serialize(self->field, outstream);
     if (self->lower_term) {
         OutStream_Write_U8(outstream, true);
@@ -127,7 +127,7 @@ RangeQuery*
 RangeQuery_deserialize(RangeQuery *self, InStream *instream)
 {
     /* Deserialize components. */
-    float boost     = InStream_Read_Float(instream);
+    float boost     = InStream_Read_F32(instream);
     CharBuf *field  = CB_deserialize(NULL, instream);
     Obj *lower_term = InStream_Read_U8(instream) ? THAW(instream) : NULL;
     Obj *upper_term = InStream_Read_U8(instream) ? THAW(instream) : NULL;

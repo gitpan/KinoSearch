@@ -10,6 +10,7 @@ use KSx::Index::ZlibDocReader;
 sub register_doc_writer {
     my ( $self, $seg_writer ) = @_;
     my $doc_writer = KSx::Index::ZlibDocWriter->new(
+        schema     => $seg_writer->get_schema,
         snapshot   => $seg_writer->get_snapshot,
         segment    => $seg_writer->get_segment,
         polyreader => $seg_writer->get_polyreader,

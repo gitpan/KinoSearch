@@ -16,20 +16,20 @@
 i32_t LexWriter_current_file_format = 2;
 
 LexiconWriter*
-LexWriter_new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader)
+LexWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
+              PolyReader *polyreader)
 {
     LexiconWriter *self = (LexiconWriter*)VTable_Make_Obj(&LEXICONWRITER);
-    return LexWriter_init(self, snapshot, segment, polyreader);
+    return LexWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
 LexiconWriter*
-LexWriter_init(LexiconWriter *self, Snapshot *snapshot, Segment *segment, 
-               PolyReader *polyreader)
+LexWriter_init(LexiconWriter *self, Schema *schema, Snapshot *snapshot,
+               Segment *segment, PolyReader *polyreader)
 {
-    Schema       *schema = PolyReader_Get_Schema(polyreader);
     Architecture *arch   = Schema_Get_Architecture(schema);
 
-    DataWriter_init((DataWriter*)self, snapshot, segment, polyreader);
+    DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
 
     /* Assign. */
     self->index_interval = Arch_Index_Interval(arch);
@@ -165,8 +165,10 @@ LexWriter_finish_field(LexiconWriter *self, i32_t field_num)
     CharBuf *field = Seg_Field_Name(self->segment, field_num);
     
     /* Store count of terms for this field as metadata. */
-    Hash_Store(self->counts, field, (Obj*)CB_newf("%i32", self->count));
-    Hash_Store(self->ix_counts, field, (Obj*)CB_newf("%i32", self->ix_count));
+    Hash_Store(self->counts, (Obj*)field, 
+        (Obj*)CB_newf("%i32", self->count));
+    Hash_Store(self->ix_counts, (Obj*)field, 
+        (Obj*)CB_newf("%i32", self->ix_count));
 
     /* Close streams. */
     OutStream_Close(self->dat_out);

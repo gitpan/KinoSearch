@@ -52,7 +52,7 @@ SegLex_init(SegLexicon *self, Schema *schema, Folder *folder,
     /* Extract count from metadata. */
     if (!counts) { THROW("Failed to extract 'counts'"); }
     else {
-        Obj *count = ASSERT_IS_A(Hash_Fetch(counts, field), OBJ);
+        Obj *count = ASSERT_IS_A(Hash_Fetch(counts, (Obj*)field), OBJ);
         self->size = (i32_t)Obj_To_I64(count);
     }
 

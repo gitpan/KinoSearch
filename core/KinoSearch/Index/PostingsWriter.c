@@ -52,23 +52,23 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
 
 
 PostingsWriter*
-PostWriter_new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader, 
-               LexiconWriter *lex_writer)
+PostWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
+               PolyReader *polyreader, LexiconWriter *lex_writer)
 {
     PostingsWriter *self 
         = (PostingsWriter*)VTable_Make_Obj(&POSTINGSWRITER);
-    return PostWriter_init(self, snapshot, segment, polyreader, lex_writer);
+    return PostWriter_init(self, schema, snapshot, segment, polyreader,
+        lex_writer);
 }
 
 #define DEFAULT_MEM_THRESH 0x1000000
 
 PostingsWriter*
-PostWriter_init(PostingsWriter *self, Snapshot *snapshot, Segment *segment,
-                PolyReader *polyreader, LexiconWriter *lex_writer)
+PostWriter_init(PostingsWriter *self, Schema *schema, Snapshot *snapshot,
+                Segment *segment, PolyReader *polyreader,
+                LexiconWriter *lex_writer)
 {
-    Schema *schema = PolyReader_Get_Schema(polyreader);
-
-    DataWriter_init((DataWriter*)self, snapshot, segment, polyreader);
+    DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
 
     /* Assign. */
     self->lex_writer = (LexiconWriter*)INCREF(lex_writer);

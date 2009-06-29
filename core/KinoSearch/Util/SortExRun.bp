@@ -2,7 +2,7 @@ parcel KinoSearch cnick Kino;
 
 __C__
 #include <stddef.h>
-#include "KinoSearch/Util/MSort.h"
+#include "KinoSearch/Util/SortUtils.h"
 __END_C__
 
 /**

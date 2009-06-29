@@ -2,20 +2,20 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 13;
+use Test::More tests => 17;
 use List::Util qw( shuffle );
 
 package ReverseType;
-use base qw( KinoSearch::FieldType::StringType );
+use base qw( KinoSearch::FieldType::Int32Type );
 
 sub new {
-    return shift->SUPER::new( sortable => 1, @_ );
+    return shift->SUPER::new( indexed => 0, sortable => 1, @_ );
 }
 
 sub compare_values {
     my ( $self, %args ) = @_;
     if ( defined $args{a} ) {
-        if   ( defined $args{b} ) { return $args{b} cmp $args{a}; }
+        if   ( defined $args{b} ) { return $args{b} <=> $args{a}; }
         else                      { return 1; }
     }
     elsif ( defined $args{b} ) { return -1; }
@@ -29,15 +29,35 @@ sub new {
     my $self       = shift->SUPER::new(@_);
     my $unsortable = KinoSearch::FieldType::FullTextType->new(
         analyzer => KinoSearch::Analysis::Tokenizer->new, );
-    my $type = KinoSearch::FieldType::StringType->new( sortable => 1 );
-    $self->spec_field( name => 'name',   type => $type );
-    $self->spec_field( name => 'speed',  type => $type );
-    $self->spec_field( name => 'sloth',  type => ReverseType->new );
-    $self->spec_field( name => 'weight', type => $type );
-    $self->spec_field( name => 'home',   type => $type );
-    $self->spec_field( name => 'cat',    type => $type );
-    $self->spec_field( name => 'unused', type => $type );
-    $self->spec_field( name => 'nope',   type => $unsortable );
+    my $string_type = KinoSearch::FieldType::StringType->new( sortable => 1 );
+    my $int32_type = KinoSearch::FieldType::Int32Type->new(
+        indexed  => 0,
+        sortable => 1,
+    );
+    my $int64_type = KinoSearch::FieldType::Int64Type->new(
+        indexed  => 0,
+        sortable => 1,
+    );
+    my $float32_type = KinoSearch::FieldType::Float32Type->new(
+        indexed  => 0,
+        sortable => 1,
+    );
+    my $float64_type = KinoSearch::FieldType::Float64Type->new(
+        indexed  => 0,
+        sortable => 1,
+    );
+    $self->spec_field( name => 'name',    type => $string_type );
+    $self->spec_field( name => 'speed',   type => $int32_type );
+    $self->spec_field( name => 'sloth',   type => ReverseType->new );
+    $self->spec_field( name => 'weight',  type => $int32_type );
+    $self->spec_field( name => 'int32',   type => $int32_type );
+    $self->spec_field( name => 'int64',   type => $int64_type );
+    $self->spec_field( name => 'float32', type => $float32_type );
+    $self->spec_field( name => 'float64', type => $float64_type );
+    $self->spec_field( name => 'home',    type => $string_type );
+    $self->spec_field( name => 'cat',     type => $string_type );
+    $self->spec_field( name => 'unused',  type => $string_type );
+    $self->spec_field( name => 'nope',    type => $unsortable );
     return $self;
 }
 
@@ -46,25 +66,25 @@ use KinoSearch::Test;
 
 my $airplane = {
     name   => 'airplane',
-    speed  => '0200',
-    sloth  => '0200',
-    weight => '8000',
+    speed  => 200,
+    sloth  => 200,
+    weight => 8000,
     home   => 'air',
     cat    => 'vehicle',
 };
 my $bike = {
     name   => 'bike',
-    speed  => '0015',
-    sloth  => '0015',
-    weight => '0025',
+    speed  => 15,
+    sloth  => 15,
+    weight => 25,
     home   => 'land',
     cat    => 'vehicle',
 };
 my $car = {
     name   => 'car',
-    speed  => '0070',
-    sloth  => '0070',
-    weight => '3000',
+    speed  => 70,
+    sloth  => 70,
+    weight => 3000,
     home   => 'land',
     cat    => 'vehicle',
 };
@@ -85,8 +105,8 @@ sub refresh_indexer {
 refresh_indexer();
 $indexer->add_doc($_) for ( $airplane, $bike, $car );
 
+# Add random strings.
 my @random_strings;
-# Add random strings for an additional experiment.
 my @letters = 'a' .. 'z';
 for ( 0 .. 99 ) {
     my $string = "";
@@ -102,6 +122,71 @@ for ( 0 .. 99 ) {
     refresh_indexer() if $_ % 10 == 0;
 }
 @random_strings = sort @random_strings;
+
+# Add random int32s.
+my @random_int32s;
+my $i32_max = 2**31 - 1;
+for ( 0 .. 99 ) {
+    my $random_num = int( rand($i32_max) );
+    $indexer->add_doc(
+        {   cat   => 'random_int32s',
+            name  => $random_num,
+            int32 => $random_num,
+        }
+    );
+    push @random_int32s, $random_num;
+    refresh_indexer() if $_ % 10 == 0;
+}
+@random_int32s = sort { $a <=> $b } @random_int32s;
+
+# Add random int64s.  On 32-bit Perls, precision errors may occur since we SVs
+# only store numbers in doubles above U32_MAX, but that's fine because the
+# errors precede the indexing stage.
+my @random_int64s;
+my $i64_max = 2**63 - 1;
+for ( 0 .. 99 ) {
+    my $random_num = int( rand($i64_max) );
+    $indexer->add_doc(
+        {   cat   => 'random_int64s',
+            name  => $random_num,
+            int64 => $random_num,
+        }
+    );
+    push @random_int64s, $random_num;
+    refresh_indexer() if $_ % 10 == 0;
+}
+@random_int64s = sort { $a <=> $b } @random_int64s;
+
+# Add random float32s.
+my @random_float32s;
+for ( 0 .. 99 ) {
+    my $random_num = rand(10);
+    $random_num = unpack( "f", pack( "f", $random_num ) );   # strip precision
+    $indexer->add_doc(
+        {   cat     => 'random_float32s',
+            name    => $random_num,
+            float32 => $random_num,
+        }
+    );
+    push @random_float32s, $random_num;
+    refresh_indexer() if $_ % 10 == 0;
+}
+@random_float32s = sort { $a <=> $b } @random_float32s;
+
+# Add random float64s.
+my @random_float64s;
+for ( 0 .. 99 ) {
+    my $random_num = rand(10);
+    $indexer->add_doc(
+        {   cat     => 'random_float64s',
+            name    => $random_num,
+            float64 => $random_num,
+        }
+    );
+    push @random_float64s, $random_num;
+    refresh_indexer() if $_ % 10 == 0;
+}
+@random_float64s = sort { $a <=> $b } @random_float64s;
 
 # Add numbers to verify consistent ordering.
 for ( shuffle( 0 .. 99 ) ) {
@@ -149,6 +234,18 @@ is_deeply( $results, $reversed, "FieldType_Compare_Values" );
 $results = test_sorted_search( 'random', 100, name => 0, );
 is_deeply( $results, \@random_strings, "random strings" );
 
+$results = test_sorted_search( 'random_int32s', 100, int32 => 0, );
+is_deeply( $results, \@random_int32s, "int32" );
+
+$results = test_sorted_search( 'random_int64s', 100, int64 => 0, );
+is_deeply( $results, \@random_int64s, "int64" );
+
+$results = test_sorted_search( 'random_float32s', 100, float32 => 0, );
+is_deeply( $results, \@random_float32s, "float32" );
+
+$results = test_sorted_search( 'random_float64s', 100, float64 => 0, );
+is_deeply( $results, \@random_float64s, "float64" );
+
 $results
     = test_sorted_search( 'bike bike bike car car airplane', 100, unused => 0,
     );
@@ -175,8 +272,8 @@ $indexer = KinoSearch::Indexer->new(
 );
 $indexer->add_doc(
     {   name   => 'carrot',
-        speed  => '0000',
-        weight => '0001',
+        speed  => 0,
+        weight => 1,
         home   => 'land',
         cat    => 'food',
     }

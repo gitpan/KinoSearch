@@ -77,13 +77,14 @@ S_read_fsfolder(RAMFolder *self)
 void
 RAMFolder_mkdir(RAMFolder *self, const CharBuf *path)
 {
-    Hash_Store(self->elems, path, (Obj*)RAMFileDes_new(path));
+    Hash_Store(self->elems, (Obj*)path, (Obj*)RAMFileDes_new(path));
 }
 
 RAMFileDes*
 RAMFolder_ram_file(RAMFolder *self, const CharBuf *filepath)
 {
-    RAMFileDes *ram_file = (RAMFileDes*)Hash_Fetch(self->elems, filepath);
+    RAMFileDes *ram_file 
+        = (RAMFileDes*)Hash_Fetch(self->elems, (Obj*)filepath);
     if (ram_file == NULL)
         THROW( "File '%o' not loaded into RAM", filepath);
     return ram_file;
@@ -92,12 +93,12 @@ RAMFolder_ram_file(RAMFolder *self, const CharBuf *filepath)
 OutStream*
 RAMFolder_open_out(RAMFolder *self, const CharBuf *filepath)
 {
-    if (Hash_Fetch(self->elems, filepath)) {
+    if (Hash_Fetch(self->elems, (Obj*)filepath)) {
         return NULL;
     }
     else {
         RAMFileDes *file_des = RAMFileDes_new(filepath);
-        Hash_Store(self->elems, filepath, (Obj*)file_des);
+        Hash_Store(self->elems, (Obj*)filepath, (Obj*)file_des);
         return OutStream_new((FileDes*)file_des);
     }
 }
@@ -106,7 +107,7 @@ FileDes*
 RAMFolder_open_filedes(RAMFolder *self, const CharBuf *filepath)
 {
     RAMFileDes *file_des 
-        = (RAMFileDes*)Hash_Fetch(self->elems, filepath);
+        = (RAMFileDes*)Hash_Fetch(self->elems, (Obj*)filepath);
     return file_des ? (FileDes*)INCREF(file_des) : NULL;
 }
 
@@ -119,7 +120,7 @@ RAMFolder_list(RAMFolder *self)
     Obj     *ignore;
 
     Hash_Iter_Init(elems);
-    while (Hash_Iter_Next(elems, &key, &ignore)) {
+    while (Hash_Iter_Next(elems, (Obj**)&key, &ignore)) {
         VA_Push(file_list, (Obj*)CB_Clone(key));
     }
 
@@ -129,7 +130,7 @@ RAMFolder_list(RAMFolder *self)
 bool_t
 RAMFolder_exists(RAMFolder *self, const CharBuf *filepath)
 {
-    if (Hash_Fetch(self->elems, filepath) != NULL) {
+    if (Hash_Fetch(self->elems, (Obj*)filepath) != NULL) {
         return true;
     }
     else {
@@ -140,13 +141,13 @@ RAMFolder_exists(RAMFolder *self, const CharBuf *filepath)
 void
 RAMFolder_rename(RAMFolder *self, const CharBuf* from, const CharBuf *to)
 {
-    RAMFileDes *file_des = (RAMFileDes*)Hash_Delete(self->elems, from);
+    RAMFileDes *file_des = (RAMFileDes*)Hash_Delete(self->elems, (Obj*)from);
 
     if (file_des == NULL) {
         THROW("File '%o' not loaded into RAM", from);
     }
 
-    Hash_Store(self->elems, to, (Obj*)file_des);
+    Hash_Store(self->elems, (Obj*)to, (Obj*)file_des);
     FileDes_Set_Path(file_des, to);
 }
 
@@ -154,7 +155,7 @@ bool_t
 RAMFolder_delete(RAMFolder *self, const CharBuf *filepath)
 {
     RAMFileDes *file_des 
-        = (RAMFileDes*)Hash_Delete(self->elems, filepath);
+        = (RAMFileDes*)Hash_Delete(self->elems, (Obj*)filepath);
     if (file_des) { RAMFileDes_Dec_RefCount(file_des); }
     return !!file_des;
 }

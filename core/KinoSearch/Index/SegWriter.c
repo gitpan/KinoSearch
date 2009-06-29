@@ -15,19 +15,19 @@
 #include "KinoSearch/Util/I32Array.h"
 
 SegWriter*
-SegWriter_new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader)
+SegWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
+              PolyReader *polyreader)
 {
     SegWriter *self = (SegWriter*)VTable_Make_Obj(&SEGWRITER);
-    return SegWriter_init(self, snapshot, segment, polyreader);
+    return SegWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
 SegWriter*
-SegWriter_init(SegWriter *self, Snapshot *snapshot, Segment *segment,
-               PolyReader *polyreader)
+SegWriter_init(SegWriter *self, Schema *schema, Snapshot *snapshot,
+               Segment *segment, PolyReader *polyreader)
 {
-    Schema       *schema = PolyReader_Get_Schema(polyreader);
     Architecture *arch   = Schema_Get_Architecture(schema);
-    DataWriter_init((DataWriter*)self, snapshot, segment, polyreader);
+    DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
     self->by_api   = Hash_new(0);
     self->inverter = Inverter_new(schema, segment);
     self->writers  = VA_new(16);
@@ -49,16 +49,16 @@ void
 SegWriter_register(SegWriter *self, const CharBuf *api, DataWriter *component)
 {
     ASSERT_IS_A(component, DATAWRITER);
-    if (Hash_Fetch(self->by_api, api)) {
+    if (Hash_Fetch(self->by_api, (Obj*)api)) {
         THROW("API %o already registered", api);
     }
-    Hash_Store(self->by_api, api, (Obj*)component);
+    Hash_Store(self->by_api, (Obj*)api, (Obj*)component);
 }
 
 Obj*
 SegWriter_fetch(SegWriter *self, const CharBuf *api)
 {
-    return Hash_Fetch(self->by_api, api);
+    return Hash_Fetch(self->by_api, (Obj*)api);
 }
 
 void

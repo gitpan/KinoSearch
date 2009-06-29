@@ -88,7 +88,7 @@ my $constructor = <<'END_NEW';
 ==head2 new( I<[labeled params]> )
 
     my $indexer = KinoSearch::Indexer->new(
-        schema       => $schema,           # required
+        schema       => $schema,           # required at index creation
         index        => '/path/to/index',  # required
         create       => 1,                 # default: 0
         truncate     => 1,                 # default: 0
@@ -99,7 +99,8 @@ my $constructor = <<'END_NEW';
 
 ==item *
 
-B<schema> - A Schema.
+B<schema> - A Schema.  Required when index is being created; if not supplied,
+will be extracted from the index folder.
 
 ==item *
 

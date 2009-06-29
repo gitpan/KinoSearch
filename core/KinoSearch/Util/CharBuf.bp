@@ -360,14 +360,14 @@ extern kino_ZombieCharBuf KINO_ZCB_EMPTY;
 /* Simple functions which allows assignment idiom for ZombieCharBuf values. 
  */
 static CHY_INLINE kino_ZombieCharBuf
-kino_ZCB_make_str(char *ptr, size_t size) 
+kino_ZCB_make_str(const char *ptr, size_t size) 
 {
     kino_ZombieCharBuf retval;
     retval.ref.count    = 1;
     retval.vtable       = (kino_VTable*)&KINO_ZOMBIECHARBUF;
     retval.cap          = 0;
     retval.size         = size;
-    retval.ptr          = ptr;
+    retval.ptr          = (char*)ptr;
     return retval;
 }
 

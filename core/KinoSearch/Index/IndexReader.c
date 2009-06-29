@@ -58,7 +58,9 @@ IxReader_close(IndexReader *self)
         CharBuf *key;
         DataReader *component;
         Hash_Iter_Init(self->components);
-        while (Hash_Iter_Next(self->components, &key, (Obj**)&component)) {
+        while (
+            Hash_Iter_Next(self->components, (Obj**)&key, (Obj**)&component)
+        ) {
             if (OBJ_IS_A(component, DATAREADER)) { 
                 DataReader_Close(component); 
             }
@@ -93,11 +95,12 @@ IxReader_get_components(IndexReader *self)
     { return self->components; }
 
 DataReader*
-IxReader_obtain(IndexReader *self, const CharBuf *key)
+IxReader_obtain(IndexReader *self, const CharBuf *api)
 {
-    DataReader *component = (DataReader*)Hash_Fetch(self->components, key);
+    DataReader *component 
+        = (DataReader*)Hash_Fetch(self->components, (Obj*)api);
     if (!component) {
-        THROW("No component registered for '%o'", key);
+        THROW("No component registered for '%o'", api);
     }
     return component;
 }
@@ -105,7 +108,7 @@ IxReader_obtain(IndexReader *self, const CharBuf *key)
 DataReader*
 IxReader_fetch(IndexReader *self, const CharBuf *api)
 {
-    return (DataReader*)Hash_Fetch(self->components, api);
+    return (DataReader*)Hash_Fetch(self->components, (Obj*)api);
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

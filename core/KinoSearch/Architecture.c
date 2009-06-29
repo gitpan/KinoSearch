@@ -58,11 +58,12 @@ Arch_init_seg_writer(Architecture *self, SegWriter *writer)
 void
 Arch_register_lexicon_writer(Architecture *self, SegWriter *writer)
 {
+    Schema        *schema     = SegWriter_Get_Schema(writer);
     Snapshot      *snapshot   = SegWriter_Get_Snapshot(writer);
     Segment       *segment    = SegWriter_Get_Segment(writer);
     PolyReader    *polyreader = SegWriter_Get_PolyReader(writer);
     LexiconWriter *lex_writer 
-        = LexWriter_new(snapshot, segment, polyreader);
+        = LexWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
     SegWriter_Register(writer, LEXICONWRITER.name, 
         (DataWriter*)lex_writer);
@@ -71,6 +72,7 @@ Arch_register_lexicon_writer(Architecture *self, SegWriter *writer)
 void
 Arch_register_postings_writer(Architecture *self, SegWriter *writer)
 {
+    Schema        *schema     = SegWriter_Get_Schema(writer);
     Snapshot      *snapshot   = SegWriter_Get_Snapshot(writer);
     Segment       *segment    = SegWriter_Get_Segment(writer);
     PolyReader    *polyreader = SegWriter_Get_PolyReader(writer);
@@ -81,8 +83,8 @@ Arch_register_postings_writer(Architecture *self, SegWriter *writer)
         THROW("Can't fetch a LexiconWriter");
     }
     else {
-        PostingsWriter *post_writer 
-            = PostWriter_new(snapshot, segment, polyreader, lex_writer);
+        PostingsWriter *post_writer = PostWriter_new(schema, snapshot,
+            segment, polyreader, lex_writer);
         SegWriter_Register(writer, POSTINGSWRITER.name, 
             (DataWriter*)post_writer);
         SegWriter_Add_Writer(writer, (DataWriter*)INCREF(post_writer));
@@ -92,11 +94,12 @@ Arch_register_postings_writer(Architecture *self, SegWriter *writer)
 void
 Arch_register_doc_writer(Architecture *self, SegWriter *writer)
 {
+    Schema     *schema     = SegWriter_Get_Schema(writer);
     Snapshot   *snapshot   = SegWriter_Get_Snapshot(writer);
     Segment    *segment    = SegWriter_Get_Segment(writer);
     PolyReader *polyreader = SegWriter_Get_PolyReader(writer);
-    DocWriter *doc_writer 
-        = DocWriter_new(snapshot, segment, polyreader);
+    DocWriter  *doc_writer 
+        = DocWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
     SegWriter_Register(writer, DOCWRITER.name, (DataWriter*)doc_writer);
     SegWriter_Add_Writer(writer, (DataWriter*)INCREF(doc_writer));
@@ -105,11 +108,12 @@ Arch_register_doc_writer(Architecture *self, SegWriter *writer)
 void
 Arch_register_sort_writer(Architecture *self, SegWriter *writer)
 {
+    Schema     *schema     = SegWriter_Get_Schema(writer);
     Snapshot   *snapshot   = SegWriter_Get_Snapshot(writer);
     Segment    *segment    = SegWriter_Get_Segment(writer);
     PolyReader *polyreader = SegWriter_Get_PolyReader(writer);
     SortWriter *sort_writer 
-        = SortWriter_new(snapshot, segment, polyreader);
+        = SortWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
     SegWriter_Register(writer, SORTWRITER.name, 
         (DataWriter*)sort_writer);
@@ -119,10 +123,12 @@ Arch_register_sort_writer(Architecture *self, SegWriter *writer)
 void
 Arch_register_highlight_writer(Architecture *self, SegWriter *writer)
 {
+    Schema     *schema     = SegWriter_Get_Schema(writer);
     Snapshot   *snapshot   = SegWriter_Get_Snapshot(writer);
     Segment    *segment    = SegWriter_Get_Segment(writer);
     PolyReader *polyreader = SegWriter_Get_PolyReader(writer);
-    HighlightWriter *hl_writer = HLWriter_new(snapshot, segment, polyreader);
+    HighlightWriter *hl_writer
+        = HLWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
     SegWriter_Register(writer, HIGHLIGHTWRITER.name, (DataWriter*)hl_writer);
     SegWriter_Add_Writer(writer, (DataWriter*)INCREF(hl_writer));
@@ -131,11 +137,12 @@ Arch_register_highlight_writer(Architecture *self, SegWriter *writer)
 void
 Arch_register_deletions_writer(Architecture *self, SegWriter *writer)
 {
+    Schema     *schema     = SegWriter_Get_Schema(writer);
     Snapshot   *snapshot   = SegWriter_Get_Snapshot(writer);
     Segment    *segment    = SegWriter_Get_Segment(writer);
     PolyReader *polyreader = SegWriter_Get_PolyReader(writer);
     DefaultDeletionsWriter *del_writer 
-        = DefDelWriter_new(snapshot, segment, polyreader);
+        = DefDelWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
     SegWriter_Register(writer, DELETIONSWRITER.name, (DataWriter*)del_writer);
     SegWriter_Set_Del_Writer(writer, (DeletionsWriter*)del_writer);

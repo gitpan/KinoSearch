@@ -52,7 +52,7 @@ PolyQuery_serialize(PolyQuery *self, OutStream *outstream)
 {
     const u32_t num_kids =  VA_Get_Size(self->children);
     u32_t i;
-    OutStream_Write_Float(outstream, self->boost);
+    OutStream_Write_F32(outstream, self->boost);
     OutStream_Write_U32(outstream, num_kids);
     for (i = 0; i < num_kids; i++) {
         Query *child = (Query*)VA_Fetch(self->children, i);
@@ -63,7 +63,7 @@ PolyQuery_serialize(PolyQuery *self, OutStream *outstream)
 PolyQuery*
 PolyQuery_deserialize(PolyQuery *self, InStream *instream)
 {
-    float boost          = InStream_Read_Float(instream);
+    float boost          = InStream_Read_F32(instream);
     u32_t num_children   = InStream_Read_U32(instream);
 
     if (!self) THROW("Abstract class");

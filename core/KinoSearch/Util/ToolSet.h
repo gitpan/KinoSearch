@@ -24,7 +24,7 @@
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/StringHelper.h"
 #include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/Float64.h"
+#include "KinoSearch/Util/Num.h"
 #include "KinoSearch/Util/VArray.h"
 #include "KinoSearch/Util/Hash.h"
 

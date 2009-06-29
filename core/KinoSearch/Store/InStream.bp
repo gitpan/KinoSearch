@@ -131,10 +131,15 @@ final class KinoSearch::Store::InStream extends KinoSearch::Obj {
     u64_t 
     Read_U64(InStream *self);
 
-    /** Decode an IEEE 764 big-endian float from the InStream and return it.
+    /** Read an IEEE 764 32-bit floating point number from the InStream.
      */
     float 
-    Read_Float(InStream *self);
+    Read_F32(InStream *self);
+
+    /** Read an IEEE 764 64-bit floating point number from the InStream.
+     */
+    double 
+    Read_F64(InStream *self);
 
     /** Read in a compressed 32-bit unsigned integer, stored in 1-5 bytes.
      */

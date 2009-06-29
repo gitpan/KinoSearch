@@ -61,13 +61,10 @@ my $num_reps;
     }
 }
 
-init_test_index_loc();
-
 my @correct;
 for my $num_letters ( reverse 1 .. 10 ) {
     my $truncate = $num_letters == 10 ? 1 : 0;
     my $indexer = KinoSearch::Indexer->new(
-        schema   => KinoSearch::Test::TestSchema->new,
         index    => $index_loc,
         truncate => $truncate,
     );

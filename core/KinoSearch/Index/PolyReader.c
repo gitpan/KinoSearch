@@ -75,17 +75,16 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
     for (i = 0; i < num_sub_readers; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(sub_readers, i);
         Hash *components = SegReader_Get_Components(seg_reader);
-        CharBuf *interface;
+        CharBuf *api;
         DataReader *component;
         starts[i] = self->doc_max;
         self->doc_max += SegReader_Doc_Max(seg_reader);
         Hash_Iter_Init(components);
-        while (Hash_Iter_Next(components, &interface, (Obj**)&component)) {
-            VArray *readers 
-                = (VArray*)Hash_Fetch(data_readers, interface);
+        while (Hash_Iter_Next(components, (Obj**)&api, (Obj**)&component)) {
+            VArray *readers = (VArray*)Hash_Fetch(data_readers, (Obj*)api);
             if (!readers) { 
                 readers = VA_new(num_sub_readers); 
-                Hash_Store(data_readers, interface, (Obj*)readers);
+                Hash_Store(data_readers, (Obj*)api, (Obj*)readers);
             }
             VA_Store(readers, i, INCREF(component));
         }
@@ -93,17 +92,17 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
     self->offsets = I32Arr_new_steal(starts, num_sub_readers);
 
     {
-        CharBuf *interface;
+        CharBuf *api;
         VArray  *readers;
         Hash_Iter_Init(data_readers);
-        while (Hash_Iter_Next(data_readers, &interface, (Obj**)&readers)) {
+        while (Hash_Iter_Next(data_readers, (Obj**)&api, (Obj**)&readers)) {
             DataReader *datareader = (DataReader*)ASSERT_IS_A(
                 S_first_non_null(readers), DATAREADER);
             DataReader *aggregator 
                 = DataReader_Aggregator(datareader, readers, self->offsets);
             if (aggregator) {
                 ASSERT_IS_A(aggregator, DATAREADER);
-                Hash_Store(self->components, interface, (Obj*)aggregator);
+                Hash_Store(self->components, (Obj*)api, (Obj*)aggregator);
             }
         }
     }
@@ -111,7 +110,7 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
 
     {
         DeletionsReader *del_reader = (DeletionsReader*)Hash_Fetch(
-            self->components, DELETIONSREADER.name);
+            self->components, (Obj*)DELETIONSREADER.name);
         self->del_count = del_reader ? DelReader_Del_Count(del_reader) : 0;
     }
 }
@@ -251,7 +250,7 @@ S_try_open_elements(PolyReader *self)
     }
 
     /* Sort the segments by age. */
-    VA_Sort(segments, NULL);
+    VA_Sort(segments, NULL, NULL);
 
     {
         Obj *result = PolyReader_Try_Open_SegReaders(self, segments);

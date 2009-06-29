@@ -9,6 +9,7 @@
 #include "KinoSearch/Util/Err.h"
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/Freezer.h"
+#include "KinoSearch/Util/SortUtils.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 
@@ -306,11 +307,12 @@ VA_resize(VArray *self, u32_t size)
 u32_t
 VA_get_size(VArray *self) { return self->size; }
 
-int
-S_default_compare(const void *va, const void *vb)
+static int
+S_default_compare(void *context, const void *va, const void *vb)
 {
     Obj *a = *(Obj**)va;
     Obj *b = *(Obj**)vb;
+    UNUSED_VAR(context);
     if      (a != NULL && b != NULL) { return Obj_Compare_To(a, b); }
     else if (a == NULL && b == NULL) { return 0;  }
     else if (a == NULL)              { return 1;  } /* NULL to the back */
@@ -318,10 +320,10 @@ S_default_compare(const void *va, const void *vb)
 }
 
 void
-VA_sort(VArray *self, Obj_compare_t compare)
+VA_sort(VArray *self, Sort_compare_t compare, void *context)
 {
     if (!compare) { compare = S_default_compare; }
-    qsort(self->elems, self->size, sizeof(void*), compare);
+    Sort_quicksort(self->elems, self->size, sizeof(void*), compare, context);
 }
 
 bool_t

@@ -130,7 +130,7 @@ Highlighter_create_excerpt(Highlighter *self, HitDoc *hit_doc)
 
         top = Highlighter_Raw_Excerpt(self, (CharBuf*)field_val, 
             (CharBuf*)&fragment, raw_excerpt, top, heat_map, sentences);
-        VA_Sort(score_spans, NULL);
+        VA_Sort(score_spans, NULL, NULL);
         Highlighter_highlight_excerpt(self, score_spans, raw_excerpt, 
             highlighted, top);
 

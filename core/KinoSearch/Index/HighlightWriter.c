@@ -13,6 +13,7 @@
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Store/InStream.h"
@@ -25,18 +26,19 @@ S_lazy_init(HighlightWriter *self);
 i32_t HLWriter_current_file_format = 1;
 
 HighlightWriter*
-HLWriter_new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader)
+HLWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
+             PolyReader *polyreader)
 {
     HighlightWriter *self 
         = (HighlightWriter*)VTable_Make_Obj(&HIGHLIGHTWRITER);
-    return HLWriter_init(self, snapshot, segment, polyreader);
+    return HLWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
 HighlightWriter*
-HLWriter_init(HighlightWriter *self, Snapshot *snapshot, Segment *segment,
-              PolyReader *polyreader)
+HLWriter_init(HighlightWriter *self, Schema *schema, Snapshot *snapshot,
+              Segment *segment, PolyReader *polyreader)
 {
-    DataWriter_init((DataWriter*)self, snapshot, segment, polyreader);
+    DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
     return self;
 }
 

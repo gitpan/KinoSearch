@@ -72,7 +72,7 @@ LeafQuery_serialize(LeafQuery *self, OutStream *outstream)
         OutStream_Write_U8(outstream, false);
     }
     CB_Serialize(self->text, outstream);
-    OutStream_Write_Float(outstream, self->boost);
+    OutStream_Write_F32(outstream, self->boost);
 }
 
 LeafQuery*
@@ -83,7 +83,7 @@ LeafQuery_deserialize(LeafQuery *self, InStream *instream)
                 ? CB_deserialize(NULL, instream)
                 : NULL;
     self->text  = CB_deserialize(NULL, instream);
-    self->boost = InStream_Read_Float(instream);
+    self->boost = InStream_Read_F32(instream);
     return self;
 }
 

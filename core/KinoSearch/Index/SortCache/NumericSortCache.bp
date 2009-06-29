@@ -1,0 +1,89 @@
+parcel KinoSearch cnick Kino;
+
+class KinoSearch::Index::SortCache::NumericSortCache cnick NumSortCache
+    extends KinoSearch::Index::SortCache {
+
+    InStream  *ord_in;
+    InStream  *dat_in;
+    char      *values;
+    char      *values_limit;
+
+    public static NumericSortCache*
+    init(NumericSortCache *self, Schema *schema, Folder *folder, 
+         Segment *segment, i32_t field_num, i32_t num_unique,
+         i32_t null_ord = -1, size_t unit_width);
+
+    void
+    Destroy(NumericSortCache *self);
+}
+
+class KinoSearch::Index::SortCache::Float64SortCache cnick F64SortCache
+    extends KinoSearch::Index::SortCache::NumericSortCache {
+
+    public static incremented Float64SortCache*
+    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
+        i32_t num_unique, i32_t null_ord = -1);
+
+    public static Float64SortCache*
+    init(Float64SortCache *self, Schema *schema, Folder *folder, 
+         Segment *segment, i32_t field_num, i32_t num_unique,
+         i32_t null_ord = -1);
+
+    public Obj*
+    Value(Float64SortCache *self, i32_t ord, Obj *blank);
+}
+
+class KinoSearch::Index::SortCache::Float32SortCache cnick F32SortCache
+    extends KinoSearch::Index::SortCache::NumericSortCache {
+
+    public static incremented Float32SortCache*
+    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
+        i32_t num_unique, i32_t null_ord = -1);
+
+    public static Float32SortCache*
+    init(Float32SortCache *self, Schema *schema, Folder *folder, 
+         Segment *segment, i32_t field_num, i32_t num_unique,
+         i32_t null_ord = -1);
+
+    public Obj*
+    Value(Float32SortCache *self, i32_t ord, Obj *blank);
+}
+
+class KinoSearch::Index::SortCache::Int32SortCache cnick I32SortCache
+    extends KinoSearch::Index::SortCache::NumericSortCache {
+
+    public static incremented Int32SortCache*
+    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
+        i32_t num_unique, i32_t null_ord = -1);
+
+    public static Int32SortCache*
+    init(Int32SortCache *self, Schema *schema, Folder *folder, 
+         Segment *segment, i32_t field_num, i32_t num_unique,
+         i32_t null_ord = -1);
+
+    public Obj*
+    Value(Int32SortCache *self, i32_t ord, Obj *blank);
+}
+
+class KinoSearch::Index::SortCache::Int64SortCache cnick I64SortCache
+    extends KinoSearch::Index::SortCache::NumericSortCache {
+
+    public static incremented Int64SortCache*
+    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
+        i32_t num_unique, i32_t null_ord = -1);
+
+    public static Int64SortCache*
+    init(Int64SortCache *self, Schema *schema, Folder *folder, 
+         Segment *segment, i32_t field_num, i32_t num_unique,
+         i32_t null_ord = -1);
+
+    public Obj*
+    Value(Int64SortCache *self, i32_t ord, Obj *blank);
+}
+
+/* Copyright 2006-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -61,7 +61,7 @@ FilePurger_purge(FilePurger *self)
          *  later.  Proceed in reverse lexical order so that segment
          *  directories get deleted after they've been emptied. */
         S_discover_unused(self, &purgables, &snapfiles);
-        VA_Sort(purgables, NULL);
+        VA_Sort(purgables, NULL, NULL);
         for (i = VA_Get_Size(purgables); i--; ) {
             CharBuf *filename = (CharBuf*)VA_fetch(purgables, i);
             if (!Folder_Delete(folder, filename)) { 
@@ -153,7 +153,7 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
                 u32_t i, max;
                 for (i = 0, max = VA_Get_Size(some_files); i < max; i++) {
                     CharBuf *filename = (CharBuf*)VA_Fetch(some_files, i);
-                    Hash_Store(candidates, filename, INCREF(&EMPTY));
+                    Hash_Store(candidates, (Obj*)filename, INCREF(&EMPTY));
                 }
                 VA_Push(snapfiles, INCREF(filename));
                 DECREF(some_files);
@@ -167,7 +167,7 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
     /* Eliminate any current files from the list of files to be purged. */
     for (i = 0, max = VA_Get_Size(current); i < max; i++) {
         CharBuf *filename = (CharBuf*)VA_Fetch(current, i);
-        DECREF(Hash_Delete(candidates, filename));
+        DECREF(Hash_Delete(candidates, (Obj*)filename));
     }
 
     /* Pass back purgables and snapfiles. */

@@ -42,11 +42,14 @@ class KinoSearch::Index::Inverter extends KinoSearch::Obj {
     public void
     Set_Boost(Inverter *self, float boost);
 
-    /** Add a field to the Inverter.  If the field is indexed/analyzed,
-     * invert it.
+    /** Add a field to the Inverter.  If the field is indexed/analyzed, invert
+     * it.  
+     * 
+     * The InverterEntry's value should have already been set to the field's
+     * value when Add_Field() is called.
      */
     void
-    Add_Field(Inverter *self, InverterEntry *entry, Obj *value);
+    Add_Field(Inverter *self, InverterEntry *entry);
 
     /** Remove the cached Doc and everything derived from it.
      */
@@ -84,7 +87,7 @@ class KinoSearch::Index::Inverter extends KinoSearch::Obj {
 
     /** Return the current field's value, or NULL if the iterator is exhausted.
      */
-    public ViewCharBuf*
+    public Obj*
     Get_Value(Inverter *self);
 
     /** Return the FieldType for the current field, or NULL if the iterator is
@@ -125,14 +128,13 @@ private final class KinoSearch::Index::Inverter::InverterEntry cnick InvEntry
 
     i32_t        field_num;
     CharBuf     *field;
-    ViewCharBuf *value;
+    Obj         *value;
     Inversion   *inversion;
     FieldType   *type;
     Analyzer    *analyzer;
     Similarity  *sim;
     bool_t       indexed;
     bool_t       highlightable;
-    bool_t       binary;
 
     static incremented InverterEntry*
     new(Schema *schema = NULL, const CharBuf *field_name, i32_t field_num);

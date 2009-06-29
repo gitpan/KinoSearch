@@ -125,7 +125,7 @@ __POD__
 
 =head1 NAME
 
-KSx::Index::ZlibDocReader - Compressed document storage.
+KSx::Index::ZlibDocReader - Compressed doc storage.
 
 =head1 DESCRIPTION
 

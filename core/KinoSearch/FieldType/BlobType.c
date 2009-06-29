@@ -1,6 +1,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/FieldType/BlobType.h"
+#include "KinoSearch/Util/ByteBuf.h"
 
 BlobType*
 BlobType_new()
@@ -29,6 +30,20 @@ BlobType_set_sortable(BlobType *self, bool_t sortable)
 {
     UNUSED_VAR(self);
     if (sortable) { THROW("BlobType fields can't be sortable"); }
+}
+
+ViewByteBuf*
+BlobType_make_blank(BlobType *self)
+{
+    UNUSED_VAR(self);
+    return ViewBB_new(NULL, 0);
+}
+
+i8_t
+BlobType_primitive_id(BlobType *self)
+{
+    UNUSED_VAR(self);
+    return FType_BLOB;
 }
 
 bool_t
@@ -82,11 +97,12 @@ BlobType_load(BlobType *self, Obj *dump)
     Obj *boost_dump      = Hash_Fetch_Str(source, "boost", 5);
     Obj *indexed_dump    = Hash_Fetch_Str(source, "indexed", 7);
     Obj *stored_dump     = Hash_Fetch_Str(source, "stored", 6);
+    UNUSED_VAR(self);
 
     BlobType_init(loaded);
-    if (boost_dump)   { self->boost   = (float)Obj_To_F64(boost_dump);    }
-    if (indexed_dump) { self->indexed = (bool_t)Obj_To_I64(indexed_dump); }
-    if (stored_dump)  { self->stored  = (bool_t)Obj_To_I64(stored_dump);  }
+    if (boost_dump)   { loaded->boost   = (float)Obj_To_F64(boost_dump);    }
+    if (indexed_dump) { loaded->indexed = (bool_t)Obj_To_I64(indexed_dump); }
+    if (stored_dump)  { loaded->stored  = (bool_t)Obj_To_I64(stored_dump);  }
 
     return loaded;
 }

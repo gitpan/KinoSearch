@@ -25,11 +25,12 @@ class KinoSearch::Index::LexiconWriter cnick LexWriter
     static i32_t current_file_format;
 
     static incremented LexiconWriter*
-    new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader);
+    new(Schema *schema, Snapshot *snapshot, Segment *segment,
+        PolyReader *polyreader);
 
     static LexiconWriter* 
-    init(LexiconWriter *self, Snapshot *snapshot, Segment *segment,
-         PolyReader *polyreader);
+    init(LexiconWriter *self, Schema *schema, Snapshot *snapshot,
+         Segment *segment, PolyReader *polyreader);
 
     /* Prepare to write the .lex and .lexx files for a field.
      */

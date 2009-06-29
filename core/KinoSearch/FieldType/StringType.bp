@@ -4,8 +4,8 @@ parcel KinoSearch cnick Kino;
  * 
  * KinoSearch::FieldType::StringType is used for "exact-match" strings.
  */
-class KinoSearch::FieldType::StringType extends KinoSearch::FieldType 
-    : dumpable {
+class KinoSearch::FieldType::StringType 
+    extends KinoSearch::FieldType::TextType : dumpable {
 
     /** 
      * @param boost floating point per-field boost.

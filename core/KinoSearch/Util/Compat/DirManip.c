@@ -89,6 +89,26 @@ S_is_updir(const char *name, size_t len)
 
 #include <dirent.h>
 
+static CHY_INLINE chy_bool_t
+SI_entry_is_dir(kino_CharBuf **fullpath, kino_CharBuf *path, 
+                kino_CharBuf *prefix, struct dirent *entry)
+{
+    #ifdef CHY_HAS_DIRENT_D_TYPE
+        CHY_UNUSED_VAR(fullpath);
+        CHY_UNUSED_VAR(path);
+        CHY_UNUSED_VAR(prefix);
+        return entry->d_type == DT_DIR ? true : false;
+    #else 
+        /* Solaris struct dirent may not have a d_type member. :( */
+        if (!*fullpath) { 
+            *fullpath = kino_CB_new(100);
+        }
+        kino_CB_setf(*fullpath, "%o%s%o%s%s", path, CHY_DIR_SEP, prefix, 
+            CHY_DIR_SEP, entry->d_name);
+        return kino_DirManip_dir_ok(*fullpath);
+    #endif
+}
+
 static void
 S_add_to_file_list(kino_VArray *list, kino_CharBuf *path, 
                    kino_CharBuf *prefix, chy_bool_t recurse)
@@ -98,6 +118,7 @@ S_add_to_file_list(kino_VArray *list, kino_CharBuf *path,
     struct dirent *entry;
     size_t orig_path_size   = Kino_CB_Get_Size(path);
     size_t orig_prefix_size = Kino_CB_Get_Size(prefix);
+    kino_CharBuf *fullpath = NULL;
 
     while (NULL != (entry = readdir(dirhandle))) {
         #ifdef CHY_HAS_DIRENT_D_NAMLEN
@@ -113,23 +134,22 @@ S_add_to_file_list(kino_VArray *list, kino_CharBuf *path,
                 Kino_VA_Grow(list, Kino_VA_Get_Size(list) + 10);
             }
             Kino_VA_Push(list, (kino_Obj*)relpath);
-            #ifdef CHY_HAS_DIRENT_D_TYPE
-            if (recurse && entry->d_type == DT_DIR) {
+
+            if (recurse && SI_entry_is_dir(&fullpath, path, prefix, entry)) {
                 kino_CB_catf(path,   "%s%s", CHY_DIR_SEP, entry->d_name);
                 kino_CB_catf(prefix, "%s/", entry->d_name);
                 S_add_to_file_list(list, path, prefix, true); /* recurse */
                 Kino_CB_Set_Size(path, orig_path_size);
                 Kino_CB_Set_Size(prefix, orig_prefix_size);
             }
-            #else
-              #error "No d_type member in struct dirent"
-            #endif
         }
     }
 
     if (closedir(dirhandle) == -1) {
         KINO_THROW("Error closing dirhandle: %s", strerror(errno));
     }
+
+    KINO_DECREF(fullpath);
 }
 
 /********************************** Windows ********************************/

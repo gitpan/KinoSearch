@@ -24,10 +24,10 @@ CODE:
     HV *const args_hash = XSBind_build_args_hash( &(ST(0)), 1, items,
         "KinoSearch::Index::SortCache::value_PARAMS");
     chy_i32_t ord = XSBind_extract_iv(args_hash, SNL("ord"));
-    kino_ZombieCharBuf temp = KINO_ZCB_BLANK;
-    kino_ViewCharBuf *value = Kino_SortCache_Value(self, ord,
-        (kino_ViewCharBuf*)&temp);
-    RETVAL = XSBind_cb_to_sv((kino_CharBuf*)value);
+    kino_Obj *blank = Kino_SortCache_Make_Blank(self);
+    kino_Obj *value = Kino_SortCache_Value(self, ord, blank);
+    RETVAL = XSBind_kobj_to_pobj(value);
+    KINO_DECREF(blank);
 }
 OUTPUT: RETVAL
 

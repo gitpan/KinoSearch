@@ -24,6 +24,7 @@
 #include "KinoSearch/Store/LockFactory.h"
 #include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IndexFileNames.h"
+#include "KinoSearch/Util/Json.h"
 #include "KinoSearch/Util/MathUtils.h"
 
 i32_t Indexer_CREATE   = 0x00000001;
@@ -37,6 +38,10 @@ S_release_write_lock(Indexer *self);
  * Folder_Initialize() if "create" is true. */
 static Folder*
 S_init_folder(Obj *index, bool_t create);
+
+/* Find the schema file within a snapshot. */
+static CharBuf*
+S_find_schema_file(Snapshot *snapshot);
 
 Indexer*
 Indexer_new(Schema *schema, Obj *index, IndexManager *manager,
@@ -67,7 +72,6 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
     self->snapfile     = NULL;
 
     /* Assign. */
-    self->schema       = (Schema*)INCREF(schema);
     self->folder       = folder;
     self->manager      = manager 
                        ? (IndexManager*)INCREF(manager) 
@@ -98,6 +102,30 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
         Snapshot_Read_File(latest_snapshot, folder, latest_snapfile);
     }
 
+    /* Look for an existing Schema if one wasn't supplied. */
+    if (schema) {
+        self->schema = (Schema*)INCREF(schema);
+    }
+    else {
+        if (!latest_snapfile) {
+            THROW("No Schema supplied, and can't find one in the index");
+        }
+        else {
+            CharBuf *schema_file = S_find_schema_file(latest_snapshot);
+            Hash *dump = (Hash*)Json_slurp_json(folder, schema_file);
+            if (dump) { /* read file successfully */
+                self->schema = (Schema*)ASSERT_IS_A(
+                    VTable_Load_Obj(&SCHEMA, (Obj*)dump), SCHEMA);
+                schema = self->schema;
+                DECREF(dump);
+                schema_file = NULL;
+            }
+            else {
+                THROW("Failed to parse %o", schema_file);
+            }
+        }
+    }
+
     /* If we're clobbering, start with an empty Snapshot and an empty 
      * PolyReader.  Otherwise, start with the most recent Snapshot and an
      * up-to-date PolyReader. */
@@ -114,17 +142,10 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
             : PolyReader_new(schema, folder, NULL, NULL, NULL);
 
         if (latest_snapfile) {
-            /* This is seriously awful hack.  For now, the Schema must be
-             * shared by the Indexer and the PolyReader, because DataWriter
-             * sub-components don't get access to the Indexer's schema and
-             * that can cause problems when fields are added.
-             *
-             * TODO: Kill this hack by fixing Architecture.
-             */
+            /* Make sure than any existing fields which may have been
+             * dynamically added during past indexing sessions get added. */
             Schema *old_schema = PolyReader_Get_Schema(self->polyreader);
             Schema_Eat(schema, old_schema);
-            DECREF(old_schema);
-            self->polyreader->schema = (Schema*)INCREF(schema);
         }
     }
 
@@ -151,8 +172,8 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
         }
         DECREF(fields);
     }
-    self->seg_writer = SegWriter_new(self->snapshot, self->segment, 
-        self->polyreader); 
+    self->seg_writer = SegWriter_new(self->schema, self->snapshot,
+        self->segment, self->polyreader); 
     SegWriter_Prep_Seg_Dir(self->seg_writer);
 
     /* Grab a local ref to the DeletionsWriter. */

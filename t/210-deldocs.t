@@ -12,6 +12,7 @@ my $seg_reader = $polyreader->seg_readers->[0];
 my $snapshot   = $polyreader->get_snapshot;
 
 my $del_writer = KinoSearch::Index::DefaultDeletionsWriter->new(
+    schema     => $polyreader->get_schema,
     polyreader => $polyreader,
     segment    => $seg_reader->get_segment,
     snapshot   => $snapshot,
@@ -40,6 +41,7 @@ my $new_seg = KinoSearch::Index::Segment->new(
     name   => 'seg_2',
 );
 $del_writer = KinoSearch::Index::DefaultDeletionsWriter->new(
+    schema     => $polyreader->get_schema,
     polyreader => $polyreader,
     segment    => $new_seg,
     snapshot   => $snapshot,

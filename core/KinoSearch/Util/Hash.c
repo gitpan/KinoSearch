@@ -20,7 +20,7 @@
 #define HashEntry kino_HashEntry
 
 typedef struct HashEntry {
-    SharedHashKey *key;
+    Obj *key;
     Obj *value;
     i32_t hash_code;
 } HashEntry;
@@ -33,7 +33,7 @@ SI_kill_iter(Hash *self);
 /* Return the entry associated with the key, if any.
  */
 static INLINE HashEntry*
-SI_fetch_entry(Hash *self, const CharBuf *key, i32_t hash_code);
+SI_fetch_entry(Hash *self, const Obj *key, i32_t hash_code);
 
 /* Double the number of buckets and redistribute all entries. 
  *
@@ -43,8 +43,6 @@ SI_fetch_entry(Hash *self, const CharBuf *key, i32_t hash_code);
  */
 HashEntry*
 kino_Hash_rebuild_hash(Hash *self);
-
-SharedKeyMasterHash *Hash_keymaster = NULL;
 
 Hash*
 Hash_new(u32_t capacity)
@@ -76,15 +74,6 @@ Hash_init(Hash *self, u32_t capacity)
     self->entries      = CALLOCATE(capacity, HashEntry);
     self->threshold    = threshold;
 
-    if (self != (Hash*)Hash_keymaster) {
-        if (Hash_keymaster == NULL) {
-            (void)SharedKeyMasterHash_new(requested_capacity);
-        }
-        else {
-            INCREF(Hash_keymaster); 
-        }
-    }
-
     return self;
 }
 
@@ -95,9 +84,6 @@ Hash_destroy(Hash *self)
         Hash_clear(self);
         free(self->entries);
     }
-    if (DECREF(Hash_keymaster) == 0) {
-        Hash_keymaster = NULL;
-    }
     FREE_OBJ(self);
 }
 
@@ -105,11 +91,12 @@ Hash*
 Hash_dump(Hash *self)
 {
     Hash *dump = Hash_new(self->size);
-    CharBuf *key;
+    Obj *key;
     Obj *value;
 
     Hash_Iter_Init(self);
     while (Hash_Iter_Next(self, &key, &value)) {
+        ASSERT_IS_A(key, CHARBUF);
         Hash_Store(dump, key, Obj_Dump(value));
     }
 
@@ -158,7 +145,7 @@ Hash_load(Hash *self, Obj *dump)
     /* It's an ordinary Hash. */
     {
         Hash *loaded = Hash_new(source->size);
-        CharBuf *key;
+        Obj *key;
         Obj *value;
 
         Hash_Iter_Init(source);
@@ -173,36 +160,66 @@ Hash_load(Hash *self, Obj *dump)
 void
 Hash_serialize(Hash *self, OutStream *outstream)
 {
-    CharBuf *key;
+    Obj *key;
     Obj *val;
+    u32_t charbuf_count = 0;
     OutStream_Write_C32(outstream, self->size);
+
+    /* Write number of CharBuf keys.  CharBuf keys are the common case;
+     * grouping them together is a form of run-length-encoding and saves
+     * space. */
     Hash_Iter_Init(self);
     while (Hash_Iter_Next(self, &key, &val)) {
-        CB_Serialize(key, outstream);
-        FREEZE(val, outstream);
+        if (OBJ_IS_A(key, CHARBUF)) { charbuf_count++; }
+    }
+    OutStream_Write_C32(outstream, charbuf_count);
+    Hash_Iter_Init(self);
+    while (Hash_Iter_Next(self, &key, &val)) {
+        if (OBJ_IS_A(key, CHARBUF)) { 
+            Obj_Serialize(key, outstream);
+            FREEZE(val, outstream);
+        }
+    }
+
+    /* Punt on the classes of the remaining keys. */
+    Hash_Iter_Init(self);
+    while (Hash_Iter_Next(self, &key, &val)) {
+        if (!OBJ_IS_A(key, CHARBUF)) { 
+            FREEZE(key, outstream);
+            FREEZE(val, outstream);
+        }
     }
 }
 
 Hash*
 Hash_deserialize(Hash *self, InStream *instream)
 {
-    u32_t size = InStream_Read_C32(instream);
-    CharBuf *key = CB_new(0);
+    u32_t    size         = InStream_Read_C32(instream);
+    u32_t    num_charbufs = InStream_Read_C32(instream);
+    u32_t    num_other    = size - num_charbufs;
+    CharBuf *key          = num_charbufs ? CB_new(0) : NULL;
 
     if (self) Hash_init(self, size);
     else self = Hash_new(size);
-
-    /* Read key/value pairs. */
-    while (size--) {
-        u32_t size = InStream_Read_C32(instream);
-        CB_Grow(key, size);
-        InStream_Read_Bytes(instream, key->ptr, size);
-        CB_Set_Size(key, size);
+ 
+    /* Read key-value pairs with CharBuf keys. */
+    while (num_charbufs--) {
+        u32_t len = InStream_Read_C32(instream);
+        CB_Grow(key, len);
+        InStream_Read_Bytes(instream, key->ptr, len);
+        CB_Set_Size(key, len);
         *CBEND(key) = '\0';
-        Hash_Store(self, key, THAW(instream));
+        Hash_Store(self, (Obj*)key, THAW(instream));
+    }
+    DECREF(key);
+    
+    /* Read remaining key/value pairs. */
+    while (num_other--) {
+        Obj *k = THAW(instream);
+        Hash_Store(self, k, THAW(instream));
+        DECREF(k);
     }
 
-    DECREF(key);
     return self;
 }
 
@@ -226,8 +243,8 @@ Hash_clear(Hash *self)
 }
 
 void
-kino_Hash_do_store(Hash *self, const CharBuf *key, Obj *value, 
-                   i32_t hash_code)
+kino_Hash_do_store(Hash *self, Obj *key, Obj *value, 
+                   i32_t hash_code, bool_t use_this_key)
 {
     HashEntry   *entries = self->size >= self->threshold
                          ? kino_Hash_rebuild_hash(self)
@@ -239,19 +256,21 @@ kino_Hash_do_store(Hash *self, const CharBuf *key, Obj *value,
     while (1) {
         tick &= mask;
         entry = entries + tick;
-        if (entry->key == (SharedHashKey*)UNDEF || !entry->key) {
-            if (entry->key == (SharedHashKey*)UNDEF) { 
+        if (entry->key == (Obj*)UNDEF || !entry->key) {
+            if (entry->key == (Obj*)UNDEF) { 
                 /* Take note of diminished tombstone clutter. */
                 self->threshold++; 
             }
-            entry->key       = Hash_Make_Key(self, key, hash_code);
+            entry->key       = use_this_key 
+                             ? key 
+                             : Hash_Make_Key(self, key, hash_code);
             entry->value     = value;
             entry->hash_code = hash_code;
             self->size++;
             break;
         }
         else if (   entry->hash_code == hash_code
-                 && Obj_Equals(key, (Obj*)entry->key)
+                 && Obj_Equals(key, entry->key)
         ) {
             DECREF(entry->value);
             entry->value = value;
@@ -262,39 +281,36 @@ kino_Hash_do_store(Hash *self, const CharBuf *key, Obj *value,
 }
 
 void
-Hash_store(Hash *self, const CharBuf *key, Obj *value) 
+Hash_store(Hash *self, Obj *key, Obj *value) 
 {
-    kino_Hash_do_store(self, key, value, Obj_Hash_Code(key));
+    kino_Hash_do_store(self, key, value, Obj_Hash_Code(key), false);
 }
 
 void
 Hash_store_str(Hash *self, const char *key, size_t key_len, Obj *value)
 {
     ZombieCharBuf key_buf = ZCB_make_str((char*)key, key_len);
-    kino_Hash_do_store(self, (CharBuf*)&key_buf, value, 
-        ZCB_Hash_Code(&key_buf));
+    kino_Hash_do_store(self, (Obj*)&key_buf, value, 
+        ZCB_Hash_Code(&key_buf), false);
 }
 
-SharedHashKey*
-Hash_make_key(Hash *self, const CharBuf *key, i32_t hash_code)
+Obj*
+Hash_make_key(Hash *self, Obj *key, i32_t hash_code)
 {
-    SharedHashKey *shared_key 
-        = (SharedHashKey*)Hash_Find_Key(Hash_keymaster, key, hash_code);
     UNUSED_VAR(self);
-    if (shared_key) { return (SharedHashKey*)INCREF(shared_key); }
-    else { return SharedHashKey_new(key, hash_code); }
+    UNUSED_VAR(hash_code);
+    return Obj_Clone(key);
 }
 
 Obj*
 Hash_fetch_str(Hash *self, const char *key, size_t key_len) 
 {
-    ZombieCharBuf key_buf = ZCB_BLANK;
-    ZCB_Assign_Str(&key_buf, key, key_len);
-    return Hash_fetch(self, (CharBuf*)&key_buf);
+    ZombieCharBuf key_buf = ZCB_make_str(key, key_len);
+    return Hash_fetch(self, (Obj*)&key_buf);
 }
 
 static INLINE HashEntry*
-SI_fetch_entry(Hash *self, const CharBuf *key, i32_t hash_code) 
+SI_fetch_entry(Hash *self, const Obj *key, i32_t hash_code) 
 {
     u32_t tick = hash_code;
     HashEntry *const entries = (HashEntry*)self->entries;
@@ -308,7 +324,7 @@ SI_fetch_entry(Hash *self, const CharBuf *key, i32_t hash_code)
             return NULL; 
         }
         else if (   entry->hash_code == hash_code
-                 && Obj_Equals(key, (Obj*)entry->key)
+                 && Obj_Equals(key, entry->key)
         ) {
             return entry;
         }
@@ -317,20 +333,20 @@ SI_fetch_entry(Hash *self, const CharBuf *key, i32_t hash_code)
 }
 
 Obj*
-Hash_fetch(Hash *self, const CharBuf *key) 
+Hash_fetch(Hash *self, const Obj *key) 
 {
     HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Code(key));
     return entry ? entry->value : NULL;
 }
 
 Obj*
-Hash_delete(Hash *self, const CharBuf *key) 
+Hash_delete(Hash *self, const Obj *key) 
 {
     HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Code(key));
     if (entry) {
         Obj *value = entry->value;
         DECREF(entry->key);
-        entry->key       = (SharedHashKey*)UNDEF;
+        entry->key       = (Obj*)UNDEF;
         entry->value     = NULL;
         entry->hash_code = 0;
         self->size--;
@@ -345,9 +361,8 @@ Hash_delete(Hash *self, const CharBuf *key)
 Obj*
 Hash_delete_str(Hash *self, const char *key, size_t key_len) 
 {
-    ZombieCharBuf key_buf = ZCB_BLANK;
-    ZCB_Assign_Str(&key_buf, key, key_len);
-    return Hash_delete(self, (CharBuf*)&key_buf);
+    ZombieCharBuf key_buf = ZCB_make_str(key, key_len);
+    return Hash_delete(self, (Obj*)&key_buf);
 }
 
 u32_t
@@ -364,7 +379,7 @@ SI_kill_iter(Hash *self)
 }
 
 bool_t
-Hash_iter_next(Hash *self, CharBuf **key, Obj **value) 
+Hash_iter_next(Hash *self, Obj **key, Obj **value) 
 {
     while (1) {
         if (++self->iter_tick >= (i32_t)self->capacity) {
@@ -377,9 +392,9 @@ Hash_iter_next(Hash *self, CharBuf **key, Obj **value)
         else {
             HashEntry *const entry 
                 = (HashEntry*)self->entries + self->iter_tick;
-            if (entry->key && entry->key != (SharedHashKey*)UNDEF) {
+            if (entry->key && entry->key != (Obj*)UNDEF) {
                 /* Success! */
-                *key   = (CharBuf*)entry->key;
+                *key   = entry->key;
                 *value = entry->value;
                 return true;
             }
@@ -387,17 +402,17 @@ Hash_iter_next(Hash *self, CharBuf **key, Obj **value)
     }
 }
 
-CharBuf*
-Hash_find_key(Hash *self, const CharBuf *key, i32_t hash_code)
+Obj*
+Hash_find_key(Hash *self, const Obj *key, i32_t hash_code)
 {
     HashEntry *entry = SI_fetch_entry(self, key, hash_code);
-    return entry ? (CharBuf*)entry->key : NULL;
+    return entry ? entry->key : NULL;
 }
 
 VArray*
 Hash_keys(Hash *self) 
 {
-    CharBuf *key;
+    Obj *key;
     Obj *val;
     VArray *keys = VA_new(self->size);
     Hash_Iter_Init(self);
@@ -410,7 +425,7 @@ Hash_keys(Hash *self)
 VArray*
 Hash_values(Hash *self) 
 {
-    CharBuf *key;
+    Obj *key;
     Obj *val;
     VArray *values = VA_new(self->size);
     Hash_Iter_Init(self);
@@ -422,7 +437,7 @@ bool_t
 Hash_equals(Hash *self, Obj *other)
 {
     Hash    *evil_twin = (Hash*)other;
-    CharBuf *key;
+    Obj     *key;
     Obj     *val;
 
     if (evil_twin == self) return true;
@@ -458,59 +473,6 @@ Hash_get_capacity(Hash *self) { return self->capacity; }
 u32_t
 Hash_get_size(Hash *self)     { return self->size; }
 
-#define INDENT_STR "  " 
-#define INDENT 2
-
-static CharBuf*
-S_do_dumper(Hash *self, i32_t dump_level)
-{
-    CharBuf *key;
-    Obj *val;
-    i32_t i;
-    CharBuf *pad = CB_new(dump_level * INDENT);
-    CharBuf *out = CB_new(self->size * (dump_level + 10));
-
-    for (i = 0; i < dump_level; i++) {
-        CB_Cat_Trusted_Str(pad, INDENT_STR, INDENT);
-    }
-
-    CB_Cat(out, pad);
-    CB_Cat_Trusted_Str(out, "{\n", 2);
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &val)) {
-        CB_Cat(out, pad);
-        CB_Cat_Trusted_Str(out, INDENT_STR "\"", 1 + INDENT);
-        CB_Cat(out, key);
-        CB_Cat_Trusted_Str(out, "\": ", 3);
-        if (OBJ_IS_A(val, HASH)) {
-            CharBuf *inner_dump = S_do_dumper((Hash*)val, dump_level + 1);
-            i32_t indent = INDENT * (dump_level + 1);
-            CB_Cat_Trusted_Str(out, inner_dump->ptr + indent, 
-                CB_Get_Size(inner_dump) - indent);
-            DECREF(inner_dump);
-        }
-        else {
-            CharBuf *val_str = Obj_To_String(val);
-            CB_Cat_Trusted_Str(out, "\"", 1);
-            CB_Cat(out, val_str);
-            CB_Cat_Trusted_Str(out, "\"\n", 2);
-            DECREF(val_str);
-        }
-    }
-    CB_Cat(out, pad);
-    CB_Cat_Trusted_Str(out, "}\n", 2);
-
-    DECREF(pad);
-
-    return out;
-}
-
-CharBuf*
-Hash_dumper(Hash *self)
-{
-    return S_do_dumper(self, 0);
-}
-
 HashEntry*
 kino_Hash_rebuild_hash(Hash *self)
 {
@@ -525,76 +487,16 @@ kino_Hash_rebuild_hash(Hash *self)
     self->size      = 0;
 
     for ( ; entry < limit; entry++) {
-        if (!entry->key || entry->key == (SharedHashKey*)UNDEF) {
+        if (!entry->key || entry->key == (Obj*)UNDEF) {
             continue; 
         }
-        kino_Hash_do_store(self, (CharBuf*)entry->key, entry->value, 
-            entry->hash_code);
-        DECREF(entry->key);
+        kino_Hash_do_store(self, entry->key, entry->value, 
+            entry->hash_code, true);
     }
 
     kino_MemMan_wrapped_free(old_entries);
 
     return self->entries;
-}
-
-SharedKeyMasterHash*
-SharedKeyMasterHash_new(u32_t request)
-{
-    SharedKeyMasterHash *self = 
-        (SharedKeyMasterHash*)VTable_Make_Obj(&SHAREDKEYMASTERHASH);
-    return SharedKeyMasterHash_init(self, request);
-}
-
-SharedKeyMasterHash*
-SharedKeyMasterHash_init(SharedKeyMasterHash *self, u32_t request)
-{
-    if (Hash_keymaster != NULL) {
-        THROW("Hash_keymaster already initialized.");
-    }
-    Hash_keymaster = self;
-    Hash_init((Hash*)self, request);
-    return self;
-}
-
-SharedHashKey*
-SharedKeyMasterHash_make_key(SharedKeyMasterHash *self, const CharBuf *key,
-                             i32_t hash_code)
-{
-    UNUSED_VAR(self);
-    UNUSED_VAR(hash_code);
-    return (SharedHashKey*)INCREF(key);
-}
-
-SharedHashKey*
-SharedHashKey_new(const CharBuf *source, i32_t hash_code)
-{
-    SharedHashKey *self = (SharedHashKey*)VTable_Make_Obj(&SHAREDHASHKEY);
-    return SharedHashKey_init(self, source, hash_code);
-}
-
-SharedHashKey*
-SharedHashKey_init(SharedHashKey *self, const CharBuf *source, 
-                   i32_t hash_code)
-{
-    size_t size = CB_Get_Size(source);
-    CB_init((CharBuf*)self, size);
-    CB_Copy_Str(self, (char*)CB_Get_Ptr8(source), size);
-    /* TODO: verify that key doesn't already exist. */
-    kino_Hash_do_store((Hash*)Hash_keymaster, (CharBuf*)self, INCREF(&EMPTY), 
-        hash_code);
-    return self;
-}
-
-u32_t
-SharedHashKey_dec_refcount(SharedHashKey *self)
-{
-    u32_t modified_refcount = Obj_dec_refcount((Obj*)self);
-    if (modified_refcount == 1) {
-        Hash_Delete(Hash_keymaster, (CharBuf*)self);
-        modified_refcount = 0;
-    }
-    return modified_refcount;
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

@@ -111,7 +111,7 @@ void
 Compiler_serialize(Compiler *self, OutStream *outstream)
 {
     ABSTRACT_CLASS_CHECK(self, COMPILER);
-    OutStream_Write_Float(outstream, self->boost);
+    OutStream_Write_F32(outstream, self->boost);
     FREEZE(self->parent, outstream);
     FREEZE(self->sim, outstream);
 }
@@ -120,7 +120,7 @@ Compiler*
 Compiler_deserialize(Compiler *self, InStream *instream)
 {
     if (!self) THROW("Compiler_Deserialize is abstract");
-    self->boost  = InStream_Read_Float(instream);
+    self->boost  = InStream_Read_F32(instream);
     self->parent = (Query*)THAW(instream);
     self->sim    = (Similarity*)THAW(instream);
     return self;

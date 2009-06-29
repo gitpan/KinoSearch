@@ -1,5 +1,5 @@
 #include "XSBind.h"
-#include "KinoSearch/Util/Float64.h"
+#include "KinoSearch/Util/Num.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/StringHelper.h"
@@ -269,9 +269,13 @@ khash_to_phash(kino_Hash *hash)
     kino_Obj     *val;
 
     Kino_Hash_Iter_Init(hash);
-    while (Kino_Hash_Iter_Next(hash, &key, &val)) {
+    while (Kino_Hash_Iter_Next(hash, (kino_Obj**)&key, &val)) {
         SV *val_sv = XSBind_kobj_to_pobj(val);
-        (void)hv_store(perl_hash, key->ptr, Kino_CB_Get_Size(key), val_sv, 0);
+        if (!KINO_OBJ_IS_A(key, KINO_CHARBUF)) {
+            KINO_THROW("Can't convert a key of class %o to a Perl hash key",
+                Kino_Obj_Get_Class_Name(key));
+        }
+        hv_store(perl_hash, key->ptr, Kino_CB_Get_Size(key), val_sv, 0);
     }
 
     return newRV_noinc((SV*)perl_hash);
@@ -290,8 +294,14 @@ kino_XSBind_kobj_to_pobj(kino_Obj *obj)
         return karray_to_parray((kino_VArray*)obj);
     else if (KINO_OBJ_IS_A(obj, KINO_HASH))
         return khash_to_phash((kino_Hash*)obj);
-    else if (KINO_OBJ_IS_A(obj, KINO_FLOAT64))
-        return newSVnv(Kino_Float64_Get_Value(obj));
+    else if (KINO_OBJ_IS_A(obj, KINO_FLOATNUM))
+        return newSVnv(Kino_Num_To_F64(obj));
+    else if (sizeof(IV) == 8 && KINO_OBJ_IS_A(obj, KINO_INTNUM))
+        return newSViv(Kino_Num_To_I64(obj));
+    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INT32)) 
+        return newSViv(Kino_Num_To_I64(obj));
+    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INT64)) 
+        return newSVnv(Kino_Num_To_I64(obj)); /* lossy */
     else 
         return (SV*)Kino_Obj_To_Host(obj);
 }

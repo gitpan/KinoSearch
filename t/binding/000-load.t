@@ -11,6 +11,7 @@ my %excluded = map { ( $_ => 1 ) } qw(
     KinoSearch::Index::Term
     KinoSearch::InvIndex
     KinoSearch::InvIndexer
+    KinoSearch::QueryParser::QueryParser
     KinoSearch::Search::BooleanQuery
     KinoSearch::Search::Scorer
     KinoSearch::Search::SearchClient
@@ -35,7 +36,7 @@ for (@modules) {
     s/\W+/::/g;
     if ( $excluded{$_} ) {
         eval qq|use $_;|;
-        like( $@, qr/removed|replaced/i,
+        like( $@, qr/removed|replaced|renamed/i,
             "Removed module '$_' throws error on load" );
     }
     else {

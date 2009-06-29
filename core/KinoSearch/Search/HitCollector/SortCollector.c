@@ -4,6 +4,8 @@
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/SortCache.h"
+#include "KinoSearch/Index/SortCache/NumericSortCache.h"
+#include "KinoSearch/Index/SortCache/TextSortCache.h"
 #include "KinoSearch/Index/SortReader.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Search/HitQueue.h"
@@ -171,7 +173,7 @@ S_derive_action(SortRule *rule, SortCache *cache)
     }
     else if (rule_type == SortRule_FIELD) {
         if (cache) {
-            i8_t width = SortCache_Get_Width(cache);
+            i8_t width = SortCache_Get_Ord_Width(cache);
             switch (width) {
                 case 1:  return COMPARE_BY_ORD1  + reverse;
                 case 2:  return COMPARE_BY_ORD2  + reverse;
@@ -260,15 +262,16 @@ SortColl_collect(SortCollector *self, i32_t doc_id)
             u32_t i, max;
 
             for (i = 0, max = self->num_rules; i < max; i++) {
-                SortCache   *cache   = self->sort_caches[i];
-                ViewCharBuf *old_val = (ViewCharBuf*)VA_Delete(values, i);
+                SortCache *cache   = self->sort_caches[i];
+                Obj       *old_val = (Obj*)VA_Delete(values, i);
                 if (cache) {
                     i32_t ord = SortCache_Ordinal(cache, doc_id);
-                    ViewCharBuf *value = old_val ? old_val
-                        : ViewCB_new_from_trusted_utf8(NULL, 0); 
-                    ViewCharBuf *val = SortCache_Value(cache, ord, value);
+                    Obj *blank = old_val 
+                               ? old_val 
+                               : SortCache_Make_Blank(cache);
+                    Obj *val = SortCache_Value(cache, ord, blank);
                     if (val) { VA_Store(values, i, (Obj*)val); }
-                    else { DECREF(value); }
+                    else { DECREF(blank); }
                 }
             }
         }

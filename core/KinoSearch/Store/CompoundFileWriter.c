@@ -112,7 +112,7 @@ do_consolidate(CompoundFileWriter *self)
     Hash_Store_Str(metadata, "format", 6, 
         (Obj*)CB_newf("%i32", CFWriter_current_file_format) );
 
-    VA_Sort(real_files, NULL);
+    VA_Sort(real_files, NULL, NULL);
     for (i = 0, max = VA_Get_Size(real_files); i < max; i++) {
         CharBuf *infilename = (CharBuf*)VA_Fetch(real_files, i);
         CB_setf(infilepath, "%o/%o", seg_name, infilename);
@@ -133,7 +133,7 @@ do_consolidate(CompoundFileWriter *self)
                 (Obj*)CB_newf("%i64", offset) );
             Hash_Store_Str(file_data, "length", 6, 
                 (Obj*)CB_newf("%i64", len) );
-            Hash_Store(sub_files, infilepath, (Obj*)file_data);
+            Hash_Store(sub_files, (Obj*)infilepath, (Obj*)file_data);
 
             /* Add filler NULL bytes so that every sub-file begins on a file
              * position multiple of 8. */
@@ -162,7 +162,7 @@ do_consolidate(CompoundFileWriter *self)
         CharBuf *merged_file;
         Obj     *ignore;
         Hash_Iter_Init(sub_files);
-        while (Hash_Iter_Next(sub_files, &merged_file, &ignore)) {
+        while (Hash_Iter_Next(sub_files, (Obj**)&merged_file, &ignore)) {
             if (!FSFolder_Delete_Real(folder, merged_file)) {
                 CharBuf *mess = MAKE_MESS("Can't delete '%o'", merged_file);
                 DECREF(sub_files);

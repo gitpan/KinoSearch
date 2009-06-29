@@ -48,47 +48,54 @@ final class KinoSearch::Store::OutStream extends KinoSearch::Obj {
     /** Write a single signed byte to the OutStream. 
      */
     void
-    Write_I8(OutStream *self, i8_t aI8);
+    Write_I8(OutStream *self, i8_t value);
 
     /** Write a single unsigned byte to the OutStream. 
      */
     void
-    Write_U8(OutStream *self, u8_t aU8);
+    Write_U8(OutStream *self, u8_t value);
 
     /** Write a signed 32-bit integer to the OutStream.
      */
     void
-    Write_I32(OutStream *self, i32_t anI32);
+    Write_I32(OutStream *self, i32_t value);
 
     /** Write an unsigned 32-bit integer to the OutStream.
      */
     void
-    Write_U32(OutStream *self, u32_t aU32);
+    Write_U32(OutStream *self, u32_t value);
 
     /** Write a signed 64-bit integer to the OutStream.
      */
     void
-    Write_I64(OutStream *self, i64_t anI64);
+    Write_I64(OutStream *self, i64_t value);
 
     /** Write an unsigned 64-bit integer to the OutStream.
      */
     void
-    Write_U64(OutStream *self, u64_t aU64);
+    Write_U64(OutStream *self, u64_t value);
 
     /** Write a 32-bit integer using a compressed format.
      */
     void
-    Write_C32(OutStream *self, u32_t aU32);
+    Write_C32(OutStream *self, u32_t value);
 
     /** Write a 64-bit integer using a compressed format.
      */
     void
-    Write_C64(OutStream *self, u64_t aU64);
+    Write_C64(OutStream *self, u64_t value);
 
-    /** Write an IEEE 764 float in big-endian byte order.
+    /** Write an IEEE 764 32-bit floating point number in big-endian byte
+     * order.
      */
     void
-    Write_Float(OutStream *self, float aFloat);
+    Write_F32(OutStream *self, float value);
+
+    /** Write an IEEE 764 64-bit double-precision floating point number in
+     * big-endian byte order.
+     */
+    void
+    Write_F64(OutStream *self, double value);
 
     /** Write a string as a C32 indicating length of content in bytes, followed by
      * the content.

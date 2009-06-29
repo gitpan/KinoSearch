@@ -189,6 +189,7 @@ sub ACTION_charmony {
     my $verbosity = $ENV{DEBUG_CHARM} ? 2 : 1;
     my $cc        = "$Config{cc}";
     unlink $charmony_in;
+    $self->add_to_cleanup( $charmony_path, $charmony_in );
     sysopen( my $infile_fh, $charmony_in, O_CREAT | O_WRONLY | O_EXCL )
         or die "Can't open '$charmony_in': $!";
     print $infile_fh qq|
@@ -200,13 +201,13 @@ sub ACTION_charmony {
     close $infile_fh or die "Can't close '$charmony_in': $!";
 
     if ($VALGRIND) {
-        system("$VALGRIND ./$CHARMONIZE_EXE_PATH $charmony_in");
+        system("$VALGRIND ./$CHARMONIZE_EXE_PATH $charmony_in")
+            and die "Failed to write charmony.h";
     }
     else {
-        system( $CHARMONIZE_EXE_PATH, $charmony_in );
+        system( $CHARMONIZE_EXE_PATH, $charmony_in )
+            and die "Failed to write charmony.h";
     }
-
-    $self->add_to_cleanup( $charmony_path, $charmony_in );
 }
 
 sub _compile_boilerplater {
@@ -814,7 +815,7 @@ sub _gen_pause_exclusion_list {
     my @redacted = map {
         my @parts = split( /\W+/, $_ );
         catfile( 'lib', @parts ) . '.pm'
-    } KinoSearch::Redacted->list;
+    } KinoSearch::Redacted->redacted, KinoSearch::Redacted->hidden;
     push @excluded_files, @redacted;
 
     my %uniquifier;

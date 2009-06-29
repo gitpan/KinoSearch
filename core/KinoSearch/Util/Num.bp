@@ -1,0 +1,210 @@
+parcel KinoSearch cnick Kino;
+
+/** Abstract base class for numbers.
+ */
+abstract class KinoSearch::Util::Num extends KinoSearch::Obj {
+
+    static Num*
+    init(Num *self);
+
+    public bool_t
+    Equals(Num *self, Obj *other);
+
+    public i32_t
+    Compare_To(Num *self, Obj *other);
+}
+
+/** Abstract base class for floating point numbers. 
+ */
+abstract class KinoSearch::Util::FloatNum extends KinoSearch::Util::Num {
+
+    static FloatNum*
+    init(FloatNum *self);
+
+    public incremented CharBuf*
+    To_String(FloatNum *self);
+}
+
+
+/** Abstract base class for Integers. 
+ */
+abstract class KinoSearch::Util::IntNum extends KinoSearch::Util::Num {
+
+    static IntNum*
+    init(IntNum *self);
+
+    public incremented CharBuf*
+    To_String(IntNum *self);
+}
+
+
+/** Single precision floating point number.
+ */
+class KinoSearch::Util::Float32 extends KinoSearch::Util::FloatNum {
+
+    float value;
+
+    /**
+     * @param value Initial value.
+     */
+    static Float32*
+    init(Float32* self, float value);
+
+    static Float32*
+    new(float value);
+
+    void
+    Set_Value(Float32 *self, float value);
+
+    float 
+    Get_Value(Float32 *self);
+
+    public i64_t
+    To_I64(Float32 *self);
+
+    public double
+    To_F64(Float32 *self);
+
+    public i32_t
+    Hash_Code(Float32 *self);
+
+    public void
+    Serialize(Float32 *self, OutStream *outstream);
+
+    public incremented Float32*
+    Deserialize(Float32 *self, InStream *instream);
+
+    public incremented Float32*
+    Clone(Float32 *self);
+}
+
+/** Double precision floating point number.
+ */
+class KinoSearch::Util::Float64 extends KinoSearch::Util::FloatNum {
+
+    double value;
+
+    /**
+     * @param value Initial value.
+     */
+    static Float64*
+    init(Float64* self, double value);
+
+    static Float64*
+    new(double value);
+
+    void
+    Set_Value(Float64 *self, double value);
+
+    double
+    Get_Value(Float64 *self);
+
+    public i64_t
+    To_I64(Float64 *self);
+
+    public double
+    To_F64(Float64 *self);
+
+    public i32_t
+    Hash_Code(Float64 *self);
+
+    public void
+    Serialize(Float64 *self, OutStream *outstream);
+
+    public incremented Float64*
+    Deserialize(Float64 *self, InStream *instream);
+
+    public incremented Float64*
+    Clone(Float64 *self);
+}
+
+/** 32-bit signed integer.
+ */
+class KinoSearch::Util::Int32 extends KinoSearch::Util::IntNum {
+
+    i32_t value;
+
+    /**
+     * @param value Initial value.
+     */
+    static Int32*
+    init(Int32* self, i32_t value);
+
+    static Int32*
+    new(i32_t value);
+
+    void
+    Set_Value(Int32 *self, i32_t value);
+
+    i32_t 
+    Get_Value(Int32 *self);
+
+    public i64_t
+    To_I64(Int32 *self);
+
+    public double
+    To_F64(Int32 *self);
+
+    public i32_t
+    Hash_Code(Int32 *self);
+
+    public void
+    Serialize(Int32 *self, OutStream *outstream);
+
+    public incremented Int32*
+    Deserialize(Int32 *self, InStream *instream);
+
+    public incremented Int32*
+    Clone(Int32 *self);
+}
+
+/**
+ * 64-bit signed integer.
+ */
+class KinoSearch::Util::Int64 extends KinoSearch::Util::IntNum {
+
+    i64_t value;
+
+    /**
+     * @param value Initial value.
+     */
+    static Int64*
+    init(Int64* self, i64_t value);
+
+    static Int64*
+    new(i64_t value);
+
+    void
+    Set_Value(Int64 *self, i64_t value);
+
+    i64_t 
+    Get_Value(Int64 *self);
+
+    public i64_t
+    To_I64(Int64 *self);
+
+    public double
+    To_F64(Int64 *self);
+
+    public i32_t
+    Hash_Code(Int64 *self);
+
+    public bool_t
+    Equals(Int64 *self, Obj *other);
+
+    public void
+    Serialize(Int64 *self, OutStream *outstream);
+
+    public incremented Int64*
+    Deserialize(Int64 *self, InStream *instream);
+
+    public incremented Int64*
+    Clone(Int64 *self);
+}
+
+/* Copyright 2005-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

@@ -36,6 +36,9 @@ PPCODE:
     else if (strEQ(package, "TestFullTextType")) {
         kino_TestFullTextType_run_tests();
     }
+    else if (strEQ(package, "TestNumericType")) {
+        kino_TestNumericType_run_tests();
+    }
     /* KinoSearch::Obj */
     else if (strEQ(package, "TestObj")) {
         kino_TestObj_run_tests();
@@ -110,6 +113,9 @@ PPCODE:
     }
     else if (strEQ(package, "TestIntArrays")) {
         kino_TestIntArrays_run_tests();
+    }
+    else if (strEQ(package, "TestNum")) {
+        kino_TestNum_run_tests();
     }
     else if (strEQ(package, "TestPriorityQueue")) {
         kino_TestPriQ_run_tests();

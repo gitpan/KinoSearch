@@ -3,7 +3,7 @@ parcel KinoSearch cnick Kino;
 __C__
 #include <stddef.h>
 #include "KinoSearch/Obj.h"
-#include "KinoSearch/Util/MSort.h"
+#include "KinoSearch/Util/SortUtils.h"
 
 #define KINO_SORTEX_DEFAULT_MEM_THRESHOLD 0x1000000
 #ifdef KINO_USE_SHORT_NAMES
@@ -16,7 +16,7 @@ __END_C__
 class KinoSearch::Util::SortExternal cnick SortEx
     extends KinoSearch::Obj {
 
-    MSort_compare_t    compare;
+    Sort_compare_t     compare;
     Obj              **cache;    /* item cache, incoming and outgoing */
     u32_t              cache_cap;   /* allocated limit for cache */
     u32_t              cache_max;   /* number of elems in cache */ 
@@ -31,7 +31,7 @@ class KinoSearch::Util::SortExternal cnick SortEx
 
     static SortExternal*
     init(SortExternal *self, u32_t mem_thresh = 0x1000000,
-         MSort_compare_t compare);
+         Sort_compare_t compare);
 
     /** Add an Obj to the sort pool.  The SortEx object takes control of the
      * Obj, so it should not be modified post-feeding.

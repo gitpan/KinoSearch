@@ -68,7 +68,8 @@ END_SYNOPSIS
 
 {   "KinoSearch::Store::OutStream" => {
         bind_methods => [
-            qw( Tell
+            qw(
+                Tell
                 Length
                 Flush
                 Close
@@ -81,7 +82,9 @@ END_SYNOPSIS
                 Write_U64
                 Write_C32
                 Write_C64
-                Write_Float )
+                Write_F32
+                Write_F64
+                )
         ],
         make_getters => [qw( file_des )],
     }

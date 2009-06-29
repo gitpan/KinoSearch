@@ -25,12 +25,12 @@ class KinoSearch::Index::PostingsWriter cnick PostWriter
     static i32_t current_file_format;
 
     static incremented PostingsWriter*
-    new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader, 
-        LexiconWriter *lex_writer); 
+    new(Schema *schema, Snapshot *snapshot, Segment *segment,
+        PolyReader *polyreader, LexiconWriter *lex_writer); 
 
     static PostingsWriter*
-    init(PostingsWriter *self, Snapshot *snapshot, Segment *segment,
-         PolyReader *polyreader, LexiconWriter *lex_writer);
+    init(PostingsWriter *self, Schema *schema, Snapshot *snapshot,
+         Segment *segment, PolyReader *polyreader, LexiconWriter *lex_writer);
 
     public void
     Add_Inverted_Doc(PostingsWriter *self, Inverter *inverter, i32_t doc_id);

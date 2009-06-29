@@ -1,0 +1,16 @@
+parcel KinoSearch cnick Kino;
+
+class KinoSearch::FieldType::TextType extends KinoSearch::FieldType { 
+    incremented ViewCharBuf*
+    Make_Blank(TextType *self);
+
+    i8_t
+    Primitive_ID(TextType *self);
+} 
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

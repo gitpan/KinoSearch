@@ -12,6 +12,7 @@ sub register_doc_writer {
     my $doc_writer = KSx::Index::ByteBufDocWriter->new(
         width      => 1,
         field      => 'id',
+        schema     => $seg_writer->get_schema,
         snapshot   => $seg_writer->get_snapshot,
         segment    => $seg_writer->get_segment,
         polyreader => $seg_writer->get_polyreader,

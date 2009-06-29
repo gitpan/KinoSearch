@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.30_01
+version: 0.30_02
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -42,7 +42,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_01
+    version: 0.30_02
   KinoSearch::Analysis::Inversion:
     file: lib/KinoSearch.pm
   KinoSearch::Analysis::Stemmer:
@@ -71,8 +71,6 @@ provides:
     file: lib/KinoSearch.pm
   KinoSearch::Obj::VTable:
     file: lib/KinoSearch.pm
-  KinoSearch::QueryParser::QueryParser:
-    file: lib/KinoSearch/QueryParser/QueryParser.pm
   KinoSearch::Redacted:
     file: lib/KinoSearch/Redacted.pm
   KinoSearch::Search::Compiler:
@@ -256,8 +254,12 @@ no_index:
     - core/KinoSearch/FieldType/BlobType.c
     - core/KinoSearch/FieldType/FullTextType.bp
     - core/KinoSearch/FieldType/FullTextType.c
+    - core/KinoSearch/FieldType/NumericType.bp
+    - core/KinoSearch/FieldType/NumericType.c
     - core/KinoSearch/FieldType/StringType.bp
     - core/KinoSearch/FieldType/StringType.c
+    - core/KinoSearch/FieldType/TextType.bp
+    - core/KinoSearch/FieldType/TextType.c
     - core/KinoSearch/Highlight/HeatMap.bp
     - core/KinoSearch/Highlight/HeatMap.c
     - core/KinoSearch/Highlight/Highlighter.bp
@@ -332,6 +334,10 @@ no_index:
     - core/KinoSearch/Index/Snapshot.c
     - core/KinoSearch/Index/SortCache.bp
     - core/KinoSearch/Index/SortCache.c
+    - core/KinoSearch/Index/SortCache/NumericSortCache.bp
+    - core/KinoSearch/Index/SortCache/NumericSortCache.c
+    - core/KinoSearch/Index/SortCache/TextSortCache.bp
+    - core/KinoSearch/Index/SortCache/TextSortCache.c
     - core/KinoSearch/Index/SortReader.bp
     - core/KinoSearch/Index/SortReader.c
     - core/KinoSearch/Index/SortWriter.bp
@@ -488,6 +494,8 @@ no_index:
     - core/KinoSearch/Test/FieldType/TestBlobType.c
     - core/KinoSearch/Test/FieldType/TestFullTextType.bp
     - core/KinoSearch/Test/FieldType/TestFullTextType.c
+    - core/KinoSearch/Test/FieldType/TestNumericType.bp
+    - core/KinoSearch/Test/FieldType/TestNumericType.c
     - core/KinoSearch/Test/Index/TestDocWriter.bp
     - core/KinoSearch/Test/Index/TestDocWriter.c
     - core/KinoSearch/Test/Index/TestHighlightWriter.bp
@@ -546,6 +554,8 @@ no_index:
     - core/KinoSearch/Test/Util/TestIntArrays.c
     - core/KinoSearch/Test/Util/TestMemoryPool.bp
     - core/KinoSearch/Test/Util/TestMemoryPool.c
+    - core/KinoSearch/Test/Util/TestNum.bp
+    - core/KinoSearch/Test/Util/TestNum.c
     - core/KinoSearch/Test/Util/TestPriorityQueue.bp
     - core/KinoSearch/Test/Util/TestPriorityQueue.c
     - core/KinoSearch/Test/Util/TestVArray.bp
@@ -566,8 +576,6 @@ no_index:
     - core/KinoSearch/Util/Debug.h
     - core/KinoSearch/Util/Err.bp
     - core/KinoSearch/Util/Err.c
-    - core/KinoSearch/Util/Float64.bp
-    - core/KinoSearch/Util/Float64.c
     - core/KinoSearch/Util/Freezer.c
     - core/KinoSearch/Util/Freezer.h
     - core/KinoSearch/Util/Hash.bp
@@ -579,20 +587,22 @@ no_index:
     - core/KinoSearch/Util/IntArrays.bp
     - core/KinoSearch/Util/IntArrays.c
     - core/KinoSearch/Util/Json.bp
-    - core/KinoSearch/Util/MSort.c
-    - core/KinoSearch/Util/MSort.h
     - core/KinoSearch/Util/MathUtils.c
     - core/KinoSearch/Util/MathUtils.h
     - core/KinoSearch/Util/MemManager.c
     - core/KinoSearch/Util/MemManager.h
     - core/KinoSearch/Util/MemoryPool.bp
     - core/KinoSearch/Util/MemoryPool.c
+    - core/KinoSearch/Util/Num.bp
+    - core/KinoSearch/Util/Num.c
     - core/KinoSearch/Util/PriorityQueue.bp
     - core/KinoSearch/Util/PriorityQueue.c
     - core/KinoSearch/Util/SortExRun.bp
     - core/KinoSearch/Util/SortExRun.c
     - core/KinoSearch/Util/SortExternal.bp
     - core/KinoSearch/Util/SortExternal.c
+    - core/KinoSearch/Util/SortUtils.c
+    - core/KinoSearch/Util/SortUtils.h
     - core/KinoSearch/Util/Stepper.bp
     - core/KinoSearch/Util/Stepper.c
     - core/KinoSearch/Util/StringHelper.c
@@ -630,7 +640,11 @@ no_index:
     - lib/KinoSearch/Doc/HitDoc.pm
     - lib/KinoSearch/FieldType.pm
     - lib/KinoSearch/FieldType/BlobType.pm
+    - lib/KinoSearch/FieldType/Float32Type.pm
+    - lib/KinoSearch/FieldType/Float64Type.pm
     - lib/KinoSearch/FieldType/FullTextType.pm
+    - lib/KinoSearch/FieldType/Int32Type.pm
+    - lib/KinoSearch/FieldType/Int64Type.pm
     - lib/KinoSearch/FieldType/StringType.pm
     - lib/KinoSearch/Highlight/HeatMap.pm
     - lib/KinoSearch/Highlight/Highlighter.pm
@@ -745,12 +759,12 @@ no_index:
     - lib/KinoSearch/Util/CharBuf.pm
     - lib/KinoSearch/Util/Compat/DirManip.pm
     - lib/KinoSearch/Util/Debug.pm
-    - lib/KinoSearch/Util/Float64.pm
     - lib/KinoSearch/Util/Hash.pm
     - lib/KinoSearch/Util/Host.pm
     - lib/KinoSearch/Util/I32Array.pm
     - lib/KinoSearch/Util/IndexFileNames.pm
     - lib/KinoSearch/Util/Json.pm
+    - lib/KinoSearch/Util/Num.pm
     - lib/KinoSearch/Util/PriorityQueue.pm
     - lib/KinoSearch/Util/SortExRun.pm
     - lib/KinoSearch/Util/SortExternal.pm
@@ -930,6 +944,7 @@ no_index:
     - t/core/019-obj.t
     - t/core/024-memory_pool.t
     - t/core/030-int_arrays.t
+    - t/core/031-num.t
     - t/core/052-instream.t
     - t/core/150-polyanalyzer.t
     - t/core/153-case_folder.t
@@ -943,6 +958,7 @@ no_index:
     - t/core/223-seg_writer.t
     - t/core/230-full_text_type.t
     - t/core/231-blob_type.t
+    - t/core/232-numeric_type.t
     - t/core/501-termquery.t
     - t/core/502-phrasequery.t
     - t/core/515-range_query.t

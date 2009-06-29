@@ -11,8 +11,8 @@ parcel KinoSearch cnick Kino;
  * For a sortable, single-value field type using character data, see
  * L<StringType|KinoSearch::FieldType::StringType>.
  */
-class KinoSearch::FieldType::FullTextType extends KinoSearch::FieldType 
-    : dumpable {
+class KinoSearch::FieldType::FullTextType 
+    extends KinoSearch::FieldType::TextType : dumpable {
 
     bool_t      highlightable;
     Analyzer   *analyzer;

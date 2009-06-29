@@ -65,7 +65,7 @@ S_do_init(PhraseQuery *self, CharBuf *field, VArray *terms, float boost)
 void
 PhraseQuery_serialize(PhraseQuery *self, OutStream *outstream)
 {
-    OutStream_Write_Float(outstream, self->boost);
+    OutStream_Write_F32(outstream, self->boost);
     CB_Serialize(self->field, outstream);
     VA_Serialize(self->terms, outstream);
 }
@@ -73,7 +73,7 @@ PhraseQuery_serialize(PhraseQuery *self, OutStream *outstream)
 PhraseQuery*
 PhraseQuery_deserialize(PhraseQuery *self, InStream *instream)
 {
-    float    boost  = InStream_Read_Float(instream);
+    float    boost  = InStream_Read_F32(instream);
     CharBuf *field  = CB_deserialize(NULL, instream);
     VArray  *terms  = VA_deserialize(NULL, instream);
     self = self ? self : (PhraseQuery*)VTable_Make_Obj(&PHRASEQUERY);
@@ -184,10 +184,10 @@ void
 PhraseCompiler_serialize(PhraseCompiler *self, OutStream *outstream)
 {
     Compiler_serialize((Compiler*)self, outstream);
-    OutStream_Write_Float(outstream, self->idf);
-    OutStream_Write_Float(outstream, self->raw_weight);
-    OutStream_Write_Float(outstream, self->query_norm_factor);
-    OutStream_Write_Float(outstream, self->normalized_weight);
+    OutStream_Write_F32(outstream, self->idf);
+    OutStream_Write_F32(outstream, self->raw_weight);
+    OutStream_Write_F32(outstream, self->query_norm_factor);
+    OutStream_Write_F32(outstream, self->normalized_weight);
 }
 
 PhraseCompiler*
@@ -195,10 +195,10 @@ PhraseCompiler_deserialize(PhraseCompiler *self, InStream *instream)
 {
     self = self ? self : (PhraseCompiler*)VTable_Make_Obj(&PHRASECOMPILER);
     Compiler_deserialize((Compiler*)self, instream);
-    self->idf               = InStream_Read_Float(instream);
-    self->raw_weight        = InStream_Read_Float(instream);
-    self->query_norm_factor = InStream_Read_Float(instream);
-    self->normalized_weight = InStream_Read_Float(instream);
+    self->idf               = InStream_Read_F32(instream);
+    self->raw_weight        = InStream_Read_F32(instream);
+    self->query_norm_factor = InStream_Read_F32(instream);
+    self->normalized_weight = InStream_Read_F32(instream);
     return self;
 }
 

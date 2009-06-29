@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 27;
+use Test::More tests => 28;
 use KinoSearch::Test::TestUtils qw( utf8_test_strings );
 use KinoSearch::Util::StringHelper qw( utf8ify utf8_flag_off );
 use bytes;
@@ -105,7 +105,10 @@ check_round_trip( 'C64 large', 'c64', \@nums );
 @nums = map {rand} 0 .. 100;
 $packed = pack( 'f*', @nums );
 @nums = unpack( 'f*', $packed );
-check_round_trip( 'float', 'float', \@nums );
+check_round_trip( 'f32', 'f32', \@nums );
+
+@nums = map {rand} 0 .. 100;
+check_round_trip( 'f64', 'f64', \@nums );
 
 my @items;
 for ( 0, 22, 300 ) {

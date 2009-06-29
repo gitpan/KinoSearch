@@ -6,10 +6,14 @@
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Doc.h"
 #include "KinoSearch/FieldType.h"
+#include "KinoSearch/FieldType/BlobType.h"
+#include "KinoSearch/FieldType/NumericType.h"
 #include "KinoSearch/FieldType/FullTextType.h"
+#include "KinoSearch/FieldType/TextType.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Util/ByteBuf.h"
 
 Inverter*
 Inverter_new(Schema *schema, Segment *segment)
@@ -56,7 +60,7 @@ Inverter_iter_init(Inverter *self)
 {
     self->tick = -1;
     if (!self->sorted) { 
-        VA_Sort(self->entries, NULL); 
+        VA_Sort(self->entries, NULL, NULL); 
         self->sorted = true;
     }
     return VA_Get_Size(self->entries);
@@ -93,7 +97,7 @@ CharBuf*
 Inverter_get_field_name(Inverter *self)
 { return self->current->field; }
 
-ViewCharBuf*
+Obj*
 Inverter_get_value(Inverter *self)
 { return self->current->value; }
 
@@ -115,13 +119,8 @@ Inverter_get_inversion(Inverter *self)
 
 
 void
-Inverter_add_field(Inverter *self, InverterEntry *entry, Obj *value)
+Inverter_add_field(Inverter *self, InverterEntry *entry)
 {
-    /* Cache value. */
-    if (!OBJ_IS_A(value, CHARBUF))
-        THROW("Can't handle non-string value for field '%o'", entry->field);
-    ViewCB_Assign(entry->value, (CharBuf*)value);
-
     /* Get an Inversion, going through analyzer if appropriate. */
     if (entry->analyzer) {
         DECREF(entry->inversion);
@@ -164,8 +163,6 @@ InvEntry_new(Schema *schema, const CharBuf *field_name, i32_t field_num)
     return InvEntry_init(self, schema, field_name, field_num);
 }
 
-static char EMPTY_CHARS[] = "";
-
 InverterEntry*
 InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field_name,
               i32_t field_num)
@@ -175,7 +172,6 @@ InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field_name,
     self->inversion  = NULL;
 
     if (schema) {
-        self->value      = ViewCB_new_from_trusted_utf8((char*)&EMPTY_CHARS, 0);
         self->analyzer   = Schema_Fetch_Analyzer(schema, field_name);
         self->sim        = Schema_Fetch_Sim(schema, field_name);
         self->type       = Schema_Fetch_Type(schema, field_name);
@@ -183,8 +179,12 @@ InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field_name,
         if (self->analyzer) { INCREF(self->analyzer); }
         if (self->type)     { INCREF(self->type); }
         else                { THROW("Unknown field: '%o'", field_name); }
+        self->value      = FType_Make_Blank(self->type);
         self->indexed    = FType_Indexed(self->type);
-        self->binary     = FType_Binary(self->type);
+        if (self->indexed && OBJ_IS_A(self->type, NUMERICTYPE)) {
+            THROW("Field '%o' spec'd as indexed, but numerical types cannot "
+                "be indexed yet", field_name);
+        }
         if (OBJ_IS_A(self->type, FULLTEXTTYPE)) {
             self->highlightable = FullTextType_Highlightable(self->type);
         }
@@ -209,9 +209,6 @@ InvEntry_clear(InverterEntry *self)
 {
     DECREF(self->inversion);
     self->inversion = NULL;
-    if (self->value) { 
-        ViewCB_Assign_Str(self->value, (char*)&EMPTY_CHARS, 0);
-    }
 }
 
 i32_t

@@ -1,0 +1,149 @@
+parcel KinoSearch cnick Kino;
+
+class KinoSearch::FieldType::NumericType cnick NumType 
+    extends KinoSearch::FieldType : dumpable {
+
+    public static NumericType* 
+    init(NumericType *self);
+
+    static NumericType* 
+    init2(NumericType *self, float boost = 1.0, bool_t indexed = true, 
+          bool_t stored = true, bool_t sortable = false);
+
+    /** Returns true. 
+     */
+    public bool_t
+    Binary(NumericType *self);
+
+    /** Return the primitive type specifier for the object type, e.g.
+     * f64_t for Numeric, u32_t for UInt32, etc.
+     */
+    abstract incremented CharBuf*
+    Specifier(NumericType *self);
+
+    incremented Hash*
+    Dump_For_Schema(NumericType *self);
+
+    public incremented Hash*
+    Dump(NumericType *self);
+
+    public incremented NumericType*
+    Load(NumericType *self, Obj *dump);
+}
+
+abstract class KinoSearch::FieldType::FloatType 
+    extends KinoSearch::FieldType::NumericType : dumpable { }
+
+class KinoSearch::FieldType::Float64Type 
+    extends KinoSearch::FieldType::FloatType : dumpable {
+
+    public static Float64Type* 
+    new();
+
+    public static Float64Type* 
+    init(Float64Type *self);
+
+    static Float64Type* 
+    init2(Float64Type *self, float boost = 1.0, bool_t indexed = true, 
+          bool_t stored = true, bool_t sortable = true);
+
+    incremented Float64*
+    Make_Blank(Float64Type *self);
+
+    i8_t
+    Primitive_ID(Float64Type *self);
+
+    incremented CharBuf*
+    Specifier(Float64Type *self);
+
+    public bool_t
+    Equals(Float64Type *self, Obj *other);
+}
+
+class KinoSearch::FieldType::Float32Type 
+    extends KinoSearch::FieldType::FloatType : dumpable {
+
+    public static Float32Type* 
+    new();
+
+    public static Float32Type* 
+    init(Float32Type *self);
+
+    static Float32Type* 
+    init2(Float32Type *self, float boost = 1.0, bool_t indexed = true, 
+          bool_t stored = true, bool_t sortable = false);
+
+    incremented Float32*
+    Make_Blank(Float32Type *self);
+
+    i8_t
+    Primitive_ID(Float32Type *self);
+
+    incremented CharBuf*
+    Specifier(Float32Type *self);
+
+    public bool_t
+    Equals(Float32Type *self, Obj *other);
+}
+
+abstract class KinoSearch::FieldType::IntType 
+    extends KinoSearch::FieldType::NumericType : dumpable { }
+
+class KinoSearch::FieldType::Int32Type 
+    extends KinoSearch::FieldType::IntType : dumpable {
+
+    public static Int32Type* 
+    new();
+
+    public static Int32Type* 
+    init(Int32Type *self);
+
+    static Int32Type* 
+    init2(Int32Type *self, float boost = 1.0, bool_t indexed = true, 
+          bool_t stored = true, bool_t sortable = false);
+
+    incremented Int32*
+    Make_Blank(Int32Type *self);
+
+    i8_t
+    Primitive_ID(Int32Type *self);
+
+    incremented CharBuf*
+    Specifier(Int32Type *self);
+
+    public bool_t
+    Equals(Int32Type *self, Obj *other);
+}
+
+class KinoSearch::FieldType::Int64Type 
+    extends KinoSearch::FieldType::IntType : dumpable {
+
+    public static Int64Type* 
+    new();
+
+    public static Int64Type* 
+    init(Int64Type *self);
+
+    static Int64Type* 
+    init2(Int64Type *self, float boost = 1.0, bool_t indexed = true, 
+          bool_t stored = true, bool_t sortable = false);
+
+    incremented Int64*
+    Make_Blank(Int64Type *self);
+
+    i8_t
+    Primitive_ID(Int64Type *self);
+
+    incremented CharBuf*
+    Specifier(Int64Type *self);
+
+    public bool_t
+    Equals(Int64Type *self, Obj *other);
+}
+
+/* Copyright 2007-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

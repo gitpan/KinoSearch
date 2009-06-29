@@ -1,5 +1,27 @@
 parcel KinoSearch cnick Kino;
 
+__C__
+
+#define kino_FType_TEXT    1
+#define kino_FType_BLOB    2
+#define kino_FType_INT32   3
+#define kino_FType_INT64   4
+#define kino_FType_FLOAT32 5
+#define kino_FType_FLOAT64 6
+#define kino_FType_PRIMITIVE_ID_MASK 0x7
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define FType_TEXT              kino_FType_TEXT
+  #define FType_BLOB              kino_FType_BLOB
+  #define FType_INT32             kino_FType_INT32
+  #define FType_INT64             kino_FType_INT64
+  #define FType_FLOAT32           kino_FType_FLOAT32
+  #define FType_FLOAT64           kino_FType_FLOAT64
+  #define FType_PRIMITIVE_ID_MASK kino_FType_PRIMITIVE_ID_MASK
+#endif
+
+__END_C__
+
 /** Define a field's behavior. 
  * 
  * FieldType is an abstract class defining a set of traits and behaviors which
@@ -77,6 +99,17 @@ abstract class KinoSearch::FieldType cnick FType extends KinoSearch::Obj {
      */
     public i64_t
     Compare_Values(FieldType *self, Obj *a = NULL, Obj *b = NULL);
+
+    /** Produce a settable object suitable for use by SortCache's Value()
+     * method.
+     */
+    abstract incremented Obj*
+    Make_Blank(FieldType *self);
+
+    /** Internal id used for switch() ops.  Unique for each primitive type.
+     */
+    abstract i8_t
+    Primitive_ID(FieldType *self);
 
     abstract incremented Hash*
     Dump_For_Schema(FieldType *self);

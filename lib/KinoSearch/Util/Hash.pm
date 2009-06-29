@@ -17,13 +17,21 @@ CODE:
     KOBJ_TO_SV_NOINC(kino_Hash_deserialize(NULL, instream), RETVAL);
 OUTPUT: RETVAL
 
+SV*
+_fetch(self, key)
+    kino_Hash *self;
+    kino_CharBuf key;
+CODE:
+    KOBJ_TO_SV( Kino_Hash_Fetch(self, (kino_Obj*)&key), RETVAL );
+OUTPUT: RETVAL
+
 void
 iter_next(self)
     kino_Hash *self;
 PPCODE:
 {
-    kino_CharBuf *key;
-    kino_Obj     *val;
+    kino_Obj *key;
+    kino_Obj *val;
 
     if (Kino_Hash_Iter_Next(self, &key, &val)) {
         SV *key_sv = Kino_Obj_To_Host(key);
@@ -38,41 +46,22 @@ PPCODE:
     }
 }
 
-SV*
-fetch(self, key)
-    kino_Hash *self;
-    kino_CharBuf key;
-CODE:
-    KOBJ_TO_SV( Kino_Hash_Fetch(self, &key), RETVAL );
-OUTPUT: RETVAL
-
-SV*
-delete(self, key)
-    kino_Hash *self;
-    kino_CharBuf key;
-CODE:
-    KOBJ_TO_SV_NOINC( Kino_Hash_Delete(self, &key), RETVAL );
-OUTPUT: RETVAL
-
-SV*
-keys(self)
-    kino_Hash *self;
-CODE:
-    KOBJ_TO_SV_NOINC( Kino_Hash_Keys(self), RETVAL );
-OUTPUT: RETVAL
-
-SV*
-values(self)
-    kino_Hash *self;
-CODE:
-    KOBJ_TO_SV_NOINC( Kino_Hash_Values(self), RETVAL );
-OUTPUT: RETVAL
-
 __AUTO_XS__
 
 {   "KinoSearch::Util::Hash" => {
-        bind_positional   => [qw( Store )],
-        bind_methods      => [qw( Find_Key Clear Iter_Init Get_Size )],
+        bind_positional => [qw( Store )],
+        bind_methods    => [
+            qw(
+                Fetch
+                Delete
+                Keys
+                Values
+                Find_Key
+                Clear
+                Iter_Init
+                Get_Size
+                )
+        ],
         make_constructors => ["new"],
     }
 }

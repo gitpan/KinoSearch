@@ -24,7 +24,7 @@ class KinoSearch::Index::PostingPool cnick PostPool
     u32_t              post_count;
     bool_t             flipped;
     bool_t             from_seg;
-    MSort_compare_t    compare;
+    Sort_compare_t     compare;
 
     /* Constructors.
      */

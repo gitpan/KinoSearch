@@ -38,7 +38,7 @@ SegReader_init(SegReader *self, Schema *schema, Folder *folder,
     }
     {
         DeletionsReader *del_reader = (DeletionsReader*)Hash_Fetch(
-            self->components, DELETIONSREADER.name);
+            self->components, (Obj*)DELETIONSREADER.name);
         self->del_count = del_reader ? DelReader_Del_Count(del_reader) : 0;
     }
     return self;
@@ -47,11 +47,11 @@ SegReader_init(SegReader *self, Schema *schema, Folder *folder,
 void
 SegReader_register(SegReader *self, const CharBuf *api, DataReader *component)
 {
-    if (Hash_Fetch(self->components, api)) {
+    if (Hash_Fetch(self->components, (Obj*)api)) {
         THROW("Interface '%o' already registered");
     }
     ASSERT_IS_A(component, DATAREADER);
-    Hash_Store(self->components, api, (Obj*)component);
+    Hash_Store(self->components, (Obj*)api, (Obj*)component);
 }
 
 i32_t

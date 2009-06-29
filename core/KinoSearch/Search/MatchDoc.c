@@ -31,7 +31,7 @@ void
 MatchDoc_serialize(MatchDoc *self, OutStream *outstream)
 {
     OutStream_Write_C32(outstream, self->doc_id);
-    OutStream_Write_Float(outstream, self->score);
+    OutStream_Write_F32(outstream, self->score);
     OutStream_Write_U8(outstream, self->values ? 1 : 0);
     if (self->values) { VA_Serialize(self->values, outstream); }
 }
@@ -41,7 +41,7 @@ MatchDoc_deserialize(MatchDoc *self, InStream *instream)
 {
     self = self ? self : (MatchDoc*)VTable_Make_Obj(&MATCHDOC);
     self->doc_id = InStream_Read_C32(instream);
-    self->score  = InStream_Read_Float(instream);
+    self->score  = InStream_Read_F32(instream);
     if (InStream_Read_U8(instream)) {
         self->values = VA_deserialize(NULL, instream);
     }

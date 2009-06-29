@@ -2,8 +2,13 @@
 #include "KinoSearch/Index/Inverter.h"
 #include "KinoSearch/Doc.h"
 #include "KinoSearch/FieldType.h"
+#include "KinoSearch/FieldType/BlobType.h"
+#include "KinoSearch/FieldType/NumericType.h"
+#include "KinoSearch/FieldType/TextType.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Schema.h"
+#include "KinoSearch/Util/ByteBuf.h"
+#include "KinoSearch/Util/Num.h"
 
 static kino_InverterEntry*
 S_fetch_entry(kino_Inverter *self, HE *hash_entry)
@@ -58,7 +63,6 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
 {
     HV          *const fields = Kino_Doc_Get_Fields(doc);
     I32          num_keys     = hv_iterinit(fields);
-    kino_ZombieCharBuf value  = KINO_ZCB_BLANK;
 
     /* Prepare for the new doc. */
     Kino_Inverter_Set_Doc(self, doc);
@@ -68,19 +72,50 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
         HE *hash_entry = hv_iternext(fields);
         kino_InverterEntry *inv_entry = S_fetch_entry(self, hash_entry);
         SV *value_sv = HeVAL(hash_entry);
-        STRLEN value_len;
-        char *value_ptr;
+        kino_FieldType *type = inv_entry->type;
 
         /* Get the field value, forcing text fields to UTF-8. */
-        if (inv_entry->binary) {
-            value_ptr = SvPV(value_sv, value_len);
+        switch (Kino_FType_Primitive_ID(type) & kino_FType_PRIMITIVE_ID_MASK) {
+            case kino_FType_TEXT: {
+                STRLEN value_len;
+                char *value_ptr = SvPVutf8(value_sv, value_len);
+                Kino_ViewCB_Assign_Str(inv_entry->value, value_ptr, value_len);
+                break;
+            }
+            case kino_FType_BLOB: {
+                STRLEN value_len;
+                char *value_ptr = SvPV(value_sv, value_len);
+                Kino_ViewBB_Assign_Str(inv_entry->value, value_ptr, value_len);
+                break;
+            }
+            case kino_FType_INT32: {
+                kino_Int32* value = (kino_Int32*)inv_entry->value;
+                Kino_Int32_Set_Value(value, SvIV(value_sv));
+                break;
+            }
+            case kino_FType_INT64: {
+                kino_Int64* value = (kino_Int64*)inv_entry->value;
+                chy_i64_t val = sizeof(IV) == 8 
+                              ? SvIV(value_sv) 
+                              : SvNV(value_sv);
+                Kino_Int64_Set_Value(value, val);
+                break;
+            }
+            case kino_FType_FLOAT32: {
+                kino_Float32* value = (kino_Float32*)inv_entry->value;
+                Kino_Float32_Set_Value(value, SvNV(value_sv));
+                break;
+            }
+            case kino_FType_FLOAT64: {
+                kino_Float64* value = (kino_Float64*)inv_entry->value;
+                Kino_Float64_Set_Value(value, SvNV(value_sv));
+                break;
+            }
+            default:
+                THROW("Unrecognized type: %o", type);
         }
-        else {
-            value_ptr = SvPVutf8(value_sv, value_len);
-        }
-        Kino_ZCB_Assign_Str(&value, value_ptr, value_len);
 
-        Kino_Inverter_Add_Field(self, inv_entry, (kino_Obj*)&value);
+        Kino_Inverter_Add_Field(self, inv_entry);
     }
 }
 

@@ -95,10 +95,11 @@ IxManager_make_snapshot_filename(IndexManager *self)
 }
 
 static int
-S_compare_doc_count(const void *va, const void *vb)
+S_compare_doc_count(void *context, const void *va, const void *vb)
 {
     SegReader *a = *(SegReader**)va;
     SegReader *b = *(SegReader**)vb;
+    UNUSED_VAR(context);
     return SegReader_Doc_Count(a) - SegReader_Doc_Count(b);
 }
 
@@ -116,7 +117,7 @@ IxManager_segreaders_to_merge(IndexManager *self, PolyReader *reader,
         const u32_t num_seg_readers = VA_Get_Size(seg_readers);
 
         /* Sort by ascending size in docs. */
-        VA_Sort(seg_readers, S_compare_doc_count);
+        VA_Sort(seg_readers, S_compare_doc_count, NULL);
 
         /* Find sparsely populated segments. */
         for (i = 0; i < num_seg_readers; i++) {

@@ -45,13 +45,13 @@ Snapshot_destroy(Snapshot *self)
 void
 Snapshot_add_entry(Snapshot *self, const CharBuf *filename)
 {
-    Hash_Store(self->entries, filename, INCREF(&EMPTY));
+    Hash_Store(self->entries, (Obj*)filename, INCREF(&EMPTY));
 }
 
 bool_t
 Snapshot_delete_entry(Snapshot *self, const CharBuf *entry)
 {
-    Obj *val = Hash_Delete(self->entries, entry);
+    Obj *val = Hash_Delete(self->entries, (Obj*)entry);
     if (val) { 
         Obj_Dec_RefCount(val);
         return true;
@@ -109,7 +109,7 @@ Snapshot_read_file(Snapshot *self, Folder *folder, const CharBuf *filename)
             for (i = 0, max = VA_Get_Size(list); i < max; i++) {
                 CharBuf *entry = (CharBuf*)ASSERT_IS_A(
                     VA_Fetch(list, i), CHARBUF);
-                Hash_Store(self->entries, entry, INCREF(&EMPTY));
+                Hash_Store(self->entries, (Obj*)entry, INCREF(&EMPTY));
             }
         }
 
@@ -145,7 +145,7 @@ Snapshot_write_file(Snapshot *self, Folder *folder, const CharBuf *filename)
     }
 
     /* Sort, then store file names. */
-    VA_Sort(list, NULL);
+    VA_Sort(list, NULL, NULL);
     Hash_Store_Str(all_data, "entries", 7, (Obj*)list);
 
     /* Create a JSON-izable data structure. */

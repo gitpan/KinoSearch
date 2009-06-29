@@ -4,33 +4,30 @@ parcel KinoSearch cnick Kino;
  */
 class KinoSearch::Index::SortCache extends KinoSearch::Obj {
 
+    CharBuf   *field;
     FieldType *type;
-    InStream  *ord_in;
-    InStream  *ix_in;
-    InStream  *dat_in;
     void      *ords;
     i32_t      doc_max;
     i32_t      num_uniq;
-    i32_t      width;
-    i64_t     *offsets;
-    i64_t     *offsets_limit;
-    char      *char_data;
-    char      *char_data_limit;
-
-    public static incremented SortCache*
-    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num);
+    i32_t      ord_width;
+    i32_t      null_ord;
 
     public static SortCache*
-    init(SortCache *self, Schema *schema, Folder *folder, Segment *segment, 
-         i32_t field_num);
+    init(SortCache *self, const CharBuf *field, FieldType *type,
+         void *ords, i32_t num_uniq, i32_t doc_max, i32_t null_ord = -1);
 
-    /** Assign the string for ordinal <code>ord</code> to <code>value</code>.
+    /** Assign the value for ordinal <code>ord</code> to <code>blank</code>.
      *
-     * @return either <code>value</code>, or NULL if the value for
-     * <code>doc_id</code> is NULL.
+     * @return either <code>blank</code> (no longer blank), or NULL if the
+     * value for <code>doc_id</code> is NULL.
      */
-    public ViewCharBuf*
-    Value(SortCache *self, i32_t ord, ViewCharBuf *value);
+    public abstract Obj*
+    Value(SortCache *self, i32_t ord, Obj *blank);
+
+    /** Return an object appropriate for use as an argument to Value(). 
+     */
+    public incremented Obj*
+    Make_Blank(SortCache *self);
 
     public void*
     Get_Ords(SortCache *self);
@@ -39,7 +36,7 @@ class KinoSearch::Index::SortCache extends KinoSearch::Obj {
     Get_Num_Unique(SortCache *self);
 
     public i32_t
-    Get_Width(SortCache *self);
+    Get_Ord_Width(SortCache *self);
 
     public i32_t
     Ordinal(SortCache *self, i32_t doc_id);

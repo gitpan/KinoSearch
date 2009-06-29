@@ -57,7 +57,7 @@ sortable.
 
 =head1 INHERITANCE
 
-KinoSearch::FieldType::StringType isa L<KinoSearch::FieldType> isa L<KinoSearch::Obj>.
+KinoSearch::FieldType::StringType isa L<KinoSearch::FieldType::TextType> isa L<KinoSearch::FieldType> isa L<KinoSearch::Obj>.
 
 
 =head1 COPYRIGHT

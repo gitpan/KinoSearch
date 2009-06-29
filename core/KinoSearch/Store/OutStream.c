@@ -11,7 +11,7 @@ static INLINE void
 SI_write_bytes(OutStream *self, const void *bytes, size_t len);
 
 static INLINE void
-SI_write_c32(OutStream *self, u32_t aU32);
+SI_write_c32(OutStream *self, u32_t value);
 
 OutStream*
 OutStream_new(FileDes *file_des) 
@@ -124,135 +124,150 @@ SI_write_bytes(OutStream *self, const void *bytes, size_t len)
 }
 
 static INLINE void
-SI_write_u8(OutStream *self, u8_t aU8)
+SI_write_u8(OutStream *self, u8_t value)
 {
     if (self->buf_pos >= IO_STREAM_BUF_SIZE)
         SI_flush(self);
-    self->buf[ self->buf_pos++ ] = (char)aU8;
+    self->buf[ self->buf_pos++ ] = (char)value;
 }
 
 void
-OutStream_write_i8(OutStream *self, i8_t aI8) 
+OutStream_write_i8(OutStream *self, i8_t value) 
 {
-    SI_write_u8(self, (u8_t)aI8);
+    SI_write_u8(self, (u8_t)value);
 }
 
 void
-OutStream_write_u8(OutStream *self, u8_t aU8) 
+OutStream_write_u8(OutStream *self, u8_t value) 
 {
-    SI_write_u8(self, aU8);
+    SI_write_u8(self, value);
 }
 
 static INLINE void 
-SI_write_u32(OutStream *self, u32_t aU32) 
+SI_write_u32(OutStream *self, u32_t value) 
 {
 #ifdef BIG_END
-    SI_write_bytes(self, &aU32, 4);
+    SI_write_bytes(self, &value, 4);
 #else 
     char  buf[4];
     char *buf_copy = buf;
-    Math_encode_bigend_u32(aU32, &buf_copy);
+    Math_encode_bigend_u32(value, &buf_copy);
     SI_write_bytes(self, buf, 4);
 #endif
 }
 
 void 
-OutStream_write_i32(OutStream *self, i32_t aI32) 
+OutStream_write_i32(OutStream *self, i32_t value) 
 {
-    SI_write_u32(self, (u32_t)aI32);
+    SI_write_u32(self, (u32_t)value);
 }
 
 void 
-OutStream_write_u32(OutStream *self, u32_t aU32) 
+OutStream_write_u32(OutStream *self, u32_t value) 
 {
-    SI_write_u32(self, aU32);
+    SI_write_u32(self, value);
 }
 
 static INLINE void
-SI_write_u64(OutStream *self, u64_t aQuad) 
+SI_write_u64(OutStream *self, u64_t value) 
 {
     u8_t buf[8];
 
     /* Store as big-endian. */
-    buf[0] = (aQuad >> 56) & 0xFF;
-    buf[1] = (aQuad >> 48) & 0xFF;
-    buf[2] = (aQuad >> 40) & 0xFF;
-    buf[3] = (aQuad >> 32) & 0xFF;
-    buf[4] = (aQuad >> 24) & 0xFF;
-    buf[5] = (aQuad >> 16) & 0xFF;
-    buf[6] = (aQuad >> 8 ) & 0xFF;
-    buf[7] = (aQuad      ) & 0xFF;
+    buf[0] = (value >> 56) & 0xFF;
+    buf[1] = (value >> 48) & 0xFF;
+    buf[2] = (value >> 40) & 0xFF;
+    buf[3] = (value >> 32) & 0xFF;
+    buf[4] = (value >> 24) & 0xFF;
+    buf[5] = (value >> 16) & 0xFF;
+    buf[6] = (value >> 8 ) & 0xFF;
+    buf[7] = (value      ) & 0xFF;
 
     /* Print encoded Long to the output handle. */
     SI_write_bytes(self, buf, 8);
 }
 
 void 
-OutStream_write_i64(OutStream *self, i64_t aI64) 
+OutStream_write_i64(OutStream *self, i64_t value) 
 {
-    SI_write_u64(self, (u64_t)aI64);
+    SI_write_u64(self, (u64_t)value);
 }
 
 void 
-OutStream_write_u64(OutStream *self, u64_t aU64) 
+OutStream_write_u64(OutStream *self, u64_t value) 
 {
-    SI_write_u64(self, aU64);
+    SI_write_u64(self, value);
 }
 
 void 
-OutStream_write_float(OutStream *self, float aFloat) 
+OutStream_write_f32(OutStream *self, float value) 
 {
 #ifdef BIG_END
-    SI_write_bytes(self, &aFloat, sizeof(float));
+    SI_write_bytes(self, &value, sizeof(float));
 #else 
     char  buf[sizeof(float)];
     char *buf_copy = buf;
     union { float f; u32_t u32; } duo; 
-    duo.f = aFloat;
+    duo.f = value;
     Math_encode_bigend_u32(duo.u32, &buf_copy);
-    SI_write_bytes(self, buf, 4);
+    SI_write_bytes(self, buf, sizeof(float));
+#endif
+}
+
+void 
+OutStream_write_f64(OutStream *self, double value) 
+{
+#ifdef BIG_END
+    SI_write_bytes(self, &value, sizeof(double));
+#else 
+    char  buf[sizeof(double)];
+    char *buf_copy = buf;
+    union { double f; u64_t u64; } duo; 
+    duo.f = value;
+    Math_encode_bigend_u64(duo.u64, &buf_copy);
+    SI_write_bytes(self, buf, sizeof(double));
 #endif
 }
 
 void
-OutStream_write_c32(OutStream *self, u32_t aU32) 
+OutStream_write_c32(OutStream *self, u32_t value) 
 {
-    SI_write_c32(self, aU32);
+    SI_write_c32(self, value);
 }
 
 static INLINE void
-SI_write_c32(OutStream *self, u32_t aU32) 
+SI_write_c32(OutStream *self, u32_t value) 
 {
     u8_t buf[C32_MAX_BYTES];
     u8_t *ptr = buf + sizeof(buf) - 1;
 
     /* Write last byte first, which has no continue bit. */
-    *ptr = aU32 & 0x7f;
-    aU32 >>= 7;
+    *ptr = value & 0x7f;
+    value >>= 7;
     
-    while (aU32) {
+    while (value) {
         /* Work backwards, writing bytes with continue bits set. */
-        *--ptr = ((aU32 & 0x7f) | 0x80);
-        aU32 >>= 7;
+        *--ptr = ((value & 0x7f) | 0x80);
+        value >>= 7;
     }
 
     SI_write_bytes(self, ptr, (buf + sizeof(buf)) - ptr);
 }
 
 void
-OutStream_write_c64(OutStream *self, u64_t aQuad) 
+OutStream_write_c64(OutStream *self, u64_t value) 
 {
     u8_t buf[C64_MAX_BYTES];
     u8_t *ptr = buf + sizeof(buf) - 1;
 
     /* Write last byte first, which has no continue bit. */
-    *ptr = aQuad & 0x7f;
-    aQuad >>= 7;
+    *ptr = value & 0x7f;
+    value >>= 7;
     
-    while (aQuad) {
+    while (value) {
         /* Work backwards, writing bytes with continue bits set. */
-        *--ptr = ((aQuad & 0x7f) | 0x80);
-        aQuad >>= 7;
+        *--ptr = ((value & 0x7f) | 0x80);
+        value >>= 7;
     }
 
     SI_write_bytes(self, ptr, (buf + sizeof(buf)) - ptr);

@@ -7,16 +7,19 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
 
     VArray  *uniq_vals;
     VArray  *doc_vals;
+    VArray  *blanks;
     Hash    *counts;
+    Hash    *null_ords;
 
     static i32_t current_file_format;
 
     static incremented SortWriter*
-    new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader);
+    new(Schema *schema, Snapshot *snapshot, Segment *segment,
+        PolyReader *polyreader);
 
     static SortWriter* 
-    init(SortWriter *self, Snapshot *snapshot, Segment *segment,
-         PolyReader *polyreader);
+    init(SortWriter *self, Schema *schema, Snapshot *snapshot,
+         Segment *segment, PolyReader *polyreader);
 
     public void
     Add_Inverted_Doc(SortWriter *self, Inverter *inverter, i32_t doc_id);

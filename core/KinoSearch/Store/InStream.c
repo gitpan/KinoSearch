@@ -333,7 +333,7 @@ InStream_read_i64(InStream *self)
 }
 
 float
-InStream_read_float(InStream *self)
+InStream_read_f32(InStream *self)
 {
     union { float f; u32_t u32; } retval;
     SI_read_bytes(self, (char*)&retval, sizeof(float));
@@ -343,30 +343,41 @@ InStream_read_float(InStream *self)
     return retval.f;
 }
 
+double
+InStream_read_f64(InStream *self)
+{
+    union { double f; u64_t u64; } retval;
+    SI_read_bytes(self, (char*)&retval, sizeof(double));
+#ifdef LITTLE_END 
+    retval.u64 = Math_decode_bigend_u64((char*)&retval.u64);
+#endif
+    return retval.f;
+}
+
 u32_t 
 InStream_read_c32 (InStream *self) 
 {
-    u32_t aU32 = 0;
+    u32_t retval = 0;
     while (1) {
-        const u8_t aUByte = SI_read_u8(self);
-        aU32 = (aU32 << 7) | (aUByte & 0x7f);
-        if ((aUByte & 0x80) == 0)
+        const u8_t ubyte = SI_read_u8(self);
+        retval = (retval << 7) | (ubyte & 0x7f);
+        if ((ubyte & 0x80) == 0)
             break;
     }
-    return aU32;
+    return retval;
 }
 
 u64_t 
 InStream_read_c64 (InStream *self) 
 {
-    u64_t aQuad = 0;
+    u64_t retval = 0;
     while (1) {
-        const u8_t aUByte = SI_read_u8(self);
-        aQuad = (aQuad << 7) | (aUByte & 0x7f);
-        if ((aUByte & 0x80) == 0)
+        const u8_t ubyte = SI_read_u8(self);
+        retval = (retval << 7) | (ubyte & 0x7f);
+        if ((ubyte & 0x80) == 0)
             break;
     }
-    return aQuad;
+    return retval;
 }
 
 int

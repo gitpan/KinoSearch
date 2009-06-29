@@ -39,14 +39,13 @@ Token_destroy(Token *self)
 }
 
 int
-Token_compare(const void *va, const void *vb)
+Token_compare(void *context, const void *va, const void *vb)
 {
     Token *const a = *((Token**)va);
     Token *const b = *((Token**)vb);
-    
     size_t min_len = a->len < b->len ? a->len : b->len;
-
     int comparison = memcmp(a->text, b->text, min_len); 
+    UNUSED_VAR(context);
 
     if (comparison == 0) {
         if (a->len != b->len) {

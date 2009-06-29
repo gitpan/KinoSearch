@@ -63,13 +63,13 @@ void
 DocVec_add_field_buf(DocVector *self, const CharBuf *field, 
                      ByteBuf *field_buf)
 {
-    Hash_Store(self->field_bufs, field, INCREF(field_buf));
+    Hash_Store(self->field_bufs, (Obj*)field, INCREF(field_buf));
 }
 
 ByteBuf*
 DocVec_field_buf(DocVector *self, const CharBuf *field)
 {
-    return (ByteBuf*)Hash_Fetch(self->field_bufs, field);
+    return (ByteBuf*)Hash_Fetch(self->field_bufs, (Obj*)field);
 }
 
 VArray*
@@ -83,21 +83,22 @@ DocVec_term_vector(DocVector *self, const CharBuf *field,
                    const CharBuf *term_text) 
 {
     ByteBuf *tv_buf;
-    Hash *field_vector = (Hash*)Hash_Fetch(self->field_vectors, field);
+    Hash *field_vector = (Hash*)Hash_Fetch(self->field_vectors, (Obj*)field);
     
     /* If no cache hit, try to fill cache. */
     if (field_vector == NULL) {
-        ByteBuf *field_buf = (ByteBuf*)Hash_Fetch(self->field_bufs, field);
+        ByteBuf *field_buf 
+            = (ByteBuf*)Hash_Fetch(self->field_bufs, (Obj*)field);
 
         /* Bail if there's no content or the field isn't highlightable. */
         if (field_buf == NULL) return NULL;
 
         field_vector = S_extract_tv_cache(field_buf);
-        Hash_Store(self->field_vectors, field, (Obj*)field_vector);
+        Hash_Store(self->field_vectors, (Obj*)field, (Obj*)field_vector);
     }
 
     /* Get a buf for the term text or bail. */
-    tv_buf = (ByteBuf*)Hash_Fetch(field_vector, term_text);
+    tv_buf = (ByteBuf*)Hash_Fetch(field_vector, (Obj*)term_text);
     if (tv_buf == NULL) 
         return NULL;
 
@@ -137,7 +138,7 @@ S_extract_tv_cache(ByteBuf *field_buf)
         len = tv_string - bookmark_ptr;
 
         /* Store the $text => $posdata pair in the output hash. */
-        Hash_Store(tv_cache, text, (Obj*)BB_new_str(bookmark_ptr, len));
+        Hash_Store(tv_cache, (Obj*)text, (Obj*)BB_new_str(bookmark_ptr, len));
     }
     DECREF(text);
 

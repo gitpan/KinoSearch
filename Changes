@@ -1,5 +1,22 @@
 Revision history for KinoSearch
 
+0.30_02  2009-06-29
+
+  API Changes:
+
+    * KinoSearch::Indexer
+      o new() - "schema" argument now required only at index creation.
+    * KinoSearch::QueryParser::QueryParser - ancient compatibility stub
+      redacted, use KinoSearch::QueryParser instead.
+
+  Bugfixes:
+  
+    * Various C compatibility tweaks for Solaris, PowerPC Linux, etc. 
+
+  Compatibility:
+
+    * Index version bumped.
+
 0.30_01  2009-06-18
 
   Highlights:

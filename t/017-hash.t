@@ -28,13 +28,12 @@ $hash = KinoSearch::Util::Hash->new( capacity => 1 );
 $hash->store( $_, get_cb($_) ) for @orig;
 $source{$_} = $_ for @orig;
 push @got, $hash->fetch($_) for 1 .. 100;
-@got = map { $_->to_string } @got;
 is_deeply( \@got, \@orig, "Basic store and fetch" );
 
 is( $hash->get_size, 100, "size incremented properly" );
 
 $hash->store( "40", get_cb("new value") );
-is( $hash->fetch("40")->to_string,
+is( $hash->fetch("40"),
     "new value", "store obliterates existing value" );
 is( $hash->get_size, 100, "size unaffected after replacement of a val" );
 $source{40} = "new value";
@@ -110,9 +109,9 @@ is( $key_copy, undef, "find_key doesn't find non-existent key" );
 $hash = KinoSearch::Util::Hash->new( capacity => 10 );
 $hash->store( "foo", get_cb("bar") );
 $hash->store( "baz", get_cb("banana") );
-my @keys = sort @{ $hash->keys->to_perl };
+my @keys = sort @{ $hash->keys };
 is_deeply( \@keys, [qw( baz foo )], "keys" );
-my @values = sort @{ $hash->values->to_perl };
+my @values = sort @{ $hash->values };
 is_deeply( \@values, [qw( banana bar )], "values" );
 
 my $frozen = nfreeze($hash);

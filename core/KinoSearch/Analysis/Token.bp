@@ -52,10 +52,10 @@ class KinoSearch::Analysis::Token extends KinoSearch::Obj {
          u32_t start_offset, u32_t end_offset, 
          float boost = 1.0, i32_t pos_inc = 1);
 
-    /** qsort-compatible comparison routine.
+    /** Sort_quicksort-compatible comparison routine.
      */
     static int 
-    compare(const void *va, const void *vb);
+    compare(void *context, const void *va, const void *vb);
 
     void 
     Destroy(Token *token);

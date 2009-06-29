@@ -20,9 +20,11 @@ class KinoSearch::Index::SegWriter extends KinoSearch::Index::DataWriter {
     DeletionsWriter   *del_writer;
 
     static incremented SegWriter*
-    new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader);
+    new(Schema *schema, Snapshot *snapshot, Segment *segment,
+        PolyReader *polyreader);
 
     /**
+     * @param schema A Schema.
      * @param snapshot The Snapshot that will be committed at the end of the
      * indexing session.
      * @param segment The Segment in progress.
@@ -31,8 +33,8 @@ class KinoSearch::Index::SegWriter extends KinoSearch::Index::DataWriter {
      * sub-readers).
      */
     static SegWriter*
-    init(SegWriter *self, Snapshot *snapshot, Segment *segment, 
-         PolyReader *polyreader);
+    init(SegWriter *self, Schema *schema, Snapshot *snapshot,
+         Segment *segment, PolyReader *polyreader);
 
     /** 
      * Register a DataWriter component with the SegWriter.  (Note that

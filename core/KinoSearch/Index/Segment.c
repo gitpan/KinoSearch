@@ -121,13 +121,13 @@ Seg_write_file(Segment *self)
 i32_t 
 Seg_add_field(Segment *self, const CharBuf *field)
 {
-    Float64 *num = (Float64*)Hash_Fetch(self->by_name, field);
+    Float64 *num = (Float64*)Hash_Fetch(self->by_name, (Obj*)field);
     if (num) {
         return (i32_t)Float64_Get_Value(num);
     }
     else {
         i32_t field_num = VA_Get_Size(self->by_num);
-        Hash_Store(self->by_name, field, (Obj*)Float64_new(field_num));
+        Hash_Store(self->by_name, (Obj*)field, (Obj*)Float64_new(field_num));
         VA_Push(self->by_num, (Obj*)CB_Clone(field));
         return field_num;
     }
@@ -150,10 +150,10 @@ Seg_increment_count(Segment *self, i32_t increment)
 void
 Seg_store_metadata(Segment *self, const CharBuf *key, Obj *value)
 {
-    if (Hash_Fetch(self->metadata, key)) {
+    if (Hash_Fetch(self->metadata, (Obj*)key)) {
         THROW("Metadata key '%o' already registered", key);
     }
-    Hash_Store(self->metadata, key, value);
+    Hash_Store(self->metadata, (Obj*)key, value);
 }
 
 void
@@ -166,7 +166,7 @@ Seg_store_metadata_str(Segment *self, const char *key, size_t key_len, Obj *valu
 Obj*
 Seg_fetch_metadata(Segment *self, const CharBuf *key)
 {
-    return Hash_Fetch(self->metadata, key);
+    return Hash_Fetch(self->metadata, (Obj*)key);
 }
 
 Obj*
@@ -200,7 +200,7 @@ Seg_field_num(Segment *self, const CharBuf *field)
         return 0;
     }
     else {
-        Float64 *num = (Float64*)Hash_Fetch(self->by_name, field);
+        Float64 *num = (Float64*)Hash_Fetch(self->by_name, (Obj*)field);
         if (num == NULL)
             return 0;
         return (i32_t)Float64_Get_Value(num);

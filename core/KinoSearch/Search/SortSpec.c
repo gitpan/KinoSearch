@@ -9,7 +9,7 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/I32Array.h"
-#include "KinoSearch/Util/MSort.h"
+#include "KinoSearch/Util/SortUtils.h"
 
 SortSpec*
 SortSpec_new(VArray *rules)

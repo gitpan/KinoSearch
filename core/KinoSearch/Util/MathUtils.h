@@ -15,8 +15,24 @@
 chy_u32_t
 kino_Math_fibonacci(chy_u32_t num);
 
+/** Encode an unsigned 16-bit integer as 2 bytes in the buffer provided, using
+ * big-endian byte order.
+ */
+static CHY_INLINE void
+kino_Math_encode_bigend_u16(chy_u16_t num, void *dest_ptr)
+{
+    chy_u8_t *dest = *(chy_u8_t**)dest_ptr;
+#ifdef CHY_BIG_END
+    memcpy(dest, &num, sizeof(chy_u16_t));
+#else /* little endian */
+    chy_u8_t *source = (chy_u8_t*)&num;
+    dest[0] = source[1];
+    dest[1] = source[0];
+#endif /* CHY_BIG_END (and little endian) */
+}
+
 /** Encode an unsigned 32-bit integer as 4 bytes in the buffer provided, using
- * big-endian byte order.  Advance buffer pointer by 4 bytes.
+ * big-endian byte order.
  */
 static CHY_INLINE void
 kino_Math_encode_bigend_u32(chy_u32_t num, void *dest_ptr)
@@ -25,11 +41,45 @@ kino_Math_encode_bigend_u32(chy_u32_t num, void *dest_ptr)
 #ifdef CHY_BIG_END
     memcpy(dest, &num, sizeof(chy_u32_t));
 #else /* little endian */
-    dest[0] = (num & 0xff000000) >> 24;
-    dest[1] = (num & 0x00ff0000) >> 16;
-    dest[2] = (num & 0x0000ff00) >> 8;
-    dest[3] = (num & 0x000000ff);
+    chy_u8_t *source = (chy_u8_t*)&num;
+    dest[0] = source[3];
+    dest[1] = source[2];
+    dest[2] = source[1];
+    dest[3] = source[0];
 #endif /* CHY_BIG_END (and little endian) */
+}
+
+/** Encode an unsigned 64-bit integer as 8 bytes in the buffer provided, using
+ * big-endian byte order. 
+ */
+static CHY_INLINE void
+kino_Math_encode_bigend_u64(chy_u64_t num, void *dest_ptr)
+{
+    chy_u8_t *dest = *(chy_u8_t**)dest_ptr;
+#ifdef CHY_BIG_END
+    memcpy(dest, &num, sizeof(chy_u64_t));
+#else /* little endian */
+    chy_u8_t *source = (chy_u8_t*)&num;
+    dest[0] = source[7];
+    dest[1] = source[6];
+    dest[2] = source[5];
+    dest[3] = source[4];
+    dest[4] = source[3];
+    dest[5] = source[2];
+    dest[6] = source[1];
+    dest[7] = source[0];
+#endif /* CHY_BIG_END (and little endian) */
+}
+
+/* Interpret a sequence of bytes as a big-endian unsigned 32-bit int.  The
+ * buffer need not be aligned to word size.  
+ */
+static CHY_INLINE chy_u16_t
+kino_Math_decode_bigend_u16(void *source)
+{
+    chy_u8_t *const buf = (chy_u8_t*)source;
+    return  (buf[0] << 8) |
+            (buf[1]);
 }
 
 /* Interpret a sequence of bytes as a big-endian unsigned 32-bit int.  The
@@ -159,7 +209,10 @@ kino_Math_skip_c32(char **source_ptr)
 }
 
 #ifdef KINO_USE_SHORT_NAMES
+  #define Math_encode_bigend_u16    kino_Math_encode_bigend_u16
   #define Math_encode_bigend_u32    kino_Math_encode_bigend_u32
+  #define Math_encode_bigend_u64    kino_Math_encode_bigend_u64
+  #define Math_decode_bigend_u16    kino_Math_decode_bigend_u16
   #define Math_decode_bigend_u32    kino_Math_decode_bigend_u32
   #define Math_decode_bigend_u64    kino_Math_decode_bigend_u64
   #define C32_MAX_BYTES             KINO_MATH_C32_MAX_BYTES

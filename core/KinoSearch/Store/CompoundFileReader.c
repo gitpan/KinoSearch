@@ -77,12 +77,12 @@ CFReader_get_size(CompoundFileReader *self)
 bool_t
 CFReader_delete_virtual(CompoundFileReader *self, const CharBuf *filepath)
 {
-    Hash *entry = (Hash*)Hash_Fetch(self->entries, filepath);
+    Hash *entry = (Hash*)Hash_Fetch(self->entries, (Obj*)filepath);
     if (entry == NULL) { 
         THROW("File '%o' doesn't exist", filepath); 
     }
     else { 
-        Hash_Delete(self->entries, filepath); 
+        Hash_Delete(self->entries, (Obj*)filepath); 
         DECREF(entry); 
     }
     return true;
@@ -92,7 +92,7 @@ static void
 S_retrieve_offset_and_len(CompoundFileReader *self, const CharBuf *filepath,
                           i64_t *offset, i64_t *len)
 {
-    Hash *entry = (Hash*)Hash_Fetch(self->entries, filepath);
+    Hash *entry = (Hash*)Hash_Fetch(self->entries, (Obj*)filepath);
     if (entry == NULL)
         THROW("Couldn't find entry for '%o'", filepath);
     
@@ -114,7 +114,7 @@ CFReader_open_in(CompoundFileReader *self, const CharBuf *filepath)
 bool_t
 CFReader_exists(CompoundFileReader *self, const CharBuf *filepath)
 {
-    return Hash_Fetch(self->entries, filepath) ? true : false;
+    return Hash_Fetch(self->entries, (Obj*)filepath) ? true : false;
 }
 
 VArray*

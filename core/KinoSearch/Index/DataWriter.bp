@@ -27,8 +27,8 @@ public class KinoSearch::Index::DataWriter extends KinoSearch::Obj {
      * sub-readers).
      */
     public static DataWriter*
-    init(DataWriter *self, Snapshot *snapshot, Segment *segment, 
-         PolyReader *polyreader);
+    init(DataWriter *self, Schema *schema, Snapshot *snapshot, 
+         Segment *segment, PolyReader *polyreader);
 
     /** Process a document, previously inverted by <code>inverter</code>.
      *

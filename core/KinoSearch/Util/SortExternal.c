@@ -32,7 +32,7 @@ static Obj*
 S_find_endpost(SortExternal *self);
 
 SortExternal*
-SortEx_init(SortExternal *self, u32_t mem_thresh, MSort_compare_t compare)
+SortEx_init(SortExternal *self, u32_t mem_thresh, Sort_compare_t compare)
 {
     /* Init. */
     self->cache           = NULL;
@@ -150,7 +150,7 @@ SortEx_sort_cache(SortExternal *self)
         self->scratch_cap = self->cache_max;
         self->scratch = REALLOCATE(self->scratch, self->scratch_cap, Obj*);
     }
-    MSort_mergesort(self->cache, self->scratch, self->cache_max, sizeof(Obj*),
+    Sort_mergesort(self->cache, self->scratch, self->cache_max, sizeof(Obj*),
         self->compare, self);
 }
 
@@ -212,9 +212,9 @@ S_refill_runs(SortExternal *self)
 static Obj*
 S_find_endpost(SortExternal *self) 
 {
-    const MSort_compare_t compare = self->compare;
-    Obj        *endpost           = NULL;
-    u32_t       i;
+    const Sort_compare_t compare = self->compare;
+    Obj *endpost = NULL;
+    u32_t  i;
 
     for (i = 0; i < self->num_runs; i++) {
         Obj *candidate;
@@ -290,7 +290,7 @@ static void
 S_merge_slices(SortExternal *self, Obj ***slice_starts, u32_t *slice_sizes,
              u32_t num_slices) 
 {
-    const MSort_compare_t compare  = self->compare;
+    const Sort_compare_t compare  = self->compare;
     u32_t i = 0, j = 0;
 
     /* Exploit previous sorting, rather than sort cache naively. */
@@ -304,11 +304,11 @@ S_merge_slices(SortExternal *self, Obj ***slice_starts, u32_t *slice_sizes,
                 const u32_t slice_size = slice_sizes[i] + slice_sizes[i+1];
 
                 if (sizeof(Obj*) == 4)
-                    MSort_merge4(slice_starts[i], slice_sizes[i],
+                    Sort_merge4(slice_starts[i], slice_sizes[i],
                         slice_starts[i+1], slice_sizes[i+1], self->scratch,
                         compare, self);
                 else 
-                    MSort_merge8(slice_starts[i], slice_sizes[i],
+                    Sort_merge8(slice_starts[i], slice_sizes[i],
                         slice_starts[i+1], slice_sizes[i+1], self->scratch,
                         compare, self);
                 slice_sizes[j] = slice_size;

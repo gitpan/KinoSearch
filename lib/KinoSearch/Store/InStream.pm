@@ -108,7 +108,8 @@ __AUTO_XS__
 
 {   "KinoSearch::Store::InStream" => {
         bind_methods => [
-            qw( Seek
+            qw(
+                Seek
                 Tell
                 Length
                 Close
@@ -120,7 +121,9 @@ __AUTO_XS__
                 Read_U64
                 Read_C32
                 Read_C64
-                Read_Float )
+                Read_F32
+                Read_F64
+                )
         ],
         make_getters => [qw( offset file_des )],
     }

@@ -64,7 +64,7 @@ sub make_not_query     { shift; MyNOTQuery->new( negated_query => shift ) }
 sub make_req_opt_query { shift; MyReqOptQuery->new(@_) }
 
 package main;
-use Test::More tests => 225;
+use Test::More tests => 224;
 use KinoSearch::Util::StringHelper qw( utf8_flag_on utf8ify );
 use KinoSearch::Test::TestUtils qw( create_index );
 
@@ -216,11 +216,6 @@ my $hits = $searcher->hits( query => 'Mot' );
 is( $hits->total_hits, 0, "Pre-test - indexing worked properly" );
 $hits = $searcher->hits( query => $motorhead );
 is( $hits->total_hits, 1, "QueryParser parses UTF-8 strings correctly" );
-
-use KinoSearch::QueryParser::QueryParser;
-my $compat_parser
-    = KinoSearch::QueryParser::QueryParser->new( schema => PlainSchema->new );
-isa_ok( $compat_parser, 'KinoSearch::QueryParser' );
 
 my $custom_parser = MyQueryParser->new( schema => PlainSchema->new );
 isa_ok( $custom_parser->parse('foo'),         'MyTermQuery' );

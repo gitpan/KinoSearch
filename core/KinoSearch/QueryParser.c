@@ -125,7 +125,7 @@ QParser_init(QueryParser *self, Schema *schema, Analyzer *analyzer,
         for (i = 0, max = VA_Get_Size(fields); i < max; i++) {
             ASSERT_IS_A(VA_Fetch(fields, i), CHARBUF);
         }
-        VA_Sort(self->fields, NULL);
+        VA_Sort(self->fields, NULL, NULL);
     }
     else {
         u32_t i;
@@ -141,7 +141,7 @@ QParser_init(QueryParser *self, Schema *schema, Analyzer *analyzer,
         }
         DECREF(all_fields);
     }
-    VA_Sort(self->fields, NULL);
+    VA_Sort(self->fields, NULL, NULL);
 
     if ( !(   CB_Equals_Str(self->default_boolop, "OR", 2)
            || CB_Equals_Str(self->default_boolop, "AND", 3)) 
@@ -349,20 +349,20 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
             /* Generate a LeafQuery from a Phrase. */
             if (CB_Starts_With(token->text, self->phrase_label)) {
                 CharBuf *inner_text 
-                    = (CharBuf*)Hash_Fetch(extractions, token->text);
+                    = (CharBuf*)Hash_Fetch(extractions, (Obj*)token->text);
                 Query *query = (Query*)LeafQuery_new(field, inner_text);
                 ParserClause *clause = ParserClause_new(query, default_occur);
-                DECREF(Hash_Delete(extractions, token->text));
+                DECREF(Hash_Delete(extractions, (Obj*)token->text));
                 VA_Store(elems, i, (Obj*)clause);
                 DECREF(query);
             }
             /* Recursively parse parenthetical groupings. */
             else if (CB_Starts_With(token->text, self->bool_group_label)) {
                 CharBuf *inner_text 
-                    = (CharBuf*)Hash_Fetch(extractions, token->text);
+                    = (CharBuf*)Hash_Fetch(extractions, (Obj*)token->text);
                 Query *query 
                     = S_do_tree(self, inner_text, field, extractions);
-                DECREF(Hash_Delete(extractions, token->text));
+                DECREF(Hash_Delete(extractions, (Obj*)token->text));
                 if (query) {
                     ParserClause *clause 
                         = ParserClause_new(query, default_occur);
@@ -1014,7 +1014,7 @@ S_extract_something(QueryParser *self, const CharBuf *query_string,
 
         /* Store inner text. */
         CB_catf(label, "%u32", self->label_inc++);
-        Hash_Store(extractions, label, 
+        Hash_Store(extractions, (Obj*)label, 
             (Obj*)CB_new_from_utf8(begin_match, len));
 
         /* Splice the label into the query string. */

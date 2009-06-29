@@ -11,6 +11,7 @@
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Schema.h"
 #include "KinoSearch/Search/BitVecMatcher.h"
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Search/Matcher.h"
@@ -22,10 +23,10 @@
 #include "KinoSearch/Util/I32Array.h"
 
 DeletionsWriter*
-DelWriter_init(DeletionsWriter *self, Snapshot *snapshot, Segment *segment,
-               PolyReader *polyreader)
+DelWriter_init(DeletionsWriter *self, Schema *schema, Snapshot *snapshot,
+               Segment *segment, PolyReader *polyreader)
 {
-    DataWriter_init((DataWriter*)self, snapshot, segment, polyreader);
+    DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
     ABSTRACT_CLASS_CHECK(self, DELETIONSWRITER);
     return self;
 }
@@ -56,21 +57,23 @@ DelWriter_generate_doc_map(DeletionsWriter *self, Matcher *deletions,
 i32_t DefDelWriter_current_file_format = 1;
 
 DefaultDeletionsWriter*
-DefDelWriter_new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader)
+DefDelWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
+                 PolyReader *polyreader)
 {
     DefaultDeletionsWriter *self
         = (DefaultDeletionsWriter*)VTable_Make_Obj(&DEFAULTDELETIONSWRITER);
-    return DefDelWriter_init(self, snapshot, segment, polyreader); 
+    return DefDelWriter_init(self, schema, snapshot, segment, polyreader); 
 }
 
 DefaultDeletionsWriter*
-DefDelWriter_init(DefaultDeletionsWriter *self, Snapshot *snapshot, 
-                  Segment *segment, PolyReader *polyreader)
+DefDelWriter_init(DefaultDeletionsWriter *self, Schema *schema, 
+                  Snapshot *snapshot, Segment *segment,
+                  PolyReader *polyreader)
 {
     u32_t i;
     u32_t num_seg_readers;
 
-    DataWriter_init((DataWriter*)self, snapshot, segment, polyreader);
+    DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
     self->seg_readers       = PolyReader_Seg_Readers(polyreader);
     num_seg_readers         = VA_Get_Size(self->seg_readers);
     self->seg_starts        = PolyReader_Offsets(polyreader);
@@ -171,7 +174,7 @@ DefDelWriter_metadata(DefaultDeletionsWriter *self)
                 (Obj*)CB_newf("%u32", (u32_t)BitVec_Count(deldocs)) );
             Hash_Store_Str(mini_meta, "filename", 8, 
                 (Obj*)S_del_filename(self, seg_reader));
-            Hash_Store(files, Seg_Get_Name(segment), (Obj*)mini_meta);
+            Hash_Store(files, (Obj*)Seg_Get_Name(segment), (Obj*)mini_meta);
         }
     }
     Hash_Store_Str(metadata, "files", 5, (Obj*)files);
@@ -308,7 +311,7 @@ S_zap_segment(DefaultDeletionsWriter *self, SegReader *reader,
             CharBuf *seg_name;
             Hash *mini_meta;
             Hash_Iter_Init(files);
-            while(Hash_Iter_Next(files, &seg_name, (Obj**)&mini_meta)) {
+            while(Hash_Iter_Next(files, (Obj**)&seg_name, (Obj**)&mini_meta)) {
                 u32_t i, max;
                 CharBuf *filename = (CharBuf*)ASSERT_IS_A(
                     Hash_Fetch_Str(mini_meta, "filename", 8), CHARBUF);

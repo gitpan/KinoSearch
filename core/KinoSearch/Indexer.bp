@@ -43,7 +43,7 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
     public static i32_t CREATE;
 
     public static incremented Indexer*
-    new(Schema *schema, Obj *index, IndexManager *manager = NULL, 
+    new(Schema *schema = NULL, Obj *index, IndexManager *manager = NULL, 
         LockFactory *lock_factory = NULL, i32_t flags = 0);
 
     /** Open a new Indexer.  If the index already exists, update it.
@@ -54,7 +54,7 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
      * @param flags Flags governing behavior.  
      */
     public static Indexer*
-    init(Indexer *self, Schema *schema, Obj *index, 
+    init(Indexer *self, Schema *schema = NULL, Obj *index, 
          IndexManager *manager = NULL, LockFactory *lock_factory = NULL, 
          i32_t flags = 0);
 

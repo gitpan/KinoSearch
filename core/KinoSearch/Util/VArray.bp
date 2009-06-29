@@ -1,6 +1,8 @@
 parcel KinoSearch cnick Kino;
 
 __C__
+#include "KinoSearch/Util/SortUtils.h"
+
 typedef chy_bool_t
 (*kino_VA_grep_test_t)(kino_VArray *self, chy_u32_t tick, void *data);
 
@@ -100,11 +102,12 @@ class KinoSearch::Util::VArray cnick VA extends KinoSearch::Obj {
      * with a "context" variable (which we'll have to write since qsort_r
      * isn't always available).
      * 
-     * @param compare qsort-friendly comparison routine.  The default uses
-     * Obj_Compare_To and sorts NULL elements towards the end.
+     * @param compare Comparison routine.  The default uses Obj_Compare_To and
+     * sorts NULL elements towards the end.
+     * @param context Argument supplied to the comparison routine.
      */
     void
-    Sort(VArray *self, Obj_compare_t compare = NULL);
+    Sort(VArray *self, Sort_compare_t compare = NULL, void *context = NULL);
 
     /** Set the size for the VArray.  If the new size is larger than the
      * current size, grow the object to accommodate NULL elements; if smaller

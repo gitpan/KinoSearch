@@ -164,7 +164,7 @@ PostPool_sort_cache(PostingPool *self)
         self->scratch = REALLOCATE(self->scratch, self->scratch_cap, Obj*);
     }
     if (self->cache_max != 0)
-        MSort_mergesort(self->cache, self->scratch, self->cache_max,
+        Sort_mergesort(self->cache, self->scratch, self->cache_max,
             sizeof(Obj*), self->compare, self);
 }
 

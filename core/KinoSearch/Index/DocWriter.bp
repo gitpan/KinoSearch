@@ -12,11 +12,12 @@ class KinoSearch::Index::DocWriter extends KinoSearch::Index::DataWriter {
     /* Constructors.
      */
     static incremented DocWriter*
-    new(Snapshot *snapshot, Segment *segment, PolyReader *polyreader);
+    new(Schema *schema, Snapshot *snapshot, Segment *segment,
+        PolyReader *polyreader);
 
     static DocWriter*
-    init(DocWriter *self, Snapshot *snapshot, Segment *segment, 
-         PolyReader *polyreader);
+    init(DocWriter *self, Schema *schema, Snapshot *snapshot,
+         Segment *segment, PolyReader *polyreader);
 
     public void
     Add_Inverted_Doc(DocWriter *self, Inverter *inverter, i32_t doc_id);

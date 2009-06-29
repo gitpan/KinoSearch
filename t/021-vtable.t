@@ -60,7 +60,7 @@ my $storage = KinoSearch::Util::Hash->new;
     $storage->store( "test", $subclassed_hash );
 }
 
-my $resurrected = $storage->fetch("test");
+my $resurrected = $storage->_fetch("test");
 
 isa_ok( $resurrected, "MyHash", "subclass name survived Perl destruction" );
 is( $resurrected->to_string, $stringified,
@@ -69,7 +69,7 @@ is( $resurrected->to_string, $stringified,
 my $booga = KinoSearch::Util::CharBuf->new("booga");
 $resurrected->store( "ooga", $booga );
 
-is( $resurrected->fetch("ooga")->to_string,
+is( $resurrected->fetch("ooga"),
     "booga", "subclassed object still performs correctly at the C level" );
 
 my $methods = KinoSearch::Obj::VTable->novel_host_methods('MyHash');

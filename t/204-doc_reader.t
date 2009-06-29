@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 5;
 
 package TestAnalyzer;
 use base qw( KinoSearch::Analysis::Analyzer );
@@ -20,9 +20,11 @@ sub new_schema {
         analyzer => $analyzer,
         stored   => 0,
     );
+    my $float64 = KinoSearch::FieldType::Float64Type->new( indexed => 0 );
     $schema->spec_field( name => 'text',     type => $fulltext );
     $schema->spec_field( name => 'bin',      type => $bin );
     $schema->spec_field( name => 'unstored', type => $not_stored );
+    $schema->spec_field( name => 'float64',  type => $float64 );
     $schema->spec_field( name => 'empty',    type => $fulltext );
     return $schema;
 }
@@ -45,6 +47,7 @@ $indexer->add_doc(
         bin      => $bin_val,
         unstored => $val,
         empty    => '',
+        float64  => 2.0,
     }
 );
 $indexer->commit;
@@ -70,3 +73,4 @@ is( $doc->{text},     $val,     "text" );
 is( $doc->{bin},      $bin_val, "bin" );
 is( $doc->{unstored}, undef,    "unstored" );
 is( $doc->{empty},    '',       "empty" );
+is( $doc->{float64},  2.0,      "float64" );

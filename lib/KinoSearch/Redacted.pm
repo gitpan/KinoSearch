@@ -11,7 +11,7 @@ BEGIN {
 # Return a partial list of KinoSearch classes which were once public but are
 # now either deprecated, removed, or moved.
 
-sub list {
+sub redacted {
     return qw(
         KinoSearch::Analysis::LCNormalizer
         KinoSearch::Analysis::Token
@@ -24,6 +24,22 @@ sub list {
         KinoSearch::Search::QueryFilter
         KinoSearch::Search::SearchServer
         KinoSearch::Search::SearchClient
+    );
+}
+
+# Hide additional stuff from PAUSE and search.cpan.org.
+sub hidden {
+    return qw(
+        KinoSearch::Analysis::Inversion
+        KinoSearch::FieldType::Int32Type
+        KinoSearch::FieldType::Int64Type
+        KinoSearch::FieldType::Float32Type
+        KinoSearch::FieldType::Float64Type
+        KinoSearch::Redacted
+        KinoSearch::Test::TestUtils
+        KinoSearch::Test::Util::TestCharBuf
+        KinoSearch::Test::USConSchema
+        KinoSearch::Util::Num
     );
 }
 

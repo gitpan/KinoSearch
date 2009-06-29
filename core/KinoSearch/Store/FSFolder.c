@@ -86,7 +86,7 @@ FSFolder_open_in(FSFolder *self, const CharBuf *filepath)
     InStream           *instream  = NULL;
     ZombieCharBuf       seg_name  = S_derive_seg_name(filepath);
     CompoundFileReader *cf_reader = (CompoundFileReader*)Hash_Fetch(
-        self->cf_readers, (CharBuf*)&seg_name);
+        self->cf_readers, (Obj*)&seg_name);
 
     /* If we already have a CompoundFileReader loaded, try that first. */
     if (   cf_reader != NULL
@@ -208,7 +208,7 @@ S_get_cf_reader(FSFolder *self, const CharBuf *filepath)
 {
     ZombieCharBuf seg_name = S_derive_seg_name(filepath);
     CompoundFileReader *cf_reader = (CompoundFileReader*)Hash_Fetch(
-        self->cf_readers, (CharBuf*)&seg_name);
+        self->cf_readers, (Obj*)&seg_name);
 
     if (CB_Ends_With_Str(filepath, "segmeta.json", 12)) { return NULL; } 
     else if (cf_reader == (CompoundFileReader*)UNDEF) { return NULL; }
@@ -220,12 +220,12 @@ S_get_cf_reader(FSFolder *self, const CharBuf *filepath)
         ) {
             cf_reader = CFReader_new(self, (CharBuf*)&seg_name);
             if (cf_reader) {
-                Hash_Store(self->cf_readers, (CharBuf*)&seg_name, 
+                Hash_Store(self->cf_readers, (Obj*)&seg_name, 
                     (Obj*)cf_reader);
             }
         }
         else {
-            Hash_Store(self->cf_readers, (CharBuf*)&seg_name, (Obj*)UNDEF);
+            Hash_Store(self->cf_readers, (Obj*)&seg_name, (Obj*)UNDEF);
         }
         DECREF(cf_file);
         DECREF(cfmeta_file);
@@ -314,7 +314,7 @@ FSFolder_delete(FSFolder *self, const CharBuf *filepath)
             }
 
             CFReader_Delete_Virtual(cf_reader, filepath);
-            Hash_Delete(self->cf_readers, (CharBuf*)&seg_name);
+            Hash_Delete(self->cf_readers, (Obj*)&seg_name);
             DECREF(cf_reader);
             DECREF(cf_file);
             DECREF(cfmeta_file);
@@ -337,7 +337,7 @@ FSFolder_delete_real(FSFolder *self, const CharBuf *filepath)
         || CB_Ends_With_Str(filepath, "cfmeta.json", 11)
     ) {
         ZombieCharBuf seg_name = S_derive_seg_name(filepath);
-        DECREF(Hash_Delete(self->cf_readers, (CharBuf*)&seg_name));
+        DECREF(Hash_Delete(self->cf_readers, (Obj*)&seg_name));
     }
     result = DirManip_delete(fullpath);
     DECREF(fullpath);
@@ -355,7 +355,7 @@ FSFolder_finish_segment(FSFolder *self, const CharBuf *seg_name)
 {
     CompoundFileWriter *cf_writer = CFWriter_new(self, seg_name);
     CFWriter_Consolidate(cf_writer);
-    DECREF(Hash_Delete(self->cf_readers, seg_name));
+    DECREF(Hash_Delete(self->cf_readers, (Obj*)seg_name));
     DECREF(cf_writer);
 }
 

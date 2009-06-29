@@ -106,18 +106,6 @@ PPCODE:
     */
     Kino_Obj_Destroy(self);
 
-SV*
-_retrieve_hashref(package_name)
-    const char *package_name;
-CODE:
-{
-    HV* fields_hash = get_hv(package_name, 0);
-    RETVAL = fields_hash == NULL
-        ? newSV(0)
-        : newRV_inc((SV*)fields_hash);
-}
-OUTPUT: RETVAL
-
 __AUTO_XS__
 
 my $synopsis = <<'END_SYNOPSIS';

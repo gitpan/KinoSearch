@@ -2,6 +2,7 @@
 
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Analysis/Token.h"
+#include "KinoSearch/Util/SortUtils.h"
 
 /* After inversion, record how many like tokens occur in each group.
  */
@@ -143,7 +144,8 @@ Inversion_invert(Inversion *self)
     }
 
     /* Sort the tokens lexically, and hand off to cluster counting routine. */
-    qsort(self->tokens, self->size, sizeof(Token*), Token_compare);
+    Sort_quicksort(self->tokens, self->size, sizeof(Token*), Token_compare,
+        NULL);
     S_count_clusters(self);
 }
 

@@ -3,6 +3,9 @@
 #include "KinoSearch/Index/DocReader.h"
 #include "KinoSearch/Doc/HitDoc.h"
 #include "KinoSearch/FieldType.h"
+#include "KinoSearch/FieldType/BlobType.h"
+#include "KinoSearch/FieldType/TextType.h"
+#include "KinoSearch/FieldType/NumericType.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Util/Host.h"
@@ -30,7 +33,6 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
         STRLEN  field_name_len;
         char   *field_name_ptr;
         SV     *value_sv;
-        STRLEN  value_len;
         kino_FieldType *type;
         kino_ZombieCharBuf field_name_zcb = KINO_ZCB_BLANK;
 
@@ -48,16 +50,46 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
         type = Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)&field_name_zcb);
 
         /* Read the field value. */
-        value_len = Kino_InStream_Read_C32(dat_in);
-        value_sv  = newSV((value_len ? value_len : 1));
-        Kino_InStream_Read_Bytes(dat_in, SvPVX(value_sv), value_len);
-        SvCUR_set(value_sv, value_len);
-        *SvEND(value_sv) = '\0';
-        SvPOK_on(value_sv);
-
-        /* Set UTF-8 flag. */
-        if (!Kino_FType_Binary(type)) {
-            SvUTF8_on(value_sv);
+        switch(Kino_FType_Primitive_ID(type) & kino_FType_PRIMITIVE_ID_MASK) {
+            case kino_FType_TEXT: {
+                STRLEN  value_len = Kino_InStream_Read_C32(dat_in);
+                value_sv  = newSV((value_len ? value_len : 1));
+                Kino_InStream_Read_Bytes(dat_in, SvPVX(value_sv), value_len);
+                SvCUR_set(value_sv, value_len);
+                *SvEND(value_sv) = '\0';
+                SvPOK_on(value_sv);
+                SvUTF8_on(value_sv);
+                break;
+            }
+            case kino_FType_BLOB: {
+                STRLEN  value_len = Kino_InStream_Read_C32(dat_in);
+                value_sv  = newSV((value_len ? value_len : 1));
+                Kino_InStream_Read_Bytes(dat_in, SvPVX(value_sv), value_len);
+                SvCUR_set(value_sv, value_len);
+                *SvEND(value_sv) = '\0';
+                SvPOK_on(value_sv);
+                break;
+            }
+            case kino_FType_FLOAT32:
+                value_sv = newSVnv(Kino_InStream_Read_F32(dat_in));
+                break;
+            case kino_FType_FLOAT64:
+                value_sv = newSVnv(Kino_InStream_Read_F64(dat_in));
+                break;
+            case kino_FType_INT32:
+                value_sv = newSViv((chy_i32_t)Kino_InStream_Read_C32(dat_in));
+                break;
+            case kino_FType_INT64:
+                if (sizeof(IV) == 8) {
+                    value_sv = newSViv((chy_i64_t)Kino_InStream_Read_C64(dat_in));
+                }
+                else { /* (lossy) */
+                    value_sv = newSVnv((chy_i64_t)Kino_InStream_Read_C64(dat_in));
+                }
+                break;
+            default:
+                value_sv = NULL; 
+                KINO_THROW("Unrecognized type: %o", type);
         }
 
         /* Store the value. */

@@ -96,7 +96,7 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
     if (VTable_registry == NULL)
         VTable_init_registry();
 
-    singleton = (VTable*)Hash_Fetch(VTable_registry, subclass_name);
+    singleton = (VTable*)Hash_Fetch(VTable_registry, (Obj*)subclass_name);
 
     if (singleton == NULL) {
         VArray *novel_host_methods;
@@ -137,14 +137,14 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
             for (i = 0; i < num_novel; i++) {
                 CharBuf *meth = (CharBuf*)VA_fetch(novel_host_methods, i);
                 S_scrunch_charbuf(meth, scrunched);
-                Hash_Store(meths, scrunched, INCREF(UNDEF));
+                Hash_Store(meths, (Obj*)scrunched, INCREF(UNDEF));
             }
             for (i = 0; singleton->callbacks[i] != NULL; i++) {
                 kino_Callback *const callback = singleton->callbacks[i];
                 ZCB_Assign_Str(&callback_name, callback->name,
                     callback->name_len);
                 S_scrunch_charbuf((CharBuf*)&callback_name, scrunched);
-                if (Hash_Fetch(meths, scrunched)) {
+                if (Hash_Fetch(meths, (Obj*)scrunched)) {
                     VTable_Override(singleton, callback->func, callback->offset);
                 }
             }
@@ -154,7 +154,7 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
         DECREF(novel_host_methods);
 
         /* Register the new class, both locally and with host. */
-        Hash_Store(VTable_registry, subclass_name, (Obj*)singleton);
+        Hash_Store(VTable_registry, (Obj*)subclass_name, (Obj*)singleton);
         VTable_register_with_host(singleton, parent);
 
         /* Track globals to help hunt memory leaks. */
@@ -208,14 +208,14 @@ VTable_add_to_registry(VTable *vtable)
 
     if (VTable_registry == NULL)
         VTable_init_registry();
-    fetched = (VTable*)Hash_Fetch(VTable_registry, vtable->name);
+    fetched = (VTable*)Hash_Fetch(VTable_registry, (Obj*)vtable->name);
     if (fetched) {
         if (fetched != vtable) {
             THROW("Attempt to redefine a vtable for '%o'", vtable->name);
         }
     }
     else {
-        Hash_Store(VTable_registry, vtable->name, INCREF(vtable));
+        Hash_Store(VTable_registry, (Obj*)vtable->name, INCREF(vtable));
     }
 }
 
@@ -224,7 +224,7 @@ VTable_fetch_vtable(const CharBuf *class_name)
 {
     VTable *vtable = NULL;
     if (VTable_registry != NULL) {
-        vtable = (VTable*)Hash_Fetch(VTable_registry, class_name);
+        vtable = (VTable*)Hash_Fetch(VTable_registry, (Obj*)class_name);
     }
     return vtable;
 }
@@ -236,7 +236,7 @@ S_remove_from_registry(const CharBuf *name)
         THROW("Attempt to remove '%o', but registry is NULL", name);
     }
     else {
-        VTable *vtable = (VTable*)Hash_Delete(VTable_registry, name);
+        VTable *vtable = (VTable*)Hash_Delete(VTable_registry, (Obj*)name);
         if (vtable) {
             Obj_Dec_RefCount(vtable);
             IFDEF_DEBUG( Debug_num_globals -= 2; );

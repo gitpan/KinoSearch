@@ -2,6 +2,7 @@
 
 #include "KinoSearch/Highlight/HeatMap.h"
 #include "KinoSearch/Search/Span.h"
+#include "KinoSearch/Util/SortUtils.h"
 
 HeatMap*
 HeatMap_new(VArray *spans, u32_t window)
@@ -19,10 +20,10 @@ HeatMap_init(HeatMap *self, VArray *spans, u32_t window)
     self->spans  = NULL;
     self->window = window;
 
-    VA_Sort(spans_copy, NULL);
+    VA_Sort(spans_copy, NULL, NULL);
     spans_plus_boosts = HeatMap_Generate_Proximity_Boosts(self, spans_copy);
     VA_Push_VArray(spans_plus_boosts, spans_copy);
-    VA_Sort(spans_plus_boosts, NULL);
+    VA_Sort(spans_plus_boosts, NULL, NULL);
     self->spans = HeatMap_Flatten_Spans(self, spans_plus_boosts);
 
     DECREF(spans_plus_boosts);
@@ -39,8 +40,9 @@ HeatMap_destroy(HeatMap *self)
 }
 
 static int
-S_compare_i32(const void *va, const void *vb)
+S_compare_i32(void *context, const void *va, const void *vb)
 {
+    UNUSED_VAR(context);
     return *(i32_t*)va - *(i32_t*)vb;
 }
 
@@ -62,7 +64,7 @@ S_flattened_but_empty_spans(VArray *spans)
         bounds[i]             = span->offset;
         bounds[i + num_spans] = span->offset + span->length; 
     }
-    qsort(bounds, num_spans * 2, sizeof(u32_t), S_compare_i32);
+    Sort_quicksort(bounds, num_spans * 2, sizeof(u32_t), S_compare_i32, NULL);
     for (i = 0, num_bounds = 0, last = U32_MAX; i < num_spans * 2; i++) {
         if (bounds[i] != last) {
             bounds[num_bounds++] = bounds[i];

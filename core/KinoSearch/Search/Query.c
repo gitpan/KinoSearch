@@ -22,13 +22,13 @@ Query_get_boost(Query *self)              { return self->boost; }
 void
 Query_serialize(Query *self, OutStream *outstream)
 {
-    OutStream_Write_Float(outstream, self->boost);
+    OutStream_Write_F32(outstream, self->boost);
 }
 
 Query*
 Query_deserialize(Query *self, InStream *instream)
 {
-    float boost = InStream_Read_Float(instream);
+    float boost = InStream_Read_F32(instream);
     self = self ? self : (Query*)VTable_Make_Obj(&QUERY);
     Query_init(self, boost);
     return self;

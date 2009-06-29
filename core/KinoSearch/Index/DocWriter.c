@@ -22,18 +22,18 @@ S_lazy_init(DocWriter *self);
 i32_t DocWriter_current_file_format = 2;
 
 DocWriter*
-DocWriter_new(Snapshot *snapshot, Segment *segment, 
-                  PolyReader *polyreader)
+DocWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment, 
+              PolyReader *polyreader)
 {
     DocWriter *self = (DocWriter*)VTable_Make_Obj(&DOCWRITER);
-    return DocWriter_init(self, snapshot, segment, polyreader);
+    return DocWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
 DocWriter*
-DocWriter_init(DocWriter *self, Snapshot *snapshot, Segment *segment,
-               PolyReader *polyreader)
+DocWriter_init(DocWriter *self, Schema *schema, Snapshot *snapshot,
+               Segment *segment, PolyReader *polyreader)
 {
-    DataWriter_init((DataWriter*)self, snapshot, segment, polyreader);
+    DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
     return self;
 }
 
@@ -100,9 +100,9 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
         FieldType *type = Inverter_Get_Type(inverter);
         if (type->stored) {
             CharBuf *field = Inverter_Get_Field_Name(inverter);
-            ViewCharBuf *value = Inverter_Get_Value(inverter);
+            Obj *value = Inverter_Get_Value(inverter);
             CB_Serialize(field, dat_out);
-            ViewCB_Serialize(value, dat_out);
+            Obj_Serialize(value, dat_out);
         }
     }
 
