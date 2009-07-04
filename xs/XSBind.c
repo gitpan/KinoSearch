@@ -298,9 +298,9 @@ kino_XSBind_kobj_to_pobj(kino_Obj *obj)
         return newSVnv(Kino_Num_To_F64(obj));
     else if (sizeof(IV) == 8 && KINO_OBJ_IS_A(obj, KINO_INTNUM))
         return newSViv(Kino_Num_To_I64(obj));
-    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INT32)) 
+    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER32)) 
         return newSViv(Kino_Num_To_I64(obj));
-    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INT64)) 
+    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER64)) 
         return newSVnv(Kino_Num_To_I64(obj)); /* lossy */
     else 
         return (SV*)Kino_Obj_To_Host(obj);

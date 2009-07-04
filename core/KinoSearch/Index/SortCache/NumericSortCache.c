@@ -240,7 +240,7 @@ I32SortCache_value(Int32SortCache *self, i32_t ord, Obj *blank)
     }
     else {
         char *val_ptr = self->values + ord * sizeof(i32_t);
-        ASSERT_IS_A(blank, INT32);
+        ASSERT_IS_A(blank, INTEGER32);
         if (val_ptr > self->values_limit) {
             i64_t over = val_ptr - self->values_limit;
             THROW("Read %i64 beyond data limit for %o", over, self->field);
@@ -288,7 +288,7 @@ I64SortCache_value(Int64SortCache *self, i32_t ord, Obj *blank)
     }
     else {
         char *val_ptr = self->values + ord * sizeof(i64_t);
-        ASSERT_IS_A(blank, INT64);
+        ASSERT_IS_A(blank, INTEGER64);
         if (val_ptr > self->values_limit) {
             i64_t over = val_ptr - self->values_limit;
             THROW("Read %i64 beyond data limit for %o", over, self->field);

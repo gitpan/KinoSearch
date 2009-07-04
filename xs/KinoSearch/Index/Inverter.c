@@ -89,12 +89,12 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
                 break;
             }
             case kino_FType_INT32: {
-                kino_Int32* value = (kino_Int32*)inv_entry->value;
+                kino_Integer32* value = (kino_Integer32*)inv_entry->value;
                 Kino_Int32_Set_Value(value, SvIV(value_sv));
                 break;
             }
             case kino_FType_INT64: {
-                kino_Int64* value = (kino_Int64*)inv_entry->value;
+                kino_Integer64* value = (kino_Integer64*)inv_entry->value;
                 chy_i64_t val = sizeof(IV) == 8 
                               ? SvIV(value_sv) 
                               : SvNV(value_sv);

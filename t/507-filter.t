@@ -5,7 +5,6 @@ use lib 'buildlib';
 use Test::More tests => 24;
 use Storable qw( nfreeze thaw );
 use KinoSearch::Test;
-use KinoSearch::Test::TestSchema;
 use KinoSearch::Test::TestUtils qw( create_index );
 use KSx::Search::Filter;
 

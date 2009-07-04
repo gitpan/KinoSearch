@@ -10,10 +10,10 @@
 static void
 test_To_String(TestBatch *batch)
 {
-    Float32 *f32 = Float32_new(1.33);
-    Float64 *f64 = Float64_new(1.33);
-    Int32   *i32 = Int32_new(I32_MAX);
-    Int64   *i64 = Int64_new(I64_MAX);
+    Float32   *f32 = Float32_new(1.33);
+    Float64   *f64 = Float64_new(1.33);
+    Integer32 *i32 = Int32_new(I32_MAX);
+    Integer64 *i64 = Int64_new(I64_MAX);
     CharBuf *f32_string = Float32_To_String(f32);
     CharBuf *f64_string = Float64_To_String(f64);
     CharBuf *i32_string = Int32_To_String(i32);
@@ -41,10 +41,10 @@ test_To_String(TestBatch *batch)
 static void
 test_accessors(TestBatch *batch)
 {
-    Float32 *f32 = Float32_new(1.0);
-    Float64 *f64 = Float64_new(1.0);
-    Int32   *i32 = Int32_new(1);
-    Int64   *i64 = Int64_new(1);
+    Float32   *f32 = Float32_new(1.0);
+    Float64   *f64 = Float64_new(1.0);
+    Integer32 *i32 = Int32_new(1);
+    Integer64 *i64 = Int64_new(1);
 
     Float32_Set_Value(f32, 1.33f);
     ASSERT_FLOAT_EQ(batch, Float32_Get_Value(f32), 1.33f, 
@@ -82,10 +82,10 @@ test_accessors(TestBatch *batch)
 static void
 test_Equals_and_Compare_To(TestBatch *batch)
 {
-    Float32 *f32 = Float32_new(1.0);
-    Float64 *f64 = Float64_new(1.0);
-    Int32   *i32 = Int32_new(I32_MAX);
-    Int64   *i64 = Int64_new(I64_MAX);
+    Float32   *f32 = Float32_new(1.0);
+    Float64   *f64 = Float64_new(1.0);
+    Integer32 *i32 = Int32_new(I32_MAX);
+    Integer64 *i64 = Int64_new(I64_MAX);
 
     ASSERT_TRUE(batch, Float32_Compare_To(f32, (Obj*)f64) == 0, 
         "F32_Compare_To equal");
@@ -125,15 +125,15 @@ test_Equals_and_Compare_To(TestBatch *batch)
 
     Float64_Set_Value(f64, I64_MAX * 2.0);
     ASSERT_TRUE(batch, Float64_Compare_To(f64, (Obj*)i64) > 0,
-        "Float64 comparison to Int64");
+        "Float64 comparison to Integer64");
     ASSERT_TRUE(batch, Int64_Compare_To(i64, (Obj*)f64) < 0,
-        "Int64 comparison to Float64");
+        "Integer64 comparison to Float64");
 
     Float32_Set_Value(f32, I32_MAX * 2.0);
     ASSERT_TRUE(batch, Float32_Compare_To(f32, (Obj*)i32) > 0,
-        "Float32 comparison to Int32");
+        "Float32 comparison to Integer32");
     ASSERT_TRUE(batch, Int32_Compare_To(i32, (Obj*)f32) < 0,
-        "Int32 comparison to Float32");
+        "Integer32 comparison to Float32");
 
     DECREF(i64);
     DECREF(i32);
@@ -144,22 +144,22 @@ test_Equals_and_Compare_To(TestBatch *batch)
 static void
 test_Clone(TestBatch *batch)
 {
-    Float32 *f32 = Float32_new(1.33f);
-    Float64 *f64 = Float64_new(1.33);
-    Int32   *i32 = Int32_new(I32_MAX);
-    Int64   *i64 = Int64_new(I64_MAX);
-    Float32 *f32_dupe = Float32_Clone(f32);
-    Float64 *f64_dupe = Float64_Clone(f64);
-    Int32   *i32_dupe = Int32_Clone(i32);
-    Int64   *i64_dupe = Int64_Clone(i64);
+    Float32   *f32 = Float32_new(1.33f);
+    Float64   *f64 = Float64_new(1.33);
+    Integer32 *i32 = Int32_new(I32_MAX);
+    Integer64 *i64 = Int64_new(I64_MAX);
+    Float32   *f32_dupe = Float32_Clone(f32);
+    Float64   *f64_dupe = Float64_Clone(f64);
+    Integer32 *i32_dupe = Int32_Clone(i32);
+    Integer64 *i64_dupe = Int64_Clone(i64);
     ASSERT_TRUE(batch, Float32_Equals(f32, (Obj*)f32_dupe), 
         "Float32 Clone");
     ASSERT_TRUE(batch, Float64_Equals(f64, (Obj*)f64_dupe),
         "Float64 Clone");
     ASSERT_TRUE(batch, Int32_Equals(i32, (Obj*)i32_dupe), 
-        "Int32 Clone");
+        "Integer32 Clone");
     ASSERT_TRUE(batch, Int64_Equals(i64, (Obj*)i64_dupe),
-        "Int64 Clone");
+        "Integer64 Clone");
     DECREF(i64_dupe);
     DECREF(i32_dupe);
     DECREF(f64_dupe);
@@ -173,10 +173,10 @@ test_Clone(TestBatch *batch)
 static void
 test_serialization(TestBatch *batch)
 {
-    Float32 *f32 = Float32_new(1.33f);
-    Float64 *f64 = Float64_new(1.33);
-    Int32   *i32 = Int32_new(-1);
-    Int64   *i64 = Int64_new(-1);
+    Float32   *f32 = Float32_new(1.33f);
+    Float64   *f64 = Float64_new(1.33);
+    Integer32 *i32 = Int32_new(-1);
+    Integer64 *i64 = Int64_new(-1);
     RAMFolder *folder = RAMFolder_new(NULL);
     ZombieCharBuf filename = ZCB_make_str("frozen", 6);
     OutStream *outstream = RAMFolder_Open_Out(folder, (CharBuf*)&filename);
@@ -188,19 +188,19 @@ test_serialization(TestBatch *batch)
     OutStream_Close(outstream);
 
     {
-        InStream *instream  = RAMFolder_Open_In(folder, (CharBuf*)&filename);
-        Float32 *f32_thaw = (Float32*)THAW(instream);
-        Float64 *f64_thaw   = (Float64*)THAW(instream);
-        Int32   *i32_thaw   = (Int32*)THAW(instream);
-        Int64   *i64_thaw   = (Int64*)THAW(instream);
+        InStream  *instream = RAMFolder_Open_In(folder, (CharBuf*)&filename);
+        Float32   *f32_thaw = (Float32*)THAW(instream);
+        Float64   *f64_thaw = (Float64*)THAW(instream);
+        Integer32 *i32_thaw = (Integer32*)THAW(instream);
+        Integer64 *i64_thaw = (Integer64*)THAW(instream);
         ASSERT_TRUE(batch, Float32_Equals(f32, (Obj*)f32_thaw), 
             "Float32 freeze/thaw");
         ASSERT_TRUE(batch, Float64_Equals(f64, (Obj*)f64_thaw),
             "Float64 freeze/thaw");
         ASSERT_TRUE(batch, Int32_Equals(i32, (Obj*)i32_thaw), 
-            "Int32 freeze/thaw");
+            "Integer32 freeze/thaw");
         ASSERT_TRUE(batch, Int64_Equals(i64, (Obj*)i64_thaw),
-            "Int64 freeze/thaw");
+            "Integer64 freeze/thaw");
 
         DECREF(i64_thaw);
         DECREF(i32_thaw);

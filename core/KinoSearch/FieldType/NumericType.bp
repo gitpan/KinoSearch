@@ -16,7 +16,7 @@ class KinoSearch::FieldType::NumericType cnick NumType
     Binary(NumericType *self);
 
     /** Return the primitive type specifier for the object type, e.g.
-     * f64_t for Numeric, u32_t for UInt32, etc.
+     * f64_t for Float64, u32_t for UInteger32, etc.
      */
     abstract incremented CharBuf*
     Specifier(NumericType *self);
@@ -102,7 +102,7 @@ class KinoSearch::FieldType::Int32Type
     init2(Int32Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 
-    incremented Int32*
+    incremented Integer32*
     Make_Blank(Int32Type *self);
 
     i8_t
@@ -128,7 +128,7 @@ class KinoSearch::FieldType::Int64Type
     init2(Int64Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 
-    incremented Int64*
+    incremented Integer64*
     Make_Blank(Int64Type *self);
 
     i8_t

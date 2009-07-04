@@ -31,7 +31,6 @@ sub new {
 package main;
 
 use KinoSearch::Test::TestUtils qw( get_uscon_docs );
-use KinoSearch::Test::TestSchema;
 use Test::More tests => 6;
 
 my $uscon_docs = get_uscon_docs();

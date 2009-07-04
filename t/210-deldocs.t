@@ -3,7 +3,6 @@ use warnings;
 use lib 'buildlib';
 
 use Test::More tests => 14;
-use KinoSearch::Test::TestSchema;
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder     = create_index( 'a' .. 'e' );

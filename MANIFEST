@@ -44,6 +44,9 @@ boilerplater/t/500-session.t
 boilerplater/t/600-parser.t
 Build.PL
 buildlib/KinoSearch/Build.pm
+buildlib/KinoSearch/Redacted.pm
+buildlib/KinoSearch/Test/TestUtils.pm
+buildlib/KinoSearch/Test/USConSchema.pm
 buildlib/Lucy/Build.pm
 Changes
 charmonizer/bin/metaquote
@@ -484,7 +487,9 @@ core/KSx/Search/FilterScorer.bp
 core/KSx/Search/FilterScorer.c
 devel/benchmarks/extract_reuters.plx
 devel/benchmarks/indexers/BenchmarkingIndexer.pm
+devel/benchmarks/indexers/kinosearch_indexer.plx
 devel/benchmarks/indexers/LuceneIndexer.java
+devel/benchmarks/indexers/plucene_indexer.plx
 devel/benchmarks/README.txt
 devel/bin/dump_index
 devel/bin/hexdebug
@@ -611,7 +616,6 @@ lib/KinoSearch/Posting/ScorePosting.pm
 lib/KinoSearch/QueryParser.pm
 lib/KinoSearch/QueryParser.pod
 lib/KinoSearch/QueryParser/QueryParser.pm
-lib/KinoSearch/Redacted.pm
 lib/KinoSearch/Schema.pm
 lib/KinoSearch/Schema.pod
 lib/KinoSearch/Search/ANDQuery.pm
@@ -696,11 +700,7 @@ lib/KinoSearch/Store/RAMFolder.pod
 lib/KinoSearch/Store/SharedLock.pm
 lib/KinoSearch/Store/SharedLock.pod
 lib/KinoSearch/Test.pm
-lib/KinoSearch/Test/TestSchema.pm
-lib/KinoSearch/Test/TestUtils.pm
-lib/KinoSearch/Test/USConSchema.pm
 lib/KinoSearch/Test/Util/BBSortEx.pm
-lib/KinoSearch/Test/Util/TestCharBuf.pm
 lib/KinoSearch/Util/BitVector.pm
 lib/KinoSearch/Util/BitVector.pod
 lib/KinoSearch/Util/ByteBuf.pm
@@ -905,6 +905,7 @@ t/core/016-varray.t
 t/core/017-hash.t
 t/core/019-obj.t
 t/core/024-memory_pool.t
+t/core/029-charbuf.t
 t/core/030-int_arrays.t
 t/core/031-num.t
 t/core/052-instream.t

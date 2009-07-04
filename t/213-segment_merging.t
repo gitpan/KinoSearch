@@ -31,7 +31,6 @@ sub new {
 
 package main;
 use Test::More tests => 8;
-use KinoSearch::Test::TestSchema;
 use KinoSearch::Test::TestUtils qw( create_index init_test_index_loc );
 use File::Find qw( find );
 

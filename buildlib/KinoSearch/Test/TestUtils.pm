@@ -21,7 +21,6 @@ our @EXPORT_OK = qw(
 );
 
 use KinoSearch;
-use KinoSearch::Test::TestSchema;
 
 use lib 'sample';
 use KinoSearch::Test::USConSchema;
@@ -233,16 +232,6 @@ sub modulo_set {
 1;
 
 __END__
-
-__XS__
-
-MODULE = KinoSearch   PACKAGE = KinoSearch::Test::TestUtils
-
-SV*
-doc_set()
-CODE:
-    KOBJ_TO_SV_NOINC( kino_TestUtils_doc_set(), RETVAL );
-OUTPUT: RETVAL
 
 __COPYRIGHT__
 

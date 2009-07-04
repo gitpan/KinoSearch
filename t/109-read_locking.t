@@ -13,7 +13,6 @@ sub segreaders_to_merge {
 
 package main;
 
-use KinoSearch::Test::TestSchema;
 use KinoSearch::Test::TestUtils qw( create_index );
 use KinoSearch::Util::IndexFileNames qw( latest_snapshot );
 

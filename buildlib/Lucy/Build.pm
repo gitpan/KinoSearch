@@ -811,7 +811,7 @@ sub _gen_pause_exclusion_list {
     }
 
     # Exclude redacted modules.
-    require 'lib/KinoSearch/Redacted.pm';
+    require 'buildlib/KinoSearch/Redacted.pm';
     my @redacted = map {
         my @parts = split( /\W+/, $_ );
         catfile( 'lib', @parts ) . '.pm'

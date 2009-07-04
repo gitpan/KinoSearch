@@ -3,7 +3,7 @@ use warnings;
 use lib 'buildlib';
 
 use Test::More tests => 3;
-use KinoSearch::Test::TestSchema;
+use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = KinoSearch::Test::TestSchema->new;

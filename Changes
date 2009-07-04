@@ -1,5 +1,13 @@
 Revision history for KinoSearch
 
+0.30_03  2009-07-03
+
+ Bugfixes:
+
+    * Fix a problem in SortCollector that led to ranking errors for some
+      documents.
+    * Eliminate a symbol conflict with MSVC.
+
 0.30_02  2009-06-29
 
   API Changes:

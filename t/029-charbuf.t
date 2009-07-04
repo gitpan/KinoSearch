@@ -2,9 +2,8 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 38;
+use Test::More tests => 25;
 use Storable qw( freeze thaw );
-use KinoSearch::Test::Util::TestCharBuf qw( vcatf_tests );
 use KinoSearch::Test::TestUtils qw( utf8_test_strings );
 
 my ( $smiley, $not_a_smiley, $frowny ) = utf8_test_strings();
@@ -64,10 +63,6 @@ $charbuf->cat_char( ord($smiley) );
 is( $charbuf->to_perl, "$smiley$smiley$smiley", "cat_char" );
 $charbuf->truncate(2);
 is( $charbuf->to_perl, "$smiley$smiley", "truncate" );
-
-for my $case ( @{ vcatf_tests() } ) {
-    is( $case->get_got, $case->get_wanted );
-}
 
 $charbuf = get_cb("1.5");
 my $difference = 1.5 - $charbuf->to_f64;

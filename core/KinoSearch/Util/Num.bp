@@ -120,86 +120,88 @@ class KinoSearch::Util::Float64 extends KinoSearch::Util::FloatNum {
 
 /** 32-bit signed integer.
  */
-class KinoSearch::Util::Int32 extends KinoSearch::Util::IntNum {
+class KinoSearch::Util::Integer32 cnick Int32 
+    extends KinoSearch::Util::IntNum {
 
     i32_t value;
 
     /**
      * @param value Initial value.
      */
-    static Int32*
-    init(Int32* self, i32_t value);
+    static Integer32*
+    init(Integer32* self, i32_t value);
 
-    static Int32*
+    static Integer32*
     new(i32_t value);
 
     void
-    Set_Value(Int32 *self, i32_t value);
+    Set_Value(Integer32 *self, i32_t value);
 
     i32_t 
-    Get_Value(Int32 *self);
+    Get_Value(Integer32 *self);
 
     public i64_t
-    To_I64(Int32 *self);
+    To_I64(Integer32 *self);
 
     public double
-    To_F64(Int32 *self);
+    To_F64(Integer32 *self);
 
     public i32_t
-    Hash_Code(Int32 *self);
+    Hash_Code(Integer32 *self);
 
     public void
-    Serialize(Int32 *self, OutStream *outstream);
+    Serialize(Integer32 *self, OutStream *outstream);
 
-    public incremented Int32*
-    Deserialize(Int32 *self, InStream *instream);
+    public incremented Integer32*
+    Deserialize(Integer32 *self, InStream *instream);
 
-    public incremented Int32*
-    Clone(Int32 *self);
+    public incremented Integer32*
+    Clone(Integer32 *self);
 }
 
 /**
  * 64-bit signed integer.
  */
-class KinoSearch::Util::Int64 extends KinoSearch::Util::IntNum {
+class KinoSearch::Util::Integer64 cnick Int64 
+    extends KinoSearch::Util::IntNum {
 
     i64_t value;
 
     /**
      * @param value Initial value.
      */
-    static Int64*
-    init(Int64* self, i64_t value);
+    static Integer64*
+    init(Integer64* self, i64_t value);
 
-    static Int64*
+    static Integer64*
     new(i64_t value);
 
     void
-    Set_Value(Int64 *self, i64_t value);
+    Set_Value(Integer64 *self, i64_t value);
 
     i64_t 
-    Get_Value(Int64 *self);
+    Get_Value(Integer64 *self);
 
     public i64_t
-    To_I64(Int64 *self);
+    To_I64(Integer64 *self);
 
     public double
-    To_F64(Int64 *self);
+    To_F64(Integer64 *self);
 
     public i32_t
-    Hash_Code(Int64 *self);
+    Hash_Code(Integer64 *self);
 
     public bool_t
-    Equals(Int64 *self, Obj *other);
+    Equals(Integer64 *self, Obj *other);
 
     public void
-    Serialize(Int64 *self, OutStream *outstream);
+    Serialize(Integer64 *self, OutStream *outstream);
 
-    public incremented Int64*
-    Deserialize(Int64 *self, InStream *instream);
+    public incremented Integer64*
+    Deserialize(Integer64 *self, InStream *instream);
 
-    public incremented Int64*
-    Clone(Int64 *self);
+    public incremented Integer64*
+    Clone(Integer64 *self);
 }
 
 /* Copyright 2005-2009 Marvin Humphrey

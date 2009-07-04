@@ -222,17 +222,17 @@ S_find_lower_bound(RangeCompiler *self, SortCache *sort_cache)
             lower_bound = 0;
         }
         else {
-            ZombieCharBuf value = ZCB_BLANK;
-            ViewCharBuf *low_found 
-                = SortCache_Value(sort_cache, low_ord, (ViewCharBuf*)&value);
+            Obj *value = SortCache_Make_Blank(sort_cache);
+            Obj *low_found = SortCache_Value(sort_cache, low_ord, value);
             bool_t exact_match = low_found == NULL
                                ? false
-                               : Obj_Equals(lower_term, (Obj*)low_found);
+                               : Obj_Equals(lower_term, low_found);
 
             lower_bound = low_ord;
             if (!exact_match || !parent->include_lower) {
                 lower_bound++;
             }
+            DECREF(value);
         }
     }
 
@@ -253,9 +253,8 @@ S_find_upper_bound(RangeCompiler *self, SortCache *sort_cache)
             retval = -1;
         }
         else {
-            ZombieCharBuf value = ZCB_BLANK;
-            ViewCharBuf *hi_found 
-                = SortCache_Value(sort_cache, hi_ord, (ViewCharBuf*)&value);
+            Obj *value = SortCache_Make_Blank(sort_cache);
+            Obj *hi_found = SortCache_Value(sort_cache, hi_ord, value);
             bool_t exact_match = hi_found == NULL
                                ? false
                                : Obj_Equals(upper_term, (Obj*)hi_found);
@@ -264,6 +263,7 @@ S_find_upper_bound(RangeCompiler *self, SortCache *sort_cache)
             if (exact_match && !parent->include_upper) {
                 retval--;
             }
+            DECREF(value);
         }
     }
 

@@ -194,57 +194,57 @@ Float64_deserialize(Float64 *self, InStream *instream)
 
 /***************************************************************************/
 
-Int32*
+Integer32*
 Int32_new(i32_t value)
 {
-    Int32 *self = (Int32*)VTable_Make_Obj(&INT32);
+    Integer32 *self = (Integer32*)VTable_Make_Obj(&INTEGER32);
     return Int32_init(self, value);
 }
 
-Int32*
-Int32_init(Int32 *self, i32_t value)
+Integer32*
+Int32_init(Integer32 *self, i32_t value)
 {
     self->value = value;
-    return (Int32*)IntNum_init((IntNum*)self);
+    return (Integer32*)IntNum_init((IntNum*)self);
 }
 
 i32_t
-Int32_get_value(Int32 *self) { return self->value; }
+Int32_get_value(Integer32 *self) { return self->value; }
 void
-Int32_set_value(Int32 *self, i32_t value) { self->value = value; }
+Int32_set_value(Integer32 *self, i32_t value) { self->value = value; }
 
 double
-Int32_to_f64(Int32 *self)
+Int32_to_f64(Integer32 *self)
 {
     return self->value;
 }
 
 i64_t
-Int32_to_i64(Int32 *self)
+Int32_to_i64(Integer32 *self)
 {
     return self->value;
 }
 
-Int32*
-Int32_clone(Int32 *self)
+Integer32*
+Int32_clone(Integer32 *self)
 {
     return Int32_new(self->value);
 }
 
 i32_t
-Int32_hash_code(Int32 *self)
+Int32_hash_code(Integer32 *self)
 {
     return self->value;
 }
 
 void
-Int32_serialize(Int32 *self, OutStream *outstream)
+Int32_serialize(Integer32 *self, OutStream *outstream)
 {
     OutStream_Write_C32(outstream, (u32_t)self->value);
 }
 
-Int32*
-Int32_deserialize(Int32 *self, InStream *instream)
+Integer32*
+Int32_deserialize(Integer32 *self, InStream *instream)
 {
     i32_t value = (i32_t)InStream_Read_C32(instream);
     return self ? Int32_init(self, value) : Int32_new(value);
@@ -252,55 +252,55 @@ Int32_deserialize(Int32 *self, InStream *instream)
 
 /***************************************************************************/
 
-Int64*
+Integer64*
 Int64_new(i64_t value)
 {
-    Int64 *self = (Int64*)VTable_Make_Obj(&INT64);
+    Integer64 *self = (Integer64*)VTable_Make_Obj(&INTEGER64);
     return Int64_init(self, value);
 }
 
-Int64*
-Int64_init(Int64 *self, i64_t value)
+Integer64*
+Int64_init(Integer64 *self, i64_t value)
 {
     self->value = value;
-    return (Int64*)FloatNum_init((FloatNum*)self);
+    return (Integer64*)FloatNum_init((FloatNum*)self);
 }
 
 i64_t
-Int64_get_value(Int64 *self) { return self->value; }
+Int64_get_value(Integer64 *self) { return self->value; }
 void
-Int64_set_value(Int64 *self, i64_t value) { self->value = value; }
+Int64_set_value(Integer64 *self, i64_t value) { self->value = value; }
 
 double
-Int64_to_f64(Int64 *self)
+Int64_to_f64(Integer64 *self)
 {
     return (double)self->value;
 }
 
 i64_t
-Int64_to_i64(Int64 *self)
+Int64_to_i64(Integer64 *self)
 {
     return self->value;
 }
 
-Int64*
-Int64_clone(Int64 *self)
+Integer64*
+Int64_clone(Integer64 *self)
 {
     return Int64_new(self->value);
 }
 
 i32_t
-Int64_hash_code(Int64 *self)
+Int64_hash_code(Integer64 *self)
 {
     i32_t *ints = (i32_t*)&self->value;
     return ints[0] ^ ints[1];
 }
 
 bool_t
-Int64_equals(Int64 *self, Obj *other)
+Int64_equals(Integer64 *self, Obj *other)
 {
     Num *evil_twin = (Num*)other;
-    if (evil_twin == self)         { return true; }
+    if (evil_twin == (Num*)self)         { return true; }
     if (!OBJ_IS_A(evil_twin, NUM)) { return false; }
     if (OBJ_IS_A(evil_twin, FLOATNUM)) {
         double floating_val = Num_To_F64(evil_twin);
@@ -315,13 +315,13 @@ Int64_equals(Int64 *self, Obj *other)
 }
 
 void
-Int64_serialize(Int64 *self, OutStream *outstream)
+Int64_serialize(Integer64 *self, OutStream *outstream)
 {
     OutStream_Write_C64(outstream, (u64_t)self->value);
 }
 
-Int64*
-Int64_deserialize(Int64 *self, InStream *instream)
+Integer64*
+Int64_deserialize(Integer64 *self, InStream *instream)
 {
     i64_t value = (i64_t)InStream_Read_C64(instream);
     return self ? Int64_init(self, value) : Int64_new(value);

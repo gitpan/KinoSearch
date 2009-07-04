@@ -1,9 +1,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 1;
+use Test::More tests => 32;
 use KinoSearch::Test;
 use List::Util qw( shuffle );
+use KSx::Search::MockScorer;
 
 my $schema = KinoSearch::Schema->new;
 my $type = KinoSearch::FieldType::StringType->new( sortable => 1 );
@@ -56,4 +57,41 @@ $collector->collect($_) for 1 .. 100;
 my $match_docs = $collector->pop_match_docs;
 is( $match_docs->[0]->get_doc_id,
     3, "Early doc numbers preferred by collector" );
+
+my @docs_and_scores;
+my %uniq_doc_ids;
+for ( 1 .. 30 ) {
+    my $doc_num = int( rand(10000) ) + 1;
+    while ( $uniq_doc_ids{$doc_num} ) {
+        $doc_num = int( rand(10000) ) + 1;
+    }
+    $uniq_doc_ids{$doc_num} = 1;
+    push @docs_and_scores, [ $doc_num, rand(10) ];
+}
+@docs_and_scores = sort { $a->[0] <=> $b->[0] } @docs_and_scores;
+my @ranked
+    = sort { $b->[1] <=> $a->[1] || $a->[1] <=> $b->[1] } @docs_and_scores;
+my @doc_ids = map { $_->[0] } @docs_and_scores;
+my @scores  = map { $_->[1] } @docs_and_scores;
+
+for my $size ( 0 .. @doc_ids ) {
+    my $matcher = KSx::Search::MockScorer->new(
+        doc_ids => \@doc_ids,
+        scores  => \@scores,
+    );
+    my $collector = KinoSearch::Search::HitCollector::SortCollector->new(
+        wanted => $size, );
+    $collector->set_matcher($matcher);
+    $matcher->collect( collector => $collector );
+
+    my @wanted;
+    if ($size) {
+        @wanted = map { $_->[0] } @ranked[ 0 .. $size - 1 ];
+    }
+    else {
+        @wanted = ();
+    }
+    my @got = map { $_->get_doc_id } @{ $collector->pop_match_docs };
+    is_deeply( \@got, \@wanted, "random docs and scores, wanted = $size" );
+}
 

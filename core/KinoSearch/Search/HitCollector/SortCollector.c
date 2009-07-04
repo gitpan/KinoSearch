@@ -208,7 +208,7 @@ SortColl_set_reader(SortCollector *self, SegReader *reader)
     self->actions        = self->auto_actions;
 
     /* Obtain sort caches. Derive actions array for this segment. */
-    if (sort_reader) {
+    if (self->need_values && sort_reader) {
         u32_t i, max;
         for (i = 0, max = self->num_rules; i < max; i++) {
             SortRule  *rule  = (SortRule*)VA_Fetch(self->rules, i);
@@ -279,8 +279,22 @@ SortColl_collect(SortCollector *self, i32_t doc_id)
         /* Insert the new MatchDoc. */
         self->bumped = (MatchDoc*)HitQ_Jostle(self->hit_q, (Obj*)match_doc);
 
-        if (!self->bumped) {
-            /* The queue isn't full yet. */
+        if (self->bumped) {
+            if (self->bumped == match_doc) {
+                /* The queue is full, and we have established a threshold for
+                 * this segment as to what sort of document is definitely not
+                 * acceptable.  Turn off AUTO_ACCEPT and start actually
+                 * testing whether hits are competitive. */
+                self->bubble_score  = match_doc->score;
+                self->bubble_doc    = doc_id;
+                self->actions       = self->derived_actions;
+            }
+
+            /* Recycle. */
+            self->bumped->score = self->need_score ? F32_NEGINF : F32_NAN;
+        }
+        else {
+            /* The queue isn't full yet, so create a fresh MatchDoc. */
             VArray *values = self->need_values 
                            ? VA_new(self->num_rules)
                            : NULL;
@@ -288,15 +302,7 @@ SortColl_collect(SortCollector *self, i32_t doc_id)
             self->bumped = MatchDoc_new(I32_MAX, fake_score, values);
             DECREF(values);
         }
-        else if (self->bumped == match_doc) {
-            /* The queue is full, and we have established a threshold for this
-             * segment as to what sort of document is definitely not
-             * acceptable.  Turn off AUTO_ACCEPT and start actually testing
-             * whether hits are competitive. */
-            self->actions      = self->derived_actions;
-            self->bubble_doc   = doc_id;
-            self->bubble_score = match_doc->score;
-        }
+
     }
 }
 

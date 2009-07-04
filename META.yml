@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.30_02
+version: 0.30_03
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -42,7 +42,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_02
+    version: 0.30_03
   KinoSearch::Analysis::Inversion:
     file: lib/KinoSearch.pm
   KinoSearch::Analysis::Stemmer:
@@ -71,20 +71,12 @@ provides:
     file: lib/KinoSearch.pm
   KinoSearch::Obj::VTable:
     file: lib/KinoSearch.pm
-  KinoSearch::Redacted:
-    file: lib/KinoSearch/Redacted.pm
   KinoSearch::Search::Compiler:
     file: lib/KinoSearch.pm
   KinoSearch::Search::Query:
     file: lib/KinoSearch.pm
   KinoSearch::Search::SortRule:
     file: lib/KinoSearch.pm
-  KinoSearch::Test::TestUtils:
-    file: lib/KinoSearch/Test/TestUtils.pm
-  KinoSearch::Test::USConSchema:
-    file: lib/KinoSearch/Test/USConSchema.pm
-  KinoSearch::Test::Util::TestCharBuf:
-    file: lib/KinoSearch/Test/Util/TestCharBuf.pm
   KinoSearch::Util::BitVector:
     file: lib/KinoSearch.pm
   KinoSearch::Util::ByteBuf:
@@ -173,6 +165,9 @@ no_index:
     - boilerplater/t/500-session.t
     - boilerplater/t/600-parser.t
     - buildlib/KinoSearch/Build.pm
+    - buildlib/KinoSearch/Redacted.pm
+    - buildlib/KinoSearch/Test/TestUtils.pm
+    - buildlib/KinoSearch/Test/USConSchema.pm
     - buildlib/Lucy/Build.pm
     - charmonizer/README
     - charmonizer/bin/metaquote
@@ -614,6 +609,8 @@ no_index:
     - devel/benchmarks/extract_reuters.plx
     - devel/benchmarks/indexers/BenchmarkingIndexer.pm
     - devel/benchmarks/indexers/LuceneIndexer.java
+    - devel/benchmarks/indexers/kinosearch_indexer.plx
+    - devel/benchmarks/indexers/plucene_indexer.plx
     - devel/bin/dump_index
     - devel/bin/hexdebug
     - devel/bin/kinotidy
@@ -749,7 +746,6 @@ no_index:
     - lib/KinoSearch/Store/RAMFolder.pm
     - lib/KinoSearch/Store/SharedLock.pm
     - lib/KinoSearch/Test.pm
-    - lib/KinoSearch/Test/TestSchema.pm
     - lib/KinoSearch/Test/TestUtils.pm
     - lib/KinoSearch/Test/USConSchema.pm
     - lib/KinoSearch/Test/Util/BBSortEx.pm
@@ -943,6 +939,7 @@ no_index:
     - t/core/017-hash.t
     - t/core/019-obj.t
     - t/core/024-memory_pool.t
+    - t/core/029-charbuf.t
     - t/core/030-int_arrays.t
     - t/core/031-num.t
     - t/core/052-instream.t

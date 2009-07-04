@@ -304,12 +304,12 @@ SI_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out)
                 break;
             }
             case FType_INT32: {
-                Int32 *i32 = (Int32*)val;
+                Integer32 *i32 = (Integer32*)val;
                 OutStream_Write_I32(dat_out, Int32_Get_Value(i32));
                 break;
             }
             case FType_INT64: {
-                Int64 *i64 = (Int64*)val;
+                Integer64 *i64 = (Integer64*)val;
                 OutStream_Write_I64(dat_out, Int64_Get_Value(i64));
                 break;
             }

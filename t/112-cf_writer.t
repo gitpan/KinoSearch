@@ -5,7 +5,6 @@ use lib 'buildlib';
 use Test::More tests => 13;
 use File::Spec::Functions qw( catfile );
 use KinoSearch::Test::TestUtils qw( init_test_index_loc );
-use KinoSearch::Test::TestSchema;
 use JSON::XS qw();
 
 my $fs_index_loc = init_test_index_loc();

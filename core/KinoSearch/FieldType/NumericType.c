@@ -226,7 +226,7 @@ Int32Type_primitive_id(Int32Type *self)
     return FType_INT32;
 }
 
-Int32*
+Integer32*
 Int32Type_make_blank(Int32Type *self)
 {
     UNUSED_VAR(self);
@@ -281,7 +281,7 @@ Int64Type_primitive_id(Int64Type *self)
     return FType_INT64;
 }
 
-Int64*
+Integer64*
 Int64Type_make_blank(Int64Type *self)
 {
     UNUSED_VAR(self);

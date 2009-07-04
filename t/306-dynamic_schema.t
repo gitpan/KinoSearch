@@ -3,7 +3,7 @@ use warnings;
 use lib 'buildlib';
 
 use Test::More tests => 9;
-use KinoSearch::Test::TestSchema;
+use KinoSearch::Test;
 
 my $schema  = KinoSearch::Test::TestSchema->new;
 my $type    = $schema->fetch_type('content');

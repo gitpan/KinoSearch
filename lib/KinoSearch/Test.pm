@@ -4,7 +4,23 @@ use KinoSearch;
 
 __END__
 
+__AUTO_XS__
+
+{   "KinoSearch::Test::TestSchema" => {
+        make_constructors => ["new"],
+    }
+}
+
+
 __XS__
+
+MODULE = KinoSearch   PACKAGE = KinoSearch::Test::TestUtils
+
+SV*
+doc_set()
+CODE:
+    KOBJ_TO_SV_NOINC( kino_TestUtils_doc_set(), RETVAL );
+OUTPUT: RETVAL
 
 MODULE = KinoSearch   PACKAGE = KinoSearch::Test
 
@@ -107,6 +123,9 @@ PPCODE:
     /* KinoSearch::Util */
     else if (strEQ(package, "TestBitVector")) {
         kino_TestBitVector_run_tests();
+    }
+    else if (strEQ(package, "TestCharBuf")) {
+        kino_TestCB_run_tests();
     }
     else if (strEQ(package, "TestHash")) {
         kino_TestHash_run_tests();
