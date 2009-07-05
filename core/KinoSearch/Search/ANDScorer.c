@@ -39,7 +39,7 @@ ANDScorer_init(ANDScorer *self, VArray *children, Similarity *sim)
 void
 ANDScorer_destroy(ANDScorer *self) 
 {
-    free(self->kids);
+    FREEMEM(self->kids);
     SUPER_DESTROY(self, ANDSCORER);
 }
 

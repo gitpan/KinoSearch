@@ -60,14 +60,14 @@ void
 SortEx_destroy(SortExternal *self) 
 {
     if (self->cache) SortEx_Clear_Cache(self);
-    free(self->cache);
-    free(self->scratch);
+    FREEMEM(self->cache);
+    FREEMEM(self->scratch);
     if (self->runs) {
         u32_t i;
         for (i = 0; i < self->num_runs; i++) {
             DECREF(self->runs[i]);
         }
-        free(self->runs);
+        FREEMEM(self->runs);
     }
     FREE_OBJ(self);
 }
@@ -282,8 +282,8 @@ S_absorb_slices(SortExternal *self, Obj *endpost)
     }
     S_merge_slices(self, slice_starts, slice_sizes, num_slices);
 
-    free(slice_starts);
-    free(slice_sizes);
+    FREEMEM(slice_starts);
+    FREEMEM(slice_sizes);
 }
 
 static void 

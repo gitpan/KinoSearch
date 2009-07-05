@@ -29,7 +29,7 @@ I32Arr_init(I32Array *self, i32_t *ints, u32_t size)
 void
 I32Arr_destroy(I32Array *self)
 {
-    free(self->ints);
+    FREEMEM(self->ints);
     FREE_OBJ(self);
 }
 

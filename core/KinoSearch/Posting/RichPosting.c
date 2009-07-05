@@ -39,7 +39,7 @@ RichPost_init(RichPosting *self, Similarity *sim)
 void
 RichPost_destroy(RichPosting *self)
 {
-    free(self->prox_boosts);
+    FREEMEM(self->prox_boosts);
     SUPER_DESTROY(self, RICHPOSTING);
 }
 

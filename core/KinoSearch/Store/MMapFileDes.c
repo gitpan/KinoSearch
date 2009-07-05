@@ -14,8 +14,32 @@
 #endif
 
 #ifdef CHY_HAS_WINDOWS_H 
-#include <windows.h>
-#include <io.h>
+  #include <windows.h>
+  #include <io.h>
+static char* 
+S_win_error()
+{
+    size_t buf_size = 256;
+    char *buf = MALLOCATE(buf_size, char);
+    size_t message_len = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 
+        NULL,       /* message source table */
+        GetLastError(),
+        0,          /* language id */
+        buf,
+        buf_size,
+        NULL        /* empty va_list */
+    );
+    if (message_len == 0) {
+        char unknown[] = "Unknown error";
+        size_t len = sizeof(unknown);
+        strncpy(buf, unknown, len);
+    }
+    else if (message_len > 1) {
+        /* Kill stupid newline. */
+        buf[message_len - 2] = '\0';
+    }
+    return buf;
+}
 #endif
 
 #include "KinoSearch/Store/MMapFileDes.h"
@@ -188,6 +212,44 @@ MMapFileDes_release_window(MMapFileDes *self, FileWindow *window)
     return true;
 }
 
+#ifdef CHY_HAS_WINDOWS_H
+
+bool_t
+MMapFileDes_read(MMapFileDes *self, char *dest, u64_t offset, u32_t len)
+{
+    BOOL check_val;
+    LARGE_INTEGER offs;
+    DWORD got;
+    
+    /* Seek. */
+    offs.QuadPart = offset;
+    check_val = SetFilePointerEx(
+        self->win_fhandle, offs, NULL, FILE_BEGIN);
+    if (!check_val) {
+        char *win_error = S_win_error();
+        if (!self->mess) { self->mess = CB_new(256); }
+        CB_catf(self->mess, "SetFilePointerEx to %u64 on %o failed: %s", 
+            offset, self->path, win_error);
+        FREEMEM(win_error);
+        return false;
+    }
+
+    /* Read. */
+    check_val = ReadFile(self->win_fhandle, dest, len, &got, NULL);
+    if (!check_val) {
+        char *win_error = S_win_error();
+        if (!self->mess) { self->mess = CB_new(256); }
+        CB_catf(self->mess, "Failed to read %u32 bytes: %s",
+            len, win_error);
+        FREEMEM(win_error);
+        return false;
+    }
+
+    return true;
+}
+
+#else /* not WINDOWS_H */
+
 bool_t
 MMapFileDes_read(MMapFileDes *self, char *dest, u64_t offset, u32_t len)
 {
@@ -215,7 +277,9 @@ MMapFileDes_read(MMapFileDes *self, char *dest, u64_t offset, u32_t len)
     return true;
 }
 
-#endif /* IS_64_BIT */
+#endif /* CHY_HAS_WINDOWS_H */
+
+#endif /* IS_64_BIT vs. 32-bit */
 
 /********************************* UNIXEN *********************************/
 
@@ -244,9 +308,9 @@ SI_do_init(MMapFileDes *self)
 
     /* Get system page size. */
 #if defined(_SC_PAGESIZE)
-	self->page_size = sysconf(_SC_PAGESIZE);
+    self->page_size = sysconf(_SC_PAGESIZE);
 #elif defined(_SC_PAGE_SIZE)
-	self->page_size = sysconf(_SC_PAGE_SIZE);
+    self->page_size = sysconf(_SC_PAGE_SIZE);
 #else
     #error "Can't determine system memory page size"
 #endif
@@ -300,7 +364,132 @@ SI_close_handles(MMapFileDes *self)
     return true;
 }
 
-/**************************** WINDOWS AND OTHERS ****************************/
+/********************************* WINDOWS **********************************/
+
+#elif defined(CHY_HAS_WINDOWS_H)
+
+static INLINE bool_t 
+SI_do_init(MMapFileDes *self)
+{
+    LARGE_INTEGER large_int;
+    char *filepath = (char*)CB_Get_Ptr8(self->path);
+    SYSTEM_INFO sys_info;
+
+    /* Open. */
+    self->win_fhandle = CreateFile(
+        filepath,
+        GENERIC_READ,
+        FILE_SHARE_READ,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_READONLY,
+        NULL
+    );
+    if (self->win_fhandle == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    /* Derive len. */
+    GetFileSizeEx(self->win_fhandle, &large_int);
+    self->len = large_int.QuadPart;
+
+    /* Init. */
+    self->buf = NULL;
+    if (self->len) {
+        self->win_maphandle = CreateFileMapping(self->win_fhandle, NULL,
+            PAGE_READONLY, 0, 0, NULL);
+        if (self->win_maphandle == NULL) {
+            char *win_error = S_win_error();
+            CharBuf *mess = MAKE_MESS("CreateFileMapping for %o failed: %s", 
+                self->path, win_error);
+            FREEMEM(win_error);
+            Err_throw_mess(mess);
+        }
+    }
+
+    /* Get system page size. */
+    GetSystemInfo(&sys_info);
+    self->page_size = sys_info.dwAllocationGranularity;
+    
+    return true;
+}
+
+static INLINE void*
+SI_map(MMapFileDes *self, i64_t offset, i64_t len)
+{
+    void *buf = NULL;
+
+    if (len) {
+        u64_t offs = (u64_t)offset;
+        DWORD file_offset_hi = offs >> 32;
+        DWORD file_offset_lo = offs & 0xFFFFFFFF;
+        size_t amount = (size_t)len;
+        buf = MapViewOfFile(
+            self->win_maphandle, 
+            FILE_MAP_READ, 
+            file_offset_hi,
+            file_offset_lo,
+            amount
+        );
+        if (buf == NULL) {
+            char *win_error = S_win_error();
+            CharBuf *mess = MAKE_MESS("MapViewOfFile for %o failed: %s", 
+                self->path, win_error);
+            FREEMEM(win_error);
+            Err_throw_mess(mess);
+        }
+    }
+
+    return buf;
+}
+
+static INLINE bool_t
+SI_unmap(MMapFileDes *self, char *buf, i64_t len)
+{
+    if (buf != NULL) {
+        if (!UnmapViewOfFile(buf)) {
+            char *win_error = S_win_error();
+            if (!self->mess) self->mess = CB_new(256);
+            CB_catf(self->mess, "Failed to unmap '%o': %s", self->path,
+                win_error);
+            FREEMEM(win_error);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static INLINE bool_t 
+SI_close_handles(MMapFileDes *self)
+{
+    if (self->win_maphandle) {
+        if (!CloseHandle(self->win_maphandle)) {
+            char *win_error = S_win_error();
+            if (!self->mess) self->mess = CB_new(30);
+            CB_catf(self->mess, "Failed to close file mapping handle: %s", 
+                win_error);
+            FREEMEM(win_error);
+            return false;
+        }
+        self->win_maphandle = NULL;
+    }
+
+    if (self->win_fhandle) {
+        if (!CloseHandle(self->win_fhandle)) {
+            char *win_error = S_win_error();
+            if (!self->mess) self->mess = CB_new(30);
+            CB_catf(self->mess, "Failed to close file handle: %s", win_error);
+            FREEMEM(win_error);
+            return false;
+        }
+        self->win_fhandle = NULL;
+    }
+
+    return true;
+}
+
+/********************************** OTHERS **********************************/
 
 /* Fall back to FSFileDes, but give the compiler stubs. */
 #else 

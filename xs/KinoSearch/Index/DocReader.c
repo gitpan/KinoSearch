@@ -81,10 +81,12 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
                 break;
             case kino_FType_INT64:
                 if (sizeof(IV) == 8) {
-                    value_sv = newSViv((chy_i64_t)Kino_InStream_Read_C64(dat_in));
+                    chy_i64_t val = (chy_i64_t)Kino_InStream_Read_C64(dat_in);
+                    value_sv = newSViv((IV)val);
                 }
                 else { /* (lossy) */
-                    value_sv = newSVnv((chy_i64_t)Kino_InStream_Read_C64(dat_in));
+                    chy_i64_t val = (chy_i64_t)Kino_InStream_Read_C64(dat_in);
+                    value_sv = newSVnv((double)val);
                 }
                 break;
             default:

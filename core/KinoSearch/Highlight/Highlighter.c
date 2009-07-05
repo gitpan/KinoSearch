@@ -251,9 +251,10 @@ Highlighter_raw_excerpt(Highlighter *self, const CharBuf *field_val,
     i32_t  end   = 0;
     i32_t  this_excerpt_len;
     const  u32_t num_sentences = VA_Get_Size(sentences);
-    u32_t  field_len = CB_Length(field_val);
+    double field_len = CB_Length(field_val);
     u32_t  min_len = field_len < self->excerpt_length * 0.6666
-                   ? field_len : self->excerpt_length * 0.6666;
+                   ? (u32_t)field_len 
+                   : (u32_t)(self->excerpt_length * 0.6666);
 
     /* Try to find a starting sentence boundary. */
     if (num_sentences) {

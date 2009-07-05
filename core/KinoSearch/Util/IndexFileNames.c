@@ -44,7 +44,7 @@ IxFileNames_extract_gen(const CharBuf *name)
         else if (code_point == '_') { break; }
     }
 
-    return ZCB_BaseX_To_I64(&num_string, 36);
+    return (i32_t)ZCB_BaseX_To_I64(&num_string, 36);
 }
 
 int

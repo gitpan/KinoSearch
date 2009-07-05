@@ -82,7 +82,7 @@ bool_t
 FSFileDes_release_window(FSFileDes *self, FileWindow *window)
 {
     UNUSED_VAR(self);
-    free(window->buf);
+    FREEMEM(window->buf);
     window->buf = NULL;
     window->len = 0;
     window->cap = 0;

@@ -24,7 +24,7 @@ SortExRun_destroy(SortExRun *self)
 {
     if (self->cache) {
         SortExRun_Clear_Cache(self);
-        free(self->cache);
+        FREEMEM(self->cache);
     }
     FREE_OBJ(self);
 }

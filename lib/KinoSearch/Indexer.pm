@@ -41,7 +41,7 @@ PPCODE:
             &boost_sv, "boost", 5,
             NULL);
         if (boost_sv) {
-            boost = SvNV(boost_sv);
+            boost = (float)SvNV(boost_sv);
         }
     }
     else if (items == 1) {

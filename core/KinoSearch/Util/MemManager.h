@@ -32,6 +32,8 @@ kino_MemMan_wrapped_free(void *ptr);
     (t*)kino_MemMan_wrapped_calloc((n),sizeof(t))
 #define KINO_REALLOCATE(v,n,t) \
     (t*)kino_MemMan_wrapped_realloc((v), (n)*sizeof(t))
+#define KINO_FREEMEM(_pointer) \
+    kino_MemMan_wrapped_free(_pointer)
 
 #ifdef KINO_USE_SHORT_NAMES
   #define MemMan_wrapped_malloc           kino_MemMan_wrapped_malloc
@@ -41,6 +43,7 @@ kino_MemMan_wrapped_free(void *ptr);
   #define MALLOCATE(n,t)                  KINO_MALLOCATE(n,t)
   #define CALLOCATE(n,t)                  KINO_CALLOCATE(n,t)
   #define REALLOCATE(v,n,t)               KINO_REALLOCATE(v,n,t)
+  #define FREEMEM(_pointer)               KINO_FREEMEM(_pointer)
 #endif
 
 #endif /* H_KINO_MEMMANAGER */

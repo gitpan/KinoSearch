@@ -80,7 +80,7 @@ S_flattened_but_empty_spans(VArray *spans)
         VA_Push(flattened, (Obj*)Span_new(start, length, 0.0f));
     }
 
-    free(bounds);
+    FREEMEM(bounds);
     return flattened;
 }
 

@@ -97,13 +97,13 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
                 kino_Integer64* value = (kino_Integer64*)inv_entry->value;
                 chy_i64_t val = sizeof(IV) == 8 
                               ? SvIV(value_sv) 
-                              : SvNV(value_sv);
+                              : (chy_i64_t)SvNV(value_sv); /* lossy */
                 Kino_Int64_Set_Value(value, val);
                 break;
             }
             case kino_FType_FLOAT32: {
                 kino_Float32* value = (kino_Float32*)inv_entry->value;
-                Kino_Float32_Set_Value(value, SvNV(value_sv));
+                Kino_Float32_Set_Value(value, (float)SvNV(value_sv));
                 break;
             }
             case kino_FType_FLOAT64: {

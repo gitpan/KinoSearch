@@ -110,7 +110,7 @@ DefDelWriter_destroy(DefaultDeletionsWriter *self)
     DECREF(self->seg_starts);
     DECREF(self->bit_vecs);
     DECREF(self->searcher);
-    free(self->updated);
+    FREEMEM(self->updated);
     SUPER_DESTROY(self, DEFAULTDELETIONSWRITER);
 }
 

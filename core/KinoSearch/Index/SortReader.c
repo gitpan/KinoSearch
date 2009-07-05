@@ -132,27 +132,32 @@ DefSortReader_fetch_sort_cache(DefaultSortReader *self, const CharBuf *field)
                 Obj *null_ord_obj 
                     = Hash_Fetch(self->null_ords, (Obj*)field);
                 i32_t null_ord = null_ord_obj 
-                               ?  (i64_t)Obj_To_I64(null_ord_obj) : -1;
+                               ?  (i32_t)Obj_To_I64(null_ord_obj) : -1;
                 switch (prim_id & FType_PRIMITIVE_ID_MASK) {
                     case FType_TEXT:
                         cache = (SortCache*)TextSortCache_new(schema, folder,
-                            segment, field_num, Obj_To_I64(count), null_ord);
+                            segment, field_num, (i32_t)Obj_To_I64(count), 
+                            null_ord);
                         break;
                     case FType_INT32:
                         cache = (SortCache*)I32SortCache_new(schema, folder,
-                            segment, field_num, Obj_To_I64(count), null_ord);
+                            segment, field_num, (i32_t)Obj_To_I64(count), 
+                            null_ord);
                         break;
                     case FType_INT64:
                         cache = (SortCache*)I64SortCache_new(schema, folder,
-                            segment, field_num, Obj_To_I64(count), null_ord);
+                            segment, field_num, (i32_t)Obj_To_I64(count), 
+                            null_ord);
                         break;
                     case FType_FLOAT32:
                         cache = (SortCache*)F32SortCache_new(schema, folder,
-                            segment, field_num, Obj_To_I64(count), null_ord);
+                            segment, field_num, (i32_t)Obj_To_I64(count), 
+                            null_ord);
                         break;
                     case FType_FLOAT64:
                         cache = (SortCache*)F64SortCache_new(schema, folder,
-                            segment, field_num, Obj_To_I64(count), null_ord);
+                            segment, field_num, (i32_t)Obj_To_I64(count), 
+                            null_ord);
                         break;
                     default:
                         THROW("No SortCache class for %o", type);

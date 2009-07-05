@@ -64,7 +64,7 @@ ScorePost_clone(ScorePosting *self)
 void
 ScorePost_destroy(ScorePosting *self)
 {
-    free(self->prox);
+    FREEMEM(self->prox);
     SUPER_DESTROY(self, SCOREPOSTING);
 }
 
@@ -249,7 +249,7 @@ ScorePostScorer_score(ScorePostingScorer* self)
 void
 ScorePostScorer_destroy(ScorePostingScorer *self)
 {
-    free(self->score_cache);
+    FREEMEM(self->score_cache);
     SUPER_DESTROY(self, SCOREPOSTINGSCORER);
 }
 

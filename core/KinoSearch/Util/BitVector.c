@@ -73,7 +73,7 @@ BitVec_init(BitVector *self, u32_t capacity)
 void
 BitVec_destroy(BitVector* self) 
 {
-    free(self->bits);
+    FREEMEM(self->bits);
     FREE_OBJ(self);
 }
 
@@ -240,7 +240,7 @@ S_do_or_or_xor(BitVector *self, const BitVector *other, int operation)
     u8_t *bits_a, *bits_b;
     u32_t max_cap, min_cap;
     u8_t *limit;
-    size_t byte_size;
+    double byte_size;
 
     /* Sort out what the minimum and maximum caps are. */
     if (self->cap < other->cap) {
@@ -256,8 +256,8 @@ S_do_or_or_xor(BitVector *self, const BitVector *other, int operation)
     BITVEC_GROW(self, max_cap);
     bits_a        = self->bits;
     bits_b        = other->bits;
-    byte_size     = (size_t)ceil((min_cap / 8.0));
-    limit         = self->bits + byte_size;
+    byte_size     = ceil(min_cap / 8.0);
+    limit         = self->bits + (size_t)byte_size;
 
     /* Perform union of common bits. */
     if (operation == DO_OR) {
@@ -278,8 +278,8 @@ S_do_or_or_xor(BitVector *self, const BitVector *other, int operation)
 
     /* Copy remaining bits if other is bigger than self. */
     if (other->cap > min_cap) {
-        const size_t other_byte_size = (size_t)ceil((other->cap / 8.0));
-        const size_t bytes_to_copy = other_byte_size - byte_size;
+        const double other_byte_size = ceil(other->cap / 8.0);
+        const size_t bytes_to_copy = (size_t)(other_byte_size - byte_size);
         memcpy(bits_a, bits_b, bytes_to_copy);
     }
 }

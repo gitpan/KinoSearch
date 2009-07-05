@@ -34,7 +34,7 @@ Token_init(Token *self, const char* text, size_t len, u32_t start_offset,
 void
 Token_destroy(Token *self) 
 {
-    free(self->text);
+    FREEMEM(self->text);
     FREE_OBJ(self);
 }
 

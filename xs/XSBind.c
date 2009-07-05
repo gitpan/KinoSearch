@@ -296,12 +296,18 @@ kino_XSBind_kobj_to_pobj(kino_Obj *obj)
         return khash_to_phash((kino_Hash*)obj);
     else if (KINO_OBJ_IS_A(obj, KINO_FLOATNUM))
         return newSVnv(Kino_Num_To_F64(obj));
-    else if (sizeof(IV) == 8 && KINO_OBJ_IS_A(obj, KINO_INTNUM))
-        return newSViv(Kino_Num_To_I64(obj));
-    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER32)) 
-        return newSViv(Kino_Num_To_I64(obj));
-    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER64)) 
-        return newSVnv(Kino_Num_To_I64(obj)); /* lossy */
+    else if (sizeof(IV) == 8 && KINO_OBJ_IS_A(obj, KINO_INTNUM)) {
+        chy_i64_t num = Kino_Num_To_I64(obj);
+        return newSViv((IV)num);
+    }
+    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER32)) {
+        chy_i32_t num = (chy_i32_t)Kino_Num_To_I64(obj);
+        return newSViv((IV)num);
+    }
+    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER64)) {
+        chy_i64_t num = Kino_Num_To_I64(obj);
+        return newSVnv((double)num); /* lossy */
+    }
     else 
         return (SV*)Kino_Obj_To_Host(obj);
 }

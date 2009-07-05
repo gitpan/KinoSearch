@@ -62,7 +62,7 @@ PhraseScorer_destroy(PhraseScorer *self)
         for (i = 0; i < self->num_elements; i++) {
             DECREF(plists[i]);
         }
-        free(self->plists);
+        FREEMEM(self->plists);
     }
 
     DECREF(self->sim);

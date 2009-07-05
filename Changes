@@ -1,8 +1,25 @@
 Revision history for KinoSearch
 
+0.30_04  2009-07-05
+
+  Bugfixes:
+ 
+    * Stemmer had been malfunctioning, producing incorrect stems in some cases
+      and bailing out with "invalid UTF-8" errors in others.  Bug found and
+      solution proposed by Nick Wellnhofer.
+
+  Features:
+
+    * Memory mapping implemented for Windows, so now that platform gets fast
+      Searcher opens and minimized search-time process memory footprint too.
+
+ Compatibility:
+
+    * Indexes that utilize Stemmer must be regenerated.
+
 0.30_03  2009-07-03
 
- Bugfixes:
+  Bugfixes:
 
     * Fix a problem in SortCollector that led to ranking errors for some
       documents.

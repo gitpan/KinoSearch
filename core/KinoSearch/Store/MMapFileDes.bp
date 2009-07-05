@@ -5,6 +5,8 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Store::MMapFileDes extends KinoSearch::Store::FileDes {
 
     int    fd;
+    void  *win_fhandle;
+    void  *win_maphandle;
     i64_t  len;
     i64_t  page_size;
     char  *buf;

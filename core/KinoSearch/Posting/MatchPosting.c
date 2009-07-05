@@ -154,7 +154,7 @@ MatchPostScorer_score(MatchPostingScorer* self)
 void
 MatchPostScorer_destroy(MatchPostingScorer *self)
 {
-    free(self->score_cache);
+    FREEMEM(self->score_cache);
     SUPER_DESTROY(self, MATCHPOSTINGSCORER);
 }
 

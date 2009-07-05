@@ -40,9 +40,9 @@ Inversion_destroy(Inversion *self)
         for ( ; tokens < limit; tokens++) {
             DECREF(*tokens);
         }
-        free(self->tokens);
+        FREEMEM(self->tokens);
     }
-    free(self->cluster_counts);
+    FREEMEM(self->cluster_counts);
     FREE_OBJ(self);
 }
 

@@ -304,7 +304,7 @@ Int64_equals(Integer64 *self, Obj *other)
     if (!OBJ_IS_A(evil_twin, NUM)) { return false; }
     if (OBJ_IS_A(evil_twin, FLOATNUM)) {
         double floating_val = Num_To_F64(evil_twin);
-        i64_t  int_val      = floating_val;
+        i64_t  int_val      = (i64_t)floating_val;
         if ((double)int_val != floating_val) { return false; }
         if (int_val != self->value)          { return false; }
     }

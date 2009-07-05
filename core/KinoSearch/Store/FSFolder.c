@@ -123,7 +123,7 @@ FileDes*
 FSFolder_open_filedes(FSFolder *self, const CharBuf *filepath)
 {
     CharBuf *fullpath = S_full_path(self, filepath);
-#ifdef CHY_HAS_SYS_MMAN_H
+#if (defined(CHY_HAS_SYS_MMAN_H) || defined(CHY_HAS_WINDOWS_H))
     MMapFileDes *file_des = MMapFileDes_new(fullpath);
 #else
     FSFileDes *file_des = FSFileDes_new(fullpath, "r");

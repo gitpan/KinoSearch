@@ -56,7 +56,7 @@ TextSortCache_init(TextSortCache *self, Schema *schema, Folder *folder,
     /* Mmap ords, offsets and character data. */
     ords            = InStream_Buf(self->ord_in, (size_t)ord_len);
     self->offsets   = (i64_t*)InStream_Buf(self->ix_in, (size_t)ix_len);
-    self->char_data = InStream_Buf(self->dat_in, dat_len);
+    self->char_data = InStream_Buf(self->dat_in, (size_t)dat_len);
     {
         char *offs            = (char*)self->offsets;
         self->offsets_limit   = (i64_t*)(offs + ix_len);

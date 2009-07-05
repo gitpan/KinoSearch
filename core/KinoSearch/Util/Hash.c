@@ -82,7 +82,7 @@ Hash_destroy(Hash *self)
 {
     if (self->entries) {
         Hash_clear(self);
-        free(self->entries);
+        FREEMEM(self->entries);
     }
     FREE_OBJ(self);
 }

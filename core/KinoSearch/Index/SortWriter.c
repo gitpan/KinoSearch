@@ -227,7 +227,7 @@ S_compare_doc_vals(void *context, const void *va, const void *vb)
     VArray *doc_vals = stuff->vals;
     Obj *a = VA_Fetch(doc_vals, doc_id_a);
     Obj *b = VA_Fetch(doc_vals, doc_id_b);
-    return FType_Compare_Values(stuff->type, a, b);
+    return (i32_t)FType_Compare_Values(stuff->type, a, b);
 }
 
 static i32_t

@@ -33,7 +33,7 @@ PolyMatcher_destroy(PolyMatcher *self)
 {
     DECREF(self->children);
     DECREF(self->sim);
-    free(self->coord_factors);
+    FREEMEM(self->coord_factors);
     SUPER_DESTROY(self, POLYMATCHER);
 }
 

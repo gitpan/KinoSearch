@@ -34,8 +34,8 @@ Sim_init(Similarity *self)
 void
 Sim_destroy(Similarity *self) 
 {
-    free(self->norm_decoder);
-    free(self->prox_decoder);
+    FREEMEM(self->norm_decoder);
+    FREEMEM(self->prox_decoder);
     FREE_OBJ(self);
 }
 

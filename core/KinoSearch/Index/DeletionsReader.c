@@ -168,7 +168,7 @@ DefDelReader_read_deletions(DefaultDeletionsReader *self)
             if (seg_files_data) {
                 Obj *count = (Obj*)ASSERT_IS_A(
                     Hash_Fetch_Str(seg_files_data, "count", 5), OBJ);
-                del_count = Obj_To_I64(count);
+                del_count = (i32_t)Obj_To_I64(count);
                 del_file  = (CharBuf*)ASSERT_IS_A(
                     Hash_Fetch_Str(seg_files_data, "filename", 8), CHARBUF);
                 break;

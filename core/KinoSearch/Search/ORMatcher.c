@@ -99,9 +99,9 @@ void
 ORMatcher_destroy(ORMatcher *self)
 {
     if (self->blob) { S_clear(self); }
-    free(self->blob);
-    free(self->pool);
-    free(self->heap);
+    FREEMEM(self->blob);
+    FREEMEM(self->pool);
+    FREEMEM(self->heap);
     SUPER_DESTROY(self, ORMATCHER);
 }
 
@@ -304,7 +304,7 @@ ORScorer_init(ORScorer *self, VArray *children, Similarity *sim)
 void
 ORScorer_destroy(ORScorer *self) 
 {
-    free(self->scores);
+    FREEMEM(self->scores);
     SUPER_DESTROY(self, ORSCORER);
 }
 

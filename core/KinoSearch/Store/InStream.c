@@ -254,7 +254,11 @@ SI_read_bytes(InStream *self, char* buf, size_t len)
         else {
             const i64_t sub_file_pos = InStream_tell(self);
             const i64_t real_file_pos = sub_file_pos + self->offset;
-            FileDes_Read(self->file_des, buf, real_file_pos, len);
+            bool_t success 
+                = FileDes_Read(self->file_des, buf, real_file_pos, len);
+            if (!success) {
+                THROW("%o", FileDes_Get_Mess(self->file_des));
+            }
             InStream_seek(self, sub_file_pos + len);
         }
     }

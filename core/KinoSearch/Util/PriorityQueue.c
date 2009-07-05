@@ -48,7 +48,7 @@ PriQ_destroy(PriorityQueue *self)
 {
     if (self->heap) {
         S_clear(self);
-        free(self->heap);
+        FREEMEM(self->heap);
     }
     FREE_OBJ(self);
 }

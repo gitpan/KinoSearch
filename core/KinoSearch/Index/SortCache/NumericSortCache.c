@@ -43,7 +43,7 @@ NumSortCache_init(NumericSortCache *self, Schema *schema, Folder *folder,
 
     /* Mmap ords and raw data. */
     ords               = InStream_Buf(self->ord_in, (size_t)ord_len);
-    self->values       = InStream_Buf(self->dat_in, dat_len);
+    self->values       = InStream_Buf(self->dat_in, (size_t)dat_len);
     self->values_limit = self->values + dat_len;
 
     SortCache_init((SortCache*)self, field, type, ords, num_unique, doc_max,

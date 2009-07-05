@@ -10,7 +10,7 @@
 static void
 test_To_String(TestBatch *batch)
 {
-    Float32   *f32 = Float32_new(1.33);
+    Float32   *f32 = Float32_new(1.33f);
     Float64   *f64 = Float64_new(1.33);
     Integer32 *i32 = Int32_new(I32_MAX);
     Integer64 *i64 = Int64_new(I64_MAX);
@@ -129,7 +129,7 @@ test_Equals_and_Compare_To(TestBatch *batch)
     ASSERT_TRUE(batch, Int64_Compare_To(i64, (Obj*)f64) < 0,
         "Integer64 comparison to Float64");
 
-    Float32_Set_Value(f32, I32_MAX * 2.0);
+    Float32_Set_Value(f32, I32_MAX * 2.0f);
     ASSERT_TRUE(batch, Float32_Compare_To(f32, (Obj*)i32) > 0,
         "Float32 comparison to Integer32");
     ASSERT_TRUE(batch, Int32_Compare_To(i32, (Obj*)f32) < 0,

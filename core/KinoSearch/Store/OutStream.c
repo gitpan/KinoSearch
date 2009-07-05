@@ -43,7 +43,7 @@ OutStream_destroy(OutStream *self)
         DECREF(self->file_des);
     }
     DECREF(self->path);
-    free(self->buf);
+    FREEMEM(self->buf);
     FREE_OBJ(self);
 }
 

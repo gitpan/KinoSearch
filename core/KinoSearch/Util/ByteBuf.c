@@ -58,7 +58,7 @@ BB_new_steal_str(char *ptr, size_t size, size_t capacity)
 void 
 BB_destroy(ByteBuf *self) 
 {
-    free(self->ptr);
+    FREEMEM(self->ptr);
     FREE_OBJ(self);
 }
 

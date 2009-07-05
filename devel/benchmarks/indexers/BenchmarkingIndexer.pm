@@ -153,11 +153,12 @@ sub new {
 
 sub init_indexer {
     my ( $self, $count ) = @_;
-    my $constructor = $count == 0 ? 'clobber' : 'open';
-    return KinoSearch::Indexer->$constructor(
-        schema => $self->{schema},
-        index  => $self->{index_dir},
-        create => 1,
+    my $truncate = $count == 0 ? 1 : 0;
+    return KinoSearch::Indexer->new(
+        schema   => $self->{schema},
+        index    => $self->{index_dir},
+        truncate => $truncate,
+        create   => 1,
     );
 }
 

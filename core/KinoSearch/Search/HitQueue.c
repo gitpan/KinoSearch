@@ -120,7 +120,7 @@ SI_compare_by_value(HitQueue *self, u32_t tick, MatchDoc *a, MatchDoc *b)
     Obj *a_val = VA_Fetch(a->values, tick);
     Obj *b_val = VA_Fetch(b->values, tick);
     FieldType *field_type = self->field_types[tick];
-    return FType_Compare_Values(field_type, a_val, b_val);
+    return (i32_t)FType_Compare_Values(field_type, a_val, b_val);
 }
 
 bool_t

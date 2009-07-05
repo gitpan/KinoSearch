@@ -41,7 +41,7 @@ PPCODE:
 {
     START_SET_OR_GET_SWITCH
 
-    case 1:  free(self->text);
+    case 1:  KINO_FREEMEM(self->text);
              {
                  STRLEN len;
                  char *str = SvPVutf8( ST(1), len);

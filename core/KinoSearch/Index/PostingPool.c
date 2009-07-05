@@ -76,7 +76,7 @@ PostPool_destroy(PostingPool *self)
     DECREF(self->posting);
     DECREF(self->type);
     DECREF(self->doc_map);
-    free(self->scratch);
+    FREEMEM(self->scratch);
     
     /* Setting these to 0 causes SortExRun_Clear_Cache to avoid 
      * decrementing refcounts on cache elements -- which is 
@@ -219,8 +219,8 @@ PostPool_shrink(PostingPool *self)
     self->cache_max   = 0;
     self->cache_cap   = 0;
     self->scratch_cap = 0;
-    free(self->cache);
-    free(self->scratch);
+    FREEMEM(self->cache);
+    FREEMEM(self->scratch);
     self->cache       = NULL;
     self->scratch     = NULL;
 }

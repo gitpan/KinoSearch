@@ -55,10 +55,10 @@ Stemmer_transform(Stemmer *self, Inversion *inversion)
             (sb_symbol*)token->text, token->len);
         size_t len = kino_Stemmer_sb_stemmer_length(snowstemmer);
         if (len > token->len) {
-            free(token->text);
+            FREEMEM(token->text);
             token->text = MALLOCATE(len + 1, char);
         }
-        memcpy(stemmed_text, token->text, len + 1);
+        memcpy(token->text, stemmed_text, len + 1);
         token->len = len;
     }
     Inversion_Reset(inversion);

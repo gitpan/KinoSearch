@@ -52,7 +52,7 @@ VA_destroy(VArray *self)
         for ( ; elems < limit; elems++) {
             DECREF(*elems);
         }
-        free(self->elems);
+        FREEMEM(self->elems);
     }
     FREE_OBJ(self);
 }
