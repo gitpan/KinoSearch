@@ -2,7 +2,7 @@
 
 #include "KinoSearch/Util/SortExRun.h"
 
-/* Determine how many items in the cache are less than or equal to [endpost]. */
+/* Determine how many cache items are less than or equal to [endpost]. */
 static u32_t
 S_find_slice_size(SortExRun *self, Obj *endpost);
 
@@ -34,7 +34,7 @@ SortExRun_refill(SortExRun *self)
 {
     /* Make sure cache is empty, then set cache tick vars. */
     if (self->cache_max - self->cache_tick > 0) {
-        THROW("Refill called but cache contains %u32 items",
+        THROW(ERR, "Refill called but cache contains %u32 items",
             self->cache_max - self->cache_tick);
     }
     self->cache_tick = 0;
@@ -68,8 +68,8 @@ SortExRun_peek_last(SortExRun *self)
 {
     const u32_t tick = self->cache_max - 1;
     if (tick >= self->cache_cap || self->cache_max < 1) {
-        THROW("Invalid call to Peek_Last: %u32 %u32 %u32", tick, self->cache_max,
-        self->cache_cap);
+        THROW(ERR, "Invalid call to Peek_Last: %u32 %u32 %u32", tick, 
+            self->cache_max, self->cache_cap);
     }
     return self->cache[tick];
 }

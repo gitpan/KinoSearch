@@ -147,9 +147,9 @@ ok( $parser->class_extension($_), "class_extension: $_" )
     for ( 'extends Foo', 'extends Foo::FooJr::FooIII' );
 
 my $class_content
-    = 'public class Foo::FooJunior cnick FooJr extends Foo { private int num; }';
+    = 'public class Foo::FooJr cnick FooJr extends Foo { private int num; }';
 my $class = $parser->class_declaration($class_content);
-isa_ok( $class, "Boilerplater::Class", "class_declaration FooJunior" );
+isa_ok( $class, "Boilerplater::Class", "class_declaration FooJr" );
 ok( ( scalar grep { $_->micro_sym eq 'num' } $class->get_member_vars ),
     "parsed private member var" );
 
@@ -160,7 +160,7 @@ $class_content = q|
      * Wow wow wow.
      */
     public class Animal::Dog extends Animal : lovable : drooly {
-        public static Dog* init(Dog *self, CharBuf *name, CharBuf *favorite_food);
+        public static Dog* init(Dog *self, CharBuf *name, CharBuf *fave_food);
         static u32_t count();
         static u64_t num_dogs;
 

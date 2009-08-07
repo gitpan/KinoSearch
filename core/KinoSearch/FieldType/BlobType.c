@@ -1,12 +1,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/FieldType/BlobType.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 BlobType*
 BlobType_new()
 {
-    BlobType *self = (BlobType*)VTable_Make_Obj(&BLOBTYPE);
+    BlobType *self = (BlobType*)VTable_Make_Obj(BLOBTYPE);
     return BlobType_init(self);
 }
 
@@ -29,7 +28,7 @@ void
 BlobType_set_sortable(BlobType *self, bool_t sortable)
 {
     UNUSED_VAR(self);
-    if (sortable) { THROW("BlobType fields can't be sortable"); }
+    if (sortable) { THROW(ERR, "BlobType fields can't be sortable"); }
 }
 
 ViewByteBuf*
@@ -92,7 +91,7 @@ BlobType_load(BlobType *self, Obj *dump)
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
     VTable *vtable = (class_name != NULL && OBJ_IS_A(class_name, CHARBUF)) 
                    ? VTable_singleton(class_name, NULL)
-                   : (VTable*)&BLOBTYPE;
+                   : BLOBTYPE;
     BlobType *loaded     = (BlobType*)VTable_Make_Obj(vtable);
     Obj *boost_dump      = Hash_Fetch_Str(source, "boost", 5);
     Obj *indexed_dump    = Hash_Fetch_Str(source, "indexed", 7);

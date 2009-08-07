@@ -100,7 +100,12 @@ assignment:
 
 subroutine_declaration:
     docucomment(?)
-    exposure_specifier(?) subroutine_modifier(s?) type declarator param_list ';'
+    exposure_specifier(?) 
+    subroutine_modifier(s?) 
+    type 
+    declarator 
+    param_list 
+    ';'
     {
         $return = {
             exposure  => $item[2],

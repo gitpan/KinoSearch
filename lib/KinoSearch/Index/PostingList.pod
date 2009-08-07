@@ -72,8 +72,8 @@ not yet purged.)
 
 =head2 seek(target)
 
-Prepare the PostingList object to iterate over matches for documents that
-match C<< target >>.
+Prepare the PostingList object to iterate over matches for documents
+that match C<< target >>.
 
 =over
 

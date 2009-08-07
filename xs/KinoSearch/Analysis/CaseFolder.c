@@ -3,7 +3,7 @@
 #include "KinoSearch/Analysis/CaseFolder.h"
 #include "KinoSearch/Analysis/Token.h"
 #include "KinoSearch/Analysis/Inversion.h"
-#include "KinoSearch/Util/ByteBuf.h"
+#include "KinoSearch/Obj/ByteBuf.h"
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/StringHelper.h"
 

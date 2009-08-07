@@ -13,7 +13,7 @@
 NoMatchQuery*
 NoMatchQuery_new()
 {
-    NoMatchQuery *self = (NoMatchQuery*)VTable_Make_Obj(&NOMATCHQUERY);
+    NoMatchQuery *self = (NoMatchQuery*)VTable_Make_Obj(NOMATCHQUERY);
     return NoMatchQuery_init(self);
 }
 
@@ -53,7 +53,7 @@ NoMatchCompiler_new(NoMatchQuery *parent, Searchable *searchable,
                      float boost)
 {
     NoMatchCompiler *self 
-        = (NoMatchCompiler*)VTable_Make_Obj(&NOMATCHCOMPILER);
+        = (NoMatchCompiler*)VTable_Make_Obj(NOMATCHCOMPILER);
     return NoMatchCompiler_init(self, parent, searchable, boost);
 }
 
@@ -68,7 +68,7 @@ NoMatchCompiler_init(NoMatchCompiler *self, NoMatchQuery *parent,
 NoMatchCompiler*
 NoMatchCompiler_deserialize(NoMatchCompiler *self, InStream *instream)
 {
-    self = self ? self : (NoMatchCompiler*)VTable_Make_Obj(&NOMATCHCOMPILER);
+    self = self ? self : (NoMatchCompiler*)VTable_Make_Obj(NOMATCHCOMPILER);
     return (NoMatchCompiler*)Compiler_deserialize((Compiler*)self, instream);
 }
 

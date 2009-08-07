@@ -20,9 +20,9 @@ sub build_perl_hashref {
     return \%perl_hash;
 }
 
-sub get_cb { KinoSearch::Util::CharBuf->new(shift) }
+sub get_cb { KinoSearch::Obj::CharBuf->new(shift) }
 
-$hash = KinoSearch::Util::Hash->new( capacity => 1 );
+$hash = KinoSearch::Obj::Hash->new( capacity => 1 );
 
 @orig = 1 .. 100;
 $hash->store( $_, get_cb($_) ) for @orig;
@@ -33,8 +33,7 @@ is_deeply( \@got, \@orig, "Basic store and fetch" );
 is( $hash->get_size, 100, "size incremented properly" );
 
 $hash->store( "40", get_cb("new value") );
-is( $hash->fetch("40"),
-    "new value", "store obliterates existing value" );
+is( $hash->fetch("40"), "new value", "store obliterates existing value" );
 is( $hash->get_size, 100, "size unaffected after replacement of a val" );
 $source{40} = "new value";
 $dest_ref = build_perl_hashref($hash);
@@ -61,7 +60,7 @@ is( $hash->get_size,   0,     "size is 0 after clear" );
 
 # iter_init, iter_next.
 %source = ();
-$hash = KinoSearch::Util::Hash->new( capacity => 1 );
+$hash = KinoSearch::Obj::Hash->new( capacity => 1 );
 for ( 1 .. 10 ) {
     $source{$_} = $_;
     $hash->store( $_, get_cb($_) );
@@ -71,7 +70,7 @@ is_deeply( \%source, $dest_ref, "iteration" );
 
 # Stress test.
 %source = ();
-$hash = KinoSearch::Util::Hash->new( capacity => 1 );
+$hash = KinoSearch::Obj::Hash->new( capacity => 1 );
 for my $iter ( 1 .. 500 ) {
     my $string = '';
     for my $string_len ( 0 .. int( rand(1200) ) ) {
@@ -91,7 +90,7 @@ while ( my ( $k, $v ) = each %source ) {
 $dest_ref = build_perl_hashref($hash);
 is_deeply( \%source, $dest_ref, "random strings" );
 
-$hash = KinoSearch::Util::Hash->new( capacity => 10 );
+$hash = KinoSearch::Obj::Hash->new( capacity => 10 );
 $hash->store( "foo", get_cb("bar") );
 my $foo      = get_cb("foo");
 my $key_copy = $hash->find_key(
@@ -106,7 +105,7 @@ $key_copy = $hash->find_key(
 );
 is( $key_copy, undef, "find_key doesn't find non-existent key" );
 
-$hash = KinoSearch::Util::Hash->new( capacity => 10 );
+$hash = KinoSearch::Obj::Hash->new( capacity => 10 );
 $hash->store( "foo", get_cb("bar") );
 $hash->store( "baz", get_cb("banana") );
 my @keys = sort @{ $hash->keys };

@@ -24,7 +24,7 @@ SV*
 _test_obj(...)
 CODE:
 {
-    kino_ByteBuf *test_obj = kino_BB_new_str("blah", 4);
+    kino_ByteBuf *test_obj = kino_BB_new_bytes("blah", 4);
     SV *pack_var = get_sv("KinoSearch::Util::Host::testobj", 1);
     RETVAL = Kino_Obj_To_Host(test_obj);
     SvSetSV_nosteal(pack_var, RETVAL);

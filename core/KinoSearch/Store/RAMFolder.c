@@ -13,7 +13,7 @@ S_read_fsfolder(RAMFolder *self);
 RAMFolder*
 RAMFolder_new(const CharBuf *path) 
 {
-    RAMFolder *self = (RAMFolder*)VTable_Make_Obj(&RAMFOLDER);
+    RAMFolder *self = (RAMFolder*)VTable_Make_Obj(RAMFOLDER);
     return RAMFolder_init(self, path);
 }
 
@@ -60,8 +60,8 @@ S_read_fsfolder(RAMFolder *self)
         InStream *source_stream 
             = FSFolder_Open_In(source_folder, filepath);
         OutStream *outstream = RAMFolder_Open_Out(self, filepath);
-        if (!source_stream) { THROW("Can't open %o", filepath); }
-        if (!outstream)     { THROW("Can't open %o", filepath); }
+        if (!source_stream) { THROW(ERR, "Can't open %o", filepath); }
+        if (!outstream)     { THROW(ERR, "Can't open %o", filepath); }
         OutStream_Absorb(outstream, source_stream);
         OutStream_Close(outstream);
         InStream_Close(source_stream);
@@ -86,7 +86,7 @@ RAMFolder_ram_file(RAMFolder *self, const CharBuf *filepath)
     RAMFileDes *ram_file 
         = (RAMFileDes*)Hash_Fetch(self->elems, (Obj*)filepath);
     if (ram_file == NULL)
-        THROW( "File '%o' not loaded into RAM", filepath);
+        THROW(ERR,  "File '%o' not loaded into RAM", filepath);
     return ram_file;
 }
 
@@ -144,11 +144,22 @@ RAMFolder_rename(RAMFolder *self, const CharBuf* from, const CharBuf *to)
     RAMFileDes *file_des = (RAMFileDes*)Hash_Delete(self->elems, (Obj*)from);
 
     if (file_des == NULL) {
-        THROW("File '%o' not loaded into RAM", from);
+        THROW(ERR, "File '%o' not loaded into RAM", from);
     }
 
     Hash_Store(self->elems, (Obj*)to, (Obj*)file_des);
     FileDes_Set_Path(file_des, to);
+}
+
+
+bool_t
+RAMFolder_hard_link(RAMFolder *self, const CharBuf *source, 
+                    const CharBuf *target)
+{
+    RAMFileDes *file_des = (RAMFileDes*)Hash_Fetch(self->elems, (Obj*)source);
+    if (!file_des) { return false; }
+    Hash_Store(self->elems, (Obj*)target, INCREF(file_des));
+    return true;
 }
 
 bool_t

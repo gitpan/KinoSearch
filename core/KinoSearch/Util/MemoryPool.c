@@ -1,7 +1,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/MemoryPool.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 static void
 S_init_arena(MemoryPool *self, size_t amount);
@@ -22,7 +21,7 @@ S_init_arena(MemoryPool *self, size_t amount);
 MemoryPool*
 MemPool_new(u32_t arena_size)
 {
-    MemoryPool *self = (MemoryPool*)VTable_Make_Obj(&MEMORYPOOL);
+    MemoryPool *self = (MemoryPool*)VTable_Make_Obj(MEMORYPOOL);
 
     self->arena_size = arena_size == 0 ? DEFAULT_BUF_SIZE : arena_size;
     self->arenas     = VA_new(16);
@@ -65,8 +64,8 @@ S_init_arena(MemoryPool *self, size_t amount)
             : self->arena_size;
         char *ptr       = MALLOCATE(buf_size, char);
         if (ptr == NULL)
-            THROW("Failed to allocate memory");
-        bb = BB_new_steal_str(ptr, buf_size - 1, buf_size);
+            THROW(ERR, "Failed to allocate memory");
+        bb = BB_new_steal_bytes(ptr, buf_size - 1, buf_size);
         VA_Push(self->arenas, (Obj*)bb);
     }
 
@@ -109,7 +108,7 @@ MemPool_resize(MemoryPool *self, void *ptr, size_t new_amount)
     INCREASE_TO_WORD_MULTIPLE(new_amount);
 
     if (ptr != self->last_buf) {
-        THROW("Not the last pointer allocated.");
+        THROW(ERR, "Not the last pointer allocated.");
     }
     else {
         if (new_amount <= last_amount) {
@@ -118,7 +117,7 @@ MemPool_resize(MemoryPool *self, void *ptr, size_t new_amount)
             self->consumed -= difference;
         }
         else {
-            THROW("Can't resize to greater amount: %u64 > %u64", 
+            THROW(ERR, "Can't resize to greater amount: %u64 > %u64", 
                 (u64_t)new_amount, (u64_t)last_amount);
         }
     }
@@ -137,7 +136,7 @@ void
 MemPool_eat(MemoryPool *self, MemoryPool *other) {
     i32_t i;
     if (self->buf != NULL)
-        THROW("Memory pool is not empty");
+        THROW(ERR, "Memory pool is not empty");
 
     /* Move active arenas from other to self. */
     for (i = 0; i <= other->tick; i++) {

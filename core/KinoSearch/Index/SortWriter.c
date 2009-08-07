@@ -16,7 +16,6 @@
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/SortUtils.h"
-#include "KinoSearch/Util/ByteBuf.h"
 #include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IntArrays.h"
 
@@ -26,7 +25,7 @@ SortWriter*
 SortWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
                PolyReader *polyreader)
 {
-    SortWriter *self = (SortWriter*)VTable_Make_Obj(&SORTWRITER);
+    SortWriter *self = (SortWriter*)VTable_Make_Obj(SORTWRITER);
     return SortWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
@@ -138,7 +137,7 @@ SortWriter_add_segment(SortWriter *self, SegReader *reader, I32Array *doc_map)
     for (i = 0, max = VA_Get_Size(fields); i < max; i++) {
         CharBuf *field = (CharBuf*)VA_Fetch(fields, i);
         SortReader *sort_reader 
-            = (SortReader*)SegReader_Fetch(reader, SORTREADER.name);
+            = (SortReader*)SegReader_Fetch(reader, SORTREADER->name);
         SortCache *cache = sort_reader 
             ? SortReader_Fetch_Sort_Cache(sort_reader, field) : NULL;
         if (cache) {
@@ -227,7 +226,7 @@ S_compare_doc_vals(void *context, const void *va, const void *vb)
     VArray *doc_vals = stuff->vals;
     Obj *a = VA_Fetch(doc_vals, doc_id_a);
     Obj *b = VA_Fetch(doc_vals, doc_id_b);
-    return (i32_t)FType_Compare_Values(stuff->type, a, b);
+    return FType_Compare_Values(stuff->type, a, b);
 }
 
 static i32_t
@@ -268,7 +267,7 @@ S_write_ord(void *ords, i32_t width, i32_t doc_id, i32_t ord)
                     ints[doc_id] = ord;
                 }
                 break;
-        default: THROW("Invalid width: %i32", width);
+        default: THROW(ERR, "Invalid width: %i32", width);
     }
 }
 
@@ -324,7 +323,7 @@ SI_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out)
                 break;
             }
             default: 
-                THROW("Unrecognized primitive id: %i32", (i32_t)prim_id);
+                THROW(ERR, "Unrecognized primitive id: %i32", (i32_t)prim_id);
         }
     }
     else {
@@ -346,7 +345,7 @@ SI_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out)
                 OutStream_Write_F32(dat_out, 0.0f);
                 break;
             default: 
-                THROW("Unrecognized primitive id: %i32", (i32_t)prim_id);
+                THROW(ERR, "Unrecognized primitive id: %i32", (i32_t)prim_id);
         }
     }
 }
@@ -380,9 +379,9 @@ S_finish_field(SortWriter *self, i32_t field_num, VArray *doc_vals,
     u32_t      i;
     kino_SortWriter_sort_context context;
 
-    if (!ord_out)              { THROW("Can't open '%o'", ord_file); }
-    if (var_width && !ix_out)  { THROW("Can't open '%o'", ix_file); }
-    if (!dat_out)              { THROW("Can't open '%o'", dat_file); }
+    if (!ord_out)              { THROW(ERR, "Can't open '%o'", ord_file); }
+    if (var_width && !ix_out)  { THROW(ERR, "Can't open '%o'", ix_file); }
+    if (!dat_out)              { THROW(ERR, "Can't open '%o'", dat_file); }
 
     /* Add files to Snapshot. */
     Snapshot_Add_Entry(snapshot, ord_file);
@@ -454,7 +453,7 @@ S_finish_field(SortWriter *self, i32_t field_num, VArray *doc_vals,
 
     count++;
     if (count != num_uniq) {
-        THROW("ord mismatch with num_uniq: %i32 %i32", count, num_uniq);
+        THROW(ERR, "ord mismatch with num_uniq: %i32 %i32", count, num_uniq);
     }
 
     return num_uniq;

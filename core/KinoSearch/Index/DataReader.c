@@ -17,13 +17,13 @@ DataReader_init(DataReader *self, Schema *schema, Folder *folder,
     self->seg_tick = seg_tick;
     if (seg_tick != -1) {
         if (!segments) {
-            THROW("No segments array provided, but seg_tick is %i32",
+            THROW(ERR, "No segments array provided, but seg_tick is %i32",
                 seg_tick);
         }
         else {
             Segment *segment = (Segment*)VA_Fetch(segments, seg_tick);
             if (!segment) {
-                THROW("No segment at seg_tick %i32", seg_tick);
+                THROW(ERR, "No segment at seg_tick %i32", seg_tick);
             }
             self->segment = (Segment*)INCREF(segment);
         }

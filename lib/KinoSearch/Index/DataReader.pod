@@ -50,7 +50,8 @@ B<segments> - An array of Segments.
 
 B<seg_tick> - The array index of the Segment object within the
 C<< segments >> array that this particular DataReader is assigned
-to, if any.  A value of -1 indicates that no Segment should be assigned.
+to, if any.  A value of -1 indicates that no Segment should be
+assigned.
 
 =back
 

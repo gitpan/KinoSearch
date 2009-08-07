@@ -10,7 +10,7 @@
 SkipStepper*
 SkipStepper_new()
 {
-    SkipStepper *self = (SkipStepper*)VTable_Make_Obj(&SKIPSTEPPER);
+    SkipStepper *self = (SkipStepper*)VTable_Make_Obj(SKIPSTEPPER);
 
     /* Init. */
     self->doc_id   = 0;
@@ -20,9 +20,9 @@ SkipStepper_new()
 }
 
 void
-SkipStepper_reset(SkipStepper *self, i32_t doc_id, u64_t filepos)
+SkipStepper_set_id_and_filepos(SkipStepper *self, i32_t doc_id, u64_t filepos)
 {
-    self->doc_id = doc_id;
+    self->doc_id  = doc_id;
     self->filepos = filepos;
 }
 

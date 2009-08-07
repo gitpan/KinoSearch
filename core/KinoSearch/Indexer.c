@@ -21,7 +21,6 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"
 #include "KinoSearch/Store/Lock.h"
-#include "KinoSearch/Store/LockFactory.h"
 #include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
@@ -34,6 +33,10 @@ i32_t Indexer_TRUNCATE = 0x00000002;
 static void
 S_release_write_lock(Indexer *self);
 
+/* Release the merge lock - if it's there. */
+static void
+S_release_merge_lock(Indexer *self);
+
 /* Verify a Folder or derive an FSFolder from a CharBuf path.  Call
  * Folder_Initialize() if "create" is true. */
 static Folder*
@@ -44,16 +47,15 @@ static CharBuf*
 S_find_schema_file(Snapshot *snapshot);
 
 Indexer*
-Indexer_new(Schema *schema, Obj *index, IndexManager *manager,
-            LockFactory *lock_factory, i32_t flags)
+Indexer_new(Schema *schema, Obj *index, IndexManager *manager, i32_t flags)
 {
-    Indexer *self = (Indexer*)VTable_Make_Obj(&INDEXER);
-    return Indexer_init(self, schema, index, manager, lock_factory, flags);
+    Indexer *self = (Indexer*)VTable_Make_Obj(INDEXER);
+    return Indexer_init(self, schema, index, manager, flags);
 }
 
 Indexer*
 Indexer_init(Indexer *self, Schema *schema, Obj *index, 
-          IndexManager *manager, LockFactory *lock_factory, i32_t flags)
+          IndexManager *manager, i32_t flags)
           
 {
     bool_t    create   = (flags & Indexer_CREATE)   ? true : false;
@@ -64,25 +66,23 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
     Snapshot *latest_snapshot = Snapshot_new();
 
     /* Init. */
-    self->stock_doc    = Doc_new(NULL, 0);
-    self->truncate     = false;
-    self->optimized    = false;
-    self->prepared     = false;
-    self->needs_commit = false;
-    self->snapfile     = NULL;
+    self->stock_doc     = Doc_new(NULL, 0);
+    self->truncate      = false;
+    self->optimize      = false;
+    self->prepared      = false;
+    self->needs_commit  = false;
+    self->snapfile      = NULL;
+    self->merge_lock    = NULL;
 
     /* Assign. */
     self->folder       = folder;
     self->manager      = manager 
                        ? (IndexManager*)INCREF(manager) 
-                       : IxManager_new(folder);
-    self->lock_factory = lock_factory 
-                       ? (LockFactory*)INCREF(lock_factory)
-                       : LockFact_new(folder, (CharBuf*)&EMPTY);
+                       : IxManager_new(NULL, NULL);
+    IxManager_Set_Folder(self->manager, folder);
 
     /* Get a write lock for this folder. */
-    write_lock = LockFact_Make_Lock(self->lock_factory,
-        (CharBuf*)Lock_write_lock_name, Lock_write_lock_timeout);
+    write_lock = IxManager_Make_Write_Lock(self->manager);
     Lock_Clear_Stale(write_lock);
     if (Lock_Obtain(write_lock)) {
         /* Only assign if successful, otherwise DESTROY unlocks -- bad! */
@@ -93,7 +93,7 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
             Lock_Get_Filename(write_lock));
         DECREF(write_lock);
         DECREF(self);
-        Err_throw_mess(message);
+        Err_throw_mess(LOCKERR, message);
     }
 
     /* Find the latest snapshot or create a new one. */
@@ -108,20 +108,20 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
     }
     else {
         if (!latest_snapfile) {
-            THROW("No Schema supplied, and can't find one in the index");
+            THROW(ERR, "No Schema supplied, and can't find one in the index");
         }
         else {
             CharBuf *schema_file = S_find_schema_file(latest_snapshot);
             Hash *dump = (Hash*)Json_slurp_json(folder, schema_file);
             if (dump) { /* read file successfully */
                 self->schema = (Schema*)ASSERT_IS_A(
-                    VTable_Load_Obj(&SCHEMA, (Obj*)dump), SCHEMA);
+                    VTable_Load_Obj(SCHEMA, (Obj*)dump), SCHEMA);
                 schema = self->schema;
                 DECREF(dump);
                 schema_file = NULL;
             }
             else {
-                THROW("Failed to parse %o", schema_file);
+                THROW(ERR, "Failed to parse %o", schema_file);
             }
         }
     }
@@ -154,24 +154,56 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
         /* Note: we have to feed FilePurger with the most recent snapshot file
          * now, but with the Indexer's snapshot later. */
         FilePurger *file_purger 
-            = FilePurger_new(folder, latest_snapshot, self->lock_factory);
+            = FilePurger_new(folder, latest_snapshot, self->manager);
         FilePurger_Purge(file_purger);
         DECREF(file_purger);
     }
 
-    /* Create new Segment, SegWriter, and FilePurger.  */
-    self->file_purger 
-        = FilePurger_new(folder, self->snapshot, self->lock_factory);
-    self->segment 
-        = IxManager_Make_New_Segment(self->manager, latest_snapshot);
+    /* Create a new segment. */
     {
-        VArray *fields = Schema_All_Fields(schema);
+        i32_t new_seg_num 
+            = IxManager_Highest_Seg_Num(self->manager, latest_snapshot) + 1;
+        Lock *merge_lock = IxManager_Make_Merge_Lock(self->manager);
         u32_t i, max;
-        for (i = 0, max = VA_Get_Size(fields); i < max; i++) {
-            Seg_Add_Field(self->segment, (CharBuf*)VA_Fetch(fields, i));
+
+        if (Lock_Is_Locked(merge_lock)) {
+            /* If there's a background merge process going on, stay out of its
+             * way. */
+            Hash *merge_data = IxManager_Read_Merge_Data(self->manager);
+            Obj *cutoff_obj = merge_data 
+                            ? Hash_Fetch_Str(merge_data, "cutoff", 6)
+                            : NULL;
+            if (!cutoff_obj) {
+                DECREF(merge_lock);
+                DECREF(merge_data);
+                THROW(ERR, "Background merge detected, but can't read merge data");
+            }
+            else {
+                i32_t cutoff = (i32_t)Obj_To_I64(cutoff_obj);
+                if (cutoff >= new_seg_num) {
+                    new_seg_num = cutoff + 1;
+                }
+            }
+            DECREF(merge_data);
         }
-        DECREF(fields);
+
+        self->segment = Seg_new(new_seg_num);
+
+        /* Add all known fields to Segment. */
+        {
+            VArray *fields = Schema_All_Fields(schema);
+            for (i = 0, max = VA_Get_Size(fields); i < max; i++) {
+                Seg_Add_Field(self->segment, (CharBuf*)VA_Fetch(fields, i));
+            }
+            DECREF(fields);
+        }
+
+        DECREF(merge_lock);
     }
+
+    /* Create new SegWriter and FilePurger.  */
+    self->file_purger 
+        = FilePurger_new(folder, self->snapshot, self->manager);
     self->seg_writer = SegWriter_new(self->schema, self->snapshot,
         self->segment, self->polyreader); 
     SegWriter_Prep_Seg_Dir(self->seg_writer);
@@ -189,13 +221,13 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
 void
 Indexer_destroy(Indexer *self) 
 {
+    S_release_merge_lock(self);
     S_release_write_lock(self);
     DECREF(self->schema);
     DECREF(self->folder);
     DECREF(self->segment);
     DECREF(self->manager);
     DECREF(self->stock_doc);
-    DECREF(self->lock_factory);
     DECREF(self->polyreader);
     DECREF(self->del_writer);
     DECREF(self->snapshot);
@@ -219,7 +251,7 @@ S_init_folder(Obj *index, bool_t create)
         folder = (Folder*)FSFolder_new((CharBuf*)index);
     }
     else {
-        THROW("Invalid type for 'index': %o", Obj_Get_Class_Name(index));
+        THROW(ERR, "Invalid type for 'index': %o", Obj_Get_Class_Name(index));
     }
 
     /* Validate or create the index directory. */
@@ -228,7 +260,7 @@ S_init_folder(Obj *index, bool_t create)
     }
     else { 
         if (!Folder_Check(folder)) {
-            THROW("Folder '%o' failed check", Folder_Get_Path(folder));
+            THROW(ERR, "Folder '%o' failed check", Folder_Get_Path(folder));
         }
     }
 
@@ -249,7 +281,7 @@ Indexer_delete_by_term(Indexer *self, CharBuf *field, Obj *term)
 
     /* Raise exception if the field isn't indexed. */
     if (!type || !FType_Indexed(type)) 
-        THROW("%o is not an indexed field", field);
+        THROW(ERR, "%o is not an indexed field", field);
 
     /* Analyze term if appropriate, then zap. */
     if (OBJ_IS_A(type, FULLTEXTTYPE)) {
@@ -289,12 +321,12 @@ Indexer_add_index(Indexer *self, Obj *index)
         other_folder = (Folder*)FSFolder_new((CharBuf*)index);
     }
     else {
-        THROW("Invalid type for 'index': %o", Obj_Get_Class_Name(index));
+        THROW(ERR, "Invalid type for 'index': %o", Obj_Get_Class_Name(index));
     }
 
     reader = IxReader_open((Obj*)other_folder, NULL, NULL);
     if (reader == NULL) {
-        THROW("Index doesn't seem to contain any data");
+        THROW(ERR, "Index doesn't seem to contain any data");
     }
     else {
         Schema *schema       = self->schema;
@@ -317,7 +349,7 @@ Indexer_add_index(Indexer *self, Obj *index)
         for (i = 0, max = VA_Get_Size(seg_readers); i < max; i++) {
             SegReader *seg_reader = (SegReader*)VA_Fetch(seg_readers, i);
             DeletionsReader *del_reader = (DeletionsReader*)SegReader_Fetch(
-                seg_reader, DELETIONSREADER.name);
+                seg_reader, DELETIONSREADER->name);
             Matcher *deletions = del_reader 
                                ? DelReader_Iterator(del_reader) 
                                : NULL;
@@ -339,24 +371,7 @@ Indexer_add_index(Indexer *self, Obj *index)
 void
 Indexer_optimize(Indexer *self)
 {
-    VArray *seg_readers = PolyReader_Get_Seg_Readers(self->polyreader);
-    u32_t i, max;
-
-    /* Consolidate segments  optimizing forced. */
-    for (i = 0, max = VA_Get_Size(seg_readers); i < max; i++) {
-        SegReader *seg_reader = (SegReader*)VA_Fetch(seg_readers, i);
-        Matcher *deletions 
-            = DelWriter_Seg_Deletions(self->del_writer, seg_reader);
-        I32Array *doc_map = DelWriter_Generate_Doc_Map(self->del_writer,
-            deletions, SegReader_Doc_Max(seg_reader),
-            Seg_Get_Count(self->segment) 
-        );
-        SegWriter_Merge_Segment(self->seg_writer, seg_reader, doc_map);
-        DECREF(deletions);
-        DECREF(doc_map);
-    }
-
-    self->optimized = true;
+    self->optimize = true;
 }
 
 static CharBuf*
@@ -378,44 +393,89 @@ S_find_schema_file(Snapshot *snapshot)
     return retval;
 }
 
+static bool_t
+S_maybe_merge(Indexer *self, VArray *seg_readers)
+{
+    bool_t  merge_happened  = false;
+    u32_t   num_seg_readers = VA_Get_Size(seg_readers);
+    Lock   *merge_lock      = IxManager_Make_Merge_Lock(self->manager);
+    bool_t  got_merge_lock  = Lock_Obtain(merge_lock);
+    i32_t   cutoff;
+    VArray *to_merge;
+    u32_t   i, max;
+
+    if (got_merge_lock) {
+        self->merge_lock = merge_lock;
+        cutoff = 0;
+    }
+    else {
+        /* If something else holds the merge lock, don't interfere. */
+        Hash *merge_data = IxManager_Read_Merge_Data(self->manager);
+        if (merge_data) {
+            Obj *cutoff_obj = Hash_Fetch_Str(merge_data, "cutoff", 6);
+            if (cutoff_obj) {
+                cutoff = (i32_t)Obj_To_I64(cutoff_obj);
+            }
+            else {
+                cutoff = I32_MAX;
+            }
+            DECREF(merge_data);
+        }
+        else {
+            cutoff = I32_MAX;
+        }
+        DECREF(merge_lock);
+    }
+
+    to_merge = IxManager_Recycle(self->manager, self->polyreader, 
+        self->del_writer, cutoff, self->optimize);
+
+    /* Consolidate segments if either sparse or optimizing forced. */
+    for (i = 0, max = VA_Get_Size(to_merge); i < max; i++) {
+        SegReader *seg_reader = (SegReader*)VA_Fetch(to_merge, i);
+        i32_t seg_num = SegReader_Get_Seg_Num(seg_reader);
+        Matcher *deletions 
+            = DelWriter_Seg_Deletions(self->del_writer, seg_reader);
+        I32Array *doc_map = DelWriter_Generate_Doc_Map(self->del_writer,
+            deletions, SegReader_Doc_Max(seg_reader),
+            Seg_Get_Count(self->segment) 
+        );
+        if (seg_num <= cutoff) {
+            THROW(ERR, "Segment %o violates cutoff (%i32 <= %i32)",
+                SegReader_Get_Seg_Name(seg_reader), seg_num, cutoff);
+        }
+        SegWriter_Merge_Segment(self->seg_writer, seg_reader, doc_map);
+        merge_happened = true;
+        DECREF(deletions);
+        DECREF(doc_map);
+    }
+
+    /* Write out new deletions. */
+    if (DelWriter_Updated(self->del_writer)) {
+        /* Only write out if they haven't all been applied. */
+        if (VA_Get_Size(to_merge) != num_seg_readers) {
+            DelWriter_Finish(self->del_writer);
+        }
+    }
+
+    DECREF(to_merge);
+    return merge_happened;
+}
+
 void
 Indexer_prepare_commit(Indexer *self)
 {
     VArray *seg_readers     = PolyReader_Get_Seg_Readers(self->polyreader);
     u32_t   num_seg_readers = VA_Get_Size(seg_readers);
-    bool_t  merge_happened  = self->optimized;
+    bool_t  merge_happened  = false;
 
     if ( !self->write_lock || self->prepared ) {
-        THROW("Can't call Prepare_Commit() more than once");
+        THROW(ERR, "Can't call Prepare_Commit() more than once");
     }
 
     /* Merge existing index data. */
-    if (num_seg_readers && !self->optimized) {
-        VArray *to_merge = IxManager_SegReaders_To_Merge(self->manager,
-            self->polyreader, false);
-        u32_t i, max;
-
-        /* Consolidate segments if either sparse or optimizing forced. */
-        for (i = 0, max = VA_Get_Size(to_merge); i < max; i++) {
-            SegReader *seg_reader = (SegReader*)VA_Fetch(to_merge, i);
-            Matcher *deletions 
-                = DelWriter_Seg_Deletions(self->del_writer, seg_reader);
-            I32Array *doc_map = DelWriter_Generate_Doc_Map(self->del_writer,
-                deletions, SegReader_Doc_Max(seg_reader),
-                Seg_Get_Count(self->segment) 
-            );
-            SegWriter_Merge_Segment(self->seg_writer, seg_reader, doc_map);
-            merge_happened = true;
-            DECREF(deletions);
-            DECREF(doc_map);
-        }
-
-        /* Write out new deletions. */
-        if (DelWriter_Updated(self->del_writer)) {
-            DelWriter_Finish(self->del_writer);
-        }
-
-        DECREF(to_merge);
+    if (num_seg_readers) { 
+        merge_happened = S_maybe_merge(self, seg_readers);
     }
 
     /* Add a new segment and write a new snapshot file if... */
@@ -467,7 +527,7 @@ Indexer_commit(Indexer *self)
 {
     /* Safety check. */
     if ( !self->write_lock ) {
-        THROW("Can't call commit() more than once");
+        THROW(ERR, "Can't call commit() more than once");
     }
 
     if (!self->prepared) {
@@ -486,7 +546,8 @@ Indexer_commit(Indexer *self)
         FilePurger_Purge(self->file_purger);
     }
 
-    /* Release the write lock, invalidating the Indexer. */
+    /* Release locks, invalidating the Indexer. */
+    S_release_merge_lock(self);
     S_release_write_lock(self);
 }
 
@@ -500,6 +561,16 @@ S_release_write_lock(Indexer *self)
         Lock_Release(self->write_lock);
         DECREF(self->write_lock);
         self->write_lock = NULL;
+    }
+}
+
+static void
+S_release_merge_lock(Indexer *self)
+{
+    if (self->merge_lock) {
+        Lock_Release(self->merge_lock);
+        DECREF(self->merge_lock);
+        self->merge_lock = NULL;
     }
 }
 

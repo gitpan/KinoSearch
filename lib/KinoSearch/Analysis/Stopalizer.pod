@@ -21,10 +21,10 @@ the same set of languages.
 
 =head1 DESCRIPTION
 
-A "stoplist" is collection of "stopwords": words which are common enough to be
-of little value when determining search results.  For example, so many
-documents in English contain "the", "if", and "maybe" that it may improve both
-performance and relevance to block them.
+A "stoplist" is collection of "stopwords": words which are common enough to
+be of little value when determining search results.  For example, so many
+documents in English contain "the", "if", and "maybe" that it may improve
+both performance and relevance to block them.
 
 Before filtering stopwords:
 

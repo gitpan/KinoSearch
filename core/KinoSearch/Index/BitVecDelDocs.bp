@@ -1,6 +1,6 @@
 parcel KinoSearch cnick Kino;
 
-class KinoSearch::Index::BitVecDelDocs extends KinoSearch::Util::BitVector {
+class KinoSearch::Index::BitVecDelDocs extends KinoSearch::Obj::BitVector {
 
     InStream  *instream;
     CharBuf   *filename;

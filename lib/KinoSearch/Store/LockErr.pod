@@ -1,0 +1,51 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Store::LockErr - Lock exception.
+
+=head1 SYNOPSIS
+
+    while (1) {
+        my $bg_merger = eval {
+            KinoSearch::Index::BackgroundMerger->new( index => $index );
+        };
+        if ( blessed($@) and $@->isa("KinoSearch::Store::LockErr") ) {
+            warn "Retrying...\n";
+        }
+        elsif (!$bg_merger) {
+            # Re-throw.
+            die "Failed to open BackgroundMerger: $@";
+        }
+        ...
+    }
+
+
+
+=head1 DESCRIPTION
+
+LockErr is a subclass of Err which indicates that a file locking problem
+occurred.
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Store::LockErr isa L<KinoSearch::Obj::Err> isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

@@ -34,11 +34,6 @@ class KinoSearch::Index::RawPosting cnick RawPost
     new(void *pre_allocated_memory, i32_t doc_id, u32_t freq,
         char *term_text, size_t term_text_len);
 
-    /** Write the posting's doc id and auxilliary content to the outstream.
-     */
-    void
-    Write_Record(RawPosting *self, OutStream *outstream, i32_t last_doc_id);
-
     u32_t
     Get_RefCount(RawPosting* self);
 
@@ -52,6 +47,31 @@ class KinoSearch::Index::RawPosting cnick RawPost
      */
     void
     Destroy(RawPosting *self);
+}
+
+class KinoSearch::Posting::RawPostingStreamer cnick RawPostStreamer
+    extends KinoSearch::Posting::PostingStreamer {
+
+    OutStream *outstream;
+    i32_t      last_doc_id;
+
+    static incremented RawPostingStreamer*
+    new(DataWriter *writer, OutStream *outstream);
+
+    static RawPostingStreamer*
+    init(RawPostingStreamer *self, DataWriter *writer, OutStream *outstream);
+
+    void
+    Destroy(RawPostingStreamer *self);
+
+    void
+    Start_Term(RawPostingStreamer *self, TermInfo *tinfo);
+
+    void
+    Update_Skip_Info(RawPostingStreamer *self, TermInfo *tinfo);
+
+    void
+    Write_Posting(RawPostingStreamer *self, RawPosting *posting);
 }
 
 __C__

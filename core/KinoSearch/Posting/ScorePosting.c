@@ -28,7 +28,7 @@
 ScorePosting*
 ScorePost_new(Similarity *sim)
 {
-    ScorePosting *self = (ScorePosting*)VTable_Make_Obj(&SCOREPOSTING);
+    ScorePosting *self = (ScorePosting*)VTable_Make_Obj(SCOREPOSTING);
     return ScorePost_init(self, sim);
 }
 
@@ -115,9 +115,9 @@ ScorePost_add_inversion_to_pool(ScorePosting *self, PostingPool *post_pool,
 }
 
 void
-ScorePost_reset(ScorePosting *self, i32_t doc_id)
+ScorePost_reset(ScorePosting *self)
 {
-    self->doc_id   = doc_id;
+    self->doc_id   = 0;
     self->freq     = 0;
     self->weight   = 0.0;
 }
@@ -205,7 +205,7 @@ ScorePost_make_matcher(ScorePosting *self, Similarity *sim,
                        bool_t need_score)
 {
     ScorePostingScorer *matcher
-        = (ScorePostingScorer*)VTable_Make_Obj(&SCOREPOSTINGSCORER);
+        = (ScorePostingScorer*)VTable_Make_Obj(SCOREPOSTINGSCORER);
     UNUSED_VAR(self);
     UNUSED_VAR(need_score);
     return ScorePostScorer_init(matcher, sim, plist, compiler);

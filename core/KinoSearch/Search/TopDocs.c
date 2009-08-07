@@ -12,7 +12,7 @@
 TopDocs*
 TopDocs_new(VArray *match_docs, u32_t total_hits)
 {
-    TopDocs *self = (TopDocs*)VTable_Make_Obj(&TOPDOCS);
+    TopDocs *self = (TopDocs*)VTable_Make_Obj(TOPDOCS);
     return TopDocs_init(self, match_docs, total_hits);
 }
 
@@ -41,7 +41,7 @@ TopDocs_serialize(TopDocs *self, OutStream *outstream)
 TopDocs*
 TopDocs_deserialize(TopDocs *self, InStream *instream)
 {
-    self = self ? self : (TopDocs*)VTable_Make_Obj(&TOPDOCS);
+    self = self ? self : (TopDocs*)VTable_Make_Obj(TOPDOCS);
     self->match_docs = VA_deserialize(NULL, instream);
     self->total_hits = InStream_Read_C32(instream);
     return self;

@@ -76,7 +76,7 @@ sub _bits {
 
     # Fill the cache.
     if ( !defined $cached_bits ) {
-        $cached_bits = KinoSearch::Util::BitVector->new(
+        $cached_bits = KinoSearch::Obj::BitVector->new(
             capacity => $seg_reader->doc_max + 1 );
         $self->_store_cached_bits( $seg_reader, $cached_bits );
 
@@ -235,8 +235,8 @@ substitute the wrapped query but use set_boost() to set its C<boost> to 0.
         query => $query;
     );
 
-Constructor.  Takes one hash-style parameter, C<query>, which must be an object
-belonging to a subclass of L<KinoSearch::Search::Query>.
+Constructor.  Takes one hash-style parameter, C<query>, which must be an
+object belonging to a subclass of L<KinoSearch::Search::Query>.
 
 =head1 BUGS
 

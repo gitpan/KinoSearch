@@ -26,7 +26,7 @@ CompoundFileWriter*
 CFWriter_new(FSFolder *folder, const CharBuf *seg_name)
 {
     CompoundFileWriter *self 
-        = (CompoundFileWriter*)VTable_Make_Obj(&COMPOUNDFILEWRITER);
+        = (CompoundFileWriter*)VTable_Make_Obj(COMPOUNDFILEWRITER);
     return CFWriter_init(self, folder, seg_name);
 }
 
@@ -53,7 +53,7 @@ CFWriter_consolidate(CompoundFileWriter *self)
     CharBuf *cfmeta_filename = CB_newf("%o/cfmeta.json", self->seg_name);
     if (FSFolder_Real_Exists(self->folder, cfmeta_filename)) {
         DECREF(cfmeta_filename);
-        THROW("Merge already performed for segment %o", self->seg_name);
+        THROW(ERR, "Merge already performed for segment %o", self->seg_name);
     }
     else {
         DECREF(cfmeta_filename);
@@ -75,7 +75,7 @@ S_clean_up_old_temp_files(CompoundFileWriter *self)
             CharBuf *mess = MAKE_MESS("Can't delete '%o'", cf_file);
             DECREF(cf_file);
             DECREF(cf_meta_temp_file);
-            Err_throw_mess(mess);
+            Err_throw_mess(ERR, mess);
         }
     }
     if (FSFolder_Real_Exists(folder, cf_meta_temp_file)) {
@@ -83,7 +83,7 @@ S_clean_up_old_temp_files(CompoundFileWriter *self)
             CharBuf *mess = MAKE_MESS("Can't delete '%o'", cf_meta_temp_file);
             DECREF(cf_file);
             DECREF(cf_meta_temp_file);
-            Err_throw_mess(mess);
+            Err_throw_mess(ERR, mess);
         }
     }
     DECREF(cf_file);
@@ -105,7 +105,7 @@ do_consolidate(CompoundFileWriter *self)
     OutStream *outstream    = FSFolder_Open_Out(folder, outfilename);
     u32_t      i, max;
 
-    if (!outstream) { THROW("Can't open %o", outfilename); }
+    if (!outstream) { THROW(ERR, "Can't open %o", outfilename); }
 
     /* Start metadata. */
     Hash_Store_Str(metadata, "files", 5, INCREF(sub_files));
@@ -124,7 +124,7 @@ do_consolidate(CompoundFileWriter *self)
             i64_t     len;
 
             /* Absorb the file. */
-            if (!instream) { THROW("Failed to open %o", infilepath); }
+            if (!instream) { THROW(ERR, "Failed to open %o", infilepath); }
             OutStream_Absorb(outstream, instream);
             len = OutStream_Tell(outstream) - offset;
 
@@ -166,7 +166,7 @@ do_consolidate(CompoundFileWriter *self)
             if (!FSFolder_Delete_Real(folder, merged_file)) {
                 CharBuf *mess = MAKE_MESS("Can't delete '%o'", merged_file);
                 DECREF(sub_files);
-                Err_throw_mess(mess);
+                Err_throw_mess(ERR, mess);
             }
         }
     }

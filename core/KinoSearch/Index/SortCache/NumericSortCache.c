@@ -25,7 +25,7 @@ NumSortCache_init(NumericSortCache *self, Schema *schema, Folder *folder,
 
     /* Validate. */
     if (!type || !FType_Sortable(type) || !OBJ_IS_A(type, NUMERICTYPE)) {
-        THROW("'%o' isn't a sortable NumericType field", field);
+        THROW(ERR, "'%o' isn't a sortable NumericType field", field);
     }
 
     /* Open instreams. */
@@ -36,7 +36,7 @@ NumSortCache_init(NumericSortCache *self, Schema *schema, Folder *folder,
             ord_file, dat_file, field);
         DECREF(ord_file);
         DECREF(dat_file);
-        Err_throw_mess(mess);
+        Err_throw_mess(ERR, mess);
     }
     ord_len = InStream_Length(self->ord_in);
     dat_len = InStream_Length(self->dat_in);
@@ -55,7 +55,7 @@ NumSortCache_init(NumericSortCache *self, Schema *schema, Folder *folder,
         double docs_per_byte = BITS_PER_BYTE / self->ord_width;
         double max_ords      = ord_len * docs_per_byte;
         if (max_ords < self->doc_max + 1) {
-            THROW("Conflict between ord count max %f64 and doc_max %i32 for "
+            THROW(ERR, "Conflict between ord count max %f64 and doc_max %i32 for "
                 "field %o", max_ords, self->doc_max, field);
         }
     }
@@ -66,7 +66,7 @@ NumSortCache_init(NumericSortCache *self, Schema *schema, Folder *folder,
         if (self->values_limit != limit) {
             i64_t wanted = limit - self->values;
             i64_t got    = self->values_limit - self->values;
-            THROW("Sort cache data file for %o should be %i64 bytes, "
+            THROW(ERR, "Sort cache data file for %o should be %i64 bytes, "
                 "not %i64", field, wanted, got);
         }
     }
@@ -99,7 +99,7 @@ F64SortCache_new(Schema *schema, Folder *folder, Segment *segment,
                  i32_t field_num, i32_t num_unique, i32_t null_ord)
 {
     Float64SortCache *self 
-        = (Float64SortCache*)VTable_Make_Obj(&FLOAT64SORTCACHE);
+        = (Float64SortCache*)VTable_Make_Obj(FLOAT64SORTCACHE);
     return F64SortCache_init(self, schema, folder, segment, field_num,
         num_unique, null_ord);
 }
@@ -112,7 +112,7 @@ F64SortCache_init(Float64SortCache *self, Schema *schema, Folder *folder,
     CharBuf   *field = Seg_Field_Name(segment, field_num);
     FieldType *type  = Schema_Fetch_Type(schema, field);
     if (!type || !FType_Sortable(type) || !OBJ_IS_A(type, FLOAT64TYPE)) {
-        THROW("'%o' isn't a sortable Float64Type field", field);
+        THROW(ERR, "'%o' isn't a sortable Float64Type field", field);
     }
     NumSortCache_init((NumericSortCache*)self, schema, folder, segment, 
         field_num, num_unique, null_ord, sizeof(double));
@@ -126,14 +126,14 @@ F64SortCache_value(Float64SortCache *self, i32_t ord, Obj *blank)
         return NULL; 
     }
     else if (ord < 0) {
-        THROW("Ordinal less than 0 for %o: %i32", self->field, ord);
+        THROW(ERR, "Ordinal less than 0 for %o: %i32", self->field, ord);
     }
     else {
         char *val_ptr = self->values + ord * sizeof(double);
         ASSERT_IS_A(blank, FLOAT64);
         if (val_ptr > self->values_limit) {
             i64_t over = val_ptr - self->values_limit;
-            THROW("Read %i64 beyond data limit for %o", over, self->field);
+            THROW(ERR, "Read %i64 beyond data limit for %o", over, self->field);
         }
         #ifdef LITTLE_END
         {
@@ -154,7 +154,7 @@ F32SortCache_new(Schema *schema, Folder *folder, Segment *segment,
                  i32_t field_num, i32_t num_unique, i32_t null_ord)
 {
     Float32SortCache *self 
-        = (Float32SortCache*)VTable_Make_Obj(&FLOAT32SORTCACHE);
+        = (Float32SortCache*)VTable_Make_Obj(FLOAT32SORTCACHE);
     return F32SortCache_init(self, schema, folder, segment, field_num,
         num_unique, null_ord);
 }
@@ -167,7 +167,7 @@ F32SortCache_init(Float32SortCache *self, Schema *schema, Folder *folder,
     CharBuf   *field = Seg_Field_Name(segment, field_num);
     FieldType *type  = Schema_Fetch_Type(schema, field);
     if (!type || !FType_Sortable(type) || !OBJ_IS_A(type, FLOAT32TYPE)) {
-        THROW("'%o' isn't a sortable Float32Type field", field);
+        THROW(ERR, "'%o' isn't a sortable Float32Type field", field);
     }
     NumSortCache_init((NumericSortCache*)self, schema, folder, segment, 
         field_num, num_unique, null_ord, sizeof(float));
@@ -181,14 +181,14 @@ F32SortCache_value(Float32SortCache *self, i32_t ord, Obj *blank)
         return NULL; 
     }
     else if (ord < 0) {
-        THROW("Ordinal less than 0 for %o: %i32", self->field, ord);
+        THROW(ERR, "Ordinal less than 0 for %o: %i32", self->field, ord);
     }
     else {
         char *val_ptr = self->values + ord * sizeof(float);
         ASSERT_IS_A(blank, FLOAT32);
         if (val_ptr > self->values_limit) {
             i64_t over = val_ptr - self->values_limit;
-            THROW("Read %i64 beyond data limit for %o", over, self->field);
+            THROW(ERR, "Read %i64 beyond data limit for %o", over, self->field);
         }
         #ifdef LITTLE_END
         {
@@ -209,7 +209,7 @@ I32SortCache_new(Schema *schema, Folder *folder, Segment *segment,
                  i32_t field_num, i32_t num_unique, i32_t null_ord)
 {
     Int32SortCache *self 
-        = (Int32SortCache*)VTable_Make_Obj(&INT32SORTCACHE);
+        = (Int32SortCache*)VTable_Make_Obj(INT32SORTCACHE);
     return I32SortCache_init(self, schema, folder, segment, field_num,
         num_unique, null_ord);
 }
@@ -222,7 +222,7 @@ I32SortCache_init(Int32SortCache *self, Schema *schema, Folder *folder,
     CharBuf   *field = Seg_Field_Name(segment, field_num);
     FieldType *type  = Schema_Fetch_Type(schema, field);
     if (!type || !FType_Sortable(type) || !OBJ_IS_A(type, INT32TYPE)) {
-        THROW("'%o' isn't a sortable Int32Type field", field);
+        THROW(ERR, "'%o' isn't a sortable Int32Type field", field);
     }
     NumSortCache_init((NumericSortCache*)self, schema, folder, segment, 
         field_num, num_unique, null_ord, sizeof(i32_t));
@@ -236,14 +236,14 @@ I32SortCache_value(Int32SortCache *self, i32_t ord, Obj *blank)
         return NULL; 
     }
     else if (ord < 0) {
-        THROW("Ordinal less than 0 for %o: %i32", self->field, ord);
+        THROW(ERR, "Ordinal less than 0 for %o: %i32", self->field, ord);
     }
     else {
         char *val_ptr = self->values + ord * sizeof(i32_t);
         ASSERT_IS_A(blank, INTEGER32);
         if (val_ptr > self->values_limit) {
             i64_t over = val_ptr - self->values_limit;
-            THROW("Read %i64 beyond data limit for %o", over, self->field);
+            THROW(ERR, "Read %i64 beyond data limit for %o", over, self->field);
         }
         Int32_Set_Value(blank, Math_decode_bigend_u32(val_ptr));
     }
@@ -257,7 +257,7 @@ I64SortCache_new(Schema *schema, Folder *folder, Segment *segment,
                  i32_t field_num, i32_t num_unique, i32_t null_ord)
 {
     Int64SortCache *self 
-        = (Int64SortCache*)VTable_Make_Obj(&INT64SORTCACHE);
+        = (Int64SortCache*)VTable_Make_Obj(INT64SORTCACHE);
     return I64SortCache_init(self, schema, folder, segment, field_num,
         num_unique, null_ord);
 }
@@ -270,7 +270,7 @@ I64SortCache_init(Int64SortCache *self, Schema *schema, Folder *folder,
     CharBuf   *field = Seg_Field_Name(segment, field_num);
     FieldType *type  = Schema_Fetch_Type(schema, field);
     if (!type || !FType_Sortable(type) || !OBJ_IS_A(type, INT64TYPE)) {
-        THROW("'%o' isn't a sortable Int64Type field", field);
+        THROW(ERR, "'%o' isn't a sortable Int64Type field", field);
     }
     NumSortCache_init((NumericSortCache*)self, schema, folder, segment, 
         field_num, num_unique, null_ord, sizeof(i64_t));
@@ -284,14 +284,14 @@ I64SortCache_value(Int64SortCache *self, i32_t ord, Obj *blank)
         return NULL; 
     }
     else if (ord < 0) {
-        THROW("Ordinal less than 0 for %o: %i32", self->field, ord);
+        THROW(ERR, "Ordinal less than 0 for %o: %i32", self->field, ord);
     }
     else {
         char *val_ptr = self->values + ord * sizeof(i64_t);
         ASSERT_IS_A(blank, INTEGER64);
         if (val_ptr > self->values_limit) {
             i64_t over = val_ptr - self->values_limit;
-            THROW("Read %i64 beyond data limit for %o", over, self->field);
+            THROW(ERR, "Read %i64 beyond data limit for %o", over, self->field);
         }
         Int64_Set_Value(blank, Math_decode_bigend_u64(val_ptr));
     }

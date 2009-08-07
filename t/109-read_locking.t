@@ -4,70 +4,71 @@ use lib 'buildlib';
 
 use Test::More tests => 15;
 
-package NonMergingIndexManager;
+package FastIndexManager;
 use base qw( KinoSearch::Index::IndexManager );
 
-sub segreaders_to_merge {
-    return KinoSearch::Util::VArray->new( capacity => 0 );
+sub new {
+    my $self = shift->SUPER::new(@_);
+    $self->set_deletion_lock_timeout(100);
+    return $self;
 }
+
+package NonMergingIndexManager;
+use base qw( FastIndexManager );
+sub recycle { [] }
 
 package main;
 
 use KinoSearch::Test::TestUtils qw( create_index );
 use KinoSearch::Util::IndexFileNames qw( latest_snapshot );
 
-KinoSearch::Store::Lock::set_commit_lock_timeout(100);
-
 my $folder  = create_index(qw( a b c ));
 my $schema  = KinoSearch::Test::TestSchema->new;
 my $indexer = KinoSearch::Indexer->new(
-    index  => $folder,
-    schema => $schema,
-    create => 1,
+    index   => $folder,
+    schema  => $schema,
+    manager => FastIndexManager->new,
+    create  => 1,
 );
 $indexer->delete_by_term( field => 'content', term => $_ ) for qw( a b c );
 $indexer->add_doc( { content => 'x' } );
 
-# Artificially create commit lock.
-my $outstream = $folder->open_out('commit.lock')
-    or die "Can't open commit.lock";
+# Artificially create deletion lock.
+my $outstream = $folder->open_out('deletion.lock')
+    or die "Can't open deletion.lock";
 $outstream->print("{}");
 $outstream->close;
-
 {
     my $captured;
     local $SIG{__WARN__} = sub { $captured = shift; };
     $indexer->commit;
     like( $captured, qr/obsolete/,
-        "Indexer warns if it can't get a commit lock" );
+        "Indexer warns if it can't get a deletion lock" );
 }
 
-ok( $folder->exists('commit.lock'),
-    "Indexer doesn't delete commit lock when it can't get it" );
+ok( $folder->exists('deletion.lock'),
+    "Indexer doesn't delete deletion lock when it can't get it" );
 my $num_ds_files = grep {m/documents\.dat$/} @{ $folder->list };
 cmp_ok( $num_ds_files, '>', 1,
-    "Indexer doesn't process deletions when it can't get commit lock" );
+    "Indexer doesn't process deletions when it can't get deletion lock" );
 
 my $num_snap_files = grep {m/snapshot/} @{ $folder->list };
 is( $num_snap_files, 2, "didn't zap the old snap file" );
 
-my $lock_factory = KinoSearch::Store::LockFactory->new(
-    agent_id => 'me',
-    folder   => $folder,
-);
 my $reader;
 SKIP: {
     skip( "IndexReader opening failure leaks", 1 )
         if $ENV{KINO_VALGRIND};
     eval {
         $reader = KinoSearch::Index::IndexReader->open(
-            index        => $folder,
-            lock_factory => $lock_factory,
+            index   => $folder,
+            manager => FastIndexManager->new( hostname => 'me' ),
         );
     };
-    like( $@, qr/commit/, "IndexReader dies if it can't get commit lock" );
+    like( $@, qr/deletion/,
+        "IndexReader dies if it can't get deletion lock" );
 }
-$folder->delete('commit.lock') or die "Can't delete 'commit.lock'";
+$folder->delete('deletion.lock') or die "Can't delete 'deletion.lock'";
 
 Test_race_condition_1: {
     my $latest_snapshot_file = latest_snapshot($folder);
@@ -79,11 +80,11 @@ Test_race_condition_1: {
     $folder->rename( from => $_, to => "$_.hidden" )
         for grep {m#^seg_1/.#} @{ $folder->list };
     KinoSearch::Index::IndexReader::set_race_condition_debug1(
-        KinoSearch::Util::CharBuf->new($latest_snapshot_file) );
+        KinoSearch::Obj::CharBuf->new($latest_snapshot_file) );
 
     $reader = KinoSearch::Index::IndexReader->open(
-        index        => $folder,
-        lock_factory => $lock_factory,
+        index   => $folder,
+        manager => FastIndexManager->new( hostname => 'me' ),
     );
     is( $reader->doc_count, 1,
         "reader overcomes race condition of index update after read lock" );
@@ -101,18 +102,14 @@ Test_race_condition_1: {
 }
 
 # Start over with one segment.
-$folder       = create_index(qw( a b c x ));
-$lock_factory = KinoSearch::Store::LockFactory->new(
-    agent_id => 'me',
-    folder   => $folder,
-);
+$folder = create_index(qw( a b c x ));
 
 {
     # Add a second segment and delete one doc from existing segment.
     $indexer = KinoSearch::Indexer->new(
         schema  => $schema,
         index   => $folder,
-        manager => NonMergingIndexManager->new( folder => $folder ),
+        manager => NonMergingIndexManager->new,
     );
     $indexer->add_doc( { content => 'foo' } );
     $indexer->add_doc( { content => 'bar' } );
@@ -123,7 +120,7 @@ $lock_factory = KinoSearch::Store::LockFactory->new(
     $indexer = KinoSearch::Indexer->new(
         schema  => $schema,
         index   => $folder,
-        manager => NonMergingIndexManager->new( folder => $folder ),
+        manager => NonMergingIndexManager->new,
     );
     $indexer->delete_by_term( field => 'content', term => 'a' );
     $indexer->delete_by_term( field => 'content', term => 'foo' );
@@ -132,8 +129,8 @@ $lock_factory = KinoSearch::Store::LockFactory->new(
 
 # Establish read lock.
 $reader = KinoSearch::Index::IndexReader->open(
-    index        => $folder,
-    lock_factory => $lock_factory,
+    index   => $folder,
+    manager => FastIndexManager->new( hostname => 'me' ),
 );
 
 $indexer = KinoSearch::Indexer->new(

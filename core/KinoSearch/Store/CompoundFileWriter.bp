@@ -24,10 +24,11 @@ class KinoSearch::Store::CompoundFileWriter cnick CFWriter
     static CompoundFileWriter*
     init(CompoundFileWriter *self, FSFolder *folder, const CharBuf *seg_name);
 
-    /** Perform the consolidation operation, building the .cf and .cfmeta files.
+    /** Perform the consolidation operation, building the .cf and .cfmeta
+     * files.
      *
-     * The commit point is a rename op, where a .cfmetatemp file gets renamed to
-     * the .cfmeta file.  After the commit completes, the source files are
+     * The commit point is a rename op, where a .cfmetatemp file gets renamed
+     * to the .cfmeta file.  After the commit completes, the source files are
      * deleted.
      */
     void

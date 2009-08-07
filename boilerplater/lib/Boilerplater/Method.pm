@@ -122,8 +122,8 @@ discover that the method has been inherited by a "final" class.
 
 However, we don't rebless the object as with override().  Inherited Method
 objects are shared between parent and child classes; if a shared Method object
-were to become final, it would interfere with its own inheritance.  So, we make
-a copy, slightly modified to make it "final".
+were to become final, it would interfere with its own inheritance.  So, we
+make a copy, slightly modified to make it "final".
 
 =end comment
 =cut
@@ -210,9 +210,8 @@ sub abstract_method_def {
 $return_type_str
 $full_func_sym($params)
 {
-    kino_CharBuf *klass = self ? Kino_Obj_Get_Class_Name(self) : $vtable.name;$unused
-    KINO_THROW("Abstract method '$self->{macro_name}' not defined by %o",
-        klass);$ret_statement
+    kino_CharBuf *klass = self ? Kino_Obj_Get_Class_Name(self) : $vtable->name;$unused
+    KINO_THROW(KINO_ERR, "Abstract method '$self->{macro_name}' not defined by %o", klass);$ret_statement
 }
 END_ABSTRACT_DEF
 }
@@ -366,8 +365,8 @@ VTable.
 
 =item *
 
-B<param_list> - A Boilerplater::ParamList.  The first element must be an object
-of the class identified by C<class_name>.
+B<param_list> - A Boilerplater::ParamList.  The first element must be an
+object of the class identified by C<class_name>.
 
 =item *
 

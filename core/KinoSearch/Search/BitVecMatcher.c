@@ -1,12 +1,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/BitVecMatcher.h"
-#include "KinoSearch/Util/BitVector.h"
 
 BitVecMatcher*
 BitVecMatcher_new(BitVector *bit_vector)
 {
-    BitVecMatcher *self = (BitVecMatcher*)VTable_Make_Obj(&BITVECMATCHER);
+    BitVecMatcher *self = (BitVecMatcher*)VTable_Make_Obj(BITVECMATCHER);
     return BitVecMatcher_init(self, bit_vector);
 }
 

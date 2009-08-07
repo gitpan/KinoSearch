@@ -35,11 +35,12 @@ sub hidden {
         KinoSearch::FieldType::Int64Type
         KinoSearch::FieldType::Float32Type
         KinoSearch::FieldType::Float64Type
+        KinoSearch::Obj::Num
         KinoSearch::Redacted
+        KinoSearch::Test::Obj::TestCharBuf
         KinoSearch::Test::TestUtils
-        KinoSearch::Test::Util::TestCharBuf
         KinoSearch::Test::USConSchema
-        KinoSearch::Util::Num
+        KinoSearch::Util::BitVector
     );
 }
 

@@ -6,7 +6,7 @@ MatchAllScorer*
 MatchAllScorer_new(float score, i32_t doc_max)
 {
     MatchAllScorer *self 
-        = (MatchAllScorer*)VTable_Make_Obj(&MATCHALLSCORER);
+        = (MatchAllScorer*)VTable_Make_Obj(MATCHALLSCORER);
     return MatchAllScorer_init(self, score, doc_max);
 }
 

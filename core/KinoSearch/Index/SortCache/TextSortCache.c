@@ -12,7 +12,7 @@ TextSortCache*
 TextSortCache_new(Schema *schema, Folder *folder, Segment *segment, 
               i32_t field_num, i32_t num_unique, i32_t null_ord)
 {
-    TextSortCache *self = (TextSortCache*)VTable_Make_Obj(&TEXTSORTCACHE);
+    TextSortCache *self = (TextSortCache*)VTable_Make_Obj(TEXTSORTCACHE);
     return TextSortCache_init(self, schema, folder, segment, field_num,
         num_unique, null_ord);
 }
@@ -34,7 +34,7 @@ TextSortCache_init(TextSortCache *self, Schema *schema, Folder *folder,
 
     /* Validate. */
     if (!type || !FType_Sortable(type)) {
-        THROW("'%o' isn't a sortable field", field);
+        THROW(ERR, "'%o' isn't a sortable field", field);
     }
 
     /* Open instreams. */
@@ -47,7 +47,7 @@ TextSortCache_init(TextSortCache *self, Schema *schema, Folder *folder,
         DECREF(ord_file);
         DECREF(ix_file);
         DECREF(dat_file);
-        Err_throw_mess(mess);
+        Err_throw_mess(ERR, mess);
     }
     ord_len = InStream_Length(self->ord_in);
     ix_len  = InStream_Length(self->ix_in);
@@ -71,7 +71,7 @@ TextSortCache_init(TextSortCache *self, Schema *schema, Folder *folder,
         double bytes_per_doc = self->ord_width / 8.0;
         double max_ords      = ord_len / bytes_per_doc;
         if (max_ords < self->doc_max + 1) {
-            THROW("Conflict between ord count max %f64 and doc_max %i32 for "
+            THROW(ERR, "Conflict between ord count max %f64 and doc_max %i32 for "
                 "field %o", max_ords, self->doc_max, field);
         }
     }
@@ -106,7 +106,7 @@ SI_fetch_offset(TextSortCache *self, u32_t ord)
 {
     i64_t *const offsets = self->offsets + ord;
     if (offsets >= self->offsets_limit) {
-        THROW("Ordinal %u32 for %o out of bounds (num unique: %i32)", ord,
+        THROW(ERR, "Ordinal %u32 for %o out of bounds (num unique: %i32)", ord,
             self->field, self->num_uniq);
     }
     return (i64_t)Math_decode_bigend_u64(offsets);
@@ -128,7 +128,9 @@ TextSortCache_value(TextSortCache *self, i32_t ord, Obj *blank)
     else {
         u32_t next_ord = ord + 1;
         i64_t next_offset;
-        while (NULL_SENTINEL == (next_offset = SI_fetch_offset(self, next_ord))) {
+        while (1) {
+            next_offset = SI_fetch_offset(self, next_ord);
+            if (next_offset != NULL_SENTINEL) { break; }
             next_ord++;
         }
         {
@@ -136,7 +138,7 @@ TextSortCache_value(TextSortCache *self, i32_t ord, Obj *blank)
             char  *end = self->char_data + next_offset;
             if (end > self->char_data_limit) {
                 i64_t over = end - self->char_data_limit;
-                THROW("Read %i64 beyond char data limit for %o", over,
+                THROW(ERR, "Read %i64 beyond char data limit for %o", over,
                     self->field);
             }
             ASSERT_IS_A(blank, VIEWCHARBUF);

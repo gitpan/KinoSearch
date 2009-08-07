@@ -86,6 +86,14 @@ abstract class KinoSearch::Store::Folder extends KinoSearch::Obj {
     abstract void
     Rename(Folder *self, const CharBuf *from, const CharBuf *to);
 
+    /** Create a hard link at path <code>target</code> to the file at path
+     * <code>source</code>.
+     * 
+     * @return true on success, false on failure.
+     */
+    public abstract bool_t
+    Hard_Link(Folder *self, const CharBuf *source, const CharBuf *target);
+
     /** Delete an entry from the folder.
      *
      * @param filepath A relative filepath.

@@ -52,7 +52,8 @@ abstract class KinoSearch::Search::Matcher extends KinoSearch::Obj {
      * @param deletions A deletions iterator.
      */
     void
-    Collect(Matcher *self, HitCollector *collector, Matcher *deletions = NULL);
+    Collect(Matcher *self, HitCollector *collector, 
+            Matcher *deletions = NULL);
 }
 
 /* Copyright 2005-2009 Marvin Humphrey

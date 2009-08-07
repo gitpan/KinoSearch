@@ -2,32 +2,29 @@
 
 #include "KinoSearch/Index/IndexReader.h"
 #include "KinoSearch/Index/DocVector.h"
+#include "KinoSearch/Index/IndexManager.h"
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Store/LockFactory.h"
 #include "KinoSearch/Store/Lock.h"
-#include "KinoSearch/Store/SharedLock.h"
 #include "KinoSearch/Util/I32Array.h"
 
 IndexReader*
-IxReader_open(Obj *index, Snapshot *snapshot, 
-              LockFactory *lock_factory)
+IxReader_open(Obj *index, Snapshot *snapshot, IndexManager *manager)
 {
-    return IxReader_do_open(NULL, index, snapshot, lock_factory);
+    return IxReader_do_open(NULL, index, snapshot, manager);
 }
 
 IndexReader*
 IxReader_do_open(IndexReader *temp_self, Obj *index, Snapshot *snapshot, 
-                 LockFactory *lock_factory)
+                 IndexManager *manager)
 {
-    PolyReader *polyreader = PolyReader_open(index, snapshot, 
-        lock_factory);
+    PolyReader *polyreader = PolyReader_open(index, snapshot, manager);
     if (!VA_Get_Size(PolyReader_Get_Seg_Readers(polyreader))) {
-        THROW("Index doesn't seem to contain any data");
+        THROW(ERR, "Index doesn't seem to contain any data");
     }
     DECREF(temp_self);
     return (IndexReader*)polyreader;
@@ -36,18 +33,22 @@ IxReader_do_open(IndexReader *temp_self, Obj *index, Snapshot *snapshot,
 IndexReader*
 IxReader_init(IndexReader *self, Schema *schema, Folder *folder, 
               Snapshot *snapshot, VArray *segments, i32_t seg_tick, 
-              LockFactory *lock_factory)
+              IndexManager *manager)
 {
     snapshot = snapshot ? (Snapshot*)INCREF(snapshot) : Snapshot_new();
     DataReader_init((DataReader*)self, schema, folder, snapshot, segments,
         seg_tick);
     DECREF(snapshot);
     self->components     = Hash_new(0);
-    self->lock_factory   = lock_factory == NULL 
-                         ? NULL 
-                         : (LockFactory*)INCREF(lock_factory);
     self->read_lock      = NULL;
-    self->commit_lock    = NULL;
+    self->deletion_lock  = NULL;
+    if (manager) {
+        self->manager = (IndexManager*)INCREF(manager);
+        IxManager_Set_Folder(self->manager, self->folder);
+    }
+    else {
+        self->manager = NULL;
+    }
     return self;
 }
 
@@ -82,14 +83,11 @@ IxReader_destroy(IndexReader *self)
         Lock_Release(self->read_lock);
         DECREF(self->read_lock);
     }
-    DECREF(self->lock_factory);
-    DECREF(self->commit_lock);
+    DECREF(self->manager);
+    DECREF(self->deletion_lock);
     SUPER_DESTROY(self, INDEXREADER);
 }
 
-LockFactory*
-IxReader_get_lock_factory(IndexReader *self) 
-    { return self->lock_factory; }
 Hash*
 IxReader_get_components(IndexReader *self) 
     { return self->components; }
@@ -100,7 +98,7 @@ IxReader_obtain(IndexReader *self, const CharBuf *api)
     DataReader *component 
         = (DataReader*)Hash_Fetch(self->components, (Obj*)api);
     if (!component) {
-        THROW("No component registered for '%o'", api);
+        THROW(ERR, "No component registered for '%o'", api);
     }
     return component;
 }

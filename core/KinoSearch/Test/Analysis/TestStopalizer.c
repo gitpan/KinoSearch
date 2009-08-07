@@ -9,7 +9,7 @@ static Stopalizer*
 S_make_stopalizer(void *unused, ...)
 {
     va_list args;
-    Stopalizer *self = (Stopalizer*)VTable_Make_Obj(&STOPALIZER);
+    Stopalizer *self = (Stopalizer*)VTable_Make_Obj(STOPALIZER);
     Hash *stoplist = Hash_new(0);
     char *stopword;
 

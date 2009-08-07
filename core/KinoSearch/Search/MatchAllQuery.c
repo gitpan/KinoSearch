@@ -15,7 +15,7 @@
 MatchAllQuery*
 MatchAllQuery_new()
 {
-    MatchAllQuery *self = (MatchAllQuery*)VTable_Make_Obj(&MATCHALLQUERY);
+    MatchAllQuery *self = (MatchAllQuery*)VTable_Make_Obj(MATCHALLQUERY);
     return MatchAllQuery_init(self);
 }
 
@@ -55,7 +55,7 @@ MatchAllCompiler_new(MatchAllQuery *parent, Searchable *searchable,
                      float boost)
 {
     MatchAllCompiler *self 
-        = (MatchAllCompiler*)VTable_Make_Obj(&MATCHALLCOMPILER);
+        = (MatchAllCompiler*)VTable_Make_Obj(MATCHALLCOMPILER);
     return MatchAllCompiler_init(self, parent, searchable, boost);
 }
 
@@ -70,7 +70,9 @@ MatchAllCompiler_init(MatchAllCompiler *self, MatchAllQuery *parent,
 MatchAllCompiler*
 MatchAllCompiler_deserialize(MatchAllCompiler *self, InStream *instream)
 {
-    self = self ? self : (MatchAllCompiler*)VTable_Make_Obj(&MATCHALLCOMPILER);
+    self = self 
+         ? self 
+         : (MatchAllCompiler*)VTable_Make_Obj(MATCHALLCOMPILER);
     return (MatchAllCompiler*)Compiler_deserialize((Compiler*)self, instream);
 }
 

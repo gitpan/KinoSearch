@@ -8,8 +8,14 @@ __AUTO_XS__
 
 {   "KinoSearch::Index::TermVector" => {
         make_constructors => ["new"],
-        bind_methods      => [qw( Get_Positions Get_Start_Offsets Get_End_Offsets )],
-        make_getters      => [qw( text field )],
+        bind_methods      => [
+            qw(
+                Get_Positions
+                Get_Start_Offsets
+                Get_End_Offsets
+                )
+        ],
+        make_getters => [qw( text field )],
     }
 }
 

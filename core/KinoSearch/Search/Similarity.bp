@@ -4,12 +4,13 @@ parcel KinoSearch cnick Kino;
  *
  * After determining whether a document matches a given query, a score must be
  * calculated which indicates how I<well> the document matches the query.  The
- * Similarity class is used to judge how "similar" the query and the document are
- * to each other; the closer the resemblance, they higher the document scores.
+ * Similarity class is used to judge how "similar" the query and the document
+ * are to each other; the closer the resemblance, they higher the document
+ * scores.
  * 
- * The default implementation uses Lucene's modified cosine similarity measure.
- * Subclasses might tweak the existing algorithms, or might be used in
- * conjunction with custom Query subclasses to implement arbitrary scoring
+ * The default implementation uses Lucene's modified cosine similarity
+ * measure.  Subclasses might tweak the existing algorithms, or might be used
+ * in conjunction with custom Query subclasses to implement arbitrary scoring
  * schemes.
  * 
  * Most of the methods operate on single fields, but some are used to combine

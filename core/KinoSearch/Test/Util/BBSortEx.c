@@ -7,7 +7,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 BBSortEx*
 BBSortEx_init(BBSortEx *self, u32_t mem_threshold)

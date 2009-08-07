@@ -58,7 +58,7 @@ FType_similarity(FieldType *self)
     return NULL;
 }
 
-i64_t
+i32_t
 FType_compare_values(FieldType *self, Obj *a, Obj *b)
 {
     UNUSED_VAR(self);

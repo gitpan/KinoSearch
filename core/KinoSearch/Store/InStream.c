@@ -19,7 +19,7 @@ SI_read_u8(InStream *self);
 InStream*
 InStream_new(FileDes *file_des)
 {
-    InStream *self = (InStream*)VTable_Make_Obj(&INSTREAM);
+    InStream *self = (InStream*)VTable_Make_Obj(INSTREAM);
     return InStream_init(self, file_des);
 }
 
@@ -67,8 +67,9 @@ InStream*
 InStream_reopen(InStream *self, const CharBuf *sub_file, i64_t offset, 
                 i64_t len)
 {
-    InStream *evil_twin = InStream_Clone(self);
-    if (sub_file != NULL) CB_Copy(evil_twin->filename, sub_file);
+    InStream *evil_twin = (InStream*)VTable_Make_Obj(self->vtable);
+    InStream_init(evil_twin, self->file_des);
+    if (sub_file != NULL) CB_Mimic(evil_twin->filename, (Obj*)sub_file);
     evil_twin->offset = offset;
     evil_twin->len    = len;
     InStream_Seek(evil_twin, 0);
@@ -96,7 +97,7 @@ SI_refill(InStream *self)
                              ? remaining 
                              : IO_STREAM_BUF_SIZE;
     if (!remaining) {
-        THROW("Read past EOF of '%o' (offset: %i64 len: %i64)",
+        THROW(ERR, "Read past EOF of '%o' (offset: %i64 len: %i64)",
             self->filename, self->offset, self->len);
     }
     SI_fill(self, amount);
@@ -117,7 +118,7 @@ SI_fill(InStream *self, i64_t amount)
     const i64_t remaining        = self->len - virtual_file_pos;
 
     if (amount > remaining) {
-        THROW( "Read past EOF of %o (pos: %u64 len: %u64 request: %u64)",
+        THROW(ERR,  "Read past EOF of %o (pos: %u64 len: %u64 request: %u64)",
             self->filename, virtual_file_pos, self->len, amount);
     }
 
@@ -132,7 +133,7 @@ SI_fill(InStream *self, i64_t amount)
                     : window_limit;
     }
     else {
-        THROW("Error for '%o': %o", self->filename, 
+        THROW(ERR, "Error for '%o': %o", self->filename, 
             FileDes_Get_Mess(self->file_des));
     }
 }
@@ -151,7 +152,7 @@ InStream_seek(InStream *self, i64_t target)
     i64_t virtual_window_end = virtual_window_top + window->len;
 
     if (target < 0) {
-        THROW("Can't Seek to negative target %i64", target);
+        THROW(ERR, "Can't Seek to negative target %i64", target);
     }
     /* Seek within window if possible. */
     else if (   target >= virtual_window_top
@@ -160,10 +161,13 @@ InStream_seek(InStream *self, i64_t target)
         self->buf = window->buf - window->offset + self->offset + target;
     }
     else {
-        /* Set buf to an invalid value outside the window, but make sure that
-         * it will never be dereferenced by setting limit to NULL. */
-        self->buf   = window->buf - window->offset + self->offset + target;
+        /* Target is outside window.  Set all buffer and limit variables to
+         * NULL to trigger refill on the next read.  Store the file position
+         * in the FileWindow's offset. */
+        FileDes_Release_Window(self->file_des, window);
+        self->buf = NULL;
         self->limit = NULL;
+        FileWindow_Set_Offset(window, self->offset + target);
     }
 }
 
@@ -171,7 +175,8 @@ i64_t
 InStream_tell(InStream *self) 
 {
     FileWindow *const window = self->window;
-    return (self->buf - window->buf) + window->offset - self->offset;
+    i64_t pos_in_buf = PTR2I64(self->buf) - PTR2I64(window->buf);
+    return pos_in_buf + window->offset - self->offset;
 }
 
 i64_t
@@ -209,12 +214,12 @@ InStream_advance_buf(InStream *self, char *buf)
 {
     if (buf > self->limit) {
         i64_t overrun = PTR2I64(buf) - PTR2I64(self->limit);
-        THROW("Supplied value is %i64 bytes beyond end of buffer",
+        THROW(ERR, "Supplied value is %i64 bytes beyond end of buffer",
             overrun);
     }
     else if (buf < self->buf) {
         i64_t underrun = PTR2I64(self->buf) - PTR2I64(buf);
-        THROW("Can't Advance_Buf backwards: (underrun: %i64))", underrun);
+        THROW(ERR, "Can't Advance_Buf backwards: (underrun: %i64))", underrun);
     }
     else {
         self->buf = buf;
@@ -257,7 +262,7 @@ SI_read_bytes(InStream *self, char* buf, size_t len)
             bool_t success 
                 = FileDes_Read(self->file_des, buf, real_file_pos, len);
             if (!success) {
-                THROW("%o", FileDes_Get_Mess(self->file_des));
+                THROW(ERR, "%o", FileDes_Get_Mess(self->file_des));
             }
             InStream_seek(self, sub_file_pos + len);
         }

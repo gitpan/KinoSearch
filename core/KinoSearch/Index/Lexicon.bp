@@ -2,8 +2,8 @@ parcel KinoSearch cnick Kino;
 
 /** Iterator for a field's terms.
  * 
- * A Lexicon is an iterator which provides access to all the unique terms for a
- * given field in sorted order.
+ * A Lexicon is an iterator which provides access to all the unique terms for
+ * a given field in sorted order.
  * 
  * If an index consists of two documents with a 'content' field holding "three
  * blind mice" and "three musketeers" respectively, then iterating through the
@@ -41,6 +41,12 @@ class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Obj {
      */
     public abstract void
     Reset(Lexicon *self);
+
+    /** Return the number of documents that the current term appears in at
+     * least once.  Deleted documents may be included in the count. 
+     */
+    public abstract i32_t
+    Doc_Freq(Lexicon *self);
 
     /** Return the current term, or NULL if the iterator is not in a valid
      * state.

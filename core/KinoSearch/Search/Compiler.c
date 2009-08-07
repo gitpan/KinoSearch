@@ -119,7 +119,7 @@ Compiler_serialize(Compiler *self, OutStream *outstream)
 Compiler*
 Compiler_deserialize(Compiler *self, InStream *instream)
 {
-    if (!self) THROW("Compiler_Deserialize is abstract");
+    if (!self) THROW(ERR, "Compiler_Deserialize is abstract");
     self->boost  = InStream_Read_F32(instream);
     self->parent = (Query*)THAW(instream);
     self->sim    = (Similarity*)THAW(instream);

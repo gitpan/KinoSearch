@@ -4,8 +4,8 @@
 
 #include "KinoSearch/Obj.h"
 #include "KinoSearch/Util/Host.h"
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/Err.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
 #include "KinoSearch/Util/MemManager.h"
 
 static SV*
@@ -15,7 +15,9 @@ do_callback_sv(kino_Obj *obj, char *method, chy_u32_t num_args, va_list args);
     do { \
         chy_u32_t arg_type = va_arg(_args, chy_u32_t); \
         char *label = va_arg(_args, char*); \
-        if (_num_params > 1) XPUSHs( sv_2mortal( newSVpvn(label, strlen(label)) ) ); \
+        if (_num_params > 1) { \
+            XPUSHs( sv_2mortal( newSVpvn(label, strlen(label)) ) ); \
+        } \
         switch (arg_type) { \
         case KINO_HOST_ARGTYPE_I32: { \
                 chy_i32_t anI32 = va_arg(_args, chy_i32_t); \
@@ -42,7 +44,7 @@ do_callback_sv(kino_Obj *obj, char *method, chy_u32_t num_args, va_list args);
             } \
             break; \
         default: \
-            KINO_THROW("Unrecognized arg type: %u32", arg_type); \
+            KINO_THROW(KINO_ERR, "Unrecognized arg type: %u32", arg_type); \
         } \
     } while (0)
 
@@ -81,7 +83,7 @@ kino_Host_callback(void *vobj, char *method, chy_u32_t num_args, ...)
 
     count = call_method(method, G_VOID|G_DISCARD);
     if (count != 0) {
-        KINO_THROW("callback '%s' in '%o' returned too many values: %i32", 
+        KINO_THROW(KINO_ERR, "callback '%s' in '%o' returned too many values: %i32", 
             method, Kino_VTable_Get_Name(vtable), (chy_i32_t)count);
     }
 
@@ -225,7 +227,7 @@ do_callback_sv(kino_Obj *obj, char *method, chy_u32_t num_args, va_list args)
     SPAGAIN;
 
     if (num_returned != 1) {
-        KINO_THROW("Bad number of return vals from %s: %i32", method,
+        KINO_THROW(KINO_ERR, "Bad number of return vals from %s: %i32", method,
             (chy_i32_t)num_returned);
     }
 

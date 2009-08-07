@@ -9,7 +9,7 @@ TermVector*
 TV_new(const CharBuf *field, const CharBuf *text, I32Array *positions, 
        I32Array *start_offsets, I32Array *end_offsets)
 {
-    TermVector *self = (TermVector*)VTable_Make_Obj(&TERMVECTOR);
+    TermVector *self = (TermVector*)VTable_Make_Obj(TERMVECTOR);
     return TV_init(self, field, text, positions, start_offsets, end_offsets);
 }
 
@@ -28,7 +28,7 @@ TV_init(TermVector *self, const CharBuf *field, const CharBuf *text,
     if (   I32Arr_Get_Size(start_offsets) != self->num_pos
         || I32Arr_Get_Size(end_offsets)   != self->num_pos
     ) {
-        THROW("Unbalanced arrays: %u32 %u32 %u32", self->num_pos,
+        THROW(ERR, "Unbalanced arrays: %u32 %u32 %u32", self->num_pos,
            I32Arr_Get_Size(start_offsets), I32Arr_Get_Size(end_offsets));
     }
     
@@ -95,7 +95,7 @@ TV_deserialize(TermVector *self, InStream *instream)
     start_offsets = I32Arr_new_steal(starts, num_pos);
     end_offsets   = I32Arr_new_steal(ends, num_pos);
     
-    self = self ? self : (TermVector*)VTable_Make_Obj(&TERMVECTOR);
+    self = self ? self : (TermVector*)VTable_Make_Obj(TERMVECTOR);
     self = TV_init(self, field, text, positions, start_offsets, end_offsets);
 
     DECREF(positions);

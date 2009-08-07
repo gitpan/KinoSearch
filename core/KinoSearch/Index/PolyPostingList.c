@@ -13,7 +13,7 @@ PolyPostingList*
 PolyPList_new(const CharBuf *field, VArray *readers, I32Array *starts)
 {
     PolyPostingList *self 
-        = (PolyPostingList*)VTable_Make_Obj(&POLYPOSTINGLIST);
+        = (PolyPostingList*)VTable_Make_Obj(POLYPOSTINGLIST);
     return PolyPList_init(self, field, readers, starts);
 }
 

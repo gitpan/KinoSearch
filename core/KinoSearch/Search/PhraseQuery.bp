@@ -51,7 +51,8 @@ class KinoSearch::Search::PhraseQuery extends KinoSearch::Search::Query
     Destroy(PhraseQuery *self);
 }
 
-class KinoSearch::Search::PhraseCompiler extends KinoSearch::Search::Compiler {
+class KinoSearch::Search::PhraseCompiler 
+    extends KinoSearch::Search::Compiler {
 
     float idf;
     float raw_weight;

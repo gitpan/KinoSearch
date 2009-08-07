@@ -91,7 +91,7 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
                 break;
             default:
                 value_sv = NULL; 
-                KINO_THROW("Unrecognized type: %o", type);
+                KINO_THROW(KINO_ERR, "Unrecognized type: %o", type);
         }
 
         /* Store the value. */

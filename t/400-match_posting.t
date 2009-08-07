@@ -69,7 +69,7 @@ sub hit_ids_array {
     my ( $searcher, $query_string ) = @_;
     my $query = $searcher->glean_query($query_string);
 
-    my $bit_vec = KinoSearch::Util::BitVector->new(
+    my $bit_vec = KinoSearch::Obj::BitVector->new(
         capacity => $searcher->doc_max + 1 );
     my $bit_collector = KinoSearch::Search::HitCollector::BitCollector->new(
         bit_vector => $bit_vec, );

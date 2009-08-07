@@ -3,7 +3,8 @@ parcel KinoSearch cnick Kino;
 /** SortExRun for sorting ByteBufs.
  */
 
-class KinoSearch::Test::Util::BBSortExRun extends KinoSearch::Util::SortExRun {
+class KinoSearch::Test::Util::BBSortExRun 
+    extends KinoSearch::Util::SortExRun {
 
     VArray   *external;
     u32_t     external_tick;

@@ -5,8 +5,8 @@
 
 #include "KinoSearch/Util/StringHelper.h"
 
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/Err.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
 #include "KinoSearch/Util/MemManager.h"
 
 const u8_t UTF8_SKIP[] = {
@@ -36,7 +36,7 @@ StrHelp_strndup(const char *source, size_t size)
 {
     char *ptr = MALLOCATE(size + 1, char);
     if (ptr == NULL) 
-        THROW("Out of memory");
+        THROW(ERR, "Out of memory");
     ptr[size] = '\0';
     memcpy(ptr, source, size);
     return ptr;
@@ -64,7 +64,7 @@ StrHelp_compare_strings(const char *a, const char *b,
     const size_t len = a_len < b_len? a_len : b_len;
 
     if (a == NULL  || b == NULL)
-        THROW("Internal error: can't compare unallocated pointers");
+        THROW(ERR, "Internal error: can't compare unallocated pointers");
     
     if (len > 0)
         comparison = memcmp(a, b, len);
@@ -219,7 +219,7 @@ StrHelp_encode_utf8_char(u32_t code_point, u8_t *buf)
         return 4;
     }
     else {
-        THROW("Illegal Unicode code point: %u32", code_point);
+        THROW(ERR, "Illegal Unicode code point: %u32", code_point);
         UNREACHABLE_RETURN(u32_t);
     }
 }
@@ -236,8 +236,9 @@ StrHelp_is_whitespace(u32_t code_point)
     case 0x1680: /* OGHAM SPACE MARK */
     case 0x180E: /* MONGOLIAN VOWEL SEPARATOR */
                  /* EN QUAD..HAIR SPACE */
-    case 0x2000: case 0x2001: case 0x2002: case 0x2003: case 0x2004: case 0x2005:
-    case 0x2006: case 0x2007: case 0x2008: case 0x2009: case 0x200A:
+    case 0x2000: case 0x2001: case 0x2002: case 0x2003: case 0x2004: 
+    case 0x2005: case 0x2006: case 0x2007: case 0x2008: case 0x2009: 
+    case 0x200A:
     case 0x2028: /* LINE SEPARATOR*/
     case 0x2029: /* PARAGRAPH SEPARATOR*/
     case 0x202F: /* NARROW NO-BREAK SPACE*/
@@ -288,7 +289,7 @@ StrHelp_decode_utf8_char(const char *ptr)
             break;
 
         default:
-            THROW("unexpected value for trailing: %i32", (i32_t)trailing);
+            THROW(ERR, "unexpected value for trailing: %i32", (i32_t)trailing);
     }
 
     return retval;

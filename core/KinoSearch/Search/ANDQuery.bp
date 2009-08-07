@@ -28,13 +28,15 @@ class KinoSearch::Search::ANDQuery extends KinoSearch::Search::PolyQuery
     Equals(ANDQuery *self, Obj *other);
 }
 
-class KinoSearch::Search::ANDCompiler extends KinoSearch::Search::PolyCompiler {
+class KinoSearch::Search::ANDCompiler 
+    extends KinoSearch::Search::PolyCompiler {
 
     static incremented ANDCompiler*
     new(ANDQuery *parent, Searchable *searchable, float boost);
 
     static ANDCompiler*
-    init(ANDCompiler *self, ANDQuery *parent, Searchable *searchable, float boost);
+    init(ANDCompiler *self, ANDQuery *parent, Searchable *searchable, 
+         float boost);
 
     public incremented Matcher*
     Make_Matcher(ANDCompiler *self, SegReader *reader, bool_t need_score);

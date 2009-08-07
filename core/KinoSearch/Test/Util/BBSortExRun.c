@@ -4,12 +4,11 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Test/Util/BBSortEx.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 BBSortExRun*
 BBSortExRun_new(VArray *external) 
 {
-    BBSortExRun *self = (BBSortExRun*)VTable_Make_Obj(&BBSORTEXRUN);
+    BBSortExRun *self = (BBSortExRun*)VTable_Make_Obj(BBSORTEXRUN);
     return BBSortExRun_init(self, external);
 }
 

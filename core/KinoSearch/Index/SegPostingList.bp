@@ -67,6 +67,10 @@ class KinoSearch::Index::SegPostingList cnick SegPList
     Matcher*
     Make_Matcher(SegPostingList *self, Similarity *similarity,
                  Compiler *compiler, bool_t need_score);
+
+    RawPosting*
+    Read_Raw(SegPostingList *self, i32_t last_doc_id, CharBuf *term_text,
+             MemoryPool *mem_pool);
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

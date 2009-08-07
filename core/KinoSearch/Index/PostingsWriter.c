@@ -48,7 +48,7 @@ S_flush_pools(PostingsWriter *self);
  */
 static void
 S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source, 
-                           OutStream *post_stream, OutStream *skip_stream);
+                           PostingStreamer *streamer, OutStream *skip_stream);
 
 
 PostingsWriter*
@@ -56,7 +56,7 @@ PostWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
                PolyReader *polyreader, LexiconWriter *lex_writer)
 {
     PostingsWriter *self 
-        = (PostingsWriter*)VTable_Make_Obj(&POSTINGSWRITER);
+        = (PostingsWriter*)VTable_Make_Obj(POSTINGSWRITER);
     return PostWriter_init(self, schema, snapshot, segment, polyreader,
         lex_writer);
 }
@@ -98,10 +98,10 @@ S_lazy_init(PostingsWriter *self)
         self->lex_outstream  = Folder_Open_Out(folder, self->lex_tempname);
         self->post_outstream = Folder_Open_Out(folder, self->post_tempname);
         if (!self->lex_outstream) { 
-            THROW("Can't open %o", self->lex_tempname); 
+            THROW(ERR, "Can't open %o", self->lex_tempname); 
         }
         if (!self->post_outstream) { 
-            THROW("Can't open %o", self->post_tempname); 
+            THROW(ERR, "Can't open %o", self->post_tempname); 
         }
     }
 }
@@ -136,7 +136,8 @@ S_init_posting_pool(PostingsWriter *self, const CharBuf *field)
     Schema *schema           = self->schema;
     i32_t   field_num        = Seg_Field_Num(self->segment, field);
     VArray *field_post_pools = (VArray*)VA_Fetch(self->post_pools, field_num);
-    PostingPool *post_pool = PostPool_new(schema, field, self->mem_pool);
+    FreshPostingPool *post_pool 
+        = FreshPostPool_new(schema, field, self->mem_pool);
 
     if (field_post_pools == NULL) {
         field_post_pools = VA_new(1);
@@ -198,16 +199,22 @@ static void
 S_flush_pools(PostingsWriter *self)
 {
     u32_t i, max;
-    VArray *const post_pools = self->post_pools;
+    VArray  *const post_pools = self->post_pools;
+    Segment *const segment    = PostWriter_Get_Segment(self);
 
     for (i = 0, max = VA_Get_Size(post_pools); i < max; i++) {
         VArray *field_post_pools = (VArray*)VA_Fetch(post_pools, i);
         if (field_post_pools != NULL) {
             /* The first pool in the array is the only active pool. */
-            PostingPool *const post_pool 
-                = (PostingPool*)VA_Fetch(field_post_pools, 0);
+            FreshPostingPool *const post_pool 
+                = (FreshPostingPool*)ASSERT_IS_A(
+                    VA_Fetch(field_post_pools, 0), FRESHPOSTINGPOOL);
 
             if (post_pool->cache_max != post_pool->cache_tick) {
+                CharBuf *field_name = Seg_Field_Name(segment, i);
+                RawPostingStreamer *streamer = RawPostStreamer_new(
+                    (DataWriter*)self, self->post_outstream);
+
                 /* Open a skip stream if it hasn't been already. */
                 if (self->skip_stream == NULL) {
                     Snapshot *snapshot = PostWriter_Get_Snapshot(self);
@@ -216,26 +223,31 @@ S_flush_pools(PostingsWriter *self)
                     self->skip_stream 
                         = Folder_Open_Out(self->folder, filename);
                     if (!self->skip_stream) {
-                        THROW("Can't open %o", filename);
+                        THROW(ERR, "Can't open %o", filename);
                     }
                     Snapshot_Add_Entry(snapshot, filename);
                     DECREF(filename);
                 }
 
                 /* Write to temp files. */
-                LexWriter_Enter_Temp_Mode(self->lex_writer, 
+                LexWriter_Enter_Temp_Mode(self->lex_writer, field_name, 
                     self->lex_outstream);
-                post_pool->lex_start = OutStream_Tell(self->lex_outstream);
-                post_pool->post_start = OutStream_Tell(self->post_outstream);
-                PostPool_Sort_Cache(post_pool);
+                FreshPostPool_Set_Lex_Start(post_pool,
+                    OutStream_Tell(self->lex_outstream));
+                FreshPostPool_Set_Post_Start(post_pool,
+                    OutStream_Tell(self->post_outstream));
+                FreshPostPool_Sort_Cache(post_pool);
                 S_write_terms_and_postings(self, (Obj*)post_pool, 
-                    self->post_outstream, self->skip_stream);
-                post_pool->lex_end = OutStream_Tell(self->lex_outstream);
-                post_pool->post_end = OutStream_Tell(self->post_outstream);
+                    (PostingStreamer*)streamer, self->skip_stream);
+                FreshPostPool_Set_Lex_End(post_pool,
+                    OutStream_Tell(self->lex_outstream));
+                FreshPostPool_Set_Post_End(post_pool,
+                    OutStream_Tell(self->post_outstream));
                 LexWriter_Leave_Temp_Mode(self->lex_writer);
+                DECREF(streamer);
 
                 /* Store away this pool and start another. */
-                PostPool_Shrink(post_pool);
+                FreshPostPool_Shrink(post_pool);
                 S_init_posting_pool(self, post_pool->field);
             }
         }
@@ -250,9 +262,10 @@ typedef RawPosting*
 
 static void
 S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source, 
-                         OutStream *post_stream, OutStream *skip_stream)
+                           PostingStreamer *streamer, OutStream *skip_stream)
 {
-    TermInfo         *const tinfo           = TInfo_new(0,0,0,0);
+    TermInfo         *const tinfo           = TInfo_new(0);
+    TermInfo         *const skip_tinfo      = TInfo_new(0);
     SkipStepper      *const skip_stepper    = self->skip_stepper;
     LexiconWriter    *const lex_writer      = self->lex_writer;
     const i32_t       skip_interval         = lex_writer->skip_interval;
@@ -274,11 +287,11 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
     }
 
     /* Prime heldover variables. */
-    SkipStepper_Reset(skip_stepper, 0, 0);
+    SkipStepper_Set_ID_And_Filepos(skip_stepper, 0, 0);
     posting = fetch(raw_post_source);
     if (posting == NULL)
-        THROW("Failed to retrieve at least one posting");
-    CB_Copy_Str(last_term_text, posting->blob, posting->content_len);
+        THROW(ERR, "Failed to retrieve at least one posting");
+    CB_Mimic_Str(last_term_text, posting->blob, posting->content_len);
 
     while (1) {
         bool_t same_text_as_last = true;
@@ -301,26 +314,23 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
 
         /* If the term text changes, process the last term. */
         if ( !same_text_as_last ) {
-            /* Take note of where we are for the term dictionary. */
-            u64_t post_filepos = OutStream_Tell(post_stream);
-
             /* Hand off to LexiconWriter. */
             LexWriter_Add_Term(lex_writer, last_term_text, tinfo);
 
             /* Start each term afresh. */
+            PostStreamer_Start_Term(streamer, tinfo);
             tinfo->doc_freq      = 0;
-            tinfo->post_filepos  = post_filepos;
             tinfo->skip_filepos  = 0;
             tinfo->lex_filepos   = 0;
 
             /* Init skip data in preparation for the next term. */
             skip_stepper->doc_id  = 0;
-            skip_stepper->filepos = post_filepos;
+            skip_stepper->filepos = tinfo->post_filepos;
             last_skip_doc         = 0;
-            last_skip_filepos     = post_filepos;
+            last_skip_filepos     = tinfo->post_filepos;
 
             /* Remember the term_text so we can write string diffs. */
-            CB_Copy_Str(last_term_text, posting->blob, 
+            CB_Mimic_Str(last_term_text, posting->blob, 
                 posting->content_len);
 
             /* Starting a new term, thus a new delta doc sequence at 0. */
@@ -332,7 +342,7 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
             break;
 
         /* Write posting data. */
-        RawPost_Write_Record(posting, post_stream, last_doc_id);
+        PostStreamer_Write_Posting(streamer, posting);
 
         /* Doc freq lags by one iter. */
         tinfo->doc_freq++;
@@ -351,7 +361,8 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
             last_skip_doc         = skip_stepper->doc_id;
             last_skip_filepos     = skip_stepper->filepos;
             skip_stepper->doc_id  = posting->doc_id;
-            skip_stepper->filepos = OutStream_Tell(post_stream);
+            PostStreamer_Update_Skip_Info(streamer, skip_tinfo);
+            skip_stepper->filepos = skip_tinfo->post_filepos;
             SkipStepper_Write_Record(skip_stepper, skip_stream,
                  last_skip_doc, last_skip_filepos);
         }
@@ -367,13 +378,15 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
 
     /* Clean up. */
     DECREF(last_term_text);
+    DECREF(skip_tinfo);
     DECREF(tinfo);
 }
 
 static void
 S_finish_field(PostingsWriter *self, i32_t field_num)
 {
-    VArray *field_post_pools = (VArray*)VA_Delete(self->post_pools, field_num);
+    VArray *field_post_pools 
+        = (VArray*)VA_Delete(self->post_pools, field_num);
     PostingPoolQueue *pool_q;
     
     if (field_post_pools == NULL)
@@ -386,26 +399,25 @@ S_finish_field(PostingsWriter *self, i32_t field_num)
 
     /* Don't bother unless there's actually content. */
     if (PostPoolQ_Peek(pool_q) != NULL) {
+        Schema           *schema        = PostWriter_Get_Schema(self);
+        Segment          *segment       = PostWriter_Get_Segment(self);
         Snapshot         *snapshot      = PostWriter_Get_Snapshot(self);
+        CharBuf          *field_name    = Seg_Field_Name(segment, field_num);
+        Posting          *posting       = Schema_Fetch_Posting(schema, 
+                                            field_name);
         LexiconWriter    *lex_writer    = self->lex_writer;
         Folder           *folder        = self->folder;
-        OutStream        *post_stream   = NULL;
         OutStream        *skip_stream   = self->skip_stream;
-        CharBuf          *filename      = CB_newf("%o/postings-%i32.dat", 
-            Seg_Get_Name(self->segment), field_num);
+        PostingStreamer  *streamer      = Post_Make_Streamer(posting,
+                                            (DataWriter*)self, field_num);
 
-        /* Open posting stream. */
-        Snapshot_Add_Entry(snapshot, filename);
-        post_stream = Folder_Open_Out(folder, filename);
-        if (!post_stream) { THROW("Can't open %o", filename); }
-    
         /* Open a skip stream if it hasn't been already. */
         if (self->skip_stream == NULL) {
             CharBuf *skip_filename = CB_newf("%o/postings.skip", 
                 Seg_Get_Name(self->segment));
             Snapshot_Add_Entry(snapshot, skip_filename);
             skip_stream = Folder_Open_Out(folder, skip_filename);
-            if (!skip_stream) { THROW("Can't open %o", skip_filename); }
+            if (!skip_stream) { THROW(ERR, "Can't open %o", skip_filename); }
             self->skip_stream = skip_stream;
             DECREF(skip_filename);
         }
@@ -414,14 +426,12 @@ S_finish_field(PostingsWriter *self, i32_t field_num)
         LexWriter_Start_Field(lex_writer, field_num);
 
         /* Write terms and postings. */
-        S_write_terms_and_postings(self, (Obj*)pool_q, post_stream, 
+        S_write_terms_and_postings(self, (Obj*)pool_q, streamer, 
             skip_stream);
 
         /* Finish and clean up. */
         LexWriter_Finish_Field(self->lex_writer, field_num);
-        OutStream_Close(post_stream);
-        DECREF(filename);
-        DECREF(post_stream);
+        DECREF(streamer);
     }
 
     /* Clean up. */
@@ -432,7 +442,6 @@ void
 PostWriter_add_segment(PostingsWriter *self, SegReader *reader,
                        I32Array *doc_map)
 {
-    Folder    *other_folder   = SegReader_Get_Folder(reader);
     Segment   *other_segment  = reader->segment;
     u32_t      i, max;
     VArray    *post_pools     = self->post_pools;
@@ -450,7 +459,7 @@ PostWriter_add_segment(PostingsWriter *self, SegReader *reader,
 
         if (!FType_Indexed(type)) { continue; }
         if (!old_field_num) { continue; } /* not in old segment */
-        if (!new_field_num) { THROW("Unrecognized field: %o", field); }
+        if (!new_field_num) { THROW(ERR, "Unrecognized field: %o", field); }
 
         /* Init field if we've never seen it before. */
         field_post_pools = (VArray*)VA_Fetch(post_pools, new_field_num);
@@ -462,10 +471,8 @@ PostWriter_add_segment(PostingsWriter *self, SegReader *reader,
 
         /* Create a pool and add it to the field's collection of pools. */
         { 
-            PostingPool *post_pool
-                = PostPool_new(schema, field, self->mem_pool);
-            PostPool_Assign_Seg(post_pool, other_folder, other_segment, 
-                Seg_Get_Count(segment), doc_map);
+            MergePostingPool *post_pool = MergePostPool_new(schema, field, 
+                self->mem_pool, reader, doc_map, Seg_Get_Count(segment));
             VA_Push(field_post_pools, (Obj*)post_pool);
         }
     }
@@ -518,10 +525,10 @@ PostWriter_finish(PostingsWriter *self)
         self->lex_instream  = Folder_Open_In(folder, self->lex_tempname);
         self->post_instream = Folder_Open_In(folder, self->post_tempname);
         if (!self->lex_instream) { 
-            THROW("Can't open %o", self->lex_tempname); 
+            THROW(ERR, "Can't open %o", self->lex_tempname); 
         }
         if (!self->post_instream) { 
-            THROW("Can't open %o", self->post_tempname); 
+            THROW(ERR, "Can't open %o", self->post_tempname); 
         }
 
         /* Write postings for each field. */
@@ -545,10 +552,10 @@ PostWriter_finish(PostingsWriter *self)
         self->lex_instream = NULL;
         self->post_instream = NULL;
         if (!Folder_Delete(folder, self->lex_tempname)) {
-            THROW("Couldn't delete %o", self->lex_tempname);
+            THROW(ERR, "Couldn't delete %o", self->lex_tempname);
         }
         if (!Folder_Delete(folder, self->post_tempname)) {
-            THROW("Couldn't delete %o", self->post_tempname);
+            THROW(ERR, "Couldn't delete %o", self->post_tempname);
         }
     }
 

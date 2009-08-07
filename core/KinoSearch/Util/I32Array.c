@@ -5,7 +5,7 @@
 I32Array*
 I32Arr_new(i32_t *ints, u32_t size) 
 {
-    I32Array *self = (I32Array*)VTable_Make_Obj(&I32ARRAY);
+    I32Array *self = (I32Array*)VTable_Make_Obj(I32ARRAY);
     i32_t *ints_copy = MALLOCATE(size, i32_t);
     memcpy(ints_copy, ints, size * sizeof(i32_t));
     return I32Arr_init(self, ints_copy, size);
@@ -14,7 +14,7 @@ I32Arr_new(i32_t *ints, u32_t size)
 I32Array*
 I32Arr_new_steal(i32_t *ints, u32_t size) 
 {
-    I32Array *self = (I32Array*)VTable_Make_Obj(&I32ARRAY);
+    I32Array *self = (I32Array*)VTable_Make_Obj(I32ARRAY);
     return I32Arr_init(self, ints, size);
 }
 
@@ -37,7 +37,7 @@ i32_t
 I32Arr_get(I32Array *self, i32_t num)
 {
     if (num < 0 || num >= (i32_t)self->size) {
-        THROW("Out of bounds: %i32 >= %i32", num, self->size);
+        THROW(ERR, "Out of bounds: %i32 >= %i32", num, self->size);
     }
     return self->ints[num];
 }

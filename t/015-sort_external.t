@@ -148,6 +148,6 @@ is_deeply( \@sort_output, \@orig, "Random binary strings of random length" );
 @sort_output = ();
 
 sub to_bytebufs {
-    my @bytebufs = map { KinoSearch::Util::ByteBuf->new($_) } @_;
+    my @bytebufs = map { KinoSearch::Obj::ByteBuf->new($_) } @_;
     return \@bytebufs;
 }

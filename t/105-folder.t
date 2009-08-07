@@ -33,17 +33,17 @@ for my $folder ( $fs_folder, $ram_folder ) {
     my $slurped = $folder->slurp_file('king_of_rock');
     is( $slurped, $king, "slurp_file works" );
 
-    my $lock = KinoSearch::Store::Lock->new(
-        agent_id  => '',
-        folder    => $folder,
-        lock_name => 'lock_robster',
-        timeout   => 0,
+    my $lock = KinoSearch::Store::LockFileLock->new(
+        hostname => '',
+        folder   => $folder,
+        name     => 'lock_robster',
+        timeout  => 0,
     );
-    my $competing_lock = KinoSearch::Store::Lock->new(
-        agent_id  => '',
-        folder    => $folder,
-        lock_name => 'lock_robster',
-        timeout   => 0,
+    my $competing_lock = KinoSearch::Store::LockFileLock->new(
+        hostname => '',
+        folder   => $folder,
+        name     => 'lock_robster',
+        timeout  => 0,
     );
 
     $lock->obtain;

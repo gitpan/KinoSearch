@@ -6,9 +6,8 @@
 #include "KinoSearch/FieldType/NumericType.h"
 #include "KinoSearch/FieldType/TextType.h"
 #include "KinoSearch/Index/Segment.h"
+#include "KinoSearch/Obj/ByteBuf.h"
 #include "KinoSearch/Schema.h"
-#include "KinoSearch/Util/ByteBuf.h"
-#include "KinoSearch/Util/Num.h"
 
 static kino_InverterEntry*
 S_fetch_entry(kino_Inverter *self, HE *hash_entry)
@@ -38,7 +37,7 @@ S_fetch_entry(kino_Inverter *self, HE *hash_entry)
             if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)&field)) {
                 /* We've truly failed to find the field.  The user must
                  * not have spec'd it. */
-                THROW("Unknown field name: '%s'", key);
+                THROW(KINO_ERR, "Unknown field name: '%s'", key);
             }
         }
 
@@ -75,17 +74,19 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
         kino_FieldType *type = inv_entry->type;
 
         /* Get the field value, forcing text fields to UTF-8. */
-        switch (Kino_FType_Primitive_ID(type) & kino_FType_PRIMITIVE_ID_MASK) {
+        switch (
+            Kino_FType_Primitive_ID(type) & kino_FType_PRIMITIVE_ID_MASK
+        ) {
             case kino_FType_TEXT: {
-                STRLEN value_len;
-                char *value_ptr = SvPVutf8(value_sv, value_len);
-                Kino_ViewCB_Assign_Str(inv_entry->value, value_ptr, value_len);
+                STRLEN val_len;
+                char *val_ptr = SvPVutf8(value_sv, val_len);
+                Kino_ViewCB_Assign_Str(inv_entry->value, val_ptr, val_len);
                 break;
             }
             case kino_FType_BLOB: {
-                STRLEN value_len;
-                char *value_ptr = SvPV(value_sv, value_len);
-                Kino_ViewBB_Assign_Str(inv_entry->value, value_ptr, value_len);
+                STRLEN val_len;
+                char *val_ptr = SvPV(value_sv, val_len);
+                Kino_ViewBB_Assign_Bytes(inv_entry->value, val_ptr, val_len);
                 break;
             }
             case kino_FType_INT32: {
@@ -112,7 +113,7 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
                 break;
             }
             default:
-                THROW("Unrecognized type: %o", type);
+                THROW(KINO_ERR, "Unrecognized type: %o", type);
         }
 
         Kino_Inverter_Add_Field(self, inv_entry);

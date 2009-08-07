@@ -102,7 +102,7 @@ Schema_spec_field(Schema *self, const CharBuf *field, FieldType *type)
     /* If the field already has an association, verify pairing and return. */
     if (existing) {
         if (FType_Equals(type, (Obj*)existing)) { return; }
-        else { THROW(  "'%o' assigned conflicting FieldType", field); }
+        else { THROW(ERR, "'%o' assigned conflicting FieldType", field); }
     }
 
     if (OBJ_IS_A(type, FULLTEXTTYPE)) {
@@ -118,7 +118,7 @@ Schema_spec_field(Schema *self, const CharBuf *field, FieldType *type)
         S_add_numeric_field(self, field, type);
     }
     else {
-        THROW("Unrecognized field type: '%o'", type);
+        THROW(ERR, "Unrecognized field type: '%o'", type);
     }
 }
 
@@ -236,7 +236,7 @@ S_find_in_array(VArray *array, Obj *obj)
             }
         }
     }
-    THROW("Couldn't find match for %o", obj);
+    THROW(ERR, "Couldn't find match for %o", obj);
     UNREACHABLE_RETURN(u32_t);
 }
 
@@ -260,11 +260,12 @@ Schema_dump(Schema *self)
         VTable *type_vtable = FType_Get_VTable(type);
 
         /* Dump known types to simplified format. */
-        if (type_vtable == (VTable*)&FULLTEXTTYPE) {
+        if (type_vtable == FULLTEXTTYPE) {
             FullTextType *fttype = (FullTextType*)type;
             Hash *type_dump = FullTextType_Dump_For_Schema(type);
             Analyzer *analyzer = FullTextType_Get_Analyzer(fttype);
-            u32_t tick = S_find_in_array(self->uniq_analyzers, (Obj*)analyzer);
+            u32_t tick 
+                = S_find_in_array(self->uniq_analyzers, (Obj*)analyzer);
 
             /* Store the tick which references a unique analyzer. */
             Hash_Store_Str(type_dump, "analyzer", 8, 
@@ -272,8 +273,8 @@ Schema_dump(Schema *self)
 
             Hash_Store(type_dumps, (Obj*)field, (Obj*)type_dump);
         }
-        else if (   type_vtable == (VTable*)&STRINGTYPE
-                 || type_vtable == (VTable*)&BLOBTYPE
+        else if (   type_vtable == STRINGTYPE
+                 || type_vtable == BLOBTYPE
         ) {
             Hash *type_dump = FType_Dump_For_Schema(type);
             Hash_Store(type_dumps, (Obj*)field, (Obj*)type_dump);
@@ -317,13 +318,13 @@ Schema_load(Schema *self, Obj *dump)
         if (type_str) {
             if (CB_Equals_Str(type_str, "fulltext", 8)) {
                 FullTextType *type = (FullTextType*)VTable_Load_Obj(
-                    &FULLTEXTTYPE, (Obj*)type_dump);
+                    FULLTEXTTYPE, (Obj*)type_dump);
                 Obj *tick = ASSERT_IS_A(
                     Hash_Fetch_Str(type_dump, "analyzer", 8), OBJ);
                 Analyzer *analyzer 
                     = (Analyzer*)VA_Fetch(analyzers, (u32_t)Obj_To_I64(tick));
                 if (!analyzer) { 
-                    THROW("Can't find analyzer for '%o'", field);
+                    THROW(ERR, "Can't find analyzer for '%o'", field);
                 }
                 FullTextType_Set_Analyzer(type, analyzer);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
@@ -331,42 +332,42 @@ Schema_load(Schema *self, Obj *dump)
             }
             else if (CB_Equals_Str(type_str, "string", 6)) {
                 StringType *type = (StringType*)VTable_Load_Obj(
-                    &STRINGTYPE, (Obj*)type_dump);
+                    STRINGTYPE, (Obj*)type_dump);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
                 DECREF(type);
             }
             else if (CB_Equals_Str(type_str, "blob", 4)) {
                 BlobType *type = (BlobType*)VTable_Load_Obj(
-                    &BLOBTYPE, (Obj*)type_dump);
+                    BLOBTYPE, (Obj*)type_dump);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
                 DECREF(type);
             }
             else if (CB_Equals_Str(type_str, "i32_t", 5)) {
                 Int32Type *type = (Int32Type*)VTable_Load_Obj(
-                    &INT32TYPE, (Obj*)type_dump);
+                    INT32TYPE, (Obj*)type_dump);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
                 DECREF(type);
             }
             else if (CB_Equals_Str(type_str, "i64_t", 5)) {
                 Int64Type *type = (Int64Type*)VTable_Load_Obj(
-                    &INT64TYPE, (Obj*)type_dump);
+                    INT64TYPE, (Obj*)type_dump);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
                 DECREF(type);
             }
             else if (CB_Equals_Str(type_str, "f32_t", 5)) {
                 Float32Type *type = (Float32Type*)VTable_Load_Obj(
-                    &FLOAT32TYPE, (Obj*)type_dump);
+                    FLOAT32TYPE, (Obj*)type_dump);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
                 DECREF(type);
             }
             else if (CB_Equals_Str(type_str, "f64_t", 5)) {
                 Float64Type *type = (Float64Type*)VTable_Load_Obj(
-                    &FLOAT64TYPE, (Obj*)type_dump);
+                    FLOAT64TYPE, (Obj*)type_dump);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
                 DECREF(type);
             }
             else {
-                THROW("Unknown type '%o' for field '%o'", type_str, field);
+                THROW(ERR, "Unknown type '%o' for field '%o'", type_str, field);
             }
          }
         else {
@@ -386,7 +387,7 @@ void
 Schema_eat(Schema *self, Schema *other)
 {
     if (!Schema_Is_A(self, Obj_Get_VTable(other))) {
-        THROW("%o not a descendent of %o", Schema_Get_Class_Name(self),
+        THROW(ERR, "%o not a descendent of %o", Schema_Get_Class_Name(self),
             Schema_Get_Class_Name(other));
     }
     else {

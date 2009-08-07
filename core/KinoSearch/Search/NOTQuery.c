@@ -12,7 +12,7 @@
 NOTQuery*
 NOTQuery_new(Query *negated_query)
 {
-    NOTQuery *self = (NOTQuery*)VTable_Make_Obj(&NOTQUERY);
+    NOTQuery *self = (NOTQuery*)VTable_Make_Obj(NOTQUERY);
     return NOTQuery_init(self, negated_query);
 }
 
@@ -65,7 +65,7 @@ NOTQuery_make_compiler(NOTQuery *self, Searchable *searchable, float boost)
 NOTCompiler*
 NOTCompiler_new(NOTQuery *parent, Searchable *searchable, float boost)
 {
-    NOTCompiler *self = (NOTCompiler*)VTable_Make_Obj(&NOTCOMPILER);
+    NOTCompiler *self = (NOTCompiler*)VTable_Make_Obj(NOTCOMPILER);
     return NOTCompiler_init(self, parent, searchable, boost);
 }
 
@@ -107,15 +107,16 @@ NOTCompiler_make_matcher(NOTCompiler *self, SegReader *reader,
 
     if (negated_matcher == NULL) {
         float weight = Compiler_Get_Weight(self);
-        return (Matcher*)MatchAllScorer_new(weight, SegReader_Doc_Max(reader));
+        i32_t doc_max = SegReader_Doc_Max(reader);
+        return (Matcher*)MatchAllScorer_new(weight, doc_max);
     }
     else if (OBJ_IS_A(negated_matcher, MATCHALLSCORER)) {
         DECREF(negated_matcher);
         return NULL;
     }
     else {
-        Matcher *retval 
-            = (Matcher*)NOTScorer_new(negated_matcher, SegReader_Doc_Max(reader));
+        i32_t doc_max = SegReader_Doc_Max(reader);
+        Matcher *retval = (Matcher*)NOTScorer_new(negated_matcher, doc_max);
         DECREF(negated_matcher);
         return retval;
     }

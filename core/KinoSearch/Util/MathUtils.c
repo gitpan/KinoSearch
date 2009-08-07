@@ -3,13 +3,13 @@
 #define CHY_USE_SHORT_NAMES
 
 #include "KinoSearch/Util/MathUtils.h"
-#include "KinoSearch/Util/Err.h"
+#include "KinoSearch/Obj/Err.h"
 
 u32_t
 Math_fibonacci(u32_t n) {
     u32_t result = 0;
     if (n > 46) {
-        THROW("input %u32 too high", n);
+        THROW(ERR, "input %u32 too high", n);
     }
     else if (n < 2) {
         result = n;

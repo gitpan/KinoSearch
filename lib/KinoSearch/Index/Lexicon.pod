@@ -16,8 +16,8 @@ KinoSearch::Index::Lexicon - Iterator for a field's terms.
 
 =head1 DESCRIPTION
 
-A Lexicon is an iterator which provides access to all the unique terms for a
-given field in sorted order.
+A Lexicon is an iterator which provides access to all the unique terms for
+a given field in sorted order.
 
 If an index consists of two documents with a 'content' field holding "three
 blind mice" and "three musketeers" respectively, then iterating through the

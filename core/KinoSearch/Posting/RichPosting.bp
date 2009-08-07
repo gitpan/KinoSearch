@@ -2,10 +2,11 @@ parcel KinoSearch cnick Kino;
 
 /** Posting with per-position boost.
  *
- * RichPosting is similar to L<ScorePosting|KinoSearch::Posting::ScorePosting>,
- * but weighting is per-position rather than per-field.  To exploit this, you need a
- * custom L<Analyzer|KinoSearch::Analysis::Analyzer> which assigns varying
- * boosts to individual L<Token|KinoSearch::Analysis::Token> objects.
+ * RichPosting is similar to
+ * L<ScorePosting|KinoSearch::Posting::ScorePosting>, but weighting is
+ * per-position rather than per-field.  To exploit this, you need a custom
+ * L<Analyzer|KinoSearch::Analysis::Analyzer> which assigns varying boosts to
+ * individual L<Token|KinoSearch::Analysis::Token> objects.
  * 
  * A typical application for RichPosting is an HTMLAnalyzer which assigns
  * boost based on the visual size and weight of the marked up text: H1

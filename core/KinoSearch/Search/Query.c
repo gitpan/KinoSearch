@@ -29,7 +29,7 @@ Query*
 Query_deserialize(Query *self, InStream *instream)
 {
     float boost = InStream_Read_F32(instream);
-    self = self ? self : (Query*)VTable_Make_Obj(&QUERY);
+    self = self ? self : (Query*)VTable_Make_Obj(QUERY);
     Query_init(self, boost);
     return self;
 }

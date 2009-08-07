@@ -13,7 +13,7 @@ Stemmer_sb_stemmer_length_t Stemmer_sb_stemmer_length = NULL;
 Stemmer*
 Stemmer_new(const CharBuf *language)
 {
-    Stemmer *self = (Stemmer*)VTable_Make_Obj(&STEMMER);
+    Stemmer *self = (Stemmer*)VTable_Make_Obj(STEMMER);
     return Stemmer_init(self, language);
 }
 
@@ -31,7 +31,7 @@ Stemmer_init(Stemmer *self, const CharBuf *language)
     lang_buf[2] = '\0';
     self->snowstemmer = kino_Stemmer_sb_stemmer_new(lang_buf, "UTF_8");
     if (!self->snowstemmer) 
-        THROW("Can't find a Snowball stemmer for %o", language);
+        THROW(ERR, "Can't find a Snowball stemmer for %o", language);
 
     return self;
 }
@@ -69,7 +69,7 @@ Hash*
 Stemmer_dump(Stemmer *self)
 {
     Stemmer_dump_t super_dump 
-        = (Stemmer_dump_t)SUPER_METHOD(&STEMMER, Stemmer, Dump);
+        = (Stemmer_dump_t)SUPER_METHOD(STEMMER, Stemmer, Dump);
     Hash *dump = super_dump(self);
     Hash_Store_Str(dump, "language", 8, (Obj*)CB_Clone(self->language));
     return dump;
@@ -79,7 +79,7 @@ Stemmer*
 Stemmer_load(Stemmer *self, Obj *dump)
 {
     Stemmer_load_t super_load 
-        = (Stemmer_load_t)SUPER_METHOD(&STEMMER, Stemmer, Load);
+        = (Stemmer_load_t)SUPER_METHOD(STEMMER, Stemmer, Load);
     Stemmer *loaded = super_load(self, dump);
     Hash    *source = (Hash*)ASSERT_IS_A(dump, HASH);
     CharBuf *language = (CharBuf*)ASSERT_IS_A(
@@ -101,7 +101,7 @@ bool_t
 Stemmer_dump_equals(Stemmer *self, Obj *dump)
 {
     Stemmer_dump_equals_t super_dump_equals 
-        = (Stemmer_dump_equals_t)SUPER_METHOD(&STEMMER, Stemmer, Dump_Equals);
+        = (Stemmer_dump_equals_t)SUPER_METHOD(STEMMER, Stemmer, Dump_Equals);
     if (!super_dump_equals(self, dump)) {
         return false;
     }

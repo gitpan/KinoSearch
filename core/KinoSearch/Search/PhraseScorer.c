@@ -5,7 +5,6 @@
 #include "KinoSearch/Posting/ScorePosting.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Compiler.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 /* Mark this scorer as invalid/finished.
  */
@@ -15,7 +14,7 @@ S_invalidate(PhraseScorer *self);
 PhraseScorer*
 PhraseScorer_new(Similarity *sim, VArray *plists, Compiler *compiler)
 {
-    PhraseScorer *self = (PhraseScorer*)VTable_Make_Obj(&PHRASESCORER);
+    PhraseScorer *self = (PhraseScorer*)VTable_Make_Obj(PHRASESCORER);
     return PhraseScorer_init(self, sim, plists, compiler);
 
 }
@@ -41,7 +40,7 @@ PhraseScorer_init(PhraseScorer *self, Similarity *similarity, VArray *plists,
     for (i = 0; i < self->num_elements; i++) {
         PostingList *const plist = (PostingList*)VA_Fetch(plists, i);
         if (plist == NULL)
-            THROW("Missing element %u32", i);
+            THROW(ERR, "Missing element %u32", i);
         self->plists[i] = (PostingList*)INCREF(plist);
     }
 
@@ -194,7 +193,8 @@ SI_winnow_anchors(u32_t *anchors_start, const u32_t *const anchors_end,
      * form is to avoid unnecessary comparisons.  I have not tested this
      * loop for speed, but glancing at the object code produced (objdump -S) 
      * it appears to be significantly faster than the nested loop alternative.
-     * But given the vagaries of modern processors, it merits actual testing.*/
+     * But given the vagaries of modern processors, it merits actual
+     * testing.*/
 
  SPIN_CANDIDATES:
     target_candidate = *anchors + offset;

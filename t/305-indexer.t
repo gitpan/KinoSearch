@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 3;
+use Test::More tests => 5;
 use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
@@ -22,21 +22,23 @@ $indexer = KinoSearch::Indexer->new(
 );
 $indexer->add_doc( { content => 'foo' } );
 pass("Indexer ignores garbage from interrupted session");
+$indexer->optimize;
+pass("optimize works as a back-compat synonym for optimize");
 
 SKIP: {
-    skip( 1, "Known leak, though might be fixable" ) if $ENV{KINO_VALGRIND};
+    skip( "Known leak, though might be fixable", 2 ) if $ENV{KINO_VALGRIND};
     eval {
-        my $lock_factory = KinoSearch::Store::LockFactory->new(
-            folder   => $folder,
-            agent_id => 'somebody_else',
-        );
+        my $manager
+            = KinoSearch::Index::IndexManager->new(
+            hostname => 'somebody_else' );
         my $inv = KinoSearch::Indexer->new(
-            lock_factory => $lock_factory,
-            index        => $folder,
-            schema       => $schema,
+            manager => $manager,
+            index   => $folder,
+            schema  => $schema,
         );
     };
-    like( $@, qr/write\.lock/, "failed to get lock with competing host" );
+    like( $@, qr/write.lock/, "failed to get lock with competing host" );
+    isa_ok( $@, "KinoSearch::Store::LockErr", "Indexer throws a LockErr" );
 }
 
 my $pid = 12345678;
@@ -51,22 +53,21 @@ do {
     $outstream->print(
         qq|
         {  
-            "agent_id": "somebody_else",
+            "hostname": "somebody_else",
             "pid": $pid,
-            "lock_name": "write"
+            "name": "write"
         }|
     );
     $outstream->close;
 
     eval {
-        my $lock_factory = KinoSearch::Store::LockFactory->new(
-            agent_id => 'somebody_else',
-            folder   => $folder,
-        );
+        my $manager
+            = KinoSearch::Index::IndexManager->new(
+            hostname => 'somebody_else' );
         my $inv = KinoSearch::Indexer->new(
-            lock_factory => $lock_factory,
-            schema       => $schema,
-            index        => $folder,
+            manager => $manager,
+            schema  => $schema,
+            index   => $folder,
         );
     };
 

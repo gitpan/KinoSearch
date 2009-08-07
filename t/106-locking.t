@@ -28,10 +28,10 @@ Dead_locks_are_removed: {
     my $folder = KinoSearch::Store::FSFolder->new( path => $path );
 
     sub make_lock {
-        my $lock = KinoSearch::Store::Lock->new(
-            timeout   => 0,
-            lock_name => 'foo',
-            agent_id  => '',
+        my $lock = KinoSearch::Store::LockFileLock->new(
+            timeout  => 0,
+            name     => 'foo',
+            hostname => '',
             @_
         );
         $lock->clear_stale;
@@ -57,8 +57,8 @@ Dead_locks_are_removed: {
     # started up with the child's pid (which would be weird).
     my $pid_active = kill( 0, $pid );
 
-    eval { make_lock( folder => $folder, agent_id => 'somebody_else' ) };
-    like( $@, qr/no dice/, "different agent_id fails to get lock" );
+    eval { make_lock( folder => $folder, hostname => 'somebody_else' ) };
+    like( $@, qr/no dice/, "different hostname fails to get lock" );
 
     eval { make_lock( folder => $folder ) };
     warn $@ if $@;

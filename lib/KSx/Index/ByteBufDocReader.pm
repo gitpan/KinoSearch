@@ -3,7 +3,7 @@ use warnings;
 
 package KSx::Index::ByteBufDocReader;
 use base qw( KinoSearch::Index::DocReader );
-use KinoSearch::Util::ByteBuf;
+use KinoSearch::Obj::ByteBuf;
 use Carp;
 
 # Inside-out member vars.
@@ -38,7 +38,7 @@ sub fetch {
     my $buf;
     $self->read_record( $doc_id, \$buf );
     if ($buf) {
-        return KinoSearch::Util::ByteBuf->new($buf);
+        return KinoSearch::Obj::ByteBuf->new($buf);
     }
     else {
         return undef;

@@ -7,7 +7,7 @@
 StringType*
 StringType_new()
 {
-    StringType *self = (StringType*)VTable_Make_Obj(&STRINGTYPE);
+    StringType *self = (StringType*)VTable_Make_Obj(STRINGTYPE);
     return StringType_init(self);
 }
 
@@ -78,7 +78,7 @@ StringType_load(StringType *self, Obj *dump)
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
     VTable *vtable = (class_name != NULL && OBJ_IS_A(class_name, CHARBUF)) 
                    ? VTable_singleton(class_name, NULL)
-                   : (VTable*)&STRINGTYPE;
+                   : STRINGTYPE;
     StringType *loaded   = (StringType*)VTable_Make_Obj(vtable);
     Obj *boost_dump      = Hash_Fetch_Str(source, "boost", 5);
     Obj *indexed_dump    = Hash_Fetch_Str(source, "indexed", 7);
@@ -87,10 +87,14 @@ StringType_load(StringType *self, Obj *dump)
     UNUSED_VAR(self);
 
     StringType_init(loaded);
-    if (boost_dump)    { loaded->boost    = (float)Obj_To_F64(boost_dump);     }
-    if (indexed_dump)  { loaded->indexed  = (bool_t)Obj_To_I64(indexed_dump);  }
-    if (stored_dump)   { loaded->stored   = (bool_t)Obj_To_I64(stored_dump);   }
-    if (sortable_dump) { loaded->sortable = (bool_t)Obj_To_I64(sortable_dump); }
+    if (boost_dump)    
+        { loaded->boost    = (float)Obj_To_F64(boost_dump);     }
+    if (indexed_dump)  
+        { loaded->indexed  = (bool_t)Obj_To_I64(indexed_dump);  }
+    if (stored_dump)   
+        { loaded->stored   = (bool_t)Obj_To_I64(stored_dump);   }
+    if (sortable_dump) 
+        { loaded->sortable = (bool_t)Obj_To_I64(sortable_dump); }
 
     return loaded;
 }

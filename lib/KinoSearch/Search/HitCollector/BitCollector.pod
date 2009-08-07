@@ -7,7 +7,7 @@ KinoSearch::Search::HitCollector::BitCollector - HitCollector which records doc 
 
 =head1 SYNOPSIS
 
-    my $bit_vec = KinoSearch::Util::BitVector->new(
+    my $bit_vec = KinoSearch::Obj::BitVector->new(
         capacity => $searcher->doc_max + 1,
     );
     my $bit_collector = KinoSearch::Search::HitCollector::BitCollector->new(
@@ -38,7 +38,7 @@ set of documents which matches a query.
 
 =item *
 
-B<bit_vector> - A KinoSearch::Util::BitVector.
+B<bit_vector> - A KinoSearch::Obj::BitVector.
 
 =back
 

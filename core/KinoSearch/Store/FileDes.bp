@@ -2,12 +2,12 @@ parcel KinoSearch cnick Kino;
 
 /** Abstract file stream.
  * 
- * Abstraction of a file descriptor, or perhaps more accurately a file stream a
- * la the c type FILE*.
+ * Abstraction of a file descriptor, or perhaps more accurately a file stream
+ * a la the c type FILE*.
  * 
- * InStream and OutStream define an interface by which other modules may write to
- * a FileDes.  FileDes implements a lower-level buffered read/write.  Subclasses
- * include FSFileDes for reading/writing to disk and RAMFileDes for
+ * InStream and OutStream define an interface by which other modules may write
+ * to a FileDes.  FileDes implements a lower-level buffered read/write.
+ * Subclasses include FSFileDes for reading/writing to disk and RAMFileDes for
  * reading/writing to RAM "files".
  */
 

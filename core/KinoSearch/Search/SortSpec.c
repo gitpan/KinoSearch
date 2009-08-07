@@ -14,7 +14,7 @@
 SortSpec*
 SortSpec_new(VArray *rules)
 {
-    SortSpec *self = (SortSpec*)VTable_Make_Obj(&SORTSPEC);
+    SortSpec *self = (SortSpec*)VTable_Make_Obj(SORTSPEC);
     return SortSpec_init(self, rules);
 }
 
@@ -45,7 +45,7 @@ SortSpec_deserialize(SortSpec *self, InStream *instream)
     u32_t i;
 
     /* Create base object. */
-    self = self ? self : (SortSpec*)VTable_Make_Obj(&SORTSPEC);
+    self = self ? self : (SortSpec*)VTable_Make_Obj(SORTSPEC);
 
     /* Add rules. */
     for (i = 0; i < num_rules; i++) {

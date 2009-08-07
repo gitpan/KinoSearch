@@ -10,7 +10,7 @@ kino_Doc_init(kino_Doc *self, void *fields, chy_i32_t doc_id)
 {
     /* Assign. */
     if (fields) {
-        if (SvTYPE((SV*)fields) != SVt_PVHV) THROW("Not a hash");
+        if (SvTYPE((SV*)fields) != SVt_PVHV) THROW(KINO_ERR, "Not a hash");
         self->fields = SvREFCNT_inc((SV*)fields);
     }
     else {
@@ -60,7 +60,7 @@ kino_Doc_deserialize(kino_Doc *self, kino_InStream *instream)
 {
     chy_i32_t doc_id     = (chy_i32_t)Kino_InStream_Read_C32(instream);
 
-    self = self ? self : (kino_Doc*)Kino_VTable_Make_Obj(&KINO_DOC);
+    self = self ? self : (kino_Doc*)Kino_VTable_Make_Obj(KINO_DOC);
     kino_Doc_init(self, NULL, doc_id);
     kino_Host_callback(self, "deserialize_fields", 1, 
         KINO_ARG_OBJ("instream", instream));
@@ -78,7 +78,7 @@ kino_Doc_extract(kino_Doc *self, kino_CharBuf *field,
 
     if (sv_ptr && XSBind_sv_defined(*sv_ptr)) {
         SV *const sv = *sv_ptr;
-        if (sv_isobject(sv) && sv_derived_from(sv, KINO_OBJ.name->ptr)) {
+        if (sv_isobject(sv) && sv_derived_from(sv, KINO_OBJ->name->ptr)) {
             IV tmp = SvIV( SvRV(sv) );
             retval = INT2PTR(kino_Obj*, tmp);
         }
@@ -96,36 +96,10 @@ kino_Doc_extract(kino_Doc *self, kino_CharBuf *field,
 void*
 kino_Doc_to_host(kino_Doc *self)
 {
-    SV *perl_obj = kino_Obj_to_host((kino_Obj*)self); /* SUPER */
-    HV *stash;
-    kino_CharBuf *class_name = Kino_Obj_Get_Class_Name(self);
-    chy_u8_t *ptr = Kino_CB_Get_Ptr8(class_name);
-    size_t size = Kino_CB_Get_Size(class_name);
-
-    /* This code is informed by the following snippet from Perl_sv_bless, from
-     * sv.c:
-     *
-     *     if (Gv_AMG(stash))
-     *         SvAMAGIC_on(sv);
-     *     else
-     *         (void)SvAMAGIC_off(sv);
-     *
-     * Gv_AMupdate is undocumented.  It is extracted from the Gv_AMG macro,
-     * also undocumented, defined in sv.h:
-     *
-     *     #define Gv_AMG(stash)  (PL_amagic_generation && Gv_AMupdate(stash))
-     * 
-     * The purpose of the code is to turn on overloading for the class in
-     * question.  It seems that as soon as overloading is on for any class,
-     * anywhere, that PL_amagic_generation goes positive and stays positive,
-     * so that Gv_AMupdate gets called with every bless() invocation.  Since
-     * we need overloading for Doc and all its subclasses, we skip the check
-     * and just update every time.
-     */
-    stash = gv_stashpvn((char*)ptr, size, true);
-    Gv_AMupdate(stash);
-    SvAMAGIC_on(perl_obj);
-
+    kino_Doc_to_host_t super_to_host 
+        = (kino_Doc_to_host_t)KINO_SUPER_METHOD(KINO_DOC, Doc, To_Host);
+    SV *perl_obj = super_to_host(self);
+    XSBind_enable_overload(perl_obj);
     return perl_obj;
 }
 

@@ -5,46 +5,46 @@
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DeletionsReader.h"
+#include "KinoSearch/Index/IndexManager.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"
 #include "KinoSearch/Store/Lock.h"
-#include "KinoSearch/Store/LockFactory.h"
 #include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/Json.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/StringHelper.h"
 
-/* Obtain/release read locks and commit locks.  If self->lock_factory is
+/* Obtain/release read locks and commit locks.  If self->manager is
  * NULL, do nothing  */
 static void 
 S_obtain_read_lock(PolyReader *self, const CharBuf *snapshot_filename);
 static void 
-S_obtain_commit_lock(PolyReader *self);
+S_obtain_deletion_lock(PolyReader *self);
 static void 
 S_release_read_lock(PolyReader *self);
 static void 
-S_release_commit_lock(PolyReader *self);
+S_release_deletion_lock(PolyReader *self);
 
 static Folder*
 S_derive_folder(Obj *index);
 
 PolyReader*
 PolyReader_new(Schema *schema, Folder *folder, Snapshot *snapshot, 
-               LockFactory *lock_factory, VArray *sub_readers)
+               IndexManager *manager, VArray *sub_readers)
 {
-    PolyReader *self = (PolyReader*)VTable_Make_Obj(&POLYREADER);
-    return PolyReader_init(self, schema, folder, snapshot, lock_factory, 
+    PolyReader *self = (PolyReader*)VTable_Make_Obj(POLYREADER);
+    return PolyReader_init(self, schema, folder, snapshot, manager, 
         sub_readers);
 }
 
 PolyReader*
-PolyReader_open(Obj *index, Snapshot *snapshot, LockFactory *lock_factory)
+PolyReader_open(Obj *index, Snapshot *snapshot, IndexManager *manager)
 {
-    PolyReader *self = (PolyReader*)VTable_Make_Obj(&POLYREADER);
-    return PolyReader_do_open(self, index, snapshot, lock_factory);
+    PolyReader *self = (PolyReader*)VTable_Make_Obj(POLYREADER);
+    return PolyReader_do_open(self, index, snapshot, manager);
 }
 
 static Obj*
@@ -110,14 +110,14 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
 
     {
         DeletionsReader *del_reader = (DeletionsReader*)Hash_Fetch(
-            self->components, (Obj*)DELETIONSREADER.name);
+            self->components, (Obj*)DELETIONSREADER->name);
         self->del_count = del_reader ? DelReader_Del_Count(del_reader) : 0;
     }
 }
 
 PolyReader*
 PolyReader_init(PolyReader *self, Schema *schema, Folder *folder, 
-                Snapshot *snapshot, LockFactory *lock_factory, 
+                Snapshot *snapshot, IndexManager *manager, 
                 VArray *sub_readers)
 {
     self->doc_max    = 0;
@@ -133,13 +133,13 @@ PolyReader_init(PolyReader *self, Schema *schema, Folder *folder,
             VA_Push(segments, INCREF(SegReader_Get_Segment(seg_reader)));
         }
         IxReader_init((IndexReader*)self, schema, folder, snapshot, 
-            segments, -1, lock_factory);
+            segments, -1, manager);
         DECREF(segments);
         S_init_sub_readers(self, sub_readers); 
     }
     else {
         IxReader_init((IndexReader*)self, schema, folder, snapshot, 
-            NULL, -1, lock_factory);
+            NULL, -1, manager);
         self->sub_readers = VA_new(0);
         self->offsets = I32Arr_new_steal(NULL, 0);
     }
@@ -151,7 +151,7 @@ void
 PolyReader_close(PolyReader *self)
 {
     PolyReader_close_t super_close 
-        = (PolyReader_close_t)SUPER_METHOD(&POLYREADER, PolyReader, Close);
+        = (PolyReader_close_t)SUPER_METHOD(POLYREADER, PolyReader, Close);
     u32_t i, max;
     for (i = 0, max = VA_Get_Size(self->sub_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->sub_readers, i);
@@ -193,7 +193,7 @@ S_try_open_elements(PolyReader *self)
             if (gen > latest_schema_gen) {
                 latest_schema_gen = gen;
                 if (!schema_file) { schema_file = CB_Clone(file); }
-                else { CB_Copy(schema_file, file); }
+                else { CB_Mimic(schema_file, (Obj*)file); }
             }
         }
     }
@@ -209,7 +209,7 @@ S_try_open_elements(PolyReader *self)
         if (dump) { /* read file successfully */
             DECREF(self->schema);
             self->schema = (Schema*)ASSERT_IS_A(
-                VTable_Load_Obj(&SCHEMA, (Obj*)dump), SCHEMA);
+                VTable_Load_Obj(SCHEMA, (Obj*)dump), SCHEMA);
             DECREF(dump);
             DECREF(schema_file);
             schema_file = NULL;
@@ -228,15 +228,13 @@ S_try_open_elements(PolyReader *self)
 
         /* Create a Segment for each segmeta. */
         if (CB_Ends_With_Str(file, "segmeta.json", 12)) {
-            ZombieCharBuf seg_name = ZCB_make(file);
-            Segment *segment;
-            ZCB_Chop(&seg_name, sizeof("/segmeta.json") - 1);
-            segment = Seg_new((CharBuf*)&seg_name, folder);
+            i32_t seg_num = IxFileNames_extract_gen(file);
+            Segment *segment = Seg_new(seg_num);
 
             /* Bail if reading the file fails (probably because it's been
              * deleted and a new snapshot file has been written so we need to
              * retry). */
-            if (Seg_Read_File(segment)) {
+            if (Seg_Read_File(segment, folder)) {
                 VA_Push(segments, (Obj*)segment);
             }
             else {
@@ -266,15 +264,15 @@ i32_t    PolyReader_debug1_num_passes     = 0;
 
 PolyReader*
 PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot, 
-                   LockFactory *lock_factory)
+                   IndexManager *manager)
 {
     Folder *folder = S_derive_folder(index);
     i32_t last_gen = 0;
 
-    PolyReader_init(self, NULL, folder, snapshot, lock_factory, NULL);
+    PolyReader_init(self, NULL, folder, snapshot, manager, NULL);
     DECREF(folder);
 
-    if (lock_factory) S_obtain_commit_lock(self);
+    if (manager) S_obtain_deletion_lock(self);
 
     while (1) {
         CharBuf *target_snap_file;
@@ -284,7 +282,7 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
         if (snapshot) {
             target_snap_file = Snapshot_Get_Filename(snapshot);
             if (!target_snap_file) {
-                THROW("Supplied snapshot objects must not be empty");
+                THROW(ERR, "Supplied snapshot objects must not be empty");
             }
             else {
                 CB_Inc_RefCount(target_snap_file);
@@ -294,8 +292,8 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
             /* Otherwise, pick the most recent snap file. */
             target_snap_file = IxFileNames_latest_snapshot(folder);
 
-            /* No snap file?  Looks like the index is empty.  We can stop now and
-             * return NULL. */
+            /* No snap file?  Looks like the index is empty.  We can stop now
+             * and return NULL. */
             if (!target_snap_file) { break; }
         }
         
@@ -303,7 +301,7 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
         gen = IxFileNames_extract_gen(target_snap_file);
 
         /* Get a read lock on the most recent snapshot file if indicated. */
-        if (lock_factory) {
+        if (manager) {
             S_obtain_read_lock(self, target_snap_file);
         }
 
@@ -318,7 +316,7 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
         }
 
         /* If a Snapshot object was passed in, the file has already been read.
-         * If that's not the case, we need to go read the file we just picked. */
+         * If that's not the case, we must read the file we just picked. */
         if (!snapshot) { 
             CharBuf *error = PolyReader_try_read_snapshot(self->snapshot, 
                 folder, target_snap_file);
@@ -332,8 +330,8 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
                     continue;
                 }
                 else { /* Real error. */
-                    if (lock_factory) S_release_commit_lock(self);
-                    Err_throw_mess(error);
+                    if (manager) S_release_deletion_lock(self);
+                    Err_throw_mess(ERR, error);
                 }
             }
         }
@@ -354,8 +352,8 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
                     last_gen = gen;
                 }
                 else { /* Real error. */
-                    if (lock_factory) S_release_commit_lock(self);
-                    Err_throw_mess((CharBuf*)result);
+                    if (manager) S_release_deletion_lock(self);
+                    Err_throw_mess(ERR, (CharBuf*)result);
                 }
             }
             else { /* Succeeded. */
@@ -367,7 +365,7 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
         }
     }
 
-    if (lock_factory) { S_release_commit_lock(self); }
+    if (manager) { S_release_deletion_lock(self); }
 
     return self;
 }
@@ -383,47 +381,34 @@ S_derive_folder(Obj *index)
         folder = (Folder*)FSFolder_new((CharBuf*)index);
     }
     else {
-        THROW("Invalid type for 'index': %o", Obj_Get_Class_Name(index));
+        THROW(ERR, "Invalid type for 'index': %o", Obj_Get_Class_Name(index));
     }
     return folder;
 }
 
 static void
-S_obtain_commit_lock(PolyReader *self)
+S_obtain_deletion_lock(PolyReader *self)
 {
-    self->commit_lock = LockFact_Make_Lock(self->lock_factory,
-        (CharBuf*)Lock_commit_lock_name, Lock_commit_lock_timeout);
-    Lock_Clear_Stale(self->commit_lock);
-    if (!Lock_Obtain(self->commit_lock)) {
-        DECREF(self->commit_lock);
-        self->commit_lock = NULL;
-        THROW("Couldn't get commit lock"); 
+    self->deletion_lock = IxManager_Make_Deletion_Lock(self->manager);
+    Lock_Clear_Stale(self->deletion_lock);
+    if (!Lock_Obtain(self->deletion_lock)) {
+        DECREF(self->deletion_lock);
+        self->deletion_lock = NULL;
+        THROW(LOCKERR, "Couldn't get commit lock"); 
     }
 }
 
 static void
 S_obtain_read_lock(PolyReader *self, const CharBuf *snapshot_file_name)
 {
-    ZombieCharBuf lock_name = ZCB_BLANK;
-
-    if (!self->lock_factory) return;
-    if (   !CB_Starts_With_Str(snapshot_file_name, "snapshot_", 9)
-        || !CB_Ends_With_Str(snapshot_file_name, ".json", 5)
-    ) {
-        THROW("Not a snapshot filename: %o", snapshot_file_name);
-    }
-        
-    /* Truncate ".json" from end of snapshot file name. */
-    ZCB_Assign(&lock_name, snapshot_file_name);
-    ZCB_Chop(&lock_name, 5);
-
-    self->read_lock = LockFact_Make_Shared_Lock(self->lock_factory,
-        (CharBuf*)&lock_name, Lock_read_lock_timeout);
+    if (!self->manager) { return; }
+    self->read_lock = IxManager_Make_Snapshot_Read_Lock(self->manager,
+        snapshot_file_name);
 
     Lock_Clear_Stale(self->read_lock);
     if (!Lock_Obtain(self->read_lock)) {
         DECREF(self->read_lock);
-        THROW("Couldn't get read lock for %o", snapshot_file_name); 
+        THROW(LOCKERR, "Couldn't get read lock for %o", snapshot_file_name); 
     }
 }
 
@@ -438,12 +423,12 @@ S_release_read_lock(PolyReader *self)
 }
 
 static void
-S_release_commit_lock(PolyReader *self)
+S_release_deletion_lock(PolyReader *self)
 {
-    if (self->commit_lock) {
-        Lock_Release(self->commit_lock);
-        DECREF(self->commit_lock);
-        self->commit_lock = NULL;
+    if (self->deletion_lock) {
+        Lock_Release(self->deletion_lock);
+        DECREF(self->deletion_lock);
+        self->deletion_lock = NULL;
     }
 }
 

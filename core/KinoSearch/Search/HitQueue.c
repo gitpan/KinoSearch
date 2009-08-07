@@ -22,7 +22,7 @@
 HitQueue*
 HitQ_new(Schema *schema, SortSpec *sort_spec, u32_t wanted) 
 {
-    HitQueue *self = (HitQueue*)VTable_Make_Obj(&HITQUEUE);
+    HitQueue *self = (HitQueue*)VTable_Make_Obj(HITQUEUE);
     return HitQ_init(self, schema, sort_spec, wanted);
 }
 
@@ -36,7 +36,7 @@ HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
         u32_t   action_num = 0;
 
         if (!schema) {
-            THROW("Can't supply sort_spec without schema");
+            THROW(ERR, "Can't supply sort_spec without schema");
         }
 
         self->need_values = false;
@@ -75,7 +75,7 @@ HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
                 } 
             }
             else {
-                THROW("Unknown SortRule type: %i32", rule_type);
+                THROW(ERR, "Unknown SortRule type: %i32", rule_type);
             }
         }
     }
@@ -107,7 +107,7 @@ HitQ_jostle(HitQueue *self, Obj *element)
 {
     MatchDoc *match_doc = (MatchDoc*)ASSERT_IS_A(element, MATCHDOC);
     HitQ_jostle_t super_jostle 
-        = (HitQ_jostle_t)SUPER_METHOD(&HITQUEUE, HitQ, Jostle);
+        = (HitQ_jostle_t)SUPER_METHOD(HITQUEUE, HitQ, Jostle);
     if (self->need_values) {
         ASSERT_IS_A(match_doc->values, VARRAY);
     }
@@ -120,7 +120,7 @@ SI_compare_by_value(HitQueue *self, u32_t tick, MatchDoc *a, MatchDoc *b)
     Obj *a_val = VA_Fetch(a->values, tick);
     Obj *b_val = VA_Fetch(b->values, tick);
     FieldType *field_type = self->field_types[tick];
-    return (i32_t)FType_Compare_Values(field_type, a_val, b_val);
+    return FType_Compare_Values(field_type, a_val, b_val);
 }
 
 bool_t
@@ -164,7 +164,7 @@ HitQ_less_than(HitQueue *self, Obj *obj_a, Obj *obj_b)
                 }
                 break;
             default:         
-                THROW("Unexpected action %u8", actions[i]);
+                THROW(ERR, "Unexpected action %u8", actions[i]);
         }
 
     } while (++i < self->num_actions);

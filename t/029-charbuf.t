@@ -8,21 +8,21 @@ use KinoSearch::Test::TestUtils qw( utf8_test_strings );
 
 my ( $smiley, $not_a_smiley, $frowny ) = utf8_test_strings();
 
-sub get_cb { KinoSearch::Util::CharBuf->new(shift) }
+sub get_cb { KinoSearch::Obj::CharBuf->new(shift) }
 
 my $charbuf = get_cb($smiley);
-isa_ok( $charbuf, "KinoSearch::Util::CharBuf" );
+isa_ok( $charbuf, "KinoSearch::Obj::CharBuf" );
 is( $charbuf->to_perl, $smiley, "round trip UTF-8" );
 
 my $frowny_charbuf = get_cb($frowny);
 $charbuf->cat($frowny_charbuf);
 is( $charbuf->to_perl, "$smiley$frowny", "cat" );
-$charbuf->copy($frowny_charbuf);
-is( $charbuf->to_perl, $frowny, "copy" );
+$charbuf->mimic($frowny_charbuf);
+is( $charbuf->to_perl, $frowny, "mimic" );
 
 $charbuf = get_cb($smiley);
 my $dupe = thaw( freeze($charbuf) );
-isa_ok( $dupe, "KinoSearch::Util::CharBuf",
+isa_ok( $dupe, "KinoSearch::Obj::CharBuf",
     "thaw/freeze produces correct object" );
 is( $dupe->to_perl, $charbuf->to_perl, "freeze/thaw" );
 
@@ -74,7 +74,7 @@ my $outstream = KinoSearch::Store::OutStream->new($ram_file);
 $charbuf->serialize($outstream);
 $outstream->close;
 my $instream     = KinoSearch::Store::InStream->new($ram_file);
-my $deserialized = KinoSearch::Util::CharBuf->deserialize($instream);
+my $deserialized = KinoSearch::Obj::CharBuf->deserialize($instream);
 is_deeply( $charbuf->to_perl, $deserialized->to_perl,
     "serialize/deserialize" );
 

@@ -66,8 +66,8 @@ eval { my $another_obj = TestObj->new( kill_me_now => 1 ) };
 like( $@, qr/kill_me_now/, "reject bad param" );
 
 my $stringified_perl_obj = "$object";
-require KinoSearch::Util::Hash;
-my $hash = KinoSearch::Util::Hash->new;
+require KinoSearch::Obj::Hash;
+my $hash = KinoSearch::Obj::Hash->new;
 $hash->store( foo => $object );
 is( $object->get_refcount, 2, "refcount increased via KS C code" );
 is( $object->get_refcount, 2, "refcount increased via KS C code" );

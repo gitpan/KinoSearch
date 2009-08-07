@@ -95,8 +95,8 @@ Generic stringification: "ClassName@hex_mem_address".
 
 =head2 equals(other)
 
-Indicate whether two objects are the same.  By default, compares the memory
-address.
+Indicate whether two objects are the same.  By default, compares the
+memory address.
 
 =over
 

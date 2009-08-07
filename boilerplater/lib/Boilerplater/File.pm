@@ -175,10 +175,10 @@ $args{header}
 
 #include "boil.h"
 #include "KinoSearch/Obj/VTable.h"
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/Hash.h"
-#include "KinoSearch/Util/VArray.h"
-#include "KinoSearch/Util/Err.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
+#include "KinoSearch/Obj/Hash.h"
+#include "KinoSearch/Obj/VArray.h"
 #include "KinoSearch/Util/Host.h"
 
 $content

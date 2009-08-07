@@ -4,43 +4,28 @@
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Architecture.h"
 #include "KinoSearch/Posting.h"
+#include "KinoSearch/Posting/MatchPosting.h"
 #include "KinoSearch/Posting/RawPosting.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/FieldType.h"
-#include "KinoSearch/Index/LexStepper.h"
+#include "KinoSearch/Index/LexiconReader.h"
+#include "KinoSearch/Index/TermStepper.h"
 #include "KinoSearch/Index/PostingPoolQueue.h"
+#include "KinoSearch/Index/PostingsReader.h"
 #include "KinoSearch/Index/Segment.h"
+#include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Util/MemoryPool.h"
 #include "KinoSearch/Util/I32Array.h"
 
-/* Constructor.
- */
-PostingPool*
-PostPool_new(Schema *schema, const CharBuf *field, MemoryPool *mem_pool)
-{
-    PostingPool *self = (PostingPool*)VTable_Make_Obj(&POSTINGPOOL);
-    return PostPool_init(self, schema, field, mem_pool);
-}
-
 PostingPool*
 PostPool_init(PostingPool *self, Schema *schema, 
               const CharBuf *field, MemoryPool *mem_pool)
 {
-    Architecture *arch = Schema_Get_Architecture(schema);
-
     /* Init. */
     SortExRun_init((SortExRun*)self);
-    self->lex_instream     = NULL;
-    self->post_instream    = NULL;
-    self->lex_start        = I64_MAX;
-    self->post_start       = I64_MAX;
-    self->lex_end          = 0;
-    self->post_end         = 0;
-    self->flipped          = false;
-    self->from_seg         = false;
     self->mem_thresh       = 0;
     self->doc_base         = 0;
     self->last_doc_id      = 0;
@@ -48,18 +33,13 @@ PostPool_init(PostingPool *self, Schema *schema,
     self->post_count       = 0;
     self->scratch          = NULL;
     self->scratch_cap      = 0;
-    self->lex_stepper = LexStepper_new(field, Arch_Skip_Interval(arch));
+    self->lexicon          = NULL;
+    self->plist            = NULL;
 
     /* Assign. */
     self->schema         = (Schema*)INCREF(schema);
     self->mem_pool       = (MemoryPool*)INCREF(mem_pool);
     self->field          = CB_Clone(field);
-
-    /* Derive. */
-    self->posting = Schema_Fetch_Posting(schema, field);
-    self->posting = (Posting*)Post_Clone(self->posting);
-    self->type    = (FieldType*)INCREF(Schema_Fetch_Type(schema, field));
-    self->compare = PostPoolQ_compare_rawp;
 
     return self;
 }
@@ -70,11 +50,6 @@ PostPool_destroy(PostingPool *self)
     DECREF(self->schema);
     DECREF(self->mem_pool);
     DECREF(self->field);
-    DECREF(self->lex_instream);
-    DECREF(self->post_instream);
-    DECREF(self->lex_stepper);
-    DECREF(self->posting);
-    DECREF(self->type);
     DECREF(self->doc_map);
     FREEMEM(self->scratch);
     
@@ -88,10 +63,39 @@ PostPool_destroy(PostingPool *self)
     SUPER_DESTROY(self, POSTINGPOOL);
 }
 
+static INLINE int
+SI_compare_rawp(void *context, const void *va, const void *vb)
+{
+    RawPosting *const a = *(RawPosting**)va;
+    RawPosting *const b = *(RawPosting**)vb;
+    const size_t a_len = a->content_len;
+    const size_t b_len = b->content_len;
+    const size_t len = a_len < b_len? a_len : b_len;
+    int comparison = memcmp(a->blob, b->blob, len);
+    UNUSED_VAR(context);
+
+    if (comparison == 0) {
+        /* If a is a substring of b, it's less than b, so return a neg num. */
+        comparison = a_len - b_len;
+
+        /* Break ties by doc id. */
+        if (comparison == 0) 
+            comparison = a->doc_id - b->doc_id;
+    }
+
+    return comparison;
+}
+
+int
+PostPool_compare_raw_postings(void *context, const void *va, const void *vb)
+{
+    return SI_compare_rawp(context, va, vb);
+}
+
 int
 PostPool_compare(PostingPool *self, Obj **a, Obj **b)
 {
-    return self->compare(self, a, b);
+    return SI_compare_rawp(self, a, b);
 }
 
 void
@@ -105,67 +109,20 @@ PostPool_add_elem(PostingPool *self, Obj *elem)
 }
 
 void
-PostPool_add_inversion(PostingPool *self, Inversion *inversion, 
-                   i32_t doc_id, float doc_boost, 
-                   float length_norm)
-{
-    Post_Add_Inversion_To_Pool(self->posting, self, inversion, self->type, 
-        doc_id, doc_boost, length_norm);
-}
-
-void
-PostPool_assign_seg(PostingPool *self, Folder *other_folder, 
-                    Segment *other_segment, i32_t doc_base, I32Array *doc_map)
-{
-    i32_t    field_num = Seg_Field_Num(other_segment, self->field);
-    CharBuf *other_seg_name = Seg_Get_Name(other_segment);
-    CharBuf *lex_file 
-        = CB_newf("%o/lexicon-%i32.dat", other_seg_name, field_num);
-
-    /* Dedicate pool to this task alone. */
-    if (self->from_seg || self->cache_max > 0 || self->lex_end != 0)
-        THROW("Can't Assign_Segment to PostingPool with other content");
-    self->from_seg = true;
-
-    /* Prepare to read from existing files. */
-    if (Folder_Exists(other_folder, lex_file)) {
-        CharBuf *post_file
-            = CB_newf("%o/postings-%i32.dat", other_seg_name, field_num);
-
-        /* Open lexicon and postings files. */
-        self->lex_instream  = Folder_Open_In(other_folder, lex_file);
-        self->post_instream = Folder_Open_In(other_folder, post_file);
-        if (!self->lex_instream)  { THROW("Can't open %o", lex_file); }
-        if (!self->post_instream) { THROW("Can't open %o", post_file); }
-        self->lex_end       = InStream_Length(self->lex_instream);
-        self->post_end      = InStream_Length(self->post_instream);
-
-        /* Assign doc base and doc map. */
-        self->doc_base = doc_base;
-        self->doc_map  = doc_map ? (I32Array*)INCREF(doc_map) : NULL;
-
-        DECREF(post_file);
-    }
-    else {
-        /* This posting pool will be empty. */
-    }
-
-    /* Clean up. */
-    DECREF(lex_file);
-}
-
-void
 PostPool_sort_cache(PostingPool *self)
 {
     if (self->cache_tick != 0)
-        THROW("Cant sort_cache when tick non-zero: %u32", self->cache_tick);
+        THROW(ERR, "Cant sort_cache when tick non-zero: %u32", self->cache_tick);
     if (self->scratch_cap < self->cache_cap) {
         self->scratch_cap = self->cache_cap;
         self->scratch = REALLOCATE(self->scratch, self->scratch_cap, Obj*);
     }
-    if (self->cache_max != 0)
+    if (self->cache_max != 0) {
+        Sort_compare_t sort_func
+            = (Sort_compare_t)METHOD(POSTINGPOOL, PostPool, Compare);
         Sort_mergesort(self->cache, self->scratch, self->cache_max,
-            sizeof(Obj*), self->compare, self);
+            sizeof(Obj*), sort_func, self);
+    }
 }
 
 RawPosting*
@@ -176,43 +133,13 @@ PostPool_fetch_from_ram(PostingPool *self)
     return (RawPosting*)self->cache[ self->cache_tick++ ];
 }
 
-void
-PostPool_flip(PostingPool *self, InStream *lex_instream,
-              InStream *post_instream, u32_t mem_thresh)
-{
-    if (self->flipped)
-        THROW("Can't call Flip twice");
-    self->flipped = true;
-
-    /* Assign memory threshold. */
-    self->mem_thresh = mem_thresh;
-
-    /* Reset cache if all elems have been cleared out. */
-    if (self->cache_tick == self->cache_max) {
-        self->cache_tick = 0;
-        self->cache_max  = 0;
-    }
-
-    /* Sort RawPostings in cache, if any. */
-    PostPool_Sort_Cache(self);
-
-    /* Bail if assigned a segment or if never flushed. */
-    if (self->from_seg || self->lex_end == 0)
-        return;
-
-    /* Clone streams. */
-    self->lex_instream   = (InStream*)InStream_Clone(lex_instream);
-    self->post_instream  = (InStream*)InStream_Clone(post_instream);
-    InStream_Seek(self->lex_instream,   self->lex_start);
-    InStream_Seek(self->post_instream, self->post_start);
-}
 
 void
 PostPool_shrink(PostingPool *self)
 {
     /* Make sure cache is empty. */
     if (self->cache_max - self->cache_tick > 0) {
-        THROW("Cache contains %u32 items, so can't shrink",
+        THROW(ERR, "Cache contains %u32 items, so can't shrink",
             self->cache_max - self->cache_tick);
     } 
     self->cache_tick  = 0; 
@@ -225,32 +152,25 @@ PostPool_shrink(PostingPool *self)
     self->scratch     = NULL;
 }
 
+
 u32_t
 PostPool_refill(PostingPool *self)
 {
-    LexStepper  *const lex_stepper     = self->lex_stepper;
-    Posting     *const main_posting    = self->posting;
-    InStream    *const lex_instream    = self->lex_instream;
-    InStream    *const post_instream   = self->post_instream;
-    I32Array    *const doc_map         = self->doc_map;
-    const u32_t        mem_thresh      = self->mem_thresh;
-    const i32_t        doc_base        = self->doc_base;
-    const i64_t        lex_end         = self->lex_end;
-    u32_t              num_elems       = 0; /* number of items recovered */
-    CharBuf           *term_text       = lex_stepper->value == NULL 
-                                            ? NULL 
-                                            : (CharBuf*)lex_stepper->value;
+    Lexicon *const     lexicon     = self->lexicon;
+    PostingList *const plist       = self->plist;
+    I32Array    *const doc_map     = self->doc_map;
+    const u32_t        mem_thresh  = self->mem_thresh;
+    const i32_t        doc_base    = self->doc_base;
+    u32_t              num_elems   = 0; /* number of items recovered */
     MemoryPool        *mem_pool;
+    CharBuf           *term_text   = NULL;
 
-    if (!self->flipped)
-        THROW("Can't call Refill before Flip");
-
-    if (lex_instream == NULL)
-        return 0;
+    if (self->lexicon == NULL) { return 0; }
+    else { term_text = (CharBuf*)Lex_Get_Term(lexicon); }
 
     /* Make sure cache is empty. */
     if (self->cache_max - self->cache_tick > 0) {
-        THROW("Refill called but cache contains %u32 items",
+        THROW(ERR, "Refill called but cache contains %u32 items",
             self->cache_max - self->cache_tick);
     }
     self->cache_max  = 0;
@@ -266,25 +186,20 @@ PostPool_refill(PostingPool *self)
 
         if (self->post_count == 0) {
             /* Read a term. */
-            if (InStream_Tell(lex_instream) < lex_end) {
-                LexStepper_Read_Record(lex_stepper, lex_instream);
-                self->post_count = lex_stepper->tinfo->doc_freq;
-                term_text = (CharBuf*)lex_stepper->value;
-                Post_Reset(main_posting, doc_base);
-                self->last_doc_id = doc_base;
+            if (Lex_Next(lexicon)) {
+                self->post_count = Lex_Doc_Freq(lexicon);
+                term_text = (CharBuf*)Lex_Get_Term(lexicon);
+                if (term_text && !OBJ_IS_A(term_text, CHARBUF)) {
+                    THROW(ERR, "Only CharBuf terms are supported for now");
+                }
+                {
+                    Posting *posting = PList_Get_Posting(plist);
+                    Post_Set_Doc_ID(posting, doc_base);
+                    self->last_doc_id = doc_base;
+                }
             }
             /* Bail if we've read everything in this run. */
             else {
-                /* Make sure we haven't read too much. */
-                if (InStream_Tell(lex_instream) > lex_end) {
-                    i64_t pos = InStream_Tell(lex_instream);
-                    THROW("tl read error: %i64 %i64", pos, lex_end);
-                }
-                else if (InStream_Tell(post_instream) != self->post_end) {
-                    i64_t pos = InStream_Tell(lex_instream);
-                    THROW("post read error: %i64 %i64", pos, lex_end);
-                }
-                /* We're ok. */
                 break;
             }
         }
@@ -294,8 +209,8 @@ PostPool_refill(PostingPool *self)
             break;
 
         /* Read a posting from the input stream. */
-        raw_posting = Post_Read_Raw(main_posting, post_instream, 
-            self->last_doc_id, term_text, mem_pool);
+        raw_posting = PList_Read_Raw(plist, self->last_doc_id, term_text, 
+            mem_pool);
         self->last_doc_id = raw_posting->doc_id;
         self->post_count--;
 
@@ -321,6 +236,257 @@ PostPool_refill(PostingPool *self)
     self->cache_tick  = 0;
 
     return num_elems;
+}
+
+/***************************************************************************/
+
+FreshPostingPool*
+FreshPostPool_new(Schema *schema, const CharBuf *field, MemoryPool *mem_pool)
+{
+    FreshPostingPool *self 
+        = (FreshPostingPool*)VTable_Make_Obj(FRESHPOSTINGPOOL);
+    return FreshPostPool_init(self, schema, field, mem_pool);
+}
+
+FreshPostingPool*
+FreshPostPool_init(FreshPostingPool *self, Schema *schema, 
+                   const CharBuf *field, MemoryPool *mem_pool)
+{
+    /* Init. */
+    PostPool_init((PostingPool*)self, schema, field, mem_pool);
+    self->lex_start        = I64_MAX;
+    self->post_start       = I64_MAX;
+    self->lex_end          = 0;
+    self->post_end         = 0;
+    self->flipped          = false;
+
+    /* Derive. */
+    self->posting = Schema_Fetch_Posting(schema, field);
+    self->posting = (Posting*)Post_Clone(self->posting);
+    self->type    = (FieldType*)INCREF(Schema_Fetch_Type(schema, field));
+
+    return self;
+}
+
+void
+FreshPostPool_destroy(FreshPostingPool *self)
+{
+    DECREF(self->posting);
+    DECREF(self->type);
+    SUPER_DESTROY(self, FRESHPOSTINGPOOL);
+}
+
+void
+FreshPostPool_set_lex_start(FreshPostingPool *self, i64_t lex_start)
+    { self->lex_start = lex_start; }
+void
+FreshPostPool_set_lex_end(FreshPostingPool *self, i64_t lex_end)
+    { self->lex_end = lex_end; }
+void
+FreshPostPool_set_post_start(FreshPostingPool *self, i64_t post_start)
+    { self->post_start = post_start; }
+void
+FreshPostPool_set_post_end(FreshPostingPool *self, i64_t post_end)
+    { self->post_end = post_end; }
+
+void
+FreshPostPool_add_inversion(FreshPostingPool *self, Inversion *inversion, 
+                            i32_t doc_id, float doc_boost, float length_norm)
+{
+    Post_Add_Inversion_To_Pool(self->posting, (PostingPool*)self, inversion, 
+        self->type, doc_id, doc_boost, length_norm);
+}
+
+void
+FreshPostPool_flip(FreshPostingPool *self, InStream *lex_instream,
+                   InStream *post_instream, u32_t mem_thresh)
+{
+    if (self->flipped) { THROW(ERR, "Can't call Flip twice"); }
+    self->flipped = true;
+
+    /* Assign memory threshold. */
+    self->mem_thresh = mem_thresh;
+
+    /* Reset cache if all elems have been cleared out. */
+    if (self->cache_tick == self->cache_max) {
+        self->cache_tick = 0;
+        self->cache_max  = 0;
+    }
+
+    /* Sort RawPostings in cache, if any. */
+    PostPool_Sort_Cache(self);
+
+    /* Bail if never flushed. */
+    if (self->lex_end == 0) { return; }
+
+    /* Get a Lexicon and a PostingList. */
+    self->lexicon = (Lexicon*)RawLex_new(self->schema, self->field, 
+        InStream_Clone(lex_instream), self->lex_start, self->lex_end);
+    self->plist = (PostingList*)RawPList_new(self->schema, self->field, 
+        InStream_Clone(post_instream), self->post_start, self->post_end);
+}
+
+/***************************************************************************/
+
+MergePostingPool*
+MergePostPool_new(Schema *schema, const CharBuf *field, MemoryPool *mem_pool,
+                  SegReader *reader, I32Array *doc_map, i32_t doc_base)
+{
+    MergePostingPool *self 
+        = (MergePostingPool*)VTable_Make_Obj(MERGEPOSTINGPOOL);
+    return MergePostPool_init(self, schema, field, mem_pool, reader, doc_map,
+        doc_base);
+}
+
+MergePostingPool*
+MergePostPool_init(MergePostingPool *self, Schema *schema, 
+                   const CharBuf *field, MemoryPool *mem_pool,
+                   SegReader *reader, I32Array *doc_map, i32_t doc_base)
+{
+    LexiconReader *lex_reader 
+        = (LexiconReader*)SegReader_Fetch(reader, LEXICONREADER->name);
+    PostingsReader *plist_reader 
+        = (PostingsReader*)SegReader_Fetch(reader, POSTINGSREADER->name);
+
+    /* Init. */
+    PostPool_init((PostingPool*)self, schema, field, mem_pool);
+
+    /* Assign. */
+    self->doc_base = doc_base;
+    self->doc_map  = doc_map ? (I32Array*)INCREF(doc_map) : NULL;
+
+    /* Derive. */
+    self->lexicon = lex_reader 
+        ? LexReader_Lexicon(lex_reader, field, NULL) 
+        : NULL;
+    self->plist = plist_reader 
+        ? PostReader_Posting_List(plist_reader, field, NULL) 
+        : NULL;
+
+    return self;
+}
+
+void
+MergePostPool_destroy(MergePostingPool *self)
+{
+    DECREF(self->plist);
+    DECREF(self->lexicon);
+    SUPER_DESTROY(self, MERGEPOSTINGPOOL);
+}
+
+void
+MergePostPool_set_mem_thresh(MergePostingPool *self, u32_t mem_thresh)
+{
+    self->mem_thresh = mem_thresh;
+}
+
+/***************************************************************************/
+
+RawLexicon*
+RawLex_new(Schema *schema, const CharBuf *field, InStream *instream, 
+           i64_t start, i64_t end)
+{
+    RawLexicon *self = (RawLexicon*)VTable_Make_Obj(RAWLEXICON);
+    return RawLex_init(self, schema, field, instream, start, end);
+}
+
+RawLexicon*
+RawLex_init(RawLexicon *self, Schema *schema, const CharBuf *field,
+            InStream *instream, i64_t start, i64_t end)
+{
+    FieldType *type = Schema_Fetch_Type(schema, field);
+    Lex_init((Lexicon*)self);
+    
+    /* Assign */
+    self->start = start;
+    self->end   = end;
+    self->instream = (InStream*)INCREF(instream);
+
+    /* Get ready to begin. */
+    InStream_Seek(self->instream, self->start);
+
+    /* Get steppers. */
+    self->term_stepper  = FType_Make_Term_Stepper(type);
+    self->tinfo_stepper = (TermStepper*)MatchTInfoStepper_new(schema);
+
+    return self;
+}
+
+void
+RawLex_destroy(RawLexicon *self)
+{
+    DECREF(self->instream);
+    DECREF(self->term_stepper);
+    DECREF(self->tinfo_stepper);
+    SUPER_DESTROY(self, RAWLEXICON);
+}
+
+bool_t
+RawLex_next(RawLexicon *self)
+{
+    if (InStream_Tell(self->instream) >= self->end) { return false; }
+    TermStepper_Read_Delta(self->term_stepper, self->instream);
+    TermStepper_Read_Delta(self->tinfo_stepper, self->instream);
+    return true;
+}
+
+Obj*
+RawLex_get_term(RawLexicon *self)
+{
+    return TermStepper_Get_Value(self->term_stepper);
+}
+
+i32_t
+RawLex_doc_freq(RawLexicon *self)
+{
+    TermInfo *tinfo = (TermInfo*)TermStepper_Get_Value(self->tinfo_stepper);
+    return tinfo ? tinfo->doc_freq : 0;
+}
+
+/***************************************************************************/
+
+RawPostingList*
+RawPList_new(Schema *schema, const CharBuf *field, InStream *instream, 
+           i64_t start, i64_t end)
+{
+    RawPostingList *self = (RawPostingList*)VTable_Make_Obj(RAWPOSTINGLIST);
+    return RawPList_init(self, schema, field, instream, start, end);
+}
+
+RawPostingList*
+RawPList_init(RawPostingList *self, Schema *schema, const CharBuf *field,
+            InStream *instream, i64_t start, i64_t end)
+{
+    Posting *posting = Schema_Fetch_Posting(schema, field);
+    PList_init((PostingList*)self);
+    self->start    = start;
+    self->end      = end;
+    self->instream = (InStream*)INCREF(instream);
+    self->posting  = (Posting*)Post_Clone(posting);
+    InStream_Seek(self->instream, self->start);
+    return self;
+}
+
+void
+RawPList_destroy(RawPostingList *self)
+{
+    DECREF(self->instream);
+    DECREF(self->posting);
+    SUPER_DESTROY(self, RAWPOSTINGLIST);
+}
+
+Posting*
+RawPList_get_posting(RawPostingList *self)
+{
+    return self->posting;
+}
+
+RawPosting*
+RawPList_read_raw(RawPostingList *self, i32_t last_doc_id, CharBuf *term_text,
+                  MemoryPool *mem_pool)
+{
+    return Post_Read_Raw(self->posting, self->instream, 
+        last_doc_id, term_text, mem_pool);
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

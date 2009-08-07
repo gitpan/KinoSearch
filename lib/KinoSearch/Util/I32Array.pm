@@ -27,13 +27,15 @@ CODE:
 
         for (i = 0; i < size; i++) {
             SV **const sv_ptr = av_fetch(ints_av, i, 0);
-            ints[i] = (sv_ptr && XSBind_sv_defined(*sv_ptr)) ? SvIV(*sv_ptr) : 0;
+            ints[i] = (sv_ptr && XSBind_sv_defined(*sv_ptr)) 
+                    ? SvIV(*sv_ptr) 
+                    : 0;
         }
         self = (kino_I32Array*)Kino_VTable_Make_Obj(vtable);
         kino_I32Arr_init(self, ints, size);
     }
     else {
-        THROW("Missing required param 'ints'");
+        THROW(KINO_ERR, "Missing required param 'ints'");
     }
     
     KOBJ_TO_SV_NOINC(self, RETVAL);

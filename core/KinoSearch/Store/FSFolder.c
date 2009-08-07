@@ -31,7 +31,7 @@ S_derive_seg_name(const CharBuf *filepath);
 FSFolder*
 FSFolder_new(const CharBuf *path) 
 {
-    FSFolder *self = (FSFolder*)VTable_Make_Obj(&FSFOLDER);
+    FSFolder *self = (FSFolder*)VTable_Make_Obj(FSFOLDER);
     return FSFolder_init(self, path);
 }
 
@@ -132,7 +132,7 @@ FSFolder_open_filedes(FSFolder *self, const CharBuf *filepath)
     DECREF(fullpath);
 
     if (file_des == NULL)
-        THROW("Can't open '%o': %s", filepath, strerror(errno));
+        THROW(ERR, "Can't open '%o': %s", filepath, strerror(errno));
 
     return (FileDes*)file_des;
 }
@@ -264,11 +264,23 @@ FSFolder_rename(FSFolder *self, const CharBuf* from, const CharBuf *to)
     CharBuf *from_path = S_full_path(self, from);
     CharBuf *to_path   = S_full_path(self, to);
     if (rename(from_path->ptr, to_path->ptr) ) {
-        THROW("rename from '%o' to '%o' failed: %s", from_path, to_path, 
+        THROW(ERR, "rename from '%o' to '%o' failed: %s", from_path, to_path, 
             strerror(errno));
     }
     DECREF(to_path);
     DECREF(from_path);
+}
+
+bool_t
+FSFolder_hard_link(FSFolder *self, const CharBuf *source, 
+                   const CharBuf *target)
+{
+    CharBuf *source_path = S_full_path(self, source);
+    CharBuf *target_path = S_full_path(self, target);
+    bool_t retval = DirManip_hard_link(source_path, target_path);
+    DECREF(source_path);
+    DECREF(target_path);
+    return retval;
 }
 
 bool_t
@@ -305,12 +317,11 @@ FSFolder_delete(FSFolder *self, const CharBuf *filepath)
              * exception.
              */
             if ( !DirManip_delete(cfmeta_file) ) {
-                CharBuf *mess = MAKE_MESS(
-                    "Couldn't delete cf meta file while deleting virtual file '%o'",
-                    filepath);
+                CharBuf *mess = MAKE_MESS( "Couldn't delete cf meta file "
+                    "while deleting virtual file '%o'", filepath);
                 DECREF(cf_file);
                 DECREF(cfmeta_file);
-                Err_throw_mess(mess);
+                Err_throw_mess(ERR, mess);
             }
 
             CFReader_Delete_Virtual(cf_reader, filepath);

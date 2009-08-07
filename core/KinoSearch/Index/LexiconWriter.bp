@@ -5,7 +5,8 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::LexiconWriter cnick LexWriter
     extends KinoSearch::Index::DataWriter {
 
-    LexStepper       *stepper;
+    TermStepper      *term_stepper;
+    TermStepper      *tinfo_stepper;
     CharBuf          *dat_file;
     CharBuf          *ix_file;
     CharBuf          *ixix_file;
@@ -17,8 +18,6 @@ class KinoSearch::Index::LexiconWriter cnick LexWriter
     bool_t            temp_mode;
     i32_t             index_interval;
     i32_t             skip_interval;
-    CharBuf          *last_text;
-    TermInfo         *last_tinfo;
     i32_t             count;
     i32_t             ix_count;
 
@@ -45,7 +44,8 @@ class KinoSearch::Index::LexiconWriter cnick LexWriter
     /* Prepare to write terms to a temporary file.
      */
     void
-    Enter_Temp_Mode(LexiconWriter *self, OutStream *temp_outstream);
+    Enter_Temp_Mode(LexiconWriter *self, const CharBuf *field, 
+                    OutStream *temp_outstream);
 
     /* Stop writing terms to temp file.  Abandon (but don't close) the file.
      */

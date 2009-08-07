@@ -15,7 +15,8 @@ TestQueryParser*
 TestQP_new(const char *query_string, Query *tree, Query *expanded, 
            u32_t num_hits)
 {
-    TestQueryParser *self = (TestQueryParser*)VTable_Make_Obj(&TESTQUERYPARSER);
+    TestQueryParser *self 
+        = (TestQueryParser*)VTable_Make_Obj(TESTQUERYPARSER);
     return TestQP_init(self, query_string, tree, expanded, num_hits);
 }
 

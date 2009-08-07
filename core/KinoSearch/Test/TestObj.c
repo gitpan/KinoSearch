@@ -2,7 +2,6 @@
 
 #include "KinoSearch/Test.h"
 #include "KinoSearch/Test/TestObj.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 static Obj*
 S_new_testobj()
@@ -11,7 +10,7 @@ S_new_testobj()
     Obj *obj;
     VTable *vtable = VTable_fetch_vtable(&klass);
     if (!vtable) {
-        vtable = VTable_singleton(&klass, (VTable*)&OBJ);
+        vtable = VTable_singleton(&klass, OBJ);
     }
     obj = VTable_Make_Obj(vtable);
     return Obj_init(obj);
@@ -91,9 +90,8 @@ static void
 test_Is_A(TestBatch *batch)
 {
     ByteBuf *bytebuf = BB_new(0);
-    ASSERT_TRUE(batch, Obj_Is_A(bytebuf, (VTable*)&BYTEBUF), 
-        "ByteBuf Is_A ByteBuf.");
-    ASSERT_TRUE(batch, Obj_Is_A(bytebuf, (VTable*)&OBJ), "ByteBuf Is_A Obj.");
+    ASSERT_TRUE(batch, Obj_Is_A(bytebuf, BYTEBUF), "ByteBuf Is_A ByteBuf.");
+    ASSERT_TRUE(batch, Obj_Is_A(bytebuf, OBJ), "ByteBuf Is_A Obj.");
     DECREF(bytebuf);
 }
 

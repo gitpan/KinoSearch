@@ -5,7 +5,7 @@
 Doc*
 Doc_new(void *fields, i32_t doc_id)
 {
-    Doc *self = (Doc*)VTable_Make_Obj(&DOC);
+    Doc *self = (Doc*)VTable_Make_Obj(DOC);
     return Doc_init(self, fields, doc_id);
 }
 

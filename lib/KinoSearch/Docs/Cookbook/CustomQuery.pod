@@ -112,8 +112,8 @@ The equals() method determines whether two Queries are logically equivalent:
         return 1;
     }
 
-The last thing we'll need is a make_compiler() factory method which kicks out a
-subclass of L<Compiler|KinoSearch::Search::Compiler>.
+The last thing we'll need is a make_compiler() factory method which kicks out
+a subclass of L<Compiler|KinoSearch::Search::Compiler>.
 
     sub make_compiler {
         my $self = shift;

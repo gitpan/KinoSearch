@@ -18,8 +18,9 @@ class KinoSearch::Index::SortCache::TextSortCache
         i32_t num_unique, i32_t null_ord = -1);
 
     public static TextSortCache*
-    init(TextSortCache *self, Schema *schema, Folder *folder, Segment *segment, 
-         i32_t field_num, i32_t num_unique, i32_t null_ord = -1);
+    init(TextSortCache *self, Schema *schema, Folder *folder, 
+         Segment *segment, i32_t field_num, i32_t num_unique, 
+         i32_t null_ord = -1);
 
     public Obj*
     Value(TextSortCache *self, i32_t ord, Obj *blank);

@@ -4,7 +4,7 @@
 #include "KinoSearch/Obj/VTable.h"
 #include "KinoSearch/Obj/Undefined.h"
 
-static Undefined the_undef_object = { (VTable*)&UNDEFINED, {1} };
+static Undefined the_undef_object = { UNDEFINED, {1} };
 Undefined *UNDEF = &the_undef_object;
 
 u32_t

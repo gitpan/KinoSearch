@@ -27,7 +27,8 @@ class KinoSearch::Search::NoMatchQuery extends KinoSearch::Search::Query
     Make_Compiler(NoMatchQuery *self, Searchable *searchable, float boost);
 }
 
-class KinoSearch::Search::NoMatchCompiler extends KinoSearch::Search::Compiler {
+class KinoSearch::Search::NoMatchCompiler 
+    extends KinoSearch::Search::Compiler {
 
     static incremented NoMatchCompiler*
     new(NoMatchQuery *parent, Searchable *searchable, float boost);

@@ -6,7 +6,7 @@
 void
 kino_Stemmer_load_snowball() 
 {
-    kino_Host_callback(&KINO_STEMMER, "lazy_load_snowball", 0);
+    kino_Host_callback(KINO_STEMMER, "lazy_load_snowball", 0);
 }
     
 /* Copyright 2005-2009 Marvin Humphrey

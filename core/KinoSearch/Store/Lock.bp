@@ -1,67 +1,69 @@
 parcel KinoSearch cnick Kino;
 
 /** 
- * Interprocess mutex lock.
+ * Abstract class representing an interprocess mutex lock.
  *
- * The Lock class produces an interprocess mutex lock.  It does not rely on
- * flock, but creates a lock "file".  What exactly constitutes that "file"
- * depends on the Folder implementation.
+ * The Lock class produces an interprocess mutex lock.  The default subclass
+ * uses dot-lock files, but alternative implementations are possible.
  * 
- * Each lock must have a name which is unique per resource to be locked.  The
- * filename for the lockfile will be derived from it, e.g. "write" will
- * produce a file "write.lock".
- *
- * Each lock also has an "agent id", a string which should be unique per-host;
- * it is used to help clear away stale lockfiles.
+ * Each lock must have a name which is unique per resource to be locked.  Each
+ * lock also has an "hostname" which should be unique per machine; it is
+ * used to help clear away stale locks.
  */
 
-class KinoSearch::Store::Lock extends KinoSearch::Obj {
+abstract class KinoSearch::Store::Lock extends KinoSearch::Obj {
 
-    Folder      *folder;    /* the Folder where the lock resides */
-    CharBuf     *lock_name; /* identifies the lock */
-    CharBuf     *filename;  /* name of actual lock file */
-    CharBuf     *agent_id;  /* identifies the host */
-    i32_t        timeout;   /* ms to continue retrying */
+    Folder      *folder;
+    CharBuf     *name;
+    CharBuf     *filename;
+    CharBuf     *hostname;
+    i32_t        timeout;
+    i32_t        interval;  
 
-    static const ZombieCharBuf *write_lock_name;
-    static const ZombieCharBuf *commit_lock_name;
-    static u32_t read_lock_timeout;
-    static u32_t write_lock_timeout;
-    static u32_t commit_lock_timeout;
-
-    static incremented Lock*
-    new(Folder *folder, const CharBuf *lock_name, const CharBuf *agent_id, 
-        i32_t timeout = 0);
-
-    /**
-     * @param folder The KinoSearch::Store::Folder where the lock file will
-     * reside.
-     * @param lock_name String identifying the resource to be locked.
-     * @param agent_id A per-machine identifier, usually the host name.
+    /** Abstract constructor.
+     *
+     * @param folder A Folder.
+     * @param name File-system-friendly string identifying the resource to be
+     * locked.
+     * @param hostname A unique per-machine identifier.
      * @param timeout Time in milliseconds to keep retrying before abandoning
      * the attempt to Obtain() a lock.
+     * @param interval Time in milliseconds between retries.
      */
     public static Lock*
-    init(Lock *self, Folder *folder, const CharBuf *lock_name, 
-         const CharBuf *agent_id, i32_t timeout = 0);
+    init(Lock *self, Folder *folder, const CharBuf *name, 
+         const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
 
-    /** Attempt to aquire lock once per second until the timeout has been
-     * reached.
+    /** Returns true if the Lock is shared, false if the Lock is exclusive.
+     */
+    public abstract bool_t
+    Shared(Lock *self);
+
+    /** Call Request() once per <code>interval</code> until Request() returns
+     * success or the <code>timeout</code> has been reached.
      * 
      * @return true on success, false otherwise.
      */
     public bool_t
     Obtain(Lock *self);
 
-    /** Do the actual work to aquire the lock and return a boolean reflecting
-     * success/failure.
+    /** Make one attempt to acquire the lock. 
+     *
+     * The semantics of Request() differ depending on whether Shared() returns
+     * true.  If the Lock is Shared(), then Request() should not fail if
+     * another lock is held against the resource identified by
+     * <code>name</code> (though it might fail for other reasons).  If it is
+     * not Shared() -- i.e. it's an exclusive (write) lock -- then other locks
+     * should cause Request() to fail.
+     * 
+     * @return true on success, false on failure.
      */
-    bool_t
-    Do_Obtain(Lock *self);
+    public abstract bool_t
+    Request(Lock *self);
 
     /** Release the lock.
      */
-    public void
+    public abstract void
     Release(Lock *self);
 
     /** Indicate whether the resource identified by this lock's name is
@@ -69,14 +71,14 @@ class KinoSearch::Store::Lock extends KinoSearch::Obj {
      *
      * @return true if the resource is locked, false otherwise.
      */
-    public bool_t
+    public abstract bool_t
     Is_Locked(Lock *self);
 
     /** Release all locks that meet the following three conditions: the lock
-     * name matches, the agent id matches, and the process id that the lock
+     * name matches, the hostname matches, and the process id that the lock
      * was created under no longer identifies an active process.
      */
-    public void
+    public abstract void
     Clear_Stale(Lock *self);
 
     /** Accessor for object's filename attribute.
@@ -88,17 +90,62 @@ class KinoSearch::Store::Lock extends KinoSearch::Obj {
     Destroy(Lock *self);
 }
 
-__C__
-/** The frequency, in milliseconds, with which attempts to secure a lock will
- * be made.
+class KinoSearch::Store::LockFileLock cnick LFLock 
+    extends KinoSearch::Store::Lock {
+
+    static incremented LockFileLock*
+    new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
+        i32_t timeout = 0, i32_t interval = 100);
+
+    public static LockFileLock*
+    init(LockFileLock *self, Folder *folder, const CharBuf *name, 
+         const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
+
+    public bool_t
+    Shared(LockFileLock *self);
+
+    public bool_t
+    Request(LockFileLock *self);
+
+    public void
+    Release(LockFileLock *self);
+
+    public bool_t
+    Is_Locked(LockFileLock *self);
+
+    public void
+    Clear_Stale(LockFileLock *self);
+
+    /** Delete a given lock file which meets these conditions...
+     *
+     *    - lock name matches.
+     *    - hostname matches.
+     *
+     * If delete_mine is false, don't delete a lock file which matches this
+     * process's pid.  If delete_other is false, don't delete lock files which
+     * don't match this process's pid.
+     */
+    bool_t
+    Maybe_Delete_File(LockFileLock *self, const CharBuf *filepath, 
+                      bool_t delete_mine, bool_t delete_other);
+}
+
+/** Lock exception. 
+ *
+ * LockErr is a subclass of Err which indicates that a file locking problem
+ * occurred.
  */
-#define KINO_LOCK_POLL_INTERVAL 1000
+class KinoSearch::Store::LockErr extends KinoSearch::Obj::Err {
+    
+    public static incremented LockErr*
+    new(CharBuf *message);
 
-#ifdef KINO_USE_SHORT_NAMES
-  #define LOCK_POLL_INTERVAL KINO_LOCK_POLL_INTERVAL
-#endif
+    public static LockErr*
+    init(LockErr *self, CharBuf *message);
 
-__END_C__
+    public incremented LockErr*
+    Make(LockErr *self);
+}
 
 /* Copyright 2006-2009 Marvin Humphrey
  *

@@ -7,7 +7,7 @@
 NOTScorer*
 NOTScorer_new(Matcher *negated_matcher, i32_t doc_max) 
 {
-    NOTScorer *self = (NOTScorer*)VTable_Make_Obj(&NOTSCORER);
+    NOTScorer *self = (NOTScorer*)VTable_Make_Obj(NOTSCORER);
     return NOTScorer_init(self, negated_matcher, doc_max);
 }
 

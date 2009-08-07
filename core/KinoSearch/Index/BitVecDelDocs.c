@@ -7,7 +7,7 @@
 BitVecDelDocs*
 BitVecDelDocs_new(Folder *folder, const CharBuf *filename)
 {
-    BitVecDelDocs *self = (BitVecDelDocs*)VTable_Make_Obj(&BITVECDELDOCS);
+    BitVecDelDocs *self = (BitVecDelDocs*)VTable_Make_Obj(BITVECDELDOCS);
     return BitVecDelDocs_init(self, folder, filename);
 }
 
@@ -23,7 +23,7 @@ BitVecDelDocs_init(BitVecDelDocs *self, Folder *folder,
     if (!self->instream) { 
         CharBuf *mess = MAKE_MESS("Can't open %o", self->filename);
         DECREF(self);
-        Err_throw_mess(mess);
+        Err_throw_mess(ERR, mess);
     }
     len            = (i32_t)InStream_Length(self->instream);
     self->bits     = (u8_t*)InStream_Buf(self->instream, len);

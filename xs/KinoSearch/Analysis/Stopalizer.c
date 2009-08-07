@@ -6,7 +6,7 @@
 Hash*
 Stopalizer_gen_stoplist(const CharBuf *language)
 {
-    return (Hash*)Host_callback_obj(&STOPALIZER, "gen_stoplist", 1,
+    return (Hash*)Host_callback_obj(STOPALIZER, "gen_stoplist", 1,
         ARG_STR("language", language));
 }
 

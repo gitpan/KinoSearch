@@ -21,7 +21,7 @@ class KinoSearch::Index::SkipStepper extends KinoSearch::Util::Stepper {
      * will add onto with its deltas.
      */
     void
-    Reset(SkipStepper *self, i32_t doc_id, u64_t filepos);
+    Set_ID_And_Filepos(SkipStepper *self, i32_t doc_id, u64_t filepos);
 
     public incremented CharBuf*
     To_String(SkipStepper *self);

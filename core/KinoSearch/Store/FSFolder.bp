@@ -60,6 +60,10 @@ class KinoSearch::Store::FSFolder extends KinoSearch::Store::Folder {
     void
     Rename(FSFolder *self, const CharBuf* from, const CharBuf *to);
 
+    public bool_t
+    Hard_Link(FSFolder *self, const CharBuf *source, const CharBuf *target);
+
+
     bool_t 
     Delete(FSFolder *self, const CharBuf *filepath);
 

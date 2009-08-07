@@ -14,7 +14,7 @@ i32_t Snapshot_current_file_format = 1;
 Snapshot*
 Snapshot_new()
 {
-    Snapshot *self = (Snapshot*)VTable_Make_Obj(&SNAPSHOT);
+    Snapshot *self = (Snapshot*)VTable_Make_Obj(SNAPSHOT);
     return Snapshot_init(self);
 }
 
@@ -96,7 +96,7 @@ Snapshot_read_file(Snapshot *self, Folder *folder, const CharBuf *filename)
 
         /* Verify that we can read the index properly. */
         if (Obj_To_I64(format) > Snapshot_current_file_format) {
-            THROW("Snapshot format too recent: %i64, %i32",
+            THROW(ERR, "Snapshot format too recent: %i64, %i32",
                 Obj_To_I64(format), Snapshot_current_file_format);
         }
 
@@ -141,7 +141,7 @@ Snapshot_write_file(Snapshot *self, Folder *folder, const CharBuf *filename)
 
     /* Don't overwrite. */
     if (Folder_Exists(folder, self->filename)) {
-        THROW("Snapshot file '%o' already exists", self->filename);
+        THROW(ERR, "Snapshot file '%o' already exists", self->filename);
     }
 
     /* Sort, then store file names. */

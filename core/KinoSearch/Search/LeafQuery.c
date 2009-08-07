@@ -9,7 +9,7 @@
 LeafQuery*
 LeafQuery_new(const CharBuf *field, const CharBuf *text)
 {
-    LeafQuery *self = (LeafQuery*)VTable_Make_Obj(&LEAFQUERY);
+    LeafQuery *self = (LeafQuery*)VTable_Make_Obj(LEAFQUERY);
     return LeafQuery_init(self, field, text);
 }
 
@@ -78,7 +78,7 @@ LeafQuery_serialize(LeafQuery *self, OutStream *outstream)
 LeafQuery*
 LeafQuery_deserialize(LeafQuery *self, InStream *instream)
 {
-    self = self ? self : (LeafQuery*)VTable_Make_Obj(&LEAFQUERY);
+    self = self ? self : (LeafQuery*)VTable_Make_Obj(LEAFQUERY);
     self->field = InStream_Read_U8(instream) 
                 ? CB_deserialize(NULL, instream)
                 : NULL;
@@ -93,7 +93,7 @@ LeafQuery_make_compiler(LeafQuery *self, Searchable *searchable, float boost)
     UNUSED_VAR(self);
     UNUSED_VAR(searchable);
     UNUSED_VAR(boost);
-    THROW("Can't Make_Compiler() from LeafQuery");
+    THROW(ERR, "Can't Make_Compiler() from LeafQuery");
     UNREACHABLE_RETURN(Compiler*);
 }
 

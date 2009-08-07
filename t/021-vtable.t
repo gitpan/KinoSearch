@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package MyHash;
-use base qw( KinoSearch::Util::Hash );
+use base qw( KinoSearch::Obj::Hash );
 
 sub oodle { }
 
@@ -46,7 +46,7 @@ use Storable qw( nfreeze );
 }
 
 my $stringified;
-my $storage = KinoSearch::Util::Hash->new;
+my $storage = KinoSearch::Obj::Hash->new;
 
 {
     my $subclassed_hash = MyHash->new;
@@ -66,7 +66,7 @@ isa_ok( $resurrected, "MyHash", "subclass name survived Perl destruction" );
 is( $resurrected->to_string, $stringified,
     "It's the same Hash from earlier (though a different Perl object)" );
 
-my $booga = KinoSearch::Util::CharBuf->new("booga");
+my $booga = KinoSearch::Obj::CharBuf->new("booga");
 $resurrected->store( "ooga", $booga );
 
 is( $resurrected->fetch("ooga"),

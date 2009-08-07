@@ -12,6 +12,12 @@ kino_Sleep_sleep(unsigned int seconds)
     Sleep(seconds * 1000);
 }
 
+void
+kino_Sleep_millisleep(unsigned int milliseconds)
+{
+    Sleep(milliseconds);
+}
+
 /********************************* UNIXEN *********************************/
 #elif defined(CHY_HAS_UNISTD_H)
 
@@ -21,6 +27,16 @@ void
 kino_Sleep_sleep(unsigned int seconds)
 {
     sleep(seconds);
+}
+
+void
+kino_Sleep_millisleep(unsigned int milliseconds)
+{
+    unsigned int seconds = milliseconds / 1000;
+    milliseconds = milliseconds % 1000;
+    sleep(seconds);
+    /* TODO: probe for usleep. */
+    usleep(milliseconds * 1000);
 }
 
 #else

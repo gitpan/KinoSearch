@@ -3,7 +3,6 @@
 #include "KinoSearch/Search/HitCollector.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Search/Matcher.h"
-#include "KinoSearch/Util/BitVector.h"
 #include "KinoSearch/Util/I32Array.h"
 
 HitCollector*
@@ -47,7 +46,7 @@ HC_set_base(HitCollector *self, i32_t base)
 BitCollector*
 BitColl_new(BitVector *bit_vec) 
 {
-    BitCollector *self = (BitCollector*)VTable_Make_Obj(&BITCOLLECTOR);
+    BitCollector *self = (BitCollector*)VTable_Make_Obj(BITCOLLECTOR);
     return BitColl_init(self, bit_vec);
 }
 
@@ -83,7 +82,8 @@ BitColl_need_score(BitCollector *self)
 OffsetCollector*
 OffsetColl_new(HitCollector *inner_coll, i32_t offset) 
 {
-    OffsetCollector *self = (OffsetCollector*)VTable_Make_Obj(&OFFSETCOLLECTOR);
+    OffsetCollector *self 
+        = (OffsetCollector*)VTable_Make_Obj(OFFSETCOLLECTOR);
     return OffsetColl_init(self, inner_coll, offset);
 }
 

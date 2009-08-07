@@ -29,7 +29,7 @@ abstract class KinoSearch::Index::LexiconReader cnick LexReader
 
     /** If the term can be found, return a term info, otherwise return NULL.
      */
-    abstract TermInfo*
+    abstract incremented TermInfo*
     Fetch_Term_Info(LexiconReader *self, const CharBuf *field, Obj *term);
 
     /** Return a LexiconReader which merges the output of other
@@ -89,7 +89,7 @@ class KinoSearch::Index::DefaultLexiconReader cnick DefLexReader
     public u32_t
     Doc_Freq(DefaultLexiconReader *self, const CharBuf *field, Obj *term);
 
-    TermInfo*
+    incremented TermInfo*
     Fetch_Term_Info(DefaultLexiconReader *self, const CharBuf *field, 
                     Obj *term);
 

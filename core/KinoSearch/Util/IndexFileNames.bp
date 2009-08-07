@@ -4,9 +4,9 @@ parcel KinoSearch cnick Kino;
  */
 static class KinoSearch::Util::IndexFileNames cnick IxFileNames {
 
-    /** Skip past the first instance of an underscore in the CharBuf, then attempt
-     * to decode a base 36 number.  For example, "snapshot_5.json" yields 5, and
-     * "seg_a1" yields 27.
+    /** Skip past the first instance of an underscore in the CharBuf, then
+     * attempt to decode a base 36 number.  For example, "snapshot_5.json"
+     * yields 5, and "seg_a1" yields 27.
      *
      * @return a generation number, or 0 if no number can be extracted.
      */

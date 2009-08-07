@@ -9,7 +9,8 @@
 #include "KinoSearch/Highlight/HeatMap.h"
 #include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Index/DocVector.h"
-#include "KinoSearch/Util/ByteBuf.h"
+
+const u32_t ELLIPSIS_CODE_POINT = 0x2026;
 
 /* If Highlighter_Encode has been overridden, return its output.  If not,
  * increment the refcount of the supplied encode_buf and call encode_entities.
@@ -29,7 +30,7 @@ Highlighter*
 Highlighter_new(Searchable *searchable, Obj *query, const CharBuf *field,
                 u32_t excerpt_length)
 {
-    Highlighter *self = (Highlighter*)VTable_Make_Obj(&HIGHLIGHTER);
+    Highlighter *self = (Highlighter*)VTable_Make_Obj(HIGHLIGHTER);
     return Highlighter_init(self, searchable, query, field, excerpt_length);
 }
 
@@ -77,10 +78,10 @@ Highlighter_highlight(Highlighter *self, const CharBuf *text)
 
 void
 Highlighter_set_pre_tag(Highlighter *self, const CharBuf *pre_tag)
-    { CB_Copy(self->pre_tag, pre_tag); }
+    { CB_Mimic(self->pre_tag, (Obj*)pre_tag); }
 void
 Highlighter_set_post_tag(Highlighter *self, const CharBuf *post_tag)
-    { CB_Copy(self->post_tag, post_tag); }
+    { CB_Mimic(self->post_tag, (Obj*)post_tag); }
 
 CharBuf*
 Highlighter_get_pre_tag(Highlighter *self)    { return self->pre_tag; }
@@ -335,12 +336,12 @@ Highlighter_raw_excerpt(Highlighter *self, const CharBuf *field_val,
         ZombieCharBuf temp = ZCB_make((CharBuf*)field_val);
         ZCB_Nip(&temp, start);
         ZCB_Truncate(&temp, this_excerpt_len);
-        CB_Copy(raw_excerpt, (CharBuf*) &temp);
+        CB_Mimic(raw_excerpt, (Obj*)&temp);
     }
     /* If not starting on a sentence boundary, prepend an ellipsis. */
     else {
         ZombieCharBuf temp = ZCB_make((CharBuf*)field_val);
-        const size_t ELLIPSIS_LEN = sizeof("... ") - 1;
+        const size_t ELLIPSIS_LEN = 2; /* Unicode ellipsis plus a space. */
         
         /* If the excerpt is already shorter than the spec'd length, we might
          * not need to make room. */
@@ -372,7 +373,8 @@ Highlighter_raw_excerpt(Highlighter *self, const CharBuf *field_val,
         } while (ZCB_Get_Size(&temp));
 
         ZCB_Truncate(&temp, self->excerpt_length - ELLIPSIS_LEN);
-        CB_Cat_Trusted_Str(raw_excerpt, "... ", ELLIPSIS_LEN);
+        CB_Cat_Char(raw_excerpt, ELLIPSIS_CODE_POINT);
+        CB_Cat_Char(raw_excerpt, ' ');
         CB_Cat(raw_excerpt, (CharBuf*)&temp);
         start -= ELLIPSIS_LEN;
     }
@@ -382,7 +384,6 @@ Highlighter_raw_excerpt(Highlighter *self, const CharBuf *field_val,
         CB_Truncate(raw_excerpt, end - start);
     }
     else {
-        CB_Truncate(raw_excerpt, self->excerpt_length - 2);
         do {
             u32_t code_point = CB_Code_Point_From(raw_excerpt, 1);
             CB_Chop(raw_excerpt, 1);
@@ -406,7 +407,7 @@ Highlighter_raw_excerpt(Highlighter *self, const CharBuf *field_val,
                 break;
             }
         } while (CB_Get_Size(raw_excerpt));
-        CB_Cat_Trusted_Str(raw_excerpt, "...", 3);
+        CB_Cat_Char(raw_excerpt, ELLIPSIS_CODE_POINT);
     }
 
     return start;
@@ -619,7 +620,9 @@ S_encode_entities(CharBuf *text, CharBuf *encoded)
     CB_Set_Size(encoded, 0);
     ZCB_Assign(&temp, text);
     while (0 != (code_point = ZCB_Nip_One(&temp))) {
-        if (code_point > 127 || (!isgraph(code_point) && !isspace(code_point))) {
+        if (   code_point > 127 
+            || (!isgraph(code_point) && !isspace(code_point))
+        ) {
             CB_catf(encoded, "&#%u32;", code_point);
         }
         else if (code_point == '<') {

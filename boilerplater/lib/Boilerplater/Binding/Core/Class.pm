@@ -69,7 +69,7 @@ sub name_var_definition {
     my $class_name_len = length( $self->{class_name} );
     return <<END_STUFF;
 kino_ZombieCharBuf $full_var_name = {
-    (kino_VTable*)&KINO_ZOMBIECHARBUF,
+    KINO_ZOMBIECHARBUF,
     {1}, /* ref.count */
     "$self->{class_name}",
     $class_name_len,
@@ -93,6 +93,7 @@ sub vtable_definition {
     my @methods    = $client->get_methods;
     my $name_var   = $self->name_var;
     my $vtable_var = $self->vtable_var;
+    my $vt         = $vtable_var . "_vt";
     my $vt_type    = $self->vtable_type;
     my $cnick      = $self->{cnick};
     my $prefix     = $self->get_prefix;
@@ -101,7 +102,7 @@ sub vtable_definition {
     # Create a pointer to the parent class's vtable.
     my $parent_ref
         = defined $parent
-        ? "&$PREFIX" . $parent->vtable_var
+        ? "$PREFIX" . $parent->vtable_var
         : "NULL";    # No parent, e.g. Obj or static classes.
 
     # Spec functions which implement the methods, casting to quiet compiler.
@@ -112,10 +113,10 @@ sub vtable_definition {
 
     return <<END_VTABLE
 
-$PREFIX$vt_type $PREFIX$vtable_var = {
-    (${prefix}VTable*)&${PREFIX}VTABLE, /* vtable vtable */
+$PREFIX$vt_type $PREFIX$vt = {
+    ${PREFIX}VTABLE, /* vtable vtable */
     {1}, /* ref.count */
-    (${prefix}VTable*)$parent_ref, /* parent */
+    $parent_ref, /* parent */
     (${prefix}CharBuf*)&${PREFIX}$name_var,
     ${PREFIX}VTABLE_F_IMMORTAL, /* flags */
     NULL, /* "void *x" member reserved for future use */
@@ -127,6 +128,7 @@ $PREFIX$vt_type $PREFIX$vtable_var = {
         $method_string
     }
 };
+
 END_VTABLE
 }
 
@@ -197,9 +199,10 @@ sub to_c_header {
     }
 
     # Declare the virtual table singleton object.
-    my $vt_type = $PREFIX . $self->vtable_type;
-    my $vtable_object
-        = "extern struct $vt_type $PREFIX" . $self->vtable_var . ";";
+    my $vt_type       = $PREFIX . $self->vtable_type;
+    my $vt            = "extern struct $vt_type $PREFIX${vtable_var}_vt;";
+    my $vtable_object = "#define $PREFIX$vtable_var "
+        . "((${prefix}VTable*)&$PREFIX${vtable_var}_vt)";
     my $num_methods = scalar @methods;
 
     # Declare Callback objects.
@@ -280,6 +283,7 @@ typedef struct $vt_type {
     kino_Callback **callbacks;
     boil_method_t methods[$num_methods];
 } $vt_type;
+$vt
 $vtable_object
 
 #ifdef ${PREFIX}USE_SHORT_NAMES

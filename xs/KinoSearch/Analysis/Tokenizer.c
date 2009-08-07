@@ -26,7 +26,7 @@ kino_Tokenizer_init(kino_Tokenizer *self, const kino_CharBuf *pattern)
                       sizeof(DEFAULT_PATTERN) - 1);
 
     /* Acquire a compiled regex engine for matching one token. */
-    token_re_sv = kino_Host_callback_nat(&KINO_TOKENIZER,
+    token_re_sv = kino_Host_callback_nat(KINO_TOKENIZER,
         "compile_token_re", 1, KINO_ARG_STR("pattern", self->pattern));
     S_set_token_re_but_not_pattern(self, SvRV(token_re_sv));
 
@@ -40,7 +40,7 @@ S_set_token_re_but_not_pattern(kino_Tokenizer *self, void *token_re)
     if (SvMAGICAL((SV*)token_re))
         magic = mg_find((SV*)token_re, PERL_MAGIC_qr); 
     if (!magic)
-        THROW("token_re is not a qr// entity");
+        THROW(KINO_ERR, "token_re is not a qr// entity");
     if (self->token_re) ReREFCNT_dec(((REGEXP*)self->token_re));
     self->token_re = magic->mg_obj;
     (void)ReREFCNT_inc(((REGEXP*)self->token_re));
@@ -52,7 +52,7 @@ S_set_pattern_from_token_re(kino_Tokenizer *self, void *token_re)
     SV *rv = newRV((SV*)token_re);
     STRLEN len = 0;
     char *ptr = SvPVutf8((SV*)rv, len);
-    Kino_CB_Copy_Str(self->pattern, ptr, len);
+    Kino_CB_Mimic_Str(self->pattern, ptr, len);
     SvREFCNT_dec(rv);
 }
 
@@ -111,13 +111,13 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
         for( ; string_arg < start_ptr; num_code_points++) {
             string_arg += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*string_arg];
             if (string_arg > string_end)
-                THROW("scanned past end of '%s'", string_beg);
+                THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }
         start = num_code_points;
         for( ; string_arg < end_ptr; num_code_points++) {
             string_arg += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*string_arg];
             if (string_arg > string_end)
-                THROW("scanned past end of '%s'", string_beg);
+                THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }
         end = num_code_points;
 

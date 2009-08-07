@@ -1,12 +1,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/ViewFileDes.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 ViewFileDes*
 ViewFileDes_new(char *ptr, size_t len) 
 {
-    ViewFileDes *self = (ViewFileDes*)VTable_Make_Obj(&VIEWFILEDES);
+    ViewFileDes *self = (ViewFileDes*)VTable_Make_Obj(VIEWFILEDES);
     return ViewFileDes_init(self, ptr, len);
 }
 

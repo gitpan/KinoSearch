@@ -49,7 +49,7 @@ S_sift_down(ORMatcher *self);
 ORMatcher*
 ORMatcher_new(VArray *children) 
 {
-    ORMatcher *self = (ORMatcher*)VTable_Make_Obj(&ORMATCHER);
+    ORMatcher *self = (ORMatcher*)VTable_Make_Obj(ORMATCHER);
     return ORMatcher_init(self, children);
 }
 
@@ -283,7 +283,7 @@ S_advance_after_current(ORScorer *self);
 ORScorer*
 ORScorer_new(VArray *children, Similarity *sim) 
 {
-    ORScorer *self = (ORScorer*)VTable_Make_Obj(&ORSCORER);
+    ORScorer *self = (ORScorer*)VTable_Make_Obj(ORSCORER);
     return ORScorer_init(self, children, sim);
 }
 

@@ -2,8 +2,8 @@ parcel KinoSearch cnick Kino;
 
 /** Specify a custom sort order for search results.
  *
- * By default, searches return results in order of relevance; SortSpec allows you
- * to indicate an alternate order via an array of SortRules.
+ * By default, searches return results in order of relevance; SortSpec allows
+ * you to indicate an alternate order via an array of SortRules.
  * 
  * Fields you wish to sort against must be <code>sortable</code>.
  *

@@ -4,13 +4,13 @@
 #include "charmony.h"
 
 /* The Debug module provides multiple levels of debugging verbosity.  Code for
- * debug statements is only compiled "#ifdef KINO_DEBUG" at compile-time.  Some
- * statements will then always print; additional output can be enabled using
- * the environment variable KINO_DEBUG.  Examples:
+ * debug statements is only compiled "#ifdef KINO_DEBUG" at compile-time.
+ * Some statements will then always print; additional output can be enabled
+ * using the environment variable KINO_DEBUG.  Examples:
  * 
  *   KINO_DEBUG=file.C      -> all debug statements in path/file.C
  *   KINO_DEBUG=func        -> all in functions named exactly 'func'
- *   KINO_DEBUG=func*       -> all in functions (or files) starting with 'func' 
+ *   KINO_DEBUG=f*          -> all in functions (or files) starting with 'f' 
  *   KINO_DEBUG=file*       -> all in files (or functions) ending with file*'
  *   KINO_DEBUG=func1,func2 -> either in func1 or in func2
  *   KINO_DEBUG=*           -> just print all debug statements

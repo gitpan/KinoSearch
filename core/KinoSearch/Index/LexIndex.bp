@@ -6,13 +6,11 @@ class KinoSearch::Index::LexIndex extends KinoSearch::Index::Lexicon {
     InStream    *ixix_in;
     InStream    *ix_in;
     i64_t       *offsets;
-    char        *data;
-    char        *limit;
     i32_t        tick;
     i32_t        size;
     i32_t        index_interval;
     i32_t        skip_interval;
-    ViewCharBuf *term;
+    TermStepper *term_stepper;
     TermInfo    *tinfo;
 
     static incremented LexIndex*

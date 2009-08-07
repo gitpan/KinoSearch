@@ -47,7 +47,7 @@ SI_competitive(SortCollector *self, i32_t doc_id);
 SortCollector*
 SortColl_new(Schema *schema, SortSpec *sort_spec, u32_t wanted) 
 {
-    SortCollector *self = (SortCollector*)VTable_Make_Obj(&SORTCOLLECTOR);
+    SortCollector *self = (SortCollector*)VTable_Make_Obj(SORTCOLLECTOR);
     return SortColl_init(self, schema, sort_spec, wanted);
 }
 
@@ -73,10 +73,10 @@ SortColl_init(SortCollector *self, Schema *schema, SortSpec *sort_spec,
 
     /* Validate. */
     if (sort_spec && !schema) {
-        THROW("Can't supply a SortSpec without a Schema.");
+        THROW(ERR, "Can't supply a SortSpec without a Schema.");
     }
     if (!num_rules) {
-        THROW("Can't supply a SortSpec with no SortRules.");
+        THROW(ERR, "Can't supply a SortSpec with no SortRules.");
     }
 
     /* Init. */
@@ -113,7 +113,7 @@ SortColl_init(SortCollector *self, Schema *schema, SortSpec *sort_spec,
             CharBuf *field = SortRule_Get_Field(rule);
             FieldType *type = Schema_Fetch_Type(schema, field);
             if (!type || !FType_Sortable(type)) {
-                THROW("'%o' isn't a sortable field", field);
+                THROW(ERR, "'%o' isn't a sortable field", field);
             }
             self->need_values = true; 
         }
@@ -181,7 +181,7 @@ S_derive_action(SortRule *rule, SortCache *cache)
                 case 8:  return COMPARE_BY_ORD8  + reverse;
                 case 16: return COMPARE_BY_ORD16 + reverse;
                 case 32: return COMPARE_BY_ORD32 + reverse;
-                default: THROW("Unknown width: %i8", width);
+                default: THROW(ERR, "Unknown width: %i8", width);
             }
         }
         else {
@@ -189,7 +189,7 @@ S_derive_action(SortRule *rule, SortCache *cache)
         }
     }
     else {
-        THROW("Unrecognized SortRule type %i32", rule_type);
+        THROW(ERR, "Unrecognized SortRule type %i32", rule_type);
     }
     UNREACHABLE_RETURN(i8_t);
 }
@@ -198,7 +198,7 @@ void
 SortColl_set_reader(SortCollector *self, SegReader *reader) 
 {
     SortReader *sort_reader 
-        = (SortReader*)SegReader_Fetch(reader, SORTREADER.name);
+        = (SortReader*)SegReader_Fetch(reader, SORTREADER->name);
 
     /* Reset threshold variables and trigger auto-action behavior. */
     self->bumped->doc_id = I32_MAX;
@@ -360,7 +360,7 @@ SI_validate_doc_id(SortCollector *self, i32_t doc_id)
 {
     /* Check as u32_t since we're using these doc ids as array indexes. */
     if ((u32_t)doc_id > (u32_t)self->seg_doc_max) {
-        THROW("Doc ID %i32 greater than doc max %i32", doc_id, 
+        THROW(ERR, "Doc ID %i32 greater than doc max %i32", doc_id, 
             self->seg_doc_max);
     }
     return doc_id;
@@ -515,7 +515,7 @@ SI_competitive(SortCollector *self, i32_t doc_id)
                 }
                 break;
             default:
-                THROW("UNEXPECTED action %u8", actions[i]);
+                THROW(ERR, "UNEXPECTED action %u8", actions[i]);
         }
     } while (++i < self->num_actions);
 

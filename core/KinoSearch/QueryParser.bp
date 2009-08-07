@@ -10,9 +10,9 @@ parcel KinoSearch cnick Kino;
  * The following syntactical constructs are recognized by QueryParser:
  * 
  *     * Boolean operators 'AND', 'OR', and 'AND NOT'.
- *     * Prepented +plus and -minus, indicating that the labeled entity should 
- *       be either required or forbidden -- be it a single word, a phrase, or
- *       a parenthetical group.
+ *     * Prepented +plus and -minus, indicating that the labeled entity 
+ *       should be either required or forbidden -- be it a single word, a 
+ *       phrase, or a parenthetical group.
  *     * Logical groups, delimited by parentheses.  
  *     * Phrases, delimited by double quotes.
  * 

@@ -14,7 +14,7 @@ set_race_condition_debug1(val_sv)
 PPCODE:
     KINO_DECREF(kino_PolyReader_race_condition_debug1);
     kino_PolyReader_race_condition_debug1 =
-        (kino_CharBuf*)MAYBE_SV_TO_KOBJ(val_sv, &KINO_CHARBUF);
+        (kino_CharBuf*)kino_XSBind_maybe_sv_to_kobj(val_sv, KINO_CHARBUF);
     if (kino_PolyReader_race_condition_debug1)
         (void)KINO_INCREF(kino_PolyReader_race_condition_debug1);
 
@@ -45,9 +45,9 @@ END_SYNOPSIS
 
 my $constructor = <<'END_CONSTRUCTOR';
     my $reader = KinoSearch::Index::IndexReader->open(
-        index        => '/path/to/index', # required
-        snapshot     => $snapshot,
-        lock_factory => $lock_factory,
+        index    => '/path/to/index', # required
+        snapshot => $snapshot,
+        manager  => $index_manager,
     );
 END_CONSTRUCTOR
 
@@ -60,7 +60,6 @@ END_CONSTRUCTOR
                 Obtain
                 Seg_Readers
                 _offsets|Offsets
-                Get_Lock_Factory
                 Get_Components
                 )
         ],

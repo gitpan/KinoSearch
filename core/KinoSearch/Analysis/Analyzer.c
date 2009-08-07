@@ -15,8 +15,8 @@ Inversion*
 Analyzer_transform_text(Analyzer *self, CharBuf *text)
 {
     size_t token_len = CB_Get_Size(text);
-    Token *seed = Token_new((char*)CB_Get_Ptr8(text), token_len, 0, token_len, 
-        1.0, 1);
+    Token *seed = Token_new((char*)CB_Get_Ptr8(text), token_len, 0, 
+        token_len, 1.0, 1);
     Inversion *starter = Inversion_new(seed);
     Inversion *retval  = Analyzer_Transform(self, starter);
     DECREF(seed);

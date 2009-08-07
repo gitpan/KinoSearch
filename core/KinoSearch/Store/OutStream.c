@@ -16,7 +16,7 @@ SI_write_c32(OutStream *self, u32_t value);
 OutStream*
 OutStream_new(FileDes *file_des) 
 {
-    OutStream *self = (OutStream*)VTable_Make_Obj(&OUTSTREAM);
+    OutStream *self = (OutStream*)VTable_Make_Obj(OUTSTREAM);
     return OutStream_init(self, file_des);
 }
 
@@ -79,9 +79,9 @@ static INLINE void
 SI_flush(OutStream *self)
 {
     if (self->file_des == NULL)
-        THROW("Can't write to a closed OutStream for %o", self->path);
+        THROW(ERR, "Can't write to a closed OutStream for %o", self->path);
     if ( !FileDes_Write(self->file_des, self->buf, self->buf_pos) ) {
-        THROW("Error: %o", FileDes_Get_Mess(self->file_des));
+        THROW(ERR, "Error: %o", FileDes_Get_Mess(self->file_des));
     }
     self->buf_start += self->buf_pos;
     self->buf_pos = 0;
@@ -107,7 +107,7 @@ SI_write_bytes(OutStream *self, const void *bytes, size_t len)
     if (len >= IO_STREAM_BUF_SIZE) {
         SI_flush(self);
         if ( !FileDes_Write(self->file_des, bytes, len) ) 
-            THROW("Error: %o", FileDes_Get_Mess(self->file_des));
+            THROW(ERR, "Error: %o", FileDes_Get_Mess(self->file_des));
         self->buf_start += len;
     }
     /* If there's not enough room in the buffer, flush then add. */

@@ -18,15 +18,15 @@ PPCODE:
 
     if (sv_derived_from(elem_sv, "KinoSearch::Obj")) {
         kino_Obj *elem;
-        if (items < 3) THROW("Must supply size along with object");
-        if (!sv_isobject(elem_sv)) THROW("Not a %o.", KINO_OBJ.name);
-        elem = SV_TO_KOBJ(elem_sv, &KINO_OBJ);
+        if (items < 3) THROW(KINO_ERR, "Must supply size along with object");
+        if (!sv_isobject(elem_sv)) THROW(KINO_ERR, "Not a %o.", KINO_OBJ->name);
+        elem = XSBind_sv_to_kobj(elem_sv, KINO_OBJ);
         Kino_SortEx_Feed(self, elem, size);
     }
     else {
         STRLEN len;
         char *ptr = SvPV(elem_sv, len);
-        kino_ByteBuf *bb = kino_BB_new_str(ptr, len);
+        kino_ByteBuf *bb = kino_BB_new_bytes(ptr, len);
         if (items < 3) size = len + sizeof(kino_ByteBuf);
         Kino_SortEx_Feed(self, (kino_Obj*)bb, size);
         KINO_DECREF(bb);

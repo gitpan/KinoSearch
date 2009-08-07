@@ -87,8 +87,8 @@ sub _add_dump_method {
     my ( $self, $class ) = @_;
     my $method = $self->_make_method_obj( $class, 'Dump' );
     $class->add_method($method);
-    my $full_func_sym    = $method->full_func_sym;
-    my $full_struct_name = 'kino_' . $class->get_struct_name;
+    my $full_func_sym = $method->full_func_sym;
+    my $full_struct   = 'kino_' . $class->get_struct_name;
     my $autocode;
     my @members;
     my $parent = $class->get_parent;
@@ -98,7 +98,7 @@ sub _add_dump_method {
         my $super_type = 'kino_' . $parent->get_struct_name;
         $autocode = <<END_STUFF;
 kino_Obj*
-$full_func_sym($full_struct_name *self)
+$full_func_sym($full_struct *self)
 {
     kino_Hash *dump = (kino_Hash*)$super_dump(($super_type*)self);
 END_STUFF
@@ -107,7 +107,7 @@ END_STUFF
     else {
         $autocode = <<END_STUFF;
 kino_Obj*
-$full_func_sym($full_struct_name *self)
+$full_func_sym($full_struct *self)
 {
     kino_Hash *dump = kino_Hash_new(0);
     Kino_Hash_Store_Str(dump, "_class", 6,
@@ -154,8 +154,8 @@ sub _add_load_method {
     my ( $self, $class ) = @_;
     my $method = $self->_make_method_obj( $class, 'Load' );
     $class->add_method($method);
-    my $full_func_sym    = $method->full_func_sym;
-    my $full_struct_name = 'kino_' . $class->get_struct_name;
+    my $full_func_sym = $method->full_func_sym;
+    my $full_struct   = 'kino_' . $class->get_struct_name;
     my $autocode;
     my @members;
     my $parent = $class->get_parent;
@@ -165,11 +165,11 @@ sub _add_load_method {
         my $super_type = 'kino_' . $parent->get_struct_name;
         $autocode = <<END_STUFF;
 kino_Obj*
-$full_func_sym($full_struct_name *self, kino_Obj *dump)
+$full_func_sym($full_struct *self, kino_Obj *dump)
 {
     kino_Hash *source = (kino_Hash*)KINO_ASSERT_IS_A(dump, KINO_HASH);
-    $full_struct_name *loaded 
-        = ($full_struct_name*)$super_load(($super_type*)self, dump);
+    $full_struct *loaded 
+        = ($full_struct*)$super_load(($super_type*)self, dump);
     CHY_UNUSED_VAR(self);
 END_STUFF
         @members = $class->novel_member_vars;
@@ -177,13 +177,13 @@ END_STUFF
     else {
         $autocode = <<END_STUFF;
 kino_Obj*
-$full_func_sym($full_struct_name *self, kino_Obj *dump)
+$full_func_sym($full_struct *self, kino_Obj *dump)
 {
     kino_Hash *source = (kino_Hash*)KINO_ASSERT_IS_A(dump, KINO_HASH);
     kino_CharBuf *class_name = (kino_CharBuf*)KINO_ASSERT_IS_A(
         Kino_Hash_Fetch_Str(source, "_class", 6), KINO_CHARBUF);
     kino_VTable *vtable = kino_VTable_singleton(class_name, NULL);
-    $full_struct_name *loaded = ($full_struct_name*)Kino_VTable_Make_Obj(vtable);
+    $full_struct *loaded = ($full_struct*)Kino_VTable_Make_Obj(vtable);
     CHY_UNUSED_VAR(self);
 END_STUFF
         @members = $class->get_member_vars;

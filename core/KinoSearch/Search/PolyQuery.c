@@ -66,7 +66,7 @@ PolyQuery_deserialize(PolyQuery *self, InStream *instream)
     float boost          = InStream_Read_F32(instream);
     u32_t num_children   = InStream_Read_U32(instream);
 
-    if (!self) THROW("Abstract class");
+    if (!self) THROW(ERR, "Abstract class");
     PolyQuery_init(self, NULL);
     PolyQuery_Set_Boost(self, boost);
 
@@ -93,8 +93,8 @@ PolyQuery_equals(PolyQuery *self, Obj *other)
 
 
 PolyCompiler*
-PolyCompiler_init(PolyCompiler *self, PolyQuery *parent, Searchable *searchable, 
-                 float boost)
+PolyCompiler_init(PolyCompiler *self, PolyQuery *parent, 
+                  Searchable *searchable, float boost)
 {
     u32_t i;
     const u32_t num_kids = VA_Get_Size(parent->children);
@@ -179,7 +179,7 @@ PolyCompiler_deserialize(PolyCompiler *self, InStream *instream)
 {
     CharBuf *class_name = CB_deserialize(NULL, instream);
     if (!self) {
-        VTable *vtable = (VTable*)VTable_singleton(class_name, NULL);
+        VTable *vtable = VTable_singleton(class_name, NULL);
         self = (PolyCompiler*)VTable_Make_Obj(vtable);
     }
     DECREF(class_name);

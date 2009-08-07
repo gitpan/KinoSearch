@@ -12,7 +12,7 @@ my $synopsis = <<'END_SYNOPSIS';
     );
     my $seg_readers = $polyreader->seg_readers;
     for my $seg_reader (@$seg_readers) {
-        my $seg_name = $seg_reader->get_segment->get_name;
+        my $seg_name = $seg_reader->get_seg_name;
         my $num_docs = $seg_reader->doc_max;
         print "Segment $seg_name ($num_docs documents):\n";
         my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
@@ -24,9 +24,12 @@ my $synopsis = <<'END_SYNOPSIS';
 END_SYNOPSIS
 
 {   "KinoSearch::Index::SegReader" => {
-        bind_methods      => [qw( Register )],
+        bind_methods      => [qw( Get_Seg_Name Get_Seg_Num Register )],
         make_constructors => ["new"],
-        make_pod          => { synopsis => $synopsis },
+        make_pod          => {
+            synopsis => $synopsis,
+            methods  => [qw( Get_Seg_Name Get_Seg_Num )],
+        },
     }
 }
 

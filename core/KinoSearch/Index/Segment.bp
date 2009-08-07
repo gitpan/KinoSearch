@@ -18,21 +18,22 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Obj {
 
     CharBuf     *name;
-    Folder      *folder;
     i32_t        count;
-    i32_t        seg_num;
+    i32_t        number;
     Hash        *by_name;   /* field numbers by name */
     VArray      *by_num;    /* field names by num */
     Hash        *metadata;
 
-    /** Constructor.  If "metadata" is null, default values will be used, 
-     * otherwise values will be extracted.
-     */
     static incremented Segment*
-    new(const CharBuf *name, Folder *folder);
+    new(i32_t number);
 
     public static Segment*
-    init(Segment *self, const CharBuf *name, Folder *folder);
+    init(Segment *self, i32_t number);
+
+    /** Return a segment name with a base-36-encoded segment number. 
+     */
+    static incremented CharBuf*
+    num_to_name(i32_t number);
 
     /** Register a new field and assign it a field number.  If the field was
      * already known, nothing happens.
@@ -85,6 +86,11 @@ class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Obj {
     public CharBuf*
     Get_Name(Segment *self);
 
+    /** Getter for the segment number. 
+     */
+    public i32_t
+    Get_Number(Segment *self);
+
     /** Setter for the object's document count.
      */
     public void
@@ -109,15 +115,15 @@ class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Obj {
     /** Write the segdata file.
      */
     public void
-    Write_File(Segment *self);
+    Write_File(Segment *self, Folder *folder);
 
-    /** Read the segdata file.
+    /** Read the segmeta file for this segment.
      *
      * @return true if the file is read and decoded successfully, false
      * otherwise.
      */
     public bool_t
-    Read_File(Segment *self);
+    Read_File(Segment *self, Folder *folder);
 
     /** Compare by segment number. 
      */

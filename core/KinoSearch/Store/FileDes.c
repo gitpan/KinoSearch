@@ -33,13 +33,13 @@ FileDes_destroy(FileDes *self)
     DECREF(self->mess);
     FREE_OBJ(self);
 
-    if (!success) Err_throw_mess(mess);
+    if (!success) Err_throw_mess(ERR, mess);
 }
 
 void
 FileDes_set_path(FileDes *self, const CharBuf *path)
 {
-    CB_Copy(self->path, path);
+    CB_Mimic(self->path, (Obj*)path);
 }
 
 CharBuf*

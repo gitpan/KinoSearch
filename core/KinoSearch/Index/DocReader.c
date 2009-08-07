@@ -9,7 +9,6 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Util/I32Array.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 DocReader*
 DocReader_init(DocReader *self, Schema *schema, Folder *folder, 
@@ -29,7 +28,7 @@ DocReader_aggregator(DocReader *self, VArray *readers, I32Array *offsets)
 PolyDocReader*
 PolyDocReader_new(VArray *readers, I32Array *offsets)
 {
-    PolyDocReader *self = (PolyDocReader*)VTable_Make_Obj(&POLYDOCREADER);
+    PolyDocReader *self = (PolyDocReader*)VTable_Make_Obj(POLYDOCREADER);
     return PolyDocReader_init(self, readers, offsets);
 }
 
@@ -76,7 +75,7 @@ PolyDocReader_fetch(PolyDocReader *self, i32_t doc_id, float score,
     DocReader *doc_reader = (DocReader*)VA_Fetch(self->readers, seg_tick);
     Obj *hit = NULL;
     if (!doc_reader) { 
-        THROW("Invalid doc_id: %i32", doc_id); 
+        THROW(ERR, "Invalid doc_id: %i32", doc_id); 
     }
     else {
         hit = DocReader_Fetch(doc_reader, doc_id - my_offset, score, 
@@ -90,7 +89,7 @@ DefDocReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
                  VArray *segments, i32_t seg_tick)
 {
     DefaultDocReader *self 
-        = (DefaultDocReader*)VTable_Make_Obj(&DEFAULTDOCREADER);
+        = (DefaultDocReader*)VTable_Make_Obj(DEFAULTDOCREADER);
     return DefDocReader_init(self, schema, folder, snapshot, segments,
         seg_tick);
 }
@@ -136,15 +135,15 @@ DefDocReader_init(DefaultDocReader *self, Schema *schema, Folder *folder,
         Obj     *format    = Hash_Fetch_Str(metadata, "format", 6);
 
         /* Check format. */
-        if (!format) { THROW("Missing 'format' var"); }
+        if (!format) { THROW(ERR, "Missing 'format' var"); }
         else {
             i64_t format_val = Obj_To_I64(format);
             if (format_val < DocWriter_current_file_format) {
-                THROW("Obsolete doc storage format %i64; "
+                THROW(ERR, "Obsolete doc storage format %i64; "
                     "Index regeneration is required", format_val);
             }
             else if (format_val != DocWriter_current_file_format) {
-                THROW("Unsupported doc storage format: %i64", format_val);
+                THROW(ERR, "Unsupported doc storage format: %i64", format_val);
             }
         }
 
@@ -158,7 +157,7 @@ DefDocReader_init(DefaultDocReader *self, Schema *schema, Folder *folder,
                 DECREF(ix_file);
                 DECREF(dat_file);
                 DECREF(self);
-                Err_throw_mess(mess);
+                Err_throw_mess(ERR, mess);
             }
         }
         DECREF(ix_file);
@@ -180,7 +179,7 @@ DefDocReader_read_record(DefaultDocReader *self, ByteBuf *buffer,
     InStream_Seek(self->ix_in, (i64_t)doc_id * 8);
     start = InStream_Read_U64(self->ix_in);
     end   = InStream_Read_U64(self->ix_in);
-    size  = end - start;
+    size  = (i32_t)(end - start);
 
     /* Read in the record. */
     BB_Grow(buffer, size);

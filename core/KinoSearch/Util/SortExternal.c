@@ -113,7 +113,7 @@ SortEx_fetch(SortExternal *self)
 {
     if (self->cache_tick >= self->cache_max) {
         if (!self->flipped)
-            THROW("Fetch called before Flip");
+            THROW(ERR, "Fetch called before Flip");
         S_refill_cache(self);
     }
 
@@ -131,7 +131,7 @@ SortEx_peek(SortExternal *self)
 {
     if (self->cache_tick >= self->cache_max) {
         if (!self->flipped)
-            THROW("Fetch called before Flip");
+            THROW(ERR, "Fetch called before Flip");
         S_refill_cache(self);
     }
 
@@ -222,7 +222,7 @@ S_find_endpost(SortExternal *self)
         SortExRun *const run = self->runs[i];
         candidate = SortExRun_Peek_Last(run);
 
-        /* If it's the first run, the item is automatically the new endpost. */
+        /* If it's the first run, item is automatically the new endpost. */
         if (i == 0) {
             endpost = candidate;
             continue;

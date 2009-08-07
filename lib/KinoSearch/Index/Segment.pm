@@ -47,6 +47,7 @@ END_SYNOPSIS
                 Field_Num
                 Field_Name
                 Get_Name
+                Get_Number 
                 Set_Count
                 Get_Count
                 Write_File
@@ -64,6 +65,7 @@ END_SYNOPSIS
                     field_num
                     field_name
                     get_name
+                    get_number 
                     set_count
                     get_count
                     )

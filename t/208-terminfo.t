@@ -1,15 +1,13 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
+use Test::More tests => 11;
 use KinoSearch::Test;
 
-my $tinfo = KinoSearch::Index::TermInfo->new(
-    doc_freq     => 10,
-    post_filepos => 20,
-    skip_filepos => 40,
-    lex_filepos  => 50
-);
+my $tinfo = KinoSearch::Index::TermInfo->new( doc_freq => 10, );
+$tinfo->set_post_filepos(20);
+$tinfo->set_skip_filepos(40);
+$tinfo->set_lex_filepos(50);
 
 my $cloned_tinfo = $tinfo->clone;
 ok( !$tinfo->equals($cloned_tinfo),
@@ -17,11 +15,8 @@ ok( !$tinfo->equals($cloned_tinfo),
 
 is( $tinfo->get_doc_freq,     10, "new sets doc_freq correctly" );
 is( $tinfo->get_doc_freq,     10, "... doc_freq cloned" );
-is( $tinfo->get_post_filepos, 20, "new sets post_filepos correctly" );
 is( $tinfo->get_post_filepos, 20, "... post_filepos cloned" );
-is( $tinfo->get_skip_filepos, 40, "new sets skip_filepos correctly" );
 is( $tinfo->get_skip_filepos, 40, "... skip_filepos cloned" );
-is( $tinfo->get_lex_filepos,  50, "new sets lex_filepos correctly" );
 is( $tinfo->get_lex_filepos,  50, "... lex_filepos cloned" );
 
 $tinfo->set_doc_freq(5);

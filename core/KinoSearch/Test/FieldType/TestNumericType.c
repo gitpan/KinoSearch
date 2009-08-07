@@ -15,7 +15,7 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj         *clone         = Obj_Load(dump, dump);
     Obj         *another_dump  = (Obj*)Float64Type_Dump_For_Schema(type);
     Float64Type *another_clone 
-        = (Float64Type*)VTable_Load_Obj(&FLOAT64TYPE, another_dump);
+        = (Float64Type*)VTable_Load_Obj(FLOAT64TYPE, another_dump);
 
     ASSERT_FALSE(batch, Float64Type_Equals(type, (Obj*)other),
         "Equals() false with different FieldType");

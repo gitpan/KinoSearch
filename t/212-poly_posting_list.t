@@ -3,6 +3,10 @@ use warnings;
 
 use KinoSearch::Test;
 
+package NonMergingIndexManager;
+use base qw( KinoSearch::Index::IndexManager );
+sub recycle { [] }
+
 package MySchema;
 use base qw( KinoSearch::Schema );
 
@@ -24,8 +28,9 @@ my $schema = MySchema->new;
 my $id = 1;
 for my $iter ( 1 .. 4 ) {
     my $indexer = KinoSearch::Indexer->new(
-        index  => $folder,
-        schema => $schema,
+        index   => $folder,
+        schema  => $schema,
+        manager => NonMergingIndexManager->new,
     );
     for my $letter ( 'a' .. 'y' ) {
         my $content = ( "$letter " x $iter ) . 'z';

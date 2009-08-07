@@ -154,8 +154,8 @@ $hit_q = KinoSearch::Search::HitQueue->new(
 
 for my $doc_id ( shuffle( 1 .. 100 ) ) {
     my $fields = $docs[ $doc_id - 1 ];
-    my $values = KinoSearch::Util::VArray->new( capacity => 1 );
-    $values->push( KinoSearch::Util::CharBuf->new( $fields->{number} ) );
+    my $values = KinoSearch::Obj::VArray->new( capacity => 1 );
+    $values->push( KinoSearch::Obj::CharBuf->new( $fields->{number} ) );
     my $match_doc = KinoSearch::Search::MatchDoc->new(
         doc_id => $doc_id,
         score  => $doc_id,

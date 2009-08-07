@@ -185,8 +185,8 @@ sub write_bindings {
             # Safety checks against excess binding code or private methods.
             if ( !$method->novel ) {
                 confess(  "Binding spec'd for method '$meth_name' in class "
-                        . "$class_name, but it's overridden and should be bound in "
-                        . "the parent class" );
+                        . "$class_name, but it's overridden and should be "
+                        . "bound in the parent class" );
             }
             elsif ( $method->private ) {
                 confess(  "Binding spec'd for method '$meth_name' in class "
@@ -631,8 +631,7 @@ sub _write_boot_c {
         my $PREFIX  = $class->get_PREFIX;
         my $vt_type = $PREFIX . $class->vtable_type;
         $registrations
-            .= qq|    ${prefix}VTable_add_to_registry((${prefix}VTable*)|
-            . qq|&$PREFIX|
+            .= qq|    ${prefix}VTable_add_to_registry($PREFIX|
             . $class->vtable_var
             . qq|);\n|;
 

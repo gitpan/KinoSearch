@@ -4,9 +4,9 @@ use warnings;
 use Test::More tests => 8;
 use Storable qw( freeze thaw );
 
-use KinoSearch::Util::ByteBuf qw( bb_compare );
+use KinoSearch::Obj::ByteBuf qw( bb_compare );
 
-sub get_bb { KinoSearch::Util::ByteBuf->new(shift) }
+sub get_bb { KinoSearch::Obj::ByteBuf->new(shift) }
 
 is( bb_compare( get_bb("foo"), get_bb("foo") ), 0, "equal terms" );
 is( bb_compare( get_bb(""),    get_bb("") ),    0, "equal empty strings" );

@@ -60,7 +60,7 @@ Searchable_glean_query(Searchable *self, Obj *query)
         real_query = QParser_Parse(self->qparser, (CharBuf*)query);
     }
     else {
-        THROW("Invalid type for 'query' param: %o",
+        THROW(ERR, "Invalid type for 'query' param: %o",
             Obj_Get_Class_Name(query));
     }
 

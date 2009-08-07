@@ -6,12 +6,13 @@
 
 #include "charmony.h"
 #include "KinoSearch/Obj.h"
+#include "KinoSearch/Obj/ByteBuf.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
+#include "KinoSearch/Obj/Hash.h"
+#include "KinoSearch/Obj/Num.h"
+#include "KinoSearch/Obj/VArray.h"
 #include "KinoSearch/Obj/VTable.h"
-#include "KinoSearch/Util/Err.h"
-#include "KinoSearch/Util/ByteBuf.h"
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/VArray.h"
-#include "KinoSearch/Util/Hash.h"
 
 #include "EXTERN.h"
 #include "perl.h"
@@ -21,8 +22,8 @@
 #include "ppport.h"
 
 /* Strip the prefix from some common kino_ symbols where we know there's no
- * conflict with Perl.  It's a little inconsistent to do this rather than leave
- * all symbols at full size, but the succinctness is worth it.
+ * conflict with Perl.  It's a little inconsistent to do this rather than
+ * leave all symbols at full size, but the succinctness is worth it.
  */
 #define THROW            KINO_THROW
 #define WARN             KINO_WARN
@@ -93,6 +94,11 @@ kino_XSBind_cb_to_sv(const kino_CharBuf *cb);
 SV*
 kino_XSBind_kobj_to_pobj(kino_Obj *obj);
 
+/* Turn on overloading for the supplied Perl object and its class.
+ */
+void
+kino_XSBind_enable_overload(void *pobj);
+
 /* Deep conversion of Perl data structures to KS objects -- Perl hash to
  * Hash*, Perl array to VArray*, and everything else stringified and turned to
  * a CharBuf.
@@ -161,15 +167,6 @@ kino_Obj*
 kino_XSBind_extract_kobj(HV *hash, const char *key, STRLEN key_len, 
                          kino_VTable *vtable);
 
-/* SV to KS obj conversion functions with vtable casts.
- */
-#define SV_TO_KOBJ(sv, vtable) \
-    XSBind_sv_to_kobj((sv), (kino_VTable*)(vtable))
-#define SV_TO_KOBJ_OR_ZCB(sv, vtable, zcb) \
-    XSBind_sv_to_kobj_or_zcb((sv), (kino_VTable*)(vtable), zcb)
-#define MAYBE_SV_TO_KOBJ(sv, vtable) \
-    XSBind_maybe_sv_to_kobj((sv), (kino_VTable*)(vtable))
-
 /* Check the vtable function pointer for a method and determine whether it
  * differs from the original.  If it doesn't throw an exception.
  */
@@ -179,7 +176,7 @@ kino_XSBind_extract_kobj(HV *hash, const char *key, STRLEN key_len,
              == (boil_method_t)kino_ ## _class_nick ## _ ## _micro_name \
         ) { \
             kino_CharBuf *_class_name = Kino_VTable_Get_Name(self->vtable); \
-            KINO_THROW("Abstract method '%s' not defined by %o", \
+            KINO_THROW(KINO_ERR, "Abstract method '%s' not defined by %o", \
                 # _micro_name, _class_name \
             ); \
         } \
@@ -235,16 +232,16 @@ kino_XSBind_extract_kobj(HV *hash, const char *key, STRLEN key_len,
     /* If called as a setter, make sure the extra arg is there. */ \
     if (ix % 2 == 1) { \
         if (items != 2) \
-            THROW("usage: $object->set_xxxxxx($val)"); \
+            THROW(KINO_ERR, "usage: $object->set_xxxxxx($val)"); \
     } \
     else { \
         if (items != 1) \
-            THROW("usage: $object->get_xxxxx()"); \
+            THROW(KINO_ERR, "usage: $object->get_xxxxx()"); \
     } \
     switch (ix) {
 
 #define END_SET_OR_GET_SWITCH \
-    default: THROW("Internal error. ix: %i32", (chy_i32_t)ix); \
+    default: THROW(KINO_ERR, "Internal error. ix: %i32", (chy_i32_t)ix); \
              break; /* probably unreachable */ \
     } \
     if (ix % 2 == 0) { \
@@ -270,6 +267,7 @@ kino_XSBind_extract_kobj(HV *hash, const char *key, STRLEN key_len,
 #define XSBind_bb_to_sv             kino_XSBind_bb_to_sv
 #define XSBind_cb_to_sv             kino_XSBind_cb_to_sv
 #define XSBind_kobj_to_pobj         kino_XSBind_kobj_to_pobj
+#define XSBind_enable_overload      kino_XSBind_enable_overload
 #define XSBind_perl_to_kino         kino_XSBind_perl_to_kino
 #define XSBind_allot_params         kino_XSBind_allot_params
 #define XSBind_build_args_hash      kino_XSBind_build_args_hash

@@ -10,7 +10,7 @@
 PolyAnalyzer*
 PolyAnalyzer_new(const CharBuf *language, VArray *analyzers)
 {
-    PolyAnalyzer *self = (PolyAnalyzer*)VTable_Make_Obj(&POLYANALYZER);
+    PolyAnalyzer *self = (PolyAnalyzer*)VTable_Make_Obj(POLYANALYZER);
     return PolyAnalyzer_init(self, language, analyzers);
 }
 
@@ -33,7 +33,7 @@ PolyAnalyzer_init(PolyAnalyzer *self, const CharBuf *language,
         VA_Push(self->analyzers, (Obj*)Stemmer_new(language));
     }
     else {
-        THROW("Must specify either 'language' or 'analyzers'");
+        THROW(ERR, "Must specify either 'language' or 'analyzers'");
     }
 
     return self;
@@ -109,8 +109,8 @@ PolyAnalyzer*
 PolyAnalyzer_load(PolyAnalyzer *self, Obj *dump)
 {
     Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
-    PolyAnalyzer_load_t super_load 
-        = (PolyAnalyzer_load_t)SUPER_METHOD(&POLYANALYZER, PolyAnalyzer, Load);
+    PolyAnalyzer_load_t super_load = (PolyAnalyzer_load_t)
+        SUPER_METHOD(POLYANALYZER, PolyAnalyzer, Load);
     PolyAnalyzer *loaded = super_load(self, dump);
     VArray *analyzer_dumps = (VArray*)ASSERT_IS_A(
         Hash_Fetch_Str(source, "analyzers", 9), VARRAY);
@@ -125,7 +125,7 @@ bool_t
 PolyAnalyzer_dump_equals(PolyAnalyzer *self, Obj *dump)
 {
     PolyAnalyzer_dump_equals_t super_dump_equals 
-        = (PolyAnalyzer_dump_equals_t) SUPER_METHOD(&POLYANALYZER, 
+        = (PolyAnalyzer_dump_equals_t) SUPER_METHOD(POLYANALYZER, 
             PolyAnalyzer, Dump_Equals);
     if (!super_dump_equals(self, dump)) { return false; }
     else {

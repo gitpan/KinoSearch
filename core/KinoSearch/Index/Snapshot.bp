@@ -9,7 +9,7 @@ parcel KinoSearch cnick Kino;
  * IndexReader objects interpret the data associated with a single Snapshot.
  */
 
-class KinoSearch::Index::Snapshot extends KinoSearch::Obj {
+class KinoSearch::Index::Snapshot extends KinoSearch::Obj : dumpable {
 
     Hash        *entries;
     CharBuf     *filename;

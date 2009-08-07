@@ -6,13 +6,14 @@ parcel KinoSearch cnick Kino;
  * inverted indexes, which may later be searched using
  * L<KinoSearch::Searcher>.
  *
- * Only one Indexer may write to an index at a time.  If a write lock cannot
- * be secured, new() will throw an exception.
+ * In general, only one Indexer at a time may write to an index safely.  If a
+ * write lock cannot be secured, new() will throw an exception.
  * 
  * If an index is located on a shared volume, each writer application must
- * identify itself by passing a L<LockFactory|KinoSearch::Store::LockFactory>
- * to Indexer's constructor or index corruption will occur.  See LockFactory's
- * documentation for a detailed explanation.
+ * identify itself by supplying an
+ * L<IndexManager|KinoSearch::Index::IndexManager> with a unique
+ * <code>hostname</code> to Indexer's constructor or index corruption will
+ * occur.  See L<KinoSearch::Docs::FileLocking> for a detailed discussion.
  *
  * Note: at present, Delete_By_Term() and Delete_By_Query() only affect
  * documents which had been previously committed to the index -- and not any
@@ -25,17 +26,17 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
     Folder            *folder;
     Segment           *segment;
     IndexManager      *manager;
-    LockFactory       *lock_factory;
     PolyReader        *polyreader;
     Snapshot          *snapshot;
     SegWriter         *seg_writer;
     DeletionsWriter   *del_writer;
     FilePurger        *file_purger;
     Lock              *write_lock;
+    Lock              *merge_lock;
     Doc               *stock_doc;
     CharBuf           *snapfile;
     bool_t             truncate;
-    bool_t             optimized;
+    bool_t             optimize;
     bool_t             needs_commit;
     bool_t             prepared;
 
@@ -44,19 +45,18 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
 
     public static incremented Indexer*
     new(Schema *schema = NULL, Obj *index, IndexManager *manager = NULL, 
-        LockFactory *lock_factory = NULL, i32_t flags = 0);
+        i32_t flags = 0);
 
     /** Open a new Indexer.  If the index already exists, update it.
      *
      * @param schema A Schema.
      * @param index Either a string filepath or a Folder.
-     * @param lock_factory A LockFactory.
+     * @param manager An IndexManager.
      * @param flags Flags governing behavior.  
      */
     public static Indexer*
     init(Indexer *self, Schema *schema = NULL, Obj *index, 
-         IndexManager *manager = NULL, LockFactory *lock_factory = NULL, 
-         i32_t flags = 0);
+         IndexManager *manager = NULL, i32_t flags = 0);
 
     /** Add a document to the index.  
      *
@@ -96,8 +96,8 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
     public void
     Delete_By_Query(Indexer *self, Query *query);
 
-    /** Collapse the index to its most compact form.  This may take a while,
-     * but will yield the fastest queries at search time.
+    /** Optimize the index for search-time performance.  This may take a
+     * while, as it can involve rewriting large amounts of data.
      */
     public void
     Optimize(Indexer *self);

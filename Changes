@@ -1,5 +1,70 @@
 Revision history for KinoSearch
 
+0.30_05  2009-08-06
+
+  Features:
+    
+    * Support for near-real-time indexing.
+
+  New public classes:
+
+    * KinoSearch::Index::IndexManager
+    * KinoSearch::Index::BackgroundMerger
+    * KinoSearch::Index::DeletionsWriter
+    * KinoSearch::Obj::Err
+    * KinoSearch::Store::LockErr
+
+  New documentation:
+
+    * KinoSearch::Docs::Cookbook::FastUpdates
+
+  API changes:
+
+    * KinoSearch::Indexer
+      o new() - param "lock_factory" replaced by param "manager"
+
+    * KinoSearch::Index::IndexReader
+      o open() - param "lock_factory" replaced by param "manager"
+
+    * KinoSearch::Index::SegReader 
+      o get_seg_num() - added.
+      o get_seg_name() - added.
+
+    * KinoSearch::Highlight::Highlighter
+      o Three dots replaced by Unicode ellipsis.
+
+    * KinoSearch::Store::Lock
+      o Now an abstract class.
+      o new() 
+        * Now an abstract constructor.
+        * param "agent_id" renamed to "hostname".
+      o get_agent_id() - replaced by get_hostname().
+      o request() - added.
+      o shared() - added.
+
+    * KinoSearch::Store::LockFactory
+      o new() - param "agent_id" renamed to "hostname"
+      o make_shared_lock() - Now returns a Lock (instead of a SharedLock).
+
+  Redacted:
+
+    * KinoSearch::Store::SharedLock
+
+  Moved:
+  
+    * KinoSearch::Util::BitVector -> KinoSearch::Obj::BitVector.
+      (Compatibility subclass left in place for now.)
+
+  Bugfixes:
+
+    * Fields with empty strings could produce corrupt Lexicons.
+    * Segment data files (cf.dat) over 2 GB could cause search-time crashes.
+
+  Compatibility:
+
+    * File-format compatible with 0.30_04.
+
+
 0.30_04  2009-07-05
 
   Bugfixes:

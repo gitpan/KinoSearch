@@ -21,7 +21,7 @@ SortCache_init(SortCache *self, const CharBuf *field, FieldType *type,
 {
     /* Assign. */
     if (!FType_Sortable(type)) { 
-        THROW("Non-sortable FieldType for %o", field); 
+        THROW(ERR, "Non-sortable FieldType for %o", field); 
     }
     self->field    = CB_Clone(field);
     self->type     = (FieldType*)INCREF(type);
@@ -49,7 +49,7 @@ i32_t
 SortCache_ordinal(SortCache *self, i32_t doc_id)
 {
     if (doc_id > self->doc_max) { 
-        THROW("Out of range: %i32 > %i32", doc_id, self->doc_max);
+        THROW(ERR, "Out of range: %i32 > %i32", doc_id, self->doc_max);
     }
     switch (self->ord_width) {
         case 1: return IntArr_u1get(self->ords, doc_id);
@@ -68,7 +68,7 @@ SortCache_ordinal(SortCache *self, i32_t doc_id)
             return ints[doc_id];
         }
         default: {
-            THROW("Invalid ord width: %i32", self->ord_width);
+            THROW(ERR, "Invalid ord width: %i32", self->ord_width);
             UNREACHABLE_RETURN(i32_t);
         }
     }
@@ -87,7 +87,7 @@ SortCache_find(SortCache *self, Obj *term)
         && !Obj_Is_A(term, Obj_Get_VTable(blank))
         && !Obj_Is_A(blank, Obj_Get_VTable(term))
     ) {
-        THROW("SortCache error for field %o: term is a %o, and not "
+        THROW(ERR, "SortCache error for field %o: term is a %o, and not "
             "comparable to a %o", self->field, Obj_Get_Class_Name(term),
             Obj_Get_Class_Name(blank));
     }
@@ -96,7 +96,7 @@ SortCache_find(SortCache *self, Obj *term)
     while (hi >= lo) {
         const i32_t mid = lo + ((hi - lo) / 2);
         Obj *val = SortCache_Value(self, mid, blank);
-        i64_t comparison = FType_Compare_Values(type, term, val);
+        i32_t comparison = FType_Compare_Values(type, term, val);
         if (comparison < 0) {
             hi = mid - 1;
         }

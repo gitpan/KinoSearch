@@ -14,6 +14,7 @@ __AUTO_XS__
                 List
                 Exists
                 Rename
+                Hard_Link
                 Delete 
                 Finish_Segment
                 Slurp_File

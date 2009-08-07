@@ -17,7 +17,6 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Util/ByteBuf.h"
 #include "KinoSearch/Util/I32Array.h"
 
 static OutStream*
@@ -30,7 +29,7 @@ HLWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
              PolyReader *polyreader)
 {
     HighlightWriter *self 
-        = (HighlightWriter*)VTable_Make_Obj(&HIGHLIGHTWRITER);
+        = (HighlightWriter*)VTable_Make_Obj(HIGHLIGHTWRITER);
     return HLWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
@@ -66,8 +65,8 @@ S_lazy_init(HighlightWriter *self)
         Snapshot_Add_Entry(snapshot, dat_file);
         self->ix_out  = Folder_Open_Out(folder, ix_file);
         self->dat_out = Folder_Open_Out(folder, dat_file);
-        if (!self->ix_out)  { THROW("Can't open %o", ix_file); }
-        if (!self->dat_out) { THROW("Can't open %o", dat_file); }
+        if (!self->ix_out)  { THROW(ERR, "Can't open %o", ix_file); }
+        if (!self->dat_out) { THROW(ERR, "Can't open %o", dat_file); }
         DECREF(ix_file);
         DECREF(dat_file);
 
@@ -90,7 +89,7 @@ HLWriter_add_inverted_doc(HighlightWriter *self, Inverter *inverter,
 
     /* Verify doc id. */
     if (doc_id != expected)
-        THROW("Expected doc id %i32 but got %i32", expected, doc_id);
+        THROW(ERR, "Expected doc id %i32 but got %i32", expected, doc_id);
 
     /* Write index data. */
     OutStream_Write_U64(ix_out, filepos);
@@ -183,7 +182,7 @@ HLWriter_tv_buf(HighlightWriter *self, Inversion *inversion)
         BB_Set_Size(tv_buf, ptr - tv_buf->ptr); 
     }
     
-    /* Go back and start the term vector string with the number of postings. */
+    /* Go back and start the term vector string with the posting count. */
     dest = tv_buf->ptr;
     Math_encode_padded_c32(num_postings, &dest);
 
@@ -202,7 +201,7 @@ HLWriter_add_segment(HighlightWriter *self, SegReader *reader,
     }
     else {
         DefaultHighlightReader *hl_reader = (DefaultHighlightReader*)
-            ASSERT_IS_A(SegReader_Obtain(reader, HIGHLIGHTREADER.name),
+            ASSERT_IS_A(SegReader_Obtain(reader, HIGHLIGHTREADER->name),
             DEFAULTHIGHLIGHTREADER);
         OutStream *dat_out = S_lazy_init(self);
         OutStream *ix_out  = self->ix_out;

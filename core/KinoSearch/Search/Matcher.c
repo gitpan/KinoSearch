@@ -2,9 +2,9 @@
 #define CHY_USE_SHORT_NAMES
 
 #include "KinoSearch/Search/Matcher.h"
+#include "KinoSearch/Obj/Err.h"
 #include "KinoSearch/Obj/VTable.h"
 #include "KinoSearch/Search/HitCollector.h"
-#include "KinoSearch/Util/Err.h"
 
 Matcher*
 Matcher_init(Matcher *self)

@@ -27,7 +27,7 @@ RangeQuery*
 RangeQuery_new(const CharBuf *field, Obj *lower_term, Obj *upper_term,
                bool_t include_lower, bool_t include_upper)
 {
-    RangeQuery *self = (RangeQuery*)VTable_Make_Obj(&RANGEQUERY);
+    RangeQuery *self = (RangeQuery*)VTable_Make_Obj(RANGEQUERY);
     return RangeQuery_init(self, field, lower_term, upper_term, 
         include_lower, include_upper);
 }
@@ -45,7 +45,7 @@ RangeQuery_init(RangeQuery *self, const CharBuf *field, Obj *lower_term,
     if (!upper_term && !lower_term) {
         DECREF(self);
         self = NULL;
-        THROW("Must supply at least one of 'upper_term' and 'lower_term'");
+        THROW(ERR, "Must supply at least one of 'upper_term' and 'lower_term'");
     }
     return self;
 }
@@ -135,7 +135,7 @@ RangeQuery_deserialize(RangeQuery *self, InStream *instream)
     bool_t include_upper = InStream_Read_U8(instream);
 
     /* Init object. */
-    self = self ? self : (RangeQuery*)VTable_Make_Obj(&RANGEQUERY);
+    self = self ? self : (RangeQuery*)VTable_Make_Obj(RANGEQUERY);
     RangeQuery_init(self, field, lower_term, upper_term, include_lower,
         include_upper);
     RangeQuery_Set_Boost(self, boost);
@@ -159,7 +159,7 @@ RangeCompiler*
 RangeCompiler_new(RangeQuery *parent, Searchable *searchable, float boost)
 {
     RangeCompiler *self 
-        = (RangeCompiler*)VTable_Make_Obj(&RANGECOMPILER);
+        = (RangeCompiler*)VTable_Make_Obj(RANGECOMPILER);
     return RangeCompiler_init(self, parent, searchable, boost);
 }
 
@@ -174,7 +174,7 @@ RangeCompiler_init(RangeCompiler *self, RangeQuery *parent,
 RangeCompiler*
 RangeCompiler_deserialize(RangeCompiler *self, InStream *instream)
 {
-    self = self ? self : (RangeCompiler*)VTable_Make_Obj(&RANGECOMPILER);
+    self = self ? self : (RangeCompiler*)VTable_Make_Obj(RANGECOMPILER);
     return (RangeCompiler*)Compiler_deserialize((Compiler*)self, instream);
 }
 
@@ -184,7 +184,7 @@ RangeCompiler_make_matcher(RangeCompiler *self, SegReader *reader,
 {
     RangeQuery *parent = (RangeQuery*)self->parent;
     SortReader *sort_reader 
-        = (SortReader*)SegReader_Fetch(reader, SORTREADER.name);
+        = (SortReader*)SegReader_Fetch(reader, SORTREADER->name);
     SortCache *sort_cache = sort_reader
         ? SortReader_Fetch_Sort_Cache(sort_reader, parent->field) 
         : NULL;

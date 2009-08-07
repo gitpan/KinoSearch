@@ -2,9 +2,9 @@ parcel KinoSearch cnick Kino;
 
 /** Default posting type.
  *
- * ScorePosting is the default posting format in KinoSearch.  The term-document
- * pairing used by MatchPosting is supplemented by additional frequency,
- * position, and weighting information.
+ * ScorePosting is the default posting format in KinoSearch.  The
+ * term-document pairing used by MatchPosting is supplemented by additional
+ * frequency, position, and weighting information.
  */ 
 class KinoSearch::Posting::ScorePosting cnick ScorePost
     extends KinoSearch::Posting::MatchPosting {
@@ -38,8 +38,8 @@ class KinoSearch::Posting::ScorePosting cnick ScorePost
                           i32_t doc_id, float doc_boost, 
                           float length_norm);
 
-    void
-    Reset(ScorePosting *self, i32_t doc_id);
+    public void
+    Reset(ScorePosting *self);
 
     public incremented ScorePostingScorer*
     Make_Matcher(ScorePosting *self, Similarity *sim, PostingList *plist, 

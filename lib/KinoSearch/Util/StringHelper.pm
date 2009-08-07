@@ -53,7 +53,8 @@ OUTPUT: RETVAL
 
 =for comment
 
-Upgrade a SV to UTF8, converting Latin1 if necessary. Equivalent to utf::upgrade().
+Upgrade a SV to UTF8, converting Latin1 if necessary. Equivalent to
+utf::upgrade().
 
 =cut
 
@@ -90,7 +91,7 @@ PPCODE:
 {
     STRLEN len;
     char *ptr = SvPV(catted, len);
-    if (SvUTF8(sv)) { KINO_THROW("Can't cat_bytes onto a UTF-8 SV"); }
+    if (SvUTF8(sv)) { KINO_THROW(KINO_ERR, "Can't cat_bytes onto a UTF-8 SV"); }
     sv_catpvn(sv, ptr, len);
 }
 

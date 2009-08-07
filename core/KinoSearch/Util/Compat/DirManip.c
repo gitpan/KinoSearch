@@ -5,15 +5,15 @@
 #include <sys/stat.h>
 
 #include "KinoSearch/Util/Compat/DirManip.h"
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/VArray.h"
-#include "KinoSearch/Util/Err.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
+#include "KinoSearch/Obj/VArray.h"
 
 #ifdef CHY_HAS_SYS_TYPES_H
   #include <sys/types.h>
 #endif
 
-/* For rmdir. */
+/* For rmdir, (hard) link. */
 #ifdef CHY_HAS_UNISTD_H
   #include <unistd.h>
 #endif
@@ -41,7 +41,7 @@ void
 kino_DirManip_create_dir(const kino_CharBuf *path)
 {
     if(-1 == chy_makedir(path->ptr, 0777)) {
-        KINO_THROW("Couldn't create directory %o", path);
+        KINO_THROW(KINO_ERR, "Couldn't create directory %o", path);
     }
 }
 
@@ -146,7 +146,7 @@ S_add_to_file_list(kino_VArray *list, kino_CharBuf *path,
     }
 
     if (closedir(dirhandle) == -1) {
-        KINO_THROW("Error closing dirhandle: %s", strerror(errno));
+        KINO_THROW(KINO_ERR, "Error closing dirhandle: %s", strerror(errno));
     }
 
     KINO_DECREF(fullpath);
@@ -170,7 +170,7 @@ S_add_to_file_list(kino_VArray *list, kino_CharBuf *path,
 
     if (orig_path_size >= MAX_PATH - 2) {
         /* Deal with Windows ceiling on file path lengths. */
-        KINO_THROW("directory path is too long: %o", path);
+        KINO_THROW(KINO_ERR, "directory path is too long: %o", path);
     }
     else {
         /* Append trailing wildcard so Windows lists dir contents. */
@@ -208,11 +208,11 @@ S_add_to_file_list(kino_VArray *list, kino_CharBuf *path,
         } while (FindNextFile(dirhandle, &find_data) != 0);
 
         if (GetLastError() != ERROR_NO_MORE_FILES) {
-            KINO_THROW("Unexpected error while traversing directory: %u32",
+            KINO_THROW(KINO_ERR, "Error while traversing directory: %u32",
                 (chy_u32_t)GetLastError());
         }
         if (!FindClose(dirhandle)) {
-            KINO_THROW("Unexpected error while closing directory: %u32", 
+            KINO_THROW(KINO_ERR, "Error while closing directory: %u32", 
                 (chy_u32_t)GetLastError());
         }
 
@@ -220,4 +220,17 @@ S_add_to_file_list(kino_VArray *list, kino_CharBuf *path,
 
 }
 #endif /* CHY_HAS_DIRENT_H vs. CHY_HAS_WINDOWS_H */
+
+chy_bool_t
+kino_DirManip_hard_link(const kino_CharBuf *source, 
+                        const kino_CharBuf *target)
+{
+    char *from = (char*)Kino_CB_Get_Ptr8(source);
+    char *to   = (char*)Kino_CB_Get_Ptr8(target);
+#ifdef CHY_HAS_UNISTD_H
+    return !link(from, to);
+#elif defined(CHY_HAS_WINDOWS_H)
+    return !!CreateHardLink(to, from, NULL);
+#endif
+}
 

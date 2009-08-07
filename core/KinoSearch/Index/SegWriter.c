@@ -18,7 +18,7 @@ SegWriter*
 SegWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
               PolyReader *polyreader)
 {
-    SegWriter *self = (SegWriter*)VTable_Make_Obj(&SEGWRITER);
+    SegWriter *self = (SegWriter*)VTable_Make_Obj(SEGWRITER);
     return SegWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
@@ -50,7 +50,7 @@ SegWriter_register(SegWriter *self, const CharBuf *api, DataWriter *component)
 {
     ASSERT_IS_A(component, DATAWRITER);
     if (Hash_Fetch(self->by_api, (Obj*)api)) {
-        THROW("API %o already registered", api);
+        THROW(ERR, "API %o already registered", api);
     }
     Hash_Store(self->by_api, (Obj*)api, (Obj*)component);
 }
@@ -89,7 +89,7 @@ SegWriter_prep_seg_dir(SegWriter *self)
             if (!Folder_Delete(folder, filename)) {
                 CharBuf *mess = MAKE_MESS("Can't delete '%o'", filename);
                 DECREF(files);
-                Err_throw_mess(mess);
+                Err_throw_mess(ERR, mess);
             }
         }
     }
@@ -211,7 +211,7 @@ SegWriter_finish(SegWriter *self)
         Snapshot *snapshot = SegWriter_Get_Snapshot(self);
         CharBuf *seg_name  = Seg_Get_Name(self->segment);
         CharBuf *segmeta_filename = CB_newf("%o/segmeta.json", seg_name);
-        Seg_Write_File(self->segment);
+        Seg_Write_File(self->segment, self->folder);
         Snapshot_Add_Entry(snapshot, seg_name);
         Snapshot_Add_Entry(snapshot, segmeta_filename);
         DECREF(segmeta_filename);

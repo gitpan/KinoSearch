@@ -2,12 +2,11 @@
 
 #include "KinoSearch/Search/ANDScorer.h"
 #include "KinoSearch/Search/Similarity.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 ANDScorer*
 ANDScorer_new(VArray *children, Similarity *sim) 
 {
-    ANDScorer *self = (ANDScorer*)VTable_Make_Obj(&ANDSCORER);
+    ANDScorer *self = (ANDScorer*)VTable_Make_Obj(ANDSCORER);
     return ANDScorer_init(self, children, sim);
 }
 
@@ -18,7 +17,6 @@ ANDScorer_init(ANDScorer *self, VArray *children, Similarity *sim)
 
     /* Init. */
     PolyMatcher_init((PolyMatcher*)self, children, sim);
-    self->cap              = 10;
     self->first_time       = true;
 
     /* Assign. */

@@ -3,7 +3,8 @@ parcel KinoSearch cnick Kino;
 /** SortExternal for ByteBufs.
  */
 
-class KinoSearch::Test::Util::BBSortEx extends KinoSearch::Util::SortExternal {
+class KinoSearch::Test::Util::BBSortEx 
+    extends KinoSearch::Util::SortExternal {
 
     static BBSortEx*
     init(BBSortEx *self, u32_t mem_thresh = 0x1000000);

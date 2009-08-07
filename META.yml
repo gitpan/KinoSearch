@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.30_04
+version: 0.30_05
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -42,7 +42,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_04
+    version: 0.30_05
   KinoSearch::Analysis::Inversion:
     file: lib/KinoSearch.pm
   KinoSearch::Analysis::Stemmer:
@@ -69,7 +69,25 @@ provides:
     file: lib/KinoSearch.pm
   KinoSearch::Obj:
     file: lib/KinoSearch.pm
+  KinoSearch::Obj::BitVector:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::ByteBuf:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::CharBuf:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::Err:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::Hash:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::VArray:
+    file: lib/KinoSearch.pm
   KinoSearch::Obj::VTable:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::ViewByteBuf:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::ViewCharBuf:
+    file: lib/KinoSearch.pm
+  KinoSearch::Obj::ZombieCharBuf:
     file: lib/KinoSearch.pm
   KinoSearch::Search::Compiler:
     file: lib/KinoSearch.pm
@@ -79,15 +97,9 @@ provides:
     file: lib/KinoSearch.pm
   KinoSearch::Util::BitVector:
     file: lib/KinoSearch.pm
-  KinoSearch::Util::ByteBuf:
-    file: lib/KinoSearch.pm
-  KinoSearch::Util::CharBuf:
-    file: lib/KinoSearch.pm
   KinoSearch::Util::Compat::DirManip:
     file: lib/KinoSearch.pm
   KinoSearch::Util::Debug:
-    file: lib/KinoSearch.pm
-  KinoSearch::Util::Hash:
     file: lib/KinoSearch.pm
   KinoSearch::Util::Host:
     file: lib/KinoSearch.pm
@@ -101,14 +113,6 @@ provides:
     file: lib/KinoSearch.pm
   KinoSearch::Util::ToolSet:
     file: lib/KinoSearch.pm
-  KinoSearch::Util::VArray:
-    file: lib/KinoSearch.pm
-  KinoSearch::Util::ViewByteBuf:
-    file: lib/KinoSearch.pm
-  KinoSearch::Util::ViewCharBuf:
-    file: lib/KinoSearch.pm
-  KinoSearch::Util::ZombieCharBuf:
-    file: lib/KinoSearch.pm
 generated_by: Module::Build version 0.32
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html
@@ -118,8 +122,7 @@ no_index:
     - ApacheLicense2.0.txt
     - Build.PL
     - Changes
-    - MANIFEST			copy
-    - META.yml
+    - MANIFEST			This list of files
     - Makefile.PL
     - boilerplater/lib/Boilerplater.pm
     - boilerplater/lib/Boilerplater/Binding/Core/Class.pm
@@ -243,6 +246,7 @@ no_index:
     - core/KinoSearch/Doc.c
     - core/KinoSearch/Doc/HitDoc.bp
     - core/KinoSearch/Doc/HitDoc.c
+    - core/KinoSearch/Docs/FileLocking.bp
     - core/KinoSearch/FieldType.bp
     - core/KinoSearch/FieldType.c
     - core/KinoSearch/FieldType/BlobType.bp
@@ -259,6 +263,8 @@ no_index:
     - core/KinoSearch/Highlight/HeatMap.c
     - core/KinoSearch/Highlight/Highlighter.bp
     - core/KinoSearch/Highlight/Highlighter.c
+    - core/KinoSearch/Index/BackgroundMerger.bp
+    - core/KinoSearch/Index/BackgroundMerger.c
     - core/KinoSearch/Index/BitVecDelDocs.bp
     - core/KinoSearch/Index/BitVecDelDocs.c
     - core/KinoSearch/Index/DataReader.bp
@@ -289,8 +295,6 @@ no_index:
     - core/KinoSearch/Index/Inverter.c
     - core/KinoSearch/Index/LexIndex.bp
     - core/KinoSearch/Index/LexIndex.c
-    - core/KinoSearch/Index/LexStepper.bp
-    - core/KinoSearch/Index/LexStepper.c
     - core/KinoSearch/Index/Lexicon.bp
     - core/KinoSearch/Index/Lexicon.c
     - core/KinoSearch/Index/LexiconReader.bp
@@ -339,14 +343,30 @@ no_index:
     - core/KinoSearch/Index/SortWriter.c
     - core/KinoSearch/Index/TermInfo.bp
     - core/KinoSearch/Index/TermInfo.c
+    - core/KinoSearch/Index/TermStepper.bp
+    - core/KinoSearch/Index/TermStepper.c
     - core/KinoSearch/Index/TermVector.bp
     - core/KinoSearch/Index/TermVector.c
     - core/KinoSearch/Indexer.bp
     - core/KinoSearch/Indexer.c
     - core/KinoSearch/Obj.bp
     - core/KinoSearch/Obj.c
+    - core/KinoSearch/Obj/BitVector.bp
+    - core/KinoSearch/Obj/BitVector.c
+    - core/KinoSearch/Obj/ByteBuf.bp
+    - core/KinoSearch/Obj/ByteBuf.c
+    - core/KinoSearch/Obj/CharBuf.bp
+    - core/KinoSearch/Obj/CharBuf.c
+    - core/KinoSearch/Obj/Err.bp
+    - core/KinoSearch/Obj/Err.c
+    - core/KinoSearch/Obj/Hash.bp
+    - core/KinoSearch/Obj/Hash.c
+    - core/KinoSearch/Obj/Num.bp
+    - core/KinoSearch/Obj/Num.c
     - core/KinoSearch/Obj/Undefined.bp
     - core/KinoSearch/Obj/Undefined.c
+    - core/KinoSearch/Obj/VArray.bp
+    - core/KinoSearch/Obj/VArray.c
     - core/KinoSearch/Obj/VTable.bp
     - core/KinoSearch/Obj/VTable.c
     - core/KinoSearch/Posting.bp
@@ -499,6 +519,18 @@ no_index:
     - core/KinoSearch/Test/Index/TestPostingsWriter.c
     - core/KinoSearch/Test/Index/TestSegWriter.bp
     - core/KinoSearch/Test/Index/TestSegWriter.c
+    - core/KinoSearch/Test/Obj/TestBitVector.bp
+    - core/KinoSearch/Test/Obj/TestBitVector.c
+    - core/KinoSearch/Test/Obj/TestByteBuf.bp
+    - core/KinoSearch/Test/Obj/TestByteBuf.c
+    - core/KinoSearch/Test/Obj/TestCharBuf.bp
+    - core/KinoSearch/Test/Obj/TestCharBuf.c
+    - core/KinoSearch/Test/Obj/TestHash.bp
+    - core/KinoSearch/Test/Obj/TestHash.c
+    - core/KinoSearch/Test/Obj/TestNum.bp
+    - core/KinoSearch/Test/Obj/TestNum.c
+    - core/KinoSearch/Test/Obj/TestVArray.bp
+    - core/KinoSearch/Test/Obj/TestVArray.c
     - core/KinoSearch/Test/Search/TestLeafQuery.bp
     - core/KinoSearch/Test/Search/TestLeafQuery.c
     - core/KinoSearch/Test/Search/TestMatchAllQuery.bp
@@ -539,28 +571,12 @@ no_index:
     - core/KinoSearch/Test/Util/BBSortEx.c
     - core/KinoSearch/Test/Util/BBSortExRun.bp
     - core/KinoSearch/Test/Util/BBSortExRun.c
-    - core/KinoSearch/Test/Util/TestBitVector.bp
-    - core/KinoSearch/Test/Util/TestBitVector.c
-    - core/KinoSearch/Test/Util/TestCharBuf.bp
-    - core/KinoSearch/Test/Util/TestCharBuf.c
-    - core/KinoSearch/Test/Util/TestHash.bp
-    - core/KinoSearch/Test/Util/TestHash.c
     - core/KinoSearch/Test/Util/TestIntArrays.bp
     - core/KinoSearch/Test/Util/TestIntArrays.c
     - core/KinoSearch/Test/Util/TestMemoryPool.bp
     - core/KinoSearch/Test/Util/TestMemoryPool.c
-    - core/KinoSearch/Test/Util/TestNum.bp
-    - core/KinoSearch/Test/Util/TestNum.c
     - core/KinoSearch/Test/Util/TestPriorityQueue.bp
     - core/KinoSearch/Test/Util/TestPriorityQueue.c
-    - core/KinoSearch/Test/Util/TestVArray.bp
-    - core/KinoSearch/Test/Util/TestVArray.c
-    - core/KinoSearch/Util/BitVector.bp
-    - core/KinoSearch/Util/BitVector.c
-    - core/KinoSearch/Util/ByteBuf.bp
-    - core/KinoSearch/Util/ByteBuf.c
-    - core/KinoSearch/Util/CharBuf.bp
-    - core/KinoSearch/Util/CharBuf.c
     - core/KinoSearch/Util/Compat/DirManip.bp
     - core/KinoSearch/Util/Compat/DirManip.c
     - core/KinoSearch/Util/Compat/ProcessID.c
@@ -569,12 +585,8 @@ no_index:
     - core/KinoSearch/Util/Compat/Sleep.h
     - core/KinoSearch/Util/Debug.c
     - core/KinoSearch/Util/Debug.h
-    - core/KinoSearch/Util/Err.bp
-    - core/KinoSearch/Util/Err.c
     - core/KinoSearch/Util/Freezer.c
     - core/KinoSearch/Util/Freezer.h
-    - core/KinoSearch/Util/Hash.bp
-    - core/KinoSearch/Util/Hash.c
     - core/KinoSearch/Util/I32Array.bp
     - core/KinoSearch/Util/I32Array.c
     - core/KinoSearch/Util/IndexFileNames.bp
@@ -588,8 +600,6 @@ no_index:
     - core/KinoSearch/Util/MemManager.h
     - core/KinoSearch/Util/MemoryPool.bp
     - core/KinoSearch/Util/MemoryPool.c
-    - core/KinoSearch/Util/Num.bp
-    - core/KinoSearch/Util/Num.c
     - core/KinoSearch/Util/PriorityQueue.bp
     - core/KinoSearch/Util/PriorityQueue.c
     - core/KinoSearch/Util/SortExRun.bp
@@ -603,8 +613,6 @@ no_index:
     - core/KinoSearch/Util/StringHelper.c
     - core/KinoSearch/Util/StringHelper.h
     - core/KinoSearch/Util/ToolSet.h
-    - core/KinoSearch/Util/VArray.bp
-    - core/KinoSearch/Util/VArray.c
     - devel/benchmarks/README.txt
     - devel/benchmarks/extract_reuters.plx
     - devel/benchmarks/indexers/BenchmarkingIndexer.pm
@@ -612,6 +620,7 @@ no_index:
     - devel/benchmarks/indexers/kinosearch_indexer.plx
     - devel/benchmarks/indexers/plucene_indexer.plx
     - devel/bin/dump_index
+    - devel/bin/find_random_failure.pl
     - devel/bin/hexdebug
     - devel/bin/kinotidy
     - devel/bin/predit
@@ -635,6 +644,7 @@ no_index:
     - lib/KinoSearch/Architecture.pm
     - lib/KinoSearch/Doc.pm
     - lib/KinoSearch/Doc/HitDoc.pm
+    - lib/KinoSearch/Docs/FileLocking.pm
     - lib/KinoSearch/FieldType.pm
     - lib/KinoSearch/FieldType/BlobType.pm
     - lib/KinoSearch/FieldType/Float32Type.pm
@@ -645,6 +655,7 @@ no_index:
     - lib/KinoSearch/FieldType/StringType.pm
     - lib/KinoSearch/Highlight/HeatMap.pm
     - lib/KinoSearch/Highlight/Highlighter.pm
+    - lib/KinoSearch/Index/BackgroundMerger.pm
     - lib/KinoSearch/Index/DataReader.pm
     - lib/KinoSearch/Index/DataWriter.pm
     - lib/KinoSearch/Index/DeletionsReader.pm
@@ -658,7 +669,6 @@ no_index:
     - lib/KinoSearch/Index/IndexManager.pm
     - lib/KinoSearch/Index/IndexReader.pm
     - lib/KinoSearch/Index/Inverter.pm
-    - lib/KinoSearch/Index/LexStepper.pm
     - lib/KinoSearch/Index/Lexicon.pm
     - lib/KinoSearch/Index/LexiconReader.pm
     - lib/KinoSearch/Index/LexiconWriter.pm
@@ -684,6 +694,13 @@ no_index:
     - lib/KinoSearch/InvIndex.pm
     - lib/KinoSearch/InvIndexer.pm
     - lib/KinoSearch/Obj.pm
+    - lib/KinoSearch/Obj/BitVector.pm
+    - lib/KinoSearch/Obj/ByteBuf.pm
+    - lib/KinoSearch/Obj/CharBuf.pm
+    - lib/KinoSearch/Obj/Err.pm
+    - lib/KinoSearch/Obj/Hash.pm
+    - lib/KinoSearch/Obj/Num.pm
+    - lib/KinoSearch/Obj/VArray.pm
     - lib/KinoSearch/Obj/VTable.pm
     - lib/KinoSearch/Posting.pm
     - lib/KinoSearch/Posting/MatchPosting.pm
@@ -740,34 +757,29 @@ no_index:
     - lib/KinoSearch/Store/Folder.pm
     - lib/KinoSearch/Store/InStream.pm
     - lib/KinoSearch/Store/Lock.pm
+    - lib/KinoSearch/Store/LockErr.pm
     - lib/KinoSearch/Store/LockFactory.pm
     - lib/KinoSearch/Store/OutStream.pm
     - lib/KinoSearch/Store/RAMFileDes.pm
     - lib/KinoSearch/Store/RAMFolder.pm
-    - lib/KinoSearch/Store/SharedLock.pm
     - lib/KinoSearch/Test.pm
+    - lib/KinoSearch/Test/Obj/TestCharBuf.pm
     - lib/KinoSearch/Test/TestUtils.pm
     - lib/KinoSearch/Test/USConSchema.pm
     - lib/KinoSearch/Test/Util/BBSortEx.pm
-    - lib/KinoSearch/Test/Util/TestCharBuf.pm
     - lib/KinoSearch/Util/BitVector.pm
-    - lib/KinoSearch/Util/ByteBuf.pm
-    - lib/KinoSearch/Util/CharBuf.pm
     - lib/KinoSearch/Util/Compat/DirManip.pm
     - lib/KinoSearch/Util/Debug.pm
-    - lib/KinoSearch/Util/Hash.pm
     - lib/KinoSearch/Util/Host.pm
     - lib/KinoSearch/Util/I32Array.pm
     - lib/KinoSearch/Util/IndexFileNames.pm
     - lib/KinoSearch/Util/Json.pm
-    - lib/KinoSearch/Util/Num.pm
     - lib/KinoSearch/Util/PriorityQueue.pm
     - lib/KinoSearch/Util/SortExRun.pm
     - lib/KinoSearch/Util/SortExternal.pm
     - lib/KinoSearch/Util/Stepper.pm
     - lib/KinoSearch/Util/StringHelper.pm
     - lib/KinoSearch/Util/ToolSet.pm
-    - lib/KinoSearch/Util/VArray.pm
     - ppport.h
     - sample/FlatQueryParser.pm
     - sample/PrefixQuery.pm
@@ -849,7 +861,7 @@ no_index:
     - t/106-locking.t
     - t/109-read_locking.t
     - t/110-shared_lock.t
-    - t/111-lock_factory.t
+    - t/111-index_manager.t
     - t/112-cf_writer.t
     - t/113-cf_reader.t
     - t/150-polyanalyzer.t
@@ -880,6 +892,7 @@ no_index:
     - t/220-zlib_doc.t
     - t/221-sort_writer.t
     - t/224-lex_reader.t
+    - t/233-background_merger.t
     - t/302-many_fields.t
     - t/303-highlighter.t
     - t/304-verify_utf8.t
@@ -938,6 +951,7 @@ no_index:
     - t/core/016-varray.t
     - t/core/017-hash.t
     - t/core/019-obj.t
+    - t/core/022-bytebuf.t
     - t/core/024-memory_pool.t
     - t/core/029-charbuf.t
     - t/core/030-int_arrays.t
@@ -980,9 +994,9 @@ no_index:
     - xs/KinoSearch/Index/PolyReader.c
     - xs/KinoSearch/Index/SegReader.c
     - xs/KinoSearch/Obj.c
+    - xs/KinoSearch/Obj/Err.c
     - xs/KinoSearch/Obj/VTable.c
     - xs/KinoSearch/Util/Compat/DirManip.c
-    - xs/KinoSearch/Util/Err.c
     - xs/KinoSearch/Util/Host.c
     - xs/KinoSearch/Util/Host.h
     - xs/KinoSearch/Util/Json.c

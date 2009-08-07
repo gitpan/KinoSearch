@@ -7,7 +7,7 @@
 HeatMap*
 HeatMap_new(VArray *spans, u32_t window)
 {
-    HeatMap *self = (HeatMap*)VTable_Make_Obj(&HEATMAP);
+    HeatMap *self = (HeatMap*)VTable_Make_Obj(HEATMAP);
     return HeatMap_init(self, spans, window);
 }
 
@@ -141,7 +141,7 @@ HeatMap_flatten_spans(HeatMap *self, VArray *spans)
 float
 HeatMap_calc_proximity_boost(HeatMap *self, Span *span1, Span *span2)
 {
-    int comparison = Span_Compare_To(span1, (Obj*)span2);
+    i32_t comparison = Span_Compare_To(span1, (Obj*)span2);
     Span *lower = comparison <= 0 ? span1 : span2;
     Span *upper = comparison >= 0 ? span1 : span2;
     i32_t lower_end_offset = lower->offset + lower->length;

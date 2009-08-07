@@ -41,7 +41,7 @@ PPCODE:
         if (Kino_BB_Get_Size(serialized_bb) == 0) { /* Thwart Storable bug */
             KINO_DECREF(target);
             KINO_DECREF(serialized_bb);
-            THROW("Calling serialize produced an empty string");
+            THROW(KINO_ERR, "Calling serialize produced an empty string");
         }
         else {
             KINO_DECREF(target);
@@ -83,7 +83,7 @@ PPCODE:
 
     /* Catch bad deserialize() override. */
     if (deserialized != self) 
-        THROW("Error when deserializing obj of class %o", &class_name);
+        THROW(KINO_ERR, "Error when deserializing obj of class %o", &class_name);
 }
 
 
@@ -197,6 +197,7 @@ END_DESCRIPTION
                 Dump
                 _load|Load
                 Clone
+                Mimic
                 Equals
                 Hash_Code
                 Serialize

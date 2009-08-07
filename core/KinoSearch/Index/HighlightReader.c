@@ -10,7 +10,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/ByteBuf.h"
 #include "KinoSearch/Util/I32Array.h"
 
 HighlightReader*
@@ -35,7 +34,7 @@ PolyHighlightReader*
 PolyHLReader_new(VArray *readers, I32Array *offsets)
 {
     PolyHighlightReader *self 
-        = (PolyHighlightReader*)VTable_Make_Obj(&POLYHIGHLIGHTREADER);
+        = (PolyHighlightReader*)VTable_Make_Obj(POLYHIGHLIGHTREADER);
     return PolyHLReader_init(self, readers, offsets);
 }
 
@@ -85,7 +84,7 @@ PolyHLReader_fetch(PolyHighlightReader *self, i32_t doc_id)
     i32_t offset   = I32Arr_Get(self->offsets, seg_tick);
     HighlightReader *sub_reader 
         = (HighlightReader*)VA_Fetch(self->readers, seg_tick);
-    if (!sub_reader) { THROW("Invalid doc_id: %i32", doc_id); }
+    if (!sub_reader) { THROW(ERR, "Invalid doc_id: %i32", doc_id); }
     return HLReader_Fetch(sub_reader, doc_id - offset);
 }
 
@@ -94,7 +93,7 @@ DefHLReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
                 VArray *segments, i32_t seg_tick)
 {
     DefaultHighlightReader *self = (DefaultHighlightReader*)
-        VTable_Make_Obj(&DEFAULTHIGHLIGHTREADER);
+        VTable_Make_Obj(DEFAULTHIGHLIGHTREADER);
     return DefHLReader_init(self, schema, folder, snapshot, segments, 
         seg_tick);
 }
@@ -117,10 +116,10 @@ DefHLReader_init(DefaultHighlightReader *self, Schema *schema,
     /* Check format. */
     if (metadata) {
         Obj     *format    = Hash_Fetch_Str(metadata, "format", 6);
-        if (!format) { THROW("Missing 'format' var"); }
+        if (!format) { THROW(ERR, "Missing 'format' var"); }
         else {
             if (Obj_To_I64(format) != HLWriter_current_file_format) {
-                THROW("Unsupported highlight data format: %i64", 
+                THROW(ERR, "Unsupported highlight data format: %i64", 
                     Obj_To_I64(format));
             }
         }
@@ -141,7 +140,7 @@ DefHLReader_init(DefaultHighlightReader *self, Schema *schema,
                 DECREF(ix_file);
                 DECREF(dat_file);
                 DECREF(self);
-                Err_throw_mess(mess);
+                Err_throw_mess(ERR, mess);
             }
         }
         DECREF(ix_file);

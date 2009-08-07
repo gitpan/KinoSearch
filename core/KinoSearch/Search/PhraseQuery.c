@@ -19,7 +19,6 @@
 #include "KinoSearch/Search/TermQuery.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/BitVector.h"
 #include "KinoSearch/Util/Freezer.h"
 #include "KinoSearch/Util/I32Array.h"
 
@@ -31,7 +30,7 @@ S_do_init(PhraseQuery *self, CharBuf *field, VArray *terms, float boost);
 PhraseQuery*
 PhraseQuery_new(const CharBuf *field, VArray *terms)
 {
-    PhraseQuery *self = (PhraseQuery*)VTable_Make_Obj(&PHRASEQUERY);
+    PhraseQuery *self = (PhraseQuery*)VTable_Make_Obj(PHRASEQUERY);
     return PhraseQuery_init(self, field, terms);
 }
 
@@ -76,7 +75,7 @@ PhraseQuery_deserialize(PhraseQuery *self, InStream *instream)
     float    boost  = InStream_Read_F32(instream);
     CharBuf *field  = CB_deserialize(NULL, instream);
     VArray  *terms  = VA_deserialize(NULL, instream);
-    self = self ? self : (PhraseQuery*)VTable_Make_Obj(&PHRASEQUERY);
+    self = self ? self : (PhraseQuery*)VTable_Make_Obj(PHRASEQUERY);
     return S_do_init(self, field, terms, boost);
 }
 
@@ -145,7 +144,7 @@ PhraseQuery_get_terms(PhraseQuery *self) { return self->terms; }
 PhraseCompiler*
 PhraseCompiler_new(PhraseQuery *parent, Searchable *searchable, float boost)
 {
-    PhraseCompiler *self = (PhraseCompiler*)VTable_Make_Obj(&PHRASECOMPILER);
+    PhraseCompiler *self = (PhraseCompiler*)VTable_Make_Obj(PHRASECOMPILER);
     return PhraseCompiler_init(self, parent, searchable, boost);
 }
 
@@ -193,7 +192,7 @@ PhraseCompiler_serialize(PhraseCompiler *self, OutStream *outstream)
 PhraseCompiler*
 PhraseCompiler_deserialize(PhraseCompiler *self, InStream *instream)
 {
-    self = self ? self : (PhraseCompiler*)VTable_Make_Obj(&PHRASECOMPILER);
+    self = self ? self : (PhraseCompiler*)VTable_Make_Obj(PHRASECOMPILER);
     Compiler_deserialize((Compiler*)self, instream);
     self->idf               = InStream_Read_F32(instream);
     self->raw_weight        = InStream_Read_F32(instream);
@@ -239,7 +238,7 @@ PhraseCompiler_make_matcher(PhraseCompiler *self, SegReader *reader,
                             bool_t need_score)
 {
     PostingsReader *const post_reader = (PostingsReader*)SegReader_Fetch(
-        reader, POSTINGSREADER.name);
+        reader, POSTINGSREADER->name);
     PhraseQuery *const parent = (PhraseQuery*)self->parent;
     VArray  *const terms      = parent->terms;
     u32_t    num_terms        = VA_Get_Size(terms);
@@ -346,7 +345,8 @@ PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable,
     num_tvs = VA_Get_Size(term_vectors);
     if (num_tvs == num_terms) {
         TermVector *first_tv = (TermVector*)VA_Fetch(term_vectors, 0);
-        TermVector *last_tv  = (TermVector*)VA_Fetch(term_vectors, num_tvs - 1);
+        TermVector *last_tv  
+            = (TermVector*)VA_Fetch(term_vectors, num_tvs - 1);
         I32Array *tv_start_positions = first_tv->positions;
         I32Array *tv_end_positions   = last_tv->positions;
         I32Array *tv_start_offsets   = first_tv->start_offsets;

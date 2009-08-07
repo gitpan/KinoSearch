@@ -370,7 +370,8 @@ logical_test_and_not_nested_or(u32_t boolop)
     Query *c_query    = make_leaf_query(NULL, "c");
     Query *nested     = make_poly_query(BOOLOP_OR, b_query, c_query, NULL);
     Query *not_nested = make_not_query(nested);
-    Query *tree       = make_poly_query(BOOLOP_AND, a_query, not_nested, NULL);
+    Query *tree       = make_poly_query(BOOLOP_AND, a_query, 
+                                        not_nested, NULL);
     UNUSED_VAR(boolop);
     return TestQP_new("a AND NOT (b OR c)", tree, NULL, 1);
 }
@@ -608,7 +609,7 @@ S_create_index()
     Schema     *schema  = (Schema*)TestSchema_new();
     RAMFolder  *folder  = RAMFolder_new(NULL);
     VArray     *doc_set = TestUtils_doc_set();
-    Indexer    *indexer = Indexer_new(schema, (Obj*)folder, NULL, NULL, 0);
+    Indexer    *indexer = Indexer_new(schema, (Obj*)folder, NULL, 0);
     u32_t i, max;
 
     for (i = 0, max = VA_Get_Size(doc_set); i < max; i++) {

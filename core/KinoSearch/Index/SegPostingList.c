@@ -11,11 +11,13 @@
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/SegLexicon.h"
 #include "KinoSearch/Index/LexiconReader.h"
+#include "KinoSearch/Posting/RawPosting.h"
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/Folder.h"
+#include "KinoSearch/Util/MemoryPool.h"
 
 /* Low level seek call. 
  */
@@ -25,7 +27,7 @@ S_seek_tinfo(SegPostingList *self, TermInfo *tinfo);
 SegPostingList*
 SegPList_new(PostingsReader *postings_reader, const CharBuf *field)
 {
-    SegPostingList *self = (SegPostingList*)VTable_Make_Obj(&SEGPOSTINGLIST);
+    SegPostingList *self = (SegPostingList*)VTable_Make_Obj(SEGPOSTINGLIST);
     return SegPList_init(self, postings_reader, field);
 }
 
@@ -39,7 +41,8 @@ SegPList_init(SegPostingList *self, PostingsReader *postings_reader,
     Architecture *const arch     = Schema_Get_Architecture(schema);
     CharBuf      *const seg_name = Seg_Get_Name(segment);
     i32_t         field_num      = Seg_Field_Num(segment, field);
-    CharBuf      *post_file      = CB_newf("%o/postings-%i32.dat", seg_name, field_num);
+    CharBuf      *post_file      = CB_newf("%o/postings-%i32.dat", 
+                                           seg_name, field_num);
     CharBuf      *skip_file      = CB_newf("%o/postings.skip", seg_name);
 
     /* Init. */
@@ -67,12 +70,12 @@ SegPList_init(SegPostingList *self, PostingsReader *postings_reader,
         self->post_stream = Folder_Open_In(folder, post_file);
         self->skip_stream = Folder_Open_In(folder, skip_file);
         if (!self->post_stream || !self->skip_stream) { 
-            CharBuf *mess = MAKE_MESS("Can't open either %o or %o", post_file, 
-                skip_file); 
+            CharBuf *mess = MAKE_MESS("Can't open either %o or %o", 
+                post_file, skip_file); 
             DECREF(post_file);
             DECREF(skip_file);
             DECREF(self);
-            Err_throw_mess(mess);
+            Err_throw_mess(ERR, mess);
         }
     }
     else {
@@ -137,7 +140,8 @@ SegPList_next(SegPostingList *self)
 
     /* Bail if we're out of docs. */
     if (self->count >= self->doc_freq) {
-        Post_Reset(posting, self->doc_base);
+        Post_Reset(posting);
+        Post_Set_Doc_ID(posting, self->doc_base);
         return 0;
     }
     self->count++;
@@ -216,6 +220,7 @@ SegPList_seek(SegPostingList *self, Obj *target)
     TermInfo      *tinfo      = LexReader_Fetch_Term_Info(lex_reader, 
         self->field, target);
     S_seek_tinfo(self, tinfo);
+    DECREF(tinfo);
 }
 
 void
@@ -254,12 +259,13 @@ S_seek_tinfo(SegPostingList *self, TermInfo *tinfo)
         InStream_Seek(self->post_stream, tinfo->post_filepos);
 
         /* Prepare posting. */
-        Post_Reset(self->posting, self->doc_base);
+        Post_Reset(self->posting);
+        Post_Set_Doc_ID(self->posting, self->doc_base);
 
         /* Prepare to skip. */
         self->skip_count    = 0;
         self->num_skips     = tinfo->doc_freq / self->skip_interval;
-        SkipStepper_Reset(self->skip_stepper, self->doc_base,
+        SkipStepper_Set_ID_And_Filepos(self->skip_stepper, self->doc_base,
             (u64_t)tinfo->post_filepos);
         InStream_Seek(self->skip_stream, tinfo->skip_filepos);
     }
@@ -271,6 +277,14 @@ SegPList_make_matcher(SegPostingList *self, Similarity *sim,
 {
     return Post_Make_Matcher(self->posting, sim, (PostingList*)self, compiler,
         need_score);
+}
+
+RawPosting*
+SegPList_read_raw(SegPostingList *self, i32_t last_doc_id, CharBuf *term_text,
+                  MemoryPool *mem_pool)
+{
+    return Post_Read_Raw(self->posting, self->post_stream, 
+        last_doc_id, term_text, mem_pool);
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

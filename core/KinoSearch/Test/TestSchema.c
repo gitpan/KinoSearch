@@ -11,7 +11,7 @@
 TestSchema*
 TestSchema_new()
 {
-    TestSchema *self = (TestSchema*)VTable_Make_Obj(&TESTSCHEMA);
+    TestSchema *self = (TestSchema*)VTable_Make_Obj(TESTSCHEMA);
     return TestSchema_init(self);
 }
 

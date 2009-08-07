@@ -62,7 +62,7 @@ NumType_load(NumericType *self, Obj *dump)
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
     VTable *vtable = (class_name != NULL && OBJ_IS_A(class_name, CHARBUF)) 
                    ? VTable_singleton(class_name, NULL)
-                   : (VTable*)&FLOAT64TYPE;
+                   : FLOAT64TYPE;
     NumericType *loaded = (NumericType*)VTable_Make_Obj(vtable);
     Obj *boost_dump   = Hash_Fetch_Str(source, "boost", 5);
     Obj *indexed_dump = Hash_Fetch_Str(source, "indexed", 7);
@@ -84,7 +84,7 @@ NumType_load(NumericType *self, Obj *dump)
 Float64Type*
 Float64Type_new()
 {
-    Float64Type *self = (Float64Type*)VTable_Make_Obj(&FLOAT64TYPE);
+    Float64Type *self = (Float64Type*)VTable_Make_Obj(FLOAT64TYPE);
     return Float64Type_init(self);
 }
 
@@ -129,7 +129,7 @@ Float64Type_equals(Float64Type *self, Obj *other)
     if (self == (Float64Type*)other) { return true; }
     else {
         Float64Type_equals_t super_equals = (Float64Type_equals_t)
-            SUPER_METHOD(&FLOAT64TYPE, Float64Type, Equals);
+            SUPER_METHOD(FLOAT64TYPE, Float64Type, Equals);
         return super_equals(self, other);
     }
 }
@@ -139,7 +139,7 @@ Float64Type_equals(Float64Type *self, Obj *other)
 Float32Type*
 Float32Type_new()
 {
-    Float32Type *self = (Float32Type*)VTable_Make_Obj(&FLOAT32TYPE);
+    Float32Type *self = (Float32Type*)VTable_Make_Obj(FLOAT32TYPE);
     return Float32Type_init(self);
 }
 
@@ -184,7 +184,7 @@ Float32Type_equals(Float32Type *self, Obj *other)
     if (self == (Float32Type*)other) { return true; }
     else {
         Float32Type_equals_t super_equals = (Float32Type_equals_t)
-            SUPER_METHOD(&FLOAT32TYPE, Float32Type, Equals);
+            SUPER_METHOD(FLOAT32TYPE, Float32Type, Equals);
         return super_equals(self, other);
     }
 }
@@ -194,7 +194,7 @@ Float32Type_equals(Float32Type *self, Obj *other)
 Int32Type*
 Int32Type_new()
 {
-    Int32Type *self = (Int32Type*)VTable_Make_Obj(&INT32TYPE);
+    Int32Type *self = (Int32Type*)VTable_Make_Obj(INT32TYPE);
     return Int32Type_init(self);
 }
 
@@ -239,7 +239,7 @@ Int32Type_equals(Int32Type *self, Obj *other)
     if (self == (Int32Type*)other) { return true; }
     else {
         Int32Type_equals_t super_equals = (Int32Type_equals_t)
-            SUPER_METHOD(&INT32TYPE, Int32Type, Equals);
+            SUPER_METHOD(INT32TYPE, Int32Type, Equals);
         return super_equals(self, other);
     }
 }
@@ -249,7 +249,7 @@ Int32Type_equals(Int32Type *self, Obj *other)
 Int64Type*
 Int64Type_new()
 {
-    Int64Type *self = (Int64Type*)VTable_Make_Obj(&INT64TYPE);
+    Int64Type *self = (Int64Type*)VTable_Make_Obj(INT64TYPE);
     return Int64Type_init(self);
 }
 
@@ -294,7 +294,7 @@ Int64Type_equals(Int64Type *self, Obj *other)
     if (self == (Int64Type*)other) { return true; }
     else {
         Int64Type_equals_t super_equals = (Int64Type_equals_t)
-            SUPER_METHOD(&INT64TYPE, Int64Type, Equals);
+            SUPER_METHOD(INT64TYPE, Int64Type, Equals);
         return super_equals(self, other);
     }
 }

@@ -61,7 +61,7 @@ S_put(PriorityQueue *self, Obj *element)
 {
     /* Increment size. */
     if (self->size >= self->max_size) {
-        THROW("PriorityQueue exceeded max_size: %u32 %u32", self->size, 
+        THROW(ERR, "PriorityQueue exceeded max_size: %u32 %u32", self->size, 
             self->max_size);
     }
     self->size++;

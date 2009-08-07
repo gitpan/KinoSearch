@@ -11,7 +11,7 @@
 Similarity*
 Sim_new()
 {
-    Similarity *self = (Similarity*)VTable_Make_Obj(&SIMILARITY);
+    Similarity *self = (Similarity*)VTable_Make_Obj(SIMILARITY);
     return Sim_init(self);
 }
 
@@ -72,11 +72,11 @@ Sim_deserialize(Similarity *self, InStream *instream)
 {
     CharBuf *class_name = CB_deserialize(NULL, instream);
     if (!self) {
-        VTable *vtable = VTable_singleton(class_name, (VTable*)&SIMILARITY);
+        VTable *vtable = VTable_singleton(class_name, SIMILARITY);
         self = (Similarity*)VTable_Make_Obj(vtable);
     }
     else if (!CB_Equals(class_name, (Obj*)Obj_Get_Class_Name(self))) {
-        THROW("Class name mismatch: '%o' '%o'", Obj_Get_Class_Name(self),
+        THROW(ERR, "Class name mismatch: '%o' '%o'", Obj_Get_Class_Name(self),
             class_name);
     }
     DECREF(class_name);

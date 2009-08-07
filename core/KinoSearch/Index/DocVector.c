@@ -4,7 +4,6 @@
 #include "KinoSearch/Index/TermVector.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/ByteBuf.h"
 #include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/MathUtils.h"
 
@@ -23,7 +22,7 @@ S_extract_tv_from_tv_buf(const CharBuf *field, const CharBuf *term_text,
 DocVector*
 DocVec_new()
 {
-    DocVector *self = (DocVector*)VTable_Make_Obj(&DOCVECTOR);
+    DocVector *self = (DocVector*)VTable_Make_Obj(DOCVECTOR);
     return DocVec_init(self);
 }
 
@@ -45,7 +44,7 @@ DocVec_serialize(DocVector *self, OutStream *outstream)
 DocVector*
 DocVec_deserialize(DocVector *self, InStream *instream)
 {
-    self = self ? self : (DocVector*)VTable_Make_Obj(&DOCVECTOR);
+    self = self ? self : (DocVector*)VTable_Make_Obj(DOCVECTOR);
     self->field_bufs    = Hash_deserialize(NULL, instream);
     self->field_vectors = Hash_deserialize(NULL, instream);
     return self;
@@ -138,7 +137,8 @@ S_extract_tv_cache(ByteBuf *field_buf)
         len = tv_string - bookmark_ptr;
 
         /* Store the $text => $posdata pair in the output hash. */
-        Hash_Store(tv_cache, (Obj*)text, (Obj*)BB_new_str(bookmark_ptr, len));
+        Hash_Store(tv_cache, (Obj*)text,
+            (Obj*)BB_new_bytes(bookmark_ptr, len));
     }
     DECREF(text);
 
@@ -173,7 +173,7 @@ S_extract_tv_from_tv_buf(const CharBuf *field, const CharBuf *term_text,
     }
 
     if (posdata != posdata_end) {
-        THROW("Bad encoding of posdata");
+        THROW(ERR, "Bad encoding of posdata");
     }
     else {
         I32Array *posits_map = I32Arr_new_steal(positions, num_pos);

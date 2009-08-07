@@ -42,13 +42,15 @@ class KinoSearch::Search::NOTQuery extends KinoSearch::Search::PolyQuery
     Equals(NOTQuery *self, Obj *other);
 }
 
-class KinoSearch::Search::NOTCompiler extends KinoSearch::Search::PolyCompiler {
+class KinoSearch::Search::NOTCompiler 
+    extends KinoSearch::Search::PolyCompiler {
 
     static incremented NOTCompiler*
     new(NOTQuery *parent, Searchable *searchable, float boost);
 
     static NOTCompiler*
-    init(NOTCompiler *self, NOTQuery *parent, Searchable *searchable, float boost);
+    init(NOTCompiler *self, NOTQuery *parent, Searchable *searchable, 
+         float boost);
 
     public incremented Matcher*
     Make_Matcher(NOTCompiler *self, SegReader *reader, bool_t need_score);

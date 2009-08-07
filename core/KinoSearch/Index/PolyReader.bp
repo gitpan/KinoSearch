@@ -17,32 +17,31 @@ class KinoSearch::Index::PolyReader extends KinoSearch::Index::IndexReader {
     I32Array *offsets;
 
     public static incremented PolyReader*
-    open(Obj *index, Snapshot *snapshot = NULL, 
-         LockFactory *lock_factory = NULL);
+    open(Obj *index, Snapshot *snapshot = NULL, IndexManager *manager = NULL);
 
     /**
      * @param index Either a string filepath or a L<KinoSearch::Folder>.  
      * @param snapshot A Snapshot.  If not supplied, the most recent snapshot
      * file will be used.
-     * @param lock_factory A L<KinoSearch::Store::LockFactory>.  Read-locking
-     * is off by default; supplying this argument turns it on.
+     * @param manager An L<IndexManager|KinoSearch::Index::IndexManager>.
+     * Read-locking is off by default; supplying this argument turns it on.
      */ 
     public static PolyReader*
     do_open(PolyReader *self, Obj *index, Snapshot *snapshot = NULL, 
-            LockFactory *lock_factory = NULL); 
+            IndexManager *manager = NULL);
 
     public static incremented PolyReader*
     new(Schema *schema = NULL, Folder *folder, Snapshot *snapshot = NULL, 
-        LockFactory *lock_factory = NULL, VArray *sub_readers = NULL);
+        IndexManager *manager = NULL, VArray *sub_readers = NULL);
 
     public static PolyReader*
     init(PolyReader *self, Schema *schema = NULL, Folder *folder, 
-         Snapshot *snapshot = NULL, LockFactory *lock_factory = NULL, 
+         Snapshot *snapshot = NULL, IndexManager *manager = NULL, 
          VArray *sub_readers = NULL);
 
     /** Attempt to open a SegReader for each Segment that the Snapshot knows
-     * about.  If an exception occurs, catch it and return its error message.  If
-     * the opening succeeds, return a VArray full of SegReaders.
+     * about.  If an exception occurs, catch it and return its error message.
+     * If the opening succeeds, return a VArray full of SegReaders.
      */
     incremented Obj*
     Try_Open_SegReaders(PolyReader *self, VArray *segments);

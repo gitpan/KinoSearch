@@ -6,7 +6,7 @@ Token*
 Token_new(const char* text, size_t len, u32_t start_offset, u32_t end_offset, 
           float boost, i32_t pos_inc) 
 {
-    Token *self = (Token*)VTable_Make_Obj(&TOKEN);
+    Token *self = (Token*)VTable_Make_Obj(TOKEN);
     return Token_init(self, text, len, start_offset, end_offset, boost,
         pos_inc);
 }

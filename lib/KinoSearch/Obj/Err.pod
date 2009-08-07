@@ -1,0 +1,58 @@
+
+# Auto-generated file -- DO NOT EDIT!!!!!
+
+=head1 NAME
+
+KinoSearch::Obj::Err - Exception.
+
+=head1 SYNOPSIS
+
+    use Scalar::Util qw( blessed );
+    my $bg_merger;
+    while (1) {
+        $bg_merger = eval {
+            KinoSearch::Index::BackgroundMerger->new( index => $index );
+        };
+        last if $bg_merger;
+        if ( blessed($@) and $@->isa("KinoSearch::Store::LockErr") ) {
+            warn "Retrying...\n";
+        }
+        else {
+            # Re-throw.
+            die "Failed to open BackgroundMerger: $@";
+        }
+    }
+
+
+
+=head1 DESCRIPTION
+
+Most of the time when KinoSearch encounters an error, it tries to raise a
+KinoSearch::Obj::Err exception with an error message and context
+information.
+
+At present, it is only safe to catch exceptions which are specifically
+documented as catchable; most times when an Err is raised, KinoSearch leaks
+memory.
+
+
+
+
+
+
+
+=head1 INHERITANCE
+
+KinoSearch::Obj::Err isa L<KinoSearch::Obj>.
+
+
+=head1 COPYRIGHT
+
+Copyright 2005-2009 Marvin Humphrey
+
+=head1 LICENSE, DISCLAIMER, BUGS, etc.
+
+See L<KinoSearch> version 0.30.
+
+=cut
+

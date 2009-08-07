@@ -12,7 +12,7 @@ CompoundFileReader*
 CFReader_new(FSFolder *folder, const CharBuf *seg_name)
 {
     CompoundFileReader *self 
-        = (CompoundFileReader*)VTable_Make_Obj(&COMPOUNDFILEREADER);
+        = (CompoundFileReader*)VTable_Make_Obj(COMPOUNDFILEREADER);
     return CFReader_init(self, folder, seg_name);
 }
 
@@ -39,9 +39,9 @@ CFReader_init(CompoundFileReader *self, FSFolder *folder,
     ASSERT_IS_A(metadata, HASH);
     {
         Obj *format = Hash_Fetch_Str(metadata, "format", 6);
-        if (!format) { THROW("Missing 'format'"); }
+        if (!format) { THROW(ERR, "Missing 'format'"); }
         else if (Obj_To_I64(format) > CFWriter_current_file_format) {
-            THROW("Unsupported compound file format: %i64", 
+            THROW(ERR, "Unsupported compound file format: %i64", 
                 Obj_To_I64(format));
         }
     }
@@ -79,7 +79,7 @@ CFReader_delete_virtual(CompoundFileReader *self, const CharBuf *filepath)
 {
     Hash *entry = (Hash*)Hash_Fetch(self->entries, (Obj*)filepath);
     if (entry == NULL) { 
-        THROW("File '%o' doesn't exist", filepath); 
+        THROW(ERR, "File '%o' doesn't exist", filepath); 
     }
     else { 
         Hash_Delete(self->entries, (Obj*)filepath); 
@@ -94,7 +94,7 @@ S_retrieve_offset_and_len(CompoundFileReader *self, const CharBuf *filepath,
 {
     Hash *entry = (Hash*)Hash_Fetch(self->entries, (Obj*)filepath);
     if (entry == NULL)
-        THROW("Couldn't find entry for '%o'", filepath);
+        THROW(ERR, "Couldn't find entry for '%o'", filepath);
     
     *offset = Obj_To_I64(Hash_Fetch_Str(entry, "offset", 6));
     *len    = Obj_To_I64(Hash_Fetch_Str(entry, "length", 6));

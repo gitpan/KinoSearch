@@ -24,7 +24,7 @@
 RichPosting*
 RichPost_new(Similarity *sim)
 {
-    RichPosting *self = (RichPosting*)VTable_Make_Obj(&RICHPOSTING);
+    RichPosting *self = (RichPosting*)VTable_Make_Obj(RICHPOSTING);
     return RichPost_init(self, sim);
 }
 
@@ -195,7 +195,7 @@ RichPost_make_matcher(RichPosting *self, Similarity *sim,
                       bool_t need_score)
 {
     RichPostingScorer* matcher
-        = (RichPostingScorer*)VTable_Make_Obj(&RICHPOSTINGSCORER);
+        = (RichPostingScorer*)VTable_Make_Obj(RICHPOSTINGSCORER);
     UNUSED_VAR(self);
     UNUSED_VAR(need_score);
     return RichPostScorer_init(matcher, sim, plist, compiler);

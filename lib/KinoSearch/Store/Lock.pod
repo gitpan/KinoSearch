@@ -3,15 +3,15 @@
 
 =head1 NAME
 
-KinoSearch::Store::Lock - Interprocess mutex lock.
+KinoSearch::Store::Lock - Abstract class representing an interprocess mutex lock.
 
 =head1 SYNOPSIS
 
     my $lock = $lock_factory->make_lock(
-        lock_name => 'commit',
-        timeout   => 5000,
+        name    => 'write',
+        timeout => 5000,
     );
-    $lock->obtain or die "can't get lock on " . $lock->get_filename;
+    $lock->obtain or die "can't get lock for " . $lock->get_name;
     do_stuff();
     $lock->release;
 
@@ -19,47 +19,50 @@ KinoSearch::Store::Lock - Interprocess mutex lock.
 
 =head1 DESCRIPTION
 
-The Lock class produces an interprocess mutex lock.  It does not rely on
-flock, but creates a lock "file".  What exactly constitutes that "file"
-depends on the Folder implementation.
+The Lock class produces an interprocess mutex lock.  The default subclass
+uses dot-lock files, but alternative implementations are possible.
 
-Each lock must have a name which is unique per resource to be locked.  The
-filename for the lockfile will be derived from it, e.g. "write" will
-produce a file "write.lock".
-
-Each lock also has an "agent id", a string which should be unique per-host;
-it is used to help clear away stale lockfiles.
+Each lock must have a name which is unique per resource to be locked.  Each
+lock also has an "hostname" which should be unique per machine; it is
+used to help clear away stale locks.
 
 =head1 CONSTRUCTORS
 
 =head2 new( I<[labeled params]> )
 
     my $lock = KinoSearch::Store::Lock->new(
-        lock_name => 'commit',           # required
-        timeout   => 5000,               # default: 0
-        folder    => $folder,            # required
-        agent_id  => $hostname,          # required
+        name     => 'commit',     # required
+        folder   => $folder,      # required
+        hostname => $hostname,    # required
+        timeout  => 5000,         # default: 0
+        interval => 1000,         # default: 100
     );
+
+Abstract constructor.
 
 =over
 
 =item *
 
-B<folder> - The KinoSearch::Store::Folder where the lock file will
-reside.
+B<folder> - A Folder.
 
 =item *
 
-B<lock_name> - String identifying the resource to be locked.
+B<name> - File-system-friendly string identifying the resource to be
+locked.
 
 =item *
 
-B<agent_id> - A per-machine identifier, usually the host name.
+B<hostname> - A unique per-machine identifier.
 
 =item *
 
 B<timeout> - Time in milliseconds to keep retrying before abandoning
 the attempt to obtain() a lock.
+
+=item *
+
+B<interval> - Time in milliseconds between retries.
 
 =back
 
@@ -69,10 +72,27 @@ the attempt to obtain() a lock.
 
 =head2 obtain()
 
-Attempt to aquire lock once per second until the timeout has been
-reached.
+Call request() once per C<< interval >> until request() returns
+success or the C<< timeout >> has been reached.
 
 Returns: true on success, false otherwise.
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 request()
+
+Make one attempt to acquire the lock. 
+
+The semantics of request() differ depending on whether shared() returns
+true.  If the Lock is shared(), then request() should not fail if
+another lock is held against the resource identified by
+C<< name >> (though it might fail for other reasons).  If it is
+not shared() -- i.e. it's an exclusive (write) lock -- then other locks
+should cause request() to fail.
+
+Returns: true on success, false on failure.
 
 =head2 release()
 
@@ -88,10 +108,8 @@ Returns: true if the resource is locked, false otherwise.
 =head2 clear_stale()
 
 Release all locks that meet the following three conditions: the lock
-name matches, the agent id matches, and the process id that the lock
+name matches, the hostname matches, and the process id that the lock
 was created under no longer identifies an active process.
-
-
 
 
 

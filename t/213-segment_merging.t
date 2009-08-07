@@ -7,8 +7,8 @@ use KinoSearch::Test;
 package NonMergingIndexManager;
 use base qw( KinoSearch::Index::IndexManager );
 
-sub segreaders_to_merge {
-    return KinoSearch::Util::VArray->new( capacity => 0 );
+sub recycle {
+    return KinoSearch::Obj::VArray->new( capacity => 0 );
 }
 
 # BiggerSchema is like TestSchema, but it has an extra field named "aux".
@@ -30,7 +30,7 @@ sub new {
 }
 
 package main;
-use Test::More tests => 8;
+use Test::More tests => 10;
 use KinoSearch::Test::TestUtils qw( create_index init_test_index_loc );
 use File::Find qw( find );
 
@@ -93,7 +93,7 @@ for my $num_letters ( reverse 1 .. 10 ) {
     my $indexer = KinoSearch::Indexer->new(
         schema  => $schema,
         index   => $folder,
-        manager => NonMergingIndexManager->new( folder => $folder ),
+        manager => NonMergingIndexManager->new,
     );
     $indexer->add_doc( { aux => 'foo', content => 'bar' } );
 
@@ -139,6 +139,35 @@ for my $num_letters ( reverse 1 .. 10 ) {
 
 is( num_cf_files($index_loc), 1,
     "merged segment files successfully deleted" );
+
+{
+    my $folder = KinoSearch::Store::RAMFolder->new;
+    my $schema = KinoSearch::Test::TestSchema->new;
+    my $number = 1;
+    for ( 1 .. 3 ) {
+        my $indexer = KinoSearch::Indexer->new(
+            index   => $folder,
+            schema  => $schema,
+            manager => NonMergingIndexManager->new,
+        );
+        $indexer->add_doc( { content => $number++ } ) for 1 .. 20;
+        $indexer->commit;
+    }
+    my $indexer = KinoSearch::Indexer->new(
+        index  => $folder,
+        schema => $schema,
+    );
+    $indexer->delete_by_term( field => 'content', term => $_ )
+        for ( 3, 23, 24, 25 );
+    $indexer->commit;
+
+    ok( $folder->exists("seg_1/segmeta.json"),
+        "Segment with under 10% deletions preserved"
+    );
+    ok( !$folder->exists("seg_2/segmeta.json"),
+        "Segment with over 10% deletions merged away"
+    );
+}
 
 is( KinoSearch::Store::FileDes::object_count(),
     0, "All FileDes objects have been cleaned up" );

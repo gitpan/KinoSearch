@@ -10,7 +10,6 @@
 #include "KinoSearch/Search/SeriesMatcher.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Util/BitVector.h"
 #include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 
@@ -36,12 +35,13 @@ PolyDeletionsReader*
 PolyDelReader_new(VArray *readers, I32Array *offsets)
 {
     PolyDeletionsReader *self 
-        = (PolyDeletionsReader*)VTable_Make_Obj(&POLYDELETIONSREADER);
+        = (PolyDeletionsReader*)VTable_Make_Obj(POLYDELETIONSREADER);
     return PolyDelReader_init(self, readers, offsets);
 }
 
 PolyDeletionsReader*
-PolyDelReader_init(PolyDeletionsReader *self, VArray *readers, I32Array *offsets)
+PolyDelReader_init(PolyDeletionsReader *self, VArray *readers, 
+                   I32Array *offsets)
 {
     u32_t i, max;
     DelReader_init((DeletionsReader*)self, NULL, NULL, NULL, NULL, -1);
@@ -109,7 +109,7 @@ DefDelReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
                     VArray *segments, i32_t seg_tick)
 {
     DefaultDeletionsReader *self 
-        = (DefaultDeletionsReader*)VTable_Make_Obj(&DEFAULTDELETIONSREADER);
+        = (DefaultDeletionsReader*)VTable_Make_Obj(DEFAULTDELETIONSREADER);
     return DefDelReader_init(self, schema, folder, snapshot, segments,
         seg_tick);
 }

@@ -7,7 +7,8 @@ class KinoSearch::Index::SegLexicon cnick SegLex
     extends KinoSearch::Index::Lexicon {
 
     Segment         *segment;
-    LexStepper      *lex_stepper;
+    TermStepper     *term_stepper;
+    TermStepper     *tinfo_stepper;
     InStream        *instream;
     LexIndex        *lex_index;
     i32_t            field_num;
@@ -50,6 +51,9 @@ class KinoSearch::Index::SegLexicon cnick SegLex
 
     public Obj*
     Get_Term(SegLexicon *self);
+
+    public i32_t
+    Doc_Freq(SegLexicon *self);
 
     public bool_t
     Next(SegLexicon *self);

@@ -6,7 +6,7 @@
 SeriesMatcher*
 SeriesMatcher_new(VArray *matchers, I32Array *offsets)
 {
-    SeriesMatcher *self = (SeriesMatcher*)VTable_Make_Obj(&SERIESMATCHER);
+    SeriesMatcher *self = (SeriesMatcher*)VTable_Make_Obj(SERIESMATCHER);
     return SeriesMatcher_init(self, matchers, offsets);
 }
 
@@ -85,7 +85,8 @@ SeriesMatcher_advance(SeriesMatcher *self, i32_t target)
             return self->doc_id;
         }
         else {
-            return SeriesMatcher_advance(self, self->next_offset); /* Recurse. */
+            /* Recurse. */
+            return SeriesMatcher_advance(self, self->next_offset);
         }
     }
 }

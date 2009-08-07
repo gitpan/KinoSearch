@@ -1,9 +1,6 @@
-#include <string.h>
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/Lexicon.h"
-#include "KinoSearch/Util/I32Array.h"
-#include "KinoSearch/Util/Err.h"
 
 Lexicon*
 Lex_init(Lexicon *self)

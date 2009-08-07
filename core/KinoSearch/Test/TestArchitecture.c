@@ -8,7 +8,7 @@ TestArchitecture*
 TestArch_new()
 {
     TestArchitecture *self 
-        = (TestArchitecture*)VTable_Make_Obj(&TESTARCHITECTURE);
+        = (TestArchitecture*)VTable_Make_Obj(TESTARCHITECTURE);
     return TestArch_init(self);
 }
 

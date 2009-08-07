@@ -8,7 +8,7 @@
 NoMatchScorer*
 NoMatchScorer_new()
 {
-    NoMatchScorer *self = (NoMatchScorer*)VTable_Make_Obj(&NOMATCHSCORER);
+    NoMatchScorer *self = (NoMatchScorer*)VTable_Make_Obj(NOMATCHSCORER);
     return NoMatchScorer_init(self);
 }
 

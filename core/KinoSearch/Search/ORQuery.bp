@@ -29,13 +29,15 @@ class KinoSearch::Search::ORQuery extends KinoSearch::Search::PolyQuery
     Equals(ORQuery *self, Obj *other);
 }
 
-class KinoSearch::Search::ORCompiler extends KinoSearch::Search::PolyCompiler {
+class KinoSearch::Search::ORCompiler 
+    extends KinoSearch::Search::PolyCompiler {
 
     static incremented ORCompiler*
     new(ORQuery *parent, Searchable *searchable, float boost);
 
     static ORCompiler*
-    init(ORCompiler *self, ORQuery *parent, Searchable *searchable, float boost);
+    init(ORCompiler *self, ORQuery *parent, Searchable *searchable, 
+         float boost);
 
     public incremented Matcher*
     Make_Matcher(ORCompiler *self, SegReader *reader, bool_t need_score);

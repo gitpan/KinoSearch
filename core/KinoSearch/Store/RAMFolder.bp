@@ -7,8 +7,8 @@ parcel KinoSearch cnick Kino;
  * 
  * First, it's possible to load an existing FSFolder into memory, which can
  * improve search-speed -- if you have that kind of RAM to spare.  Needless to
- * say, any FSFolder you try to load this way should be appropriately modest in
- * size.
+ * say, any FSFolder you try to load this way should be appropriately modest
+ * in size.
  * 
  * Second, RAMFolder is handy for testing and development.
  */
@@ -59,6 +59,9 @@ class KinoSearch::Store::RAMFolder extends KinoSearch::Store::Folder {
 
     void
     Rename(RAMFolder *self, const CharBuf* from, const CharBuf *to);
+
+    public bool_t
+    Hard_Link(RAMFolder *self, const CharBuf *source, const CharBuf *target);
 
     bool_t
     Delete(RAMFolder *self, const CharBuf *filepath);

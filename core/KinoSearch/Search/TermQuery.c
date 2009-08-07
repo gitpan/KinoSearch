@@ -20,7 +20,7 @@
 TermQuery*
 TermQuery_new(const CharBuf *field, const Obj *term)
 {
-    TermQuery *self = (TermQuery*)VTable_Make_Obj(&TERMQUERY);
+    TermQuery *self = (TermQuery*)VTable_Make_Obj(TERMQUERY);
     return TermQuery_init(self, field, term);
 }
 
@@ -52,7 +52,7 @@ TermQuery_serialize(TermQuery *self, OutStream *outstream)
 TermQuery*
 TermQuery_deserialize(TermQuery *self, InStream *instream)
 {
-    self = self ? self : (TermQuery*)VTable_Make_Obj(&TERMQUERY);
+    self = self ? self : (TermQuery*)VTable_Make_Obj(TERMQUERY);
     self->field = CB_deserialize(NULL, instream);
     self->term  = (Obj*)THAW(instream);
     self->boost = InStream_Read_F32(instream);
@@ -96,7 +96,7 @@ TermQuery_make_compiler(TermQuery *self, Searchable *searchable, float boost)
 TermCompiler*
 TermCompiler_new(Query *parent, Searchable *searchable, float boost)
 {
-    TermCompiler *self = (TermCompiler*)VTable_Make_Obj(&TERMCOMPILER);
+    TermCompiler *self = (TermCompiler*)VTable_Make_Obj(TERMCOMPILER);
     return TermCompiler_init(self, parent, searchable, boost);
 }
 
@@ -164,7 +164,7 @@ TermCompiler_serialize(TermCompiler *self, OutStream *outstream)
 TermCompiler*
 TermCompiler_deserialize(TermCompiler *self, InStream *instream)
 {
-    self = self ? self : (TermCompiler*)VTable_Make_Obj(&TERMCOMPILER);
+    self = self ? self : (TermCompiler*)VTable_Make_Obj(TERMCOMPILER);
     Compiler_deserialize((Compiler*)self, instream);
     self->idf               = InStream_Read_F32(instream);
     self->raw_weight        = InStream_Read_F32(instream);
@@ -190,7 +190,8 @@ TermCompiler_apply_norm_factor(TermCompiler *self, float query_norm_factor)
      *
      * Note: factoring in IDF a second time is correct.  See formula.
      */
-    self->normalized_weight = self->raw_weight * self->idf * query_norm_factor;
+    self->normalized_weight 
+        = self->raw_weight * self->idf * query_norm_factor;
 }
 
 float
@@ -205,7 +206,7 @@ TermCompiler_make_matcher(TermCompiler *self, SegReader *reader,
 {
     TermQuery *tparent = (TermQuery*)self->parent;
     PostingsReader *post_reader = (PostingsReader*)SegReader_Fetch(reader,
-        POSTINGSREADER.name);
+        POSTINGSREADER->name);
     PostingList *plist = post_reader 
         ? PostReader_Posting_List(post_reader, tparent->field, tparent->term)
         : NULL;

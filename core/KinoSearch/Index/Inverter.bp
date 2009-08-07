@@ -32,7 +32,8 @@ class KinoSearch::Index::Inverter extends KinoSearch::Obj {
     public void
     Invert_Doc(Inverter *self, Doc *doc);
 
-    /** Set the object's <code>doc</code> member.  Calls Clear() as side effect.
+    /** Set the object's <code>doc</code> member.  Calls Clear() as side
+     * effect.
      */
     public void
     Set_Doc(Inverter *self, Doc *doc);
@@ -85,7 +86,8 @@ class KinoSearch::Index::Inverter extends KinoSearch::Obj {
     public CharBuf*
     Get_Field_Name(Inverter *self);
 
-    /** Return the current field's value, or NULL if the iterator is exhausted.
+    /** Return the current field's value, or NULL if the iterator is
+     * exhausted.
      */
     public Obj*
     Get_Value(Inverter *self);

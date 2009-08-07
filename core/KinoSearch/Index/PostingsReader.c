@@ -35,7 +35,7 @@ PolyPostingsReader*
 PolyPostReader_new(VArray *readers, I32Array *offsets)
 {
     PolyPostingsReader *self 
-        = (PolyPostingsReader*)VTable_Make_Obj(&POLYPOSTINGSREADER);
+        = (PolyPostingsReader*)VTable_Make_Obj(POLYPOSTINGSREADER);
     return PolyPostReader_init(self, readers, offsets);
 }
 
@@ -105,7 +105,7 @@ DefPostReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
                   VArray *segments, i32_t seg_tick, LexiconReader *lex_reader)
 {
     DefaultPostingsReader *self 
-        = (DefaultPostingsReader*)VTable_Make_Obj(&DEFAULTPOSTINGSREADER);
+        = (DefaultPostingsReader*)VTable_Make_Obj(DEFAULTPOSTINGSREADER);
     return DefPostReader_init(self, schema, folder, snapshot, segments, 
         seg_tick, lex_reader);
 }
@@ -133,10 +133,10 @@ DefPostReader_init(DefaultPostingsReader *self, Schema *schema,
 
         if (my_meta) {
             Obj *format = Hash_Fetch_Str(my_meta, "format", 6);
-            if (!format) { THROW("Missing 'format' var"); }
+            if (!format) { THROW(ERR, "Missing 'format' var"); }
             else {
                 if (Obj_To_I64(format) != PostWriter_current_file_format) {
-                    THROW("Unsupported postings format: %i64", 
+                    THROW(ERR, "Unsupported postings format: %i64", 
                         Obj_To_I64(format));
                 }
             }

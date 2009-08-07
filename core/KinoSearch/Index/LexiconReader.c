@@ -32,12 +32,13 @@ PolyLexiconReader*
 PolyLexReader_new(VArray *readers, I32Array *offsets)
 {
     PolyLexiconReader *self 
-        = (PolyLexiconReader*)VTable_Make_Obj(&POLYLEXICONREADER);
+        = (PolyLexiconReader*)VTable_Make_Obj(POLYLEXICONREADER);
     return PolyLexReader_init(self, readers, offsets);
 }
 
 PolyLexiconReader*
-PolyLexReader_init(PolyLexiconReader *self, VArray *readers, I32Array *offsets)
+PolyLexReader_init(PolyLexiconReader *self, VArray *readers, 
+                   I32Array *offsets)
 {
     u32_t i, max;
     Schema *schema = NULL;
@@ -116,7 +117,7 @@ DefLexReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
                  VArray *segments, i32_t seg_tick)
 {
     DefaultLexiconReader *self 
-        = (DefaultLexiconReader*)VTable_Make_Obj(&DEFAULTLEXICONREADER);
+        = (DefaultLexiconReader*)VTable_Make_Obj(DEFAULTLEXICONREADER);
     return DefLexReader_init(self, schema, folder, snapshot, segments, 
         seg_tick);
 }
@@ -201,9 +202,8 @@ DefLexReader_lexicon(DefaultLexiconReader *self, const CharBuf *field,
     return (Lexicon*)lexicon;
 }
 
-TermInfo*
-DefLexReader_fetch_term_info(DefaultLexiconReader *self, 
-                             const CharBuf *field, Obj *target) 
+static TermInfo* 
+S_find_tinfo(DefaultLexiconReader *self, const CharBuf *field, Obj *target)
 {    
     if (field != NULL && target != NULL) {
         i32_t field_num = Seg_Field_Num(self->segment, field);
@@ -226,11 +226,19 @@ DefLexReader_fetch_term_info(DefaultLexiconReader *self,
     return NULL;
 }
 
+TermInfo*
+DefLexReader_fetch_term_info(DefaultLexiconReader *self, 
+                             const CharBuf *field, Obj *target) 
+{    
+    TermInfo *tinfo = S_find_tinfo(self, field, target);
+    return tinfo ? TInfo_Clone(tinfo) : NULL;
+}
+
 u32_t
 DefLexReader_doc_freq(DefaultLexiconReader *self, const CharBuf *field,
                       Obj *term)
 {
-    TermInfo *tinfo = LexReader_Fetch_Term_Info(self, field, term);
+    TermInfo *tinfo = S_find_tinfo(self, field, term);
     return tinfo ? tinfo->doc_freq : 0;
 }
 

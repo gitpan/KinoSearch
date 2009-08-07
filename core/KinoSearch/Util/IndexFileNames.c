@@ -22,7 +22,7 @@ IxFileNames_latest_snapshot(Folder *folder)
             if (gen > latest_gen) {
                 latest_gen = gen;
                 if (!retval) retval = CB_Clone(filename);
-                else CB_Copy(retval, filename);
+                else CB_Mimic(retval, (Obj*)filename);
             }
         }
     }

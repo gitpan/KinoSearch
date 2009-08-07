@@ -43,16 +43,16 @@ FSFileDes_new(const CharBuf *path, const char *mode)
 {
     int         fd;
     FILE       *fhandle;
-    FSFileDes  *self = (FSFileDes*)VTable_Make_Obj(&FSFILEDES);
+    FSFileDes  *self = (FSFileDes*)VTable_Make_Obj(FSFILEDES);
     int         oflags = *mode == 'w' ? SI_write_flags() : SI_read_flags();
     const char *fmode  = *mode == 'w' ? "ab" : "rb";
 
     if (*mode != 'w' && *mode != 'r') {
-        THROW("invalid value for 'mode': %s", mode);
+        THROW(ERR, "invalid value for 'mode': %s", mode);
     }
 
     /* Open. */
-    if (!path) { THROW("Missing required param 'path'"); }
+    if (!path) { THROW(ERR, "Missing required param 'path'"); }
     fd = open((char*)CB_Get_Ptr8(path), oflags, 0666);
     if (fd == -1) { FREE_OBJ(self); return NULL; }
     fhandle = fdopen(fd, fmode);
@@ -149,7 +149,7 @@ FSFileDes_write(FSFileDes *self, const void *buf, u32_t len)
     do { \
         i64_t check_val = (x); \
         if (check_val == -1) { \
-            THROW("File operation failed: %s", strerror(errno)); \
+            THROW(ERR, "File operation failed: %s", strerror(errno)); \
         } \
     } while (0)
 

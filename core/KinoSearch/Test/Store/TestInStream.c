@@ -26,7 +26,7 @@ TestInStream_run_tests()
 
     CB_Cat_Str(filename, "foo", 3);
     outstream = Folder_Open_Out(folder, filename);
-    if (!outstream) { THROW("Can't open %o", filename); }
+    if (!outstream) { THROW(ERR, "Can't open %o", filename); }
     for (i = 0; i < 1023; i++) {
         OutStream_Write_U8(outstream, 'x');
     }
@@ -35,7 +35,7 @@ TestInStream_run_tests()
     OutStream_Close(outstream);
 
     instream = Folder_Open_In(folder, filename);
-    if (!instream) { THROW("Can't open %o", filename); }
+    if (!instream) { THROW(ERR, "Can't open %o", filename); }
     InStream_Refill(instream);
     ASSERT_INT_EQ(batch, instream->limit - instream->buf, IO_STREAM_BUF_SIZE,
         "Refill");
@@ -44,7 +44,7 @@ TestInStream_run_tests()
     DECREF(instream);
 
     instream = Folder_Open_In(folder, filename);
-    if (!instream) { THROW("Can't open %o", filename); }
+    if (!instream) { THROW(ERR, "Can't open %o", filename); }
     InStream_Fill(instream, 30);
     ASSERT_INT_EQ(batch, instream->limit - instream->buf, 30, "Fill()");
     ASSERT_INT_EQ(batch, (long)InStream_Tell(instream), 0, 
@@ -52,14 +52,14 @@ TestInStream_run_tests()
     DECREF(instream);
 
     instream = Folder_Open_In(folder, filename);
-    if (!instream) { THROW("Can't open %o", filename); }
+    if (!instream) { THROW(ERR, "Can't open %o", filename); }
     InStream_Read_Bytes(instream, scratch, 5);
     ASSERT_INT_EQ(batch, instream->limit - instream->buf, 
         IO_STREAM_BUF_SIZE - 5, "small read triggers refill");
     DECREF(instream);
 
     instream = Folder_Open_In(folder, filename);
-    if (!instream) { THROW("Can't open %o", filename); }
+    if (!instream) { THROW(ERR, "Can't open %o", filename); }
     ASSERT_INT_EQ(batch, InStream_Read_U8(instream), 'x', "Read_U8");
     InStream_Seek(instream, 1023);
     ASSERT_INT_EQ(batch, (long)instream->window->offset, 0, 

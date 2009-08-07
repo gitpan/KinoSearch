@@ -7,7 +7,7 @@ RangeScorer*
 RangeScorer_new(i32_t lower_bound, i32_t upper_bound, SortCache *sort_cache,
                 i32_t doc_max)
 {
-    RangeScorer *self = (RangeScorer*)VTable_Make_Obj(&RANGESCORER);
+    RangeScorer *self = (RangeScorer*)VTable_Make_Obj(RANGESCORER);
     return RangeScorer_init(self, lower_bound, upper_bound, sort_cache,
         doc_max);
 }
@@ -51,7 +51,8 @@ RangeScorer_next(RangeScorer* self)
             /* Check if ord for this document is within the specied range. */
             /* TODO: Unroll? i.e. use SortCache_Get_Ords at constructor time
              * and save ourselves some method call overhead. */
-            const i32_t ord = SortCache_Ordinal(self->sort_cache, self->doc_id);
+            const i32_t ord 
+                = SortCache_Ordinal(self->sort_cache, self->doc_id);
             if (ord >= self->lower_bound && ord <= self->upper_bound) {
                 break;
             }

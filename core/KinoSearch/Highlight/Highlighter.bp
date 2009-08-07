@@ -2,10 +2,10 @@ parcel KinoSearch cnick Kino;
 
 /** Create and highlight excerpts.
  * 
- * The Highlighter can be used to select relevant snippets from a
- * document, and to surround search terms with highlighting tags.  It handles
- * both stems and phrases correctly and efficiently, using special-purpose data
- * generated at index-time.  
+ * The Highlighter can be used to select relevant snippets from a document,
+ * and to surround search terms with highlighting tags.  It handles both stems
+ * and phrases correctly and efficiently, using special-purpose data generated
+ * at index-time.  
 */
 class KinoSearch::Highlight::Highlighter extends KinoSearch::Obj {
 

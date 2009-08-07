@@ -3,13 +3,20 @@
 #include "KinoSearch/Posting/MatchPosting.h"
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Analysis/Token.h"
+#include "KinoSearch/Architecture.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/PostingPool.h"
+#include "KinoSearch/Index/Segment.h"
+#include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Posting/RawPosting.h"
+#include "KinoSearch/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Compiler.h"
+#include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
+#include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/MemoryPool.h"
 
 #define MAX_RAW_POSTING_LEN(_text_len) \
@@ -20,7 +27,7 @@
 MatchPosting*
 MatchPost_new(Similarity *sim)
 {
-    MatchPosting *self = (MatchPosting*)VTable_Make_Obj(&MATCHPOSTING);
+    MatchPosting *self = (MatchPosting*)VTable_Make_Obj(MATCHPOSTING);
     return MatchPost_init(self, sim);
 }
 
@@ -46,9 +53,9 @@ MatchPost_clone(MatchPosting *self)
 }
 
 void
-MatchPost_reset(MatchPosting *self, i32_t doc_id)
+MatchPost_reset(MatchPosting *self)
 {
-    self->doc_id   = doc_id;
+    self->doc_id = 0;
 }
 
 void
@@ -116,11 +123,21 @@ MatchPost_make_matcher(MatchPosting *self, Similarity *sim,
                        bool_t need_score)
 {
     MatchPostingScorer *matcher 
-        = (MatchPostingScorer*)VTable_Make_Obj(&MATCHPOSTINGSCORER);
+        = (MatchPostingScorer*)VTable_Make_Obj(MATCHPOSTINGSCORER);
     UNUSED_VAR(self);
     UNUSED_VAR(need_score);
     return MatchPostScorer_init(matcher, sim, plist, compiler);
 }
+
+MatchPostingStreamer*
+MatchPost_make_streamer(MatchPosting *self, DataWriter *writer, 
+                        i32_t field_num)
+{
+    UNUSED_VAR(self);
+    return MatchPostStreamer_new(writer, field_num);
+}
+
+/***************************************************************************/
 
 MatchPostingScorer*
 MatchPostScorer_init(MatchPostingScorer *self, Similarity *sim,
@@ -156,6 +173,184 @@ MatchPostScorer_destroy(MatchPostingScorer *self)
 {
     FREEMEM(self->score_cache);
     SUPER_DESTROY(self, MATCHPOSTINGSCORER);
+}
+
+/***************************************************************************/
+
+MatchPostingStreamer*
+MatchPostStreamer_new(DataWriter *writer, i32_t field_num)
+{
+    MatchPostingStreamer *self 
+        = (MatchPostingStreamer*)VTable_Make_Obj(MATCHPOSTINGSTREAMER);
+    return MatchPostStreamer_init(self, writer, field_num);
+}
+
+MatchPostingStreamer*
+MatchPostStreamer_init(MatchPostingStreamer *self, DataWriter *writer, 
+                       i32_t field_num)
+{
+    Folder   *folder   = DataWriter_Get_Folder(writer);
+    Segment  *segment  = DataWriter_Get_Segment(writer);
+    Snapshot *snapshot = DataWriter_Get_Snapshot(writer);
+    CharBuf *filename 
+        = CB_newf("%o/postings-%i32.dat", Seg_Get_Name(segment), field_num);
+    PostStreamer_init((PostingStreamer*)self, writer, field_num);
+    Snapshot_Add_Entry(snapshot, filename);
+    self->outstream = Folder_Open_Out(folder, filename);
+    if (!self->outstream) { THROW(ERR, "Failed to open %o", filename); }
+    DECREF(filename);
+    return self;
+}
+
+void
+MatchPostStreamer_destroy(MatchPostingStreamer *self)
+{
+    DECREF(self->outstream);
+    SUPER_DESTROY(self, MATCHPOSTINGSTREAMER);
+}
+
+void
+MatchPostStreamer_write_posting(MatchPostingStreamer *self, 
+                                RawPosting *posting)
+{
+    OutStream *const outstream   = self->outstream;
+    const i32_t      doc_id      = posting->doc_id;
+    const u32_t      delta_doc   = doc_id - self->last_doc_id;
+    char  *const     aux_content = posting->blob + posting->content_len;
+    if (posting->freq == 1) {
+        const u32_t doc_code = (delta_doc << 1) | 1;
+        OutStream_Write_C32(outstream, doc_code);
+    }
+    else {
+        const u32_t doc_code = delta_doc << 1;
+        OutStream_Write_C32(outstream, doc_code);
+        OutStream_Write_C32(outstream, posting->freq);
+    }
+    OutStream_Write_Bytes(outstream, aux_content, posting->aux_len);
+    self->last_doc_id = doc_id;
+}
+
+void
+MatchPostStreamer_start_term(MatchPostingStreamer *self, TermInfo *tinfo)
+{
+    self->last_doc_id   = 0;
+    tinfo->post_filepos = OutStream_Tell(self->outstream);
+}
+
+void
+MatchPostStreamer_update_skip_info(MatchPostingStreamer *self, 
+                                   TermInfo *tinfo)
+{
+    tinfo->post_filepos = OutStream_Tell(self->outstream);
+}
+
+/***************************************************************************/
+
+MatchTermInfoStepper*
+MatchTInfoStepper_new(Schema *schema)
+{
+    MatchTermInfoStepper *self 
+        = (MatchTermInfoStepper*)VTable_Make_Obj(MATCHTERMINFOSTEPPER);
+    return MatchTInfoStepper_init(self, schema);
+}
+
+MatchTermInfoStepper*
+MatchTInfoStepper_init(MatchTermInfoStepper *self, Schema *schema)
+{
+    Architecture *arch = Schema_Get_Architecture(schema);
+    TermStepper_init((TermStepper*)self);
+    self->skip_interval = Arch_Skip_Interval(arch);
+    self->value = (Obj*)TInfo_new(0);
+    return self;
+}
+
+void
+MatchTInfoStepper_reset(MatchTermInfoStepper *self)
+{
+    TInfo_Reset(self->value);
+}
+
+void
+MatchTInfoStepper_write_key_frame(MatchTermInfoStepper *self, 
+                                  OutStream *outstream, Obj *value)
+{
+    TermInfo *tinfo = (TermInfo*)ASSERT_IS_A(value, TERMINFO);
+
+    /* Write doc_freq. */
+    OutStream_Write_C32(outstream, tinfo->doc_freq);
+
+    /* Write postings file pointer. */
+    OutStream_Write_C64(outstream, tinfo->post_filepos);
+
+    /* Write skip file pointer (maybe). */
+    if (tinfo->doc_freq >= self->skip_interval) {
+        OutStream_Write_C64(outstream, tinfo->skip_filepos);
+    }
+
+    TInfo_Mimic(self->value, (Obj*)tinfo);
+}
+
+void
+MatchTInfoStepper_write_delta(MatchTermInfoStepper *self, 
+                              OutStream *outstream, Obj *value)
+{
+    TermInfo *tinfo      = (TermInfo*)ASSERT_IS_A(value, TERMINFO);
+    TermInfo *last_tinfo = (TermInfo*)self->value;
+    i64_t     post_delta = tinfo->post_filepos - last_tinfo->post_filepos;
+
+    /* Write doc_freq. */
+    OutStream_Write_C32(outstream, tinfo->doc_freq);
+
+    /* Write postings file pointer delta. */
+    OutStream_Write_C64(outstream, post_delta);
+
+    /* Write skip file pointer (maybe). */
+    if (tinfo->doc_freq >= self->skip_interval) {
+        OutStream_Write_C64(outstream, tinfo->skip_filepos);
+    }
+
+    TInfo_Mimic(self->value, (Obj*)tinfo);
+}
+
+void
+MatchTInfoStepper_read_key_frame(MatchTermInfoStepper *self, 
+                                 InStream *instream)
+{ 
+    TermInfo *const tinfo = (TermInfo*)self->value;
+
+    /* Read doc freq. */
+    tinfo->doc_freq = InStream_Read_C32(instream);
+
+    /* Read postings file pointer. */
+    tinfo->post_filepos = InStream_Read_C64(instream);
+
+    /* Maybe read skip pointer. */
+    if (tinfo->doc_freq >= self->skip_interval) {
+        tinfo->skip_filepos = InStream_Read_C64(instream);
+    }
+    else {
+        tinfo->skip_filepos = 0;
+    }
+}
+
+void
+MatchTInfoStepper_read_delta(MatchTermInfoStepper *self, InStream *instream)
+{ 
+    TermInfo *const tinfo = (TermInfo*)self->value;
+
+    /* Read doc freq. */
+    tinfo->doc_freq = InStream_Read_C32(instream);
+
+    /* Adjust postings file pointer. */
+    tinfo->post_filepos += InStream_Read_C64(instream);
+
+    /* Maybe read skip pointer. */
+    if (tinfo->doc_freq >= self->skip_interval) {
+        tinfo->skip_filepos = InStream_Read_C64(instream);
+    }
+    else {
+        tinfo->skip_filepos = 0;
+    }
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

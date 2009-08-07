@@ -5,7 +5,6 @@
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Posting.h"
 #include "KinoSearch/Index/Lexicon.h"
-#include "KinoSearch/Util/Err.h"
 #include "KinoSearch/Util/MemManager.h"
 
 PostingList*

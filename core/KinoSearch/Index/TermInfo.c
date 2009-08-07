@@ -1,41 +1,33 @@
 #include "KinoSearch/Util/ToolSet.h"
 
-#include <stdio.h>
-
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Util/StringHelper.h"
 
 TermInfo*
-TInfo_new(i32_t doc_freq,
-          u64_t post_filepos,
-          u64_t skip_filepos,
-          u64_t lex_filepos)
+TInfo_new(i32_t doc_freq)
 {
-    TermInfo *self = (TermInfo*)VTable_Make_Obj(&TERMINFO);
-    return TInfo_init(self, doc_freq, post_filepos, skip_filepos,
-        lex_filepos);
+    TermInfo *self = (TermInfo*)VTable_Make_Obj(TERMINFO);
+    return TInfo_init(self, doc_freq);
 }
 
 TermInfo*
-TInfo_init(TermInfo *self,
-           i32_t doc_freq,
-           u64_t post_filepos,
-           u64_t skip_filepos,
-           u64_t lex_filepos)
+TInfo_init(TermInfo *self, i32_t doc_freq)
 {
     self->doc_freq      = doc_freq;
-    self->post_filepos  = post_filepos;
-    self->skip_filepos  = skip_filepos;
-    self->lex_filepos   = lex_filepos;
-
+    self->post_filepos  = 0;
+    self->skip_filepos  = 0;
+    self->lex_filepos   = 0;
     return self;
 }
 
 TermInfo*
 TInfo_clone(TermInfo *self) 
 {
-    return TInfo_new(self->doc_freq, self->post_filepos, self->skip_filepos,
-        self->lex_filepos);
+    TermInfo *evil_twin = TInfo_new(self->doc_freq);
+    evil_twin->post_filepos = self->post_filepos;
+    evil_twin->skip_filepos = self->skip_filepos;
+    evil_twin->lex_filepos  = self->lex_filepos;
+    return evil_twin;
 }
 
 /* TODO: this should probably be some sort of Dump variant rather than
@@ -55,12 +47,13 @@ TInfo_to_string(TermInfo *self)
 }
 
 void
-TInfo_copy(TermInfo *self, const TermInfo *other) 
+TInfo_mimic(TermInfo *self, Obj *other) 
 {
-    self->doc_freq      = other->doc_freq;
-    self->post_filepos  = other->post_filepos;
-    self->skip_filepos  = other->skip_filepos;
-    self->lex_filepos   = other->lex_filepos;
+    TermInfo *evil_twin = (TermInfo*)ASSERT_IS_A(other, TERMINFO);
+    self->doc_freq      = evil_twin->doc_freq;
+    self->post_filepos  = evil_twin->post_filepos;
+    self->skip_filepos  = evil_twin->skip_filepos;
+    self->lex_filepos   = evil_twin->lex_filepos;
 }
 
 void

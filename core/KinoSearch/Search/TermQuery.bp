@@ -62,7 +62,8 @@ class KinoSearch::Search::TermCompiler extends KinoSearch::Search::Compiler {
     new(Query *parent, Searchable *searchable, float boost);
 
     static TermCompiler*
-    init(TermCompiler *self, Query *parent, Searchable *searchable, float boost);
+    init(TermCompiler *self, Query *parent, Searchable *searchable, 
+         float boost);
 
     public incremented Matcher*
     Make_Matcher(TermCompiler *self, SegReader *reader, bool_t need_score);

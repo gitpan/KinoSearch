@@ -22,7 +22,8 @@ class KinoSearch::Util::Compat::DirManip extends KinoSearch::Obj {
     dir_ok(const CharBuf *path);
 
 
-    /** Attempt to create a directory.  Throw an exception if the attempt fails.
+    /** Attempt to create a directory.  Throw an exception if the attempt
+     * fails.
      */
     static void
     create_dir(const CharBuf *path);
@@ -38,5 +39,13 @@ class KinoSearch::Util::Compat::DirManip extends KinoSearch::Obj {
      */
     static incremented CharBuf*
     absolutify(const CharBuf *path);
+
+    /** Create a hard link at path <code>target</code> to the file at path
+     * <code>source</code>.
+     * 
+     * @return true on success, false on failure.
+     */
+    static bool_t
+    hard_link(const CharBuf *source, const CharBuf *target);
 }
 

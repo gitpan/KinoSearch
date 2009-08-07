@@ -13,12 +13,11 @@
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 Inverter*
 Inverter_new(Schema *schema, Segment *segment)
 {
-    Inverter *self = (Inverter*)VTable_Make_Obj(&INVERTER);
+    Inverter *self = (Inverter*)VTable_Make_Obj(INVERTER);
     return Inverter_init(self, schema, segment);
 }
 
@@ -124,14 +123,14 @@ Inverter_add_field(Inverter *self, InverterEntry *entry)
     /* Get an Inversion, going through analyzer if appropriate. */
     if (entry->analyzer) {
         DECREF(entry->inversion);
-        entry->inversion
-            = Analyzer_Transform_Text(entry->analyzer, (CharBuf*)entry->value);
+        entry->inversion = Analyzer_Transform_Text(entry->analyzer, 
+            (CharBuf*)entry->value);
         Inversion_Invert(entry->inversion);
     }
     else if (entry->indexed || entry->highlightable) {
         size_t token_len = ViewCB_Get_Size(entry->value);
-        Token *seed = Token_new((char*)ViewCB_Get_Ptr8(entry->value), token_len, 
-            0, token_len, 1.0f, 1);
+        Token *seed = Token_new((char*)ViewCB_Get_Ptr8(entry->value), 
+            token_len, 0, token_len, 1.0f, 1);
         DECREF(entry->inversion);
         entry->inversion = Inversion_new(seed);
         DECREF(seed);
@@ -159,7 +158,7 @@ Inverter_clear(Inverter *self)
 InverterEntry*
 InvEntry_new(Schema *schema, const CharBuf *field_name, i32_t field_num)
 {
-    InverterEntry *self = (InverterEntry*)VTable_Make_Obj(&INVERTERENTRY);
+    InverterEntry *self = (InverterEntry*)VTable_Make_Obj(INVERTERENTRY);
     return InvEntry_init(self, schema, field_name, field_num);
 }
 
@@ -178,11 +177,11 @@ InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field_name,
         if (self->sim)      { INCREF(self->sim); }
         if (self->analyzer) { INCREF(self->analyzer); }
         if (self->type)     { INCREF(self->type); }
-        else                { THROW("Unknown field: '%o'", field_name); }
+        else                { THROW(ERR, "Unknown field: '%o'", field_name); }
         self->value      = FType_Make_Blank(self->type);
         self->indexed    = FType_Indexed(self->type);
         if (self->indexed && OBJ_IS_A(self->type, NUMERICTYPE)) {
-            THROW("Field '%o' spec'd as indexed, but numerical types cannot "
+            THROW(ERR, "Field '%o' spec'd as indexed, but numerical types cannot "
                 "be indexed yet", field_name);
         }
         if (OBJ_IS_A(self->type, FULLTEXTTYPE)) {

@@ -28,13 +28,14 @@ The Indexer class is KinoSearch's primary tool for managing the content of
 inverted indexes, which may later be searched using
 L<KinoSearch::Searcher>.
 
-Only one Indexer may write to an index at a time.  If a write lock cannot
-be secured, new() will throw an exception.
+In general, only one Indexer at a time may write to an index safely.  If a
+write lock cannot be secured, new() will throw an exception.
 
 If an index is located on a shared volume, each writer application must
-identify itself by passing a L<LockFactory|KinoSearch::Store::LockFactory>
-to Indexer's constructor or index corruption will occur.  See LockFactory's
-documentation for a detailed explanation.
+identify itself by supplying an
+L<IndexManager|KinoSearch::Index::IndexManager> with a unique
+C<< hostname >> to Indexer's constructor or index corruption will
+occur.  See L<KinoSearch::Docs::FileLocking> for a detailed discussion.
 
 Note: at present, delete_by_term() and delete_by_query() only affect
 documents which had been previously committed to the index -- and not any
@@ -46,11 +47,11 @@ change in a future update.
 =head2 new( I<[labeled params]> )
 
     my $indexer = KinoSearch::Indexer->new(
-        schema       => $schema,           # required at index creation
-        index        => '/path/to/index',  # required
-        create       => 1,                 # default: 0
-        truncate     => 1,                 # default: 0
-        lock_factory => $factory           # default: created internally 
+        schema   => $schema,             # required at index creation
+        index    => '/path/to/index',    # required
+        create   => 1,                   # default: 0
+        truncate => 1,                   # default: 0
+        manager  => $manager             # default: created internally
     );
 
 =over
@@ -77,7 +78,7 @@ called.
 
 =item *
 
-B<lock_factory> - A LockFactory.
+B<manager> - An IndexManager.
 
 =back
 
@@ -124,8 +125,8 @@ B<index> - Either an index path name or a Folder.
 
 =head2 optimize()
 
-Collapse the index to its most compact form.  This may take a while,
-but will yield the fastest queries at search time.
+Optimize the index for search-time performance.  This may take a
+while, as it can involve rewriting large amounts of data.
 
 =head2 commit()
 

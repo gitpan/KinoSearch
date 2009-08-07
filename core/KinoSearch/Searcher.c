@@ -29,7 +29,7 @@
 Searcher*
 Searcher_new(Obj *index)
 {
-    Searcher *self = (Searcher*)VTable_Make_Obj(&SEARCHER);
+    Searcher *self = (Searcher*)VTable_Make_Obj(SEARCHER);
     return Searcher_init(self, index);
 }
 
@@ -46,9 +46,9 @@ Searcher_init(Searcher *self, Obj *index)
     self->seg_readers = IxReader_Seg_Readers(self->reader);
     self->seg_starts  = IxReader_Offsets(self->reader);
     self->doc_reader = (DocReader*)IxReader_Fetch(
-        self->reader, DOCREADER.name);
+        self->reader, DOCREADER->name);
     self->hl_reader = (HighlightReader*)IxReader_Fetch(
-        self->reader, HIGHLIGHTREADER.name);
+        self->reader, HIGHLIGHTREADER->name);
     if (self->doc_reader) { INCREF(self->doc_reader); }
     if (self->hl_reader)  { INCREF(self->hl_reader); }
 
@@ -69,14 +69,14 @@ Searcher_destroy(Searcher *self)
 Obj*
 Searcher_fetch_doc(Searcher *self, i32_t doc_id, float score, i32_t offset)
 {
-    if (!self->doc_reader) { THROW("No DocReader"); }
+    if (!self->doc_reader) { THROW(ERR, "No DocReader"); }
     return DocReader_Fetch(self->doc_reader, doc_id, score, offset);
 }
 
 DocVector*
 Searcher_fetch_doc_vec(Searcher *self, i32_t doc_id)
 {
-    if (!self->hl_reader) { THROW("No HighlightReader"); }
+    if (!self->hl_reader) { THROW(ERR, "No HighlightReader"); }
     return HLReader_Fetch(self->hl_reader, doc_id);
 }
 
@@ -90,7 +90,7 @@ u32_t
 Searcher_doc_freq(Searcher *self, const CharBuf *field, Obj *term)
 {
     LexiconReader *lex_reader 
-        = (LexiconReader*)IxReader_Fetch(self->reader, LEXICONREADER.name);
+        = (LexiconReader*)IxReader_Fetch(self->reader, LEXICONREADER->name);
     return lex_reader ? LexReader_Doc_Freq(lex_reader, field, term) : 0;
 }
 
@@ -127,7 +127,7 @@ Searcher_collect(Searcher *self, Query *query, HitCollector *collector)
     for (i = 0, max = VA_Get_Size(seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(seg_readers, i);
         DeletionsReader *del_reader = (DeletionsReader*)SegReader_Fetch(
-            seg_reader, DELETIONSREADER.name);
+            seg_reader, DELETIONSREADER->name);
         Matcher *matcher 
             = Compiler_Make_Matcher(compiler, seg_reader, need_score);
         if (matcher) {

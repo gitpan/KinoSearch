@@ -25,9 +25,9 @@ KinoSearch::Schema - User-created specification for an inverted index.
 
 =head1 DESCRIPTION
 
-A Schema is a blueprint specifying how other entities should interpret the raw
-data in an inverted index and interact with it.  It's akin to an SQL table
-definition.
+A Schema is a blueprint specifying how other entities should interpret the
+raw data in an inverted index and interact with it.  It's akin to an SQL
+table definition.
 
 Once an actual index has been created using a particular Schema, existing
 field definitions may not be changed.  However, it is possible to add new

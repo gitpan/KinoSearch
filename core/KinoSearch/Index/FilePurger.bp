@@ -5,17 +5,17 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Index::FilePurger extends KinoSearch::Obj {
 
-    Folder      *folder;
-    Snapshot    *snapshot;
-    LockFactory *lock_factory;
+    Folder       *folder;
+    Snapshot     *snapshot;
+    IndexManager *manager;
 
     static incremented FilePurger* 
     new(Folder *folder, Snapshot *snapshot = NULL, 
-        LockFactory *lock_factory = NULL);
+        IndexManager *manager = NULL);
 
     static FilePurger* 
     init(FilePurger *self, Folder *folder, Snapshot *snapshot = NULL,
-         LockFactory *lock_factory = NULL);
+         IndexManager *manager = NULL);
 
     /** Purge obsolete files from the index.
      */

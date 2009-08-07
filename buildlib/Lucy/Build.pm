@@ -646,7 +646,7 @@ sub ACTION_write_typemap {
         $typemap_start .= $prefix . "$ctype\t$uc_ctype\n";
         $typemap_input .= <<END_INPUT;
 $uc_ctype
-    \$var = ($prefix$ctype)SV_TO_KOBJ(\$arg, &$vtable);
+    \$var = ($prefix$ctype)XSBind_sv_to_kobj(\$arg, $vtable);
 
 END_INPUT
 
@@ -714,7 +714,7 @@ CLASSNAMEBUF
 
 CHARBUF_NOT_POINTER
         \$var.ref.count = 1;
-        \$var.vtable    = (${prefix}VTable*)&${PREFIX}ZOMBIECHARBUF;
+        \$var.vtable    = ${PREFIX}ZOMBIECHARBUF;
         \$var.ptr       = SvPVutf8_nolen(\$arg);
         \$var.size      = SvCUR(\$arg);
 
@@ -741,48 +741,34 @@ CHY_BIG_INT
 END_STUFF
 }
 
-=begin comment
-
-We build our Perl release tarball from the $REPOS_ROOT/perl, rather than from
-the top-level.
-
-Because some items we need are outside this directory, we need to copy a
-bunch of stuff, then update the MANIFEST so that the newly copied files get
-included.
-
-After the tarball is done, we delete the copied directories, then revert the
-MANIFEST so that during ordinary development we don't get a bunch of errors
-about missing files every time we run Build.PL.  
-
-=end comment
-=cut
 
 sub ACTION_dist {
     my $self = shift;
 
     $self->dispatch('pod');
-    my @dirs_to_copy = qw( core charmonizer devel boilerplater );
 
+    # We build our Perl release tarball from $REPOS_ROOT/perl, rather than
+    # from the top-level.
+    # 
+    # Because some items we need are outside this directory, we need to copy a
+    # bunch of stuff.  After the tarball is packaged up, we delete the copied
+    # directories.
+    my @dirs_to_copy = qw( core charmonizer devel boilerplater );
     print "Copying files...\n";
     for my $dir (@dirs_to_copy) {
         confess("'$dir' already exists") if -e $dir;
         system("cp -R ../$dir $dir");
     }
 
-    print "Updating MANIFEST temporarily...\n";
     $self->dispatch('manifest');
-
-    print "Generating no_index list...\n";
     my $no_index = $self->_gen_pause_exclusion_list;
     $self->meta_add( { no_index => $no_index } );
-
     $self->SUPER::ACTION_dist;
 
-    # Clean up and restore MANIFEST.
+    # Clean up.
     print "Removing copied files...\n";
     rmtree($_) for @dirs_to_copy;
-    print "Restoring MANIFEST...\n";
-    move( 'MANIFEST.bak', 'MANIFEST' );
+    unlink($_) for qw( MANIFEST META.yml );
 }
 
 # Generate a list of files for PAUSE, search.cpan.org, etc to ignore.

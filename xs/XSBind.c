@@ -1,5 +1,4 @@
 #include "XSBind.h"
-#include "KinoSearch/Util/Num.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/StringHelper.h"
@@ -23,7 +22,7 @@ kino_XSBind_new_blank_obj(SV *either_sv)
 
     /* Get a vtable. */
     if (   sv_isobject(either_sv) 
-        && sv_derived_from(either_sv, KINO_OBJ.name->ptr)
+        && sv_derived_from(either_sv, KINO_OBJ->name->ptr)
     ) {
         IV iv_ptr = SvIV(SvRV(either_sv));
         kino_Obj *self = INT2PTR(kino_Obj*, iv_ptr);
@@ -31,8 +30,7 @@ kino_XSBind_new_blank_obj(SV *either_sv)
     }
     else {
         kino_ZombieCharBuf klass = XSBind_sv_to_class_name(either_sv);
-        vtable = (kino_VTable*)kino_VTable_singleton(
-            (kino_CharBuf*)&klass, NULL);
+        vtable = kino_VTable_singleton((kino_CharBuf*)&klass, NULL);
     }
 
     return Kino_VTable_Make_Obj(vtable);
@@ -50,7 +48,7 @@ kino_Obj*
 kino_XSBind_sv_to_kobj(SV *sv, kino_VTable *vtable) 
 {
     kino_Obj *retval = XSBind_maybe_sv_to_kobj(sv, vtable);
-    if (!retval) THROW("Not a %o", vtable->name);
+    if (!retval) THROW(KINO_ERR, "Not a %o", vtable->name);
     return retval;
 }
 
@@ -60,23 +58,23 @@ kino_XSBind_sv_to_kobj_or_zcb(SV *sv, kino_VTable *vtable,
 {
     kino_Obj *retval = NULL;
     if (!sv || !kino_XSBind_sv_defined(sv)) {
-        THROW("Need a %o, but got NULL or undef", vtable->name);
+        THROW(KINO_ERR, "Need a %o, but got NULL or undef", vtable->name);
     }
     else if (sv_isobject(sv) && sv_derived_from(sv, vtable->name->ptr)) {
         IV tmp = SvIV( SvRV(sv) );
         retval = INT2PTR(kino_Obj*, tmp);
     }
-    else if (   vtable == (kino_VTable*)&KINO_ZOMBIECHARBUF
-             || vtable == (kino_VTable*)&KINO_VIEWCHARBUF
-             || vtable == (kino_VTable*)&KINO_CHARBUF
-             || vtable == (kino_VTable*)&KINO_OBJ
+    else if (   vtable == KINO_ZOMBIECHARBUF
+             || vtable == KINO_VIEWCHARBUF
+             || vtable == KINO_CHARBUF
+             || vtable == KINO_OBJ
     ) {
         STRLEN size;
         char *ptr = SvPVutf8(sv, size);
         Kino_ViewCB_Assign_Str(zcb, ptr, size);
         retval = (kino_Obj*)zcb;
     }
-    else THROW("Not a %o", vtable->name);
+    else THROW(KINO_ERR, "Not a %o", vtable->name);
     return retval;
 }
 
@@ -92,15 +90,15 @@ kino_XSBind_maybe_sv_to_kobj(SV *sv, kino_VTable *vtable)
         else if (SvROK(sv)) {
             SV *inner = SvRV(sv);
             if (SvTYPE(inner) == SVt_PVAV) {
-                if (   vtable == (kino_VTable*)&KINO_VARRAY
-                    || vtable == (kino_VTable*)&KINO_OBJ
+                if (   vtable == KINO_VARRAY
+                    || vtable == KINO_OBJ
                 ) {
                     retval = (kino_Obj*)parray_to_karray((AV*)inner);
                 }
             }
             else if (SvTYPE(inner) == SVt_PVHV) {
-                if (   vtable == (kino_VTable*)&KINO_HASH
-                    || vtable == (kino_VTable*)&KINO_OBJ
+                if (   vtable == KINO_HASH
+                    || vtable == KINO_OBJ
                 ) {
                     retval = (kino_Obj*)phash_to_khash((HV*)inner);
                 }
@@ -210,7 +208,7 @@ kino_XSBind_perl_to_kino(SV *sv)
                 retval = (kino_Obj*)phash_to_khash((HV*)inner);
             }
             else if (   sv_isobject(sv) 
-                     && sv_derived_from(sv, KINO_OBJ.name->ptr)
+                     && sv_derived_from(sv, KINO_OBJ->name->ptr)
             ) {
                 IV tmp = SvIV(inner);
                 retval = INT2PTR(kino_Obj*, tmp);
@@ -272,7 +270,7 @@ khash_to_phash(kino_Hash *hash)
     while (Kino_Hash_Iter_Next(hash, (kino_Obj**)&key, &val)) {
         SV *val_sv = XSBind_kobj_to_pobj(val);
         if (!KINO_OBJ_IS_A(key, KINO_CHARBUF)) {
-            KINO_THROW("Can't convert a key of class %o to a Perl hash key",
+            KINO_THROW(KINO_ERR, "Can't convert a key of class %o to a Perl hash key",
                 Kino_Obj_Get_Class_Name(key));
         }
         hv_store(perl_hash, key->ptr, Kino_CB_Get_Size(key), val_sv, 0);
@@ -313,6 +311,39 @@ kino_XSBind_kobj_to_pobj(kino_Obj *obj)
 }
 
 void
+kino_XSBind_enable_overload(void *pobj)
+{
+    SV *perl_obj = (SV*)pobj;
+    HV *stash = SvSTASH(SvRV(perl_obj));
+    char *package_name = HvNAME(stash);
+    size_t size = strlen(package_name);
+
+    /* This code is informed by the following snippet from Perl_sv_bless, from
+     * sv.c:
+     *
+     *     if (Gv_AMG(stash))
+     *         SvAMAGIC_on(sv);
+     *     else
+     *         (void)SvAMAGIC_off(sv);
+     *
+     * Gv_AMupdate is undocumented.  It is extracted from the Gv_AMG macro,
+     * also undocumented, defined in sv.h:
+     *
+     *     #define Gv_AMG(stash)  (PL_amagic_generation && Gv_AMupdate(stash))
+     * 
+     * The purpose of the code is to turn on overloading for the class in
+     * question.  It seems that as soon as overloading is on for any class,
+     * anywhere, that PL_amagic_generation goes positive and stays positive,
+     * so that Gv_AMupdate gets called with every bless() invocation.  Since
+     * we need overloading for Doc and all its subclasses, we skip the check
+     * and just update every time.
+     */
+    stash = gv_stashpvn((char*)package_name, size, true);
+    Gv_AMupdate(stash);
+    SvAMAGIC_on(perl_obj);
+}
+
+void
 kino_XSBind_allot_params(SV** stack, chy_i32_t start, 
                          chy_i32_t num_stack_elems, 
                          char* defaults_hash_name, ...)
@@ -325,12 +356,12 @@ kino_XSBind_allot_params(SV** stack, chy_i32_t start,
 
     /* NOTE: the defaults hash must be declared using "our". */
     if (defaults_hash == NULL)
-        THROW("Can't find hash named %s", defaults_hash_name);
+        THROW(KINO_ERR, "Can't find hash named %s", defaults_hash_name);
 
     /* Verify that our args come in pairs. Bail if there are no args. */
     if (num_stack_elems == start) return;
     if ((num_stack_elems - start) % 2 != 0)
-        THROW("Expecting hash-style params, got odd number of args");
+        THROW(KINO_ERR, "Expecting hash-style params, got odd number of args");
 
     /* Validate param names. */
     for (i = start; i < num_stack_elems; i += 2) {
@@ -338,7 +369,7 @@ kino_XSBind_allot_params(SV** stack, chy_i32_t start,
         STRLEN key_len;
         const char *key = SvPV(key_sv, key_len); /* assume ASCII labels */
         if (!hv_exists(defaults_hash, key, key_len)) {
-            THROW("Invalid parameter: '%s'", key);
+            THROW(KINO_ERR, "Invalid parameter: '%s'", key);
         }
     }
 
@@ -375,11 +406,11 @@ kino_XSBind_build_args_hash(SV** stack, chy_i32_t start,
 
     /* NOTE: the defaults hash must be declared using "our". */
     if (defaults_hash == NULL)
-        THROW("Can't find hash named %s", defaults_hash_name);
+        THROW(KINO_ERR, "Can't find hash named %s", defaults_hash_name);
 
     /* Verify that our args come in pairs. */
     if ((num_stack_elems - start) % 2 != 0)
-        THROW("Expecting hash-style params, got odd number of args");
+        THROW(KINO_ERR, "Expecting hash-style params, got odd number of args");
 
     /* Make the args hash a copy of the defaults hash. */
     (void)hv_iterinit(defaults_hash);
@@ -399,7 +430,7 @@ kino_XSBind_build_args_hash(SV** stack, chy_i32_t start,
         STRLEN key_len;
         char *key = SvPV(key_sv, key_len);
         if (!hv_exists(args_hash, key, key_len)) {
-            THROW("Invalid parameter: '%s'", key);
+            THROW(KINO_ERR, "Invalid parameter: '%s'", key);
         }
         val_sv = stack[stack_pos++];
         (void)hv_store(args_hash, key, key_len, newSVsv(val_sv), 0);
@@ -413,7 +444,7 @@ kino_XSBind_extract_sv(HV* hash, char* key, chy_i32_t key_len)
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
-        THROW("Failed to retrieve hash entry '%s'", key);
+        THROW(KINO_ERR, "Failed to retrieve hash entry '%s'", key);
     return *sv_ptr;
 }
 
@@ -435,7 +466,7 @@ kino_XSBind_maybe_extract_hv(HV *hash, char *key, STRLEN key_len)
             retval = (HV*)SvRV(*sv_ptr);
         }
         if (!retval || SvTYPE((SV*)retval) != SVt_PVHV) {
-            THROW("Value for '%s' isn't a valid hashref", key);
+            THROW(KINO_ERR, "Value for '%s' isn't a valid hashref", key);
         }
     }
     return retval;
@@ -451,7 +482,7 @@ kino_XSBind_maybe_extract_av(HV *hash, char *key, STRLEN key_len)
             retval = (AV*)SvRV(*sv_ptr);
         }
         if (!retval || SvTYPE((SV*)retval) != SVt_PVAV) {
-            THROW("Value for '%s' isn't a valid arrayref", key);
+            THROW(KINO_ERR, "Value for '%s' isn't a valid arrayref", key);
         }
     }
     return retval;
@@ -462,7 +493,7 @@ kino_XSBind_extract_iv(HV* hash, char* key, chy_i32_t key_len)
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
-        THROW("Failed to retrieve hash entry '%s'", key);
+        THROW(KINO_ERR, "Failed to retrieve hash entry '%s'", key);
     return SvIV(*sv_ptr);
 }
 
@@ -471,7 +502,7 @@ kino_XSBind_extract_uv(HV* hash, char* key, chy_i32_t key_len)
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
-        THROW("Failed to retrieve hash entry '%s'", key);
+        THROW(KINO_ERR, "Failed to retrieve hash entry '%s'", key);
     return SvUV(*sv_ptr);
 }
 
@@ -480,7 +511,7 @@ kino_XSBind_extract_nv(HV* hash, char* key, chy_i32_t key_len)
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
-        THROW("Failed to retrieve hash entry '%s'", key);
+        THROW(KINO_ERR, "Failed to retrieve hash entry '%s'", key);
     return SvNV(*sv_ptr);
 }
 
@@ -490,7 +521,7 @@ kino_XSBind_extract_kobj(HV *hash, const char *key, STRLEN key_len,
 {
     SV **const sv_ptr = hv_fetch(hash, key, key_len, 0);
     if (sv_ptr == NULL)
-        THROW("Failed to retrieve hash entry '%s'", key);
+        THROW(KINO_ERR, "Failed to retrieve hash entry '%s'", key);
     return XSBind_sv_to_kobj(*sv_ptr, vtable);
 }
 

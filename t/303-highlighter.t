@@ -78,7 +78,7 @@ my $hl   = KinoSearch::Highlight::Highlighter->new(
     excerpt_length => 3,
 );
 
-my $target = KinoSearch::Util::ViewCharBuf->_new("");
+my $target = KinoSearch::Obj::ViewCharBuf->_new("");
 
 my $field_val = make_cb("a $phi $phi b c");
 my $top       = $hl->_find_best_fragment(
@@ -165,8 +165,8 @@ $top       = $hl->_raw_excerpt(
     sentences   => make_spans( [ 0, length($field_val), 0 ] ),
     heat_map    => make_heat_map( [ 0, length($field_val), 1.0 ] ),
 );
-is( $target->to_perl, "... i.", "Ellipsis at top" );
-is( $top, 8, "top correct when leading ellipsis inserted" );
+is( $target->to_perl, "\x{2026} i.", "Ellipsis at top" );
+is( $top, 10, "top correct when leading ellipsis inserted" );
 
 $target    = make_cb("");
 $field_val = "Urk.  Iz no good.";
@@ -178,8 +178,8 @@ $top       = $hl->_raw_excerpt(
     sentences   => make_spans( [ 6, length($field_val) - 6, 0 ] ),
     heat_map    => make_heat_map( [ 0, length($field_val), 1.0 ] ),
 );
-is( $target->to_perl, "Iz...", "Ellipsis at end" );
-is( $top,             6,       "top trimmed" );
+is( $target->to_perl, "Iz no\x{2026}", "Ellipsis at end" );
+is( $top, 6, "top trimmed" );
 
 $hl = KinoSearch::Highlight::Highlighter->new(
     searchable     => $searcher,
@@ -360,7 +360,7 @@ like( $hl->create_excerpt($hit),
     qr/\*wise\*/, "override both Encode() and Highlight()" );
 
 sub make_cb {
-    return KinoSearch::Util::CharBuf->new(shift);
+    return KinoSearch::Obj::CharBuf->new(shift);
 }
 
 sub make_heat_map {
@@ -376,7 +376,7 @@ sub make_span {
 }
 
 sub make_spans {
-    my $spans = KinoSearch::Util::VArray->new( capacity => scalar @_ );
+    my $spans = KinoSearch::Obj::VArray->new( capacity => scalar @_ );
     for my $span_spec (@_) {
         $spans->push( make_span( @{$span_spec}[ 0 .. 2 ] ) );
     }

@@ -3,7 +3,6 @@
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Store/LockFactory.h"
 #include "KinoSearch/Util/Host.h"
 
 Obj*
@@ -17,7 +16,7 @@ CharBuf*
 PolyReader_try_read_snapshot(Snapshot *snapshot, Folder *folder, 
                              const CharBuf *filename) 
 {
-    return (CharBuf*)Host_callback_obj(&POLYREADER, "try_read_snapshot", 3,
+    return (CharBuf*)Host_callback_obj(POLYREADER, "try_read_snapshot", 3,
         ARG_OBJ("snapshot", snapshot), ARG_OBJ("folder", folder), 
         ARG_STR("filename", filename));
 }

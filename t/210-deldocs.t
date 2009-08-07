@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 14;
+use Test::More tests => 16;
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder     = create_index( 'a' .. 'e' );
@@ -35,10 +35,7 @@ $doc_map = $del_writer->generate_doc_map(
 is( $doc_map->get(4), 103, "doc map handles offset correctly" );
 ok( !$doc_map->get(3), "doc_map handled deletions correctly" );
 
-my $new_seg = KinoSearch::Index::Segment->new(
-    folder => $folder,
-    name   => 'seg_2',
-);
+my $new_seg = KinoSearch::Index::Segment->new( number => 2 );
 $del_writer = KinoSearch::Index::DefaultDeletionsWriter->new(
     schema     => $polyreader->get_schema,
     polyreader => $polyreader,
@@ -46,9 +43,9 @@ $del_writer = KinoSearch::Index::DefaultDeletionsWriter->new(
     snapshot   => $snapshot,
 );
 $del_writer->delete_by_term( field => 'content', term => 'a' );
-$del_writer->delete_by_term( field => 'content', term => 'b' );
+$del_writer->delete_by_doc_id(2);
 $del_writer->finish;
-$new_seg->write_file;
+$new_seg->write_file($folder);
 $snapshot->add_entry( $new_seg->get_name . "/segmeta.json" );
 
 for my $entry ( values %{ $new_seg->fetch_metadata('deletions')->{files} } ) {
@@ -60,6 +57,9 @@ $polyreader = KinoSearch::Index::PolyReader->open( index => $folder );
 $seg_reader = $polyreader->seg_readers->[0];
 my $del_reader = $seg_reader->obtain("KinoSearch::Index::DeletionsReader");
 my $deldocs    = $del_reader->read_deletions;
+
+ok( $deldocs->get(2), "Delete_By_Term" );
+ok( $deldocs->get(2), "Delete_By_Doc_ID" );
 
 my @deleted_or_not = map { $deldocs->get($_) } 0 .. 7;
 is_deeply(

@@ -7,7 +7,7 @@
 HitDoc*
 HitDoc_new(void *fields, i32_t doc_id, float score)
 {
-    HitDoc *self = (HitDoc*)VTable_Make_Obj(&HITDOC);
+    HitDoc *self = (HitDoc*)VTable_Make_Obj(HITDOC);
     return HitDoc_init(self, fields, doc_id, score);
 }
 
@@ -32,7 +32,7 @@ HitDoc_serialize(HitDoc *self, OutStream *outstream)
 HitDoc*
 HitDoc_deserialize(HitDoc *self, InStream *instream)
 {
-    self = self ? self : (HitDoc*)VTable_Make_Obj(&HITDOC);
+    self = self ? self : (HitDoc*)VTable_Make_Obj(HITDOC);
     Doc_deserialize((Doc*)self, instream);
     self->score = InStream_Read_F32(instream);
     return self;
@@ -42,7 +42,7 @@ Hash*
 HitDoc_dump(HitDoc *self)
 {
     HitDoc_dump_t super_dump 
-        = (HitDoc_dump_t)SUPER_METHOD(&HITDOC, HitDoc, Dump);
+        = (HitDoc_dump_t)SUPER_METHOD(HITDOC, HitDoc, Dump);
     Hash *dump = super_dump(self);
     Hash_Store_Str(dump, "score", 5, (Obj*)CB_newf("%f64", self->score));
     return dump;
@@ -53,7 +53,7 @@ HitDoc_load(HitDoc *self, Obj *dump)
 {
     Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
     HitDoc_load_t super_load 
-        = (HitDoc_load_t)SUPER_METHOD(&HITDOC, HitDoc, Load);
+        = (HitDoc_load_t)SUPER_METHOD(HITDOC, HitDoc, Load);
     HitDoc *loaded = super_load(self, dump);
     Obj *score = ASSERT_IS_A(Hash_Fetch_Str(source, "score", 5), OBJ);
     loaded->score = (float)Obj_To_F64(score);

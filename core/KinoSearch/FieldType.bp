@@ -97,7 +97,7 @@ abstract class KinoSearch::FieldType cnick FType extends KinoSearch::Obj {
      * @return a negative number if a is "less than" b, 0 if they are "equal",
      * and a positive number if a is "greater than" b.
      */
-    public i64_t
+    public i32_t
     Compare_Values(FieldType *self, Obj *a = NULL, Obj *b = NULL);
 
     /** Produce a settable object suitable for use by SortCache's Value()
@@ -105,6 +105,11 @@ abstract class KinoSearch::FieldType cnick FType extends KinoSearch::Obj {
      */
     abstract incremented Obj*
     Make_Blank(FieldType *self);
+
+    /** Produce a Stepper suitable for use by a Lexicon. 
+     */
+    public abstract incremented TermStepper*
+    Make_Term_Stepper(FieldType *self);
 
     /** Internal id used for switch() ops.  Unique for each primitive type.
      */

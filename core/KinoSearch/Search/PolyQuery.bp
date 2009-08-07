@@ -6,8 +6,8 @@ parcel KinoSearch cnick Kino;
  * and RequiredOptionalQuery.  All of these classes may serve as nodes in
  * composite Query with a tree structure which may be walked.
  */
-abstract class KinoSearch::Search::PolyQuery extends KinoSearch::Search::Query 
-    : dumpable {
+abstract class KinoSearch::Search::PolyQuery
+    extends KinoSearch::Search::Query : dumpable {
 
     VArray    *children;
 
@@ -52,7 +52,8 @@ class KinoSearch::Search::PolyCompiler extends KinoSearch::Search::Compiler {
      * Query.  Normalization is left to the subclass.
      */
     static PolyCompiler*
-    init(PolyCompiler *self, PolyQuery *parent, Searchable *searchable, float boost);
+    init(PolyCompiler *self, PolyQuery *parent, Searchable *searchable,
+         float boost);
 
     public float
     Sum_Of_Squared_Weights(PolyCompiler *self);

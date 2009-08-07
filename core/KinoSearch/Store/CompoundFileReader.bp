@@ -8,10 +8,10 @@ parcel KinoSearch cnick Kino;
  * e.g. Seek(0) seeks to the beginning of the sub-file, not the beginning of
  * the compound file.  
  * 
- * Each of the InStreams spawned maintains its own memory buffer; however, they
- * all share a single filehandle.  This allows KinoSearch to get around the
- * limitations that many operating systems place on the number of available
- * filehandles.
+ * Each of the InStreams spawned maintains its own memory buffer; however,
+ * they all share a single filehandle.  This allows KinoSearch to get around
+ * the limitations that many operating systems place on the number of
+ * available filehandles.
  */
 
 class KinoSearch::Store::CompoundFileReader cnick CFReader

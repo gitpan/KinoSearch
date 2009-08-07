@@ -6,7 +6,6 @@
 #include "KinoSearch/Search/BitVecMatcher.h"
 #include "KinoSearch/Search/SeriesMatcher.h"
 #include "KinoSearch/Util/I32Array.h"
-#include "KinoSearch/Util/BitVector.h"
 
 static SeriesMatcher*
 S_make_series_matcher(I32Array *doc_ids, I32Array *offsets, i32_t doc_max)
@@ -52,7 +51,7 @@ S_generate_match_list(i32_t first, i32_t max, i32_t doc_inc)
     for ( ; doc_id < max; doc_id += doc_inc, i++) {
         doc_ids[i] = doc_id;
     }
-    if (i != count) { THROW("Screwed up somehow: %i32 %i32", i, count); }
+    if (i != count) { THROW(ERR, "Screwed up somehow: %i32 %i32", i, count); }
 
     return I32Arr_new_steal(doc_ids, count);
 }

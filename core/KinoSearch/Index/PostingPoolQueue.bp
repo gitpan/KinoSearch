@@ -17,11 +17,6 @@ class KinoSearch::Util::PostingPoolQueue cnick PostPoolQ
     init(PostingPoolQueue *self, VArray *post_pools, InStream *lex_instream,
          InStream *post_stream, u32_t mem_thresh);
 
-    /* Compare two RawPosting** pointers.
-     */
-    static int
-    compare_rawp(void *context, const void *va, const void *vb);
-
     void
     Flip(PostingPoolQueue *self);
 }

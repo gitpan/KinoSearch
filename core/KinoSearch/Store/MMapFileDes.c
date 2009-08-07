@@ -75,14 +75,14 @@ SI_close_handles(MMapFileDes *self);
 MMapFileDes*
 MMapFileDes_new(const CharBuf *path) 
 {
-    MMapFileDes *self = (MMapFileDes*)VTable_Make_Obj(&MMAPFILEDES);
+    MMapFileDes *self = (MMapFileDes*)VTable_Make_Obj(MMAPFILEDES);
     return MMapFileDes_init(self, path);
 }
 
 MMapFileDes*
 MMapFileDes_init(MMapFileDes *self, const CharBuf *path) 
 {
-    if (!path) THROW("Missing required param 'path'");
+    if (!path) THROW(ERR, "Missing required param 'path'");
     FileDes_init((FileDes*)self, path);
 
     /* Open file or return NULL. */
@@ -297,12 +297,12 @@ SI_do_init(MMapFileDes *self)
     /* Derive len. */
     self->len = lseek(self->fd, 0, SEEK_END);
     if (self->len == -1) {
-        THROW("lseek on %o failed: %s", self->path, strerror(errno));
+        THROW(ERR, "lseek on %o failed: %s", self->path, strerror(errno));
     }
     else {
         i64_t check_val = lseek(self->fd, 0, SEEK_SET);
         if (check_val == -1) {
-            THROW("lseek on %o failed: %s", self->path, strerror(errno));
+            THROW(ERR, "lseek on %o failed: %s", self->path, strerror(errno));
         }
     }
 
@@ -326,7 +326,9 @@ SI_map(MMapFileDes *self, i64_t offset, i64_t len)
     if (len) {
         buf = mmap(NULL, len, PROT_READ, MAP_SHARED, self->fd, offset);
         if (buf == (void*)-1) {
-            THROW("mmap of '%o' failed: %s", self->path, strerror(errno));
+            THROW(ERR, "mmap of offset %i64 and length %i64 (page size %i64) "
+                "against '%o' failed: %s", offset, len, self->page_size,
+                self->path, strerror(errno));
         }
     }
 
@@ -403,7 +405,7 @@ SI_do_init(MMapFileDes *self)
             CharBuf *mess = MAKE_MESS("CreateFileMapping for %o failed: %s", 
                 self->path, win_error);
             FREEMEM(win_error);
-            Err_throw_mess(mess);
+            Err_throw_mess(ERR, mess);
         }
     }
 
@@ -436,7 +438,7 @@ SI_map(MMapFileDes *self, i64_t offset, i64_t len)
             CharBuf *mess = MAKE_MESS("MapViewOfFile for %o failed: %s", 
                 self->path, win_error);
             FREEMEM(win_error);
-            Err_throw_mess(mess);
+            Err_throw_mess(ERR, mess);
         }
     }
 

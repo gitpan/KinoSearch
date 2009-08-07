@@ -5,7 +5,7 @@
 Span*
 Span_new(i32_t offset, i32_t length, float weight)
 {
-    Span *self = (Span*)VTable_Make_Obj(&SPAN);
+    Span *self = (Span*)VTable_Make_Obj(SPAN);
     return Span_init(self, offset, length, weight);
 }
 

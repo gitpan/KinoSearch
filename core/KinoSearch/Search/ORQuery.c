@@ -11,7 +11,7 @@
 ORQuery*
 ORQuery_new(VArray *children)
 {
-    ORQuery *self = (ORQuery*)VTable_Make_Obj(&ORQUERY);
+    ORQuery *self = (ORQuery*)VTable_Make_Obj(ORQUERY);
     return ORQuery_init(self, children);
 }
 
@@ -64,7 +64,7 @@ ORQuery_to_string(ORQuery *self)
 ORCompiler*
 ORCompiler_new(ORQuery *parent, Searchable *searchable, float boost)
 {
-    ORCompiler *self = (ORCompiler*)VTable_Make_Obj(&ORCOMPILER);
+    ORCompiler *self = (ORCompiler*)VTable_Make_Obj(ORCOMPILER);
     return ORCompiler_init(self, parent, searchable, boost);
 }
 

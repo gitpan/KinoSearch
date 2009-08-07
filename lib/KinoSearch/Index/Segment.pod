@@ -116,6 +116,10 @@ field name can't be found.
 
 Getter for the object's seg name.
 
+=head2 get_number()
+
+Getter for the segment number.
+
 =head2 set_count(count)
 
 Setter for the object's document count.

@@ -6,7 +6,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/Lock.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/ByteBuf.h"
 #include "KinoSearch/Util/Compat/DirManip.h"
 
 
@@ -54,7 +53,7 @@ Folder_slurp_file(Folder *self, const CharBuf *filename)
     ByteBuf  *retval   = NULL;
 
     if (!instream) {
-        THROW("Can't open '%o'", filename);
+        THROW(ERR, "Can't open '%o'", filename);
     }
     else {
         size_t size = (size_t)InStream_Length(instream);
@@ -62,13 +61,13 @@ Folder_slurp_file(Folder *self, const CharBuf *filename)
         if (size > I32_MAX) {
             InStream_Close(instream);
             DECREF(instream);
-            THROW("File %o is too big to slurp (%u64 bytes)", filename, size);
+            THROW(ERR, "File %o is too big to slurp (%u64 bytes)", filename, size);
         } 
         else {
             char *ptr = MALLOCATE(size + 1, char);
             InStream_Read_Bytes(instream, ptr, size);
             ptr[size] = '\0';
-            retval = BB_new_steal_str(ptr, size, size + 1);
+            retval = BB_new_steal_bytes(ptr, size, size + 1);
             InStream_Close(instream);
             DECREF(instream);
         }

@@ -11,7 +11,7 @@ i32_t SortRule_DOC_ID = 2;
 SortRule*
 SortRule_new(i32_t type, const CharBuf *field, bool_t reverse)
 {
-    SortRule *self = (SortRule*)VTable_Make_Obj(&SORTRULE);
+    SortRule *self = (SortRule*)VTable_Make_Obj(SORTRULE);
     return SortRule_init(self, type, field, reverse);
 }
 
@@ -26,12 +26,12 @@ SortRule_init(SortRule *self, i32_t type, const CharBuf *field,
     /* Validate. */
     if (type == SortRule_FIELD) {
         if (!field) { 
-            THROW("When sorting by field, param 'field' is required"); 
+            THROW(ERR, "When sorting by field, param 'field' is required"); 
         }
     }
     else if (type == SortRule_SCORE)  { }
     else if (type == SortRule_DOC_ID) { }
-    else { THROW("Unknown type: %i32", type); }
+    else { THROW(ERR, "Unknown type: %i32", type); }
 
     return self;
 }
@@ -46,7 +46,7 @@ SortRule_destroy(SortRule *self)
 SortRule*
 SortRule_deserialize(SortRule *self, InStream *instream)
 {
-    self = self ? self : (SortRule*)VTable_Make_Obj(&SORTRULE);
+    self = self ? self : (SortRule*)VTable_Make_Obj(SORTRULE);
     self->type = InStream_Read_C32(instream);
     if (self->type == SortRule_FIELD) {
         self->field = CB_deserialize(NULL, instream);

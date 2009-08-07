@@ -6,7 +6,7 @@ use Test::More tests => 3;
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my @docs;
-my @chars = ( 'a' .. 'z', 'B' .. 'Z' );
+my @chars = ( 'a' .. 'z', 'B' .. 'E', 'G' .. 'Z' );
 for ( 0 .. 1000 ) {
     my $content = '';
     for my $num_words ( 0 .. int( rand(20) ) ) {
@@ -32,11 +32,8 @@ my $schema = KinoSearch::Test::TestSchema->new;
 
 my $snapshot
     = KinoSearch::Index::Snapshot->new->read_file( folder => $folder );
-my $segment = KinoSearch::Index::Segment->new(
-    folder => $folder,
-    name   => 'seg_1',
-);
-$segment->read_file;
+my $segment = KinoSearch::Index::Segment->new( number => 1 );
+$segment->read_file($folder);
 my $lex_reader = KinoSearch::Index::DefaultLexiconReader->new(
     schema   => $schema,
     folder   => $folder,

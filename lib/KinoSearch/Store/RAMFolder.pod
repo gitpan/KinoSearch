@@ -23,8 +23,8 @@ KinoSearch::Store::Folder.  It serves two main purposes.
 
 First, it's possible to load an existing FSFolder into memory, which can
 improve search-speed -- if you have that kind of RAM to spare.  Needless to
-say, any FSFolder you try to load this way should be appropriately modest in
-size.
+say, any FSFolder you try to load this way should be appropriately modest
+in size.
 
 Second, RAMFolder is handy for testing and development.
 

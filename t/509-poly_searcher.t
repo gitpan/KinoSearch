@@ -32,7 +32,7 @@ $hits = $poly_searcher->hits( query => 'c' );
 is( $hits->total_hits, 2, "Find hits in both searchers" );
 
 my $bit_vec
-    = KinoSearch::Util::BitVector->new( capacity => $poly_searcher->doc_max );
+    = KinoSearch::Obj::BitVector->new( capacity => $poly_searcher->doc_max );
 my $bitcoll = KinoSearch::Search::HitCollector::BitCollector->new(
     bit_vector => $bit_vec );
 my $query = $poly_searcher->glean_query('b');

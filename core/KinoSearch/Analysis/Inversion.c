@@ -12,7 +12,7 @@ S_count_clusters(Inversion *self);
 Inversion*
 Inversion_new(Token *seed_token) 
 {
-    Inversion *self = (Inversion*)VTable_Make_Obj(&INVERSION);
+    Inversion *self = (Inversion*)VTable_Make_Obj(INVERSION);
 
     /* Init. */
     self->cap                 = 16;
@@ -77,7 +77,7 @@ Inversion_append(Inversion *self, Token *token)
 {
     /* Safety check. */
     if (self->inverted)
-        THROW("Can't append tokens after inversion");
+        THROW(ERR, "Can't append tokens after inversion");
 
     /* Minimize reallocations. */
     if (self->size >= self->cap) {
@@ -109,9 +109,9 @@ Inversion_next_cluster(Inversion *self, u32_t *count)
 
     /* Don't read past the end of the cluster counts array. */
     if (!self->inverted)
-        THROW("Inversion not yet inverted");
+        THROW(ERR, "Inversion not yet inverted");
     if (self->cur > self->cluster_counts_size)
-        THROW("Tokens were added after inversion");
+        THROW(ERR, "Tokens were added after inversion");
 
     /* Place cluster count in passed-in var, advance bookmark. */
     *count = self->cluster_counts[ self->cur ];
@@ -129,7 +129,7 @@ Inversion_invert(Inversion *self)
 
     /* Thwart future attempts to append. */
     if (self->inverted)
-        THROW("Inversion has already been inverted");
+        THROW(ERR, "Inversion has already been inverted");
     self->inverted = true;
 
     /* Assign token positions. */
@@ -138,7 +138,7 @@ Inversion_invert(Inversion *self)
         cur_token->pos = token_pos;
         token_pos += cur_token->pos_inc;
         if (token_pos < cur_token->pos) {
-            THROW("Token positions out of order: %i32 %i32", 
+            THROW(ERR, "Token positions out of order: %i32 %i32", 
                 cur_token->pos, token_pos);
         }
     }
@@ -180,7 +180,7 @@ S_count_clusters(Inversion *self)
             }
         }
 
-        /* Record a count at the position of the first token in the cluster. */
+        /* Record count at the position of the first token in the cluster. */
         counts[i] = j - i;
 
         /* Start the next loop at the next token we haven't seen. */

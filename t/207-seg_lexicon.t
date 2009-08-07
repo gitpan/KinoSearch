@@ -47,11 +47,8 @@ $indexer->commit;
 
 my $snapshot
     = KinoSearch::Index::Snapshot->new->read_file( folder => $folder );
-my $segment = KinoSearch::Index::Segment->new(
-    folder => $folder,
-    name   => 'seg_1',
-);
-$segment->read_file;
+my $segment = KinoSearch::Index::Segment->new( number => 1 );
+$segment->read_file($folder);
 my $lex_reader = KinoSearch::Index::DefaultLexiconReader->new(
     schema   => $schema,
     folder   => $folder,

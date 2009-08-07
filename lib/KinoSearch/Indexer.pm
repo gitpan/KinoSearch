@@ -36,20 +36,19 @@ PPCODE:
     }
     else if (items > 2) {
         SV* boost_sv = NULL; 
-        XSBind_allot_params( &(ST(0)), 1, items, "KinoSearch::Indexer::add_doc_PARAMS",
-            &doc_sv, "doc", 3,
-            &boost_sv, "boost", 5,
-            NULL);
+        XSBind_allot_params( &(ST(0)), 1, items, 
+            "KinoSearch::Indexer::add_doc_PARAMS", &doc_sv, "doc", 3,
+            &boost_sv, "boost", 5, NULL);
         if (boost_sv) {
             boost = (float)SvNV(boost_sv);
         }
     }
     else if (items == 1) {
-        KINO_THROW("Missing required argument 'doc'");
+        KINO_THROW(KINO_ERR, "Missing required argument 'doc'");
     }
 
     /* Either get a Doc or use the stock doc. */
-    if (sv_isobject(doc_sv) && sv_derived_from(doc_sv, KINO_DOC.name->ptr)) {
+    if (sv_isobject(doc_sv) && sv_derived_from(doc_sv, KINO_DOC->name->ptr)) {
         IV tmp = SvIV( SvRV(doc_sv) );
         doc = INT2PTR(kino_Doc*, tmp);
     }
@@ -61,7 +60,7 @@ PPCODE:
         }
     }
     if (!doc) {
-        THROW("Need either a hashref or a %o", KINO_DOC.name);
+        THROW(KINO_ERR, "Need either a hashref or a %o", KINO_DOC->name);
     }
 
     Kino_Indexer_Add_Doc(self, doc, boost);
@@ -88,11 +87,11 @@ my $constructor = <<'END_NEW';
 ==head2 new( I<[labeled params]> )
 
     my $indexer = KinoSearch::Indexer->new(
-        schema       => $schema,           # required at index creation
-        index        => '/path/to/index',  # required
-        create       => 1,                 # default: 0
-        truncate     => 1,                 # default: 0
-        lock_factory => $factory           # default: created internally 
+        schema   => $schema,             # required at index creation
+        index    => '/path/to/index',    # required
+        create   => 1,                   # default: 0
+        truncate => 1,                   # default: 0
+        manager  => $manager             # default: created internally
     );
 
 ==over
@@ -119,7 +118,7 @@ called.
 
 ==item *
 
-B<lock_factory> - A LockFactory.
+B<manager> - An IndexManager.
 
 ==back
 END_NEW
@@ -162,7 +161,7 @@ END_ADD_DOC_POD
                 Add_Index
                 Commit
                 Prepare_Commit
-                Optimize
+                Optimize 
                 )
         ],
         make_constructors => ["_new|init"],

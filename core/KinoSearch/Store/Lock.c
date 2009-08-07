@@ -10,46 +10,25 @@
 #include "KinoSearch/Util/Compat/Sleep.h"
 #include "KinoSearch/Util/Compat/ProcessID.h"
 
-static const ZombieCharBuf write_lock_name_cb  = ZCB_LITERAL("write");
-static const ZombieCharBuf commit_lock_name_cb = ZCB_LITERAL("commit");
-const ZombieCharBuf *Lock_write_lock_name  = &write_lock_name_cb;
-const ZombieCharBuf *Lock_commit_lock_name = &commit_lock_name_cb;
-u32_t Lock_read_lock_timeout   = 1000;
-u32_t Lock_write_lock_timeout  = 1000;
-u32_t Lock_commit_lock_timeout = 5000;
-
-/* Delete a given lock file which meets these conditions:
- *    - lock name matches.
- *    - agent id matches.
- *
- * If delete_mine is false, don't delete a lock file which
- * matches this process's pid.  If delete_other is false, don't delete lock
- * files which don't match this process's pid.
- */
-static bool_t
-S_clear_file(Lock *self, const CharBuf *filename, bool_t delete_mine, 
-             bool_t delete_other);
-
 Lock*
-Lock_new(Folder *folder, const CharBuf *lock_name, const CharBuf *agent_id, 
-         i32_t timeout)
+Lock_init(Lock *self, Folder *folder, const CharBuf *name, 
+          const CharBuf *hostname, i32_t timeout, i32_t interval)
 {
-    Lock *self = (Lock*)VTable_Make_Obj(&LOCK);
-    return Lock_init(self, folder, lock_name, agent_id, timeout);
-}
+    /* Validate */
+    if (interval <= 0) {
+        DECREF(self);
+        THROW(ERR, "Invalid value for 'interval': %i32", interval);
+    }
 
-Lock*
-Lock_init(Lock *self, Folder *folder, const CharBuf *lock_name, 
-          const CharBuf *agent_id, i32_t timeout)
-{
     /* Assign. */
     self->folder       = (Folder*)INCREF(folder);
     self->timeout      = timeout;
-    self->lock_name    = CB_Clone(lock_name);
-    self->agent_id     = CB_Clone(agent_id);
+    self->name         = CB_Clone(name);
+    self->hostname     = CB_Clone(hostname);
+    self->interval     = interval;
 
     /* Derive. */
-    self->filename = CB_Clone(lock_name);
+    self->filename = CB_Clone(name);
     CB_Cat_Trusted_Str(self->filename, ".lock", 5);
 
     return self;
@@ -59,8 +38,8 @@ void
 Lock_destroy(Lock *self)
 {
     DECREF(self->folder);
-    DECREF(self->agent_id);
-    DECREF(self->lock_name);
+    DECREF(self->hostname);
+    DECREF(self->name);
     DECREF(self->filename);
     FREE_OBJ(self);
 }
@@ -71,97 +50,128 @@ Lock_get_filename(Lock *self) { return self->filename; }
 bool_t
 Lock_obtain(Lock *self)
 {
-    float sleep_count = (float)self->timeout / LOCK_POLL_INTERVAL;
-    bool_t locked = Lock_Do_Obtain(self);
+    float sleep_count = self->interval == 0 
+                      ? 0.0f
+                      : (float)self->timeout / self->interval;
+    bool_t locked = Lock_Request(self);
     
-    while (!locked && sleep_count-- > 0) {
-        Sleep_sleep(1);
-        locked = Lock_Do_Obtain(self);
+    while (!locked) {
+        sleep_count -= self->interval;
+        if (sleep_count < 0) { break; }
+        Sleep_millisleep(self->interval);
+        locked = Lock_Request(self);
     }
 
     return locked;
 }
 
+/***************************************************************************/
+
+LockFileLock*
+LFLock_new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
+           i32_t timeout, i32_t interval)
+{
+    LockFileLock *self = (LockFileLock*)VTable_Make_Obj(LOCKFILELOCK);
+    return LFLock_init(self, folder, name, hostname, timeout, interval);
+}
+
+LockFileLock*
+LFLock_init(LockFileLock *self, Folder *folder, const CharBuf *name, 
+            const CharBuf *hostname, i32_t timeout, i32_t interval)
+{
+    Lock_init((Lock*)self, folder, name, hostname, timeout, interval);
+    return self;
+}
+
 bool_t
-Lock_do_obtain(Lock *self)
+LFLock_shared(LockFileLock *self) { UNUSED_VAR(self); return false; }
+
+bool_t
+LFLock_request(LockFileLock *self)
 {
     Hash      *file_data; 
-    bool_t     success;
+    bool_t     wrote_json;
+    bool_t     success = false;
+    bool_t     deletion_failed = false;
+    CharBuf   *temp_name;
     
-    if (Folder_Exists(self->folder, self->filename))
-        return false;
+    if (Folder_Exists(self->folder, self->filename)) { return false; }
 
-    /* Write pid, lock name, and agent id to the lock file as YAML. */
+    /* Write pid, lock name, and hostname to the lock file as JSON. */
     file_data = Hash_new(3);
     Hash_Store_Str(file_data, "pid", 3, 
         (Obj*)CB_newf("%i64", (i64_t)PID_getpid() ) );
-    Hash_Store_Str(file_data, "agent_id", 8, INCREF(self->agent_id));
-    Hash_Store_Str(file_data, "lock_name", 9, INCREF(self->lock_name));
-    success = Json_spew_json((Obj*)file_data, self->folder, self->filename);
+    Hash_Store_Str(file_data, "hostname", 8, INCREF(self->hostname));
+    Hash_Store_Str(file_data, "name", 4, INCREF(self->name));
 
-    /* Clean up. */
+    /* Write to a temporary file, then use the creation of a hard link to
+     * ensure atomic but non-destructive creation of the lockfile with its
+     * complete contents. */
+    temp_name = CB_newf("%o.temp", self->filename);
+    wrote_json = Json_spew_json((Obj*)file_data, self->folder, temp_name);
+    if (wrote_json) {
+        success = Folder_Hard_Link(self->folder, temp_name, self->filename);
+        deletion_failed = !Folder_Delete(self->folder, temp_name);
+    }
     DECREF(file_data);
+
+    /* Verify that our temporary file got zapped. */
+    if (wrote_json && deletion_failed) {
+        CharBuf *mess = MAKE_MESS("Failed to delete %o", temp_name);
+        DECREF(temp_name);
+        Err_throw_mess(ERR, mess);
+    }
+    DECREF(temp_name);
 
     return success;
 }
 
 void
-Lock_release(Lock *self)
+LFLock_release(LockFileLock *self)
 {
     if (Folder_Exists(self->folder, self->filename)) {
-        S_clear_file(self, self->filename, true, false);
+        LFLock_Maybe_Delete_File(self, self->filename, true, false);
     }
 }
 
 bool_t
-Lock_is_locked(Lock *self)
+LFLock_is_locked(LockFileLock *self)
 {
     return Folder_Exists(self->folder, self->filename);
 }
 
 void
-Lock_clear_stale(Lock *self)
+LFLock_clear_stale(LockFileLock *self)
 {
-    VArray *files = Folder_List(self->folder);
-    u32_t i, max;
-    
-    /* Take a stab at any file that begins with our lock_name. */
-    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *filename = (CharBuf*)VA_Fetch(files, i);
-        if (   CB_Starts_With(filename, self->lock_name)
-            && CB_Ends_With_Str(filename, ".lock", 5)
-        ) {
-            S_clear_file(self, filename, false, true);
-        }
-    }
-
-    DECREF(files);
+    LFLock_Maybe_Delete_File(self, self->filename, false, true);
 }
 
-static bool_t
-S_clear_file(Lock *self, const CharBuf *filename, bool_t delete_mine, 
-             bool_t delete_other) 
+bool_t
+LFLock_maybe_delete_file(LockFileLock *self, const CharBuf *filename,
+                         bool_t delete_mine, bool_t delete_other) 
 {
     Folder *folder      = self->folder;
     bool_t  success     = false;
 
-    /* Only delete locks that start with our lock_name. */
-    if ( !CB_Starts_With(filename, self->lock_name) ) 
+    /* Only delete locks that start with our lock name. */
+    if ( !CB_Starts_With(filename, self->name) ) 
         return false;
 
     /* Attempt to delete dead lock file. */
     if (Folder_Exists(folder, filename)) {
         Hash *hash = (Hash*)Json_slurp_json(folder, filename);
         if ( hash != NULL && OBJ_IS_A(hash, HASH) ) {
-            CharBuf *pid_buf   = (CharBuf*)Hash_Fetch_Str(hash, "pid", 3);
-            CharBuf *agent_id  = (CharBuf*)Hash_Fetch_Str(hash, "agent_id", 8);
-            CharBuf *lock_name = (CharBuf*)Hash_Fetch_Str(hash, "lock_name", 9);
+            CharBuf *pid_buf = (CharBuf*)Hash_Fetch_Str(hash, "pid", 3);
+            CharBuf *hostname 
+                = (CharBuf*)Hash_Fetch_Str(hash, "hostname", 8);
+            CharBuf *name 
+                = (CharBuf*)Hash_Fetch_Str(hash, "name", 4);
 
-            /* Match agent id and lock name. */
-            if (   agent_id != NULL  
-                && CB_Equals(agent_id, (Obj*)self->agent_id)
-                && lock_name != NULL
-                && CB_Equals(lock_name, (Obj*)self->lock_name)
+            /* Match hostname and lock name. */
+            if (   hostname != NULL  
+                && CB_Equals(hostname, (Obj*)self->hostname)
+                && name != NULL
+                && CB_Equals(name, (Obj*)self->name)
                 && pid_buf != NULL
             ) {
                 /* Verify that pid is either mine or dead. */
@@ -178,7 +188,7 @@ S_clear_file(Lock *self, const CharBuf *filename, bool_t delete_mine,
                         CharBuf *mess 
                             = MAKE_MESS("Can't delete '%o'", filename);
                         DECREF(hash);
-                        Err_throw_mess(mess);
+                        Err_throw_mess(ERR, mess);
                     }
                 }
             }
@@ -187,6 +197,30 @@ S_clear_file(Lock *self, const CharBuf *filename, bool_t delete_mine,
     }
 
     return success;
+}
+
+
+/***************************************************************************/
+
+LockErr*
+LockErr_new(CharBuf *message)
+{
+    LockErr *self = (LockErr*)VTable_Make_Obj(LOCKERR);
+    return LockErr_init(self, message);
+}
+
+LockErr*
+LockErr_init(LockErr *self, CharBuf *message)
+{
+    Err_init((Err*)self, message);
+    return self;
+}
+
+LockErr*
+LockErr_make(LockErr *self)
+{
+    UNUSED_VAR(self);
+    return LockErr_new(CB_new(0));
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

@@ -8,7 +8,7 @@ NumPriorityQueue*
 NumPriQ_new(u32_t max_size)
 {
     NumPriorityQueue *self 
-        = (NumPriorityQueue*)VTable_Make_Obj(&NUMPRIORITYQUEUE);
+        = (NumPriorityQueue*)VTable_Make_Obj(NUMPRIORITYQUEUE);
     return (NumPriorityQueue*)PriQ_init((PriorityQueue*)self, max_size);
 }
 
@@ -32,7 +32,7 @@ S_pop_num(NumPriorityQueue *pq)
 {
     Float64 *num = (Float64*)PriQ_Pop(pq);
     i32_t retval;
-    if (!num) { THROW("Queue is empty"); }
+    if (!num) { THROW(ERR, "Queue is empty"); }
     retval = (i32_t)Float64_Get_Value(num);
     DECREF(num);
     return retval;

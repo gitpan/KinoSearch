@@ -4,9 +4,9 @@
 #include "ppport.h"
 
 #include "KinoSearch/Obj.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
 #include "KinoSearch/Obj/VTable.h"
-#include "KinoSearch/Util/Err.h"
-#include "KinoSearch/Util/CharBuf.h"
 #include "KinoSearch/Util/MemManager.h"
 
 static void
@@ -52,7 +52,7 @@ kino_Obj_inc_refcount(kino_Obj *self)
 {
     switch (self->ref.count) {
         case 0:
-            KINO_THROW("Illegal refcount of 0");
+            KINO_THROW(KINO_ERR, "Illegal refcount of 0");
             break; /* useless */
         case 1:
         case 2:
@@ -70,10 +70,10 @@ kino_Obj_inc_refcount(kino_Obj *self)
 chy_u32_t
 kino_Obj_dec_refcount(kino_Obj *self)
 {
-    chy_u32_t modified_refcount;
+    chy_u32_t modified_refcount = I32_MAX;
     switch (self->ref.count) {
         case 0:
-            KINO_THROW("Illegal refcount of 0");
+            KINO_THROW(KINO_ERR, "Illegal refcount of 0");
             break; /* useless */
         case 1:
             modified_refcount = 0;

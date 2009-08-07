@@ -97,8 +97,8 @@ final class KinoSearch::Store::OutStream extends KinoSearch::Obj {
     void
     Write_F64(OutStream *self, double value);
 
-    /** Write a string as a C32 indicating length of content in bytes, followed by
-     * the content.
+    /** Write a string as a C32 indicating length of content in bytes,
+     * followed by the content.
      */
     void 
     Write_String(OutStream *self, const char *buf, size_t len);

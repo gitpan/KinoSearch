@@ -2,14 +2,16 @@
 
 #include "KinoSearch/Index/SegLexicon.h"
 #include "KinoSearch/Architecture.h"
+#include "KinoSearch/FieldType.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/LexIndex.h"
-#include "KinoSearch/Index/LexStepper.h"
 #include "KinoSearch/Index/LexiconWriter.h"
 #include "KinoSearch/Index/SegPostingList.h"
+#include "KinoSearch/Index/TermStepper.h"
+#include "KinoSearch/Posting/MatchPosting.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Util/I32Array.h"
@@ -23,7 +25,7 @@ SegLexicon*
 SegLex_new(Schema *schema, Folder *folder, Segment *segment, 
            const CharBuf *field)
 {
-    SegLexicon *self = (SegLexicon*)VTable_Make_Obj(&SEGLEXICON);
+    SegLexicon *self = (SegLexicon*)VTable_Make_Obj(SEGLEXICON);
     return SegLex_init(self, schema, folder, segment, field);
 }
 
@@ -38,19 +40,20 @@ SegLex_init(SegLexicon *self, Schema *schema, Folder *folder,
     Obj          *format    = Hash_Fetch_Str(metadata, "format", 6);
     CharBuf      *seg_name  = Seg_Get_Name(segment);
     i32_t         field_num = Seg_Field_Num(segment, field);
+    FieldType    *type      = Schema_Fetch_Type(schema, field);
     CharBuf *filename = CB_newf("%o/lexicon-%i32.dat", seg_name, field_num);
 
     /* Check format. */
-    if (!format) { THROW("Missing 'format'"); }
+    if (!format) { THROW(ERR, "Missing 'format'"); }
     else {
         if (Obj_To_I64(format) > LexWriter_current_file_format) {
-            THROW("Unsupported lexicon format: %i64",
+            THROW(ERR, "Unsupported lexicon format: %i64",
                 Obj_To_I64(format));
         }
     }
 
     /* Extract count from metadata. */
-    if (!counts) { THROW("Failed to extract 'counts'"); }
+    if (!counts) { THROW(ERR, "Failed to extract 'counts'"); }
     else {
         Obj *count = ASSERT_IS_A(Hash_Fetch(counts, (Obj*)field), OBJ);
         self->size = (i32_t)Obj_To_I64(count);
@@ -70,15 +73,16 @@ SegLex_init(SegLexicon *self, Schema *schema, Folder *folder,
         CharBuf *mess = MAKE_MESS("Can't open %o", filename);
         DECREF(filename);
         DECREF(self);
-        Err_throw_mess(mess);
+        Err_throw_mess(ERR, mess);
     }
     DECREF(filename);
 
     /* Define the term_num as "not yet started". */
     self->term_num = -1;
 
-    /* Get a LexStepper. */
-    self->lex_stepper = LexStepper_new(field, self->skip_interval);
+    /* Get steppers. */
+    self->term_stepper  = FType_Make_Term_Stepper(type);
+    self->tinfo_stepper = (TermStepper*)MatchTInfoStepper_new(schema);
 
     return self;
 }
@@ -87,7 +91,8 @@ void
 SegLex_destroy(SegLexicon *self) 
 {
     DECREF(self->segment);
-    DECREF(self->lex_stepper);
+    DECREF(self->term_stepper);
+    DECREF(self->tinfo_stepper);
     DECREF(self->field);
     DECREF(self->lex_index);
     DECREF(self->instream);
@@ -107,10 +112,16 @@ SegLex_seek(SegLexicon *self, Obj *target)
 
     /* Use the LexIndex to get in the ballpark. */
     LexIndex_Seek(lex_index, target);
-    LexStepper_Set_TInfo(self->lex_stepper, 
-        LexIndex_Get_Term_Info(lex_index));
-    LexStepper_Set_Value(self->lex_stepper, LexIndex_Get_Term(lex_index));
-    InStream_Seek(self->instream, self->lex_stepper->tinfo->lex_filepos);
+    {
+        TermInfo *target_tinfo = LexIndex_Get_Term_Info(lex_index);
+        TermInfo *my_tinfo
+            = (TermInfo*)TermStepper_Get_Value(self->tinfo_stepper);
+        Obj *lex_index_term = Obj_Clone(LexIndex_Get_Term(lex_index));
+        TInfo_Mimic(my_tinfo, (Obj*)target_tinfo);
+        TermStepper_Set_Value(self->term_stepper, lex_index_term);
+        DECREF(lex_index_term);
+        InStream_Seek(self->instream, target_tinfo->lex_filepos);
+    }
     self->term_num = LexIndex_Get_Term_Num(lex_index);
 
     /* Scan to the precise location. */
@@ -122,7 +133,8 @@ SegLex_reset(SegLexicon* self)
 {
     self->term_num = -1;
     InStream_Seek(self->instream, 0);
-    LexStepper_Reset(self->lex_stepper);
+    TermStepper_Reset(self->term_stepper);
+    TermStepper_Reset(self->tinfo_stepper);
 }
 
 i32_t
@@ -134,13 +146,20 @@ SegLex_get_field_num(SegLexicon *self)
 Obj*
 SegLex_get_term(SegLexicon *self)
 {
-    return self->lex_stepper->value;
+    return TermStepper_Get_Value(self->term_stepper);
+}
+
+i32_t
+SegLex_doc_freq(SegLexicon *self)
+{
+    TermInfo *tinfo = (TermInfo*)TermStepper_Get_Value(self->tinfo_stepper);
+    return tinfo ? tinfo->doc_freq : 0;
 }
 
 TermInfo*
 SegLex_get_term_info(SegLexicon *self)
 {
-    return self->lex_stepper->tinfo;
+    return (TermInfo*)TermStepper_Get_Value(self->tinfo_stepper);
 }
 
 Segment*
@@ -152,12 +171,14 @@ SegLex_next(SegLexicon *self)
     /* If we've run out of terms, null out and return. */
     if (++self->term_num >= self->size) {
         self->term_num = self->size; /* don't keep growing */
-        LexStepper_Reset(self->lex_stepper);
+        TermStepper_Reset(self->term_stepper);
+        TermStepper_Reset(self->tinfo_stepper);
         return false;
     }
 
     /* Read next term/terminfo. */
-    LexStepper_Read_Record(self->lex_stepper, self->instream);
+    TermStepper_Read_Delta(self->term_stepper, self->instream);
+    TermStepper_Read_Delta(self->tinfo_stepper, self->instream);
 
     return true;
 }
@@ -166,9 +187,9 @@ static void
 S_scan_to(SegLexicon *self, Obj *target)
 {
     /* (mildly evil encapsulation violation, since value can be null) */
-    Obj *current = self->lex_stepper->value;
+    Obj *current = TermStepper_Get_Value(self->term_stepper);
     if ( !Obj_Is_A(target, Obj_Get_VTable(current)) ) { 
-        THROW("Target is a %o, and not comparable to a %o",
+        THROW(ERR, "Target is a %o, and not comparable to a %o",
             Obj_Get_Class_Name(target), Obj_Get_Class_Name(current));
     }
 

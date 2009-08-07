@@ -12,7 +12,6 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/ByteBuf.h"
 #include "KinoSearch/Util/Host.h"
 #include "KinoSearch/Util/I32Array.h"
 
@@ -25,7 +24,7 @@ DocWriter*
 DocWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment, 
               PolyReader *polyreader)
 {
-    DocWriter *self = (DocWriter*)VTable_Make_Obj(&DOCWRITER);
+    DocWriter *self = (DocWriter*)VTable_Make_Obj(DOCWRITER);
     return DocWriter_init(self, schema, snapshot, segment, polyreader);
 }
 
@@ -60,8 +59,8 @@ S_lazy_init(DocWriter *self)
         Snapshot_Add_Entry(snapshot, dat_file);
         self->ix_out  = Folder_Open_Out(folder, ix_file);
         self->dat_out = Folder_Open_Out(folder, dat_file);
-        if (!self->ix_out)  { THROW("Can't open %o", ix_file); }
-        if (!self->dat_out) { THROW("Can't open %o", dat_file); }
+        if (!self->ix_out)  { THROW(ERR, "Can't open %o", ix_file); }
+        if (!self->dat_out) { THROW(ERR, "Can't open %o", dat_file); }
         DECREF(ix_file);
         DECREF(dat_file);
 
@@ -84,7 +83,7 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
 
     /* Verify doc id. */
     if (doc_id != expected)
-        THROW("Expected doc id %i64 but got %i32", expected, doc_id);
+        THROW(ERR, "Expected doc id %i64 but got %i32", expected, doc_id);
 
     /* Write the number of stored fields. */
     Inverter_Iter_Init(inverter);
@@ -125,7 +124,7 @@ DocWriter_add_segment(DocWriter *self, SegReader *reader,
         OutStream     *const ix_out     = self->ix_out;
         ByteBuf       *const buffer     = BB_new(0);
         DefaultDocReader *const doc_reader = (DefaultDocReader*)ASSERT_IS_A(
-            SegReader_Obtain(reader, DOCREADER.name), DEFAULTDOCREADER);
+            SegReader_Obtain(reader, DOCREADER->name), DEFAULTDOCREADER);
         i32_t i, max;
 
         for (i = 1, max = SegReader_Doc_Max(reader); i <= max; i++) {

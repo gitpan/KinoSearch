@@ -10,7 +10,7 @@
 Hits*
 Hits_new(Searchable *searchable, TopDocs *top_docs, u32_t offset)
 {
-    Hits *self = (Hits*)VTable_Make_Obj(&HITS);
+    Hits *self = (Hits*)VTable_Make_Obj(HITS);
     return Hits_init(self, searchable, top_docs, offset);
 }
 

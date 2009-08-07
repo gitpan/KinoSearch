@@ -9,18 +9,18 @@
 #include "KinoSearch/Store/OutStream.h"
 
 SharedLock*
-ShLock_new(Folder *folder, const CharBuf *lock_name, const CharBuf *agent_id, 
-           i32_t timeout)
+ShLock_new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
+           i32_t timeout, i32_t interval)
 {
-    SharedLock *self = (SharedLock*)VTable_Make_Obj(&SHAREDLOCK);
-    return ShLock_init(self, folder, lock_name, agent_id, timeout);
+    SharedLock *self = (SharedLock*)VTable_Make_Obj(SHAREDLOCK);
+    return ShLock_init(self, folder, name, hostname, timeout, interval);
 }
 
 SharedLock*
-ShLock_init(SharedLock *self, Folder *folder, const CharBuf *lock_name, 
-            const CharBuf *agent_id, i32_t timeout)
+ShLock_init(SharedLock *self, Folder *folder, const CharBuf *name, 
+            const CharBuf *hostname, i32_t timeout, i32_t interval)
 {
-    Lock_init((Lock*)self, folder, lock_name, agent_id, timeout);
+    Lock_init((Lock*)self, folder, name, hostname, timeout, interval);
 
     /* Override. */
     DECREF(self->filename);
@@ -30,11 +30,14 @@ ShLock_init(SharedLock *self, Folder *folder, const CharBuf *lock_name,
 }
 
 bool_t
-ShLock_do_obtain(SharedLock *self)
+ShLock_shared(SharedLock *self) { UNUSED_VAR(self); return true; }
+
+bool_t
+ShLock_request(SharedLock *self)
 {
     u32_t i = 0;
-    ShLock_do_obtain_t super_do_obtain 
-        = (ShLock_do_obtain_t)SUPER_METHOD(&SHAREDLOCK, ShLock, Do_Obtain);
+    ShLock_request_t super_request 
+        = (ShLock_request_t)SUPER_METHOD(SHAREDLOCK, ShLock, Request);
 
     /* EMPTY filename indicates whether this particular instance is locked. */
     if (   self->filename != (CharBuf*)&EMPTY 
@@ -45,12 +48,12 @@ ShLock_do_obtain(SharedLock *self)
     }
 
     DECREF(self->filename);
-    self->filename = CB_new(CB_Get_Size(self->lock_name) + 10);
+    self->filename = CB_new(CB_Get_Size(self->name) + 10);
     do {
-        CB_setf(self->filename, "%o-%u32.lock", self->lock_name, ++i);
+        CB_setf(self->filename, "%o-%u32.lock", self->name, ++i);
     } while ( Folder_Exists(self->folder, self->filename) );
 
-    return super_do_obtain(self);
+    return super_request(self);
 }
 
 void
@@ -58,13 +61,32 @@ ShLock_release(SharedLock *self)
 {
     if (self->filename != (CharBuf*)&EMPTY) {
         ShLock_release_t super_release
-            = (ShLock_release_t)SUPER_METHOD(&SHAREDLOCK, ShLock, Release);
+            = (ShLock_release_t)SUPER_METHOD(SHAREDLOCK, ShLock, Release);
         super_release(self);
 
         /* Empty out filename. */
         DECREF(self->filename);
         self->filename = (CharBuf*)INCREF(&EMPTY);
     }
+}
+
+void
+ShLock_clear_stale(SharedLock *self)
+{
+    VArray *files = Folder_List(self->folder);
+    u32_t i, max;
+    
+    /* Take a stab at any file that begins with our lock name. */
+    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
+        CharBuf *filename = (CharBuf*)VA_Fetch(files, i);
+        if (   CB_Starts_With(filename, self->name)
+            && CB_Ends_With_Str(filename, ".lock", 5)
+        ) {
+            LFLock_Maybe_Delete_File(self, filename, false, true);
+        }
+    }
+
+    DECREF(files);
 }
 
 bool_t
@@ -77,15 +99,20 @@ ShLock_is_locked(SharedLock *self)
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
         CharBuf *filename = (CharBuf*)VA_Fetch(files, i);
 
-        /* Translation: $locked = 1 if $filename =~ /$lock_name-\d+\.lock$/ */
-        if (CB_Starts_With(filename, self->lock_name)) {
+        /* Translation: 
+         *   $locked = 1 if $filename =~ /^\Q$name-\d+\.lock$/ 
+         */
+        if (   CB_Starts_With(filename, self->name)
+            && CB_Ends_With_Str(filename, ".lock", 5)
+        ) {
             ZombieCharBuf temp = ZCB_make(filename);
-            ZCB_Nip(&temp, CB_Length(self->lock_name));
-            if (ZCB_Nip_One(&temp) == '-') {
-                while (isdigit(ZCB_Code_Point_At(&temp, 0))) {
-                    ZCB_Nip_One(&temp);
-                }
-                if (CB_Equals_Str(&temp, ".lock", 5)) {
+            ZCB_Chop(&temp, sizeof(".lock") - 1);
+            while(isdigit(ZCB_Code_Point_From(&temp, 1))) {
+                ZCB_Chop(&temp, 1);
+            }
+            if (ZCB_Code_Point_From(&temp, 1) == '-') {
+                ZCB_Chop(&temp, 1);
+                if (CB_Equals(&temp, (Obj*)self->name)) {
                     locked = true;
                 }
             }

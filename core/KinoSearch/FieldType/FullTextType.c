@@ -9,7 +9,7 @@
 FullTextType*
 FullTextType_new(Analyzer *analyzer)
 {
-    FullTextType *self = (FullTextType*)VTable_Make_Obj(&FULLTEXTTYPE);
+    FullTextType *self = (FullTextType*)VTable_Make_Obj(FULLTEXTTYPE);
     return FullTextType_init(self, analyzer);
 }
 
@@ -89,7 +89,8 @@ FullTextType_dump(FullTextType *self)
     Hash_Store_Str(dump, "_class", 6, 
         (Obj*)CB_Clone(Obj_Get_Class_Name(self)));
     if (self->analyzer) {
-        Hash_Store_Str(dump, "analyzer", 8, (Obj*)Analyzer_Dump(self->analyzer));
+        Hash_Store_Str(dump, "analyzer", 8, 
+            (Obj*)Analyzer_Dump(self->analyzer));
     }
     DECREF(Hash_Delete_Str(dump, "type", 4));
     
@@ -103,7 +104,7 @@ FullTextType_load(FullTextType *self, Obj *dump)
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
     VTable *vtable = (class_name != NULL && OBJ_IS_A(class_name, CHARBUF)) 
                    ? VTable_singleton(class_name, NULL)
-                   : (VTable*)&FULLTEXTTYPE;
+                   : FULLTEXTTYPE;
     FullTextType *loaded = (FullTextType*)VTable_Make_Obj(vtable);
     Hash *analyzer_dump  = (Hash*)Hash_Fetch_Str(source, "analyzer", 8);
     Analyzer *analyzer = NULL;
@@ -150,7 +151,7 @@ void
 FullTextType_set_sortable(FullTextType *self, bool_t sortable)
 {
     UNUSED_VAR(self);
-    if (sortable) { THROW("FullTextType fields can't be sortable"); }
+    if (sortable) { THROW(ERR, "FullTextType fields can't be sortable"); }
 }
 
 Similarity*

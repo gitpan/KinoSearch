@@ -33,7 +33,7 @@ my %from_perl = (
         }
         else {
             $_[0] = NULL; /* avoid uninitialized compiler warning */
-            THROW("$_[0] is not a reference");
+            THROW(KINO_ERR, "$_[0] is not a reference");
         }\n|;
     },
 );
@@ -66,11 +66,11 @@ sub _from_bp {
     my ( $bp_var, $c_var, $struct_name ) = @_;
     my $vtable = uc($struct_name);
     if ( $struct_name =~ /^kino_(Obj|ByteBuf|CharBuf)$/ ) {
-        return "$bp_var = ($struct_name*)SV_TO_KOBJ_OR_ZCB($c_var, "
-            . "&$vtable, &${bp_var}_zcb);";
+        return "$bp_var = ($struct_name*)XSBind_sv_to_kobj_or_zcb($c_var, "
+            . "$vtable, &${bp_var}_zcb);";
     }
     else {
-        return "$bp_var = ($struct_name*)SV_TO_KOBJ($c_var, &$vtable);";
+        return "$bp_var = ($struct_name*)XSBind_sv_to_kobj($c_var, $vtable);";
     }
 }
 

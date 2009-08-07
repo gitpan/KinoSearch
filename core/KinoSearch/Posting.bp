@@ -34,16 +34,45 @@ class KinoSearch::Posting cnick Post extends KinoSearch::Util::Stepper {
                           i32_t doc_id, float doc_boost, 
                           float length_norm);
 
-    /** Prepare the posting to start reading after a seek.
-     */
-    abstract void
-    Reset(Posting *self, i32_t doc_id);
+    public void
+    Set_Doc_ID(Posting *self, i32_t doc_id);
 
     /** Factory method for creating a Matcher.
      */
     abstract incremented Matcher*
     Make_Matcher(Posting *self, Similarity *sim, PostingList *plist, 
                  Compiler *compiler, bool_t need_score);
+
+    abstract incremented PostingStreamer*
+    Make_Streamer(Posting *self, DataWriter *writer, i32_t field_num);
+}
+
+abstract class KinoSearch::Posting::PostingStreamer cnick PostStreamer
+    extends KinoSearch::Index::DataWriter {
+
+    i32_t field_num;
+
+    static PostingStreamer*
+    init(PostingStreamer *self, DataWriter *writer, i32_t field_num);
+
+    /** Take a RawPosting that was flattened earlier and write it to the
+     * index. */
+    abstract void
+    Write_Posting(PostingStreamer *self, RawPosting *posting);
+
+    /** Start a new term.  Update the TermInfo to reflect the state of the
+     * PostingStreamer. 
+     */
+    abstract void
+    Start_Term(PostingStreamer *self, TermInfo *tinfo);
+
+    /** Update the TermInfo to reflect the internal state of the
+     * PostingStreamer so that skip information can be written. 
+     * 
+     * TODO: This is an ugly hack which needs refactoring.
+     */
+    abstract void
+    Update_Skip_Info(PostingStreamer *self, TermInfo *tinfo);
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

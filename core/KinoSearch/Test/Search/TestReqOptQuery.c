@@ -17,7 +17,8 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     RequiredOptionalQuery *kids_differ = ReqOptQuery_new(a_leaf, c_leaf);
     RequiredOptionalQuery *boost_differs = ReqOptQuery_new(a_leaf, b_leaf);
     Obj *dump = (Obj*)ReqOptQuery_Dump(query);
-    RequiredOptionalQuery *clone = (RequiredOptionalQuery*)Obj_Load(dump, dump);
+    RequiredOptionalQuery *clone 
+        = (RequiredOptionalQuery*)Obj_Load(dump, dump);
 
     ASSERT_FALSE(batch, ReqOptQuery_Equals(query, (Obj*)kids_differ), 
         "Different kids spoil Equals");

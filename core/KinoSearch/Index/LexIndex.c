@@ -5,6 +5,7 @@
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/TermInfo.h"
+#include "KinoSearch/Index/TermStepper.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
@@ -17,7 +18,7 @@ LexIndex*
 LexIndex_new(Schema *schema, Folder *folder, Segment *segment, 
              const CharBuf *field)
 {
-    LexIndex *self = (LexIndex*)VTable_Make_Obj(&LEXINDEX);
+    LexIndex *self = (LexIndex*)VTable_Make_Obj(LEXINDEX);
     return LexIndex_init(self, schema, folder, segment, field);
 }
 
@@ -32,9 +33,8 @@ LexIndex_init(LexIndex *self, Schema *schema, Folder *folder,
     Architecture *arch = Schema_Get_Architecture(schema);
 
     /* Init. */
-    self->term  = ViewCB_new_from_trusted_utf8(NULL, 0);
-    self->tinfo = TInfo_new(0,0,0,0);
-    self->tick  = 0;
+    self->tinfo        = TInfo_new(0);
+    self->tick         = 0;
 
     /* Derive */
     self->field_type = Schema_Fetch_Type(schema, field);
@@ -43,9 +43,10 @@ LexIndex_init(LexIndex *self, Schema *schema, Folder *folder,
         DECREF(ix_file);
         DECREF(ixix_file);
         DECREF(self);
-        Err_throw_mess(mess);
+        Err_throw_mess(ERR, mess);
     }
     INCREF(self->field_type);
+    self->term_stepper = FType_Make_Term_Stepper(self->field_type);
     self->ixix_in = Folder_Open_In(folder, ixix_file);
     self->ix_in   = Folder_Open_In(folder, ix_file);
     if (!self->ixix_in || !self->ix_in) {
@@ -54,15 +55,13 @@ LexIndex_init(LexIndex *self, Schema *schema, Folder *folder,
         DECREF(ix_file);
         DECREF(ixix_file);
         DECREF(self);
-        Err_throw_mess(mess);
+        Err_throw_mess(ERR, mess);
     }
     self->index_interval = Arch_Index_Interval(arch);
     self->skip_interval  = Arch_Skip_Interval(arch);
     self->size    = (i32_t)(InStream_Length(self->ixix_in) / sizeof(i64_t));
     self->offsets = (i64_t*)InStream_Buf(self->ixix_in,
         (size_t)InStream_Length(self->ixix_in));
-    self->data = InStream_Buf(self->ix_in, InStream_Length(self->ix_in));
-    self->limit = self->data + InStream_Length(self->ix_in);
 
     DECREF(ixix_file);
     DECREF(ix_file);
@@ -76,7 +75,7 @@ LexIndex_destroy(LexIndex *self)
     DECREF(self->field_type);
     DECREF(self->ixix_in);
     DECREF(self->ix_in);
-    DECREF(self->term);
+    DECREF(self->term_stepper);
     DECREF(self->tinfo);
     FREE_OBJ(self);
 }
@@ -88,40 +87,38 @@ LexIndex_get_term_num(LexIndex *self)
 }
 
 Obj*
-LexIndex_get_term(LexIndex *self) { return (Obj*)self->term; }
+LexIndex_get_term(LexIndex *self) 
+{ 
+    return TermStepper_Get_Value(self->term_stepper); 
+}
+
 TermInfo*
 LexIndex_get_term_info(LexIndex *self) { return self->tinfo; }
 
 static void
 S_read_entry(LexIndex *self)
 {
+    InStream *ix_in  = self->ix_in;
     TermInfo *tinfo  = self->tinfo;
-    i64_t     offset = (i64_t)Math_decode_bigend_u64(self->offsets + self->tick);
-    char     *data   = self->data + offset;
-    size_t    size   = Math_decode_c32(&data);
-
-    ViewCB_Assign_Str(self->term, data, size);
-    data += size;
-    tinfo->doc_freq = Math_decode_c32(&data);
-    tinfo->post_filepos = Math_decode_c64(&data);
+    i64_t offset = (i64_t)Math_decode_bigend_u64(self->offsets + self->tick);
+    InStream_Seek(ix_in, offset);
+    TermStepper_Read_Key_Frame(self->term_stepper, ix_in);
+    tinfo->doc_freq     = InStream_Read_C32(ix_in);
+    tinfo->post_filepos = InStream_Read_C64(ix_in);
     tinfo->skip_filepos = tinfo->doc_freq >= self->skip_interval
-                        ? Math_decode_c64(&data) : 0;
-    tinfo->lex_filepos  = Math_decode_c64(&data);
-
-    /* Don't allow buffer overruns. */
-    if (data > self->limit) {
-        THROW("Buffer overrun in lexicon index for %o",
-            InStream_Get_Filename(self->ix_in));
-    }
+                        ? InStream_Read_C64(ix_in) : 0;
+    tinfo->lex_filepos  = InStream_Read_C64(ix_in);
 }
 
 void
 LexIndex_seek(LexIndex *self, Obj *target)
 {
-    FieldType   *type   = self->field_type;
-    i32_t        lo     = 0;
-    i32_t        hi     = self->size - 1;
-    i32_t        result = -100;
+    TermStepper *term_stepper = self->term_stepper;
+    InStream    *ix_in        = self->ix_in;
+    FieldType   *type         = self->field_type;
+    i32_t        lo           = 0;
+    i32_t        hi           = self->size - 1;
+    i32_t        result       = -100;
 
     if (target == NULL || self->size == 0) { 
         self->tick = 0;
@@ -129,13 +126,13 @@ LexIndex_seek(LexIndex *self, Obj *target)
     }
     else {
         if ( !OBJ_IS_A(target, CHARBUF)) {
-            THROW("Target is a %o, and not comparable to a %o",
-                Obj_Get_Class_Name(target), CHARBUF.name);
+            THROW(ERR, "Target is a %o, and not comparable to a %o",
+                Obj_Get_Class_Name(target), CHARBUF->name);
         }
         /* TODO: 
         Obj *first_obj = VA_Fetch(terms, 0);
         if ( !Obj_Is_A(target, Obj_Get_VTable(first_obj)) ) {
-            THROW("Target is a %o, and not comparable to a %o",
+            THROW(ERR, "Target is a %o, and not comparable to a %o",
                 Obj_Get_Class_Name(target), Obj_Get_Class_Name(first_obj));
         }
         */
@@ -146,12 +143,12 @@ LexIndex_seek(LexIndex *self, Obj *target)
         const i32_t mid = lo + ((hi - lo) / 2);
         const i64_t offset 
             = (i64_t)Math_decode_bigend_u64(self->offsets + mid);
-        char *data = self->data + offset;
-        size_t size = Math_decode_c32(&data);
-        i64_t comparison;
+        i32_t comparison;
+        InStream_Seek(ix_in, offset);
+        TermStepper_Read_Key_Frame(term_stepper, ix_in);
 
-        ViewCB_Assign_Str(self->term, data, size);
-        comparison = FType_Compare_Values(type, target, (Obj*)self->term);
+        comparison = FType_Compare_Values(type, target,
+            TermStepper_Get_Value(term_stepper));
         if (comparison < 0) {
             hi = mid - 1;
         }

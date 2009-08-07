@@ -3,7 +3,7 @@
 
 #include <string.h>
 #include "KinoSearch/Util/SortUtils.h"
-#include "KinoSearch/Util/Err.h"
+#include "KinoSearch/Obj/Err.h"
 
 /* Define four-byte and eight-byte types so that we can dereference void
  * pointers like integer pointers.  The only significance of using i32_t and
@@ -39,7 +39,7 @@ Sort_mergesort(void *elems, void *scratch, u32_t num_elems, u32_t width,
 
     /* Validate. */
     if (num_elems >= I32_MAX) {
-        THROW("Provided %u64 elems, but can't handle more than %i32",
+        THROW(ERR, "Provided %u64 elems, but can't handle more than %i32",
             (u64_t)num_elems, I32_MAX);
     }
 
@@ -51,7 +51,7 @@ Sort_mergesort(void *elems, void *scratch, u32_t num_elems, u32_t width,
         S_msort8(elems, scratch, 0, num_elems - 1, compare, context);
     }
     else {
-        THROW("Can't sort elements which are %u32 bytes", width);
+        THROW(ERR, "Can't sort elements which are %u32 bytes", width);
     }
 }
 
@@ -414,7 +414,7 @@ Sort_quicksort(void *elems, size_t num_elems, size_t width,
 
     /* Validate. */
     if (num_elems >= I32_MAX) {
-        THROW("Provided %u64 elems, but can't handle more than %i32",
+        THROW(ERR, "Provided %u64 elems, but can't handle more than %i32",
             (u64_t)num_elems, I32_MAX);
     }
 
@@ -425,7 +425,7 @@ Sort_quicksort(void *elems, size_t num_elems, size_t width,
         S_qsort8(elems, 0, num_elems - 1, compare, context);
     }
     else {
-        THROW("Unsupported width: %i64", (i64_t)width);
+        THROW(ERR, "Unsupported width: %i64", (i64_t)width);
     }
 }
 

@@ -15,6 +15,8 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
 
     i32_t    doc_max;
     i32_t    del_count;
+    i32_t    seg_num;
+    CharBuf *seg_name;
 
     static incremented SegReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot = NULL,
@@ -32,6 +34,9 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
     static SegReader*
     init(SegReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot = NULL, VArray *segments, i32_t seg_tick);
+
+    void
+    Destroy(SegReader *self);
 
     /** Constructor helper.
      *
@@ -51,6 +56,16 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
     public void
     Register(SegReader *self, const CharBuf *api, 
              decremented DataReader *component);
+
+    /** Return the name of the segment. 
+     */
+    public CharBuf*
+    Get_Seg_Name(SegReader *self);
+
+    /** Return the number of the segment. 
+     */
+    public i32_t
+    Get_Seg_Num(SegReader *self);
 
     public i32_t
     Del_Count(SegReader *self);

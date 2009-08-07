@@ -21,9 +21,9 @@ is( $match_doc_copy->get_score, $match_doc->get_score,
 is( $match_doc_copy->get_values, $match_doc->get_values,
     "empty values still empty after serialization" );
 
-my $values = KinoSearch::Util::VArray->new( capacity => 4 );
-$values->store( 0, KinoSearch::Util::CharBuf->new("foo") );
-$values->store( 3, KinoSearch::Util::CharBuf->new("bar") );
+my $values = KinoSearch::Obj::VArray->new( capacity => 4 );
+$values->store( 0, KinoSearch::Obj::CharBuf->new("foo") );
+$values->store( 3, KinoSearch::Obj::CharBuf->new("bar") );
 $match_doc = KinoSearch::Search::MatchDoc->new(
     doc_id => 120,
     score  => 35,

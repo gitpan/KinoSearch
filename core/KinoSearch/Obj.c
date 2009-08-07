@@ -6,10 +6,10 @@
 #include <string.h>
 
 #include "KinoSearch/Obj.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
+#include "KinoSearch/Obj/Hash.h"
 #include "KinoSearch/Obj/VTable.h"
-#include "KinoSearch/Util/Err.h"
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/Hash.h"
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -65,13 +65,13 @@ Obj_deserialize(Obj *self, InStream *instream)
 {
     CharBuf *class_name = CB_deserialize(NULL, instream);
     if (!self) {
-        VTable *vtable = VTable_singleton(class_name, (VTable*)&OBJ);
+        VTable *vtable = VTable_singleton(class_name, OBJ);
         self = VTable_Make_Obj(vtable);
     }
     else {
         CharBuf *my_class = VTable_Get_Name(self->vtable);
         if (!CB_Equals(class_name, (Obj*)my_class)) 
-            THROW("Class mismatch: %o %o", class_name, my_class);
+            THROW(ERR, "Class mismatch: %o %o", class_name, my_class);
     }
     DECREF(class_name);
     return Obj_init(self);

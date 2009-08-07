@@ -25,8 +25,8 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     Add_Inverted_Doc(SortWriter *self, Inverter *inverter, i32_t doc_id);
 
     public void
-    Add_Segment(SortWriter *self, SegReader *reader, I32Array *doc_map = NULL);
-
+    Add_Segment(SortWriter *self, SegReader *reader, 
+                I32Array *doc_map = NULL); 
     public void
     Delete_Segment(SortWriter *self, SegReader *reader);
 

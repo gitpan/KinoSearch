@@ -39,7 +39,7 @@ PolySearcher_init(PolySearcher *self, Schema *schema, VArray *searchables)
 
         /* Confirm that searchables all use the same schema. */
         if (orig_vt != candidate_vt) {
-            THROW("Conflicting schemas: '%o', '%o'",
+            THROW(ERR, "Conflicting schemas: '%o', '%o'",
                 Obj_Get_Class_Name(schema), 
                 Obj_Get_Class_Name(candidate));
         }
@@ -70,7 +70,7 @@ PolySearcher_fetch_doc(PolySearcher *self, i32_t doc_id, float score,
     u32_t       tick       = PolyReader_sub_tick(self->starts, doc_id);
     Searchable *searchable = (Searchable*)VA_Fetch(self->searchables, tick);
     i32_t       start      = I32Arr_Get(self->starts, tick);
-    if (!searchable) { THROW("Invalid doc id: %i32", doc_id); }
+    if (!searchable) { THROW(ERR, "Invalid doc id: %i32", doc_id); }
     return Searchable_Fetch_Doc(searchable, doc_id - start, score, 
         offset + start);
 }
@@ -81,7 +81,7 @@ PolySearcher_fetch_doc_vec(PolySearcher *self, i32_t doc_id)
     u32_t       tick       = PolyReader_sub_tick(self->starts, doc_id);
     Searchable *searchable = (Searchable*)VA_Fetch(self->searchables, tick);
     i32_t       start      = I32Arr_Get(self->starts, tick);
-    if (!searchable) { THROW("Invalid doc id: %i32", doc_id); }
+    if (!searchable) { THROW(ERR, "Invalid doc id: %i32", doc_id); }
     return Searchable_Fetch_Doc_Vec(searchable, doc_id - start);
 }
 

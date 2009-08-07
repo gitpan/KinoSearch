@@ -10,17 +10,17 @@
 #include "KinoSearch/Store/SharedLock.h"
 
 LockFactory*
-LockFact_new(Folder *folder, const CharBuf *agent_id)
+LockFact_new(Folder *folder, const CharBuf *hostname)
 {
-    LockFactory *self = (LockFactory*)VTable_Make_Obj(&LOCKFACTORY);
-    return LockFact_init(self, folder, agent_id);
+    LockFactory *self = (LockFactory*)VTable_Make_Obj(LOCKFACTORY);
+    return LockFact_init(self, folder, hostname);
 }
 
 LockFactory*
-LockFact_init(LockFactory *self, Folder *folder, const CharBuf *agent_id)
+LockFact_init(LockFactory *self, Folder *folder, const CharBuf *hostname)
 {
-    self->folder       = (Folder*)INCREF(folder);
-    self->agent_id     = CB_Clone(agent_id);
+    self->folder    = (Folder*)INCREF(folder);
+    self->hostname  = CB_Clone(hostname);
     return self;
 }
 
@@ -28,22 +28,24 @@ void
 LockFact_destroy(LockFactory *self)
 {
     DECREF(self->folder);
-    DECREF(self->agent_id);
+    DECREF(self->hostname);
     FREE_OBJ(self);
 }
 
 Lock*
-LockFact_make_lock(LockFactory *self, const CharBuf *lock_name, 
-                   i32_t timeout)
+LockFact_make_lock(LockFactory *self, const CharBuf *name, i32_t timeout, 
+                   i32_t interval)
 {
-    return Lock_new(self->folder, lock_name, self->agent_id, timeout);
+    return (Lock*)LFLock_new(self->folder, name, self->hostname, timeout, 
+        interval);
 }
 
-SharedLock*
-LockFact_make_shared_lock(LockFactory *self, const CharBuf *lock_name, 
-                          i32_t timeout)
+Lock*
+LockFact_make_shared_lock(LockFactory *self, const CharBuf *name, 
+                          i32_t timeout, i32_t interval)
 {
-    return ShLock_new(self->folder, lock_name, self->agent_id, timeout);
+    return (Lock*)ShLock_new(self->folder, name, self->hostname, timeout, 
+        interval);
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

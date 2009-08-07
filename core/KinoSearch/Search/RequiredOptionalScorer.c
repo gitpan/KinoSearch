@@ -8,7 +8,7 @@ ReqOptScorer_new(Similarity *similarity, Matcher *required_matcher,
                  Matcher *optional_matcher) 
 {
     RequiredOptionalScorer *self 
-        = (RequiredOptionalScorer*)VTable_Make_Obj(&REQUIREDOPTIONALSCORER);
+        = (RequiredOptionalScorer*)VTable_Make_Obj(REQUIREDOPTIONALSCORER);
     return ReqOptScorer_init(self, similarity, required_matcher, 
         optional_matcher);
 }

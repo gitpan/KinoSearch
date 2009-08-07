@@ -96,7 +96,7 @@ sub xsub_def {
     my $vtable        = uc( $self_type->get_specifier );
     my $self_type_str = $self_type->to_c;
     my $self_assignment
-        = qq|self = ($self_type_str)SV_TO_KOBJ(ST(0), &$vtable);|;
+        = qq|self = ($self_type_str)XSBind_sv_to_kobj(ST(0), $vtable);|;
 
     return <<END_STUFF;
 XS($c_name); /* -Wmissing-prototypes */

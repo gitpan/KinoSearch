@@ -1,12 +1,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KSx/Search/FilterScorer.h"
-#include "KinoSearch/Util/BitVector.h"
 
 FilterScorer*
 FilterScorer_new(BitVector *bits, i32_t doc_max)
 {
-    FilterScorer *self = (FilterScorer*)VTable_Make_Obj(&FILTERSCORER);
+    FilterScorer *self = (FilterScorer*)VTable_Make_Obj(FILTERSCORER);
     return FilterScorer_init(self, bits, doc_max);
 }
 

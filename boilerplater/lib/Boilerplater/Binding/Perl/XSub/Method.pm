@@ -107,12 +107,16 @@ sub _xsub_def_positional_args {
     my $xs_name_list = join( ", ", @xs_arg_names );
     my $num_args_check;
     if ( $min_required < $num_args ) {
-        $num_args_check = qq|if (items < $min_required)
-            THROW("Usage: %s(%s)",  GvNAME(CvGV(cv)), "$xs_name_list");|;
+        $num_args_check
+            = qq|if (items < $min_required) { |
+            . qq|THROW(KINO_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)),|
+            . qq| "$xs_name_list"); }|;
     }
     else {
-        $num_args_check = qq|if (items != $num_args)
-            THROW("Usage: %s(%s)",  GvNAME(CvGV(cv)), "$xs_name_list");|;
+        $num_args_check
+            = qq|if (items != $num_args) { |
+            . qq| THROW(KINO_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)), |
+            . qq|"$xs_name_list"); }|;
     }
 
     # Var assignments.
@@ -178,9 +182,11 @@ sub _xsub_def_labeled_params {
     my $body       = $self->_xsub_body;
 
     # Prepare error message for incorrect args.
-    my $name_list      = $arg_vars->[0]->micro_sym . ", ...";
-    my $num_args_check = qq|if (items < 1)
-        THROW("Usage: %s(%s)",  GvNAME(CvGV(cv)), "$name_list");|;
+    my $name_list = $arg_vars->[0]->micro_sym . ", ...";
+    my $num_args_check
+        = qq|if (items < 1) { |
+        . qq|THROW(KINO_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)), |
+        . qq|"$name_list"); }|;
 
     my $var_declarations = $self->var_declarations;
     my $self_var         = $arg_vars->[0];
@@ -217,10 +223,9 @@ sub _xsub_def_labeled_params {
         }
         else {
             my $assignment
-                = qq#if ( !$sv_name || !XSBind_sv_defined($sv_name) ) {
-           THROW("Missing required param '$name'");
-        }
-        $statement;#;
+                = qq#if ( !$sv_name || !XSBind_sv_defined($sv_name) ) { #
+                . qq#THROW(KINO_ERR, "Missing required param '$name'"); }\n#
+                . qq#         $statement;#;
             push @var_assignments, $assignment;
         }
     }
@@ -261,11 +266,11 @@ sub _self_assign_statement {
 
     # Make an exception for deserialize -- allow self to be NULL if called as
     # a class method.
-    my $macro
+    my $binding_func
         = $method_name =~ /^deserialize$/
-        ? 'MAYBE_SV_TO_KOBJ'
-        : 'SV_TO_KOBJ';
-    return "self = ($type_c)$macro(ST(0), &$vtable);";
+        ? "XSBind_maybe_sv_to_kobj"
+        : "XSBind_sv_to_kobj";
+    return "self = ($type_c)$binding_func(ST(0), $vtable);";
 }
 
 1;

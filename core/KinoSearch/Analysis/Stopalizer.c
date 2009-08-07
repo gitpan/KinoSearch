@@ -7,7 +7,7 @@
 Stopalizer*
 Stopalizer_new(const CharBuf *language, Hash *stoplist)
 {
-    Stopalizer *self = (Stopalizer*)VTable_Make_Obj(&STOPALIZER);
+    Stopalizer *self = (Stopalizer*)VTable_Make_Obj(STOPALIZER);
     return Stopalizer_init(self, language, stoplist);
 }
 
@@ -17,16 +17,16 @@ Stopalizer_init(Stopalizer *self, const CharBuf *language, Hash *stoplist)
     Analyzer_init((Analyzer*)self);
 
     if (stoplist) {
-        if (language) { THROW("Can't have both stoplist and language"); }
+        if (language) { THROW(ERR, "Can't have both stoplist and language"); }
         self->stoplist = (Hash*)INCREF(stoplist);
     }
     else if (language) {
         self->stoplist = Stopalizer_gen_stoplist(language);
         if (!self->stoplist)
-            THROW("Can't get a stoplist for '%o'", language);
+            THROW(ERR, "Can't get a stoplist for '%o'", language);
     }
     else {
-        THROW("Either stoplist or language is required");
+        THROW(ERR, "Either stoplist or language is required");
     }
 
     return self;
@@ -59,7 +59,7 @@ bool_t
 Stopalizer_dump_equals(Stopalizer *self, Obj *dump)
 {
     Stopalizer_dump_equals_t super_dump_equals = (Stopalizer_dump_equals_t)
-        SUPER_METHOD(&STOPALIZER, Stopalizer, Dump_Equals);
+        SUPER_METHOD(STOPALIZER, Stopalizer, Dump_Equals);
     if (!super_dump_equals(self, dump)) {
         return false;
     }

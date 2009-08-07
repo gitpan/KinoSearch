@@ -98,7 +98,7 @@ QueryParser*
 QParser_new(Schema *schema, Analyzer *analyzer, const CharBuf *default_boolop,
             VArray *fields)
 {
-    QueryParser *self = (QueryParser*)VTable_Make_Obj(&QUERYPARSER);
+    QueryParser *self = (QueryParser*)VTable_Make_Obj(QUERYPARSER);
     return QParser_init(self, schema, analyzer, default_boolop, fields);
 }
 
@@ -146,7 +146,7 @@ QParser_init(QueryParser *self, Schema *schema, Analyzer *analyzer,
     if ( !(   CB_Equals_Str(self->default_boolop, "OR", 2)
            || CB_Equals_Str(self->default_boolop, "AND", 3)) 
     ) {
-        THROW("Invalid value for default_boolop: %o", self->default_boolop);
+        THROW(ERR, "Invalid value for default_boolop: %o", self->default_boolop);
     }
 
     /* Create string labels that presumably won't appear in a search. */
@@ -269,7 +269,7 @@ S_parse_flat_string(QueryParser *self, CharBuf *query_string)
                 ViewCB_Get_Size(&temp));
         }
         else {
-            THROW("Failed to parse '%o'", &qstring);
+            THROW(ERR, "Failed to parse '%o'", &qstring);
         }
 
         VA_Push(parse_tree, (Obj*)token);
@@ -618,7 +618,7 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
         }
         else {
             retval = NULL; /* kill "uninitialized" compiler warning */
-            THROW("Unexpected error");
+            THROW(ERR, "Unexpected error");
         }
 
         DECREF(opt_query);
@@ -768,22 +768,20 @@ S_consume_field(ViewCharBuf *qstring, ViewCharBuf *target)
 static bool_t
 S_consume_non_whitespace(ViewCharBuf *qstring, ViewCharBuf *target)
 {
-    char *ptr = qstring->ptr;
-    char *const end = CBEND(qstring);
-    while (ptr < end) {
-        u32_t code_point = StrHelp_decode_utf8_char(ptr);
-        if (StrHelp_is_whitespace(code_point)) break;
-        ptr += UTF8_SKIP[*(u8_t*)ptr];
+    u32_t code_point = ZCB_Code_Point_At(qstring, 0);
+    bool_t success = false;
+    ViewCB_Assign(target, (CharBuf*)qstring);
+    while (code_point && !StrHelp_is_whitespace(code_point)) {
+        ZCB_Nip_One(qstring);
+        code_point = ZCB_Code_Point_At(qstring, 0);
+        success = true;
     }
-    if (ptr == qstring->ptr) {
+    if (!success) {
         return false;
     }
     else {
-        target->ptr = qstring->ptr;
-        ViewCB_Set_Size(target, ptr - qstring->ptr);
-        qstring->ptr = ptr;
-        qstring->ptr = ptr;
-        ViewCB_Set_Size(qstring, end - ptr);
+        u32_t new_size = ViewCB_Get_Size(target) - ViewCB_Get_Size(qstring);
+        ViewCB_Set_Size(target, new_size);
         return true;
     }
 }
@@ -868,7 +866,7 @@ S_unescape(QueryParser *self, CharBuf *orig, CharBuf *target)
     u32_t code_point;
 
     if (!self->heed_colons) {
-        CB_Copy(target, orig);
+        CB_Mimic(target, (Obj*)orig);
         return target;
     }
 
@@ -1140,7 +1138,7 @@ QParser_make_req_opt_query(QueryParser *self, Query *required_query,
 ParserClause*
 ParserClause_new(Query *query, u32_t occur)
 {
-    ParserClause *self = (ParserClause*)VTable_Make_Obj(&PARSERCLAUSE);
+    ParserClause *self = (ParserClause*)VTable_Make_Obj(PARSERCLAUSE);
     return ParserClause_init(self, query, occur);
 }
 
@@ -1164,7 +1162,7 @@ ParserClause_destroy(ParserClause *self)
 ParserToken*
 ParserToken_new(u32_t type, const char *text, size_t len)
 {
-    ParserToken *self = (ParserToken*)VTable_Make_Obj(&PARSERTOKEN);
+    ParserToken *self = (ParserToken*)VTable_Make_Obj(PARSERTOKEN);
     return ParserToken_init(self, type, text, len);
 }
 

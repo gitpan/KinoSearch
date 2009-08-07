@@ -6,7 +6,6 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Search::ANDScorer extends KinoSearch::Search::PolyMatcher {
 
     Matcher     **kids;
-    size_t        cap;
     bool_t        more;
     bool_t        first_time;
 

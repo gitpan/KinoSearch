@@ -5,27 +5,116 @@ parcel KinoSearch cnick Kino;
  * IndexManager is an advanced-usage class for controlling index locking,
  * updating, merging, and deletion behaviors.
  *
- * IndexManager and Architecture are companion classes: Architecture is used
- * to define traits and behaviors which cannot change for the life of an
+ * IndexManager and Architecture are complementary classes: Architecture is
+ * used to define traits and behaviors which cannot change for the life of an
  * index; IndexManager is used for defining rules which may change from
  * process to process.
  */
 class KinoSearch::Index::IndexManager cnick IxManager 
     extends KinoSearch::Obj {
 
-    Folder *folder;
+    Folder      *folder;
+    CharBuf     *hostname;
+    LockFactory *lock_factory;
+    u32_t        write_lock_timeout;
+    u32_t        write_lock_interval;
+    u32_t        merge_lock_timeout;
+    u32_t        merge_lock_interval;
+    u32_t        deletion_lock_timeout;
+    u32_t        deletion_lock_interval;
 
     public static incremented IndexManager*
-    new(Folder *folder);
+    new(const CharBuf *hostname = NULL, LockFactory *lock_factory = NULL);
 
     /**
-     * @param folder A Folder.
+     * @param hostname An identifier which should be unique per-machine.
+     * @param lock_factory A LockFactory.
      */
     public static IndexManager*
-    init(IndexManager *self, Folder *folder);
+    init(IndexManager *self, const CharBuf *hostname = NULL, 
+         LockFactory *lock_factory = NULL);
 
-    public incremented Segment*
-    Make_New_Segment(IndexManager *self, Snapshot *snapshot);
+    void
+    Destroy(IndexManager *self);
+
+    /**
+     * Setter for <code>folder</code> member, needed by several methods.
+     * Typical clients (Indexer, IndexReader) will use this method to install
+     * their own Folder instance.
+     */
+    public void
+    Set_Folder(IndexManager *self, Folder *folder = NULL);
+
+    /** Getter for <code>folder</code> member.
+     */
+    public Folder* 
+    Get_Folder(IndexManager *self);
+
+    /** Getter for <code>hostname</code> member.
+     */
+    public CharBuf* 
+    Get_Hostname(IndexManager *self);
+
+    /** Return an array of SegReaders representing segments that should be
+     * consolidated.  Implementations must balance index-time churn against
+     * search-time degradation due to segment proliferation. The default
+     * implementation prefers small segments or segments with a high
+     * proportion of deletions.
+     * 
+     * @param reader A PolyReader.
+     * @param del_writer A DeletionsWriter.
+     * @param cutoff A segment number which all returned SegReaders must
+     * exceed.
+     * @param optimize A boolean indicating whether to spend extra time
+     * optimizing the index for search-time performance.
+     */
+    public incremented VArray*
+    Recycle(IndexManager *self, PolyReader *reader, 
+            DeletionsWriter *del_writer, i32_t cutoff, 
+            bool_t optimize = false);
+
+    /** Create the Lock which controls access to modifying the logical content
+     * of the index. 
+     */
+    public incremented Lock*
+    Make_Write_Lock(IndexManager *self);
+
+    /** Create the Lock which grants permission to delete obsolete snapshot
+     * files or any file listed within an existing snapshot file.
+     */
+    public incremented Lock*
+    Make_Deletion_Lock(IndexManager *self);
+
+    public incremented Lock*
+    Make_Merge_Lock(IndexManager *self);
+
+    /** Write supplied data to "merge.json".  Throw an exception if the write
+     * fails.
+     */
+    public void
+    Write_Merge_Data(IndexManager *self, i32_t cutoff);
+
+    /** Look for the "merge.json" file dropped by BackgroundMerger.  If it's
+     * not there, return NULL.  If it's there but can't be decoded, return an
+     * empty Hash.  If successfully decoded, return contents.
+     */
+    public incremented Hash*
+    Read_Merge_Data(IndexManager *self);
+
+    public bool_t
+    Remove_Merge_Data(IndexManager *self);
+
+    /** Create a shared lock on a snapshot file, which serves as a proxy for
+     * all the files it lists and indicates that they must not be deleted.
+     */
+    public incremented Lock*
+    Make_Snapshot_Read_Lock(IndexManager *self, const CharBuf *filename);
+
+    /** Return the highest number for a segment directory which contains a
+     * segmeta file in the snapshot.
+     */
+    public i32_t
+    Highest_Seg_Num(IndexManager *self, Snapshot *snapshot);
 
     /** Return the name of a new snapshot file, which shall contain a base-36
      * "generation" embedded inside it greater than the generation of any
@@ -34,14 +123,65 @@ class KinoSearch::Index::IndexManager cnick IxManager
     public incremented CharBuf*
     Make_Snapshot_Filename(IndexManager *self);
 
-    /** Return an array of SegReaders representing either sparsely populated
-     * segments, or all segments if 'all' is true.  Testing only. 
+    /** Setter for write lock timeout.  Default: 1000 milliseconds.
      */
-    public incremented VArray*
-    SegReaders_To_Merge(IndexManager *self, PolyReader *reader, bool_t all);
+    public void
+    Set_Write_Lock_Timeout(IndexManager *self, u32_t timeout);
 
-    void
-    Destroy(IndexManager *self);
+    /** Getter for write lock timeout. 
+     */
+    public u32_t
+    Get_Write_Lock_Timeout(IndexManager *self);
+
+    /** Setter for write lock retry interval.  Default: 100 milliseconds.
+     */
+    public void
+    Set_Write_Lock_Interval(IndexManager *self, u32_t timeout);
+
+    /** Getter for write lock retry interval. 
+     */
+    public u32_t
+    Get_Write_Lock_Interval(IndexManager *self);
+
+    /** Setter for merge lock timeout.  Default: 0 milliseconds (no retries).
+     */
+    public void
+    Set_Merge_Lock_Timeout(IndexManager *self, u32_t timeout);
+
+    /** Getter for merge lock timeout. 
+     */
+    public u32_t
+    Get_Merge_Lock_Timeout(IndexManager *self);
+
+    /** Setter for merge lock retry interval.  Default: 1000 milliseconds.
+     */
+    public void
+    Set_Merge_Lock_Interval(IndexManager *self, u32_t timeout);
+
+    /** Getter for merge lock retry interval. 
+     */
+    public u32_t
+    Get_Merge_Lock_Interval(IndexManager *self);
+
+    /** Setter for deletion lock timeout.  Default: 1000 milliseconds.
+     */
+    public void
+    Set_Deletion_Lock_Timeout(IndexManager *self, u32_t timeout);
+
+    /** Getter for deletion lock timeout. 
+     */
+    public u32_t
+    Get_Deletion_Lock_Timeout(IndexManager *self);
+
+    /** Setter for deletion lock retry interval.  Default: 100 milliseconds.
+     */
+    public void
+    Set_Deletion_Lock_Interval(IndexManager *self, u32_t timeout);
+
+    /** Getter for deletion lock retry interval. 
+     */
+    public u32_t
+    Get_Deletion_Lock_Interval(IndexManager *self);
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

@@ -56,7 +56,7 @@ class KinoSearch::Search::HitCollector::BitCollector cnick BitColl
     BitVector    *bit_vec;
 
     /** 
-     * @param bit_vector A KinoSearch::Util::BitVector.
+     * @param bit_vector A KinoSearch::Obj::BitVector.
      */
     public static BitCollector*
     init(BitCollector *self, BitVector *bit_vector);

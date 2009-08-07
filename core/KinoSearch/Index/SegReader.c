@@ -11,14 +11,13 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/BitVector.h"
 #include "KinoSearch/Util/I32Array.h"
 
 SegReader*
 SegReader_new(Schema *schema, Folder *folder, Snapshot *snapshot, 
               VArray *segments, i32_t seg_tick)
 {
-    SegReader *self = (SegReader*)VTable_Make_Obj(&SEGREADER);
+    SegReader *self = (SegReader*)VTable_Make_Obj(SEGREADER);
     return SegReader_init(self, schema, folder, snapshot, segments, seg_tick);
 }
 
@@ -27,32 +26,50 @@ SegReader_init(SegReader *self, Schema *schema, Folder *folder,
                Snapshot *snapshot, VArray *segments, i32_t seg_tick)
 {
     CharBuf *mess;
+    Segment *segment;
+
     IxReader_init((IndexReader*)self, schema, folder, snapshot, segments,
         seg_tick, NULL);
-    self->doc_max    = Seg_Get_Count(SegReader_Get_Segment(self));
+    segment = SegReader_Get_Segment(self);
+
+    self->doc_max    = Seg_Get_Count(segment);
+    self->seg_name   = (CharBuf*)INCREF(Seg_Get_Name(segment));
+    self->seg_num    = Seg_Get_Number(segment);
     mess = SegReader_Try_Init_Components(self);
     if (mess) {
         /* An error occurred, so clean up self and throw an exception. */
         DECREF(self);
-        Err_throw_mess(mess);
+        Err_throw_mess(ERR, mess);
     }
     {
         DeletionsReader *del_reader = (DeletionsReader*)Hash_Fetch(
-            self->components, (Obj*)DELETIONSREADER.name);
+            self->components, (Obj*)DELETIONSREADER->name);
         self->del_count = del_reader ? DelReader_Del_Count(del_reader) : 0;
     }
     return self;
 }
 
 void
+SegReader_destroy(SegReader *self)
+{
+    DECREF(self->seg_name);
+    SUPER_DESTROY(self, SEGREADER);
+}
+
+void
 SegReader_register(SegReader *self, const CharBuf *api, DataReader *component)
 {
     if (Hash_Fetch(self->components, (Obj*)api)) {
-        THROW("Interface '%o' already registered");
+        THROW(ERR, "Interface '%o' already registered");
     }
     ASSERT_IS_A(component, DATAREADER);
     Hash_Store(self->components, (Obj*)api, (Obj*)component);
 }
+
+CharBuf*
+SegReader_get_seg_name(SegReader *self) { return self->seg_name; }
+i32_t
+SegReader_get_seg_num(SegReader *self)  { return self->seg_num; }
 
 i32_t
 SegReader_del_count(SegReader *self) 

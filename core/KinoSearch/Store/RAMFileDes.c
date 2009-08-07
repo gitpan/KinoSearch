@@ -5,12 +5,11 @@
 
 #include "KinoSearch/Store/RAMFileDes.h"
 #include "KinoSearch/Store/FileWindow.h"
-#include "KinoSearch/Util/ByteBuf.h"
 
 RAMFileDes*
 RAMFileDes_new(const CharBuf *path) 
 {
-    RAMFileDes *self = (RAMFileDes*)VTable_Make_Obj(&RAMFILEDES);
+    RAMFileDes *self = (RAMFileDes*)VTable_Make_Obj(RAMFILEDES);
     return RAMFileDes_init(self, path);
 }
 
@@ -31,7 +30,8 @@ RAMFileDes_destroy(RAMFileDes *self)
 }
 
 bool_t
-RAMFileDes_window(RAMFileDes *self, FileWindow *window, i64_t offset, i64_t len)
+RAMFileDes_window(RAMFileDes *self, FileWindow *window, i64_t offset, 
+                  i64_t len)
 {
     if (window->cap < len) {
         window->cap = len < IO_STREAM_BUF_SIZE ? IO_STREAM_BUF_SIZE : len;
@@ -137,7 +137,7 @@ RAMFileDes_contents(RAMFileDes *self)
     ByteBuf *retval = NULL;
 
     if (self->len > I32_MAX) {
-        THROW("length for %o is %u64 -- too large", self->path, self->len);
+        THROW(ERR, "length for %o is %u64 -- too large", self->path, self->len);
     }
     else {
         VArray  *buffers    = self->buffers;

@@ -5,8 +5,8 @@ use lib 'buildlib';
 package NonMergingIndexManager;
 use base qw( KinoSearch::Index::IndexManager );
 
-sub segreaders_to_merge {
-    return KinoSearch::Util::VArray->new( capacity => 0 );
+sub recycle {
+    return KinoSearch::Obj::VArray->new( capacity => 0 );
 }
 
 package SortSchema;
@@ -114,7 +114,7 @@ for my $field (qw( unused nope )) {
 $indexer = KinoSearch::Indexer->new(
     index   => $folder,
     schema  => $schema,
-    manager => NonMergingIndexManager->new( folder => $folder ),
+    manager => NonMergingIndexManager->new,
 );
 $indexer->add_doc($dirigible);
 $indexer->commit;

@@ -53,14 +53,14 @@ class KinoSearch::Obj {
     abstract incremented Obj*
     Clone(Obj *self);
 
-    /** Generic destructor.  Frees the struct itself but not any complex member
-     * elements.
+    /** Generic destructor.  Frees the struct itself but not any complex
+     * member elements.
      */
     void
     Destroy(Obj *self);
 
-    /** Indicate whether two objects are the same.  By default, compares the memory
-     * address.
+    /** Indicate whether two objects are the same.  By default, compares the
+     * memory address.
      *
      * @param other Another Obj.
      */
@@ -93,8 +93,8 @@ class KinoSearch::Obj {
     CharBuf*
     Get_Class_Name(Obj *self);
 
-    /** Indicate whether the object's ancestry includes the supplied parent class
-     * name.
+    /** Indicate whether the object's ancestry includes the supplied parent
+     * class name.
      */
     bool_t
     Is_A(Obj *self, VTable *target_vtable);
@@ -123,8 +123,8 @@ class KinoSearch::Obj {
      * The assumption is that the object has been allocated, assigned a
      * refcount and a vtable, but that everything else is uninitialized.  
      * 
-     * Implementations should also be prepared to handle NULL as an argument, in
-     * which case they should create the object from nothing.
+     * Implementations should also be prepared to handle NULL as an argument,
+     * in which case they should create the object from nothing.
      */
     public incremented Obj*
     Deserialize(Obj *self, InStream *instream);
@@ -144,6 +144,12 @@ class KinoSearch::Obj {
      */
     public abstract incremented Obj*
     Load(Obj *self, Obj *dump);
+
+    /** Update the internal state of the object to mimic that of
+     * <code>other</code>. 
+     */
+    public abstract void
+    Mimic(Obj *self, Obj *other);
 }
 
 __C__
@@ -158,11 +164,10 @@ __C__
 #define KINO_ABSTRACT_CLASS_CHECK(_self, _vtable) \
     do { \
         kino_Obj *const _obj = (kino_Obj*)_self; \
-        kino_VTable *const _vt = (kino_VTable*)&_vtable; \
-        if (_obj->vtable == _vt) { \
+        if (_obj->vtable == _vtable) { \
             KINO_DECREF(_obj); \
-            KINO_THROW("%o is an abstract class", \
-                Kino_VTable_Get_Name(_vt)); \
+            KINO_THROW(KINO_ERR, "%o is an abstract class", \
+                Kino_VTable_Get_Name(_vtable)); \
         } \
     } while (0)
 
@@ -174,7 +179,7 @@ __C__
     } while (0)
 
 #define KINO_SUPER_DESTROY(_self, _vtable) \
-    kino_Obj_super_destroy((kino_Obj*)_self, (kino_VTable*)&_vtable)
+    kino_Obj_super_destroy((kino_Obj*)_self, _vtable)
 
 static CHY_INLINE void
 kino_Obj_super_destroy(kino_Obj *self, kino_VTable *vtable)
@@ -207,11 +212,9 @@ kino_Obj_decref(kino_Obj *self)
     else { return 0; }
 }
 
-/* Convenience macro for Obj_Is_A that adds a cast and an address operator for
- * the vtable.
+/* Obsolete macro synonym for Obj_Is_A.
  */
-#define KINO_OBJ_IS_A(var, vtable) \
-    (Kino_Obj_Is_A(var, (kino_VTable*)&vtable))
+#define KINO_OBJ_IS_A(var, vtable) (Kino_Obj_Is_A(var, vtable))
 
 /* Function pointer typedefs for common signatures, used to clean up various 
  * function declarations, struct definitions, etc.

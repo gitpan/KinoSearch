@@ -17,16 +17,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include "KinoSearch/Obj.h"
+#include "KinoSearch/Obj/BitVector.h"
+#include "KinoSearch/Obj/ByteBuf.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
+#include "KinoSearch/Obj/Hash.h"
+#include "KinoSearch/Obj/Num.h"
 #include "KinoSearch/Obj/Undefined.h"
+#include "KinoSearch/Obj/VArray.h"
 #include "KinoSearch/Obj/VTable.h"
-#include "KinoSearch/Util/Err.h"
 #include "KinoSearch/Util/MathUtils.h"
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/StringHelper.h"
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/Num.h"
-#include "KinoSearch/Util/VArray.h"
-#include "KinoSearch/Util/Hash.h"
 
 #endif /* H_KINO_TOOLSET */
 

@@ -35,7 +35,7 @@ DefSortReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
                VArray *segments, i32_t seg_tick)
 {
     DefaultSortReader *self 
-        = (DefaultSortReader*)VTable_Make_Obj(&DEFAULTSORTREADER);
+        = (DefaultSortReader*)VTable_Make_Obj(DEFAULTSORTREADER);
     return DefSortReader_init(self, schema, folder, snapshot, segments,
         seg_tick);
 }
@@ -54,10 +54,10 @@ DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
     /* Check format. */
     if (metadata) {
         Obj *format = Hash_Fetch_Str(metadata, "format", 6);
-        if (!format) { THROW("Missing 'format' var"); }
+        if (!format) { THROW(ERR, "Missing 'format' var"); }
         else {
             if (Obj_To_I64(format) != SortWriter_current_file_format) {
-                THROW("Unsupported term vectors format: %i64", 
+                THROW(ERR, "Unsupported term vectors format: %i64", 
                     Obj_To_I64(format));
             }
         }
@@ -160,7 +160,7 @@ DefSortReader_fetch_sort_cache(DefaultSortReader *self, const CharBuf *field)
                             null_ord);
                         break;
                     default:
-                        THROW("No SortCache class for %o", type);
+                        THROW(ERR, "No SortCache class for %o", type);
                 }
                 Hash_Store(self->caches, (Obj*)field, (Obj*)cache);
             }

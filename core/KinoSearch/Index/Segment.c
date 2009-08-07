@@ -9,15 +9,18 @@
 #include "KinoSearch/Util/IndexFileNames.h"
 
 Segment*
-Seg_new(const CharBuf *name, Folder *folder)
+Seg_new(i32_t number)
 {
-    Segment *self = (Segment*)VTable_Make_Obj(&SEGMENT);
-    return Seg_init(self, name, folder);
+    Segment *self = (Segment*)VTable_Make_Obj(SEGMENT);
+    return Seg_init(self, number);
 }
 
 Segment*
-Seg_init(Segment *self, const CharBuf *name, Folder *folder)
+Seg_init(Segment *self, i32_t number)
 {
+    /* Validate. */
+    if (number < 0) { THROW(ERR, "Segment number %i32 less than 0", number); }
+
     /* Init. */
     self->metadata  = Hash_new(0);
     self->count     = 0;
@@ -28,20 +31,27 @@ Seg_init(Segment *self, const CharBuf *name, Folder *folder)
     VA_Push(self->by_num, INCREF(&EMPTY));
 
     /* Assign. */
-    self->folder   = (Folder*)INCREF(folder);
-    self->name     = CB_Clone(name);
+    self->number = number;
 
     /* Derive. */
-    self->seg_num = IxFileNames_extract_gen(name);
+    self->name = Seg_num_to_name(number);
 
     return self;
+}
+
+CharBuf*
+Seg_num_to_name(i32_t number)
+{
+    CharBuf *base_36 = StrHelp_to_base36(number);
+    CharBuf *name    = CB_newf("seg_%o", base_36);
+    DECREF(base_36);
+    return name;
 }
 
 void
 Seg_destroy(Segment *self)
 {
     DECREF(self->name);
-    DECREF(self->folder);
     DECREF(self->metadata);
     DECREF(self->by_name);
     DECREF(self->by_num);
@@ -49,10 +59,10 @@ Seg_destroy(Segment *self)
 }
 
 bool_t
-Seg_read_file(Segment *self)
+Seg_read_file(Segment *self, Folder *folder)
 {
     CharBuf *filename = CB_newf("%o/segmeta.json", self->name);
-    Hash    *metadata = (Hash*)Json_slurp_json(self->folder, filename);
+    Hash    *metadata = (Hash*)Json_slurp_json(folder, filename);
     Hash    *my_metadata;
 
     /* Bail unless the segmeta file was read successfully. */
@@ -70,7 +80,7 @@ Seg_read_file(Segment *self)
     {
         Obj *count = Hash_Fetch_Str(my_metadata, "count", 5);
         if (!count) { count = Hash_Fetch_Str(my_metadata, "doc_count", 9); }
-        if (!count) { THROW("Missing 'count'"); }
+        if (!count) { THROW(ERR, "Missing 'count'"); }
         else { self->count = (i32_t)Obj_To_I64(count); }
     }
 
@@ -81,7 +91,7 @@ Seg_read_file(Segment *self)
             "field_names", 11);
         u32_t num_fields = source_by_num ? VA_Get_Size(source_by_num) : 0;
         if (source_by_num == NULL) {
-            THROW("Failed to extract 'field_names' from metadata");
+            THROW(ERR, "Failed to extract 'field_names' from metadata");
         }
 
         /* Init. */
@@ -101,7 +111,7 @@ Seg_read_file(Segment *self)
 }
 
 void
-Seg_write_file(Segment *self)
+Seg_write_file(Segment *self, Folder *folder)
 {
     CharBuf *filename    = CB_newf("%o/segmeta.json", self->name);
     Hash    *my_metadata = Hash_new(16);
@@ -114,7 +124,7 @@ Seg_write_file(Segment *self)
     Hash_Store_Str(my_metadata, "format", 6, (Obj*)CB_newf("%i32", 1));
     Hash_Store_Str(self->metadata, "segmeta", 7, (Obj*)my_metadata);
 
-    Json_spew_json((Obj*)self->metadata, self->folder, filename);
+    Json_spew_json((Obj*)self->metadata, folder, filename);
     DECREF(filename);
 }
 
@@ -135,6 +145,8 @@ Seg_add_field(Segment *self, const CharBuf *field)
 
 CharBuf*
 Seg_get_name(Segment *self)               { return self->name; }
+i32_t
+Seg_get_number(Segment *self)             { return self->number; }
 void
 Seg_set_count(Segment *self, i32_t count) { self->count = count; }
 i32_t
@@ -151,13 +163,14 @@ void
 Seg_store_metadata(Segment *self, const CharBuf *key, Obj *value)
 {
     if (Hash_Fetch(self->metadata, (Obj*)key)) {
-        THROW("Metadata key '%o' already registered", key);
+        THROW(ERR, "Metadata key '%o' already registered", key);
     }
     Hash_Store(self->metadata, (Obj*)key, value);
 }
 
 void
-Seg_store_metadata_str(Segment *self, const char *key, size_t key_len, Obj *value)
+Seg_store_metadata_str(Segment *self, const char *key, size_t key_len, 
+                       Obj *value)
 {
     ZombieCharBuf k = ZCB_make_str((char*)key, key_len);
     Seg_store_metadata(self, (CharBuf*)&k, value);
@@ -182,7 +195,7 @@ i32_t
 Seg_compare_to(Segment *self, Obj *other)
 {
     Segment *other_seg = (Segment*)other;
-    return self->seg_num - other_seg->seg_num;
+    return self->number - other_seg->number;
 }
 
 CharBuf*

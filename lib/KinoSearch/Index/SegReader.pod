@@ -12,7 +12,7 @@ KinoSearch::Index::SegReader - Single-segment IndexReader.
     );
     my $seg_readers = $polyreader->seg_readers;
     for my $seg_reader (@$seg_readers) {
-        my $seg_name = $seg_reader->get_segment->get_name;
+        my $seg_name = $seg_reader->get_seg_name;
         my $num_docs = $seg_reader->doc_max;
         print "Segment $seg_name ($num_docs documents):\n";
         my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
@@ -35,6 +35,16 @@ Nearly all of SegReader's functionality is implemented by pluggable
 components spawned by Architecture's factory methods.
 
 
+
+=head1 METHODS
+
+=head2 get_seg_name()
+
+Return the name of the segment.
+
+=head2 get_seg_num()
+
+Return the number of the segment.
 
 
 

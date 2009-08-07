@@ -25,7 +25,7 @@
 Architecture*
 Arch_new()
 {
-    Architecture *self = (Architecture*)VTable_Make_Obj(&ARCHITECTURE);
+    Architecture *self = (Architecture*)VTable_Make_Obj(ARCHITECTURE);
     return Arch_init(self);
 }
 
@@ -65,7 +65,7 @@ Arch_register_lexicon_writer(Architecture *self, SegWriter *writer)
     LexiconWriter *lex_writer 
         = LexWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
-    SegWriter_Register(writer, LEXICONWRITER.name, 
+    SegWriter_Register(writer, LEXICONWRITER->name, 
         (DataWriter*)lex_writer);
 }
 
@@ -77,15 +77,15 @@ Arch_register_postings_writer(Architecture *self, SegWriter *writer)
     Segment       *segment    = SegWriter_Get_Segment(writer);
     PolyReader    *polyreader = SegWriter_Get_PolyReader(writer);
     LexiconWriter *lex_writer 
-        = (LexiconWriter*)SegWriter_Fetch(writer, LEXICONWRITER.name);
+        = (LexiconWriter*)SegWriter_Fetch(writer, LEXICONWRITER->name);
     UNUSED_VAR(self);
     if (!lex_writer) {
-        THROW("Can't fetch a LexiconWriter");
+        THROW(ERR, "Can't fetch a LexiconWriter");
     }
     else {
         PostingsWriter *post_writer = PostWriter_new(schema, snapshot,
             segment, polyreader, lex_writer);
-        SegWriter_Register(writer, POSTINGSWRITER.name, 
+        SegWriter_Register(writer, POSTINGSWRITER->name, 
             (DataWriter*)post_writer);
         SegWriter_Add_Writer(writer, (DataWriter*)INCREF(post_writer));
     }
@@ -101,7 +101,7 @@ Arch_register_doc_writer(Architecture *self, SegWriter *writer)
     DocWriter  *doc_writer 
         = DocWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
-    SegWriter_Register(writer, DOCWRITER.name, (DataWriter*)doc_writer);
+    SegWriter_Register(writer, DOCWRITER->name, (DataWriter*)doc_writer);
     SegWriter_Add_Writer(writer, (DataWriter*)INCREF(doc_writer));
 }
 
@@ -115,7 +115,7 @@ Arch_register_sort_writer(Architecture *self, SegWriter *writer)
     SortWriter *sort_writer 
         = SortWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
-    SegWriter_Register(writer, SORTWRITER.name, 
+    SegWriter_Register(writer, SORTWRITER->name, 
         (DataWriter*)sort_writer);
     SegWriter_Add_Writer(writer, (DataWriter*)INCREF(sort_writer));
 }
@@ -130,7 +130,7 @@ Arch_register_highlight_writer(Architecture *self, SegWriter *writer)
     HighlightWriter *hl_writer
         = HLWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
-    SegWriter_Register(writer, HIGHLIGHTWRITER.name, (DataWriter*)hl_writer);
+    SegWriter_Register(writer, HIGHLIGHTWRITER->name, (DataWriter*)hl_writer);
     SegWriter_Add_Writer(writer, (DataWriter*)INCREF(hl_writer));
 }
 
@@ -144,7 +144,7 @@ Arch_register_deletions_writer(Architecture *self, SegWriter *writer)
     DefaultDeletionsWriter *del_writer 
         = DefDelWriter_new(schema, snapshot, segment, polyreader);
     UNUSED_VAR(self);
-    SegWriter_Register(writer, DELETIONSWRITER.name, (DataWriter*)del_writer);
+    SegWriter_Register(writer, DELETIONSWRITER->name, (DataWriter*)del_writer);
     SegWriter_Set_Del_Writer(writer, (DeletionsWriter*)del_writer);
 }
 
@@ -170,7 +170,7 @@ Arch_register_doc_reader(Architecture *self, SegReader *reader)
     DefaultDocReader *doc_reader 
         = DefDocReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
-    SegReader_Register(reader, DOCREADER.name, (DataReader*)doc_reader);
+    SegReader_Register(reader, DOCREADER->name, (DataReader*)doc_reader);
 }
 
 void
@@ -182,11 +182,11 @@ Arch_register_postings_reader(Architecture *self, SegReader *reader)
     Snapshot  *snapshot = SegReader_Get_Snapshot(reader);
     i32_t      seg_tick = SegReader_Get_Seg_Tick(reader);
     LexiconReader *lex_reader 
-        = (LexiconReader*)SegReader_Obtain(reader, LEXICONREADER.name);
+        = (LexiconReader*)SegReader_Obtain(reader, LEXICONREADER->name);
     DefaultPostingsReader *post_reader = DefPostReader_new(schema, folder, 
         snapshot, segments, seg_tick, lex_reader);
     UNUSED_VAR(self);
-    SegReader_Register(reader, POSTINGSREADER.name, (DataReader*)post_reader);
+    SegReader_Register(reader, POSTINGSREADER->name, (DataReader*)post_reader);
 }
 
 void
@@ -200,7 +200,7 @@ Arch_register_lexicon_reader(Architecture *self, SegReader *reader)
     DefaultLexiconReader *lex_reader 
         = DefLexReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
-    SegReader_Register(reader, LEXICONREADER.name, (DataReader*)lex_reader);
+    SegReader_Register(reader, LEXICONREADER->name, (DataReader*)lex_reader);
 }
 
 void
@@ -214,7 +214,7 @@ Arch_register_sort_reader(Architecture *self, SegReader *reader)
     DefaultSortReader *sort_reader 
         = DefSortReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
-    SegReader_Register(reader, SORTREADER.name, (DataReader*)sort_reader);
+    SegReader_Register(reader, SORTREADER->name, (DataReader*)sort_reader);
 }
 
 void
@@ -228,7 +228,7 @@ Arch_register_highlight_reader(Architecture *self, SegReader *reader)
     DefaultHighlightReader* hl_reader
         = DefHLReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
-    SegReader_Register(reader, HIGHLIGHTREADER.name, (DataReader*)hl_reader);
+    SegReader_Register(reader, HIGHLIGHTREADER->name, (DataReader*)hl_reader);
 }
 
 void
@@ -242,7 +242,7 @@ Arch_register_deletions_reader(Architecture *self, SegReader *reader)
     DefaultDeletionsReader* del_reader
         = DefDelReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
-    SegReader_Register(reader, DELETIONSREADER.name, (DataReader*)del_reader);
+    SegReader_Register(reader, DELETIONSREADER->name, (DataReader*)del_reader);
 }
 
 Similarity*

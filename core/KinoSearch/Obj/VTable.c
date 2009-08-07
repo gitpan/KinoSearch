@@ -5,12 +5,12 @@
 #include <ctype.h>
 
 #include "KinoSearch/Obj/VTable.h"
+#include "KinoSearch/Obj/CharBuf.h"
+#include "KinoSearch/Obj/Err.h"
+#include "KinoSearch/Obj/Hash.h"
 #include "KinoSearch/Obj/Undefined.h"
-#include "KinoSearch/Util/Err.h"
-#include "KinoSearch/Util/CharBuf.h"
-#include "KinoSearch/Util/Hash.h"
+#include "KinoSearch/Obj/VArray.h"
 #include "KinoSearch/Util/MemManager.h"
-#include "KinoSearch/Util/VArray.h"
 
 size_t kino_VTable_offset_of_parent = offsetof(kino_VTable, parent);
 
@@ -29,7 +29,7 @@ void
 VTable_destroy(VTable *self)
 {
     if (self->flags & VTABLE_F_IMMORTAL) {
-        THROW("Attempt to destroy immortal VTable for class %o", self->name);
+        THROW(ERR, "Attempt to destroy immortal VTable for class %o", self->name);
     }
     if (self->parent && (REFCOUNT(self->parent) == 2)) {
         S_remove_from_registry(self->parent->name);
@@ -42,7 +42,8 @@ VTable_destroy(VTable *self)
 VTable*
 VTable_clone(VTable *self)
 {
-    VTable *evil_twin = (VTable*)MemMan_wrapped_calloc(self->vt_alloc_size, 1);
+    VTable *evil_twin 
+        = (VTable*)MemMan_wrapped_calloc(self->vt_alloc_size, 1);
 
     memcpy(evil_twin, self, self->vt_alloc_size);
     INCREF(evil_twin->vtable);
@@ -62,7 +63,7 @@ u32_t
 VTable_dec_refcount(VTable *self)
 {
     VTable_dec_refcount_t super_decref 
-        = (VTable_dec_refcount_t)SUPER_METHOD(&VTABLE, VTable, Dec_RefCount);
+        = (VTable_dec_refcount_t)SUPER_METHOD(VTABLE, VTable, Dec_RefCount);
     u32_t modified_refcount = super_decref(self);
     if (modified_refcount == 1) {
         S_remove_from_registry(self->name);
@@ -105,8 +106,8 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
         if (parent == NULL) {
             CharBuf *parent_class = VTable_find_parent_class(subclass_name);
             if (parent_class == NULL) {
-                THROW("Class '%o' doesn't descend from %o", subclass_name,
-                    OBJ.name);
+                THROW(ERR, "Class '%o' doesn't descend from %o", subclass_name,
+                    OBJ->name);
             }
             else {
                 parent = VTable_singleton(parent_class, NULL);
@@ -118,7 +119,7 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
         /* Copy source vtable. */
         singleton = VTable_Clone(parent);
         DECREF(singleton->vtable);
-        singleton->vtable = (VTable*)INCREF(&VTABLE);
+        singleton->vtable = (VTable*)INCREF(VTABLE);
 
         /* Turn clone into child. */
         DECREF(singleton->parent);
@@ -145,7 +146,8 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
                     callback->name_len);
                 S_scrunch_charbuf((CharBuf*)&callback_name, scrunched);
                 if (Hash_Fetch(meths, (Obj*)scrunched)) {
-                    VTable_Override(singleton, callback->func, callback->offset);
+                    VTable_Override(singleton, callback->func, 
+                        callback->offset);
                 }
             }
             DECREF(scrunched);
@@ -179,7 +181,7 @@ VTable_load_obj(VTable *self, Obj *dump)
 {
     Obj_load_t load = (Obj_load_t)METHOD(self, Obj, Load);
     if (load == Obj_load) {
-        THROW("Abstract method Load() not defined for %o", self->name);
+        THROW(ERR, "Abstract method Load() not defined for %o", self->name);
     }
     return load(NULL, dump);
 }
@@ -193,7 +195,7 @@ S_scrunch_charbuf(CharBuf *source, CharBuf *target)
     while (ZCB_Get_Size(&iterator)) {
         u32_t code_point = ZCB_Nip_One(&iterator);
         if (code_point > 127) {
-            THROW("Can't fold case for %o", source);
+            THROW(ERR, "Can't fold case for %o", source);
         }
         else if (code_point != '_') {
             CB_Cat_Char(target, tolower(code_point));
@@ -211,7 +213,7 @@ VTable_add_to_registry(VTable *vtable)
     fetched = (VTable*)Hash_Fetch(VTable_registry, (Obj*)vtable->name);
     if (fetched) {
         if (fetched != vtable) {
-            THROW("Attempt to redefine a vtable for '%o'", vtable->name);
+            THROW(ERR, "Attempt to redefine a vtable for '%o'", vtable->name);
         }
     }
     else {
@@ -233,7 +235,7 @@ static void
 S_remove_from_registry(const CharBuf *name)
 {
     if (VTable_registry == NULL) {
-        THROW("Attempt to remove '%o', but registry is NULL", name);
+        THROW(ERR, "Attempt to remove '%o', but registry is NULL", name);
     }
     else {
         VTable *vtable = (VTable*)Hash_Delete(VTable_registry, (Obj*)name);

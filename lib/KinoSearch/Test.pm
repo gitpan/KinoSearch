@@ -59,6 +59,9 @@ PPCODE:
     else if (strEQ(package, "TestObj")) {
         kino_TestObj_run_tests();
     }
+    else if (strEQ(package, "TestByteBuf")) {
+        kino_TestBB_run_tests();
+    }
     /* KinoSearch::QueryParser */
     else if (strEQ(package, "TestQueryParserSyntax")) {
     }
@@ -146,7 +149,7 @@ PPCODE:
         kino_TestVArray_run_tests();
     }
     else {
-        THROW("Unknown test id: %s", package);
+        THROW(KINO_ERR, "Unknown test id: %s", package);
     }
 }
 
@@ -190,7 +193,7 @@ PPCODE:
         batch = chaz_TVariadicMacros_prepare();
     }
     else {
-        THROW("Unknown test identifier: '%s'", which);
+        THROW(KINO_ERR, "Unknown test identifier: '%s'", which);
     }
 
     batch->run_test(batch);

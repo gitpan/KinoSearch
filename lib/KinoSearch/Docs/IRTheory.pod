@@ -61,9 +61,9 @@ ambitious for our present purposes, but in a nutshell, it means that...
 
 =item
 
-in a search for C<skate park>, documents which score well for the comparatively
-rare term C<skate> will rank higher than documents which score well for the
-more common term C<park>.  
+in a search for C<skate park>, documents which score well for the
+comparatively rare term C<skate> will rank higher than documents which score
+well for the more common term C<park>.  
 
 =item
 
