@@ -34,10 +34,10 @@ abstract class KinoSearch::FieldType cnick FType extends KinoSearch::Obj {
     bool_t        stored;
     bool_t        sortable;
 
-    static FieldType* 
+    inert FieldType* 
     init(FieldType *self);
 
-    static FieldType* 
+    inert FieldType* 
     init2(FieldType *self, float boost = 1.0, bool_t indexed = false, 
           bool_t stored = false, bool_t sortable = false);
 

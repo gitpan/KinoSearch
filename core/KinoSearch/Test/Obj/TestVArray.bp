@@ -1,7 +1,7 @@
 parcel KinoSearch cnick Kino;
 
-static class KinoSearch::Test::Obj::TestVArray {
-    static void
+inert class KinoSearch::Test::Obj::TestVArray {
+    inert void
     run_tests();
 }
 

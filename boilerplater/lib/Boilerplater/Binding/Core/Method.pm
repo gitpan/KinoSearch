@@ -33,7 +33,7 @@ sub _virtual_method_def {
         or confess("no match: $params");
 
     my $return_type = $method->get_return_type->to_c;
-    my $maybe_return = $method->get_return_type->void ? '' : 'return ';
+    my $maybe_return = $method->get_return_type->is_void ? '' : 'return ';
 
     return <<END_STUFF;
 extern size_t $offset_var_name;
@@ -82,12 +82,11 @@ __POD__
 
 Boilerplater::Binding::Core::Method - Generate core C code for a method.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

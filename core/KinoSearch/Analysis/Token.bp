@@ -43,18 +43,18 @@ class KinoSearch::Analysis::Token extends KinoSearch::Obj {
     i32_t   pos_inc;
     i32_t   pos;
 
-    static incremented Token* 
+    inert incremented Token* 
     new(const char *text, size_t len, u32_t start_offset, u32_t end_offset, 
         float boost = 1.0, i32_t pos_inc = 1);
 
-    static Token* 
+    inert Token* 
     init(Token *self, const char *text, size_t len, 
          u32_t start_offset, u32_t end_offset, 
          float boost = 1.0, i32_t pos_inc = 1);
 
     /** Sort_quicksort-compatible comparison routine.
      */
-    static int 
+    inert int 
     compare(void *context, const void *va, const void *vb);
 
     void 

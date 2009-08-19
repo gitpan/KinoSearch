@@ -19,10 +19,10 @@ final class KinoSearch::Store::OutStream extends KinoSearch::Obj {
     FileDes       *file_des;
     CharBuf       *path;
 
-    static incremented OutStream* 
+    inert incremented OutStream* 
     new(FileDes *file_des);
 
-    static OutStream* 
+    inert OutStream* 
     init(OutStream *self, FileDes *file_des);
 
     /** Return the current file position. 

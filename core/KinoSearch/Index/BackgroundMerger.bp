@@ -31,7 +31,7 @@ class KinoSearch::Index::BackgroundMerger cnick BGMerger
     bool_t             needs_commit;
     bool_t             prepared;
 
-    public static incremented BackgroundMerger*
+    public inert incremented BackgroundMerger*
     new(Obj *index, IndexManager *manager = NULL);
 
     /** Open a new BackgroundMerger.  
@@ -40,7 +40,7 @@ class KinoSearch::Index::BackgroundMerger cnick BGMerger
      * @param manager An IndexManager.  If not supplied, an IndexManager with
      * a 10-second write lock timeout will be created.
      */
-    public static BackgroundMerger*
+    public inert BackgroundMerger*
     init(BackgroundMerger *self, Obj *index, IndexManager *manager = NULL);
 
     /** Optimize the index for search-time performance.  This may take a

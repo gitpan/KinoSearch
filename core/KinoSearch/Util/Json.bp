@@ -8,27 +8,27 @@ class KinoSearch::Util::Json extends KinoSearch::Obj {
 
     /** Encode <code>dump</code> as JSON.
      */
-    static incremented CharBuf* 
+    inert incremented CharBuf* 
     to_json(Obj *dump);
 
     /** Decode the supplied JSON and return a data structure made
      * of Hashes, VArrays, and CharBufs.
      */
-    static incremented Obj* 
+    inert incremented Obj* 
     from_json(CharBuf *json);
 
     /** Encode <code>dump</code> as JSON and attempt to write to the indicated
      * file.  
      * @return true if the write succeeds, false if it fails.
      */
-    static bool_t
+    inert bool_t
     spew_json(Obj *dump, Folder *folder, const CharBuf *filename);
 
     /** Decode the JSON in the indicated file and return a data structure made
      * of Hashes, VArrays, and CharBufs.  Returns NULL if the file can't be
      * can't be open or if the file doesn't contain valid JSON.
      */
-    static incremented Obj* 
+    inert incremented Obj* 
     slurp_json(Folder *folder, const CharBuf *filename);
 }
 

@@ -16,7 +16,7 @@ abstract class KinoSearch::Store::Folder extends KinoSearch::Obj {
 
     CharBuf *path;
 
-    public static Folder*
+    public inert Folder*
     init(Folder *self, const CharBuf *path);
 
     /** Perform implementation-specific initialization.  For example: FSFolder

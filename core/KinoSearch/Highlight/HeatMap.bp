@@ -11,7 +11,7 @@ class KinoSearch::Highlight::HeatMap extends KinoSearch::Obj {
     VArray *spans;
     u32_t   window;
 
-    static incremented HeatMap*
+    inert incremented HeatMap*
     new(VArray *spans, u32_t window = 133);
 
     /**
@@ -20,7 +20,7 @@ class KinoSearch::Highlight::HeatMap extends KinoSearch::Obj {
      * @param window The greatest distance between which heat points may
      * reinforce each other.
      */
-    public static HeatMap*
+    public inert HeatMap*
     init(HeatMap *self, VArray *spans, u32_t window = 133);
 
     /** Reduce/slice overlapping spans.  Say we have two spans:

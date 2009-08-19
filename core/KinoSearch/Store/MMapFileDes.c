@@ -87,7 +87,7 @@ MMapFileDes_init(MMapFileDes *self, const CharBuf *path)
 
     /* Open file or return NULL. */
     if ( !SI_do_init(self) ) {
-        FREE_OBJ(self);
+        SUPER_DESTROY(self, MMAPFILEDES);
         return NULL;
     }
 

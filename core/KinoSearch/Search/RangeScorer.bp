@@ -8,11 +8,11 @@ class KinoSearch::Search::RangeScorer extends KinoSearch::Search::Matcher {
     i32_t      upper_bound;
     SortCache *sort_cache;
 
-    static incremented RangeScorer*
+    inert incremented RangeScorer*
     new(i32_t lower_bound, i32_t upper_bound, SortCache *sort_cache, 
         i32_t doc_max);
 
-    static RangeScorer*
+    inert RangeScorer*
     init(RangeScorer *self, i32_t lower_bound, i32_t upper_bound, 
          SortCache *sort_cache, i32_t doc_max);
 

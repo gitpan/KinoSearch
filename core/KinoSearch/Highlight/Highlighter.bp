@@ -19,7 +19,7 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Obj {
     CharBuf    *post_tag;
     Compiler   *compiler;
 
-    static incremented Highlighter*
+    inert incremented Highlighter*
     new(Searchable *searchable, Obj *query, const CharBuf *field, 
         u32_t excerpt_length = 200);
 
@@ -33,7 +33,7 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Obj {
      * L<FieldType|KinoSearch::FieldType>).
      * @param excerpt_length Maximum length of the excerpt, in characters.
      */
-    public static Highlighter*
+    public inert Highlighter*
     init(Highlighter *self, Searchable *searchable, Obj *query, 
          const CharBuf *field, u32_t excerpt_length = 200);
 

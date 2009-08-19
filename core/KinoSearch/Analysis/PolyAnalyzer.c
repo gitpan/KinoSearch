@@ -43,7 +43,7 @@ void
 PolyAnalyzer_destroy(PolyAnalyzer *self)
 {
     DECREF(self->analyzers);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, POLYANALYZER);
 }
 
 VArray*
@@ -75,8 +75,9 @@ PolyAnalyzer_transform_text(PolyAnalyzer *self, CharBuf *text)
     Inversion    *retval;
 
     if (num_analyzers == 0) {
-        size_t token_len = CB_Get_Size(text);
-        Token *seed = Token_new(text->ptr, token_len, 0, token_len, 1.0f, 1);
+        size_t  token_len = CB_Get_Size(text);
+        char   *buf       = (char*)CB_Get_Ptr8(text);
+        Token  *seed      = Token_new(buf, token_len, 0, token_len, 1.0f, 1);
         retval = Inversion_new(seed);
         DECREF(seed);
     }

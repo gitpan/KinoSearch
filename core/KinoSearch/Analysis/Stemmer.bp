@@ -44,14 +44,14 @@ class KinoSearch::Analysis::Stemmer extends KinoSearch::Analysis::Analyzer
     void *snowstemmer;
     CharBuf *language;
 
-    static incremented Stemmer* 
+    inert incremented Stemmer* 
     new(const CharBuf *language);
 
     /**
      * @param language A two-letter ISO code identifying a language supported
      * by Snowball.
      */
-    public static Stemmer* 
+    public inert Stemmer* 
     init(Stemmer *self, const CharBuf *language);
 
     public incremented Inversion*
@@ -71,7 +71,7 @@ class KinoSearch::Analysis::Stemmer extends KinoSearch::Analysis::Analyzer
 
     /** Load the Snowball stemming library.  Called by the constructor.
      */
-    static void
+    inert void
     load_snowball();
 
     void

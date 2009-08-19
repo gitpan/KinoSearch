@@ -27,7 +27,7 @@ Searchable_destroy(Searchable *self)
 {
     DECREF(self->schema);
     DECREF(self->qparser);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SEARCHABLE);
 }
 
 Hits*

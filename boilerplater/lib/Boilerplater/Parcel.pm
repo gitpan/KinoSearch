@@ -126,12 +126,12 @@ Return the singleton for default parcel, which has no prefix.
 
 Return one of the three capitalization variants for the parcel's prefix.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2006-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
+

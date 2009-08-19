@@ -129,13 +129,15 @@ DocWriter_add_segment(DocWriter *self, SegReader *reader,
 
         for (i = 1, max = SegReader_Doc_Max(reader); i <= max; i++) {
             if (I32Arr_Get(doc_map, i)) {
-                u64_t start = OutStream_Tell(dat_out);
-                size_t size;
+                u64_t   start = OutStream_Tell(dat_out);
+                char   *buf;
+                size_t  size;
 
                 /* Copy record over. */ 
                 DefDocReader_Read_Record(doc_reader, buffer, i);
+                buf  = BB_Get_Buf(buffer);
                 size = BB_Get_Size(buffer);
-                OutStream_Write_Bytes(dat_out, buffer->ptr, size);
+                OutStream_Write_Bytes(dat_out, buf, size);
 
                 /* Write file pointer. */
                 OutStream_Write_U64(ix_out, start);

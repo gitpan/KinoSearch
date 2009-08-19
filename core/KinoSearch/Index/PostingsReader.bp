@@ -8,7 +8,7 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::PostingsReader cnick PostReader
     extends KinoSearch::Index::DataReader {
 
-    static PostingsReader*
+    inert PostingsReader*
     init(PostingsReader *self, Schema *schema = NULL, Folder *folder = NULL,
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
          i32_t seg_tick = -1);
@@ -37,10 +37,10 @@ class KinoSearch::Index::PolyPostingsReader cnick PolyPostReader
     VArray   *readers;
     I32Array *offsets;
 
-    static incremented PolyPostingsReader*
+    inert incremented PolyPostingsReader*
     new(VArray *readers, I32Array *offsets);
 
-    static PolyPostingsReader*
+    inert PolyPostingsReader*
     init(PolyPostingsReader *self, VArray *readers, I32Array *offsets);
 
     public incremented PostingList*
@@ -61,11 +61,11 @@ class KinoSearch::Index::DefaultPostingsReader cnick DefPostReader
 
     /* Constructors.
      */
-    static incremented DefaultPostingsReader*
+    inert incremented DefaultPostingsReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
         i32_t seg_tick, LexiconReader *lex_reader);
 
-    static DefaultPostingsReader*
+    inert DefaultPostingsReader*
     init(DefaultPostingsReader *self, Schema *schema, Folder *folder,
          Snapshot *snapshot, VArray *segments, i32_t seg_tick, 
          LexiconReader *lex_reader);

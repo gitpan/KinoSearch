@@ -9,12 +9,12 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Search::NoMatchQuery extends KinoSearch::Search::Query
     : dumpable {
 
-    static incremented NoMatchQuery*
+    inert incremented NoMatchQuery*
     new();
 
     /** Constructor. Takes no arguments.
      */
-    public static NoMatchQuery*
+    public inert NoMatchQuery*
     init(NoMatchQuery *self);
 
     public bool_t
@@ -30,10 +30,10 @@ class KinoSearch::Search::NoMatchQuery extends KinoSearch::Search::Query
 class KinoSearch::Search::NoMatchCompiler 
     extends KinoSearch::Search::Compiler {
 
-    static incremented NoMatchCompiler*
+    inert incremented NoMatchCompiler*
     new(NoMatchQuery *parent, Searchable *searchable, float boost);
 
-    static NoMatchCompiler*
+    inert NoMatchCompiler*
     init(NoMatchCompiler *self, NoMatchQuery *parent,
          Searchable *searchable, float boost);
 

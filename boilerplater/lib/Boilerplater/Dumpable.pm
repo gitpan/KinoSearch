@@ -35,13 +35,13 @@ sub add_dumpables {
 # Create a Boilerplater::Method object for either Dump() or Load().
 sub _make_method_obj {
     my ( $self, $class, $dump_or_load ) = @_;
-    my $return_type = Boilerplater::Type->new(
+    my $return_type = Boilerplater::Type::Object->new(
         incremented => 1,
         specifier   => 'Obj',
         indirection => 1,
         parcel      => $class->get_parcel,
     );
-    my $self_type = Boilerplater::Type->new(
+    my $self_type = Boilerplater::Type::Object->new(
         specifier   => $class->get_struct_name,
         indirection => 1,
         parcel      => $class->get_parcel,
@@ -58,7 +58,7 @@ sub _make_method_obj {
             = Boilerplater::ParamList->new( variables => [$self_var], );
     }
     else {
-        my $dump_type = Boilerplater::Type->new(
+        my $dump_type = Boilerplater::Type::Object->new(
             specifier   => 'Obj',
             indirection => 1,
             parcel      => $class->get_parcel,
@@ -230,12 +230,11 @@ __POD__
 
 Boilerplater::Dumpable - Auto-generate code for "dumpable" classes.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2006-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

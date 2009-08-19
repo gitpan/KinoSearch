@@ -36,7 +36,7 @@ Sim_destroy(Similarity *self)
 {
     FREEMEM(self->norm_decoder);
     FREEMEM(self->prox_decoder);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SIMILARITY);
 }
 
 Obj*

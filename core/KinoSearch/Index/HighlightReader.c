@@ -207,12 +207,12 @@ DefHLReader_read_record(DefaultHighlightReader *self, i32_t doc_id,
 
     {
         /* Copy the whole record. */
-        u64_t  filepos = InStream_Read_U64(ix_in);
-        u64_t  end     = InStream_Read_U64(ix_in);
-        size_t size    = (size_t)(end - filepos);
-        BB_Grow(target, size);
+        u64_t   filepos = InStream_Read_U64(ix_in);
+        u64_t   end     = InStream_Read_U64(ix_in);
+        size_t  size    = (size_t)(end - filepos);
+        char   *buf     = BB_Grow(target, size);
         InStream_Seek(dat_in, filepos);
-        InStream_Read_Bytes(dat_in, target->ptr, size);
+        InStream_Read_Bytes(dat_in, buf, size);
         BB_Set_Size(target, size);
     }
 }

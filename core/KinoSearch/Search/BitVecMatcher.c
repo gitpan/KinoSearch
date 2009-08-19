@@ -22,7 +22,7 @@ void
 BitVecMatcher_destroy(BitVecMatcher *self)
 {
     DECREF(self->bit_vec);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, BITVECMATCHER);
 }
 
 i32_t

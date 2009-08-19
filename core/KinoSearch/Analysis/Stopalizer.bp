@@ -25,20 +25,20 @@ class KinoSearch::Analysis::Stopalizer
 
     Hash *stoplist;
     
-    static incremented Stopalizer* 
+    inert incremented Stopalizer* 
     new(const CharBuf *language = NULL, Hash *stoplist = NULL);
 
     /**
      * @param stoplist A hash with stopwords as the keys.
      * @param language The ISO code for a supported language.
      */
-    public static Stopalizer* 
+    public inert Stopalizer* 
     init(Stopalizer *self, const CharBuf *language = NULL, 
          Hash *stoplist = NULL);
 
     /** Return a Hash with the Snowball stoplist for the supplied language.
      */
-    static incremented Hash*
+    inert incremented Hash*
     gen_stoplist(const CharBuf *language);
 
     public incremented Inversion*

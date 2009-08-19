@@ -133,8 +133,8 @@ PPCODE:
     else if (strEQ(package, "TestHash")) {
         kino_TestHash_run_tests();
     }
-    else if (strEQ(package, "TestIntArrays")) {
-        kino_TestIntArrays_run_tests();
+    else if (strEQ(package, "TestNumberUtils")) {
+        kino_TestNumUtil_run_tests();
     }
     else if (strEQ(package, "TestNum")) {
         kino_TestNum_run_tests();

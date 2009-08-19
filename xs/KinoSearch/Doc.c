@@ -73,12 +73,12 @@ kino_Doc_extract(kino_Doc *self, kino_CharBuf *field,
                  kino_ViewCharBuf *target) 
 {
     kino_Obj *retval = NULL;
-    SV **sv_ptr = hv_fetch(self->fields, field->ptr, 
+    SV **sv_ptr = hv_fetch(self->fields, (char*)Kino_CB_Get_Ptr8(field), 
         Kino_CB_Get_Size(field), 0);
 
     if (sv_ptr && XSBind_sv_defined(*sv_ptr)) {
         SV *const sv = *sv_ptr;
-        if (sv_isobject(sv) && sv_derived_from(sv, KINO_OBJ->name->ptr)) {
+        if (sv_isobject(sv) && sv_derived_from(sv, "KinoSearch::Obj")) {
             IV tmp = SvIV( SvRV(sv) );
             retval = INT2PTR(kino_Obj*, tmp);
         }
@@ -172,7 +172,7 @@ void
 kino_Doc_destroy(kino_Doc *self)
 {
     if (self->fields) SvREFCNT_dec((SV*)self->fields);
-    KINO_FREE_OBJ(self);
+    KINO_SUPER_DESTROY(self, KINO_DOC);
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

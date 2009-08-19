@@ -655,9 +655,9 @@ TestQPLogic_run_tests()
         Hits  *hits     = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
-            "tree() OR   %s", test_case->query_string->ptr);
+            "tree() OR   %s", (char*)CB_Get_Ptr8(test_case->query_string));
         ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
-            "hits: OR   %s", test_case->query_string->ptr);
+            "hits: OR   %s", (char*)CB_Get_Ptr8(test_case->query_string));
         DECREF(hits);
         DECREF(parsed);
         DECREF(tree);
@@ -673,9 +673,9 @@ TestQPLogic_run_tests()
         Hits  *hits     = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
-            "tree() AND   %s", test_case->query_string->ptr);
+            "tree() AND   %s", (char*)CB_Get_Ptr8(test_case->query_string));
         ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
-            "hits: AND   %s", test_case->query_string->ptr);
+            "hits: AND   %s", (char*)CB_Get_Ptr8(test_case->query_string));
         DECREF(hits);
         DECREF(parsed);
         DECREF(tree);
@@ -696,11 +696,11 @@ TestQPLogic_run_tests()
         Hits  *hits;
 
         ASSERT_TRUE(batch, Query_Equals(pruned, (Obj*)wanted),
-            "prune()   %s", qstring->ptr);
+            "prune()   %s", (char*)CB_Get_Ptr8(qstring));
         expanded = QParser_Expand(or_parser, pruned);
         hits = Searcher_Hits(searcher, (Obj*)expanded, 0, 10, NULL);
         ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
-            "hits:    %s", qstring->ptr);
+            "hits:    %s", (char*)CB_Get_Ptr8(qstring));
 
         DECREF(hits);
         DECREF(expanded);

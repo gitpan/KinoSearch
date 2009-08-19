@@ -4,7 +4,7 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Test::Obj::TestByteBuf cnick TestBB
     extends KinoSearch::Obj {
 
-    static void
+    inert void
     run_tests();
 }
 

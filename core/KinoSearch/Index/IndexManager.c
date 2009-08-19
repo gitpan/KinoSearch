@@ -47,7 +47,7 @@ IxManager_destroy(IndexManager *self)
     DECREF(self->hostname);
     DECREF(self->folder);
     DECREF(self->lock_factory);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, INDEXMANAGER);
 }
 
 i32_t
@@ -113,6 +113,21 @@ S_check_cutoff(VArray *array, u32_t tick, void *data)
     return SegReader_Get_Seg_Num(seg_reader) > cutoff;
 }
 
+static u32_t
+S_fibonacci(u32_t n) {
+    u32_t result = 0;
+    if (n > 46) {
+        THROW(ERR, "input %u32 too high", n); 
+    }   
+    else if (n < 2) {
+        result = n;
+    }   
+    else {
+        result = S_fibonacci(n - 1) + S_fibonacci(n - 2); 
+    }   
+    return result;
+}
+
 VArray*
 IxManager_recycle(IndexManager *self, PolyReader *reader, 
                   DeletionsWriter *del_writer, i32_t cutoff, bool_t optimize)
@@ -135,14 +150,14 @@ IxManager_recycle(IndexManager *self, PolyReader *reader,
         u32_t num_segs_when_done = num_seg_readers - threshold + 1;
         SegReader *seg_reader = (SegReader*)VA_Fetch(recyclables, i);
         total_docs += SegReader_Doc_Count(seg_reader);
-        if (total_docs < Math_fibonacci(num_segs_when_done + 5)) {
+        if (total_docs < S_fibonacci(num_segs_when_done + 5)) {
             threshold = i + 1;
         }
     }
     VA_Splice(recyclables, threshold, num_seg_readers);
 
     /* Find segments where at least 10% of all docs have been deleted. */
-    for (i = threshold; i < num_seg_readers; i++) {
+    for (i = threshold + 1; i < num_seg_readers; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(seg_readers, i);
         CharBuf   *seg_name   = SegReader_Get_Seg_Name(seg_reader);
         double doc_max = SegReader_Doc_Max(seg_reader);

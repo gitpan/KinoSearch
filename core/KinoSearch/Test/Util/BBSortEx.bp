@@ -6,12 +6,12 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Test::Util::BBSortEx 
     extends KinoSearch::Util::SortExternal {
 
-    static BBSortEx*
+    inert BBSortEx*
     init(BBSortEx *self, u32_t mem_thresh = 0x1000000);
 
     /** Wrapper around BB_compare which allows (superfluous) context argument.
      */
-    static int
+    inert int
     compare_bbs(void *context, const void *va, const void *vb);
 
     void

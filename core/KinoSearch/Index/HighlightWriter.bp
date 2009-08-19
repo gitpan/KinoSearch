@@ -9,13 +9,13 @@ class KinoSearch::Index::HighlightWriter cnick HLWriter
     OutStream *ix_out;
     OutStream *dat_out;
 
-    static i32_t current_file_format;
+    inert i32_t current_file_format;
 
-    static incremented HighlightWriter*
+    inert incremented HighlightWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
         PolyReader *polyreader);
 
-    static HighlightWriter*
+    inert HighlightWriter*
     init(HighlightWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader);
 

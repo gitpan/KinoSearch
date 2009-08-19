@@ -10,6 +10,7 @@
 #include "KinoSearch/Obj/Hash.h"
 #include "KinoSearch/Obj/Undefined.h"
 #include "KinoSearch/Obj/VArray.h"
+#include "KinoSearch/Util/Debug.h"
 #include "KinoSearch/Util/MemManager.h"
 
 size_t kino_VTable_offset_of_parent = offsetof(kino_VTable, parent);
@@ -36,7 +37,7 @@ VTable_destroy(VTable *self)
     }
     DECREF(self->name);
     DECREF(self->parent);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, VTABLE);
 }
 
 VTable*
@@ -189,8 +190,7 @@ VTable_load_obj(VTable *self, Obj *dump)
 static void
 S_scrunch_charbuf(CharBuf *source, CharBuf *target)
 {
-    ZombieCharBuf iterator = ZCB_BLANK;
-    CB_Iter_Init(source, &iterator);
+    ZombieCharBuf iterator = ZCB_make(source);
     CB_Set_Size(target, 0);
     while (ZCB_Get_Size(&iterator)) {
         u32_t code_point = ZCB_Nip_One(&iterator);

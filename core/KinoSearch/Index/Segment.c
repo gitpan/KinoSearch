@@ -55,7 +55,7 @@ Seg_destroy(Segment *self)
     DECREF(self->metadata);
     DECREF(self->by_name);
     DECREF(self->by_num);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SEGMENT);
 }
 
 bool_t

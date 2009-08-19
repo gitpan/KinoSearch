@@ -9,10 +9,6 @@ parcel KinoSearch cnick Kino;
  * Since the write algorithms for different Stepper types may require
  * differing argument lists, it is left to the subclass to define the routine.
  * 
- * However, since all Stepper subclasses must implement Stepper_Read_Record,
- * all of them may inherit the debugging aids Stepper_Dump and
- * Stepper_Dump_To_File.
- *
  * Sometimes it is possible to change a file's format by changing only a
  * Stepper.  In that case, a compatibility version of the old class may be
  * squirreled away as a plugin, to be accessed only when reading files written
@@ -25,7 +21,7 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Util::Stepper extends KinoSearch::Obj {
 
-    static Stepper*
+    inert Stepper*
     init(Stepper *self);
     
     public abstract void 
@@ -66,12 +62,6 @@ class KinoSearch::Util::Stepper extends KinoSearch::Obj {
      */
     abstract void
     Read_Record(Stepper *self, InStream *instream);
-
-    /** Step through the file, writing Stepper_To_String() to the OutStream
-     * for each record until the stream's end is reached.
-     */
-    void
-    Dump_To_File(Stepper *self, InStream *instream, OutStream *outstream);
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

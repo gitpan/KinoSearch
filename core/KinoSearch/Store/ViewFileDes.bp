@@ -8,10 +8,10 @@ class KinoSearch::Store::ViewFileDes extends KinoSearch::Store::RAMFileDes {
     /** Constructor.  The caller assumes responsibility for ensuring that
      * <code>ptr</code> remains valid for the life of the ViewFileDes object.
      */
-    static incremented ViewFileDes*
+    inert incremented ViewFileDes*
     new(char *ptr, size_t len);
 
-    static ViewFileDes*
+    inert ViewFileDes*
     init(ViewFileDes *self, char *ptr, size_t len);
 
     /** Throws an error.

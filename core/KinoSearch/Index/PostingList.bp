@@ -11,7 +11,7 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::PostingList cnick PList
     extends KinoSearch::Search::Matcher {
 
-    public static PostingList*
+    public inert PostingList*
     init(PostingList *self);
 
     /** Return the iterator's current Posting.  Should not be called before

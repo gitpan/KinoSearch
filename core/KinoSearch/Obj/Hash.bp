@@ -3,12 +3,11 @@ parcel KinoSearch cnick Kino;
 /** 
  * Hashtable.
  *
- * Private hashtable module for KinoSearch's internal use.  The keys are
- * CharBufs; the values may belong to any subclass of Obj. The hashing
- * function is the one used by Perl 5.8.8: Bob Jenkin's "one-at-a-time"
- * algorithm.  Collisions are resolved using a linked list.
+ * Hashtable implementation.  Values are stored by reference and may be any
+ * kind of Obj. By default, keys are cloned and so must belong to an Obj
+ * subclass that implements Clone(); however, this behavior can be changed by
+ * overridding Make_Key(), e.g. to implement efficient hash sets.
  */ 
-
 class KinoSearch::Obj::Hash extends KinoSearch::Obj {
 
     void          *entries;
@@ -21,10 +20,10 @@ class KinoSearch::Obj::Hash extends KinoSearch::Obj {
      * @param capacity The number of elements that the hash will be asked to
      * hold initially.
      */
-    static incremented Hash*
+    inert incremented Hash*
     new(u32_t capacity = 0);
 
-    static Hash*
+    inert Hash*
     init(Hash *self, u32_t capacity = 0);
 
     /** Empty the hash of all key-value pairs.
@@ -104,7 +103,7 @@ class KinoSearch::Obj::Hash extends KinoSearch::Obj {
      *       "baz", baz,
      *   );
      */
-    static void
+    inert void
     marshall(Hash *self, u32_t num_pairs, ...);
 
     /** Create a key to be stored within the hash entry.  Implementations must

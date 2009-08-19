@@ -28,7 +28,7 @@ Hits_destroy(Hits *self)
 {
     DECREF(self->searchable);
     DECREF(self->top_docs);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, HITS);
 }
 
 Obj*

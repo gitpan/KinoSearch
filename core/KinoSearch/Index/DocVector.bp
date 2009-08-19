@@ -11,10 +11,10 @@ class KinoSearch::Index::DocVector cnick DocVec
 
     /* Constructor.
      */
-    static incremented DocVector*
+    inert incremented DocVector*
     new();
 
-    static DocVector*
+    inert DocVector*
     init(DocVector *self);
 
     incremented TermVector*

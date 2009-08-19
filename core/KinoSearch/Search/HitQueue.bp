@@ -14,7 +14,7 @@ class KinoSearch::Search::HitQueue cnick HitQ
     u32_t           num_actions;
     bool_t          need_values;
 
-    static incremented HitQueue*
+    inert incremented HitQueue*
     new(Schema *schema = NULL, SortSpec *sort_spec = NULL, u32_t wanted);
 
     /** 
@@ -23,7 +23,7 @@ class KinoSearch::Search::HitQueue cnick HitQ
      * by descending score first and ascending doc id second.
      * @param wanted Max elements the queue can hold.
      */
-    static HitQueue*
+    inert HitQueue*
     init(HitQueue *self, Schema *schema = NULL, SortSpec *sort_spec = NULL, 
          u32_t wanted);
 

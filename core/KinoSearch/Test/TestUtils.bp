@@ -3,41 +3,41 @@ parcel KinoSearch cnick Kino;
 /** Test case object for QueryParser unit tests. 
  */
 
-static class KinoSearch::Test::TestUtils  {
+inert class KinoSearch::Test::TestUtils  {
 
     /** Testing-only CharBuf factory which uses strlen().
      */
-    static incremented CharBuf* 
+    inert incremented CharBuf* 
     get_cb(const char *utf8);
 
     /** Return a VArray of CharBufs, each representing the content for a
      * document in the shared collection.
      */
-    static incremented VArray*
+    inert incremented VArray*
     doc_set();
 
     /** Testing-only TermQuery factory.
      */
-    static incremented TermQuery*
+    inert incremented TermQuery*
     make_term_query(const char *field, const char *term);
 
     /** Testing-only PhraseQuery factory.
      */
-    static incremented PhraseQuery*
+    inert incremented PhraseQuery*
     make_phrase_query(const char *field, ...);
 
     /** Testing-only LeafQuery factory.
      */
-    static incremented LeafQuery*
+    inert incremented LeafQuery*
     make_leaf_query(const char *field, const char *term);
 
     /** Return a new NOTQuery, decrementing the refcount for
      * <code>negated_query</code>.
      */
-    static incremented NOTQuery*
+    inert incremented NOTQuery*
     make_not_query(Query *negated_query);
 
-    static incremented RangeQuery*
+    inert incremented RangeQuery*
     make_range_query(const char *field, const char *lower_term = NULL, 
                      const char *upper_term = NULL, 
                      bool_t include_lower = true, 
@@ -48,7 +48,7 @@ static class KinoSearch::Test::TestUtils  {
      * Decrements the refcounts of all supplied children, under the assumption
      * that they were created solely for inclusion within the aggregate query.
      */
-    static incremented PolyQuery*
+    inert incremented PolyQuery*
     make_poly_query(u32_t boolop, ...);
 }
 

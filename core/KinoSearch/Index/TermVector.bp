@@ -16,11 +16,11 @@ class KinoSearch::Index::TermVector cnick TV
     /* Constructor.  The object will assume ownership of the positions,
      * start_offsets, and end_offsets arrays.
      */
-    static incremented TermVector*
+    inert incremented TermVector*
     new(const CharBuf *field, const CharBuf *text, I32Array *positions, 
         I32Array *start_offsets, I32Array *end_offsets);
 
-    static TermVector*
+    inert TermVector*
     init(TermVector *self, const CharBuf *field, const CharBuf *text,
          I32Array *positions, I32Array *start_offsets, I32Array *end_offsets);
 

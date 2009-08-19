@@ -15,7 +15,7 @@ class KinoSearch::Search::Searchable extends KinoSearch::Obj {
      *
      * @param schema A KinoSearch::Schema.
      */
-    public static Searchable*
+    public inert Searchable*
     init(Searchable *self, Schema *schema);
 
     void

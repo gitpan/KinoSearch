@@ -171,9 +171,10 @@ void
 DefDocReader_read_record(DefaultDocReader *self, ByteBuf *buffer,
                          i32_t doc_id)
 {
-    i64_t start;
-    i64_t end;
-    i32_t size;
+    i64_t  start;
+    i64_t  end;
+    i32_t  size;
+    char  *buf;
 
     /* Find start and length of variable length record. */
     InStream_Seek(self->ix_in, (i64_t)doc_id * 8);
@@ -182,9 +183,9 @@ DefDocReader_read_record(DefaultDocReader *self, ByteBuf *buffer,
     size  = (i32_t)(end - start);
 
     /* Read in the record. */
-    BB_Grow(buffer, size);
+    buf = BB_Grow(buffer, size);
     InStream_Seek(self->dat_in, start);
-    InStream_Read_Bytes(self->dat_in, buffer->ptr, size);
+    InStream_Read_Bytes(self->dat_in, buf, size);
     BB_Set_Size(buffer, size);
 }
 

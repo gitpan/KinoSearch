@@ -37,7 +37,7 @@ SeriesMatcher_destroy(SeriesMatcher *self)
 {
     DECREF(self->matchers);
     DECREF(self->offsets);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SERIESMATCHER);
 }
 
 i32_t

@@ -18,10 +18,10 @@ final class KinoSearch::Store::InStream extends KinoSearch::Obj {
     FileDes    *file_des;
     FileWindow *window;
 
-    static incremented InStream* 
+    inert incremented InStream* 
     new(FileDes *file_des);
 
-    static InStream* 
+    inert InStream* 
     init(InStream *instream, FileDes *file_des);
 
     /** Clone the instream, but specify a new offset, length, and possibly

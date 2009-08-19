@@ -51,7 +51,7 @@ Inverter_destroy(Inverter *self)
     DECREF(self->entry_pool);
     DECREF(self->schema);
     DECREF(self->segment);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, INVERTER);
 }
 
 u32_t
@@ -200,7 +200,7 @@ InvEntry_destroy(InverterEntry *self)
     DECREF(self->type);
     DECREF(self->sim);
     DECREF(self->inversion);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, INVERTERENTRY);
 }
 
 void

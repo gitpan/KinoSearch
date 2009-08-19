@@ -25,13 +25,13 @@ class KinoSearch::Util::MemoryPool cnick MemPool
      * @param arena_size The size of each internally allocated memory slab.
      * If 0, it will be set to 1 MiB.
      */
-    static incremented MemoryPool*
+    inert incremented MemoryPool*
     new(u32_t arena_size);
 
     /** Run some tests.  (This belongs in a test file, but we don't have those
      * for C as of the creation of this function.)
      */
-    static bool_t
+    inert bool_t
     run_tests();
 
     /** Allocate memory from the pool.

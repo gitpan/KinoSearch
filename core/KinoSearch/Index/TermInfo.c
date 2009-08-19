@@ -30,6 +30,9 @@ TInfo_clone(TermInfo *self)
     return evil_twin;
 }
 
+i32_t
+TInfo_get_doc_freq(TermInfo *self) { return self->doc_freq; }
+
 /* TODO: this should probably be some sort of Dump variant rather than
  * To_String.
  */

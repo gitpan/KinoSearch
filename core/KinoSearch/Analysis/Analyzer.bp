@@ -11,7 +11,7 @@ parcel KinoSearch cnick Kino;
 abstract class KinoSearch::Analysis::Analyzer 
     extends KinoSearch::Obj : dumpable {
 
-    public static Analyzer* 
+    public inert Analyzer* 
     init(Analyzer *self);
 
     /** Take a single L<Inversion|KinoSearch::Analysis::Inversion> as input

@@ -101,7 +101,7 @@ sub var_declarations {
     my @var_declarations;
     for my $i ( 0 .. $#$arg_vars ) {
         my $arg_var = $arg_vars->[$i];
-        push @var_declarations, $arg_var->c_declaration;
+        push @var_declarations, $arg_var->local_declaration;
         next if $i == 0;    # no ZombieCharBuf for $self.
         next
             unless $arg_var->get_type->get_specifier

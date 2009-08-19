@@ -12,7 +12,7 @@ class KinoSearch::Index::SortCache extends KinoSearch::Obj {
     i32_t      ord_width;
     i32_t      null_ord;
 
-    public static SortCache*
+    public inert SortCache*
     init(SortCache *self, const CharBuf *field, FieldType *type,
          void *ords, i32_t num_uniq, i32_t doc_max, i32_t null_ord = -1);
 

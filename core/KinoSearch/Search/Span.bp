@@ -16,7 +16,7 @@ class KinoSearch::Search::Span extends KinoSearch::Obj {
     i32_t length;
     float weight;
 
-    static incremented Span*
+    inert incremented Span*
     new(i32_t offset, i32_t length, float weight = 0.0);
 
     /**
@@ -24,7 +24,7 @@ class KinoSearch::Search::Span extends KinoSearch::Obj {
      * @param length Integer length, unit is context-dependent.
      * @param weight A floating point weight.
      */
-    public static Span*
+    public inert Span*
     init(Span *self, i32_t offset, i32_t length, 
          float weight = 0.0);
 

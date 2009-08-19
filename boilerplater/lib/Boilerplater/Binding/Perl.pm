@@ -243,7 +243,6 @@ sub write_bindings {
 #include "$self->{boot_h_file}"
 
 #include "KinoSearch/Util/Host.h"
-#include "KinoSearch/Util/MathUtils.h"
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/StringHelper.h"
 
@@ -563,13 +562,12 @@ $abstract_methods_pod
 
 $inheritance_pod
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2005-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
 
@@ -626,7 +624,7 @@ sub _write_boot_c {
     for my $class (@ordered) {
         my $include_h = $class->include_h;
         $pound_includes .= qq|#include "$include_h"\n|;
-        next if $class->static;
+        next if $class->inert;
         my $prefix  = $class->get_prefix;
         my $PREFIX  = $class->get_PREFIX;
         my $vt_type = $PREFIX . $class->vtable_type;

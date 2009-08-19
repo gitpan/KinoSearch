@@ -16,7 +16,7 @@ class KinoSearch::Index::PolyReader extends KinoSearch::Index::IndexReader {
     i32_t     del_count;
     I32Array *offsets;
 
-    public static incremented PolyReader*
+    public inert incremented PolyReader*
     open(Obj *index, Snapshot *snapshot = NULL, IndexManager *manager = NULL);
 
     /**
@@ -26,15 +26,15 @@ class KinoSearch::Index::PolyReader extends KinoSearch::Index::IndexReader {
      * @param manager An L<IndexManager|KinoSearch::Index::IndexManager>.
      * Read-locking is off by default; supplying this argument turns it on.
      */ 
-    public static PolyReader*
+    public inert PolyReader*
     do_open(PolyReader *self, Obj *index, Snapshot *snapshot = NULL, 
             IndexManager *manager = NULL);
 
-    public static incremented PolyReader*
+    public inert incremented PolyReader*
     new(Schema *schema = NULL, Folder *folder, Snapshot *snapshot = NULL, 
         IndexManager *manager = NULL, VArray *sub_readers = NULL);
 
-    public static PolyReader*
+    public inert PolyReader*
     init(PolyReader *self, Schema *schema = NULL, Folder *folder, 
          Snapshot *snapshot = NULL, IndexManager *manager = NULL, 
          VArray *sub_readers = NULL);
@@ -49,16 +49,16 @@ class KinoSearch::Index::PolyReader extends KinoSearch::Index::IndexReader {
     /** Attempt to read a snapshot file.  If the operation succeeds, return
      * NULL.  If an exception occurs, catch it and return its error message.
      */
-    static incremented CharBuf*
+    inert incremented CharBuf*
     try_read_snapshot(Snapshot *snapshot, Folder *folder, 
                       const CharBuf *filename);
 
-    static CharBuf* race_condition_debug1;
-    static i32_t    debug1_num_passes;
+    inert CharBuf* race_condition_debug1;
+    inert i32_t    debug1_num_passes;
     
     /** Determine which sub-reader a document id belongs to.
      */
-    static u32_t
+    inert u32_t
     sub_tick(I32Array *offsets, i32_t doc_id);
 
     public i32_t

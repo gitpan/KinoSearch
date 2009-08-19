@@ -13,11 +13,11 @@ class KinoSearch::Index::SortCache::TextSortCache
     char      *char_data;
     char      *char_data_limit;
 
-    public static incremented TextSortCache*
+    public inert incremented TextSortCache*
     new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num,
         i32_t num_unique, i32_t null_ord = -1);
 
-    public static TextSortCache*
+    public inert TextSortCache*
     init(TextSortCache *self, Schema *schema, Folder *folder, 
          Segment *segment, i32_t field_num, i32_t num_unique, 
          i32_t null_ord = -1);

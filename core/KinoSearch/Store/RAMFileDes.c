@@ -76,7 +76,7 @@ RAMFileDes_read(RAMFileDes *self, char *dest, u64_t offset, u32_t len)
             ? bytes_wanted
             : bytes_in_buf;
         ByteBuf *const buffer = (ByteBuf*)VA_Fetch(buffers, buf_num);
-        char *const source = buffer->ptr + source_offset; 
+        char *const source = BB_Get_Buf(buffer) + source_offset; 
 
         memcpy(dest, source, bytes_to_copy);
 
@@ -116,7 +116,7 @@ RAMFileDes_write(RAMFileDes *self, const void *buf, u32_t len)
             buffer = (ByteBuf*)VA_Fetch(buffers, dest_buf_num);
         }
         
-        dest = buffer->ptr + dest_offset;
+        dest = BB_Get_Buf(buffer) + dest_offset;
         memcpy(dest, source, bytes_to_copy * sizeof(char));
         if (dest_offset + bytes_to_copy > BB_Get_Size(buffer)) {
             BB_Set_Size(buffer, dest_offset + bytes_to_copy);

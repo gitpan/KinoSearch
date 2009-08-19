@@ -13,10 +13,10 @@ class KinoSearch::Store::MMapFileDes extends KinoSearch::Store::FileDes {
 
     /** Constructor.  Will return NULL if attempt to open the file fails.
      */
-    static incremented MMapFileDes* 
+    inert incremented MMapFileDes* 
     new(const CharBuf *path = NULL);
 
-    static MMapFileDes* 
+    inert MMapFileDes* 
     init(MMapFileDes *self, const CharBuf *path = NULL);
 
     bool_t

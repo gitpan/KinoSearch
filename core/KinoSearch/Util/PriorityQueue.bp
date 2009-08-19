@@ -22,7 +22,7 @@ class KinoSearch::Util::PriorityQueue cnick PriQ
     /** 
      * @param max_size Max elements the queue can hold.
      */
-    static PriorityQueue*
+    inert PriorityQueue*
     init(PriorityQueue *self, u32_t max_size);
 
     /** Compare queue elements.

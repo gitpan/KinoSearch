@@ -11,10 +11,10 @@ class KinoSearch::Search::MatchDoc extends KinoSearch::Obj {
     float    score;
     VArray  *values;
 
-    static incremented MatchDoc*
+    inert incremented MatchDoc*
     new(i32_t doc_id, float score, VArray *values = NULL);
 
-    static MatchDoc*
+    inert MatchDoc*
     init(MatchDoc *self, i32_t doc_id, float score, VArray *values = NULL);
 
     public void

@@ -50,7 +50,7 @@ PriQ_destroy(PriorityQueue *self)
         S_clear(self);
         FREEMEM(self->heap);
     }
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, PRIORITYQUEUE);
 }
 
 u32_t

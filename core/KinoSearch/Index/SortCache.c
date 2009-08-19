@@ -2,7 +2,6 @@
 
 #include "KinoSearch/Index/SortCache.h"
 #include "KinoSearch/FieldType.h"
-#include "KinoSearch/Util/IntArrays.h"
 
 static i32_t
 S_calc_ord_width(i32_t num_uniq) 
@@ -52,9 +51,9 @@ SortCache_ordinal(SortCache *self, i32_t doc_id)
         THROW(ERR, "Out of range: %i32 > %i32", doc_id, self->doc_max);
     }
     switch (self->ord_width) {
-        case 1: return IntArr_u1get(self->ords, doc_id);
-        case 2: return IntArr_u2get(self->ords, doc_id);
-        case 4: return IntArr_u4get(self->ords, doc_id);
+        case 1: return NumUtil_u1get(self->ords, doc_id);
+        case 2: return NumUtil_u2get(self->ords, doc_id);
+        case 4: return NumUtil_u4get(self->ords, doc_id);
         case 8: {
             u8_t *ints = (u8_t*)self->ords;
             return ints[doc_id];

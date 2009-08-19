@@ -46,9 +46,9 @@ Searcher_init(Searcher *self, Obj *index)
     self->seg_readers = IxReader_Seg_Readers(self->reader);
     self->seg_starts  = IxReader_Offsets(self->reader);
     self->doc_reader = (DocReader*)IxReader_Fetch(
-        self->reader, DOCREADER->name);
+        self->reader, VTable_Get_Name(DOCREADER));
     self->hl_reader = (HighlightReader*)IxReader_Fetch(
-        self->reader, HIGHLIGHTREADER->name);
+        self->reader, VTable_Get_Name(HIGHLIGHTREADER));
     if (self->doc_reader) { INCREF(self->doc_reader); }
     if (self->hl_reader)  { INCREF(self->hl_reader); }
 
@@ -89,8 +89,8 @@ Searcher_doc_max(Searcher *self)
 u32_t
 Searcher_doc_freq(Searcher *self, const CharBuf *field, Obj *term)
 {
-    LexiconReader *lex_reader 
-        = (LexiconReader*)IxReader_Fetch(self->reader, LEXICONREADER->name);
+    LexiconReader *lex_reader = (LexiconReader*)IxReader_Fetch(self->reader, 
+        VTable_Get_Name(LEXICONREADER));
     return lex_reader ? LexReader_Doc_Freq(lex_reader, field, term) : 0;
 }
 
@@ -127,7 +127,7 @@ Searcher_collect(Searcher *self, Query *query, HitCollector *collector)
     for (i = 0, max = VA_Get_Size(seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(seg_readers, i);
         DeletionsReader *del_reader = (DeletionsReader*)SegReader_Fetch(
-            seg_reader, DELETIONSREADER->name);
+            seg_reader, VTable_Get_Name(DELETIONSREADER));
         Matcher *matcher 
             = Compiler_Make_Matcher(compiler, seg_reader, need_score);
         if (matcher) {

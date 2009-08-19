@@ -43,7 +43,7 @@ TV_destroy(TermVector *self)
     DECREF(self->positions);
     DECREF(self->start_offsets);
     DECREF(self->end_offsets);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, TERMVECTOR);
 }
 
 I32Array*

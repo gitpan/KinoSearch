@@ -30,7 +30,7 @@ class KinoSearch::Index::RawPosting cnick RawPost
 
     /** Constructor.  Uses pre-allocated memory.
      */
-    static incremented RawPosting*
+    inert incremented RawPosting*
     new(void *pre_allocated_memory, i32_t doc_id, u32_t freq,
         char *term_text, size_t term_text_len);
 
@@ -55,10 +55,10 @@ class KinoSearch::Posting::RawPostingStreamer cnick RawPostStreamer
     OutStream *outstream;
     i32_t      last_doc_id;
 
-    static incremented RawPostingStreamer*
+    inert incremented RawPostingStreamer*
     new(DataWriter *writer, OutStream *outstream);
 
-    static RawPostingStreamer*
+    inert RawPostingStreamer*
     init(RawPostingStreamer *self, DataWriter *writer, OutStream *outstream);
 
     void

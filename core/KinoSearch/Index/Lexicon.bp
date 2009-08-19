@@ -19,7 +19,7 @@ class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Obj {
 
     CharBuf *field;
 
-    public static Lexicon*
+    public inert Lexicon*
     init(Lexicon *self);
 
     /** Seek the Lexicon to the first iterator state which is greater than or

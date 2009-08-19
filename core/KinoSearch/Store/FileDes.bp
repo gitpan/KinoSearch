@@ -16,7 +16,7 @@ abstract class KinoSearch::Store::FileDes extends KinoSearch::Obj {
     CharBuf *path;
     CharBuf *mess;
 
-    static FileDes*
+    inert FileDes*
     init(FileDes *self, const CharBuf *path = NULL);
 
     /** Ensure that the FileWindow's buffer provides access to the file data

@@ -13,8 +13,10 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/MemManager.h"
-#include "KinoSearch/Util/MathUtils.h"
 #include "KinoSearch/Util/StringHelper.h"
+
+/* The end of the string (address of terminating NULL). */
+#define CBEND(self) ((self)->ptr + (self)->size)
 
 /* Reallocate if necessary. */
 static INLINE void
@@ -126,8 +128,7 @@ i32_t
 CB_hash_code(CharBuf *self)
 {
     u32_t hashvalue = 5381; 
-    ZombieCharBuf iterator = ZCB_BLANK;
-    CB_Iter_Init(self, &iterator);
+    ZombieCharBuf iterator = ZCB_make(self);
     
     {
         const CB_nip_one_t nip_one 
@@ -152,10 +153,11 @@ SI_maybe_grow(CharBuf *self, size_t new_size)
     self->cap = new_size + 1;
 }
 
-void 
+char*
 CB_grow(CharBuf *self, size_t new_size) 
 {
     SI_maybe_grow(self, new_size);
+    return self->ptr;
 }
 
 static void
@@ -354,7 +356,7 @@ CB_cat_char(CharBuf *self, u32_t code_point)
 {
     const size_t MIN_SAFE_ROOM = 4 + 1;
     if (self->size + MIN_SAFE_ROOM > self->cap) {
-        CB_Grow(self, self->size + 10);
+        SI_maybe_grow(self, self->size + 10);
     }
     self->size += StrHelp_encode_utf8_char(code_point, (u8_t*)CBEND(self));
     *CBEND(self) = '\0';
@@ -688,8 +690,7 @@ size_t
 CB_truncate(CharBuf *self, size_t count)
 {
     u32_t num_code_points;
-    ZombieCharBuf iterator = ZCB_BLANK;
-    CB_Iter_Init(self, &iterator);
+    ZombieCharBuf iterator = ZCB_make(self);
     num_code_points = ZCB_Nip(&iterator, count);
     self->size -= iterator.size;
     return num_code_points;
@@ -726,11 +727,10 @@ CB_code_point_from(CharBuf *self, size_t tick)
 CharBuf*
 CB_substring(CharBuf *self, size_t offset, size_t len)
 {
-    ZombieCharBuf iterator = ZCB_BLANK;
+    ZombieCharBuf iterator = ZCB_make(self);
     char *sub_start;
     size_t byte_len;
 
-    CB_Iter_Init(self, &iterator);
     ZCB_Nip(&iterator, offset);
     sub_start = iterator.ptr;
     ZCB_Nip(&iterator, len);
@@ -744,10 +744,8 @@ CB_compare(const void *va, const void *vb)
 {
     const CharBuf *a = *(const CharBuf**)va;
     const CharBuf *b = *(const CharBuf**)vb;
-    ZombieCharBuf iterator_a = ZCB_BLANK;
-    ZombieCharBuf iterator_b = ZCB_BLANK;
-    CB_Iter_Init(a, &iterator_a);
-    CB_Iter_Init(b, &iterator_b);
+    ZombieCharBuf iterator_a = ZCB_make(a);
+    ZombieCharBuf iterator_b = ZCB_make(b);
     while (iterator_a.size && iterator_b.size) {
         i32_t code_point_a = ZCB_Nip_One(&iterator_a);
         i32_t code_point_b = ZCB_Nip_One(&iterator_b);
@@ -764,14 +762,6 @@ bool_t
 CB_less_than(const void *va, const void *vb)
 {
     return CB_compare(va, vb) < 0 ? 1 : 0;
-}
-
-ZombieCharBuf*
-CB_iter_init(CharBuf *self, ZombieCharBuf *target)
-{
-    target->vtable = ZOMBIECHARBUF;
-    ZCB_Assign(target, self);
-    return target;
 }
 
 void
@@ -894,6 +884,24 @@ ViewCB_grow(ViewCharBuf *self, size_t size)
 }
 
 /*****************************************************************/
+
+ZombieCharBuf
+ZCB_make_str(const char *ptr, size_t size) 
+{
+    ZombieCharBuf retval;
+    retval.ref.count    = 1;
+    retval.vtable       = ZOMBIECHARBUF;
+    retval.cap          = 0;
+    retval.size         = size;
+    retval.ptr          = (char*)ptr;
+    return retval;
+}
+
+ZombieCharBuf
+ZCB_make(const CharBuf *source) 
+{
+    return ZCB_make_str(source->ptr, source->size);
+}
 
 void
 ZCB_destroy(ZombieCharBuf *self)

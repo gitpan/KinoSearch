@@ -22,10 +22,10 @@ class KinoSearch::Index::SegPostingList cnick SegPList
 
     /* Constructor.
      */
-    static incremented SegPostingList*
+    inert incremented SegPostingList*
     new(PostingsReader *postings_reader, const CharBuf *field);
 
-    static SegPostingList*
+    inert SegPostingList*
     init(SegPostingList *self, PostingsReader *postings_reader, 
          const CharBuf *field);
 

@@ -11,10 +11,10 @@ class KSx::Search::FilterScorer extends KinoSearch::Search::Matcher {
      * true.
      * @param doc_max The largest doc id that could possibly match.
      */
-    static incremented FilterScorer*
+    inert incremented FilterScorer*
     new(BitVector *bits, i32_t doc_max);
 
-    static FilterScorer*
+    inert FilterScorer*
     init(FilterScorer *self, BitVector *bits, i32_t doc_max);
 
     void

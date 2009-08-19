@@ -10,10 +10,10 @@ class KinoSearch::FieldType::BlobType extends KinoSearch::FieldType
 
     /** Constructor.  Takes no arguments. 
      */
-    public static BlobType* 
+    public inert BlobType* 
     init(BlobType *self);
 
-    public static incremented BlobType* 
+    public inert incremented BlobType* 
     new();
 
     /** Returns true. 

@@ -7,16 +7,16 @@ parcel KinoSearch cnick Kino;
  */
 
 class KinoSearch::Test::TestSchema extends KinoSearch::Schema {
-    static incremented TestSchema* 
+    inert incremented TestSchema* 
     new();
 
-    static TestSchema*
+    inert TestSchema*
     init(TestSchema *self);
 
     public incremented Architecture*
     Architecture(TestSchema *self);
 
-    static void
+    inert void
     run_tests();
 }
 

@@ -12,14 +12,14 @@ class KinoSearch::Search::PhraseQuery extends KinoSearch::Search::Query
     CharBuf       *field;
     VArray        *terms;
 
-    static incremented PhraseQuery*
+    inert incremented PhraseQuery*
     new(const CharBuf *field, VArray *terms);
 
     /**
      * @param field The field that the phrase must occur in.
      * @param terms The ordered array of terms that must match.
      */
-    public static PhraseQuery*
+    public inert PhraseQuery*
     init(PhraseQuery *self, const CharBuf *field, VArray *terms);
 
     /** Accessor for object's field attribute.
@@ -59,10 +59,10 @@ class KinoSearch::Search::PhraseCompiler
     float query_norm_factor;
     float normalized_weight;
 
-    static incremented PhraseCompiler*
+    inert incremented PhraseCompiler*
     new(PhraseQuery *parent, Searchable *searchable, float boost);
 
-    static PhraseCompiler*
+    inert PhraseCompiler*
     init(PhraseCompiler *self, PhraseQuery *parent, Searchable *searchable, 
          float boost);
 

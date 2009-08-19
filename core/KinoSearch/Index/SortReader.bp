@@ -5,7 +5,7 @@ parcel KinoSearch cnick Kino;
 abstract class KinoSearch::Index::SortReader 
     extends KinoSearch::Index::DataReader {
 
-    static SortReader*
+    inert SortReader*
     init(SortReader *self, Schema *schema = NULL, Folder *folder = NULL,
          Snapshot *snapshot = NULL, VArray *segments = NULL,
          i32_t seg_tick = -1);
@@ -30,11 +30,11 @@ class KinoSearch::Index::DefaultSortReader cnick DefSortReader
 
     /* Constructors.
      */
-    static incremented DefaultSortReader*
+    inert incremented DefaultSortReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
         i32_t seg_tick);
 
-    static DefaultSortReader*
+    inert DefaultSortReader*
     init(DefaultSortReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot, VArray *segments, i32_t seg_tick);
 

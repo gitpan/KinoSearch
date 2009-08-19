@@ -4,74 +4,67 @@ use warnings;
 package Boilerplater::Type::Primitive;
 use base qw( Boilerplater::Type );
 use Boilerplater::Util qw( verify_args );
+use Scalar::Util qw( blessed );
 use Carp;
 
 our %new_PARAMS = (
     const     => undef,
     specifier => undef,
-);
-
-our %specifiers = (
-    bool_t => 'integer',
-    i8_t   => 'integer',
-    i16_t  => 'integer',
-    i32_t  => 'integer',
-    i64_t  => 'integer',
-    u8_t   => 'integer',
-    u16_t  => 'integer',
-    u32_t  => 'integer',
-    u64_t  => 'integer',
-    char   => 'integer',
-    int    => 'integer',
-    short  => 'integer',
-    long   => 'integer',
-    float  => 'float',
-    double => 'float',
+    c_string  => undef,
 );
 
 sub new {
     my ( $either, %args ) = @_;
+    my $package = ref($either) || $either;
+    confess( __PACKAGE__ . " is abstract" ) if $package eq __PACKAGE__;
     verify_args( \%new_PARAMS, %args ) or confess $@;
-
-    my $int_or_float = $specifiers{ $args{specifier} };
-    confess("Unknown specifier: '$args{specifier}'")
-        unless $int_or_float;
-
-    my $self = bless {
-        %new_PARAMS,
-        is_floating => $int_or_float eq 'float'   ? 1 : 0,
-        is_integer  => $int_or_float eq 'integer' ? 1 : 0,
-        %args
-        },
-        ref($either) || $either;
-
-    # Cache the C representation of this type.
-    $self->{_c_string} = $self->const ? 'const ' : '';
-    if ( $self->{specifier} =~ /^(?:[iu]\d+|bool)_t$/ ) {
-        $self->{_c_string} .= "chy_";
-    }
-    $self->{_c_string} .= $self->{specifier};
-
-    return $self;
+    return bless { %new_PARAMS, %args }, $package;
 }
 
-# Accessors.
-sub get_specifier { shift->{specifier} }
-sub const         { shift->{const} }
-sub is_object     {0}
-sub is_integer    { shift->{is_integer} }
-sub is_floating   { shift->{is_floating} }
+sub is_primitive {1}
 
 sub equals {
     my ( $self, $other ) = @_;
+    return 0 unless blessed($other);
+    return 0 unless $other->isa(__PACKAGE__);
     return 0 unless $self->{specifier} eq $other->{specifier};
     return 0 if ( $self->{const} xor $other->{const} );
     return 1;
 }
 
-sub to_c { shift->{_c_string} }
-
 1;
 
 __END__
 
+__POD__
+
+=head1 NAME
+
+Boilerplater::Type::Primitive - Abstract base class for primitive types.
+
+=head1 DESCRIPTION
+
+Boilerplater::Type::Primitive serves as a common parent class for primitive
+types including L<Boilerplater::Type::Integer> and
+L<Boilerplater::Type::Float>.
+
+=head1 METHODS
+
+=head2 new
+
+    my $type = MyPrimitiveType->new(
+        const     => 1,       # default: undef
+        specifier => 'char',  # default: undef
+        c_string  => 'char',  # default: undef
+    );
+
+Abstract constructor.  See L<Boilerplater::Type> for parameter definitions.
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2008-2009 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=cut

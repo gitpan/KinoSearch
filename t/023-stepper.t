@@ -26,13 +26,8 @@ sub read_record {
     $number{$$self} += $instream->read_c32;
 }
 
-sub to_string {
-    my $self = shift;
-    return $number{$$self};
-}
-
 package main;
-use Test::More tests => 2;
+use Test::More tests => 1;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $outstream = $folder->open_out("foo") or die "Can't open outstream";
@@ -47,14 +42,4 @@ while ( $instream->tell < $instream->length ) {
     push @got, $stepper->get_number;
 }
 is_deeply( \@got, [ 10, 20, 30, 40, 50 ], 'Read_Record' );
-
-$stepper = MyStepper->new;
-$instream->seek(0);
-my $dump_stream = $folder->open_out('dump')
-    or die "Can't open outstream";
-
-$stepper->dump_to_file( instream => $instream, outstream => $dump_stream );
-$dump_stream->close;
-my $dumped = $folder->slurp_file('dump');
-like( $dumped, qr/10.*20.*30.*40.*50/s, "dump_to_file" );
 

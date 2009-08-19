@@ -10,7 +10,7 @@ class KinoSearch::Store::FSFolder extends KinoSearch::Store::Folder {
 
     Hash    *cf_readers;
 
-    static incremented FSFolder*
+    inert incremented FSFolder*
     new(const CharBuf *path);
 
     /**
@@ -19,7 +19,7 @@ class KinoSearch::Store::FSFolder extends KinoSearch::Store::Folder {
      * misconfigured read applications from spawning bogus files -- so it may
      * be necessary to create the directory yourself.
      */
-    public static FSFolder*
+    public inert FSFolder*
     init(FSFolder *self, const CharBuf *path);
 
     /** Attempt to create the directory specified by <code>path</code>.

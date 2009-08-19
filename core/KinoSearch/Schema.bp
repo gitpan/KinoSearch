@@ -22,7 +22,7 @@ class KinoSearch::Schema extends KinoSearch::Obj {
 
     /** Constructor.  Takes no arguments.
      */
-    public static Schema*
+    public inert Schema*
     init(Schema *self);
 
     /** Factory method which returns the Architecture for this index. 

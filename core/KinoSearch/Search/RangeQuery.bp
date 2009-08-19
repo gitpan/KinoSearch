@@ -15,7 +15,7 @@ class KinoSearch::Search::RangeQuery extends KinoSearch::Search::Query
     bool_t    include_lower;
     bool_t    include_upper;
 
-    static incremented RangeQuery*
+    inert incremented RangeQuery*
     new(const CharBuf *field, Obj *lower_term = NULL, Obj *upper_term = NULL,
         bool_t include_lower = true, bool_t include_upper = true);
 
@@ -33,7 +33,7 @@ class KinoSearch::Search::RangeQuery extends KinoSearch::Search::Query
      * @param include_upper Indicates whether docs which match
      * <code>upper_term</code> should be included in the results.
      */
-    public static RangeQuery*
+    public inert RangeQuery*
     init(RangeQuery *self, const CharBuf *field, 
          Obj *lower_term = NULL, Obj *upper_term = NULL, 
          bool_t include_lower = true, bool_t include_upper = true);
@@ -59,10 +59,10 @@ class KinoSearch::Search::RangeQuery extends KinoSearch::Search::Query
 
 class KinoSearch::Search::RangeCompiler extends KinoSearch::Search::Compiler {
 
-    static incremented RangeCompiler*
+    inert incremented RangeCompiler*
     new(RangeQuery *parent, Searchable *searchable, float boost);
 
-    static RangeCompiler*
+    inert RangeCompiler*
     init(RangeCompiler *self, RangeQuery *parent,
          Searchable *searchable, float boost);
 

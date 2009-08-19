@@ -1,7 +1,7 @@
 parcel KinoSearch cnick Kino;
 
-static class KinoSearch::Test::Analysis::TestTokenizer {
-    static void
+inert class KinoSearch::Test::Analysis::TestTokenizer {
+    inert void
     run_tests();
 }
 

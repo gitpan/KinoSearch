@@ -22,13 +22,13 @@ class KinoSearch::Index::PostingsWriter cnick PostWriter
     InStream        *post_instream;
     u32_t            mem_thresh;
 
-    static i32_t current_file_format;
+    inert i32_t current_file_format;
 
-    static incremented PostingsWriter*
+    inert incremented PostingsWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
         PolyReader *polyreader, LexiconWriter *lex_writer); 
 
-    static PostingsWriter*
+    inert PostingsWriter*
     init(PostingsWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader, LexiconWriter *lex_writer);
 

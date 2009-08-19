@@ -192,6 +192,8 @@ sub abstract_method_def {
     my $vtable          = uc( $self->self_type->get_specifier );
     my $return_type     = $self->{return_type};
     my $return_type_str = $return_type->to_c;
+    my $prefix          = $self->get_prefix;
+    my $Prefix          = $self->get_Prefix;
 
     # Build list of unused params and create an unreachable return statement
     # if necessary, in order to thwart compiler warnings.
@@ -202,7 +204,7 @@ sub abstract_method_def {
         $unused .= "\n    CHY_UNUSED_VAR($var_name);";
     }
     my $ret_statement = '';
-    if ( !$return_type->void ) {
+    if ( !$return_type->is_void ) {
         $ret_statement = "\n    CHY_UNREACHABLE_RETURN($return_type_str);";
     }
 
@@ -210,8 +212,8 @@ sub abstract_method_def {
 $return_type_str
 $full_func_sym($params)
 {
-    kino_CharBuf *klass = self ? Kino_Obj_Get_Class_Name(self) : $vtable->name;$unused
-    KINO_THROW(KINO_ERR, "Abstract method '$self->{macro_name}' not defined by %o", klass);$ret_statement
+    ${prefix}CharBuf *klass = self ? ${Prefix}Obj_Get_Class_Name(self) : $vtable->name;$unused
+    BOIL_THROW(BOIL_ERR, "Abstract method '$self->{macro_name}' not defined by %o", klass);$ret_statement
 }
 END_ABSTRACT_DEF
 }
@@ -220,7 +222,7 @@ sub callback_def {
     my $self        = shift;
     my $return_type = $self->get_return_type;
     return
-          $return_type->void      ? _void_callback_def($self)
+          $return_type->is_void   ? _void_callback_def($self)
         : $return_type->is_object ? _obj_callback_def($self)
         :                           _primitive_callback_def($self);
 }
@@ -231,15 +233,16 @@ sub _callback_params {
     my $param_list = $self->{param_list};
     my $num_params = $param_list->num_vars - 1;
     my $arg_vars   = $param_list->get_variables;
+    my $PREFIX     = $self->get_PREFIX;
     my @params;
     for my $var ( @$arg_vars[ 1 .. $#$arg_vars ] ) {
         my $name = $var->micro_sym;
         my $type = $var->get_type;
         my $param
-            = $type->is_string_type ? qq|KINO_ARG_STR("$name", $name)|
-            : $type->is_object      ? qq|KINO_ARG_OBJ("$name", $name)|
-            : $type->is_integer     ? qq|KINO_ARG_I32("$name", $name)|
-            :                         qq|KINO_ARG_F("$name", $name)|;
+            = $type->is_string_type ? qq|${PREFIX}ARG_STR("$name", $name)|
+            : $type->is_object      ? qq|${PREFIX}ARG_OBJ("$name", $name)|
+            : $type->is_integer     ? qq|${PREFIX}ARG_I32("$name", $name)|
+            :                         qq|${PREFIX}ARG_F("$name", $name)|;
         push @params, $param;
     }
     return join( ', ', 'self', qq|"$micro_sym"|, $num_params, @params );
@@ -250,11 +253,12 @@ sub _void_callback_def {
     my $override_sym    = $self->full_override_sym;
     my $callback_params = _callback_params($self);
     my $params          = $self->{param_list}->to_c;
+    my $prefix          = $self->get_prefix;
     return <<END_CALLBACK_DEF;
 void
 $override_sym($params)
 {
-    kino_Host_callback($callback_params);
+    ${prefix}Host_callback($callback_params);
 }
 END_CALLBACK_DEF
 }
@@ -265,10 +269,11 @@ sub _primitive_callback_def {
     my $callback_params = _callback_params($self);
     my $params          = $self->{param_list}->to_c;
     my $return_type     = $self->{return_type}->to_c;
+    my $prefix          = $self->get_prefix;
     my $nat_func
-        = $self->{return_type}->is_floating ? 'kino_Host_callback_f'
-        : $self->{return_type}->is_integer  ? 'kino_Host_callback_i'
-        : $return_type eq 'void*' ? 'kino_Host_callback_nat'
+        = $self->{return_type}->is_floating ? "${prefix}Host_callback_f"
+        : $self->{return_type}->is_integer  ? "${prefix}Host_callback_i"
+        : $return_type eq 'void*' ? "${prefix}Host_callback_nat"
         :   confess("unrecognized type: $return_type");
     return <<END_CALLBACK_DEF;
 $return_type
@@ -285,10 +290,12 @@ sub _obj_callback_def {
     my $callback_params = _callback_params($self);
     my $params          = $self->{param_list}->to_c;
     my $return_type     = $self->{return_type}->to_c;
+    my $prefix          = $self->get_prefix;
+    my $PREFIX          = $self->get_PREFIX;
     my $cb_func_name
         = $self->{return_type}->is_string_type
-        ? 'kino_Host_callback_str'
-        : 'kino_Host_callback_obj';
+        ? "${prefix}Host_callback_str"
+        : "${prefix}Host_callback_obj";
     if ( $self->{return_type}->incremented ) {
         return <<END_CALLBACK_DEF;
 $return_type
@@ -304,7 +311,7 @@ $return_type
 $override_sym($params)
 {
     $return_type retval = ($return_type)$cb_func_name($callback_params);
-    KINO_DECREF(retval);
+    ${PREFIX}DECREF(retval);
     return retval;
 }
 END_CALLBACK_DEF
@@ -394,12 +401,11 @@ B<class_name>, B<class_cnick>, B<docu_comment>, see L<Boilerplater::Function>.
 
 =back
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2006-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

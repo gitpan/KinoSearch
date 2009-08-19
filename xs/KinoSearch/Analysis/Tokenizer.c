@@ -69,7 +69,7 @@ kino_Tokenizer_destroy(kino_Tokenizer *self)
 {
     KINO_DECREF(self->pattern);
     ReREFCNT_dec(((REGEXP*)self->token_re));
-    KINO_FREE_OBJ(self);
+    KINO_SUPER_DESTROY(self, KINO_TOKENIZER);
 }
 
 void

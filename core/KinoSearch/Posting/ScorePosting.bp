@@ -13,10 +13,10 @@ class KinoSearch::Posting::ScorePosting cnick ScorePost
     u32_t   *prox;
     u32_t    prox_cap;
 
-    static incremented ScorePosting*
+    inert incremented ScorePosting*
     new(Similarity *similarity);
 
-    static ScorePosting*
+    inert ScorePosting*
     init(ScorePosting *self, Similarity *similarity);
 
     void
@@ -51,7 +51,7 @@ class KinoSearch::Posting::ScorePostingScorer cnick ScorePostScorer
 
     float *score_cache;
 
-    static ScorePostingScorer*
+    inert ScorePostingScorer*
     init(ScorePostingScorer *self, Similarity *sim, PostingList *plist, 
          Compiler *compiler);
 

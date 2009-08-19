@@ -54,7 +54,7 @@ VA_destroy(VArray *self)
         }
         FREEMEM(self->elems);
     }
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, VARRAY);
 }
 
 VArray*

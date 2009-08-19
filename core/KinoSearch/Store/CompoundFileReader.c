@@ -65,7 +65,7 @@ CFReader_destroy(CompoundFileReader *self)
     DECREF(self->instream);
     DECREF(self->entries);
     DECREF(self->seg_name);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, COMPOUNDFILEREADER);
 }
 
 i32_t

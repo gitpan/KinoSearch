@@ -41,7 +41,7 @@ Lock_destroy(Lock *self)
     DECREF(self->hostname);
     DECREF(self->name);
     DECREF(self->filename);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, LOCK);
 }
 
 CharBuf*

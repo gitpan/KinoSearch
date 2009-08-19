@@ -13,10 +13,10 @@ class KinoSearch::Search::SeriesMatcher extends KinoSearch::Search::Matcher {
     i32_t      current_offset;
     i32_t      next_offset;
 
-    public static incremented SeriesMatcher*
+    public inert incremented SeriesMatcher*
     new(VArray *matchers, I32Array *offsets);
 
-    public static SeriesMatcher*
+    public inert SeriesMatcher*
     init(SeriesMatcher *self, VArray *matchers, I32Array *offsets);
 
     public i32_t

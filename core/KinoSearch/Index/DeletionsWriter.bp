@@ -18,7 +18,7 @@ parcel KinoSearch cnick Kino;
 abstract class KinoSearch::Index::DeletionsWriter cnick DelWriter
     extends KinoSearch::Index::DataWriter {
 
-    static DeletionsWriter* 
+    inert DeletionsWriter* 
     init(DeletionsWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader);
 
@@ -91,7 +91,7 @@ class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
     bool_t      *updated;
     Searcher    *searcher;
 
-    static i32_t current_file_format;
+    inert i32_t current_file_format;
 
     /**
      * @param schema A Schema.
@@ -99,11 +99,11 @@ class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
      * @param snapshot A Snapshot.
      * @param polyreader An PolyReader.
      */
-    static incremented DefaultDeletionsWriter* 
+    inert incremented DefaultDeletionsWriter* 
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
         PolyReader *polyreader);
 
-    static DefaultDeletionsWriter* 
+    inert DefaultDeletionsWriter* 
     init(DefaultDeletionsWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader);
 

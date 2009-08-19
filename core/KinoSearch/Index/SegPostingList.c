@@ -255,7 +255,7 @@ S_seek_tinfo(SegPostingList *self, TermInfo *tinfo)
     }
     else {
         /* Transfer doc_freq, seek main stream. */
-        self->doc_freq     = tinfo->doc_freq;
+        self->doc_freq     = TInfo_Get_Doc_Freq(tinfo);
         InStream_Seek(self->post_stream, tinfo->post_filepos);
 
         /* Prepare posting. */
@@ -264,7 +264,7 @@ S_seek_tinfo(SegPostingList *self, TermInfo *tinfo)
 
         /* Prepare to skip. */
         self->skip_count    = 0;
-        self->num_skips     = tinfo->doc_freq / self->skip_interval;
+        self->num_skips     = self->doc_freq / self->skip_interval;
         SkipStepper_Set_ID_And_Filepos(self->skip_stepper, self->doc_base,
             (u64_t)tinfo->post_filepos);
         InStream_Seek(self->skip_stream, tinfo->skip_filepos);

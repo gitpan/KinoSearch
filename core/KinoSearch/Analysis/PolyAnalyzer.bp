@@ -33,7 +33,7 @@ class KinoSearch::Analysis::PolyAnalyzer
 
     VArray  *analyzers;
 
-    static incremented PolyAnalyzer* 
+    inert incremented PolyAnalyzer* 
     new(const CharBuf *language = NULL, VArray *analyzers = NULL);
 
     /** 
@@ -45,7 +45,7 @@ class KinoSearch::Analysis::PolyAnalyzer
      * stoplist).  In general, the sequence should be: normalize, tokenize,
      * stopalize, stem.  
      */
-    public static PolyAnalyzer* 
+    public inert PolyAnalyzer* 
     init(PolyAnalyzer *self, const CharBuf *language = NULL, 
          VArray *analyzers = NULL);
 

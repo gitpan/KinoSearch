@@ -44,7 +44,7 @@ OutStream_destroy(OutStream *self)
     }
     DECREF(self->path);
     FREEMEM(self->buf);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, OUTSTREAM);
 }
 
 void 
@@ -151,7 +151,7 @@ SI_write_u32(OutStream *self, u32_t value)
 #else 
     char  buf[4];
     char *buf_copy = buf;
-    Math_encode_bigend_u32(value, &buf_copy);
+    NumUtil_encode_bigend_u32(value, &buf_copy);
     SI_write_bytes(self, buf, 4);
 #endif
 }
@@ -202,31 +202,19 @@ OutStream_write_u64(OutStream *self, u64_t value)
 void 
 OutStream_write_f32(OutStream *self, float value) 
 {
-#ifdef BIG_END
-    SI_write_bytes(self, &value, sizeof(float));
-#else 
     char  buf[sizeof(float)];
     char *buf_copy = buf;
-    union { float f; u32_t u32; } duo; 
-    duo.f = value;
-    Math_encode_bigend_u32(duo.u32, &buf_copy);
-    SI_write_bytes(self, buf, sizeof(float));
-#endif
+    NumUtil_encode_bigend_f32(value, &buf_copy);
+    SI_write_bytes(self, buf_copy, sizeof(float));
 }
 
 void 
 OutStream_write_f64(OutStream *self, double value) 
 {
-#ifdef BIG_END
-    SI_write_bytes(self, &value, sizeof(double));
-#else 
     char  buf[sizeof(double)];
     char *buf_copy = buf;
-    union { double f; u64_t u64; } duo; 
-    duo.f = value;
-    Math_encode_bigend_u64(duo.u64, &buf_copy);
-    SI_write_bytes(self, buf, sizeof(double));
-#endif
+    NumUtil_encode_bigend_f64(value, &buf_copy);
+    SI_write_bytes(self, buf_copy, sizeof(double));
 }
 
 void

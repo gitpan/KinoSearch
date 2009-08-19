@@ -11,12 +11,12 @@ class KinoSearch::Analysis::CaseFolder
 
     ByteBuf *work_buf;
 
-    static incremented CaseFolder* 
+    inert incremented CaseFolder* 
     new();
 
     /** Constructor.  Takes no arguments.
      */
-    public static CaseFolder* 
+    public inert CaseFolder* 
     init(CaseFolder *self);
 
     public incremented Inversion*

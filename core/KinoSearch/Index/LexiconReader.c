@@ -239,7 +239,7 @@ DefLexReader_doc_freq(DefaultLexiconReader *self, const CharBuf *field,
                       Obj *term)
 {
     TermInfo *tinfo = S_find_tinfo(self, field, term);
-    return tinfo ? tinfo->doc_freq : 0;
+    return tinfo ? TInfo_Get_Doc_Freq(tinfo) : 0;
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

@@ -12,7 +12,6 @@
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Search/Similarity.h"
-#include "KinoSearch/Util/MathUtils.h"
 #include "KinoSearch/Util/MemoryPool.h"
 
 #define FIELD_BOOST_LEN  1
@@ -102,7 +101,7 @@ ScorePost_add_inversion_to_pool(ScorePosting *self, PostingPool *post_pool,
         for (i = 0; i < freq; i++) {
             Token *const t = tokens[i];
             const u32_t prox_delta = t->pos - last_prox;
-            Math_encode_c32(prox_delta, &dest);
+            NumUtil_encode_c32(prox_delta, &dest);
             last_prox = t->pos; 
         }
 
@@ -130,7 +129,7 @@ ScorePost_read_record(ScorePosting *self, InStream *instream)
     u32_t *positions;
     const  size_t max_start_bytes = (C32_MAX_BYTES * 2) + 1;
     char  *buf = InStream_Buf(instream, max_start_bytes);
-    const u32_t doc_code = Math_decode_c32(&buf);
+    const u32_t doc_code = NumUtil_decode_c32(&buf);
     const u32_t doc_delta = doc_code >> 1;
 
     /* Apply delta doc and retrieve freq. */
@@ -138,7 +137,7 @@ ScorePost_read_record(ScorePosting *self, InStream *instream)
     if (doc_code & 1) 
         self->freq = 1;
     else
-        self->freq = Math_decode_c32(&buf);
+        self->freq = NumUtil_decode_c32(&buf);
 
     /* Decode boost/norm byte. */
     self->weight = self->sim->norm_decoder[ *(u8_t*)buf ];
@@ -155,7 +154,7 @@ ScorePost_read_record(ScorePosting *self, InStream *instream)
     InStream_Advance_Buf(instream, buf);
     buf = InStream_Buf(instream, num_prox * C32_MAX_BYTES);
     while (num_prox--) {
-        position += Math_decode_c32(&buf);
+        position += NumUtil_decode_c32(&buf);
         *positions++ = position;
     }
 
@@ -166,6 +165,7 @@ RawPosting*
 ScorePost_read_raw(ScorePosting *self, InStream *instream, i32_t last_doc_id,
                    CharBuf *term_text, MemoryPool *mem_pool)
 {
+    char *const  text_buf         = (char*)CB_Get_Ptr8(term_text);
     const size_t text_size        = CB_Get_Size(term_text);
     const u32_t  doc_code         = InStream_Read_C32(instream);
     const u32_t  delta_doc        = doc_code >> 1;
@@ -176,7 +176,7 @@ ScorePost_read_raw(ScorePosting *self, InStream *instream, i32_t last_doc_id,
     size_t raw_post_bytes         = MAX_RAW_POSTING_LEN(text_size, freq);
     void *const allocation        = MemPool_Grab(mem_pool, raw_post_bytes);
     RawPosting *const raw_posting = RawPost_new(allocation, doc_id, freq,
-        term_text->ptr, text_size);
+        text_buf, text_size);
     u32_t  num_prox   = freq;
     char *const start = raw_posting->blob + text_size;
     char *      dest  = start;

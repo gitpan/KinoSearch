@@ -14,7 +14,7 @@ class KinoSearch::Posting cnick Post extends KinoSearch::Util::Stepper {
 
     i32_t doc_id;
 
-    public static Posting*
+    public inert Posting*
     init(Posting *self);
 
     /** Create a RawPosting object, suitable for index-time sorting.  
@@ -52,7 +52,7 @@ abstract class KinoSearch::Posting::PostingStreamer cnick PostStreamer
 
     i32_t field_num;
 
-    static PostingStreamer*
+    inert PostingStreamer*
     init(PostingStreamer *self, DataWriter *writer, i32_t field_num);
 
     /** Take a RawPosting that was flattened earlier and write it to the

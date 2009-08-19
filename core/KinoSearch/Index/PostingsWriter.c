@@ -270,20 +270,22 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
     LexiconWriter    *const lex_writer      = self->lex_writer;
     const i32_t       skip_interval         = lex_writer->skip_interval;
     CharBuf          *const last_term_text  = CB_new(0);
+    char             *last_text_buf;     
+    u32_t             last_text_size;
     i32_t             last_doc_id           = 0;
     i32_t             last_skip_doc         = 0;
     u64_t             last_skip_filepos     = 0;
     RawPosting       *posting               = NULL;
     fetcher_t         fetch                 = NULL;
 
-    /* Cache fetch method (violates OO principles, but we'll deal). */
+    /* Find and cache fetch method. */
     if (OBJ_IS_A(raw_post_source, POSTINGPOOL)) {
-        fetch = (fetcher_t)METHOD(raw_post_source->vtable, PostPool,
-            Fetch_From_RAM);
+        VTable *vtable = Obj_Get_VTable(raw_post_source);
+        fetch = (fetcher_t)METHOD(vtable, PostPool, Fetch_From_RAM);
     }
     else if (OBJ_IS_A(raw_post_source, POSTINGPOOLQUEUE)) {
-        fetch = (fetcher_t)METHOD(raw_post_source->vtable, PostPoolQ, 
-            Fetch);
+        VTable *vtable = Obj_Get_VTable(raw_post_source);
+        fetch = (fetcher_t)METHOD(vtable, PostPoolQ, Fetch);
     }
 
     /* Prime heldover variables. */
@@ -292,6 +294,8 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
     if (posting == NULL)
         THROW(ERR, "Failed to retrieve at least one posting");
     CB_Mimic_Str(last_term_text, posting->blob, posting->content_len);
+    last_text_buf  = (char*)CB_Get_Ptr8(last_term_text);
+    last_text_size = CB_Get_Size(last_term_text);
 
     while (1) {
         bool_t same_text_as_last = true;
@@ -304,9 +308,8 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
         }
         else {
             /* Compare once. */
-            if (   posting->content_len != CB_Get_Size(last_term_text)
-                || memcmp(&posting->blob, last_term_text->ptr, 
-                    posting->content_len) != 0
+            if (   posting->content_len != last_text_size
+                || memcmp(&posting->blob, last_text_buf, last_text_size) != 0
             ) {
                 same_text_as_last = false;
             }
@@ -332,6 +335,8 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
             /* Remember the term_text so we can write string diffs. */
             CB_Mimic_Str(last_term_text, posting->blob, 
                 posting->content_len);
+            last_text_buf  = (char*)CB_Get_Ptr8(last_term_text);
+            last_text_size = CB_Get_Size(last_term_text);
 
             /* Starting a new term, thus a new delta doc sequence at 0. */
             last_doc_id = 0;

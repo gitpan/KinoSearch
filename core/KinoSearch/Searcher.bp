@@ -14,13 +14,13 @@ class KinoSearch::Searcher extends KinoSearch::Search::Searchable {
     VArray            *seg_readers;
     I32Array          *seg_starts;
 
-    static incremented Searcher*
+    inert incremented Searcher*
     new(Obj *index);
 
     /** 
      * @param index Either a string filepath, a Folder, or an IndexReader.
      */
-    public static Searcher*
+    public inert Searcher*
     init(Searcher *self, Obj *index);
 
     void

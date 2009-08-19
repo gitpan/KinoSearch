@@ -7,15 +7,15 @@ class KinoSearch::Index::DocWriter extends KinoSearch::Index::DataWriter {
     OutStream    *ix_out;
     OutStream    *dat_out;
 
-    static i32_t current_file_format;
+    inert i32_t current_file_format;
 
     /* Constructors.
      */
-    static incremented DocWriter*
+    inert incremented DocWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
         PolyReader *polyreader);
 
-    static DocWriter*
+    inert DocWriter*
     init(DocWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader);
 

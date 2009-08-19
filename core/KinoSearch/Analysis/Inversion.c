@@ -43,7 +43,7 @@ Inversion_destroy(Inversion *self)
         FREEMEM(self->tokens);
     }
     FREEMEM(self->cluster_counts);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, INVERSION);
 }
 
 Token*

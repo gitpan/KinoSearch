@@ -7,10 +7,10 @@ class KinoSearch::Search::BitVecMatcher extends KinoSearch::Search::Matcher {
     BitVector *bit_vec;
     i32_t      doc_id;
 
-    public static incremented BitVecMatcher*
+    public inert incremented BitVecMatcher*
     new(BitVector *bit_vector);
 
-    public static BitVecMatcher*
+    public inert BitVecMatcher*
     init(BitVecMatcher *self, BitVector *bit_vector);
 
     public i32_t

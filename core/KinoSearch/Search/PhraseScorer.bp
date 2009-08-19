@@ -17,10 +17,10 @@ class KinoSearch::Search::PhraseScorer extends KinoSearch::Search::Matcher {
     bool_t          first_time;
     bool_t          more;
 
-    static incremented PhraseScorer*
+    inert incremented PhraseScorer*
     new(Similarity *similarity, VArray *posting_lists, Compiler *compiler);
 
-    static PhraseScorer*
+    inert PhraseScorer*
     init(PhraseScorer *self, Similarity *similarity, VArray *posting_lists, 
          Compiler *compiler);
 

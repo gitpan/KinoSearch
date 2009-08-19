@@ -17,7 +17,6 @@
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/SortUtils.h"
 #include "KinoSearch/Util/I32Array.h"
-#include "KinoSearch/Util/IntArrays.h"
 
 i32_t SortWriter_current_file_format = 2;
 
@@ -244,11 +243,11 @@ static void
 S_write_ord(void *ords, i32_t width, i32_t doc_id, i32_t ord)
 {
     switch (width) {
-        case 1: if (ord) { IntArr_u1set(ords, doc_id); }
+        case 1: if (ord) { NumUtil_u1set(ords, doc_id); }
                 break;
-        case 2: IntArr_u2set(ords, doc_id, ord);
+        case 2: NumUtil_u2set(ords, doc_id, ord);
                 break;
-        case 4: IntArr_u4set(ords, doc_id, ord);
+        case 4: NumUtil_u4set(ords, doc_id, ord);
                 break;
         case 8: {
                     u8_t *ints = (u8_t*)ords;
@@ -298,7 +297,7 @@ SI_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out)
             case FType_BLOB: {
                 ByteBuf *byte_buf = (ByteBuf*)val;
                 OutStream_Write_I64(ix_out, OutStream_Tell(dat_out));
-                OutStream_Write_Bytes(dat_out, byte_buf->ptr,
+                OutStream_Write_Bytes(dat_out, BB_Get_Buf(byte_buf),
                     BB_Get_Size(byte_buf));
                 break;
             }

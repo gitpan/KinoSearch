@@ -9,11 +9,11 @@ class KinoSearch::Index::FilePurger extends KinoSearch::Obj {
     Snapshot     *snapshot;
     IndexManager *manager;
 
-    static incremented FilePurger* 
+    inert incremented FilePurger* 
     new(Folder *folder, Snapshot *snapshot = NULL, 
         IndexManager *manager = NULL);
 
-    static FilePurger* 
+    inert FilePurger* 
     init(FilePurger *self, Folder *folder, Snapshot *snapshot = NULL,
          IndexManager *manager = NULL);
 

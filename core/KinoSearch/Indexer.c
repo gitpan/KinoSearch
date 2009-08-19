@@ -24,7 +24,6 @@
 #include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
-#include "KinoSearch/Util/MathUtils.h"
 
 i32_t Indexer_CREATE   = 0x00000001;
 i32_t Indexer_TRUNCATE = 0x00000002;
@@ -235,7 +234,7 @@ Indexer_destroy(Indexer *self)
     DECREF(self->file_purger);
     DECREF(self->write_lock);
     DECREF(self->snapfile);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, INDEXER);
 }
 
 static Folder*
@@ -349,7 +348,7 @@ Indexer_add_index(Indexer *self, Obj *index)
         for (i = 0, max = VA_Get_Size(seg_readers); i < max; i++) {
             SegReader *seg_reader = (SegReader*)VA_Fetch(seg_readers, i);
             DeletionsReader *del_reader = (DeletionsReader*)SegReader_Fetch(
-                seg_reader, DELETIONSREADER->name);
+                seg_reader, VTable_Get_Name(DELETIONSREADER));
             Matcher *deletions = del_reader 
                                ? DelReader_Iterator(del_reader) 
                                : NULL;

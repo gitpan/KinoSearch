@@ -172,7 +172,7 @@ QParser_destroy(QueryParser *self)
     DECREF(self->fields);
     DECREF(self->phrase_label);
     DECREF(self->bool_group_label);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, QUERYPARSER);
 }
 
 Analyzer*
@@ -640,9 +640,10 @@ S_has_valid_clauses(Query *query)
     else if (OBJ_IS_A(query, MATCHALLQUERY)) return false;
     else if (OBJ_IS_A(query, ORQUERY) || OBJ_IS_A(query, ANDQUERY)) {
         PolyQuery *polyquery = (PolyQuery*)query;
+        VArray    *children  = PolyQuery_Get_Children(polyquery);
         u32_t i, max;
-        for (i = 0, max = VA_Get_Size(polyquery->children); i < max; i++) {
-            Query *child = (Query*)VA_Fetch(polyquery->children, i);
+        for (i = 0, max = VA_Get_Size(children); i < max; i++) {
+            Query *child = (Query*)VA_Fetch(children, i);
             if (S_has_valid_clauses(child)) return true;
         }
         return false;
@@ -667,11 +668,12 @@ S_do_prune(QueryParser *self, Query *query)
     }
     else if (OBJ_IS_A(query, POLYQUERY)) {
         PolyQuery *polyquery = (PolyQuery*)query;
+        VArray    *children  = PolyQuery_Get_Children(polyquery);
         u32_t i, max;
 
         /* Recurse. */
-        for (i = 0, max = VA_Get_Size(polyquery->children); i < max; i++) {
-            Query *child = (Query*)VA_Fetch(polyquery->children, i);
+        for (i = 0, max = VA_Get_Size(children); i < max; i++) {
+            Query *child = (Query*)VA_Fetch(children, i);
             S_do_prune(self, child);
         }
 
@@ -679,7 +681,7 @@ S_do_prune(QueryParser *self, Query *query)
             || OBJ_IS_A(query, ORQUERY)
         ) {
             /* Don't allow 'foo OR (-bar)'. */
-            VArray *children = ((PolyQuery*)query)->children;
+            VArray *children = PolyQuery_Get_Children(query);
             for (i = 0, max = VA_Get_Size(children); i < max; i++) {
                 Query *child = (Query*)VA_Fetch(children, i);
                 if (!S_has_valid_clauses(child)) {
@@ -690,7 +692,7 @@ S_do_prune(QueryParser *self, Query *query)
         else if (OBJ_IS_A(query, ANDQUERY)) {
             /* Don't allow '(-bar AND -baz)'. */
             if (!S_has_valid_clauses(query)) {
-                VArray *children = ((ANDQuery*)query)->children;
+                VArray *children = PolyQuery_Get_Children(query);
                 VA_Clear(children);
             }
         }
@@ -999,16 +1001,20 @@ static CharBuf*
 S_extract_something(QueryParser *self, const CharBuf *query_string, 
                     CharBuf *label, Hash *extractions, match_t match) 
 {
-    char *begin_match;
-    char *end_match;
-    size_t orig_label_size = CB_Get_Size(label);
-    CharBuf *retval  = CB_Clone(query_string);
+    CharBuf *retval          = CB_Clone(query_string);
+    size_t   qstring_size    = CB_Get_Size(query_string);
+    size_t   orig_label_size = CB_Get_Size(label);
+    char    *begin_match;
+    char    *end_match;
     
     while (match(retval, &begin_match, &end_match)) {
-        size_t len            = end_match - begin_match;
-        size_t new_retval_len = len + 1 + (begin_match - retval->ptr) 
-                                + (CBEND(retval) - end_match);
-        CharBuf *new_retval   = CB_new(new_retval_len);
+        size_t   len          = end_match - begin_match;
+        size_t   retval_size  = CB_Get_Size(retval);
+        char    *retval_buf   = (char*)CB_Get_Ptr8(retval);
+        char    *retval_end   = retval_buf + retval_size;
+        size_t   before_match = begin_match - retval_buf;
+        size_t   after_match  = retval_end - end_match;
+        CharBuf *new_retval   = CB_new(qstring_size);
 
         /* Store inner text. */
         CB_catf(label, "%u32", self->label_inc++);
@@ -1016,10 +1022,10 @@ S_extract_something(QueryParser *self, const CharBuf *query_string,
             (Obj*)CB_new_from_utf8(begin_match, len));
 
         /* Splice the label into the query string. */
-        CB_Cat_Str(new_retval, retval->ptr, begin_match - retval->ptr);
+        CB_Cat_Str(new_retval, retval_buf, before_match);
         CB_Cat(new_retval, label);
         CB_Cat_Str(new_retval, " ", 1); /* Extra space for safety. */
-        CB_Cat_Str(new_retval, end_match, CBEND(retval) - end_match);
+        CB_Cat_Str(new_retval, end_match, after_match);
         DECREF(retval);
         retval = new_retval;
         CB_Set_Size(label, orig_label_size);
@@ -1039,21 +1045,24 @@ S_extract_phrases(QueryParser *self, const CharBuf *query_string,
 static bool_t
 S_match_phrase(CharBuf *input, char**begin_match, char **end_match)
 {
-    char *ptr = input->ptr;
-    char *const end = CBEND(input);
-    for ( ; ptr < end; ptr++) {
-        if (*ptr == '"') {
-            *begin_match = ptr; 
-            *end_match   = end;
-            for ( ptr = ptr + 1; ptr < end; ptr++) {
-                if (*ptr == '\\') ptr++;
-                else if (*ptr == '"') {
-                    *end_match = ptr + 1;
+    ZombieCharBuf iterator = ZCB_make(input);
+    u32_t code_point;
+
+    while (0 != (code_point = ZCB_Code_Point_At(&iterator, 0))) {
+        if (code_point == '"') {
+            *begin_match = (char*)ZCB_Get_Ptr8(&iterator); 
+            *end_match   = *begin_match + ZCB_Get_Size(&iterator);
+            ZCB_Nip_One(&iterator);
+            while (0 != (code_point = ZCB_Nip_One(&iterator))) {
+                if (code_point == '\\') { continue; }
+                else if (code_point == '"') {
+                    *end_match = (char*)ZCB_Get_Ptr8(&iterator);
                     return true;
                 }
             }
             return true;
         }
+        ZCB_Nip_One(&iterator);
     }
     return false;
 }
@@ -1069,23 +1078,27 @@ S_extract_paren_groups(QueryParser *self, const CharBuf *query_string,
 static bool_t
 S_match_bool_group(CharBuf *input, char**begin_match, char **end_match)
 {
-    char *ptr = input->ptr;
-    char *const end = CBEND(input);
-    for ( ; ptr < end; ptr++) {
-        if (*ptr == '(') {
+    ZombieCharBuf iterator = ZCB_make(input);
+    u32_t code_point;
+
+    while (0 != (code_point = ZCB_Code_Point_At(&iterator, 0))) {
+        if (code_point == '(') {
             FOUND_OPEN_PAREN:
-            *begin_match = ptr; 
-            *end_match   = end;
-            for ( ptr = ptr + 1; ptr < end; ptr++) {
-                if (*ptr == '(') goto FOUND_OPEN_PAREN;
-                else if (*ptr == ')') {
-                    *end_match = ptr + 1;
+            *begin_match = (char*)ZCB_Get_Ptr8(&iterator); 
+            *end_match   = *begin_match + ZCB_Get_Size(&iterator);
+            ZCB_Nip_One(&iterator);
+            while (0 != (code_point = ZCB_Code_Point_At(&iterator, 0))) {
+                if (code_point == '(') { goto FOUND_OPEN_PAREN; }
+                ZCB_Nip_One(&iterator);
+                if (code_point == ')') {
+                    *end_match = (char*)ZCB_Get_Ptr8(&iterator);
                     return true;
-                }
-            }
+                }    
+            }    
             return true;
-        }
-    }
+        }    
+        ZCB_Nip_One(&iterator);
+    }    
     return false;
 }
 
@@ -1154,7 +1167,7 @@ void
 ParserClause_destroy(ParserClause *self)
 {
     DECREF(self->query);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, PARSERCLAUSE);
 }
 
 /********************************************************************/
@@ -1178,7 +1191,7 @@ void
 ParserToken_destroy(ParserToken *self)
 {
     DECREF(self->text);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, PARSERTOKEN);
 }
 
 /* Copyright 2005-2009 Marvin Humphrey

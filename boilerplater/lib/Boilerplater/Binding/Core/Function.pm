@@ -11,7 +11,8 @@ sub func_declaration {
         unless a_isa_b( $function, "Boilerplater::Function" );
     my $return_type = $function->get_return_type;
     my $param_list  = $function->get_param_list;
-    my $dec         = $return_type->to_c . "\n";
+    my $dec = $function->inline ? 'static CHY_INLINE ' : '';
+    $dec .= $return_type->to_c . "\n";
     $dec .= $function->full_func_sym;
     $dec .= "(" . $param_list->to_c . ");";
     return $dec;
@@ -27,12 +28,11 @@ __POD__
 
 Boilerplater::Binding::Core::Function - Generate core C code for a function.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

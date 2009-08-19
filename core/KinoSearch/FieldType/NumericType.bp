@@ -3,10 +3,10 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::FieldType::NumericType cnick NumType 
     extends KinoSearch::FieldType : dumpable {
 
-    public static NumericType* 
+    public inert NumericType* 
     init(NumericType *self);
 
-    static NumericType* 
+    inert NumericType* 
     init2(NumericType *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 
@@ -37,13 +37,13 @@ abstract class KinoSearch::FieldType::FloatType
 class KinoSearch::FieldType::Float64Type 
     extends KinoSearch::FieldType::FloatType : dumpable {
 
-    public static Float64Type* 
+    public inert Float64Type* 
     new();
 
-    public static Float64Type* 
+    public inert Float64Type* 
     init(Float64Type *self);
 
-    static Float64Type* 
+    inert Float64Type* 
     init2(Float64Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = true);
 
@@ -63,13 +63,13 @@ class KinoSearch::FieldType::Float64Type
 class KinoSearch::FieldType::Float32Type 
     extends KinoSearch::FieldType::FloatType : dumpable {
 
-    public static Float32Type* 
+    public inert Float32Type* 
     new();
 
-    public static Float32Type* 
+    public inert Float32Type* 
     init(Float32Type *self);
 
-    static Float32Type* 
+    inert Float32Type* 
     init2(Float32Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 
@@ -92,13 +92,13 @@ abstract class KinoSearch::FieldType::IntType
 class KinoSearch::FieldType::Int32Type 
     extends KinoSearch::FieldType::IntType : dumpable {
 
-    public static Int32Type* 
+    public inert Int32Type* 
     new();
 
-    public static Int32Type* 
+    public inert Int32Type* 
     init(Int32Type *self);
 
-    static Int32Type* 
+    inert Int32Type* 
     init2(Int32Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 
@@ -118,13 +118,13 @@ class KinoSearch::FieldType::Int32Type
 class KinoSearch::FieldType::Int64Type 
     extends KinoSearch::FieldType::IntType : dumpable {
 
-    public static Int64Type* 
+    public inert Int64Type* 
     new();
 
-    public static Int64Type* 
+    public inert Int64Type* 
     init(Int64Type *self);
 
-    static Int64Type* 
+    inert Int64Type* 
     init2(Int64Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 

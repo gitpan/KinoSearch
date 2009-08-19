@@ -1,7 +1,7 @@
 parcel KinoSearch cnick Kino;
 
-static class KinoSearch::Test::Util::TestMemoryPool cnick TestMemPool {
-    static void
+inert class KinoSearch::Test::Util::TestMemoryPool cnick TestMemPool {
+    inert void
     run_tests();
 }
 

@@ -50,7 +50,7 @@ sub num_vars           { scalar @{ shift->{variables} } }
 
 sub to_c {
     my $self = shift;
-    my $string = join( ', ', map { $_->to_c } @{ $self->{variables} } );
+    my $string = join( ', ', map { $_->local_c } @{ $self->{variables} } );
     $string .= ", ..." if $self->{variadic};
     return $string;
 }
@@ -61,4 +61,67 @@ sub name_list {
 }
 
 1;
+
+__END__
+
+__POD__
+
+=head1 NAME
+
+Boilerplater::ParamList - parameter list.
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=head2 new
+
+    my $type = Boilerplater::ParamList->new(
+        variables      => \@vars,    # required
+        initial_values => \@vals,    # default: undef
+        variadic       => 1,         # default: false
+    );
+
+=over
+
+=item * B<variables> - An array where each element is a
+L<Boilerplater::Variable>. 
+
+=item * B<initial_values> - If supplied, an array of default values, one for
+each variable.
+
+=item * B<variadic> - Should be true if the function is variadic.
+
+=back
+
+=head2 get_variables get_initial_values variadic
+
+Accessors. 
+
+=head2 num_vars
+
+Return the number of variables in the ParamList, including "self" for methods.
+
+=head2 to_c
+
+    # Prints "Obj* self, Foo* foo, Bar* bar".
+    print $param_list->to_c;
+
+Return a list of the variable's types and names, joined by commas.
+
+=head2 name_list
+
+    # Prints "self, foo, bar".
+    print $param_list->name_list;
+
+Return the variable's names, joined by commas.
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2008-2009 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=cut
 

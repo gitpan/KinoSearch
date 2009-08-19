@@ -25,12 +25,6 @@ kino_StrHelp_compare_strings(const char *a, const char *b,
 kino_CharBuf*
 kino_StrHelp_to_base36(chy_u32_t num);
 
-/* Add <code>amount</code> spaces at the start of the string and after each
- * newline.
- */
-void
-kino_StrHelp_add_indent(kino_CharBuf *charbuf, size_t amount);
-
 /* A table where the values indicate the number of bytes in a UTF-8 sequence
  * implied by the leading utf8 byte.
  */

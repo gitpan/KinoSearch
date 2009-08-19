@@ -11,7 +11,6 @@ __AUTO_XS__
             qw(
                 Cat
                 Cat_Char
-                Grow
                 Starts_With
                 Ends_With
                 Nip

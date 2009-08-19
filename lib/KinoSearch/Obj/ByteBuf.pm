@@ -49,7 +49,6 @@ __AUTO_XS__
             qw( Get_Size
                 Get_Capacity
                 Cat
-                Grow
                 )
         ],
     }

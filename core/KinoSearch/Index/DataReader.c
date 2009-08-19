@@ -44,7 +44,7 @@ DataReader_destroy(DataReader *self)
     DECREF(self->snapshot);
     DECREF(self->segments);
     DECREF(self->segment);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, DATAREADER);
 }
 
 Schema*

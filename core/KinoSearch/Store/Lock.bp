@@ -30,7 +30,7 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Obj {
      * the attempt to Obtain() a lock.
      * @param interval Time in milliseconds between retries.
      */
-    public static Lock*
+    public inert Lock*
     init(Lock *self, Folder *folder, const CharBuf *name, 
          const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
 
@@ -93,11 +93,11 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Obj {
 class KinoSearch::Store::LockFileLock cnick LFLock 
     extends KinoSearch::Store::Lock {
 
-    static incremented LockFileLock*
+    inert incremented LockFileLock*
     new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
         i32_t timeout = 0, i32_t interval = 100);
 
-    public static LockFileLock*
+    public inert LockFileLock*
     init(LockFileLock *self, Folder *folder, const CharBuf *name, 
          const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
 
@@ -137,10 +137,10 @@ class KinoSearch::Store::LockFileLock cnick LFLock
  */
 class KinoSearch::Store::LockErr extends KinoSearch::Obj::Err {
     
-    public static incremented LockErr*
+    public inert incremented LockErr*
     new(CharBuf *message);
 
-    public static LockErr*
+    public inert LockErr*
     init(LockErr *self, CharBuf *message);
 
     public incremented LockErr*

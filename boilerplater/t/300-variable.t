@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 13;
 use Boilerplater::Type;
 use Boilerplater::Parser;
 
@@ -12,15 +12,6 @@ $parser->parcel_definition('parcel Boil;')
     or die "failed to process parcel_definition";
 
 sub new_type { $parser->type(shift) }
-
-my $var = Boilerplater::Variable->new(
-    micro_sym => 'foo',
-    type      => new_type('int**'),
-    exposure  => 'parcel',
-);
-isa_ok( $var, "Boilerplater::Variable" );
-ok( $var->parcel,  "parcel acl" );
-ok( !$var->public, "not public acl" );
 
 eval {
     my $death = Boilerplater::Variable->new(
@@ -36,17 +27,35 @@ like( $@, qr/type/, "type is required" );
 eval { my $death = Boilerplater::Variable->new( type => new_type('i32_t') ) };
 like( $@, qr/micro_sym/, "micro_sym is required" );
 
-$var = Boilerplater::Variable->new(
+my $var = Boilerplater::Variable->new(
     micro_sym => 'foo',
     type      => new_type('float*')
 );
-is( $var->to_c,          'float* foo',  "to_c" );
-is( $var->c_declaration, 'float* foo;', "declaration" );
+is( $var->local_c,           'float* foo',  "local_c" );
+is( $var->local_declaration, 'float* foo;', "declaration" );
 ok( $var->local, "default to local access" );
 
 $var = Boilerplater::Variable->new(
     micro_sym => 'foo',
     type      => new_type('float[1]')
 );
-is( $var->to_c, 'float foo[1]',
+is( $var->local_c, 'float foo[1]',
     "to_c appends array to var name rather than type specifier" );
+
+$var = Boilerplater::Variable->new(
+    parcel      => 'Boil',
+    micro_sym   => 'foo',
+    type        => new_type("Foo*"),
+    class_name  => 'Crustacean::Lobster::LobsterClaw',
+    class_cnick => 'LobClaw',
+);
+is( $var->global_c, 'boil_Foo* boil_LobClaw_foo', "global_c" );
+
+isa_ok( $parser->var_declaration_statement($_)->{declared},
+    "Boilerplater::Variable", "var_declaration_statement: $_" )
+    for (
+    'parcel int foo;',
+    'private Obj *obj;',
+    'public inert i32_t **foo;',
+    'Dog *fido;'
+    );

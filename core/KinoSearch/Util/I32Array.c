@@ -30,7 +30,7 @@ void
 I32Arr_destroy(I32Array *self)
 {
     FREEMEM(self->ints);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, I32ARRAY);
 }
 
 i32_t 

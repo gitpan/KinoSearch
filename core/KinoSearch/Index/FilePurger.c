@@ -45,7 +45,7 @@ FilePurger_destroy(FilePurger *self)
     DECREF(self->folder);
     DECREF(self->snapshot);
     DECREF(self->manager);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, FILEPURGER);
 }
 
 void

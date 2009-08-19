@@ -35,7 +35,7 @@ class KinoSearch::QueryParser cnick QParser extends KinoSearch::Obj {
     bool_t    heed_colons;
     u32_t     label_inc;
 
-    static incremented QueryParser*
+    inert incremented QueryParser*
     new(Schema *schema, Analyzer *analyzer = NULL, 
         const CharBuf *default_boolop = NULL, VArray *fields = NULL);
 
@@ -55,7 +55,7 @@ class KinoSearch::QueryParser cnick QParser extends KinoSearch::Obj {
      * terms.  If you want only documents which match all of the query terms,
      * set this to 'AND'.
      */
-    public static QueryParser*
+    public inert QueryParser*
     init(QueryParser *self, Schema *schema, Analyzer *analyzer = NULL,
         const CharBuf *default_boolop = NULL, VArray *fields = NULL);
 
@@ -217,10 +217,10 @@ class KinoSearch::QueryParser::ParserClause extends KinoSearch::Obj {
     u32_t occur;
     Query *query;
 
-    static incremented ParserClause*
+    inert incremented ParserClause*
     new(Query *query, u32_t occur);
 
-    static ParserClause*
+    inert ParserClause*
     init(ParserClause *self, Query *query, u32_t occur);
 
     void
@@ -234,10 +234,10 @@ class KinoSearch::QueryParser::ParserToken extends KinoSearch::Obj {
     u32_t    type;
     CharBuf *text;
 
-    static incremented ParserToken*
+    inert incremented ParserToken*
     new(u32_t type, const char *text = NULL, size_t len = 0);
 
-    static ParserToken*
+    inert ParserToken*
     init(ParserToken *self, u32_t type, const char *text = NULL, 
          size_t len = 0);
 

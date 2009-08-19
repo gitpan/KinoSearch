@@ -7,7 +7,7 @@ __END__
 __AUTO_XS__
 
 {   "KinoSearch::Util::Stepper" => {
-        bind_methods      => [qw( Read_Record Dump_To_File )],
+        bind_methods      => [qw( Read_Record )],
     }
 }
 

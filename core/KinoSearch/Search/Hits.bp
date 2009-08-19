@@ -10,10 +10,10 @@ class KinoSearch::Search::Hits extends KinoSearch::Obj {
     TopDocs    *top_docs;
     u32_t       offset;
 
-    static incremented Hits*
+    inert incremented Hits*
     new(Searchable *searchable, TopDocs *top_docs, u32_t offset = 0);
 
-    static Hits*
+    inert Hits*
     init(Hits *self, Searchable *searchable, TopDocs *top_docs,
          u32_t offset = 0);
 

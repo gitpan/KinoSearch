@@ -2,6 +2,7 @@
 
 #include "KinoSearch/Obj/VTable.h"
 #include "KinoSearch/Util/Host.h"
+#include "KinoSearch/Util/Debug.h"
 #include "KinoSearch/Util/MemManager.h"
 
 kino_Obj*

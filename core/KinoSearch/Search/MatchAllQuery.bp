@@ -10,12 +10,12 @@ parcel KinoSearch cnick Kino;
 abstract class KinoSearch::Search::MatchAllQuery 
     extends KinoSearch::Search::Query : dumpable {
 
-    static incremented MatchAllQuery*
+    inert incremented MatchAllQuery*
     new();
 
     /** Constructor.  Takes no arguments.
      */
-    public static MatchAllQuery*
+    public inert MatchAllQuery*
     init(MatchAllQuery *self);
 
     public bool_t
@@ -31,10 +31,10 @@ abstract class KinoSearch::Search::MatchAllQuery
 class KinoSearch::Search::MatchAllCompiler 
     extends KinoSearch::Search::Compiler {
 
-    static incremented MatchAllCompiler*
+    inert incremented MatchAllCompiler*
     new(MatchAllQuery *parent, Searchable *searchable, float boost);
 
-    static MatchAllCompiler*
+    inert MatchAllCompiler*
     init(MatchAllCompiler *self, MatchAllQuery *parent,
          Searchable *searchable, float boost);
 

@@ -19,7 +19,7 @@ class KinoSearch::Analysis::Inversion extends KinoSearch::Obj {
     /** 
      * @param seed An initial Token to start things off, which may be NULL.
      */
-    static incremented Inversion* 
+    inert incremented Inversion* 
     new(Token *seed = NULL);
 
     /** Tack a token onto the end of the Inversion.

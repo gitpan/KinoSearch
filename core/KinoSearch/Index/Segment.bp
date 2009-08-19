@@ -24,15 +24,15 @@ class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Obj {
     VArray      *by_num;    /* field names by num */
     Hash        *metadata;
 
-    static incremented Segment*
+    inert incremented Segment*
     new(i32_t number);
 
-    public static Segment*
+    public inert Segment*
     init(Segment *self, i32_t number);
 
     /** Return a segment name with a base-36-encoded segment number. 
      */
-    static incremented CharBuf*
+    inert incremented CharBuf*
     num_to_name(i32_t number);
 
     /** Register a new field and assign it a field number.  If the field was

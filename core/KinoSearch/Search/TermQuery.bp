@@ -13,14 +13,14 @@ class KinoSearch::Search::TermQuery extends KinoSearch::Search::Query
     CharBuf *field;
     Obj     *term;
 
-    static incremented TermQuery*
+    inert incremented TermQuery*
     new(const CharBuf *field, const Obj *term);
 
     /**
      * @param field Field name.
      * @param term Term text.
      */
-    public static TermQuery*
+    public inert TermQuery*
     init(TermQuery *self, const CharBuf *field, const Obj *term);
 
     /** Accessor for object's <code>field</code> member. 
@@ -58,10 +58,10 @@ class KinoSearch::Search::TermCompiler extends KinoSearch::Search::Compiler {
     float query_norm_factor;
     float normalized_weight;
 
-    static incremented TermCompiler*
+    inert incremented TermCompiler*
     new(Query *parent, Searchable *searchable, float boost);
 
-    static TermCompiler*
+    inert TermCompiler*
     init(TermCompiler *self, Query *parent, Searchable *searchable, 
          float boost);
 

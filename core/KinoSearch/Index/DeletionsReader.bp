@@ -3,7 +3,7 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::DeletionsReader cnick DelReader
     extends KinoSearch::Index::DataReader {
 
-    static DeletionsReader*
+    inert DeletionsReader*
     init(DeletionsReader *self, Schema *schema = NULL, Folder *folder = NULL,
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
          i32_t seg_tick = -1);
@@ -31,10 +31,10 @@ class KinoSearch::Index::PolyDeletionsReader cnick PolyDelReader
     I32Array *offsets;
     i32_t     del_count;
 
-    static incremented PolyDeletionsReader*
+    inert incremented PolyDeletionsReader*
     new(VArray *readers, I32Array *offsets);
 
-    static PolyDeletionsReader*
+    inert PolyDeletionsReader*
     init(PolyDeletionsReader *self, VArray *readers, I32Array *offsets);
 
     i32_t 
@@ -56,11 +56,11 @@ class KinoSearch::Index::DefaultDeletionsReader cnick DefDelReader
     BitVector *deldocs;
     i32_t      del_count;
 
-    static incremented DefaultDeletionsReader*
+    inert incremented DefaultDeletionsReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
         i32_t seg_tick);
 
-    static DefaultDeletionsReader*
+    inert DefaultDeletionsReader*
     init(DefaultDeletionsReader *self, Schema *schema, Folder *folder,
          Snapshot *snapshot, VArray *segments, i32_t seg_tick);
 

@@ -26,7 +26,7 @@ SortExRun_destroy(SortExRun *self)
         SortExRun_Clear_Cache(self);
         FREEMEM(self->cache);
     }
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SORTEXRUN);
 }
 
 u32_t

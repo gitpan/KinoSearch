@@ -20,10 +20,10 @@ class KinoSearch::Index::Inverter extends KinoSearch::Obj {
     i32_t          tick;
     bool_t         sorted;
 
-    static incremented Inverter*
+    inert incremented Inverter*
     new(Schema *schema, Segment *segment);
 
-    static Inverter*
+    inert Inverter*
     init(Inverter *self, Schema *schema, Segment *segment);
 
     /** Invert the document, first calling Set_Doc(), then Add_Field() for
@@ -138,10 +138,10 @@ private final class KinoSearch::Index::Inverter::InverterEntry cnick InvEntry
     bool_t       indexed;
     bool_t       highlightable;
 
-    static incremented InverterEntry*
+    inert incremented InverterEntry*
     new(Schema *schema = NULL, const CharBuf *field_name, i32_t field_num);
 
-    static InverterEntry*
+    inert InverterEntry*
     init(InverterEntry *self = NULL, Schema *schema, 
          const CharBuf *field_name, i32_t field_num);
 

@@ -15,7 +15,7 @@ abstract class KinoSearch::Search::HitCollector cnick HC
 
     /** Abstract constructor.  Takes no arguments.
      */
-    public static HitCollector*
+    public inert HitCollector*
     init(HitCollector *self);
 
     void
@@ -58,7 +58,7 @@ class KinoSearch::Search::HitCollector::BitCollector cnick BitColl
     /** 
      * @param bit_vector A KinoSearch::Obj::BitVector.
      */
-    public static BitCollector*
+    public inert BitCollector*
     init(BitCollector *self, BitVector *bit_vector);
 
     void
@@ -81,14 +81,14 @@ class KinoSearch::Search::HitCollector::OffsetCollector cnick OffsetColl
     i32_t         offset;
     HitCollector *inner_coll;
 
-    static incremented OffsetCollector*
+    inert incremented OffsetCollector*
     new(HitCollector *collector, i32_t offset);
 
     /** Wrap another HitCollector, adding a constant offset to each document
      * number.  Useful when combining results from multiple independent
      * indexes.
      */
-    static OffsetCollector*
+    inert OffsetCollector*
     init(OffsetCollector *self, HitCollector *collector, i32_t offset);
 
     void

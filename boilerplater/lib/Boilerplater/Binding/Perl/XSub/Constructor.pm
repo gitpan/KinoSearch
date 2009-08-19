@@ -53,18 +53,19 @@ sub xsub_def {
         = qq|XSBind_allot_params( &(ST(0)), 1, items, "$params_hash_name",\n|;
 
     for ( my $i = 1; $i <= $#$arg_vars; $i++ ) {
-        my $var     = $arg_vars->[$i];
-        my $val     = $arg_inits->[$i];
-        my $name    = $var->micro_sym;
-        my $sv_name = $name . "_sv";
-        my $type    = $var->get_type;
-        my $len     = length $name;
+        my $var        = $arg_vars->[$i];
+        my $val        = $arg_inits->[$i];
+        my $name       = $var->micro_sym;
+        my $sv_name    = $name . "_sv";
+        my $stack_name = $name . "_zcb";
+        my $type       = $var->get_type;
+        my $len        = length $name;
 
         # Code for extracting sv from stack, if supplied.
         $allot_params .= qq|            &$sv_name, "$name", $len,\n|;
 
         # Code for determining and validating value.
-        my $statement = from_perl( $type, $name, $sv_name );
+        my $statement = from_perl( $type, $name, $sv_name, $stack_name );
         if ( defined $val ) {
             my $assignment = qq|if ($sv_name && XSBind_sv_defined($sv_name)) {
             $statement
@@ -83,7 +84,7 @@ sub xsub_def {
             push @var_assignments, $assignment;
         }
 
-        if ( $type->decremented ) {
+        if ( $type->is_object and $type->decremented ) {
             push @refcount_mods, "if ($name) { KINO_INCREF($name); }";
         }
     }

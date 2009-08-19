@@ -9,10 +9,10 @@ class KinoSearch::Store::FileWindow extends KinoSearch::Obj {
     i64_t    len;
     i64_t    cap;
 
-    static FileWindow*
+    inert FileWindow*
     init(FileWindow *self, char *buf, i64_t offset, i64_t len, i64_t cap);
 
-    static incremented FileWindow*
+    inert incremented FileWindow*
     new(char *buf, i64_t offset, i64_t len, i64_t cap);
 
     void

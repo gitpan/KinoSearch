@@ -15,34 +15,34 @@ class KinoSearch::Obj::CharBuf cnick CB
     size_t   size;
     size_t   cap;  /* allocated bytes, including terminating null */
 
-    static incremented CharBuf*
+    inert incremented CharBuf*
     new(size_t size);
 
-    static CharBuf*
+    inert CharBuf*
     init(CharBuf *self, size_t size);
 
     /** Return a new CharBuf which holds a copy of the passed-in string.
      * Check for UTF-8 validity.
      */
-    static incremented CharBuf* 
+    inert incremented CharBuf* 
     new_from_utf8(const char *utf8, size_t size);
 
     /** Return a new CharBuf which holds a copy of the passed-in string.  No
      * validity checking is performed.
      */
-    static incremented CharBuf* 
+    inert incremented CharBuf* 
     new_from_trusted_utf8(const char *utf8, size_t size);
 
     /** Return a pointer to a new CharBuf which assumes ownership of the
      * passed-in string.  Check validity of supplied UTF-8.
      */
-    static incremented CharBuf*
+    inert incremented CharBuf*
     new_steal_str(char *ptr, size_t size, size_t cap);
 
     /** Return a pointer to a new CharBuf which assumes ownership of the
      * passed-in string.  Do not check validity of supplied UTF-8.
      */
-    static incremented CharBuf*
+    inert incremented CharBuf*
     new_steal_from_trusted_str(char *ptr, size_t size, size_t cap);
 
     /** Return a pointer to a new CharBuf which contains formatted data 
@@ -51,20 +51,20 @@ class KinoSearch::Obj::CharBuf cnick CB
      * Note: allowing a user-supplied format<code>pattern</code> string is a
      * security hole and should not be allowed.
      */
-    static incremented CharBuf*
+    inert incremented CharBuf*
     newf(const char *pattern, ...);
 
     /** Perform lexical comparison of two CharBufs, with level of indirection
      * set to please qsort and friends.
      */
-    static int
+    inert int
     compare(const void *va, const void *vb); 
 
     /** Perform lexical comparison of two CharBufs, with level of indirection
      * set to please qsort and friends, and return true if <code>a</code> is
      * less than <code>b</code>.
      */
-    static bool_t
+    inert bool_t
     less_than(const void *va, const void *vb); 
 
     public void
@@ -102,12 +102,12 @@ class KinoSearch::Obj::CharBuf cnick CB
     /** Invokes CB_VCatF to concatenate formatted arguments.  Note that this
      * is only a function and not a method.
      */
-    static void
+    inert void
     catf(CharBuf *self, const char *pattern, ...);
 
     /** Replaces the contents of the CharBuf using formatted arguments.
      */
-    static void
+    inert void
     setf(CharBuf *self, const char *pattern, ...);
 
     /** Concatenate one Unicode character onto the end of the CharBuf.
@@ -135,8 +135,10 @@ class KinoSearch::Obj::CharBuf cnick CB
     /** Assign more memory to the CharBuf, if it doesn't already have enough
      * room to hold a string of <code>size</code> bytes.  Cannot shrink the
      * allocation.
+     * 
+     * @return a pointer to the raw buffer.
      */
-    void
+    char*
     Grow(CharBuf *self, size_t size);
 
     /** Test whether the CharBuf starts with the content of another.
@@ -288,25 +290,18 @@ class KinoSearch::Obj::CharBuf cnick CB
      */
     void 
     Cat_Trusted_Str(CharBuf *self, const char *ptr, size_t size);
-
-    /** Assign string to the passed-in target, changing its vtable pointer if
-     * need be to reflect the internal encoding.  Returns <code>target</code>
-     * for C89 assignment convenience.
-     */
-    ZombieCharBuf*
-    Iter_Init(CharBuf *self, ZombieCharBuf *target);
 }
 
 class KinoSearch::Obj::ViewCharBuf cnick ViewCB
     extends KinoSearch::Obj::CharBuf {
     
-    static incremented ViewCharBuf*
+    inert incremented ViewCharBuf*
     new_from_utf8(const char *utf8, size_t size);
 
-    static incremented ViewCharBuf*
+    inert incremented ViewCharBuf*
     new_from_trusted_utf8(const char *utf8, size_t size);
 
-    static ViewCharBuf*
+    inert ViewCharBuf*
     init(ViewCharBuf *self, const char *utf8, size_t size);
 
     void
@@ -343,8 +338,6 @@ class KinoSearch::Obj::ZombieCharBuf cnick ZCB
 
 __C__
 
-#define KINO_CBEND(self) ((self)->ptr + (self)->size)
-
 #define KINO_ZCB_BLANK \
     { KINO_ZOMBIECHARBUF, {1}, "", 0, 0 }
 #define KINO_ZCB_LITERAL(string) \
@@ -354,26 +347,13 @@ extern kino_ZombieCharBuf KINO_ZCB_EMPTY;
 
 /* Simple functions which allows assignment idiom for ZombieCharBuf values. 
  */
-static CHY_INLINE kino_ZombieCharBuf
-kino_ZCB_make_str(const char *ptr, size_t size) 
-{
-    kino_ZombieCharBuf retval;
-    retval.ref.count    = 1;
-    retval.vtable       = KINO_ZOMBIECHARBUF;
-    retval.cap          = 0;
-    retval.size         = size;
-    retval.ptr          = (char*)ptr;
-    return retval;
-}
+kino_ZombieCharBuf
+kino_ZCB_make_str(const char *ptr, size_t size);
 
-static CHY_INLINE kino_ZombieCharBuf
-kino_ZCB_make(const kino_CharBuf *source) 
-{
-    return kino_ZCB_make_str(source->ptr, source->size);
-}
+kino_ZombieCharBuf
+kino_ZCB_make(const kino_CharBuf *source);
 
 #ifdef KINO_USE_SHORT_NAMES
-  #define CBEND(_self)          KINO_CBEND(_self)
   #define ZCB_BLANK             KINO_ZCB_BLANK
   #define ZCB_LITERAL(_string)  KINO_ZCB_LITERAL(_string)
   #define EMPTY                 KINO_ZCB_EMPTY

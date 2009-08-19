@@ -16,14 +16,14 @@ class KinoSearch::Index::PostingPool cnick PostPool
     i32_t              last_doc_id;
     u32_t              post_count;
 
-    static PostingPool*
+    inert PostingPool*
     init(PostingPool *self, Schema *schema, const CharBuf *field,
          MemoryPool *mem_pool);
 
     /** Sort_compare_t-compatible function for comparing two non-NULL
      * RawPosting objects. The <code>context</code> argument is unused.
      */
-    static int
+    inert int
     compare_raw_postings(void *context, const void *va, const void *vb);
 
     /** Add an element to the cache.  Multiple elements need not be added in
@@ -76,10 +76,10 @@ class KinoSearch::Index::FreshPostingPool cnick FreshPostPool
     i64_t              lex_end;
     i64_t              post_end;
 
-    static incremented FreshPostingPool*
+    inert incremented FreshPostingPool*
     new(Schema *schema, const CharBuf *field, MemoryPool *mem_pool);
 
-    static FreshPostingPool*
+    inert FreshPostingPool*
     init(FreshPostingPool *self, Schema *schema, const CharBuf *field,
          MemoryPool *mem_pool);
 
@@ -115,11 +115,11 @@ class KinoSearch::Index::FreshPostingPool cnick FreshPostPool
 class KinoSearch::Index::MergePostingPool cnick MergePostPool
     extends KinoSearch::Index::PostingPool {
 
-    static incremented MergePostingPool*
+    inert incremented MergePostingPool*
     new(Schema *schema, const CharBuf *field, MemoryPool *mem_pool, 
         SegReader *reader, I32Array *doc_map = NULL, i32_t doc_base);
 
-    static MergePostingPool*
+    inert MergePostingPool*
     init(MergePostingPool *self, Schema *schema, const CharBuf *field, 
          MemoryPool *mem_pool, SegReader *reader, I32Array *doc_map = NULL,
          i32_t doc_base);
@@ -142,11 +142,11 @@ class KinoSearch::Index::PostingPool::RawLexicon cnick RawLex
     i64_t          start;
     i64_t          end;
 
-    static incremented RawLexicon*
+    inert incremented RawLexicon*
     new(Schema *schema, const CharBuf *field, InStream *instream, 
         i64_t start, i64_t end);
 
-    static RawLexicon*
+    inert RawLexicon*
     init(RawLexicon *self, Schema *schema, const CharBuf *field, 
          InStream *instream, i64_t start, i64_t end);
 
@@ -173,11 +173,11 @@ class KinoSearch::Index::PostingPool::RawPostingList cnick RawPList
     i64_t          start;
     i64_t          end;
 
-    static incremented RawPostingList*
+    inert incremented RawPostingList*
     new(Schema *schema, const CharBuf *field, InStream *instream, 
         i64_t start, i64_t end);
 
-    static RawPostingList*
+    inert RawPostingList*
     init(RawPostingList *self, Schema *schema, const CharBuf *field, 
          InStream *instream, i64_t lex_start, i64_t lex_end);
 

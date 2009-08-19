@@ -13,14 +13,14 @@ class KinoSearch::Search::LeafQuery extends KinoSearch::Search::Query
     CharBuf *field;
     CharBuf *text;
 
-    static incremented LeafQuery*
+    inert incremented LeafQuery*
     new(const CharBuf *field = NULL, const CharBuf *text);
 
     /**
      * @param field Optional field name.
      * @param text Raw query text.
      */
-    public static LeafQuery*
+    public inert LeafQuery*
     init(LeafQuery *self, const CharBuf *field = NULL, const CharBuf *text);
 
     /** Accessor for object's <code>field</code> attribute.

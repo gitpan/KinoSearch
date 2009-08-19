@@ -10,7 +10,7 @@ class KinoSearch::Obj {
 
     /** Abstract initializer.
      */
-    public static Obj*
+    public inert Obj*
     init(Obj* self);
 
     /** Zero argument constructor.
@@ -33,7 +33,7 @@ class KinoSearch::Obj {
     /** Utility function: manufacture a new host-language wrapper for this
      * object.
      */
-    static void*
+    inert void*
     wrap(Obj *obj);
 
     /** Decrement an object's refcount, calling destroy if it hits 0.
@@ -153,8 +153,6 @@ class KinoSearch::Obj {
 }
 
 __C__
-#include "KinoSearch/Util/Debug.h"
-
 /* Verify that an object belongs to a subclass and not an abstract class.
  * 
  * This check should be performed only after initialization is complete.
@@ -169,13 +167,6 @@ __C__
             KINO_THROW(KINO_ERR, "%o is an abstract class", \
                 Kino_VTable_Get_Name(_vtable)); \
         } \
-    } while (0)
-
-#define KINO_FREE_OBJ(_self) \
-    do { \
-        KINO_IFDEF_DEBUG( kino_Debug_num_freed++; ); \
-        Kino_Obj_Dec_RefCount(_self->vtable); \
-        kino_MemMan_wrapped_free(_self); \
     } while (0)
 
 #define KINO_SUPER_DESTROY(_self, _vtable) \
@@ -216,38 +207,13 @@ kino_Obj_decref(kino_Obj *self)
  */
 #define KINO_OBJ_IS_A(var, vtable) (Kino_Obj_Is_A(var, vtable))
 
-/* Function pointer typedefs for common signatures, used to clean up various 
- * function declarations, struct definitions, etc.
- * 
- * TODO: These also belong somewhere else.
- */
-
-/* "qsort" function signature.
- */
-typedef int
-(*kino_Obj_compare_t)(const void *a, const void *b);
-
-/* PriorityQueue function signature.
- */
-typedef chy_bool_t 
-(*kino_Obj_less_than_t)(const void *a, const void *b);
-
-/* Dispose of a discarded element.
- */
-typedef void
-(*kino_Obj_free_elem_t)(void *elem);
-
 #ifdef KINO_USE_SHORT_NAMES
   #define ABSTRACT_CLASS_CHECK(_s,_vt)    KINO_ABSTRACT_CLASS_CHECK(_s,_vt)
-  #define FREE_OBJ                        KINO_FREE_OBJ
   #define SUPER_DESTROY(_self, _vtable)   KINO_SUPER_DESTROY(_self, _vtable)
   #define REFCOUNT(_self)                 KINO_REFCOUNT(_self)
   #define INCREF(_self)                   KINO_INCREF(_self)
   #define DECREF(_self)                   KINO_DECREF(_self)
   #define OBJ_IS_A(_self, _vtable)        KINO_OBJ_IS_A(_self, _vtable)
-  #define Obj_compare_t                   kino_Obj_compare_t
-  #define Obj_less_than_t                 kino_Obj_less_than_t
-  #define Obj_free_elem_t                 kino_Obj_free_elem_t
 #endif
 
 __END_C__

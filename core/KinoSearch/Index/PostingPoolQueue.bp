@@ -9,11 +9,11 @@ class KinoSearch::Util::PostingPoolQueue cnick PostPoolQ
 
     /* Constructors.
      */
-    static incremented PostingPoolQueue*
+    inert incremented PostingPoolQueue*
     new(VArray *post_pools, InStream *lex_instream, InStream *post_stream,
         u32_t mem_thresh);
 
-    static PostingPoolQueue*
+    inert PostingPoolQueue*
     init(PostingPoolQueue *self, VArray *post_pools, InStream *lex_instream,
          InStream *post_stream, u32_t mem_thresh);
 

@@ -14,7 +14,7 @@ abstract class KinoSearch::Search::PolyQuery
     /**
      * @param children An array of child Queries.
      */
-    public static PolyQuery*
+    public inert PolyQuery*
     init(PolyQuery *self, VArray *children = NULL);
 
     /** Add a child Query node.
@@ -45,13 +45,13 @@ class KinoSearch::Search::PolyCompiler extends KinoSearch::Search::Compiler {
 
     VArray *children;
 
-    static incremented PolyCompiler*
+    inert incremented PolyCompiler*
     new(PolyQuery *parent, Searchable *searchable, float boost);
 
     /** Initialize the Compiler, creating a Compiler child for each child
      * Query.  Normalization is left to the subclass.
      */
-    static PolyCompiler*
+    inert PolyCompiler*
     init(PolyCompiler *self, PolyQuery *parent, Searchable *searchable,
          float boost);
 

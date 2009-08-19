@@ -9,13 +9,13 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Search::ANDQuery extends KinoSearch::Search::PolyQuery 
     : dumpable {
 
-    static incremented ANDQuery*
+    inert incremented ANDQuery*
     new(VArray *children = NULL);
 
     /**
      * @param children An array of child Queries.
      */
-    public static ANDQuery*
+    public inert ANDQuery*
     init(ANDQuery *self, VArray *children = NULL);
 
     public incremented Compiler*
@@ -31,10 +31,10 @@ class KinoSearch::Search::ANDQuery extends KinoSearch::Search::PolyQuery
 class KinoSearch::Search::ANDCompiler 
     extends KinoSearch::Search::PolyCompiler {
 
-    static incremented ANDCompiler*
+    inert incremented ANDCompiler*
     new(ANDQuery *parent, Searchable *searchable, float boost);
 
-    static ANDCompiler*
+    inert ANDCompiler*
     init(ANDCompiler *self, ANDQuery *parent, Searchable *searchable, 
          float boost);
 

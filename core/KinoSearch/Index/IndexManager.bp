@@ -23,14 +23,14 @@ class KinoSearch::Index::IndexManager cnick IxManager
     u32_t        deletion_lock_timeout;
     u32_t        deletion_lock_interval;
 
-    public static incremented IndexManager*
+    public inert incremented IndexManager*
     new(const CharBuf *hostname = NULL, LockFactory *lock_factory = NULL);
 
     /**
      * @param hostname An identifier which should be unique per-machine.
      * @param lock_factory A LockFactory.
      */
-    public static IndexManager*
+    public inert IndexManager*
     init(IndexManager *self, const CharBuf *hostname = NULL, 
          LockFactory *lock_factory = NULL);
 

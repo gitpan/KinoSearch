@@ -5,12 +5,13 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.30_05';
+our $VERSION = '0.30_06';
+$VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
 # See the docs for KinoSearch::Util::ToolSet.
-BEGIN { XSLoader::load( 'KinoSearch', '0.30_05' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.30_06' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -552,7 +553,7 @@ to_perl(sv)
     SV *sv;
 CODE:
 {
-    if (sv_isobject(sv) && sv_derived_from(sv, KINO_OBJ->name->ptr)) {
+    if (sv_isobject(sv) && sv_derived_from(sv, "KinoSearch::Obj")) {
         IV tmp = SvIV(SvRV(sv));
         kino_Obj* obj = INT2PTR(kino_Obj*, tmp);
         RETVAL = XSBind_kobj_to_pobj(obj);

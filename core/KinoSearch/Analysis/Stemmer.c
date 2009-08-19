@@ -41,7 +41,7 @@ Stemmer_destroy(Stemmer *self)
 {
     if (self->snowstemmer) kino_Stemmer_sb_stemmer_delete(self->snowstemmer);
     DECREF(self->language);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, STEMMER);
 }
 
 Inversion*

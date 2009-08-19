@@ -26,7 +26,7 @@
 #include "KinoSearch/Obj/Undefined.h"
 #include "KinoSearch/Obj/VArray.h"
 #include "KinoSearch/Obj/VTable.h"
-#include "KinoSearch/Util/MathUtils.h"
+#include "KinoSearch/Util/NumberUtils.h"
 #include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Util/StringHelper.h"
 

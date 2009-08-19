@@ -231,14 +231,14 @@ PhraseScorer_calc_phrase_freq(PhraseScorer *self)
     /* Create a overwriteable anchor set from the first posting. */
     ScorePosting *posting = (ScorePosting*)PList_Get_Posting(plists[0]);
     u32_t anchors_remaining = posting->freq;
+    size_t amount = anchors_remaining * sizeof(u32_t);
     ByteBuf *const anchor_set  = self->anchor_set;
     u32_t *anchors_start, *anchors_end, *anchors;
 
-    BB_Grow(self->anchor_set, anchors_remaining * sizeof(u32_t));
-    anchors_start = (u32_t *)anchor_set->ptr;
+    anchors_start = (u32_t*)BB_Grow(anchor_set, amount);
     anchors_end   = anchors_start + anchors_remaining;
     anchors       = anchors_start;
-    memcpy(anchors_start, posting->prox, anchors_remaining * sizeof(u32_t));
+    memcpy(anchors_start, posting->prox, amount);
 
     /* Match the positions of other terms against the anchor set. */
     anchors_remaining = anchors_end - anchors_start;

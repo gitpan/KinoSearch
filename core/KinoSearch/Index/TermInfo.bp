@@ -18,11 +18,14 @@ class KinoSearch::Index::TermInfo cnick TInfo extends KinoSearch::Obj {
     u64_t lex_filepos;
 
 
-    static incremented TermInfo*
+    inert incremented TermInfo*
     new(i32_t doc_freq = 0);
 
-    static TermInfo* 
+    inert TermInfo* 
     init(TermInfo *self, i32_t doc_freq = 0);
+
+    public i32_t
+    Get_Doc_Freq(TermInfo *self);
 
     /** "Zero out" the TermInfo.
      */

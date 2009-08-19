@@ -23,7 +23,7 @@ void
 CaseFolder_destroy(CaseFolder *self)
 {
     DECREF(self->work_buf);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, CASEFOLDER);
 }
 
 bool_t

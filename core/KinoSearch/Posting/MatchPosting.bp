@@ -13,10 +13,10 @@ class KinoSearch::Posting::MatchPosting cnick MatchPost
     Similarity *sim;
     u32_t       freq;
 
-    static incremented MatchPosting*
+    inert incremented MatchPosting*
     new(Similarity *similarity);
 
-    static MatchPosting*
+    inert MatchPosting*
     init(MatchPosting *self, Similarity *similarity);
 
     void
@@ -55,7 +55,7 @@ class KinoSearch::Posting::MatchPostingScorer cnick MatchPostScorer
 
     float *score_cache;
 
-    static MatchPostingScorer*
+    inert MatchPostingScorer*
     init(MatchPostingScorer *self, Similarity *similarity, 
          PostingList *posting_list, Compiler *compiler);
 
@@ -72,10 +72,10 @@ class KinoSearch::Posting::MatchPostingStreamer cnick MatchPostStreamer
     OutStream *outstream;
     i32_t      last_doc_id;
 
-    static incremented MatchPostingStreamer*
+    inert incremented MatchPostingStreamer*
     new(DataWriter *writer, i32_t field_num);
 
-    static MatchPostingStreamer*
+    inert MatchPostingStreamer*
     init(MatchPostingStreamer *self, DataWriter *writer, i32_t field_num);
 
     void
@@ -96,10 +96,10 @@ class KinoSearch::Posting::MatchPosting::MatchTermInfoStepper
 
     i32_t skip_interval;
     
-    static incremented MatchTermInfoStepper*
+    inert incremented MatchTermInfoStepper*
     new(Schema *schema);
 
-    static MatchTermInfoStepper*
+    inert MatchTermInfoStepper*
     init(MatchTermInfoStepper *self, Schema *schema);
 
     public void 

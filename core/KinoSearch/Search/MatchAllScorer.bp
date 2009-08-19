@@ -10,10 +10,10 @@ class KinoSearch::Search::MatchAllScorer extends KinoSearch::Search::Matcher {
      * @param score Fixed score to be added to each matching document's score.
      * @param reader An IndexReader.
      */
-    static incremented MatchAllScorer*
+    inert incremented MatchAllScorer*
     new(float score, i32_t doc_max);
 
-    static MatchAllScorer*
+    inert MatchAllScorer*
     init(MatchAllScorer *self, float score, i32_t doc_max);
 
     public i32_t

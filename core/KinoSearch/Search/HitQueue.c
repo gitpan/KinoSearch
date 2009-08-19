@@ -8,7 +8,6 @@
 #include "KinoSearch/Search/MatchDoc.h"
 #include "KinoSearch/Search/SortRule.h"
 #include "KinoSearch/Search/SortSpec.h"
-#include "KinoSearch/Util/IntArrays.h"
 
 
 #define COMPARE_BY_SCORE      1

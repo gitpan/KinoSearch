@@ -40,7 +40,7 @@ void
 SortRule_destroy(SortRule *self)
 {
     DECREF(self->field);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SORTRULE);
 }
 
 SortRule*

@@ -11,10 +11,10 @@ class KinoSearch::Test::Util::BBSortExRun
     u32_t     mem_thresh;
     u32_t     mem_consumed;
 
-    static incremented BBSortExRun* 
+    inert incremented BBSortExRun* 
     new(VArray *external);
 
-    static BBSortExRun*
+    inert BBSortExRun*
     init(BBSortExRun *self, VArray *external);
 
     void 

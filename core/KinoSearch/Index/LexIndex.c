@@ -77,7 +77,7 @@ LexIndex_destroy(LexIndex *self)
     DECREF(self->ix_in);
     DECREF(self->term_stepper);
     DECREF(self->tinfo);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, LEXINDEX);
 }
 
 i32_t
@@ -100,7 +100,7 @@ S_read_entry(LexIndex *self)
 {
     InStream *ix_in  = self->ix_in;
     TermInfo *tinfo  = self->tinfo;
-    i64_t offset = (i64_t)Math_decode_bigend_u64(self->offsets + self->tick);
+    i64_t offset = (i64_t)NumUtil_decode_bigend_u64(self->offsets + self->tick);
     InStream_Seek(ix_in, offset);
     TermStepper_Read_Key_Frame(self->term_stepper, ix_in);
     tinfo->doc_freq     = InStream_Read_C32(ix_in);
@@ -142,7 +142,7 @@ LexIndex_seek(LexIndex *self, Obj *target)
     while (hi >= lo) {
         const i32_t mid = lo + ((hi - lo) / 2);
         const i64_t offset 
-            = (i64_t)Math_decode_bigend_u64(self->offsets + mid);
+            = (i64_t)NumUtil_decode_bigend_u64(self->offsets + mid);
         i32_t comparison;
         InStream_Seek(ix_in, offset);
         TermStepper_Read_Key_Frame(term_stepper, ix_in);

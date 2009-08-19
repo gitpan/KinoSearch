@@ -29,7 +29,7 @@ LockFact_destroy(LockFactory *self)
 {
     DECREF(self->folder);
     DECREF(self->hostname);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, LOCKFACTORY);
 }
 
 Lock*

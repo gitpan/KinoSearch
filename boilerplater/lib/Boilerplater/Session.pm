@@ -189,7 +189,7 @@ sub write_boil_h {
     my $typedefs = "";
 
     for my $class (@ordered) {
-        next if $class->static;
+        next if $class->inert;
         my $struct = $class->get_struct_name;
         my $prefix = $class->get_prefix;
         $typedefs .= "typedef struct $prefix$struct $prefix$struct;\n";
@@ -272,6 +272,9 @@ typedef struct kino_Callback {
 #define KINO_CALLBACK_DEC(_name, _func, _offset) \\
     { _name, sizeof(_name) - 1, (boil_method_t)_func, _offset }
 
+#define BOIL_THROW KINO_THROW
+#define BOIL_ERR   KINO_ERR
+
 #endif /* BOIL_H */
 
 $self->{footer}
@@ -322,12 +325,11 @@ typically copyright information.
 
 =back
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2006-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

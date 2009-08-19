@@ -16,10 +16,10 @@ class KinoSearch::Obj::Err extends KinoSearch::Obj {
 
     CharBuf *mess;
 
-    static incremented Err*
+    inert incremented Err*
     new(decremented CharBuf *mess);
 
-    static Err*
+    inert Err*
     init(Err *self, decremented CharBuf *mess);
 
     void
@@ -45,13 +45,13 @@ class KinoSearch::Obj::Err extends KinoSearch::Obj {
     /** Print an error message to stderr with some C contextual information.
      * Usually invoked via the WARN(pattern, ...) macro.
      */
-    static void
+    inert void
     warn_at(const char *file, int line, const char *func, 
             const char *pattern, ...);
 
     /** Raise an exception. Usually invoked via the THROW macro.
      */
-    static void
+    inert void
     throw_at(VTable *vtable, const char *file, int line, const char *func,
                const char *pattern, ...);
 
@@ -61,12 +61,12 @@ class KinoSearch::Obj::Err extends KinoSearch::Obj {
      * @param vtable The vtable for the Err class to throw.
      * @param message Error message, to be output verbatim.
      */
-    static void
+    inert void
     throw_mess(VTable *vtable, decremented CharBuf *message);
 
     /** Invoke host exception handling.  
      */
-    static void
+    inert void
     do_throw(decremented Err *self);
 
     /** Invoke host warning mechanism.  Clean up the supplied message by
@@ -74,13 +74,13 @@ class KinoSearch::Obj::Err extends KinoSearch::Obj {
      *
      * @param message Error message, to be output verbatim.
      */
-    static void
+    inert void
     warn_mess(decremented CharBuf *message);
 
     /** Create a formatted error message.  Ususally invoked via the MAKE_MESS
      * macro.
      */
-    static CharBuf*
+    inert CharBuf*
     make_mess(const char *file, int line, const char *func,
               const char *pattern, ...);
 
@@ -89,7 +89,7 @@ class KinoSearch::Obj::Err extends KinoSearch::Obj {
      * 
      * @return the object.
      */
-    static Obj*
+    inert Obj*
     assert_is_a(Obj *obj, VTable *vtable, const char *file, int line, 
                 const char *func);
 }

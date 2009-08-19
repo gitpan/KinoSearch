@@ -11,6 +11,8 @@ __XS__
 
 MODULE = KinoSearch   PACKAGE = KinoSearch::Util::Debug
 
+#include "KinoSearch/Util/Debug.h"
+
 void
 DEBUG_PRINT(message)
     char *message;

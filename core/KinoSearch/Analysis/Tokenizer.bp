@@ -37,7 +37,7 @@ class KinoSearch::Analysis::Tokenizer
     CharBuf *pattern;
     void    *token_re;
 
-    static incremented Tokenizer* 
+    inert incremented Tokenizer* 
     new(const CharBuf *pattern = NULL);
 
     /**
@@ -46,7 +46,7 @@ class KinoSearch::Analysis::Tokenizer
      * <code>\w+(?:[\x{2019}']\w+)*</code>, which matches "it's" as well as
      * "it" and "O'Henry's" as well as "Henry".
      */
-    public static Tokenizer* 
+    public inert Tokenizer* 
     init(Tokenizer *self, const CharBuf *pattern = NULL);
 
     public incremented Inversion*

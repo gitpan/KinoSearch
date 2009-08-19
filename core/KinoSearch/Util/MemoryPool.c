@@ -37,7 +37,7 @@ void
 MemPool_destroy(MemoryPool *self)
 {
     DECREF(self->arenas);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, MEMORYPOOL);
 }
 
 static void
@@ -76,8 +76,8 @@ S_init_arena(MemoryPool *self, size_t amount)
         self->consumed += BB_Get_Size(bb);
     }
 
-    self->buf   = bb->ptr;
-    self->limit = BBEND(bb);
+    self->buf   = BB_Get_Buf(bb);
+    self->limit = self->buf + BB_Get_Size(bb);
 }
 
 void*

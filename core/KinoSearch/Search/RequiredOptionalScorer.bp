@@ -10,11 +10,11 @@ class KinoSearch::Search::RequiredOptionalScorer cnick ReqOptScorer
     Matcher      *opt_matcher;
     bool_t        opt_matcher_first_time;
 
-    static incremented RequiredOptionalScorer* 
+    inert incremented RequiredOptionalScorer* 
     new(Similarity *similarity, Matcher *required_matcher, 
         Matcher *optional_matcher);
 
-    static RequiredOptionalScorer* 
+    inert RequiredOptionalScorer* 
     init(RequiredOptionalScorer *self, Similarity *similarity, 
          Matcher *required_matcher, Matcher *optional_matcher);
 

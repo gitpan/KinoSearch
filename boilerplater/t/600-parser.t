@@ -1,16 +1,23 @@
 use strict;
 use warnings;
 
-use Test::More tests => 128;
+use Test::More tests => 156;
 
 BEGIN { use_ok('Boilerplater::Parser') }
 
 my $parser = Boilerplater::Parser->new;
 isa_ok( $parser, "Boilerplater::Parser" );
 
+isa_ok( $parser->parcel_definition("parcel Fish;"),
+    "Boilerplater::Parcel", "parcel_definition" );
+isa_ok( $parser->parcel_definition("parcel Crustacean cnick Crust;"),
+    "Boilerplater::Parcel", "parcel_definition with cnick" );
+
 # Set and leave parcel.
-$parser->parcel_definition('parcel Boil;')
+my $parcel = $parser->parcel_definition('parcel Boil;')
     or die "failed to process parcel_definition";
+is( $Boilerplater::Parser::parcel, $parcel,
+    "parcel_definition sets internal \$parcel var" );
 
 is( $parser->strip_plain_comments("/*x*/"),
     "     ", "comments replaced by spaces" );
@@ -56,15 +63,16 @@ isa_ok( $parser->type($_), "Boilerplater::Type", "type $_" )
 is( $parser->declarator($_), $_, "declarator: $_" )
     for ( 'foo', 'bar_bar_bar' );
 
-isa_ok( $parser->variable($_), "Boilerplater::Variable", "variable: $_" )
+isa_ok( $parser->param_variable($_),
+    "Boilerplater::Variable", "param_variable: $_" )
     for ( 'u32_t baz;', 'CharBuf *stuff;', 'float **ptr;', );
 
-isa_ok( $parser->var_declaration($_)->{declared},
-    "Boilerplater::Variable", "var_declaration: $_" )
+isa_ok( $parser->var_declaration_statement($_)->{declared},
+    "Boilerplater::Variable", "var_declaration_statement: $_" )
     for (
     'parcel int foo;',
     'private Obj *obj;',
-    'public static i32_t **foo;',
+    'public inert i32_t **foo;',
     'Dog *fido;'
     );
 
@@ -82,6 +90,23 @@ is( $parser->string_literal($_), $_, "string_literal: $_" )
 
 is( $parser->scalar_constant($_), $_, "scalar_constant: $_" )
     for ( q|"blah"|, 1, 1.2, "0xFC" );
+
+my @composites = ( 'int[]', "i32_t **", "Foo **", "Foo ***", "const void *" );
+for my $composite (@composites) {
+    my $parsed = $parser->composite_type($composite);
+    isa_ok(
+        $parsed,
+        "Boilerplater::Type::Composite",
+        "composite_type: $composite"
+    );
+}
+
+my @object_types = ( 'Obj *', "incremented Foo*", "decremented CharBuf *" );
+for my $object_type (@object_types) {
+    my $parsed = $parser->object_type($object_type);
+    isa_ok( $parsed, "Boilerplater::Type::Object",
+        "object_type: $object_type" );
+}
 
 my %param_lists = (
     '(int foo)'                 => 1,
@@ -102,8 +127,11 @@ is_deeply(
 
 my %sub_args = ( class => 'Boil::Obj', cnick => 'Obj' );
 
-isa_ok( $parser->subroutine_declaration( $_, 0, %sub_args )->{declared},
-    "Boilerplater::Method", "method declaration: $_" )
+isa_ok(
+    $parser->subroutine_declaration_statement( $_, 0, %sub_args )->{declared},
+    "Boilerplater::Method",
+    "method declaration: $_"
+    )
     for (
     'public int Do_Foo(Obj *self);',
     'parcel Obj* Gimme_An_Obj(Obj *self);',
@@ -112,36 +140,47 @@ isa_ok( $parser->subroutine_declaration( $_, 0, %sub_args )->{declared},
     );
 
 isa_ok(
-    $parser->subroutine_declaration( $_, 0, %sub_args, static => 1 )
+    $parser->subroutine_declaration_statement( $_, 0, %sub_args, inert => 1 )
         ->{declared},
     "Boilerplater::Function",
     "function declaration: $_"
     )
     for (
-    'static int running_count(int biscuit);',
-    'public static Hash* init_fave_hash(i32_t num_buckets, bool_t o_rly);',
+    'inert int running_count(int biscuit);',
+    'public inert Hash* init_fave_hash(i32_t num_buckets, bool_t o_rly);',
     );
 
-ok( $parser->subroutine_declaration( $_, 0, %sub_args )->{declared}->final,
-    "final method: $_" )
-    for ( 'public final void The_End(Obj *self);', );
+ok( $parser->subroutine_declaration_statement( $_, 0, %sub_args )->{declared}
+        ->final,
+    "final method: $_"
+) for ( 'public final void The_End(Obj *self);', );
 
-ok( $parser->declaration( $_, 0, %sub_args, static => 1 ), "declaration: $_" )
+ok( $parser->declaration_statement( $_, 0, %sub_args, inert => 1 ),
+    "declaration_statment: $_" )
     for (
     'public Foo* Spew_Foo(Obj *self, u32_t *how_many);',
     'private Hash *hash;',
     );
 
-ok( $parser->class_name($_), "class_name: $_" )
+is( $parser->object_type_specifier($_), $_, "object_type_specifier: $_" )
+    for (qw( Foo FooJr FooIII Foo4th ));
+
+ok( !$parser->object_type_specifier($_), "illegal object_type_specifier: $_" )
+    for (qw( foo fooBar Foo_Bar FOOBAR 1Foo 1FOO ));
+
+is( $parser->class_name($_), $_, "class_name: $_" )
     for (qw( Foo Foo::FooJr Foo::FooJr::FooIII Foo::FooJr::FooIII::Foo4th ));
 
 ok( !$parser->class_name($_), "illegal class_name: $_" )
-    for (qw( foo fooBar Foo_Bar ));
+    for (qw( foo fooBar Foo_Bar FOOBAR 1Foo 1FOO ));
 
-ok( $parser->cnick(qq|cnick $_|), "cnick: $_" ) for (qw( Foo ));
+is( $parser->cnick(qq|cnick $_|), $_, "cnick: $_" ) for (qw( Foo FF ));
+
+ok( !$parser->cnick(qq|cnick $_|), "Illegal cnick: $_" )
+    for (qw( foo fOO 1Foo ));
 
 ok( $parser->class_modifier($_), "class_modifier: $_" )
-    for (qw( abstract static ));
+    for (qw( abstract inert ));
 
 ok( $parser->class_extension($_), "class_extension: $_" )
     for ( 'extends Foo', 'extends Foo::FooJr::FooIII' );
@@ -160,9 +199,9 @@ $class_content = q|
      * Wow wow wow.
      */
     public class Animal::Dog extends Animal : lovable : drooly {
-        public static Dog* init(Dog *self, CharBuf *name, CharBuf *fave_food);
-        static u32_t count();
-        static u64_t num_dogs;
+        public inert Dog* init(Dog *self, CharBuf *name, CharBuf *fave_food);
+        inert u32_t count();
+        inert u64_t num_dogs;
 
         private CharBuf *name;
         private bool_t   likes_to_go_fetch;
@@ -184,8 +223,8 @@ $class_content = q|
 
 $class = $parser->class_declaration($class_content);
 isa_ok( $class, "Boilerplater::Class", "class_declaration Dog" );
-ok( ( scalar grep { $_->micro_sym eq 'num_dogs' } $class->get_static_vars ),
-    "parsed static var" );
+ok( ( scalar grep { $_->micro_sym eq 'num_dogs' } $class->get_inert_vars ),
+    "parsed inert var" );
 ok( ( scalar grep { $_->micro_sym eq 'mom' } $class->get_member_vars ),
     "parsed public member var" );
 ok( ( scalar grep { $_->micro_sym eq 'squishy' } $class->get_member_vars ),
@@ -204,12 +243,12 @@ ok( $class->is('lovable'), "parsed class attribute" );
 ok( $class->is('drooly'),  "parsed second class attribute" );
 
 $class_content = qq|
-    parcel static class Rigor::Mortis cnick Mort { 
-        parcel static void lie_still(); 
+    parcel inert class Rigor::Mortis cnick Mort { 
+        parcel inert void lie_still(); 
     }|;
 $class = $parser->class_declaration($class_content);
-isa_ok( $class, "Boilerplater::Class", "static class_declaration" );
-ok( $class->static, "static modifier parsed and passed to constructor" );
+isa_ok( $class, "Boilerplater::Class", "inert class_declaration" );
+ok( $class->inert, "inert modifier parsed and passed to constructor" );
 
 $class_content = qq|
     final class Ultimo { 

@@ -5,7 +5,7 @@ abstract class KinoSearch::Index::TermStepper
 
     Obj *value;
 
-    public static TermStepper*
+    public inert TermStepper*
     init();
 
     public void

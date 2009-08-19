@@ -15,13 +15,13 @@ class KinoSearch::Search::SortSpec extends KinoSearch::Obj {
 
     VArray        *rules;
 
-    public static SortSpec*
+    public inert SortSpec*
     new(VArray *rules);
 
     /**
      * @param rules An array of SortRules.
      */
-    public static SortSpec*
+    public inert SortSpec*
     init(SortSpec *self, VArray *rules);
 
     public incremented SortSpec*

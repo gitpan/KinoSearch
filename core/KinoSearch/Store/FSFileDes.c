@@ -54,9 +54,9 @@ FSFileDes_new(const CharBuf *path, const char *mode)
     /* Open. */
     if (!path) { THROW(ERR, "Missing required param 'path'"); }
     fd = open((char*)CB_Get_Ptr8(path), oflags, 0666);
-    if (fd == -1) { FREE_OBJ(self); return NULL; }
+    if (fd == -1) { SUPER_DESTROY(self, FSFILEDES); return NULL; }
     fhandle = fdopen(fd, fmode);
-    if (fhandle == NULL) { FREE_OBJ(self); return NULL; }
+    if (fhandle == NULL) { SUPER_DESTROY(self, FSFILEDES); return NULL; }
     if (*mode == 'w')    { setvbuf(fhandle, NULL, _IONBF, 0); }
     self->fhandle = fhandle;
 

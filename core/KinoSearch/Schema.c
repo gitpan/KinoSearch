@@ -58,7 +58,7 @@ Schema_destroy(Schema *self)
     DECREF(self->postings);
     DECREF(self->sims);
     DECREF(self->sim);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SCHEMA);
 }
 
 static void

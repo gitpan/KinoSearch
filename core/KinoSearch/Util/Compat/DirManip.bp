@@ -2,7 +2,7 @@ parcel KinoSearch cnick Kino;
 
 /** Directory manipulation utility functions.
  *
- * (Note: this should be a static class, but we currently need to make it
+ * (Note: this should be an inert class, but we currently need to make it
  * instiantiable to execute callbacks.)
  */
 
@@ -11,33 +11,33 @@ class KinoSearch::Util::Compat::DirManip extends KinoSearch::Obj {
     /** Return an array of file names.  Omit "." and "..".  Returns NULL if
      * the directory does not exist or is inaccessible. 
      */
-    static incremented VArray*
+    inert incremented VArray*
     list_files(const CharBuf *path);
 
     /** Check whether a directory exists at the specified location.
      *
      * @return true if the path is a directory, false otherwise.
      */
-    static bool_t
+    inert bool_t
     dir_ok(const CharBuf *path);
 
 
     /** Attempt to create a directory.  Throw an exception if the attempt
      * fails.
      */
-    static void
+    inert void
     create_dir(const CharBuf *path);
 
     /** Delete either a file or a directory at the specified filepath.
      *
      * @return true if the deletion was successful, false otherwise.
      */
-    static bool_t
+    inert bool_t
     delete(const CharBuf *path);
 
     /** Transform a relative path into an abolute path.
      */
-    static incremented CharBuf*
+    inert incremented CharBuf*
     absolutify(const CharBuf *path);
 
     /** Create a hard link at path <code>target</code> to the file at path
@@ -45,7 +45,7 @@ class KinoSearch::Util::Compat::DirManip extends KinoSearch::Obj {
      * 
      * @return true on success, false on failure.
      */
-    static bool_t
+    inert bool_t
     hard_link(const CharBuf *source, const CharBuf *target);
 }
 

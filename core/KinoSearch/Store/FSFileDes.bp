@@ -9,7 +9,7 @@ class KinoSearch::Store::FSFileDes extends KinoSearch::Store::FileDes {
 
     /** Constructor.  Will return NULL if attempt to open the file fails.
      */
-    static incremented FSFileDes* 
+    inert incremented FSFileDes* 
     new(const CharBuf *path = NULL, const char *mode);
 
     bool_t

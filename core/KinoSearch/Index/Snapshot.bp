@@ -14,15 +14,15 @@ class KinoSearch::Index::Snapshot extends KinoSearch::Obj : dumpable {
     Hash        *entries;
     CharBuf     *filename;
 
-    static i32_t current_file_format;
+    inert i32_t current_file_format;
 
-    public static incremented Snapshot* 
+    public inert incremented Snapshot* 
     new();
     
     /**
      * Constructor.  Takes no arguments.
      */
-    public static Snapshot* 
+    public inert Snapshot* 
     init(Snapshot *self);
 
     /** Return a list of all entries.

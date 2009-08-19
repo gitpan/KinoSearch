@@ -35,7 +35,7 @@ void
 Token_destroy(Token *self) 
 {
     FREEMEM(self->text);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, TOKEN);
 }
 
 int

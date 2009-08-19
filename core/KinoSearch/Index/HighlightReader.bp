@@ -7,7 +7,7 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::HighlightReader cnick HLReader
     extends KinoSearch::Index::DataReader {
 
-    static HighlightReader*
+    inert HighlightReader*
     init(HighlightReader *self, Schema *schema = NULL, Folder *folder = NULL, 
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
          i32_t seg_tick = -1);
@@ -27,10 +27,10 @@ class KinoSearch::Index::PolyHighlightReader cnick PolyHLReader
     VArray   *readers;
     I32Array *offsets;
 
-    static incremented PolyHighlightReader*
+    inert incremented PolyHighlightReader*
     new(VArray *readers, I32Array *offsets);
 
-    static PolyHighlightReader*
+    inert PolyHighlightReader*
     init(PolyHighlightReader *self, VArray *readers, I32Array *offsets);
 
     public incremented DocVector*
@@ -51,11 +51,11 @@ class KinoSearch::Index::DefaultHighlightReader cnick DefHLReader
 
     /* Constructors.
      */
-    static incremented DefaultHighlightReader*
+    inert incremented DefaultHighlightReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
         i32_t seg_tick);
 
-    static DefaultHighlightReader*
+    inert DefaultHighlightReader*
     init(DefaultHighlightReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot, VArray *segments, i32_t seg_tick);
 

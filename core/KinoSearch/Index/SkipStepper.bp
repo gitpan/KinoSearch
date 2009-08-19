@@ -7,7 +7,7 @@ class KinoSearch::Index::SkipStepper extends KinoSearch::Util::Stepper {
 
     /* Constructor.
      */
-    static incremented SkipStepper*
+    inert incremented SkipStepper*
     new();
 
     void

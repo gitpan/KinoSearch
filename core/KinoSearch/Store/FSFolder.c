@@ -158,13 +158,13 @@ FSFolder_list(FSFolder *self)
     /* Accumulate virtual files. */
     for (i = 0; i < num_files; i++) {
         CharBuf *filepath = (CharBuf*)VA_Fetch(real_files, i);
-        if (   CB_Ends_With_Str(filepath, ".cfmeta", 7)
-            || CB_Ends_With_Str(filepath, "cfmeta.json", 11)
-        ) {
+        if (CB_Ends_With_Str(filepath, "cfmeta.json", 11)) {
             CompoundFileReader *cf_reader = S_get_cf_reader(self, filepath);
-            VArray *seg_vfiles = CFReader_List(cf_reader);
-            num_vfiles += VA_Get_Size(seg_vfiles);
-            VA_Push(vfiles, (Obj*)seg_vfiles);
+            if (cf_reader) {
+                VArray *seg_vfiles = CFReader_List(cf_reader);
+                num_vfiles += VA_Get_Size(seg_vfiles);
+                VA_Push(vfiles, (Obj*)seg_vfiles);
+            }
         }
         else if (CB_Ends_With_Str(filepath, ".cf", 3)) { }
         else if (CB_Ends_With_Str(filepath, "cf.dat", 6)) { }
@@ -252,7 +252,7 @@ FSFolder_real_exists(FSFolder *self, const CharBuf *filepath)
     struct stat sb;
     CharBuf *fullpath = S_full_path(self, filepath);
     bool_t retval = false;
-    if (stat(fullpath->ptr, &sb) != -1)
+    if (stat((char*)CB_Get_Ptr8(fullpath), &sb) != -1)
         retval = true;
     DECREF(fullpath);
     return retval;
@@ -263,7 +263,7 @@ FSFolder_rename(FSFolder *self, const CharBuf* from, const CharBuf *to)
 {
     CharBuf *from_path = S_full_path(self, from);
     CharBuf *to_path   = S_full_path(self, to);
-    if (rename(from_path->ptr, to_path->ptr) ) {
+    if (rename((char*)CB_Get_Ptr8(from_path), (char*)CB_Get_Ptr8(to_path)) ) {
         THROW(ERR, "rename from '%o' to '%o' failed: %s", from_path, to_path, 
             strerror(errno));
     }

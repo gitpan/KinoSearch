@@ -7,10 +7,10 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Test::TestArchitecture cnick TestArch
     extends KinoSearch::Architecture {
 
-    static incremented TestArchitecture* 
+    inert incremented TestArchitecture* 
     new();
 
-    static TestArchitecture*
+    inert TestArchitecture*
     init(TestArchitecture *self);
 
     public i32_t

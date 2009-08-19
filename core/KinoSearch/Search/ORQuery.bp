@@ -10,13 +10,13 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Search::ORQuery extends KinoSearch::Search::PolyQuery 
     : dumpable {
 
-    static incremented ORQuery*
+    inert incremented ORQuery*
     new(VArray *children = NULL);
 
     /**
      * @param children An array of child Queries.
      */
-    public static ORQuery*
+    public inert ORQuery*
     init(ORQuery *self, VArray *children = NULL);
 
     public incremented Compiler*
@@ -32,10 +32,10 @@ class KinoSearch::Search::ORQuery extends KinoSearch::Search::PolyQuery
 class KinoSearch::Search::ORCompiler 
     extends KinoSearch::Search::PolyCompiler {
 
-    static incremented ORCompiler*
+    inert incremented ORCompiler*
     new(ORQuery *parent, Searchable *searchable, float boost);
 
-    static ORCompiler*
+    inert ORCompiler*
     init(ORCompiler *self, ORQuery *parent, Searchable *searchable, 
          float boost);
 

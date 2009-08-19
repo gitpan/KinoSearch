@@ -63,7 +63,9 @@ sub _xsub_body {
 
     # Compensate for functions which eat refcounts.
     for my $arg_var (@$arg_vars) {
-        next unless $arg_var->get_type->decremented;
+        my $arg_type = $arg_var->get_type;
+        next unless $arg_type->is_object;
+        next unless $arg_type->decremented;
         my $var_name = $arg_var->micro_sym;
         $body .= "if ($var_name) (void)KINO_INCREF($var_name);\n        ";
     }
@@ -72,10 +74,12 @@ sub _xsub_body {
         $body .= qq|$full_func_sym($name_list);|;
     }
     else {
-        my $return_type = $method->get_return_type;
+        my $return_type       = $method->get_return_type;
         my $retval_assignment = to_perl( $return_type, 'ST(0)', 'retval' );
-        my $decrement
-            = $return_type->incremented ? "KINO_DECREF(retval);\n" : "";
+        my $decrement         = "";
+        if ( $return_type->is_object and $return_type->incremented ) {
+            $decrement = "KINO_DECREF(retval);\n";
+        }
         $body .= qq|retval = $full_func_sym($name_list);
         $retval_assignment$decrement
         sv_2mortal( ST(0) );
@@ -123,17 +127,19 @@ sub _xsub_def_positional_args {
     my $var_declarations = $self->var_declarations;
     my @var_assignments;
     for ( my $i = 0; $i < @$arg_vars; $i++ ) {
-        my $var      = $arg_vars->[$i];
-        my $val      = $arg_inits->[$i];
-        my $var_name = $var->micro_sym;
-        my $var_type = $var->get_type;
+        my $var        = $arg_vars->[$i];
+        my $val        = $arg_inits->[$i];
+        my $var_name   = $var->micro_sym;
+        my $stack_name = $var_name . '_zcb';
+        my $var_type   = $var->get_type;
         my $statement;
         if ( $i == 0 ) {    # $self
             $statement
                 = _self_assign_statement( $var_type, $method->micro_sym );
         }
         else {
-            $statement = from_perl( $var_type, $var_name, "ST($i)" );
+            $statement
+                = from_perl( $var_type, $var_name, "ST($i)", $stack_name );
         }
         if ( defined $val ) {
             $statement
@@ -199,18 +205,19 @@ sub _xsub_def_labeled_params {
         = qq|XSBind_allot_params( &(ST(0)), 1, items, "$params_hash_name", |;
 
     for ( my $i = 1; $i <= $#$arg_vars; $i++ ) {
-        my $var     = $arg_vars->[$i];
-        my $val     = $arg_inits->[$i];
-        my $name    = $var->micro_sym;
-        my $sv_name = $name . "_sv";
-        my $type    = $var->get_type;
-        my $len     = length $name;
+        my $var        = $arg_vars->[$i];
+        my $val        = $arg_inits->[$i];
+        my $name       = $var->micro_sym;
+        my $sv_name    = $name . "_sv";
+        my $stack_name = $name . "_zcb";
+        my $type       = $var->get_type;
+        my $len        = length $name;
 
         # Code for extracting sv from stack, if supplied.
         $allot_params .= qq|            &$sv_name, "$name", $len,\n|;
 
         # Code for determining and validating value.
-        my $statement = from_perl( $type, $name, $sv_name );
+        my $statement = from_perl( $type, $name, $sv_name, $stack_name );
         if ( defined $val ) {
             my $assignment
                 = qq|if ( $sv_name && XSBind_sv_defined($sv_name) ) {

@@ -4,7 +4,7 @@ parcel KinoSearch cnick Kino;
  */
 abstract class KinoSearch::Obj::Num extends KinoSearch::Obj {
 
-    static Num*
+    inert Num*
     init(Num *self);
 
     public bool_t
@@ -18,7 +18,7 @@ abstract class KinoSearch::Obj::Num extends KinoSearch::Obj {
  */
 abstract class KinoSearch::Obj::FloatNum extends KinoSearch::Obj::Num {
 
-    static FloatNum*
+    inert FloatNum*
     init(FloatNum *self);
 
     public incremented CharBuf*
@@ -30,7 +30,7 @@ abstract class KinoSearch::Obj::FloatNum extends KinoSearch::Obj::Num {
  */
 abstract class KinoSearch::Obj::IntNum extends KinoSearch::Obj::Num {
 
-    static IntNum*
+    inert IntNum*
     init(IntNum *self);
 
     public incremented CharBuf*
@@ -47,10 +47,10 @@ class KinoSearch::Obj::Float32 extends KinoSearch::Obj::FloatNum {
     /**
      * @param value Initial value.
      */
-    static Float32*
+    inert Float32*
     init(Float32* self, float value);
 
-    static Float32*
+    inert Float32*
     new(float value);
 
     void
@@ -87,10 +87,10 @@ class KinoSearch::Obj::Float64 extends KinoSearch::Obj::FloatNum {
     /**
      * @param value Initial value.
      */
-    static Float64*
+    inert Float64*
     init(Float64* self, double value);
 
-    static Float64*
+    inert Float64*
     new(double value);
 
     void
@@ -128,10 +128,10 @@ class KinoSearch::Obj::Integer32 cnick Int32
     /**
      * @param value Initial value.
      */
-    static Integer32*
+    inert Integer32*
     init(Integer32* self, i32_t value);
 
-    static Integer32*
+    inert Integer32*
     new(i32_t value);
 
     void
@@ -170,10 +170,10 @@ class KinoSearch::Obj::Integer64 cnick Int64
     /**
      * @param value Initial value.
      */
-    static Integer64*
+    inert Integer64*
     init(Integer64* self, i64_t value);
 
-    static Integer64*
+    inert Integer64*
     new(i64_t value);
 
     void

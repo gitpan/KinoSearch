@@ -11,10 +11,10 @@ class KinoSearch::Store::RAMFileDes extends KinoSearch::Store::FileDes {
     VArray  *buffers;
     u64_t    len;
 
-    static incremented RAMFileDes*
+    inert incremented RAMFileDes*
     new(const CharBuf *path = NULL);
 
-    static RAMFileDes*
+    inert RAMFileDes*
     init(RAMFileDes *self, const CharBuf *path = NULL);
 
     /** Return a ByteBuf whose string is a copy of the ram file's contents.

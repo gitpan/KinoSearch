@@ -31,7 +31,7 @@ void
 Folder_destroy(Folder *self)
 {
     DECREF(self->path);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, FOLDER);
 }
 
 InStream*

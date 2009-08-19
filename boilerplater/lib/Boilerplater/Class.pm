@@ -23,9 +23,9 @@ our %new_PARAMS = (
     methods           => undef,
     functions         => undef,
     member_vars       => undef,
-    static_vars       => undef,
+    inert_vars        => undef,
     docu_comment      => undef,
-    static            => undef,
+    inert             => undef,
     parcel            => undef,
     attributes        => undef,
     exposure          => 'parcel',
@@ -73,8 +73,9 @@ sub fetch_singleton {
 sub new { confess("The constructor for Boilerplater::Class is create()") }
 
 sub create {
-    my $class_class = shift;
-    verify_args( \%new_PARAMS, @_ ) or confess $@;
+    my ( $class_class, %args ) = @_;
+    verify_args( \%new_PARAMS, %args ) or confess $@;
+    $args{class_cnick} = $args{cnick};
     my $self = $class_class->SUPER::new(
         %new_PARAMS,
         struct_name       => undef,
@@ -87,8 +88,9 @@ sub create {
         parent            => undef,
         attributes        => {},
         autocode          => '',
-        @_
+        %args,
     );
+    $self->{cnick} ||= $self->{class_cnick};
 
     # Keep track of member vars defined by this class rather than inherited.
     $self->{novel_member_vars} = [ @{ $self->{member_vars} } ];
@@ -97,13 +99,10 @@ sub create {
     $self->{meth_by_name}{ $_->micro_sym } = $_ for $self->get_methods;
     $self->{func_by_name}{ $_->micro_sym } = $_ for $self->get_functions;
 
-    # Verify class name, derive struct name and possibly cnick as well.
-    confess("Invalid class name")
-        unless $self->{class_name}
-            =~ /^([A-Z][A-Za-z0-9]*)(::[A-Z][A-Za-z0-9]*)*$/;
+    # Derive struct name.
+    confess("Missing required param 'class_name'") unless $self->{class_name};
     $self->{class_name} =~ /(\w+)$/;
     $self->{struct_name} = $1;
-    $self->{cnick} = $1 unless defined $self->{cnick};
 
     # Verify that members of supplied arrays meet "is a" requirements.
     for ( @{ $self->{functions} } ) {
@@ -114,7 +113,7 @@ sub create {
         confess("Not a Boilerplater::Method")
             unless a_isa_b( $_, 'Boilerplater::Method' );
     }
-    for ( @{ $self->{member_vars} }, @{ $self->{static_vars} } ) {
+    for ( @{ $self->{member_vars} }, @{ $self->{inert_vars} } ) {
         confess("Not a Boilerplater::Variable")
             unless a_isa_b( $_, 'Boilerplater::Variable' );
     }
@@ -165,7 +164,6 @@ sub include_h {
 # Accessors.
 sub is                    { exists $_[0]->{attributes}{ $_[1] } }
 sub get_cnick             { shift->{cnick} }
-sub get_class_name        { shift->{class_name} }
 sub get_struct_name       { shift->{struct_name} }
 sub get_parent_class_name { shift->{parent_class_name} }
 sub get_source_class      { shift->{source_class} }
@@ -174,11 +172,11 @@ sub get_functions         { @{ shift->{functions} } }
 sub get_methods           { @{ shift->{methods} } }
 sub get_member_vars       { @{ shift->{member_vars} } }
 sub novel_member_vars     { @{ shift->{novel_member_vars} } }
-sub get_static_vars       { @{ shift->{static_vars} } }
+sub get_inert_vars        { @{ shift->{inert_vars} } }
 sub get_children          { @{ shift->{children} } }
 sub get_parent            { shift->{parent} }
 sub get_autocode          { shift->{autocode} }
-sub static                { shift->{static} }
+sub inert                 { shift->{inert} }
 
 sub set_parent { $_[0]->{parent} = $_[1] }
 
@@ -203,7 +201,9 @@ sub method {
 sub novel_method {
     my ( $self, $micro_sym ) = @_;
     my $method = $self->{meth_by_name}{ lc($micro_sym) };
-    if ( defined $method and $method->get_class_cnick eq $self->{cnick} ) {
+    if ( defined $method
+        and $method->get_class_cnick eq $self->get_class_cnick )
+    {
         return $method;
     }
     else {
@@ -341,12 +341,11 @@ __POD__
 
 Boilerplater::Class - An object representing a single class definition.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

@@ -5,7 +5,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/I32Array.h"
-#include "KinoSearch/Util/MathUtils.h"
 
 /* Extract a document's compressed TermVector data into ( term_text =>
  * compressed positional data ) pairs.
@@ -55,7 +54,7 @@ DocVec_destroy(DocVector *self)
 {
     DECREF(self->field_bufs);
     DECREF(self->field_vectors);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, DOCVECTOR);
 }
 
 void
@@ -108,16 +107,16 @@ static Hash*
 S_extract_tv_cache(ByteBuf *field_buf) 
 {
     Hash          *tv_cache  = Hash_new(0);
-    char          *tv_string = field_buf->ptr;
-    i32_t          num_terms = Math_decode_c32(&tv_string);
+    char          *tv_string = BB_Get_Buf(field_buf);
+    i32_t          num_terms = NumUtil_decode_c32(&tv_string);
     CharBuf       *text      = CB_new(0);
     i32_t          i;
     
     /* Read the number of highlightable terms in the field. */
     for (i = 0; i < num_terms; i++) {
         char         *bookmark_ptr;
-        size_t        overlap = Math_decode_c32(&tv_string);
-        size_t        len     = Math_decode_c32(&tv_string);
+        size_t        overlap = NumUtil_decode_c32(&tv_string);
+        size_t        len     = NumUtil_decode_c32(&tv_string);
         i32_t         num_positions;
 
         /* Decompress the term text. */
@@ -127,12 +126,12 @@ S_extract_tv_cache(ByteBuf *field_buf)
 
         /* Get positions & offsets string. */
         bookmark_ptr  = tv_string;
-        num_positions = Math_decode_c32(&tv_string);
+        num_positions = NumUtil_decode_c32(&tv_string);
         while(num_positions--) {
             /* Leave nums compressed to save a little mem. */
-            Math_skip_c32(&tv_string);
-            Math_skip_c32(&tv_string);
-            Math_skip_c32(&tv_string);
+            NumUtil_skip_cint(&tv_string);
+            NumUtil_skip_cint(&tv_string);
+            NumUtil_skip_cint(&tv_string);
         }
         len = tv_string - bookmark_ptr;
 
@@ -150,8 +149,8 @@ S_extract_tv_from_tv_buf(const CharBuf *field, const CharBuf *term_text,
                          ByteBuf *tv_buf)
 {
     TermVector *retval      = NULL;
-    char       *posdata     = tv_buf->ptr;
-    char       *posdata_end = BBEND(tv_buf);
+    char       *posdata     = BB_Get_Buf(tv_buf);
+    char       *posdata_end = posdata + BB_Get_Size(tv_buf);
     i32_t      *positions   = NULL;
     i32_t      *starts      = NULL;
     i32_t      *ends        = NULL;
@@ -159,7 +158,7 @@ S_extract_tv_from_tv_buf(const CharBuf *field, const CharBuf *term_text,
     u32_t       i;
 
     if (posdata != posdata_end) {
-        num_pos   = Math_decode_c32(&posdata);
+        num_pos   = NumUtil_decode_c32(&posdata);
         positions = MALLOCATE(num_pos, i32_t);
         starts    = MALLOCATE(num_pos, i32_t);
         ends      = MALLOCATE(num_pos, i32_t);
@@ -167,9 +166,9 @@ S_extract_tv_from_tv_buf(const CharBuf *field, const CharBuf *term_text,
 
     /* Expand C32s. */
     for (i = 0; i < num_pos; i++) {
-        positions[i] = Math_decode_c32(&posdata);
-        starts[i]    = Math_decode_c32(&posdata);
-        ends[i]      = Math_decode_c32(&posdata);
+        positions[i] = NumUtil_decode_c32(&posdata);
+        starts[i]    = NumUtil_decode_c32(&posdata);
+        ends[i]      = NumUtil_decode_c32(&posdata);
     }
 
     if (posdata != posdata_end) {

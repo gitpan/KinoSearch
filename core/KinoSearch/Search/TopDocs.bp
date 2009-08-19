@@ -10,10 +10,10 @@ class KinoSearch::Search::TopDocs extends KinoSearch::Obj {
     VArray *match_docs;
     u32_t   total_hits;
 
-    static incremented TopDocs*
+    inert incremented TopDocs*
     new(VArray *match_docs, u32_t total_hits);
 
-    static TopDocs*
+    inert TopDocs*
     init(TopDocs *self, VArray *match_docs, u32_t total_hits);
 
     /** Accessor for <code>match_docs</code> member. 

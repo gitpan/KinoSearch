@@ -14,10 +14,10 @@ class KinoSearch::Index::PolyPostingList cnick PolyPList
 
     /* Constructors.
      */
-    static incremented PolyPostingList*
+    inert incremented PolyPostingList*
     new(const CharBuf *field, VArray *readers, I32Array *starts);
 
-    static PolyPostingList*
+    inert PolyPostingList*
     init(PolyPostingList *self, const CharBuf *field, VArray *readers,
          I32Array *starts);
 

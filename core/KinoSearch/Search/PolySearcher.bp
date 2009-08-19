@@ -15,14 +15,14 @@ class KinoSearch::Search::PolySearcher
     I32Array  *starts;
     i32_t      doc_max;
 
-    static incremented PolySearcher*
+    inert incremented PolySearcher*
     new(Schema *schema, VArray *searchables);
 
     /**
      * @param schema A Schema.
      * @param searchables An array of Searchables.
      */
-    public static PolySearcher*
+    public inert PolySearcher*
     init(PolySearcher *self, Schema *schema, VArray *searchables);
 
     void

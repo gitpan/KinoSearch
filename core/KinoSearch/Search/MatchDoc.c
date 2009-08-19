@@ -24,7 +24,7 @@ void
 MatchDoc_destroy(MatchDoc *self)
 {
     DECREF(self->values);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, MATCHDOC);
 }
 
 void

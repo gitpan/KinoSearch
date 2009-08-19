@@ -42,7 +42,7 @@ void
 MatchPost_destroy(MatchPosting *self)
 {
     DECREF(self->sim);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, MATCHPOSTING);
 }
 
 MatchPosting*
@@ -76,6 +76,7 @@ RawPosting*
 MatchPost_read_raw(MatchPosting *self, InStream *instream, i32_t last_doc_id,
                    CharBuf *term_text, MemoryPool *mem_pool)
 {
+    char *const  text_buf         = (char*)CB_Get_Ptr8(term_text);
     const size_t text_size        = CB_Get_Size(term_text);
     const u32_t  doc_code         = InStream_Read_C32(instream);
     const u32_t  delta_doc        = doc_code >> 1;
@@ -87,7 +88,7 @@ MatchPost_read_raw(MatchPosting *self, InStream *instream, i32_t last_doc_id,
     void *const allocation        = MemPool_Grab(mem_pool, raw_post_bytes);
     UNUSED_VAR(self);
 
-    return RawPost_new(allocation, doc_id, freq, term_text->ptr, text_size);
+    return RawPost_new(allocation, doc_id, freq, text_buf, text_size);
 }
 
 void
@@ -275,15 +276,16 @@ MatchTInfoStepper_write_key_frame(MatchTermInfoStepper *self,
                                   OutStream *outstream, Obj *value)
 {
     TermInfo *tinfo = (TermInfo*)ASSERT_IS_A(value, TERMINFO);
+    i32_t doc_freq  = TInfo_Get_Doc_Freq(tinfo);
 
     /* Write doc_freq. */
-    OutStream_Write_C32(outstream, tinfo->doc_freq);
+    OutStream_Write_C32(outstream, doc_freq);
 
     /* Write postings file pointer. */
     OutStream_Write_C64(outstream, tinfo->post_filepos);
 
     /* Write skip file pointer (maybe). */
-    if (tinfo->doc_freq >= self->skip_interval) {
+    if (doc_freq >= self->skip_interval) {
         OutStream_Write_C64(outstream, tinfo->skip_filepos);
     }
 
@@ -296,16 +298,17 @@ MatchTInfoStepper_write_delta(MatchTermInfoStepper *self,
 {
     TermInfo *tinfo      = (TermInfo*)ASSERT_IS_A(value, TERMINFO);
     TermInfo *last_tinfo = (TermInfo*)self->value;
+    i32_t     doc_freq   = TInfo_Get_Doc_Freq(tinfo);
     i64_t     post_delta = tinfo->post_filepos - last_tinfo->post_filepos;
 
     /* Write doc_freq. */
-    OutStream_Write_C32(outstream, tinfo->doc_freq);
+    OutStream_Write_C32(outstream, doc_freq);
 
     /* Write postings file pointer delta. */
     OutStream_Write_C64(outstream, post_delta);
 
     /* Write skip file pointer (maybe). */
-    if (tinfo->doc_freq >= self->skip_interval) {
+    if (doc_freq >= self->skip_interval) {
         OutStream_Write_C64(outstream, tinfo->skip_filepos);
     }
 

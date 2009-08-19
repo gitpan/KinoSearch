@@ -22,7 +22,7 @@ __END_C__
 /** Tests for logical structure of Query objects output by QueryParser.
  */
 
-static class KinoSearch::Test { 
+inert class KinoSearch::Test { 
     
 }
 

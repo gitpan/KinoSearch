@@ -4,8 +4,8 @@ parcel KinoSearch cnick Kino;
  * streamed sources.
  */
 
-static class KinoSearch::Test::Store::TestInStream {
-    static void
+inert class KinoSearch::Test::Store::TestInStream {
+    inert void
     run_tests();
 }
 

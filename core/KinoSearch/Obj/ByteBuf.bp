@@ -6,35 +6,35 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Obj::ByteBuf cnick BB extends KinoSearch::Obj {
 
-    char    *ptr;
+    char    *buf;
     size_t   size;  /* number of valid bytes */
     size_t   cap;   /* allocated bytes, including terminating null */
 
     /** 
      * @param capacity initial capacity of the ByteBuf, in bytes.
      */
-    static incremented ByteBuf*
+    inert incremented ByteBuf*
     new(size_t capacity);
 
-    static ByteBuf*
+    inert ByteBuf*
     init(ByteBuf *self, size_t capacity);
 
     /** Return a pointer to a new ByteBuf which holds a copy of the passed-in
      * string.
      */
-    static incremented ByteBuf*
+    inert incremented ByteBuf*
     new_bytes(const void *bytes, size_t size);
 
     /** Return a pointer to a new ByteBuf which assumes ownership of the
      * passed-in string.
      */
-    static incremented ByteBuf*
+    inert incremented ByteBuf*
     new_steal_bytes(void *bytes, size_t size, size_t capacity);
 
     /** Lexical comparison of two ByteBufs, with level of indirection set to
      * please qsort and friends.
      */
-    static int
+    inert int
     compare(const void *va, const void *vb); 
 
     /** Set the object's size member.  If greater than the object's capacity,
@@ -47,6 +47,11 @@ class KinoSearch::Obj::ByteBuf cnick BB extends KinoSearch::Obj {
      */
     size_t
     Get_Size(ByteBuf *self);
+
+    /** Accessor for raw internal buffer.
+     */
+    char*
+    Get_Buf(ByteBuf *self);
 
     /** Return the number of bytes in the Object's allocation.
      */
@@ -73,8 +78,10 @@ class KinoSearch::Obj::ByteBuf cnick BB extends KinoSearch::Obj {
 
     /** Assign more memory to the ByteBuf, if it doesn't already have enough
      * room to hold <code>size</code> bytes.  Cannot shrink the allocation.
+     *
+     * @return a pointer to the raw buffer.
      */
-    void
+    char*
     Grow(ByteBuf *self, size_t size);
 
     /** Test whether the ByteBuf matches the passed-in bytes.
@@ -123,15 +130,15 @@ class KinoSearch::Obj::ViewByteBuf cnick ViewBB
     /** Return a pointer to a new "view" ByteBuf, offing a persective on the
      * passed-in string.
      */
-    static incremented ViewByteBuf*
-    new(char *ptr, size_t size);
+    inert incremented ViewByteBuf*
+    new(char *buf, size_t size);
 
-    /** Assign ptr and size members to the passed in values.
+    /** Assign buf and size members to the passed in values.
      */
     void
-    Assign_Bytes(ViewByteBuf *self, char *ptr, size_t size);
+    Assign_Bytes(ViewByteBuf *self, char *buf, size_t size);
 
-    /** Assign ptr and size members from the passed-in ByteBuf.
+    /** Assign buf and size members from the passed-in ByteBuf.
      */
     void
     Assign(ViewByteBuf *self, const ByteBuf *other);
@@ -139,15 +146,6 @@ class KinoSearch::Obj::ViewByteBuf cnick ViewBB
     void
     Destroy(ViewByteBuf *self);
 }
-
-__C__
-
-#define KINO_BBEND(self) ((self)->ptr + (self)->size)
-
-#ifdef KINO_USE_SHORT_NAMES
-  #define BBEND(self)         KINO_BBEND(self)
-#endif
-__END_C__
 
 /* Copyright 2006-2009 Marvin Humphrey
  *

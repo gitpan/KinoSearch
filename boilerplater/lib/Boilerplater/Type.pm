@@ -11,132 +11,49 @@ our %new_PARAMS = (
     const       => undef,
     specifier   => undef,
     indirection => undef,
-    array       => undef,
     parcel      => undef,
-    incremented => 0,
-    decremented => 0,
+    c_string    => undef,
 );
 
 sub new {
     my $either = shift;
+    my $package = ref($either) || $either;
+    confess( __PACKAGE__ . "is an abstract class" )
+        if $package eq __PACKAGE__;
     verify_args( \%new_PARAMS, @_ ) or confess $@;
-    my $self = bless {
-        %new_PARAMS,
-        is_object   => undef,
-        is_floating => undef,
-        @_,
-        },
-        ref($either) || $either;
-
-    # Default indirection level to 0.
-    $self->{indirection} ||= 0;
-
-    # Find parcel and parcel prefix.
-    if ( !defined $self->{parcel} ) {
-        $self->{parcel} = Boilerplater::Parcel->default_parcel;
-    }
-    elsif ( blessed( $self->{parcel} ) ) {
+    my $self = bless { %new_PARAMS, @_, }, $package;
+    if ( defined $self->{parcel} ) {
+        if ( !blessed( $self->{parcel} ) ) {
+            $self->{parcel}
+                = Boilerplater::Parcel->singleton( name => $self->{parcel} );
+        }
         confess("Not a Boilerplater::Parcel")
             unless $self->{parcel}->isa('Boilerplater::Parcel');
     }
-    else {
-        $self->{parcel}
-            = Boilerplater::Parcel->singleton( name => $self->{parcel} );
-    }
-    my $prefix = $self->{parcel}->get_prefix;
-
-    # Validate specifier, use lousy, fragile heuristic to determine whether a
-    # type is an object.
-    confess("illegal specifier: '$self->{specifier}")
-        unless $self->{specifier} =~ /^\w+$/;
-    $self->{is_object} = $self->{specifier} =~ /^(?:$prefix)?[A-Z]/ ? 1 : 0;
-
-    # Identify and validate type.
-    if (   $self->{is_object}
-        || $self->{indirection}
-        || $self->{array}
-        || $self->{specifier} eq 'void' )
-    {
-    }
-    elsif ( $self->{specifier} =~ /^([iu]\d+|bool)_t$/ ) {
-        $self->{is_integer} = 1;
-    }
-    elsif ( $self->{specifier} =~ /^(?:char|short|int|long)$/ ) {
-        $self->{is_integer} = 1;
-    }
-    elsif ( $self->{specifier} =~ /^(?:float|double)$/ ) {
-        $self->{is_floating} = 1;
-    }
-    elsif ( $self->{specifier} eq 'va_list' ) { }
-    elsif ( $self->{specifier} =~ /_t$/ ) { }    # catchall
-    else {
-        confess("Unknown type specifier: '$self->{specifier}'");
-    }
-
-    if ( $self->{specifier} =~ /^[A-Z]/ ) {
-        # Add $prefix to what appear to be namespaced types.
-        $self->{specifier} = $prefix . $self->{specifier}
-            unless $self->{specifier} =~ /^$prefix/;
-    }
-    elsif ( $self->{specifier} =~ /^([iu]\d+|bool)_t$/ ) {
-        # Add chy_ prefix to Charmony integer variables.
-        $self->{specifier} = "chy_$self->{specifier}";
-    }
-
     return $self;
 }
 
-# Accessors.
 sub get_specifier { shift->{specifier} }
-sub get_array     { shift->{array} }
-sub const         { defined shift->{const} ? 1 : 0 }
-sub is_object     { shift->{is_object} }
-sub is_integer    { shift->{is_integer} }
-sub is_floating   { shift->{is_floating} }
-sub incremented   { shift->{incremented} }
-sub decremented   { shift->{decremented} }
+sub get_parcel    { shift->{parcel} }
+sub const         { shift->{const} }
 
-sub is_string_type {
-    my $self = shift;
-    return 0 unless $self->{is_object};
-    return 0 unless $self->{specifier} =~ /CharBuf/;
-    return 1;
-}
+sub is_object      {0}
+sub is_primitive   {0}
+sub is_integer     {0}
+sub is_floating    {0}
+sub is_void        {0}
+sub is_composite   {0}
+sub is_string_type {0}
 
 sub equals {
     my ( $self, $other ) = @_;
-    return 0 unless $self->{indirection} == $other->{indirection};
-    return 0 unless $self->{specifier} eq $other->{specifier};
-    for (qw( const array incremented decremented )) {
-        next unless defined $self->{$_} && defined $other->{$_};
-        return 0 unless $self->{$_} eq $other->{$_};
-    }
+    return 0 unless blessed($other);
+    return 0 unless $other->isa(__PACKAGE__);
     return 1;
 }
 
-# Indicate whether the type is "void".
-sub void {
-    my $self = shift;
-    return 0 if $self->{indirection};
-    return 0 unless $self->{specifier} eq 'void';
-    return 1;
-}
-
-# Return a C stringified version of the type.
-#
-# Note that the behavior of this method is not consistently C-ish, though it
-# is convenient.
-#   * Pointers will be included.
-#   * Array postfixes will NOT be included.
-sub to_c {
-    my $self = shift;
-    my $string = $self->const ? 'const ' : '';
-    $string .= $self->{specifier};
-    for ( my $i = 0; $i < $self->{indirection}; $i++ ) {
-        $string .= '*';
-    }
-    return $string;
-}
+sub to_c { shift->{c_string} }
+sub set_c_string { $_[0]->{c_string} = $_[1] }
 
 1;
 
@@ -146,27 +63,28 @@ __POD__
 
 =head1 NAME
 
-Boilerplater::Type - A primitive or object type.
+Boilerplater::Type - A variable's type.
 
 =head1 METHODS
 
 =head2 new
 
-    my $type = Boilerplater::Type->new(
-        specifier   => 'char',    # required
+    my $type = MyType->new(
+        specifier   => 'char',    # default undef
         indirection => undef,     # default 0
-        array       => '[]',      # default undef,
         const       => 1,         # default undef
-        incremented => 1,         # default 0
+        parcel      => undef,     # default undef
+        c_string    => undef,     # default undef
     );
+
+Abstract constructor.
 
 =over
 
 =item *
 
-B<specifier> - The name of the type, not including any indirection or array
-subscripts.  If the type begins with a capital letter, it will be assumed to
-be an object type.
+B<specifier> - The C name for the type, not including any indirection or array
+subscripts.  
 
 =item *
 
@@ -175,32 +93,74 @@ B<indirection> - integer indicating level of indirection. Example: the C type
 
 =item *
 
-B<array> - A string describing an array postfix.  
+B<const> - should be true if the type is const.
 
 =item *
 
-B<const> - should be 1 if the type is const.
+B<parcel> - A Boilerplater::Parcel or a parcel name.
 
 =item *
 
-B<incremented> - Indicates that the variable is having its refcount
-incremented by a function, meaning that the caller must take responsibility
-for the additional refcount.
-
-=item *
-
-B<decremented> - Indicates that the variable is having its refcount
-decremented by a function, meaning that the caller must take responsibility
-for the loss of one refcount.
+B<c_string> - The C representation of the type.
 
 =back
 
-=head1 COPYRIGHT
+=head2 equals
+
+    do_stuff() if $type->equals($other);
+
+Returns true if two Boilerplater::Type objects are equivalent.  The default
+implementation merely checks that C<$other> is a Boilerplater::Type object, so
+it should be overridden in all subclasses.
+
+=head2 to_c
+
+    # Declare variable "foo".
+    print $type->to_c . " foo;\n";
+
+Return the C representation of the type.
+
+=head2 set_c_string
+
+Set the C representation of the type.
+
+=head2 get_specifier get_parcel const
+
+Accessors.
+
+=head2 is_object is_primitive is_integer is_floating is_composite is_void
+
+    do_stuff() if $type->is_object;
+
+Shorthand for various $type->isa($package) calls.  
+
+=over
+
+=item * is_object: Boilerplater::Type::Object
+
+=item * is_primitive: Boilerplater::Type::Primitive
+
+=item * is_integer: Boilerplater::Type::Integer
+
+=item * is_floating: Boilerplater::Type::Float
+
+=item * is_void: Boilerplater::Type::Void
+
+=item * is_composite: Boilerplater::Type::Composite
+
+=back
+
+=head2 is_string_type
+
+Returns true if $type represents a Boilerplater type which holds unicode
+strings.
+
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
+

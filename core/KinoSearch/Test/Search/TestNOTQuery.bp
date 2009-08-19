@@ -1,7 +1,7 @@
 parcel KinoSearch cnick Kino;
 
-static class KinoSearch::Test::Search::TestNOTQuery {
-    static void
+inert class KinoSearch::Test::Search::TestNOTQuery {
+    inert void
     run_tests();
 }
 

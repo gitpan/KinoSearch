@@ -62,7 +62,7 @@ parcel KinoSearch cnick Kino;
  * may persist, preventing deletion of obsolete index data.
  */
 
-static class KinoSearch::Docs::FileLocking { }
+inert class KinoSearch::Docs::FileLocking { }
 
 /* Copyright 2007-2009 Marvin Humphrey
  *

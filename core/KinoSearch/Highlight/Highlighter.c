@@ -60,7 +60,7 @@ Highlighter_destroy(Highlighter *self)
     DECREF(self->field);
     DECREF(self->pre_tag);
     DECREF(self->post_tag);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, HIGHLIGHTER);
 }
 
 CharBuf*

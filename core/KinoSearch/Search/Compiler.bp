@@ -52,7 +52,7 @@ class KinoSearch::Search::Compiler extends KinoSearch::Search::Query {
      * @param boost An arbitrary scoring multiplier.  Defaults to the boost of
      * the parent Query.
      */
-    public static Compiler*
+    public inert Compiler*
     init(Compiler *self, Query *parent, Searchable *searchable, 
          Similarity *similarity = NULL, float boost);
 

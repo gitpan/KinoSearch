@@ -28,7 +28,7 @@ void
 TopDocs_destroy(TopDocs *self)
 {
     DECREF(self->match_docs);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, TOPDOCS);
 }
 
 void

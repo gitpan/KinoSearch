@@ -23,10 +23,10 @@ class KinoSearch::Store::CompoundFileReader cnick CFReader
 
     /* Constructor.  May return NULL if a compound file can't be found.
      */
-    static incremented CompoundFileReader*
+    inert incremented CompoundFileReader*
     new(FSFolder *folder, const CharBuf *seg_name);
 
-    static CompoundFileReader*
+    inert CompoundFileReader*
     init(CompoundFileReader *self, FSFolder *folder, const CharBuf *seg_name);
 
     /** Remove the entry associated with a virtual file, rendering it

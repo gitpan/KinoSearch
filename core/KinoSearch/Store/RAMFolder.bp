@@ -17,14 +17,14 @@ class KinoSearch::Store::RAMFolder extends KinoSearch::Store::Folder {
 
     Hash *elems;
 
-    static incremented RAMFolder*
+    inert incremented RAMFolder*
     new(const CharBuf *path = NULL);
 
     /**
      * @param path If supplied, attempt to read an FSFolder at that location
      * into memory; otherwise the Folder starts out empty.
      */
-    public static RAMFolder*
+    public inert RAMFolder*
     init(RAMFolder *self, const CharBuf *path = NULL);
 
     /** Return the underlying RAMFileDes for the specified filepath.

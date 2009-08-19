@@ -1,14 +1,14 @@
 parcel KinoSearch cnick Kino;
 
-static class KinoSearch::Test::Search::TestPolyQuery { }
+inert class KinoSearch::Test::Search::TestPolyQuery { }
 
-static class KinoSearch::Test::Search::TestANDQuery {
-    static void
+inert class KinoSearch::Test::Search::TestANDQuery {
+    inert void
     run_tests();
 }
 
-static class KinoSearch::Test::Search::TestORQuery {
-    static void
+inert class KinoSearch::Test::Search::TestORQuery {
+    inert void
     run_tests();
 }
 

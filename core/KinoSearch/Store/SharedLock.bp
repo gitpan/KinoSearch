@@ -25,7 +25,7 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Store::SharedLock cnick ShLock
     extends KinoSearch::Store::LockFileLock {
 
-    static incremented SharedLock*
+    inert incremented SharedLock*
     new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
         i32_t timeout = 0, i32_t interval = 100);
 
@@ -38,7 +38,7 @@ class KinoSearch::Store::SharedLock cnick ShLock
      * the attempt to Obtain() a lock.
      * @param interval Time in milliseconds between retries.
      */
-    public static SharedLock*
+    public inert SharedLock*
     init(SharedLock *self, Folder *folder, const CharBuf *name, 
          const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
 

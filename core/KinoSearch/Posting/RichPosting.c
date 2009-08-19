@@ -139,7 +139,7 @@ RichPost_add_inversion_to_pool(RichPosting *self, PostingPool *post_pool,
             const u32_t prox_delta = t->pos - last_prox;
             const float boost = field_boost * t->boost;
 
-            Math_encode_c32(prox_delta, &dest);
+            NumUtil_encode_c32(prox_delta, &dest);
             last_prox = t->pos; 
 
             *((u8_t*)dest) = Sim_Encode_Norm(sim, boost);
@@ -158,6 +158,7 @@ RawPosting*
 RichPost_read_raw(RichPosting *self, InStream *instream, i32_t last_doc_id, 
                   CharBuf *term_text, MemoryPool *mem_pool)
 {
+    char *const  text_buf         = (char*)CB_Get_Ptr8(term_text);
     const size_t text_size        = CB_Get_Size(term_text);
     const u32_t  doc_code         = InStream_Read_C32(instream);
     const u32_t  delta_doc        = doc_code >> 1;
@@ -168,7 +169,7 @@ RichPost_read_raw(RichPosting *self, InStream *instream, i32_t last_doc_id,
     size_t raw_post_bytes         = MAX_RAW_POSTING_LEN(text_size, freq);
     void *const allocation        = MemPool_Grab(mem_pool, raw_post_bytes);
     RawPosting *const raw_posting = RawPost_new(allocation, doc_id, freq,
-        term_text->ptr, text_size);
+        text_buf, text_size);
     u32_t  num_prox   = freq;
     char *const start = raw_posting->blob + text_size;
     char *      dest  = start;

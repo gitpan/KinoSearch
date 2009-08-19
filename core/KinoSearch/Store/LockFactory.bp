@@ -14,14 +14,14 @@ class KinoSearch::Store::LockFactory cnick LockFact
     Folder  *folder;
     CharBuf *hostname;
 
-    static incremented LockFactory*
+    inert incremented LockFactory*
     new(Folder *folder, const CharBuf *hostname);
 
     /**
      * @param folder A L<KinoSearch::Store::Folder>.
      * @param hostname An identifier which should be unique per-machine.
      */
-    public static LockFactory*
+    public inert LockFactory*
     init(LockFactory *self, Folder *folder, const CharBuf *hostname);
 
     /** Return a Lock object, which, once Obtain() returns successfully,

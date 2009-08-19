@@ -13,10 +13,10 @@ class KinoSearch::Index::PolyLexicon cnick PolyLex
     VArray         *seg_lexicons;
     i32_t           size;
 
-    static incremented PolyLexicon*
+    inert incremented PolyLexicon*
     new(const CharBuf *field, VArray *sub_readers);
 
-    static PolyLexicon*
+    inert PolyLexicon*
     init(PolyLexicon *self, const CharBuf *field, VArray *sub_readers);
 
     public void
@@ -38,7 +38,7 @@ class KinoSearch::Index::PolyLexicon cnick PolyLex
 class KinoSearch::Index::SegLexQueue cnick SegLexQ
     extends KinoSearch::Util::PriorityQueue {
 
-    static incremented SegLexQueue*
+    inert incremented SegLexQueue*
     new(u32_t max_size);
 
     bool_t

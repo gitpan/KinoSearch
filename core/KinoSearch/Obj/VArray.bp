@@ -19,14 +19,14 @@ class KinoSearch::Obj::VArray cnick VA extends KinoSearch::Obj {
     u32_t    size;
     u32_t    cap;
 
-    static incremented VArray*
+    inert incremented VArray*
     new(u32_t capacity);
 
     /** 
      * @param capacity Initial number of elements that the object will be able
      * to hold before reallocation.
      */
-    static VArray*
+    inert VArray*
     init(VArray *self, u32_t capacity);
 
     /** Push an item onto the end of a VArray.

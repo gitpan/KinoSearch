@@ -3,8 +3,8 @@ parcel KinoSearch cnick Kino;
 /** Tests for logical structure of Query objects output by QueryParser.
  */
 
-static class KinoSearch::Test::TestQueryParserSyntax cnick TestQPSyntax {
-    static void
+inert class KinoSearch::Test::TestQueryParserSyntax cnick TestQPSyntax {
+    inert void
     run_tests(Folder *index);
 }
 

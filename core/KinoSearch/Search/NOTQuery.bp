@@ -15,13 +15,13 @@ class KinoSearch::Search::NOTQuery extends KinoSearch::Search::PolyQuery
     /**
      * @param negated_query The Query to be inverted.
      */
-    static incremented NOTQuery*
+    inert incremented NOTQuery*
     new(Query *negated_query);
 
     /**
      * @param negated_query The Query whose result set should be inverted.
      */
-    public static NOTQuery*
+    public inert NOTQuery*
     init(NOTQuery *self, Query *negated_query);
 
     /** Accessor for the object's negated query. */
@@ -45,10 +45,10 @@ class KinoSearch::Search::NOTQuery extends KinoSearch::Search::PolyQuery
 class KinoSearch::Search::NOTCompiler 
     extends KinoSearch::Search::PolyCompiler {
 
-    static incremented NOTCompiler*
+    inert incremented NOTCompiler*
     new(NOTQuery *parent, Searchable *searchable, float boost);
 
-    static NOTCompiler*
+    inert NOTCompiler*
     init(NOTCompiler *self, NOTQuery *parent, Searchable *searchable, 
          float boost);
 

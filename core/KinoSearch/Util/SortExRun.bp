@@ -20,7 +20,7 @@ class KinoSearch::Util::SortExRun extends KinoSearch::Obj {
     u32_t     cache_max;
     u32_t     cache_tick;
 
-    static SortExRun*
+    inert SortExRun*
     init(SortExRun *self);
 
     /** Compare two sortable elements.

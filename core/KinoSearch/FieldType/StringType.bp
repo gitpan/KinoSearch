@@ -14,14 +14,14 @@ class KinoSearch::FieldType::StringType
      * @param sortable boolean indicating whether the field should be
      * sortable.
      */
-    public static StringType* 
+    public inert StringType* 
     init(StringType *self);
 
-    static StringType* 
+    inert StringType* 
     init2(StringType *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 
-    public static incremented StringType* 
+    public inert incremented StringType* 
     new();
 
     public incremented Similarity*

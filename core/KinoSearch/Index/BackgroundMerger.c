@@ -154,7 +154,7 @@ BGMerger_destroy(BackgroundMerger *self)
     DECREF(self->write_lock);
     DECREF(self->snapfile);
     DECREF(self->doc_maps);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, BACKGROUNDMERGER);
 }
 
 static Folder*

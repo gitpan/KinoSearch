@@ -29,7 +29,7 @@ class KinoSearch::Util::SortExternal cnick SortEx
     u32_t              num_runs;
     bool_t             flipped;      /* force flip before fetch */ 
 
-    static SortExternal*
+    inert SortExternal*
     init(SortExternal *self, u32_t mem_thresh = 0x1000000,
          Sort_compare_t compare);
 

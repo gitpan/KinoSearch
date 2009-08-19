@@ -10,14 +10,14 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Search::RequiredOptionalQuery cnick ReqOptQuery
     extends KinoSearch::Search::PolyQuery {
 
-    static incremented RequiredOptionalQuery*
+    inert incremented RequiredOptionalQuery*
     new(Query *required_query, Query *optional_query);
 
     /** 
      * @param required_query Query must must match.
      * @param optional_query Query which should match.
      */
-    public static RequiredOptionalQuery*
+    public inert RequiredOptionalQuery*
     init(RequiredOptionalQuery *self, Query *required_query, 
          Query *optional_query);
 
@@ -51,10 +51,10 @@ class KinoSearch::Search::RequiredOptionalQuery cnick ReqOptQuery
 class KinoSearch::Search::RequiredOptionalCompiler cnick ReqOptCompiler
     extends KinoSearch::Search::PolyCompiler {
 
-    static incremented RequiredOptionalCompiler*
+    inert incremented RequiredOptionalCompiler*
     new(RequiredOptionalQuery *parent, Searchable *searchable, float boost);
 
-    static RequiredOptionalCompiler*
+    inert RequiredOptionalCompiler*
     init(RequiredOptionalCompiler *self, RequiredOptionalQuery *parent, 
          Searchable *searchable, float boost);
 

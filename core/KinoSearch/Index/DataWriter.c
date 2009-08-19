@@ -31,7 +31,7 @@ DataWriter_destroy(DataWriter *self)
     DECREF(self->polyreader);
     DECREF(self->schema);
     DECREF(self->folder);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, DATAWRITER);
 }
 
 Snapshot*

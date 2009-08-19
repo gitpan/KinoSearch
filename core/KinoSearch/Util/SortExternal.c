@@ -69,7 +69,7 @@ SortEx_destroy(SortExternal *self)
         }
         FREEMEM(self->runs);
     }
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SORTEXTERNAL);
 }
 
 void

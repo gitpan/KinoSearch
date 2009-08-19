@@ -10,10 +10,10 @@ parcel KinoSearch cnick Kino;
  */
 class KinoSearch::Architecture cnick Arch extends KinoSearch::Obj {
 
-    public static incremented Architecture*
+    public inert incremented Architecture*
     new();
 
-    public static Architecture*
+    public inert Architecture*
     init(Architecture *self);
 
     /** Initialize a SegWriter, adding DataWriter components.

@@ -23,12 +23,12 @@ class KinoSearch::Search::Similarity cnick Sim
     float  *norm_decoder;
     float  *prox_decoder;
 
-    static incremented Similarity*
+    inert incremented Similarity*
     new();
 
     /** Constructor. Takes no arguments. 
      */
-    public static Similarity* 
+    public inert Similarity* 
     init(Similarity *self);
 
     /** Return a score factor based on the frequency of a term in a given

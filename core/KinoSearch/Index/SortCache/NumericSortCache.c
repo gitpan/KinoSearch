@@ -7,7 +7,6 @@
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/IntArrays.h"
 
 NumericSortCache*
 NumSortCache_init(NumericSortCache *self, Schema *schema, Folder *folder,
@@ -137,7 +136,7 @@ F64SortCache_value(Float64SortCache *self, i32_t ord, Obj *blank)
         }
         #ifdef LITTLE_END
         {
-            u64_t reversed_bytes = Math_decode_bigend_u64(val_ptr);
+            u64_t reversed_bytes = NumUtil_decode_bigend_u64(val_ptr);
             Float64_Set_Value(blank, *((double*)&reversed_bytes));
         }
         #else 
@@ -192,7 +191,7 @@ F32SortCache_value(Float32SortCache *self, i32_t ord, Obj *blank)
         }
         #ifdef LITTLE_END
         {
-            u32_t reversed_bytes = Math_decode_bigend_u32(val_ptr);
+            u32_t reversed_bytes = NumUtil_decode_bigend_u32(val_ptr);
             Float32_Set_Value(blank, *((float*)&reversed_bytes));
         }
         #else 
@@ -245,7 +244,7 @@ I32SortCache_value(Int32SortCache *self, i32_t ord, Obj *blank)
             i64_t over = val_ptr - self->values_limit;
             THROW(ERR, "Read %i64 beyond data limit for %o", over, self->field);
         }
-        Int32_Set_Value(blank, Math_decode_bigend_u32(val_ptr));
+        Int32_Set_Value(blank, NumUtil_decode_bigend_u32(val_ptr));
     }
     return blank;
 }
@@ -293,7 +292,7 @@ I64SortCache_value(Int64SortCache *self, i32_t ord, Obj *blank)
             i64_t over = val_ptr - self->values_limit;
             THROW(ERR, "Read %i64 beyond data limit for %o", over, self->field);
         }
-        Int64_Set_Value(blank, Math_decode_bigend_u64(val_ptr));
+        Int64_Set_Value(blank, NumUtil_decode_bigend_u64(val_ptr));
     }
     return blank;
 }

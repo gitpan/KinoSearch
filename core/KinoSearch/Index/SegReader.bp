@@ -18,7 +18,7 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
     i32_t    seg_num;
     CharBuf *seg_name;
 
-    static incremented SegReader*
+    inert incremented SegReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot = NULL,
         VArray *segments, i32_t seg_tick);
 
@@ -31,7 +31,7 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
      * @param seg_tick The array index of the Segment object within
      * <code>segments</code> that this particular SegReader is assigned to.
      */
-    static SegReader*
+    inert SegReader*
     init(SegReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot = NULL, VArray *segments, i32_t seg_tick);
 

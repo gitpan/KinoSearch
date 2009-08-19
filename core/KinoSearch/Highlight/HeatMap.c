@@ -36,7 +36,7 @@ void
 HeatMap_destroy(HeatMap *self)
 {
     DECREF(self->spans);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, HEATMAP);
 }
 
 static int

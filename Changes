@@ -1,5 +1,13 @@
 Revision history for KinoSearch
 
+0.30_06  2009-08-17
+
+  Bugfixes:
+
+    * Solve a fencepost error in IndexManager's recycle() method which could
+      cause document duplication and lost deletions.
+
+
 0.30_05  2009-08-06
 
   Features:

@@ -10,10 +10,10 @@ class KinoSearch::Search::NOTScorer extends KinoSearch::Search::PolyMatcher {
     i32_t          doc_max;
     i32_t          next_negation;
 
-    static incremented NOTScorer* 
+    inert incremented NOTScorer* 
     new(Matcher* negated_matcher, i32_t doc_max);
 
-    static NOTScorer* 
+    inert NOTScorer* 
     init(NOTScorer *self, Matcher *negated_matcher, i32_t doc_max);
 
     void

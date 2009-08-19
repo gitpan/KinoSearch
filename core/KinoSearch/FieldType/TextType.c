@@ -95,20 +95,21 @@ TextTermStepper_read_key_frame(TextTermStepper *self, InStream *instream)
 { 
     const u32_t text_len = InStream_Read_C32(instream);
     CharBuf *value;
+    char *ptr;
 
     /* Allocate space. */
     if (self->value == NULL) {
         self->value = (Obj*)CB_new(text_len);
     }
     value = (CharBuf*)self->value;
-    CB_Grow(value, text_len);
+    ptr   = CB_Grow(value, text_len);
 
     /* Set the value text. */
-    InStream_Read_Bytes(instream, (char*)CB_Get_Ptr8(value), text_len);
+    InStream_Read_Bytes(instream, ptr, text_len);
     CB_Set_Size(value, text_len);
 
     /* Null-terminate. */
-    *(value->ptr + text_len) = '\0';
+    ptr[text_len] = '\0';
 }
 
 void
@@ -118,21 +119,21 @@ TextTermStepper_read_delta(TextTermStepper *self, InStream *instream)
     const u32_t finish_chars_len = InStream_Read_C32(instream);
     const u32_t total_text_len   = text_overlap + finish_chars_len;
     CharBuf *value;
+    char *ptr;
 
     /* Allocate space. */
     if (self->value == NULL) {
         self->value = (Obj*)CB_new(total_text_len);
     }
     value = (CharBuf*)self->value;
-    CB_Grow(value, total_text_len);
+    ptr   = CB_Grow(value, total_text_len);
 
     /* Set the value text. */
-    InStream_Read_BytesO(instream, (char*)CB_Get_Ptr8(value), text_overlap,
-        finish_chars_len);
+    InStream_Read_BytesO(instream, ptr, text_overlap, finish_chars_len);
     CB_Set_Size(value, total_text_len);
 
     /* Null-terminate. */
-    *(value->ptr + total_text_len) = '\0';
+    ptr[total_text_len] = '\0';
 }
 
 /* Copyright 2007-2009 Marvin Humphrey

@@ -18,7 +18,7 @@ class KinoSearch::Obj::VTable extends KinoSearch::Obj {
     Callback         **callbacks;
     boil_method_t[1]   methods; /* flexible array */
 
-    static Hash *registry;
+    inert Hash *registry;
 
     /** Return a singleton.  If a VTable can be found in the registry based on
      * the subclass name, it will be returned.  Otherwise, a new VTable will
@@ -28,42 +28,42 @@ class KinoSearch::Obj::VTable extends KinoSearch::Obj {
      * VTable_find_parent_class().  If the attempt fails, an error will
      * result.
      */
-    static VTable*
+    inert VTable*
     singleton(const CharBuf *subclass_name, VTable *parent);
 
     /** Register a vtable, so that it can be retrieved by class name.
      *
      * TODO: Move this functionality to some kind of class loader.
      */
-    static void
+    inert void
     add_to_registry(VTable *vtable);
 
     /** Initialize the registry hash.
      */
-    static void
+    inert void
     init_registry();
 
     /** Tell the host about the new class.
      */
-    static void
+    inert void
     register_with_host(VTable *vtable, VTable *parent);
 
     /** Find a registered class and return its vtable.  May return NULL if the
      * class is not registered.
      */
-    static VTable*
+    inert VTable*
     fetch_vtable(const CharBuf *class_name);
     
     /** Given a class name, return the name of a parent class which descends
      * from KinoSearch::Obj, or NULL if such a class can't be found.
      */
-    static CharBuf*
+    inert CharBuf*
     find_parent_class(const CharBuf *class_name);
 
     /** List all of the methods that a class has overridden via the host
      * language.
      */
-    static incremented VArray*
+    inert incremented VArray*
     novel_host_methods(const CharBuf *class_name);
 
     /** Replace a function pointer in the VTable. 

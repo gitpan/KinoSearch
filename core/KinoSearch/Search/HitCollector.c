@@ -20,7 +20,7 @@ HC_destroy(HitCollector *self)
 {
     DECREF(self->reader);
     DECREF(self->matcher);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, HITCOLLECTOR);
 }
 
 void

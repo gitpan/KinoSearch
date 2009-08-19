@@ -60,7 +60,7 @@ InStream_destroy(InStream *self)
     }
     DECREF(self->filename);
     DECREF(self->window);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, INSTREAM);
 }
 
 InStream*
@@ -301,7 +301,7 @@ SI_read_u32 (InStream *self)
     u32_t retval;
     SI_read_bytes(self, (char*)&retval, 4);
 #ifdef LITTLE_END 
-    retval = Math_decode_bigend_u32((char*)&retval);
+    retval = NumUtil_decode_bigend_u32((char*)&retval);
 #endif
     return retval;
 }
@@ -324,7 +324,7 @@ SI_read_u64 (InStream *self)
     u64_t retval;
     SI_read_bytes(self, (char*)&retval, 8);
 #ifdef LITTLE_END 
-    retval = Math_decode_bigend_u64((char*)&retval);
+    retval = NumUtil_decode_bigend_u64((char*)&retval);
 #endif
     return retval;
 }
@@ -344,23 +344,23 @@ InStream_read_i64(InStream *self)
 float
 InStream_read_f32(InStream *self)
 {
-    union { float f; u32_t u32; } retval;
-    SI_read_bytes(self, (char*)&retval, sizeof(float));
+    union { float f; u32_t u32; } duo;
+    SI_read_bytes(self, (char*)&duo, sizeof(float));
 #ifdef LITTLE_END 
-    retval.u32 = Math_decode_bigend_u32((char*)&retval.u32);
+    duo.u32 = NumUtil_decode_bigend_u32(&duo.u32);
 #endif
-    return retval.f;
+    return duo.f;
 }
 
 double
 InStream_read_f64(InStream *self)
 {
-    union { double f; u64_t u64; } retval;
-    SI_read_bytes(self, (char*)&retval, sizeof(double));
+    union { double d; u64_t u64; } duo;
+    SI_read_bytes(self, (char*)&duo, sizeof(double));
 #ifdef LITTLE_END 
-    retval.u64 = Math_decode_bigend_u64((char*)&retval.u64);
+    duo.u64 = NumUtil_decode_bigend_u64(&duo.u64);
 #endif
-    return retval.f;
+    return duo.d;
 }
 
 u32_t 

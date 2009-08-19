@@ -11,7 +11,7 @@ class KinoSearch::Doc::HitDoc extends KinoSearch::Doc {
 
     float score;
 
-    static incremented HitDoc* 
+    inert incremented HitDoc* 
     new(void *fields = NULL, i32_t doc_id = 0, float score = 0.0);
 
     /** Constructor.
@@ -20,7 +20,7 @@ class KinoSearch::Doc::HitDoc extends KinoSearch::Doc {
      * @param doc_id Internal document id.
      * @param score Number indicating how well the doc scored against a query.
      */
-    static HitDoc* 
+    inert HitDoc* 
     init(HitDoc *self, void *fields = NULL, i32_t doc_id = 0, 
          float score = 0.0);
 

@@ -11,7 +11,7 @@ public class KinoSearch::Doc extends KinoSearch::Obj : dumpable {
     void        *fields;
     i32_t        doc_id;
 
-    static incremented Doc*
+    inert incremented Doc*
     new(void *fields = NULL, i32_t doc_id = 0);
 
     /* Unimplemented constructor. */
@@ -19,7 +19,7 @@ public class KinoSearch::Doc extends KinoSearch::Obj : dumpable {
      * @param fields Field-value pairs.
      * @param doc_id Internal KinoSearch document id.  Default of 0.
      */
-    public static Doc* 
+    public inert Doc* 
     init(Doc *self, void *fields = NULL, i32_t doc_id = 0);
 
     void

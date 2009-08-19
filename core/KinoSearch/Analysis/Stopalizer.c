@@ -36,7 +36,7 @@ void
 Stopalizer_destroy(Stopalizer *self)
 {
     DECREF(self->stoplist);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, STOPALIZER);
 }
 
 Inversion*

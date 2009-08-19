@@ -74,7 +74,7 @@ Dog_say_hello is a function, Dog_Say_Hello is a method.
 
 =head2 Class declaration syntax
 
-    [final] [static] class CLASSNAME [cnick CNICK] [extends PARENT] {
+    [final] [inert] class CLASSNAME [cnick CNICK] [extends PARENT] {
         [declarations]
     }
 
@@ -104,8 +104,8 @@ B<PARENT> - The full name of the parent class.
 
 =head2 Memory management
 
-At present, KinoSearch manages memory via a reference counting scheme, but
-this is not inherently part of Boilerplater.
+At present, memory is managed via a reference counting scheme, but this is not
+inherently part of Boilerplater.
 
 =head2 Namespaces, parcels, prefixes, and "short names"
 
@@ -153,8 +153,8 @@ The boilerplate code is written to a file with whose name is the same as the
 
 Copyright 2006-2009 Marvin Humphrey
 
-This program is free software; you can redistribute it and/or modify under the
-same terms as Perl itself.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
 

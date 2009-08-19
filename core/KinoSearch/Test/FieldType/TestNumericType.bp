@@ -1,7 +1,7 @@
 parcel KinoSearch cnick Kino;
 
-static class KinoSearch::Test::FieldType::TestNumericType {
-    static void
+inert class KinoSearch::Test::FieldType::TestNumericType {
+    inert void
     run_tests();
 }
 

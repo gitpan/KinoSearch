@@ -57,7 +57,7 @@ PolyLex_destroy(PolyLexicon *self)
     DECREF(self->lex_q);
     DECREF(self->field);
     DECREF(self->term);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, POLYLEXICON);
 }
 
 static void

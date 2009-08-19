@@ -44,7 +44,7 @@ CFWriter_destroy(CompoundFileWriter *self)
 {
     DECREF(self->folder);
     DECREF(self->seg_name);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, COMPOUNDFILEWRITER);
 }
 
 void

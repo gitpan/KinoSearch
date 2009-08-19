@@ -16,12 +16,12 @@ class KinoSearch::Store::CompoundFileWriter cnick CFWriter
     FSFolder      *folder;
     CharBuf       *seg_name;
 
-    static i32_t current_file_format;
+    inert i32_t current_file_format;
 
-    static incremented CompoundFileWriter*
+    inert incremented CompoundFileWriter*
     new(FSFolder *folder, const CharBuf *seg_name);
 
-    static CompoundFileWriter*
+    inert CompoundFileWriter*
     init(CompoundFileWriter *self, FSFolder *folder, const CharBuf *seg_name);
 
     /** Perform the consolidation operation, building the .cf and .cfmeta

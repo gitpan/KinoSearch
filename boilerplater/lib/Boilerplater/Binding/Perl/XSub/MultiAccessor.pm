@@ -4,6 +4,7 @@ use warnings;
 package Boilerplater::Binding::Perl::XSub::MultiAccessor;
 use base qw( Boilerplater::Binding::Perl::XSub );
 use Carp;
+use Boilerplater::Type::Object;
 use Boilerplater::Variable;
 use Boilerplater::ParamList;
 use Boilerplater::Binding::Perl::TypeMap qw( from_perl to_perl );
@@ -17,7 +18,8 @@ sub new {
     my $setters    = delete( $args{setters} ) || [];
     my $class_name = $class->get_class_name;
 
-    my $self_type = Boilerplater::Type->new(
+    my $self_type = Boilerplater::Type::Object->new(
+        parcel      => $class->get_parcel,
         specifier   => $class->get_prefix . $class->get_struct_name,
         indirection => 1,
     );
@@ -38,6 +40,7 @@ sub new {
     for my $var ( $class->novel_member_vars ) {
         my $var_type    = $var->get_type;
         my $var_name    = $var->micro_sym;
+        my $stack_name  = $var_name . "_zcb";
         my $make_setter = delete $setters{$var_name};
         my $make_getter = delete $getters{$var_name};
         next unless $make_setter || $make_getter;
@@ -45,7 +48,8 @@ sub new {
         $alias_num++;
         if ($make_setter) {
             $aliases[$alias_num] = "set_$var_name";
-            my $set_case = from_perl( $var_type, "self->$var_name", "ST(1)" );
+            my $set_case = from_perl( $var_type, "self->$var_name", "ST(1)",
+                $stack_name );
             if ( $var->get_type->is_object ) {
                 $set_case = "{\n             KINO_DECREF(self->$var_name);"
                     . "\n            $set_case\n        }\n";

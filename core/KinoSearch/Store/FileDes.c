@@ -31,7 +31,7 @@ FileDes_destroy(FileDes *self)
 
     DECREF(self->path);
     DECREF(self->mess);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, FILEDES);
 
     if (!success) Err_throw_mess(ERR, mess);
 }

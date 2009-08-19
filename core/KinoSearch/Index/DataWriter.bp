@@ -26,7 +26,7 @@ public class KinoSearch::Index::DataWriter extends KinoSearch::Obj {
      * index.  (If the index is brand new, the PolyReader will have no
      * sub-readers).
      */
-    public static DataWriter*
+    public inert DataWriter*
     init(DataWriter *self, Schema *schema, Snapshot *snapshot, 
          Segment *segment, PolyReader *polyreader);
 

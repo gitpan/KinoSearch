@@ -16,6 +16,7 @@ my %new_PARAMS = (
     micro_sym    => undef,
     docu_comment => undef,
     parcel       => undef,
+    inline       => 0,
     exposure     => 'parcel',
 );
 
@@ -39,13 +40,6 @@ sub new {
     confess 'return_type must be a Type object'
         unless ref($return_type) && $return_type->isa("Boilerplater::Type");
 
-    # Derive class_cnick if necessary.
-    if ( !defined $self->{class_cnick} ) {
-        $self->{class_name} =~ /(\w+)$/
-            or die "Invalid class name: $self->{class_name}";
-        $self->{class_cnick} = $1;
-    }
-
     return $self;
 }
 
@@ -56,9 +50,10 @@ sub get_class_name   { shift->{class_name} }
 sub get_class_cnick  { shift->{class_cnick} }
 sub get_param_list   { shift->{param_list} }
 sub get_docu_comment { shift->{docu_comment} }
+sub inline           { shift->{inline} }
 
 # Indicate true if the function is void, false otherwise.
-sub void { shift->{return_type}->void }
+sub void { shift->{return_type}->is_void }
 
 # Return the fully qualified C symbol for the function.
 sub full_func_sym {
@@ -125,12 +120,11 @@ B<docu_comment> - A Boilerplater::DocuComment describing the function.
 
 =back
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2006-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

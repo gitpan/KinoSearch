@@ -11,14 +11,14 @@ class KinoSearch::Obj::BitVector cnick BitVec
     u32_t  cap;
     u8_t  *bits;
 
-    static incremented BitVector* 
+    inert incremented BitVector* 
     new(u32_t capacity = 0);
 
     /**
      * @param capacity The number of bits that the initial array should be
      * able to hold.
      */
-    public static BitVector* 
+    public inert BitVector* 
     init(BitVector *self, u32_t capacity = 0);
 
     /** Return true if the bit indicated has been set, false if it

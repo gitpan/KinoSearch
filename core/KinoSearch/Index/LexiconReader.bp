@@ -7,7 +7,7 @@ parcel KinoSearch cnick Kino;
 abstract class KinoSearch::Index::LexiconReader cnick LexReader 
     extends KinoSearch::Index::DataReader {
 
-    static LexiconReader*
+    inert LexiconReader*
     init(LexiconReader *self, Schema *schema = NULL, Folder *folder = NULL,
         Snapshot *snapshot = NULL, VArray *segments = NULL, 
         i32_t seg_tick = -1);
@@ -48,10 +48,10 @@ class KinoSearch::Index::PolyLexiconReader cnick PolyLexReader
     VArray   *readers;
     I32Array *offsets;
 
-    static incremented PolyLexiconReader*
+    inert incremented PolyLexiconReader*
     new(VArray *readers, I32Array *offsets);
 
-    static PolyLexiconReader*
+    inert PolyLexiconReader*
     init(PolyLexiconReader *self, VArray *readers, I32Array *offsets);
 
     public incremented Lexicon*
@@ -72,11 +72,11 @@ class KinoSearch::Index::DefaultLexiconReader cnick DefLexReader
 
     VArray *lexicons;
 
-    static incremented DefaultLexiconReader*
+    inert incremented DefaultLexiconReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
         i32_t seg_tick);
 
-    static DefaultLexiconReader*
+    inert DefaultLexiconReader*
     init(DefaultLexiconReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot, VArray *segments, i32_t seg_tick);
 

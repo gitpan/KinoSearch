@@ -76,44 +76,6 @@ StrHelp_compare_strings(const char *a, const char *b,
     return comparison;
 }
 
-void
-StrHelp_add_indent(CharBuf *charbuf, size_t amount)
-{
-    u32_t num_margins = 1;
-    size_t new_size; 
-    char *limit   = CBEND(charbuf);
-    char *source  = charbuf->ptr;
-    char *dest;
-
-    /* Add a margin for every newline. */
-    for ( ; source < limit; source++) {
-        if (*source == '\n')
-            num_margins++;
-    }
-
-    /* Make space for margins. */
-    new_size = CB_Get_Size(charbuf) + (num_margins * amount);
-    CB_Grow(charbuf, new_size);
-    source = CBEND(charbuf);
-    CB_Set_Size(charbuf, new_size);
-    dest = CBEND(charbuf);
-    *dest-- = '\0';
-    source--;
-
-    while (source >= charbuf->ptr) {
-        if (*source == '\n') {
-            int i = amount;
-            while (i--) {
-                *dest-- = ' ';
-            }
-        }
-        *dest-- = *source--;
-    }
-    while (dest >= charbuf->ptr) {
-        *dest-- =  ' ';
-    }
-}
-
 static const char base36_chars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 CharBuf*

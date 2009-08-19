@@ -11,7 +11,7 @@ abstract class KinoSearch::Search::Matcher extends KinoSearch::Obj {
 
     /** Abstract constructor. 
      */
-    public static Matcher*
+    public inert Matcher*
     init(Matcher* self);
 
     /** Proceed to the next doc id.

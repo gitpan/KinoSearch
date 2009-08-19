@@ -37,7 +37,7 @@ TestQP_destroy(TestQueryParser *self)
     DECREF(self->query_string);
     DECREF(self->tree);
     DECREF(self->expanded);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, TESTQUERYPARSER);
 }
 
 CharBuf*

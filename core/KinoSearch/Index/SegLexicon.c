@@ -96,7 +96,7 @@ SegLex_destroy(SegLexicon *self)
     DECREF(self->field);
     DECREF(self->lex_index);
     DECREF(self->instream);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SEGLEXICON);
 }
 
 void
@@ -153,7 +153,7 @@ i32_t
 SegLex_doc_freq(SegLexicon *self)
 {
     TermInfo *tinfo = (TermInfo*)TermStepper_Get_Value(self->tinfo_stepper);
-    return tinfo ? tinfo->doc_freq : 0;
+    return tinfo ? TInfo_Get_Doc_Freq(tinfo) : 0;
 }
 
 TermInfo*

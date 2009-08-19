@@ -3,15 +3,15 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Test::Util::NumPriorityQueue cnick NumPriQ
     extends KinoSearch::Util::PriorityQueue {
 
-    static incremented NumPriorityQueue*
+    inert incremented NumPriorityQueue*
     new(u32_t max_size);
 
     public bool_t
     Less_Than(NumPriorityQueue *self, Obj *a, Obj *b);
 }
 
-static class KinoSearch::Test::Util::TestPriorityQueue cnick TestPriQ {
-    static void
+inert class KinoSearch::Test::Util::TestPriorityQueue cnick TestPriQ {
+    inert void
     run_tests();
 }
 

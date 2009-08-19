@@ -48,7 +48,7 @@ PPCODE:
     }
 
     /* Either get a Doc or use the stock doc. */
-    if (sv_isobject(doc_sv) && sv_derived_from(doc_sv, KINO_DOC->name->ptr)) {
+    if (sv_isobject(doc_sv) && sv_derived_from(doc_sv, "KinoSearch::Doc")) {
         IV tmp = SvIV( SvRV(doc_sv) );
         doc = INT2PTR(kino_Doc*, tmp);
     }

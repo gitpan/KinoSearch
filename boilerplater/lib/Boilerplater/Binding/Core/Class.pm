@@ -65,11 +65,13 @@ sub name_var { shift->vtable_var . '_CLASS_NAME' }
 
 sub name_var_definition {
     my $self           = shift;
-    my $full_var_name  = $self->get_PREFIX . $self->name_var;
+    my $prefix         = $self->get_prefix;
+    my $PREFIX         = $self->get_PREFIX;
+    my $full_var_name  = $PREFIX . $self->name_var;
     my $class_name_len = length( $self->{class_name} );
     return <<END_STUFF;
-kino_ZombieCharBuf $full_var_name = {
-    KINO_ZOMBIECHARBUF,
+${prefix}ZombieCharBuf $full_var_name = {
+    ${PREFIX}ZOMBIECHARBUF,
     {1}, /* ref.count */
     "$self->{class_name}",
     $class_name_len,
@@ -103,7 +105,7 @@ sub vtable_definition {
     my $parent_ref
         = defined $parent
         ? "$PREFIX" . $parent->vtable_var
-        : "NULL";    # No parent, e.g. Obj or static classes.
+        : "NULL";    # No parent, e.g. Obj or inert classes.
 
     # Spec functions which implement the methods, casting to quiet compiler.
     my @implementing_funcs
@@ -123,7 +125,7 @@ $PREFIX$vt_type $PREFIX$vt = {
     sizeof(${prefix}$self->{struct_name}), /* obj_alloc_size */
     offsetof(${prefix}VTable, methods) 
         + $num_methods * sizeof(boil_method_t), /* vt_alloc_size */
-    (kino_Callback**)&${PREFIX}${vtable_var}_CALLBACKS,  /* callbacks */
+    (${prefix}Callback**)&${PREFIX}${vtable_var}_CALLBACKS,  /* callbacks */
     {
         $method_string
     }
@@ -137,7 +139,7 @@ sub struct_definition {
     my $self                = shift;
     my $prefix              = $self->get_prefix;
     my $member_declarations = join( "\n    ",
-        map { $_->c_declaration } $self->{client}->get_member_vars );
+        map { $_->local_declaration } $self->{client}->get_member_vars );
 
     return <<END_STRUCT
 struct $prefix$self->{struct_name} {
@@ -154,7 +156,7 @@ sub to_c_header {
     my @functions     = $client->get_functions;
     my @methods       = $client->get_methods;
     my @novel_methods = $client->novel_methods;
-    my @static_vars   = $client->get_static_vars;
+    my @inert_vars    = $client->get_inert_vars;
     my $vtable_var    = $self->vtable_var;
     my $struct_def    = $self->struct_definition;
     my $prefix        = $self->get_prefix;
@@ -175,12 +177,10 @@ sub to_c_header {
             . "\n\n";
     }
 
-    # Declare extern (a.k.a. "static") variables.
-    my $static_vars = "";
-    for my $static_var ( $client->get_static_vars ) {
-        my $type = $static_var->get_type->to_c;
-        my $name = "$prefix$self->{cnick}_" . $static_var->micro_sym;
-        $static_vars .= "extern $type $name;\n";
+    # Declare class (a.k.a. "inert") variables.
+    my $inert_vars = "";
+    for my $inert_var ( $client->get_inert_vars ) {
+        $inert_vars .= "extern " . $inert_var->global_c . ";\n";
     }
 
     # Declare typedefs for novel methods, to ease casting.
@@ -217,11 +217,11 @@ sub to_c_header {
     for my $function (@functions) {
         $short_names .= $function->short_func_sym;
     }
-    for my $static_var (@static_vars) {
-        my $short_name = "$self->{cnick}_" . $static_var->micro_sym;
+    for my $inert_var (@inert_vars) {
+        my $short_name = "$self->{cnick}_" . $inert_var->micro_sym;
         $short_names .= "  #define $short_name $prefix$short_name\n";
     }
-    if ( !$client->static ) {
+    if ( !$client->inert ) {
         for my $method (@novel_methods) {
             $short_names .= $method->short_typedef
                 unless $method->isa("Boilerplater::Method::Overridden");
@@ -235,14 +235,14 @@ sub to_c_header {
     # Make the spacing in the file a little more elegant.
     s/\s+$// for ( $method_typedefs, $method_defs, $short_names );
 
-    # Static classes only output static functions and member vars.
-    if ( $client->static ) {
-        return <<END_STATIC
+    # Inert classes only output inert functions and member vars.
+    if ( $client->inert ) {
+        return <<END_INERT
 #include "charmony.h"
 #include "boil.h"
 $parent_include
 
-$static_vars
+$inert_vars
 
 $sub_declarations
 
@@ -250,7 +250,7 @@ $sub_declarations
 $short_names
 #endif /* ${PREFIX}USE_SHORT_NAMES */
 
-END_STATIC
+END_INERT
     }
 
     # Instantiable classes get everything.
@@ -262,7 +262,7 @@ $parent_include
 
 $struct_def
 
-$static_vars
+$inert_vars
 
 $sub_declarations
 $callback_declarations
@@ -280,7 +280,7 @@ typedef struct $vt_type {
     void *x;
     size_t obj_alloc_size;
     size_t vt_alloc_size;
-    kino_Callback **callbacks;
+    ${prefix}Callback **callbacks;
     boil_method_t methods[$num_methods];
 } $vt_type;
 $vt
@@ -299,7 +299,7 @@ sub to_c {
     my $self   = shift;
     my $client = $self->{client};
 
-    return $client->get_autocode if $client->static;
+    return $client->get_autocode if $client->inert;
 
     my $include_h      = $self->include_h;
     my $class_name_def = $self->name_var_definition;
@@ -337,7 +337,7 @@ sub to_c {
                 $callback_funcs .= $method->callback_def . "\n";
                 my $callback_obj = $method->callback_obj( offset => $offset );
                 $callbacks
-                    .= "kino_Callback $callback_sym = $callback_obj;\n";
+                    .= "${prefix}Callback $callback_sym = $callback_obj;\n";
             }
             push @class_callbacks, "&$callback_sym";
         }
@@ -372,12 +372,11 @@ __POD__
 
 Boilerplater::Binding::Core::Class - Generate core C code for a class.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

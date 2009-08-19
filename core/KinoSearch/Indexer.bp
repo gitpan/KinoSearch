@@ -40,10 +40,10 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
     bool_t             needs_commit;
     bool_t             prepared;
 
-    public static i32_t TRUNCATE;
-    public static i32_t CREATE;
+    public inert i32_t TRUNCATE;
+    public inert i32_t CREATE;
 
-    public static incremented Indexer*
+    public inert incremented Indexer*
     new(Schema *schema = NULL, Obj *index, IndexManager *manager = NULL, 
         i32_t flags = 0);
 
@@ -54,7 +54,7 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
      * @param manager An IndexManager.
      * @param flags Flags governing behavior.  
      */
-    public static Indexer*
+    public inert Indexer*
     init(Indexer *self, Schema *schema = NULL, Obj *index, 
          IndexManager *manager = NULL, i32_t flags = 0);
 

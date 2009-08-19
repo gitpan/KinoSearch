@@ -6,7 +6,6 @@
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/IntArrays.h"
 
 TextSortCache*
 TextSortCache_new(Schema *schema, Folder *folder, Segment *segment, 
@@ -109,7 +108,7 @@ SI_fetch_offset(TextSortCache *self, u32_t ord)
         THROW(ERR, "Ordinal %u32 for %o out of bounds (num unique: %i32)", ord,
             self->field, self->num_uniq);
     }
-    return (i64_t)Math_decode_bigend_u64(offsets);
+    return (i64_t)NumUtil_decode_bigend_u64(offsets);
 }
 
 #define NULL_SENTINEL -1 

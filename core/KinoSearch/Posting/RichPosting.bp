@@ -17,10 +17,10 @@ class KinoSearch::Posting::RichPosting cnick RichPost
 
     float  *prox_boosts;
 
-    static incremented RichPosting*
+    inert incremented RichPosting*
     new(Similarity *similarity);
 
-    static RichPosting*
+    inert RichPosting*
     init(RichPosting *self, Similarity *similarity);
 
     void
@@ -50,7 +50,7 @@ class KinoSearch::Posting::RichPosting cnick RichPost
 class KinoSearch::Posting::RichPostingScorer cnick RichPostScorer
     extends KinoSearch::Posting::ScorePostingScorer {
 
-    static RichPostingScorer*
+    inert RichPostingScorer*
     init(RichPostingScorer *self, Similarity *similarity, 
          PostingList *posting_list, Compiler *compiler);
 }

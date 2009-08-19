@@ -34,7 +34,7 @@ void
 SortSpec_destroy(SortSpec *self)
 {
     DECREF(self->rules);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SORTSPEC);
 }
 
 SortSpec*

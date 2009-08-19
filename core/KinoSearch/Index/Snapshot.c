@@ -39,7 +39,7 @@ Snapshot_destroy(Snapshot *self)
 {
     DECREF(self->entries);
     DECREF(self->filename);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, SNAPSHOT);
 }
 
 void

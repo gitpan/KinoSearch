@@ -4,13 +4,13 @@ class KinoSearch::Util::I32Array cnick I32Arr extends KinoSearch::Obj {
     i32_t    *ints;
     u32_t     size;
 
-    static incremented I32Array*
+    inert incremented I32Array*
     new(i32_t *ints, u32_t size);
 
-    static incremented I32Array*
+    inert incremented I32Array*
     new_steal(i32_t *ints, u32_t size);
 
-    static I32Array*
+    inert I32Array*
     init(I32Array *self, i32_t *ints, u32_t size);
 
     /** Return the number present at the index requested.  If the requested

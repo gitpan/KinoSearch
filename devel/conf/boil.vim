@@ -19,10 +19,10 @@ syn keyword boilOperator    new init
 syn keyword boilType		char byte short int long float double size_t
 syn keyword boilType		bool_t i8_t i16_t i32_t i64_t u8_t u16_t u32_t u64_t
 syn keyword boilType		void
-syn keyword boilStorageClass static const volatile final incremented decremented
+syn keyword boilStorageClass inert const volatile inline final incremented decremented
 syn keyword boilBoolean		true false
 syn keyword boilTodo        TODO XXX FIXME
-syn keyword boilClassDecl	class static extends cnick
+syn keyword boilClassDecl	class inert extends cnick
 syn keyword boilScopeDecl	public parcel private abstract
 
 syn match   boilAnnotation      "@[_$a-zA-Z][_$a-zA-Z0-9_]*\>"

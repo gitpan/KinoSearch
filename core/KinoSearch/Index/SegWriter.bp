@@ -19,7 +19,7 @@ class KinoSearch::Index::SegWriter extends KinoSearch::Index::DataWriter {
     Hash              *by_api;
     DeletionsWriter   *del_writer;
 
-    static incremented SegWriter*
+    inert incremented SegWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
         PolyReader *polyreader);
 
@@ -32,7 +32,7 @@ class KinoSearch::Index::SegWriter extends KinoSearch::Index::DataWriter {
      * index.  (If the index is brand new, the PolyReader will have no
      * sub-readers).
      */
-    static SegWriter*
+    inert SegWriter*
     init(SegWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader);
 

@@ -25,7 +25,7 @@ class KinoSearch::Index::DataReader extends KinoSearch::Obj {
      * to, if any.  A value of -1 indicates that no Segment should be
      * assigned.
      */
-    public static DataReader*
+    public inert DataReader*
     init(DataReader *self, Schema *schema = NULL, Folder *folder = NULL,
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
          i32_t seg_tick = -1);

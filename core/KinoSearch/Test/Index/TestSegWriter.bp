@@ -1,8 +1,8 @@
 parcel KinoSearch cnick Kino;
 
-static class KinoSearch::Test::Index::TestSegWriter  {
+inert class KinoSearch::Test::Index::TestSegWriter  {
 
-    static void
+    inert void
     run_tests();
 }
 

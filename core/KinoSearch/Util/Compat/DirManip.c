@@ -31,7 +31,7 @@ chy_bool_t
 kino_DirManip_dir_ok(const kino_CharBuf *path)
 {
     struct stat sb;
-    if (stat(path->ptr, &sb) != -1) {
+    if (stat((char*)Kino_CB_Get_Ptr8(path), &sb) != -1) {
         if (sb.st_mode & S_IFDIR) return true;
     }
     return false;
@@ -40,7 +40,7 @@ kino_DirManip_dir_ok(const kino_CharBuf *path)
 void
 kino_DirManip_create_dir(const kino_CharBuf *path)
 {
-    if(-1 == chy_makedir(path->ptr, 0777)) {
+    if(-1 == chy_makedir((char*)Kino_CB_Get_Ptr8(path), 0777)) {
         KINO_THROW(KINO_ERR, "Couldn't create directory %o", path);
     }
 }

@@ -4,7 +4,6 @@
 
 #include "KinoSearch/Obj/BitVector.h"
 #include "KinoSearch/Util/I32Array.h"
-#include "KinoSearch/Util/IntArrays.h"
 
 #define BITVEC_GROW(self, num) \
     do { \
@@ -25,7 +24,7 @@ S_do_or_or_xor(BitVector *self, const BitVector *other, int operation);
 /* Clear a bit.  Caller must ensure that tick is within capacity.
  */
 #define CLEAR(self, tick) \
-    self->bits[ (tick >> 3) ] &= ~(kino_IntArr_u1masks[tick & 0x7])
+    self->bits[ (tick >> 3) ] &= ~(kino_NumUtil_u1masks[tick & 0x7])
 
 /* Number of 1 bits given a u8 value. 
  */
@@ -74,7 +73,7 @@ void
 BitVec_destroy(BitVector* self) 
 {
     FREEMEM(self->bits);
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, BITVECTOR);
 }
 
 BitVector*
@@ -84,7 +83,7 @@ BitVec_clone(BitVector *self)
     u32_t byte_size      = (u32_t)ceil(self->cap / 8.0);
 
     /* Forbid inheritance. */
-    if (self->vtable != BITVECTOR) {
+    if (Obj_Get_VTable(self) != BITVECTOR) {
         THROW(ERR, "Attempt by %o to inherit BitVec_Clone", 
             Obj_Get_Class_Name(self));
     }
@@ -131,7 +130,7 @@ void
 BitVec_set(BitVector *self, u32_t tick) 
 {
     BITVEC_GROW(self, tick);
-    IntArr_u1set(self->bits, tick);
+    NumUtil_u1set(self->bits, tick);
 }
 
 void 
@@ -154,7 +153,7 @@ BitVec_get(BitVector *self, u32_t tick)
 {
     if (tick >= self->cap)
         return false;
-    return IntArr_u1get(self->bits, tick);
+    return NumUtil_u1get(self->bits, tick);
 }
 
 static i32_t
@@ -308,19 +307,8 @@ BitVec_and_not(BitVector *self, const BitVector *other)
 void
 BitVec_flip(BitVector *self, u32_t tick) 
 {
-    const u32_t byte_offset = tick >> 3;
-    const u8_t single_bit_mask = IntArr_u1masks[ (tick % 8) ];
-    u8_t byte;
-
     BITVEC_GROW(self, tick);
-    byte = self->bits[byte_offset];
-
-    if ((byte & single_bit_mask) == single_bit_mask) /* bit is set */
-        byte &= ~single_bit_mask; /* turn off one bit */
-    else 
-        byte |= single_bit_mask; /* turn on one bit */
-
-    self->bits[byte_offset] = byte; 
+    NumUtil_u1flip(self->bits, tick);
 }
 
 void
@@ -329,26 +317,25 @@ BitVec_flip_block(BitVector *self, u32_t offset, u32_t length)
     u32_t first = offset;
     u32_t last  = offset + length - 1;
 
-    /* Proceed only if we have bits to flip. */
-    if (!length) 
-        return;
+    /* Bail if there's nothing to flip. */
+    if (!length) { return; }
 
     BITVEC_GROW(self, last);
 
     /* Flip partial bytes. */
     while (last % 8 != 0 && last > first) {
-        BitVec_flip(self, last);
+        NumUtil_u1flip(self->bits, last);
         last--;
     }
     while (first % 8 != 0 && first < last) {
-        BitVec_flip(self, first);
+        NumUtil_u1flip(self->bits, first);
         first++;
     }
 
     /* Are first and last equal? */
     if (first == last) {
         /* There's only one bit left to flip. */
-        BitVec_flip(self, last);
+        NumUtil_u1flip(self->bits, last);
     }
     /* They must be multiples of 8, then. */
     else {
@@ -358,7 +345,7 @@ BitVec_flip_block(BitVector *self, u32_t offset, u32_t length)
         u8_t *limit = self->bits + limit_tick;
 
         /* Last actually belongs to the following byte (e.g. 8, in byte 2). */
-        BitVec_flip(self, last);
+        NumUtil_u1flip(self->bits, last);
 
         /* Flip whole bytes. */
         while (bits < limit) {

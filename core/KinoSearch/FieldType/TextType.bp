@@ -14,10 +14,10 @@ class KinoSearch::FieldType::TextType extends KinoSearch::FieldType {
 class KinoSearch::Index::TermStepper::TextTermStepper
     extends KinoSearch::Index::TermStepper {
 
-    static incremented TextTermStepper*
+    inert incremented TextTermStepper*
     new();
 
-    static TextTermStepper*
+    inert TextTermStepper*
     init(TextTermStepper *self);
 
     public void 

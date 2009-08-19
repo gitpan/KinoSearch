@@ -28,7 +28,7 @@ class KinoSearch::Search::Query extends KinoSearch::Obj : dumpable {
      * subclasses which do not contribute to document scores such as NOTQuery
      * and MatchAllQuery default to 0.0 instead.
      */
-    public static Query*
+    public inert Query*
     init(Query *self, float boost = 1.0);
 
     /** Abstract factory method returning a Compiler derived from this Query.

@@ -13,7 +13,6 @@
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Search/SortRule.h"
 #include "KinoSearch/Search/SortSpec.h"
-#include "KinoSearch/Util/IntArrays.h"
 
 #define COMPARE_BY_SCORE      1
 #define COMPARE_BY_SCORE_REV  2
@@ -310,24 +309,24 @@ static INLINE i32_t
 SI_compare_by_ord1(SortCollector *self, u32_t tick, i32_t a, i32_t b)
 {
     void *const ords = self->ord_arrays[tick];
-    i32_t a_ord = IntArr_u1get(ords, a);
-    i32_t b_ord = IntArr_u1get(ords, b);
+    i32_t a_ord = NumUtil_u1get(ords, a);
+    i32_t b_ord = NumUtil_u1get(ords, b);
     return a_ord - b_ord;
 }
 static INLINE i32_t
 SI_compare_by_ord2(SortCollector *self, u32_t tick, i32_t a, i32_t b)
 {
     void *const ords = self->ord_arrays[tick];
-    i32_t a_ord = IntArr_u2get(ords, a);
-    i32_t b_ord = IntArr_u2get(ords, b);
+    i32_t a_ord = NumUtil_u2get(ords, a);
+    i32_t b_ord = NumUtil_u2get(ords, b);
     return a_ord - b_ord;
 }
 static INLINE i32_t
 SI_compare_by_ord4(SortCollector *self, u32_t tick, i32_t a, i32_t b)
 {
     void *const ords = self->ord_arrays[tick];
-    i32_t a_ord = IntArr_u4get(ords, a);
-    i32_t b_ord = IntArr_u4get(ords, b);
+    i32_t a_ord = NumUtil_u4get(ords, a);
+    i32_t b_ord = NumUtil_u4get(ords, b);
     return a_ord - b_ord;
 }
 static INLINE i32_t

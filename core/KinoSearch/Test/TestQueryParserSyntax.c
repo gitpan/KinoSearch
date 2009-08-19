@@ -241,11 +241,11 @@ TestQPSyntax_run_tests(Folder *index)
         Hits  *hits     = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
-            "tree()    %s", test_case->query_string->ptr);
+            "tree()    %s", (char*)CB_Get_Ptr8(test_case->query_string));
         ASSERT_TRUE(batch, Query_Equals(expanded, (Obj*)test_case->expanded),
-            "expand_leaf()    %s", test_case->query_string->ptr);
+            "expand_leaf()    %s", (char*)CB_Get_Ptr8(test_case->query_string));
         ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
-            "hits:    %s", test_case->query_string->ptr);
+            "hits:    %s", (char*)CB_Get_Ptr8(test_case->query_string));
         DECREF(hits);
         DECREF(parsed);
         DECREF(expanded);
@@ -261,9 +261,9 @@ TestQPSyntax_run_tests(Folder *index)
         Hits  *hits   = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
-            "tree()    %s", test_case->query_string->ptr);
+            "tree()    %s", (char*)CB_Get_Ptr8(test_case->query_string));
         ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
-            "hits:    %s", test_case->query_string->ptr);
+            "hits:    %s", (char*)CB_Get_Ptr8(test_case->query_string));
         DECREF(hits);
         DECREF(parsed);
         DECREF(tree);

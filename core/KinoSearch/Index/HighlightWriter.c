@@ -143,7 +143,9 @@ HLWriter_tv_buf(HighlightWriter *self, Inversion *inversion)
         i32_t overlap = StrHelp_string_diff(last_text, token->text, 
             last_len, token->len);
         char *ptr;
-        size_t new_size =   BB_Get_Size(tv_buf)
+        char *orig;
+        size_t old_size = BB_Get_Size(tv_buf);
+        size_t new_size =   old_size
                           + C32_MAX_BYTES      /* overlap */
                           + C32_MAX_BYTES      /* length of string diff */
                           + (token->len - overlap) /* diff char data */
@@ -151,15 +153,16 @@ HLWriter_tv_buf(HighlightWriter *self, Inversion *inversion)
                           + (C32_MAX_BYTES * freq * 3);  /* pos data */
 
         /* Allocate for worst-case scenario. */
-        BB_Grow(tv_buf, new_size);
-        ptr = BBEND(tv_buf);
+        ptr  = BB_Grow(tv_buf, new_size);
+        orig = ptr;
+        ptr += old_size;
 
         /* Track number of postings. */
         num_postings += 1;
         
         /* Append the string diff to the tv_buf. */
-        Math_encode_c32(overlap, &ptr);
-        Math_encode_c32( (token->len - overlap), &ptr);
+        NumUtil_encode_c32(overlap, &ptr);
+        NumUtil_encode_c32( (token->len - overlap), &ptr);
         memcpy(ptr, (token->text + overlap), (token->len - overlap));
         ptr += token->len - overlap;
 
@@ -168,23 +171,23 @@ HLWriter_tv_buf(HighlightWriter *self, Inversion *inversion)
         last_len  = token->len;
 
         /* Append the number of positions for this term. */
-        Math_encode_c32(freq, &ptr);
+        NumUtil_encode_c32(freq, &ptr);
 
         do {
             /* Add position, start_offset, and end_offset to tv_buf. */
-            Math_encode_c32(token->pos, &ptr);
-            Math_encode_c32(token->start_offset, &ptr);
-            Math_encode_c32(token->end_offset, &ptr);
+            NumUtil_encode_c32(token->pos, &ptr);
+            NumUtil_encode_c32(token->start_offset, &ptr);
+            NumUtil_encode_c32(token->end_offset, &ptr);
 
         } while (--freq && (token = *++tokens));
 
         /* Set new byte length. */
-        BB_Set_Size(tv_buf, ptr - tv_buf->ptr); 
+        BB_Set_Size(tv_buf, ptr - orig); 
     }
     
     /* Go back and start the term vector string with the posting count. */
-    dest = tv_buf->ptr;
-    Math_encode_padded_c32(num_postings, &dest);
+    dest = BB_Get_Buf(tv_buf);
+    NumUtil_encode_padded_c32(num_postings, &dest);
 
     return tv_buf;
 }
@@ -218,9 +221,9 @@ HLWriter_add_segment(HighlightWriter *self, SegReader *reader,
             
             /* Copy the raw record. */
             DefHLReader_Read_Record(hl_reader, orig, bb);
-            OutStream_Write_Bytes(dat_out, bb->ptr, bb->size);
+            OutStream_Write_Bytes(dat_out, BB_Get_Buf(bb), BB_Get_Size(bb));
 
-            bb->size = 0;
+            BB_Set_Size(bb, 0);
         }
         DECREF(bb);
     }

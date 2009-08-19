@@ -12,11 +12,11 @@ class KinoSearch::Search::SortRule extends KinoSearch::Obj {
     CharBuf  *field;
     bool_t    reverse;
 
-    static i32_t FIELD;
-    static i32_t SCORE;
-    static i32_t DOC_ID;
+    inert i32_t FIELD;
+    inert i32_t SCORE;
+    inert i32_t DOC_ID;
 
-    public static incremented SortRule*
+    public inert incremented SortRule*
     new(i32_t type = 0, const CharBuf *field = NULL, 
         bool_t reverse = false);
 
@@ -26,7 +26,7 @@ class KinoSearch::Search::SortRule extends KinoSearch::Obj {
      * @param field The name of a <code>sortable</code> field.
      * @param reverse If true, reverse the order of the sort for this rule.
      */
-    public static incremented SortRule*
+    public inert incremented SortRule*
     init(SortRule *self, i32_t type = 0, const CharBuf *field = NULL, 
          bool_t reverse = false);
 

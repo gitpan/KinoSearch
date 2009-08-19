@@ -84,7 +84,7 @@ Hash_destroy(Hash *self)
         Hash_clear(self);
         FREEMEM(self->entries);
     }
-    FREE_OBJ(self);
+    SUPER_DESTROY(self, HASH);
 }
 
 Hash*
@@ -205,10 +205,10 @@ Hash_deserialize(Hash *self, InStream *instream)
     /* Read key-value pairs with CharBuf keys. */
     while (num_charbufs--) {
         u32_t len = InStream_Read_C32(instream);
-        CB_Grow(key, len);
-        InStream_Read_Bytes(instream, key->ptr, len);
+        char *key_buf = CB_Grow(key, len);
+        InStream_Read_Bytes(instream, key_buf, len);
+        key_buf[len] = '\0';
         CB_Set_Size(key, len);
-        *CBEND(key) = '\0';
         Hash_Store(self, (Obj*)key, THAW(instream));
     }
     DECREF(key);

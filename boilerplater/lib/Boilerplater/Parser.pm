@@ -4,10 +4,14 @@ use warnings;
 package Boilerplater::Parser;
 use base qw( Parse::RecDescent );
 
-use Boilerplater;
+use Boilerplater::Parcel;
 use Boilerplater::Type;
-use Boilerplater::Type::Primitive;
+use Boilerplater::Type::Arbitrary;
+use Boilerplater::Type::Composite;
+use Boilerplater::Type::Float;
+use Boilerplater::Type::Integer;
 use Boilerplater::Type::Object;
+use Boilerplater::Type::VAList;
 use Boilerplater::Type::Void;
 use Boilerplater::File;
 use Boilerplater::Class;
@@ -22,7 +26,7 @@ use Carp;
 our $grammar = <<'END_GRAMMAR';
 
 file:
-    { Boilerplater::Parser->set_parcel_name(undef); 0; }
+    { Boilerplater::Parser->set_parcel(undef); 0; }
     major_block[%arg](s) eofile
     { Boilerplater::Parser->new_file( \%item, \%arg ) }
 
@@ -34,8 +38,9 @@ major_block:
 parcel_definition:
     'parcel' class_name cnick(?) ';'
     { 
-        Boilerplater::Parser->set_parcel_name( $item{class_name} );
-        Boilerplater::Parser->new_parcel( \%item ); 
+        my $parcel = Boilerplater::Parser->new_parcel( \%item );
+        Boilerplater::Parser->set_parcel($parcel);
+        $parcel;
     }
 
 class_declaration:
@@ -45,7 +50,7 @@ class_declaration:
         class_extension(?)
         class_attribute(s?)
     '{'
-        declaration[
+        declaration_statement[
             class  => $item{class_name}, 
             cnick  => $item{'cnick(?)'}[0],
             parent => $item{'class_extension(?)'}[0],
@@ -54,7 +59,7 @@ class_declaration:
     { Boilerplater::Parser->new_class( \%item, \%arg ) }
 
 class_modifier:
-      'static'
+      'inert'
     | 'abstract'
     | 'final'
     { $item[1] }
@@ -64,41 +69,34 @@ class_attribute:
     { $item[2] }
 
 class_name:
-    /[A-Z][A-Za-z0-9]+(::[A-Z][A-Za-z0-9]+)*(?!\w)/
+    object_type_specifier ( "::" object_type_specifier )(s?)
+    { join('::', $item[1], @{ $item[2] } ) }
 
 cnick:
     'cnick'
-    /([A-Za-z0-9]+)/
+    /([A-Z][A-Za-z0-9]+)(?!\w)/
     { $1 }
 
 class_extension:
     'extends' class_name
     { $item[2] }
 
-declaration:
-      var_declaration
-    | subroutine_declaration[%arg]
+declaration_statement:
+      var_declaration_statement[%arg]
+    | subroutine_declaration_statement[%arg]
     | <error>
 
-var_declaration:
+var_declaration_statement:
     exposure_specifier(?) variable_modifier(s?) type declarator ';'
     {
         $return = {
             exposure  => $item[1][0] || 'parcel',
             modifiers => $item[2],
-            declared  => Boilerplater::Parser->new_var( \%item ),
+            declared  => Boilerplater::Parser->new_var( \%item, \%arg ),
         };
     }
 
-variable:
-    type declarator
-    { Boilerplater::Parser->new_var(\%item); }
-
-assignment: 
-    '=' scalar_constant
-    { $item[2] }
-
-subroutine_declaration:
+subroutine_declaration_statement:
     docucomment(?)
     exposure_specifier(?) 
     subroutine_modifier(s?) 
@@ -124,46 +122,73 @@ param_list:
     }
 
 param_list_elem:
-    variable assignment(?)
+    param_variable assignment(?)
     { [ $item[1], $item[2][0] ] }
 
+param_variable:
+    type declarator
+    { Boilerplater::Parser->new_var(\%item); }
+
+assignment: 
+    '=' scalar_constant
+    { $item[2] }
+
 type:
+      composite_type
+    | simple_type
+    { $item[1] }
+
+simple_type:
       object_type
-    | composite_type
     | primitive_type
     | void_type
     | va_list_type
-    | generic_type
+    | arbitrary_type
     { $item[1] }
 
 object_type:
-    type_qualifier(s?) object_type_specifier /\*(?!\*)/
+    type_qualifier(s?) object_type_specifier '*'
     { Boilerplater::Parser->new_object_type(\%item); }
 
 composite_type:
-    type_qualifier(s?) type_specifier type_postfix(s)
-    { Boilerplater::Parser->new_composite_type(\%item); }
+    simple_type type_postfix(s)
+    { Boilerplater::Parser->new_composite_type(\%item) }
 
 primitive_type:
-    type_qualifier(s?) primitive_type_specifier
-    { Boilerplater::Parser->new_primitive_type(\%item); }
+      c_integer_type
+    | chy_integer_type
+    | float_type
+    { $item[1] }
+
+c_integer_type:
+    type_qualifier(s?) c_integer_specifier
+    { Boilerplater::Parser->new_integer_type(\%item) }
+
+chy_integer_type:
+    type_qualifier(s?) chy_integer_specifier
+    { Boilerplater::Parser->new_integer_type(\%item) }
+    
+float_type:
+    type_qualifier(s?) c_float_specifier
+    { Boilerplater::Parser->new_float_type(\%item) }
     
 void_type:
-    void_type_specifier
-    { Boilerplater::Type::Void->new( specifier => 'void' ) }
+    type_qualifier(s?) void_type_specifier
+    { Boilerplater::Parser->new_void_type(\%item) }
 
 va_list_type:
     va_list_type_specifier
-    { Boilerplater::Type->new( specifier => 'va_list' ) }
+    { Boilerplater::Type::VAList->new }
 
-generic_type:
-    generic_type_specifier
-    { Boilerplater::Parser->new_generic_type(\%item); }
+arbitrary_type:
+    arbitrary_type_specifier
+    { Boilerplater::Parser->new_arbitrary_type(\%item); }
 
 exposure_specifier:
       'public'
     | 'private'
     | 'parcel'
+    | 'local'
 
 type_qualifier:
       'const' 
@@ -171,13 +196,14 @@ type_qualifier:
     | 'decremented'
 
 subroutine_modifier:
-      'static'
+      'inert'
+    | 'inline'
     | 'abstract'
     | 'final'
     { $item[1] }
 
 variable_modifier:
-      'static'
+      'inert'
     { $item[1] }
 
 type_specifier:
@@ -185,7 +211,7 @@ type_specifier:
        | primitive_type_specifier
        | void_type_specifier
        | va_list_type_specifier
-       | generic_type_specifier
+       | arbitrary_type_specifier
     ) 
     { $item[1] }
 
@@ -199,18 +225,18 @@ chy_integer_specifier:
     /(?:chy_)?([iu](8|16|32|64)|bool)_t(?!\w)/
 
 c_integer_specifier:
-    /(?:char|int|short|long)(?!\w)/
+    /(?:char|int|short|long|size_t)(?!\w)/
 
 c_float_specifier:
     /(?:float|double)(?!\w)/
 
 void_type_specifier:
-    'void'
+    /void(?!\w)/
 
 va_list_type_specifier:
-    'va_list'
+    /va_list(?!\w)/
 
-generic_type_specifier:
+arbitrary_type_specifier:
     /\w+_t(?!\w)/
 
 declarator:
@@ -226,7 +252,7 @@ type_postfix:
       { "[$item[2]]" }
 
 object_type_specifier:
-    /[A-Z][A-Za-z0-9]*[a-z]+[A-Za-z0-9]*(?!\w)/
+    /[A-Z]+[A-Z0-9]*[a-z]+[A-Za-z0-9]*(?!\w)/
 
 constant_expression:
       /\d+/
@@ -273,7 +299,7 @@ string_literal:
 
 reserved_word:
     /(char|const|double|enum|extern|float|int|long|register|signed|sizeof
-       |short|static|struct|typedef|union|unsigned|void)(?!\w)/x
+       |short|inert|struct|typedef|union|unsigned|void)(?!\w)/x
     | chy_integer_specifier
 
 eofile:
@@ -283,8 +309,8 @@ END_GRAMMAR
 
 sub new { return shift->SUPER::new($grammar) }
 
-our $parcel_name = undef;
-sub set_parcel_name { $parcel_name = $_[1] }
+our $parcel = undef;
+sub set_parcel { $parcel = $_[1] }
 
 # Replace plain comments with spaces (but not docu-comments).
 sub strip_plain_comments {
@@ -297,18 +323,34 @@ sub strip_plain_comments {
     return $text;
 }
 
-sub new_primitive_type {
+sub new_integer_type {
     my ( undef, $item ) = @_;
-    my %args = ( specifier => $item->{primitive_type_specifier} );
+    my $specifier = $item->{c_integer_specifier}
+        || $item->{chy_integer_specifier};
+    my %args = ( specifier => $specifier );
     $args{$_} = 1 for @{ $item->{'type_qualifier(s?)'} };
-    return Boilerplater::Type::Primitive->new(%args);
+    return Boilerplater::Type::Integer->new(%args);
+}
+
+sub new_float_type {
+    my ( undef, $item ) = @_;
+    my %args = ( specifier => $item->{c_float_specifier} );
+    $args{$_} = 1 for @{ $item->{'type_qualifier(s?)'} };
+    return Boilerplater::Type::Float->new(%args);
+}
+
+sub new_void_type {
+    my ( undef, $item ) = @_;
+    my %args = ( specifier => $item->{void_type_specifier} );
+    $args{$_} = 1 for @{ $item->{'type_qualifier(s?)'} };
+    return Boilerplater::Type::Void->new(%args);
 }
 
 sub new_object_type {
     my ( undef, $item ) = @_;
     my %args = (
         specifier   => $item->{object_type_specifier},
-        parcel      => $parcel_name,
+        parcel      => $parcel,
         indirection => 1
     );
     $args{$_} = 1 for @{ $item->{'type_qualifier(s?)'} };
@@ -317,33 +359,40 @@ sub new_object_type {
 
 sub new_composite_type {
     my ( undef, $item ) = @_;
-    my %args = ( parcel => $parcel_name );
-    $args{$_} = 1 for @{ $item->{'type_qualifier(s?)'} };
-    $args{specifier} = $item->{type_specifier};
-    my $num_stars = 0;
+    my %args = (
+        child       => $item->{simple_type},
+        indirection => 0,
+    );
     for my $postfix ( @{ $item->{'type_postfix(s)'} } ) {
-        $args{array} = $postfix if $postfix =~ /\[/;
-        $num_stars++ if $postfix eq '*';
+        if ( $postfix =~ /\[/ ) {
+            $args{array} ||= '';
+            $args{array} .= $postfix;
+        }
+        elsif ( $postfix eq '*' ) {
+            $args{indirection}++;
+        }
     }
-    $args{indirection} = $num_stars;
-
-    return Boilerplater::Type->new(%args);
+    return Boilerplater::Type::Composite->new(%args);
 }
 
-sub new_generic_type {
+sub new_arbitrary_type {
     my ( undef, $item ) = @_;
-    return Boilerplater::Type->new(
-        specifier => $item->{generic_type_specifier},
-        parcel    => $parcel_name,
+    return Boilerplater::Type::Arbitrary->new(
+        specifier => $item->{arbitrary_type_specifier},
+        parcel    => $parcel,
     );
 }
 
 sub new_var {
-    my ( undef, $item ) = @_;
+    my ( undef, $item, $arg ) = @_;
     my $exposure = $item->{'exposure_specifier(?)'}[0];
     my %args = $exposure ? ( exposure => $exposure ) : ();
+    if ($arg) {
+        $args{class_name}  = $arg->{class} if $arg->{class};
+        $args{class_cnick} = $arg->{cnick} if $arg->{cnick};
+    }
     return Boilerplater::Variable->new(
-        parcel    => $parcel_name,
+        parcel    => $parcel,
         type      => $item->{type},
         micro_sym => $item->{declarator},
         %args,
@@ -362,16 +411,17 @@ sub new_param_list {
 }
 
 sub new_sub {
-    my ( undef, $item, $args ) = @_;
+    my ( undef, $item, $arg ) = @_;
     my ( $class, $micro_sym, $macro_name );
     my $modifiers  = $item->{'subroutine_modifier(s?)'};
     my $docu_com   = $item->{'docucomment(?)'}[0];
     my $exposure   = $item->{'exposure_specifier(?)'}[0];
-    my $static     = ( scalar grep { $_ eq 'static' } @$modifiers ) ? 1 : 0;
+    my $inert      = ( scalar grep { $_ eq 'inert' } @$modifiers ) ? 1 : 0;
+    my $inline     = ( scalar grep { $_ eq 'inline' } @$modifiers ) ? 1 : 0;
     my $abstract   = ( scalar grep { $_ eq 'abstract' } @$modifiers ) ? 1 : 0;
     my %extra_args = $exposure ? ( exposure => $exposure ) : ();
 
-    if ($static) {
+    if ($inert) {
         $class     = 'Boilerplater::Function';
         $micro_sym = $item->{declarator};
     }
@@ -389,33 +439,34 @@ sub new_sub {
     }
 
     return $class->new(
-        parcel       => $parcel_name,
+        parcel       => $parcel,
         docu_comment => $docu_com,
-        class_name   => $args->{class},
-        class_cnick  => $args->{cnick},
+        class_name   => $arg->{class},
+        class_cnick  => $arg->{cnick},
         return_type  => $item->{type},
         micro_sym    => $micro_sym,
         param_list   => $item->{param_list},
+        inline       => $inline,
         %extra_args,
     );
 }
 
 sub new_class {
-    my ( undef, $item, $args ) = @_;
-    my ( @member_vars, @static_vars, @functions, @methods );
-    my $source_class = $args->{source_class} || $item->{class_name};
+    my ( undef, $item, $arg ) = @_;
+    my ( @member_vars, @inert_vars, @functions, @methods );
+    my $source_class = $arg->{source_class} || $item->{class_name};
     my %class_modifiers
         = map { ( $_ => 1 ) } @{ $item->{'class_modifier(s?)'} };
     my %class_attributes
         = map { ( $_ => 1 ) } @{ $item->{'class_attribute(s?)'} };
 
-    for my $declaration ( @{ $item->{'declaration(s?)'} } ) {
+    for my $declaration ( @{ $item->{'declaration_statement(s?)'} } ) {
         my $declared  = $declaration->{declared};
         my $exposure  = $declaration->{exposure};
         my $modifiers = $declaration->{modifiers};
-        my $static    = ( scalar grep {/static/} @$modifiers ) ? 1 : 0;
-        my $subs      = $static ? \@functions : \@methods;
-        my $vars      = $static ? \@static_vars : \@member_vars;
+        my $inert     = ( scalar grep {/inert/} @$modifiers ) ? 1 : 0;
+        my $subs      = $inert ? \@functions : \@methods;
+        my $vars      = $inert ? \@inert_vars : \@member_vars;
 
         if ( $declared->isa('Boilerplater::Variable') ) {
             push @$vars, $declared;
@@ -430,17 +481,17 @@ sub new_class {
         ? 'Boilerplater::Class::Final'
         : 'Boilerplater::Class';
     return $class_class->create(
-        parcel            => $parcel_name,
+        parcel            => $parcel,
         class_name        => $item->{class_name},
         cnick             => $item->{'cnick(?)'}[0],
         parent_class_name => $item->{'class_extension(?)'}[0],
         member_vars       => \@member_vars,
         functions         => \@functions,
         methods           => \@methods,
-        static_vars       => \@static_vars,
+        inert_vars        => \@inert_vars,
         docu_comment      => $item->{'docucomment(?)'}[0],
         source_class      => $source_class,
-        static            => $class_modifiers{static},
+        inert             => $class_modifiers{inert},
         attributes        => \%class_attributes,
     );
 }
@@ -451,12 +502,12 @@ sub new_docucomment {
 }
 
 sub new_file {
-    my ( undef, $item, $args ) = @_;
+    my ( undef, $item, $arg ) = @_;
 
     return Boilerplater::File->new(
-        parcel       => $parcel_name,
+        parcel       => $parcel,
         blocks       => $item->{'major_block(s)'},
-        source_class => $args->{source_class},
+        source_class => $arg->{source_class},
     );
 }
 
@@ -484,16 +535,15 @@ Boilerplater::Parser - Parse Boilerplater header files.
 
 =head1 DESCRIPTION
 
-This parser class extracts Boilerplater::Class objects from .bp code.  It is
+Boilerplater::Parser is a combined lexer/parser which parses .bp code.  It is
 not at all strict, as it relies heavily on the C parser to pick up errors such
 as misspelled type names.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2009 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

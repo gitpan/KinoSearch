@@ -8,7 +8,7 @@ parcel KinoSearch cnick Kino;
  */
 class KinoSearch::Index::DocReader extends KinoSearch::Index::DataReader {
 
-    static DocReader*
+    inert DocReader*
     init(DocReader *self, Schema *schema = NULL, Folder *folder = NULL,
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
          i32_t seg_tick = -1);
@@ -35,10 +35,10 @@ class KinoSearch::Index::PolyDocReader extends KinoSearch::Index::DocReader {
     VArray   *readers;
     I32Array *offsets;
 
-    static incremented PolyDocReader*
+    inert incremented PolyDocReader*
     new(VArray *readers, I32Array *offsets);
 
-    static PolyDocReader*
+    inert PolyDocReader*
     init(PolyDocReader *self, VArray *readers, I32Array *offsets);
 
     public incremented Obj*
@@ -58,11 +58,11 @@ class KinoSearch::Index::DefaultDocReader cnick DefDocReader
     InStream    *dat_in;
     InStream    *ix_in;
 
-    static incremented DefaultDocReader*
+    inert incremented DefaultDocReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
         i32_t seg_tick);
 
-    static DefaultDocReader*
+    inert DefaultDocReader*
     init(DefaultDocReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot, VArray *segments, i32_t seg_tick);
 

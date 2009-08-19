@@ -10,9 +10,10 @@
 #include "KinoSearch/Obj/Err.h"
 #include "KinoSearch/Obj/Hash.h"
 #include "KinoSearch/Obj/VTable.h"
-#include "KinoSearch/Util/MemManager.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
+#include "KinoSearch/Util/Debug.h"
+#include "KinoSearch/Util/MemManager.h"
 
 Obj*
 Obj_init(Obj *self)
@@ -24,7 +25,9 @@ Obj_init(Obj *self)
 void
 Obj_destroy(Obj *self)
 {
-    FREE_OBJ(self);
+    IFDEF_DEBUG( kino_Debug_num_freed++; );
+    Obj_Dec_RefCount(self->vtable);
+    MemMan_wrapped_free(self);
 }
 
 i32_t

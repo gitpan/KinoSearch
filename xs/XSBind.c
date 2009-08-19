@@ -22,7 +22,7 @@ kino_XSBind_new_blank_obj(SV *either_sv)
 
     /* Get a vtable. */
     if (   sv_isobject(either_sv) 
-        && sv_derived_from(either_sv, KINO_OBJ->name->ptr)
+        && sv_derived_from(either_sv, "KinoSearch::Obj")
     ) {
         IV iv_ptr = SvIV(SvRV(either_sv));
         kino_Obj *self = INT2PTR(kino_Obj*, iv_ptr);
@@ -60,7 +60,9 @@ kino_XSBind_sv_to_kobj_or_zcb(SV *sv, kino_VTable *vtable,
     if (!sv || !kino_XSBind_sv_defined(sv)) {
         THROW(KINO_ERR, "Need a %o, but got NULL or undef", vtable->name);
     }
-    else if (sv_isobject(sv) && sv_derived_from(sv, vtable->name->ptr)) {
+    else if (   sv_isobject(sv) 
+             && sv_derived_from(sv, (char*)Kino_CB_Get_Ptr8(vtable->name))
+    ) {
         IV tmp = SvIV( SvRV(sv) );
         retval = INT2PTR(kino_Obj*, tmp);
     }
@@ -83,7 +85,9 @@ kino_XSBind_maybe_sv_to_kobj(SV *sv, kino_VTable *vtable)
 {
     kino_Obj *retval = NULL;
     if (sv && kino_XSBind_sv_defined(sv)) {
-        if (sv_isobject(sv) && sv_derived_from(sv, vtable->name->ptr)) {
+        if (   sv_isobject(sv) 
+            && sv_derived_from(sv, (char*)Kino_CB_Get_Ptr8(vtable->name))
+        ) {
             IV tmp = SvIV( SvRV(sv) );
             retval = INT2PTR(kino_Obj*, tmp);
         }
@@ -132,7 +136,9 @@ kino_XSBind_sv_to_class_name(SV* either_sv)
 SV*
 kino_XSBind_bb_to_sv(const kino_ByteBuf *bb) 
 {
-    return bb ? newSVpvn(bb->ptr, Kino_BB_Get_Size(bb)) : newSV(0);
+    return bb 
+        ? newSVpvn(Kino_BB_Get_Buf(bb), Kino_BB_Get_Size(bb)) 
+        : newSV(0);
 }
 
 SV*
@@ -140,7 +146,7 @@ kino_XSBind_cb_to_sv(const kino_CharBuf *cb)
 {
     if (!cb) return newSV(0);
     else {
-        SV *sv = newSVpvn(cb->ptr, Kino_CB_Get_Size(cb));
+        SV *sv = newSVpvn((char*)Kino_CB_Get_Ptr8(cb), Kino_CB_Get_Size(cb));
         SvUTF8_on(sv);
         return sv;
     }
@@ -208,7 +214,7 @@ kino_XSBind_perl_to_kino(SV *sv)
                 retval = (kino_Obj*)phash_to_khash((HV*)inner);
             }
             else if (   sv_isobject(sv) 
-                     && sv_derived_from(sv, KINO_OBJ->name->ptr)
+                     && sv_derived_from(sv, "KinoSearch::Obj")
             ) {
                 IV tmp = SvIV(inner);
                 retval = INT2PTR(kino_Obj*, tmp);
@@ -270,10 +276,12 @@ khash_to_phash(kino_Hash *hash)
     while (Kino_Hash_Iter_Next(hash, (kino_Obj**)&key, &val)) {
         SV *val_sv = XSBind_kobj_to_pobj(val);
         if (!KINO_OBJ_IS_A(key, KINO_CHARBUF)) {
-            KINO_THROW(KINO_ERR, "Can't convert a key of class %o to a Perl hash key",
+            KINO_THROW(KINO_ERR, 
+                "Can't convert a key of class %o to a Perl hash key",
                 Kino_Obj_Get_Class_Name(key));
         }
-        hv_store(perl_hash, key->ptr, Kino_CB_Get_Size(key), val_sv, 0);
+        hv_store(perl_hash, (char*)Kino_CB_Get_Ptr8(key), 
+            Kino_CB_Get_Size(key), val_sv, 0);
     }
 
     return newRV_noinc((SV*)perl_hash);
