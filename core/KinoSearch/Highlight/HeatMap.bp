@@ -56,6 +56,9 @@ class KinoSearch::Highlight::HeatMap extends KinoSearch::Obj {
     incremented VArray*
     Generate_Proximity_Boosts(HeatMap *self, VArray *spans);
 
+    VArray*
+    Get_Spans(HeatMap *self);
+
     void
     Destroy(HeatMap *self);
 }

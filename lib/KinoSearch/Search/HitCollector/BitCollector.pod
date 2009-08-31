@@ -22,6 +22,8 @@ KinoSearch::Search::HitCollector::BitCollector - HitCollector which records doc 
 
 =head1 DESCRIPTION
 
+HitCollector which records doc nums in a BitVector.
+
 BitCollector is a HitCollector which saves matching document ids in a
 BitVector while ignoring scores.  It is useful for recording the entire
 set of documents which matches a query.

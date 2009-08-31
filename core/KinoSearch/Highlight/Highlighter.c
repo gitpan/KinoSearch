@@ -1,3 +1,5 @@
+#define C_KINO_HIGHLIGHTER
+#define C_KINO_SPAN
 #include <ctype.h>
 #include "KinoSearch/Util/ToolSet.h"
 
@@ -151,8 +153,9 @@ S_hottest(HeatMap *heat_map)
     u32_t i;
     float max_score = 0.0f;
     i32_t retval = 0;
-    for (i = VA_Get_Size(heat_map->spans); i--; ) {
-        Span *span = (Span*)VA_Fetch(heat_map->spans, i);
+    VArray *spans = HeatMap_Get_Spans(heat_map);
+    for (i = VA_Get_Size(spans); i--; ) {
+        Span *span = (Span*)VA_Fetch(spans, i);
         if (span->weight >= max_score) {
             retval = span->offset;
             max_score = span->weight;
@@ -221,7 +224,7 @@ Highlighter_find_best_fragment(Highlighter *self, const CharBuf *field_val,
 static bool_t
 S_has_heat(HeatMap *heat_map, i32_t offset, i32_t length)
 {
-    VArray *spans     = heat_map->spans;
+    VArray *spans     = HeatMap_Get_Spans(heat_map);
     u32_t   num_spans = VA_Get_Size(spans);
     i32_t   end       = offset + length;
     u32_t   i;

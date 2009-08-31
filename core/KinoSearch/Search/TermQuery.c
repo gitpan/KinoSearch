@@ -1,3 +1,5 @@
+#define C_KINO_TERMQUERY
+#define C_KINO_TERMCOMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/TermQuery.h"
@@ -206,7 +208,7 @@ TermCompiler_make_matcher(TermCompiler *self, SegReader *reader,
 {
     TermQuery *tparent = (TermQuery*)self->parent;
     PostingsReader *post_reader = (PostingsReader*)SegReader_Fetch(reader,
-        POSTINGSREADER->name);
+        VTable_Get_Name(POSTINGSREADER));
     PostingList *plist = post_reader 
         ? PostReader_Posting_List(post_reader, tparent->field, tparent->term)
         : NULL;
@@ -240,8 +242,8 @@ TermCompiler_highlight_spans(TermCompiler *self, Searchable *searchable,
     term_vector = DocVec_Term_Vector(doc_vec, field, (CharBuf*)parent->term);
     if (!term_vector) return spans;
 
-    starts = term_vector->start_offsets;
-    ends   = term_vector->end_offsets;
+    starts = TV_Get_Start_Offsets(term_vector);
+    ends   = TV_Get_End_Offsets(term_vector);
     for (i = 0, max = I32Arr_Get_Size(starts); i < max; i++) {
         i32_t start  = I32Arr_Get(starts, i);
         i32_t length = I32Arr_Get(ends, i) - start;

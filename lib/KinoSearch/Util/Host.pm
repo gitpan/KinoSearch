@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch     PACKAGE = KinoSearch::Util::Host
 
 =for comment
@@ -38,8 +39,9 @@ _callback(obj)
     kino_Obj *obj;
 PPCODE:
 {
-    kino_CharBuf blank = KINO_ZCB_BLANK; 
-    kino_Host_callback(obj, "_test", 2, KINO_ARG_OBJ("nothing", &blank),
+    kino_ZombieCharBuf blank = KINO_ZCB_BLANK; 
+    kino_Host_callback(obj, "_test", 2, 
+        KINO_ARG_OBJ("nothing", (kino_CharBuf*)&blank),
         KINO_ARG_I32("foo", 3));
 }
 
@@ -48,9 +50,10 @@ _callback_i(obj)
     kino_Obj *obj;
 CODE:
 {
-    kino_CharBuf blank = KINO_ZCB_BLANK;
+    kino_ZombieCharBuf blank = KINO_ZCB_BLANK;
     RETVAL = kino_Host_callback_i(obj, "_test", 2, 
-        KINO_ARG_OBJ("nothing", &blank), KINO_ARG_I32("foo", 3));
+        KINO_ARG_OBJ("nothing", (kino_CharBuf*)&blank), 
+        KINO_ARG_I32("foo", 3));
 }
 OUTPUT: RETVAL
 
@@ -59,9 +62,10 @@ _callback_f(obj)
     kino_Obj *obj;
 CODE:
 {
-    kino_CharBuf blank = KINO_ZCB_BLANK;
+    kino_ZombieCharBuf blank = KINO_ZCB_BLANK;
     RETVAL = kino_Host_callback_f(obj, "_test", 2, 
-        KINO_ARG_OBJ("nothing", &blank), KINO_ARG_I32("foo", 3));
+        KINO_ARG_OBJ("nothing", (kino_CharBuf*)&blank), 
+        KINO_ARG_I32("foo", 3));
 }
 OUTPUT: RETVAL
 
@@ -75,6 +79,13 @@ CODE:
     KINO_DECREF(other);
 }
 OUTPUT: RETVAL
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch::Util::Host",
+    xs_code    => $xs_code,
+);
 
 __COPYRIGHT__
 

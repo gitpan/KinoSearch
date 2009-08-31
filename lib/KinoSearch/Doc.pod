@@ -17,6 +17,8 @@ KinoSearch::Doc - A document.
 
 =head1 DESCRIPTION
 
+A document.
+
 A Doc object is akin to a row in a database, in that it is made up of one
 or more fields, each of which has a value.
 

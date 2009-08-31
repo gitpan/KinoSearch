@@ -20,6 +20,8 @@ KinoSearch::Search::Compiler - Query-to-Matcher compiler.
 
 =head1 DESCRIPTION
 
+Query-to-Matcher compiler.
+
 The purpose of the Compiler class is to take a specification in the form of
 a Query object and compile a Matcher object that can do real work.  
 

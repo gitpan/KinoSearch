@@ -57,6 +57,9 @@ class KinoSearch::Util::MemoryPool cnick MemPool
     void
     Eat(MemoryPool *self, MemoryPool *other);
 
+    size_t
+    Get_Consumed(MemoryPool *self);
+
     void
     Destroy(MemoryPool *self);
 }

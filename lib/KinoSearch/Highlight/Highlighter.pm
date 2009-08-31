@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
@@ -28,46 +28,51 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Highlight::Highlighter" => {
-        bind_methods => [
-            qw( Highlight
-                Encode
-                Create_Excerpt
-                _find_best_fragment|Find_Best_Fragment
-                _raw_excerpt|Raw_Excerpt
-                _highlight_excerpt|Highlight_Excerpt
-                Find_Sentences
-                Set_Pre_Tag
-                Get_Pre_Tag
-                Set_Post_Tag
-                Get_Post_Tag
-                Get_Searchable
-                Get_Query
-                Get_Compiler
-                Get_Excerpt_Length
-                Get_Field )
-        ],
-        make_constructors => ["new"],
-         make_pod => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods => [
-                qw( create_excerpt
-                    highlight
-                    encode
-                    set_pre_tag
-                    get_pre_tag
-                    set_post_tag
-                    get_post_tag
-                    get_searchable
-                    get_query
-                    get_compiler
-                    get_excerpt_length
-                    get_field )
-            ]
-        },
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Highlight::Highlighter",
+    bind_methods => [
+        qw(
+            Highlight
+            Encode
+            Create_Excerpt
+            _find_best_fragment|Find_Best_Fragment
+            _raw_excerpt|Raw_Excerpt
+            _highlight_excerpt|Highlight_Excerpt
+            Find_Sentences
+            Set_Pre_Tag
+            Get_Pre_Tag
+            Set_Post_Tag
+            Get_Post_Tag
+            Get_Searchable
+            Get_Query
+            Get_Compiler
+            Get_Excerpt_Length
+            Get_Field
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [
+            qw(
+                create_excerpt
+                highlight
+                encode
+                set_pre_tag
+                get_pre_tag
+                set_post_tag
+                get_post_tag
+                get_searchable
+                get_query
+                get_compiler
+                get_excerpt_length
+                get_field
+                )
+        ]
+    },
+);
 
 __COPYRIGHT__
 

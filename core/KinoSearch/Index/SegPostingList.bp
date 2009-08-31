@@ -29,6 +29,12 @@ class KinoSearch::Index::SegPostingList cnick SegPList
     init(SegPostingList *self, PostingsReader *postings_reader, 
          const CharBuf *field);
 
+    InStream*
+    Get_Post_Stream(SegPostingList *self);
+
+    u32_t
+    Get_Count(SegPostingList *self);
+
     /* Set a base which will be added to the document id of all postings.
      * 
      * This should not be called after Seek.
@@ -57,7 +63,7 @@ class KinoSearch::Index::SegPostingList cnick SegPList
     */
 
     public void
-    Seek(SegPostingList *self, Obj *target);
+    Seek(SegPostingList *self, Obj *target = NULL);
 
     /** Optimized version of Seek(), designed to speed sequential access.
      */

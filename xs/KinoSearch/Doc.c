@@ -1,3 +1,4 @@
+#define C_KINO_DOC
 #include "xs/XSBind.h"
 #include "KinoSearch/Doc.h"
 #include "KinoSearch/Store/InStream.h"

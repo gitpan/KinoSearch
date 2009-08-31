@@ -1,3 +1,4 @@
+#define C_KINO_MEMORYPOOL
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/MemoryPool.h"
@@ -79,6 +80,9 @@ S_init_arena(MemoryPool *self, size_t amount)
     self->buf   = BB_Get_Buf(bb);
     self->limit = self->buf + BB_Get_Size(bb);
 }
+
+size_t
+MemPool_get_consumed(MemoryPool *self) { return self->consumed; }
 
 void*
 MemPool_grab(MemoryPool *self, size_t amount)

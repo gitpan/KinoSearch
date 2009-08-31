@@ -4,15 +4,16 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Posting" => {
-        make_getters => [qw( doc_id )],
-#        make_pod => {
-#            synopsis => "    # Abstract base class.\n",
-#        },
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Posting",
+    bind_methods => [qw( Get_Doc_ID )],
+#    make_pod => {
+#        synopsis => "    # Abstract base class.\n",
+#    },
+);
 
 __COPYRIGHT__
 

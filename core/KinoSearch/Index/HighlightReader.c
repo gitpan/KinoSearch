@@ -1,3 +1,6 @@
+#define C_KINO_HIGHLIGHTREADER
+#define C_KINO_POLYHIGHLIGHTREADER
+#define C_KINO_DEFAULTHIGHLIGHTREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/HighlightReader.h"

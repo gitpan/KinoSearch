@@ -1,3 +1,5 @@
+#define C_KINO_ANDQUERY
+#define C_KINO_ANDCOMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/ANDQuery.h"

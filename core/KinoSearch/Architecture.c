@@ -1,3 +1,4 @@
+#define C_KINO_ARCHITECTURE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Architecture.h"

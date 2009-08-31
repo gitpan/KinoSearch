@@ -4,11 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::Inverter" => {
-        make_constructors => ["new"],
-        bind_methods => [qw(
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::Inverter",
+    bind_constructors => ["new"],
+    bind_methods      => [
+        qw(
             Get_Doc
             Iter_Init
             Next
@@ -19,10 +22,9 @@ __AUTO_XS__
             Get_Analyzer
             Get_Similarity
             Get_Inversion
-        )],
-        make_getters => [qw( schema )],
-    }
-}
+            )
+    ],
+);
 
 __COPYRIGHT__
 

@@ -4,7 +4,29 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
+
+my $xs_code = <<'END_XS_CODE';
+MODULE = KinoSearch   PACKAGE = KinoSearch::Posting::ScorePosting
+
+SV*
+get_prox(self)
+    kino_ScorePosting *self;
+CODE:
+{
+    AV *out_av            = newAV();
+    chy_u32_t *positions  = Kino_ScorePost_Get_Prox(self);
+    chy_u32_t i, max;
+
+    for (i = 0, max = Kino_ScorePost_Get_Freq(self); i < max; i++) {
+        SV *pos_sv = newSVuv(positions[i]);
+        av_push(out_av, pos_sv);
+    }
+
+    RETVAL = newRV_noinc((SV*)out_av);
+}
+OUTPUT: RETVAL
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     # ScorePosting is used indirectly, by specifying in FieldType subclass.
@@ -17,36 +39,15 @@ my $synopsis = <<'END_SYNOPSIS';
     # }
 END_SYNOPSIS
 
-{   "KinoSearch::Posting::ScorePosting" => {
-        make_constructors  => ["new"],
-        make_getters       => [qw( weight )],
-#        make_pod => {
-#            synopsis => $synopsis,
-#        }
-    }
-}
-
-__XS__
-
-MODULE = KinoSearch   PACKAGE = KinoSearch::Posting::ScorePosting
-
-SV*
-get_prox(self)
-    kino_ScorePosting *self;
-CODE:
-{
-    AV *out_av            = newAV();
-    chy_u32_t *positions  = self->prox;
-    chy_u32_t i;
-
-    for (i = 0; i < self->freq; i++) {
-        SV *pos_sv = newSVuv(positions[i]);
-        av_push(out_av, pos_sv);
-    }
-
-    RETVAL = newRV_noinc((SV*)out_av);
-}
-OUTPUT: RETVAL
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Posting::ScorePosting",
+    xs_code           => $xs_code,
+    bind_constructors => ["new"],
+#    make_pod => {
+#        synopsis => $synopsis,
+#    }
+);
 
 __COPYRIGHT__
 

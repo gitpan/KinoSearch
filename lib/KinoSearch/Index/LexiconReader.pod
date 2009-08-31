@@ -14,6 +14,8 @@ KinoSearch::Index::LexiconReader - Read Lexicon data.
 
 =head1 DESCRIPTION
 
+Read Lexicon data.
+
 LexiconReader reads term dictionary information.
 
 

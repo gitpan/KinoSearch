@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     use Sys::Hostname qw( hostname );
@@ -33,53 +33,54 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Index::IndexManager" => {
-        make_constructors => ["new"],
-        bind_methods      => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::IndexManager",
+    bind_constructors => ["new"],
+    bind_methods      => [
+        qw(
+            Recycle
+            Make_Write_Lock
+            Make_Deletion_Lock
+            Make_Merge_Lock
+            Make_Snapshot_Read_Lock
+            Highest_Seg_Num
+            Make_Snapshot_Filename
+            Set_Folder
+            Get_Folder
+            Get_Hostname
+            Set_Write_Lock_Timeout
+            Get_Write_Lock_Timeout
+            Set_Write_Lock_Interval
+            Get_Write_Lock_Interval
+            Set_Merge_Lock_Timeout
+            Get_Merge_Lock_Timeout
+            Set_Merge_Lock_Interval
+            Get_Merge_Lock_Interval
+            Set_Deletion_Lock_Timeout
+            Get_Deletion_Lock_Timeout
+            Set_Deletion_Lock_Interval
+            Get_Deletion_Lock_Interval
+            )
+    ],
+    make_pod => {
+        methods => [
             qw(
-                Recycle
-                Make_Write_Lock
-                Make_Deletion_Lock
-                Make_Merge_Lock
-                Make_Snapshot_Read_Lock
-                Highest_Seg_Num 
-                Make_Snapshot_Filename
-                Set_Folder
-                Get_Folder
-                Get_Hostname
-                Set_Write_Lock_Timeout
-                Get_Write_Lock_Timeout
-                Set_Write_Lock_Interval
-                Get_Write_Lock_Interval
-                Set_Merge_Lock_Timeout
-                Get_Merge_Lock_Timeout
-                Set_Merge_Lock_Interval
-                Get_Merge_Lock_Interval
-                Set_Deletion_Lock_Timeout
-                Get_Deletion_Lock_Timeout
-                Set_Deletion_Lock_Interval
-                Get_Deletion_Lock_Interval
+                make_write_lock
+                recycle
+                set_folder
+                get_folder
+                get_hostname
+                set_write_lock_timeout
+                get_write_lock_timeout
+                set_write_lock_interval
+                get_write_lock_interval
                 )
         ],
-        make_pod => {
-            methods => [
-                qw(
-                    make_write_lock
-                    recycle
-                    set_folder
-                    get_folder
-                    get_hostname
-                    set_write_lock_timeout
-                    get_write_lock_timeout
-                    set_write_lock_interval
-                    get_write_lock_interval
-                    )
-            ],
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        },
-    }
-}
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+    },
+);
 
 __COPYRIGHT__
 

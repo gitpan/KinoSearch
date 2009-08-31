@@ -1,3 +1,4 @@
+#define C_KINO_MATCHALLQUERY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/MatchAllQuery.h"

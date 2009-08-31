@@ -4,30 +4,30 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Store::Folder" => {
-        bind_methods => [
-            qw( Open_Out
-                Open_In
-                MkDir
-                List
-                Exists
-                Rename
-                Hard_Link
-                Delete 
-                Finish_Segment
-                Slurp_File
-                Close
-                )
-        ],
-        make_constructors => ["new"],
-        make_getters => [qw( path )],
-        make_pod => {
-            synopsis => "    # Abstract base class.\n",
-        },
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Store::Folder",
+    bind_methods => [
+        qw(
+            Open_Out
+            Open_In
+            MkDir
+            List
+            Exists
+            Rename
+            Hard_Link
+            Delete
+            Finish_Segment
+            Slurp_File
+            Close
+            Get_Path
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => { synopsis => "    # Abstract base class.\n", },
+);
 
 __COPYRIGHT__
 

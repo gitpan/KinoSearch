@@ -1,3 +1,4 @@
+#define C_KINO_PRIORITYQUEUE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <string.h>

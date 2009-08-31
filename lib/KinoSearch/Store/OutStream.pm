@@ -4,19 +4,18 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch     PACKAGE = KinoSearch::Store::OutStream
 
 SV*
-new(class_name, file_des)
-    kino_ClassNameBuf class_name;
+new(either_sv, file_des)
+    SV           *either_sv;
     kino_FileDes *file_des;
 CODE:
 {
-    kino_VTable *vtable 
-        = kino_VTable_singleton((kino_CharBuf*)&class_name, NULL);
-    kino_OutStream *self = (kino_OutStream*)Kino_VTable_Make_Obj(vtable);
+    kino_OutStream *self = (kino_OutStream*)XSBind_new_blank_obj(either_sv);
     kino_OutStream_init(self, file_des);
     KOBJ_TO_SV_NOINC(self, RETVAL);
 }
@@ -57,8 +56,7 @@ PPCODE:
     char *ptr = SvPV(aSV, len);
     Kino_OutStream_Write_Bytes(self, ptr, len);
 }
-
-__AUTO_XS__
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';    # Don't use this yet.
     my $outstream = $folder->open_out($filename) 
@@ -66,29 +64,30 @@ my $synopsis = <<'END_SYNOPSIS';    # Don't use this yet.
     $outstream->write_u64($file_position);
 END_SYNOPSIS
 
-{   "KinoSearch::Store::OutStream" => {
-        bind_methods => [
-            qw(
-                Tell
-                Length
-                Flush
-                Close
-                Absorb
-                Write_I8
-                Write_I32
-                Write_I64
-                Write_U8
-                Write_U32
-                Write_U64
-                Write_C32
-                Write_C64
-                Write_F32
-                Write_F64
-                )
-        ],
-        make_getters => [qw( file_des )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Store::OutStream",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw(
+            Tell
+            Length
+            Flush
+            Close
+            Absorb
+            Write_I8
+            Write_I32
+            Write_I64
+            Write_U8
+            Write_U32
+            Write_U64
+            Write_C32
+            Write_C64
+            Write_F32
+            Write_F64
+            )
+    ],
+);
 
 __COPYRIGHT__
 

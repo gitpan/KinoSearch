@@ -1,3 +1,4 @@
+#define C_KINO_MATCHALLSCORER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/MatchAllScorer.h"

@@ -1,3 +1,4 @@
+#define C_KINO_NUMERICTYPE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/FieldType/NumericType.h"

@@ -1,3 +1,4 @@
+#define C_KINO_I32ARRAY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/I32Array.h"

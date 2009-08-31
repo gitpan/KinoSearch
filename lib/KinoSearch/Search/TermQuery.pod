@@ -17,6 +17,8 @@ KinoSearch::Search::TermQuery - Query which matches individual terms.
 
 =head1 DESCRIPTION
 
+Query which matches individual terms.
+
 TermQuery is a subclass of L<KinoSearch::Search::Query> for matching
 individual terms in a specific field.
 

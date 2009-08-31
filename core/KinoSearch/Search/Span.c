@@ -1,3 +1,4 @@
+#define C_KINO_SPAN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/Span.h"

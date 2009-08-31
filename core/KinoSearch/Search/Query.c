@@ -1,3 +1,4 @@
+#define C_KINO_QUERY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/Query.h"

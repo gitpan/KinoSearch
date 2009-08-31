@@ -1,3 +1,5 @@
+#define C_KINO_INSTREAM
+#define C_KINO_FILEWINDOW
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/InStream.h"

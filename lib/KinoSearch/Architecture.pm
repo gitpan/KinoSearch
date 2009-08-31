@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     package MyArchitecture;
@@ -51,38 +51,39 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Architecture" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Architecture",
+    bind_methods => [
+        qw(
+            Index_Interval
+            Skip_Interval
+            Init_Seg_Reader
+            Register_Doc_Writer
+            Register_Doc_Reader
+            Register_Deletions_Writer
+            Register_Deletions_Reader
+            Register_Lexicon_Reader
+            Register_Postings_Writer
+            Register_Postings_Reader
+            Register_Sort_Writer
+            Register_Sort_Reader
+            Register_Highlight_Writer
+            Register_Highlight_Reader
+            Make_Similarity
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis => $synopsis,
+        methods  => [
             qw(
-                Index_Interval
-                Skip_Interval
-                Init_Seg_Reader
-                Register_Doc_Writer
-                Register_Doc_Reader
-                Register_Deletions_Writer
-                Register_Deletions_Reader
-                Register_Lexicon_Reader
-                Register_Postings_Writer
-                Register_Postings_Reader
-                Register_Sort_Writer
-                Register_Sort_Reader
-                Register_Highlight_Writer
-                Register_Highlight_Reader
-                Make_Similarity
+                register_doc_writer
+                register_doc_reader
                 )
         ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis => $synopsis,
-            methods  => [
-                qw(
-                    register_doc_writer
-                    register_doc_reader
-                    )
-            ],
-        }
     }
-}
+);
 
 __COPYRIGHT__
 

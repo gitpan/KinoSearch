@@ -1,3 +1,4 @@
+#define C_KINO_FILEDES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/FileDes.h"

@@ -1,3 +1,4 @@
+#define C_KINO_BBSORTEX
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test/Util/BBSortEx.h"

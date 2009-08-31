@@ -1,3 +1,5 @@
+#define C_KINO_SORTREADER
+#define C_KINO_DEFAULTSORTREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SortReader.h"

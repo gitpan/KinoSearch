@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $constructor = <<'END_CONSTRUCTOR';
     my $heat_map = KinoSearch::Highlight::HeatMap->new(
@@ -13,19 +13,27 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Highlight::HeatMap" => {
-        bind_methods => [
-            qw(
-                Calc_Proximity_Boost
-                Generate_Proximity_Boosts
-                Flatten_Spans
-                )
-        ],
-        make_getters      => [qw( spans window )],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => "    # TODO.\n",
-            constructor => { sample => $constructor },
-        },
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Highlight::HeatMap",
+    bind_methods => [
+        qw(
+            Calc_Proximity_Boost
+            Generate_Proximity_Boosts
+            Flatten_Spans
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => "    # TODO.\n",
+        constructor => { sample => $constructor },
+    },
+);
+
+__COPYRIGHT__
+
+Copyright 2005-2009 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify
+under the same terms as Perl itself.
+

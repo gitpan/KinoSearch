@@ -1,3 +1,5 @@
+#define C_KINO_STEMMER
+#define C_KINO_TOKEN
 #include <ctype.h>
 #include "KinoSearch/Util/ToolSet.h"
 

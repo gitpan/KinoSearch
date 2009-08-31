@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     # Matcher is an abstract base class -- see MockScorer for an example
@@ -15,16 +15,17 @@ my $constructor = <<'END_CONSTRUCTOR_CODE_SAMPLE';
     my $matcher = MyMatcher->SUPER::new;
 END_CONSTRUCTOR_CODE_SAMPLE
 
-{   "KinoSearch::Search::Matcher" => {
-        bind_methods      => [qw( Next Advance Get_Doc_ID Score Collect )],
-        make_constructors => ["new"],
-        make_pod => {
-            synopsis => $synopsis,
-            constructor => { sample => $constructor },
-            methods => [qw( next advance get_doc_id score )],
-        }
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::Matcher",
+    bind_methods      => [qw( Next Advance Get_Doc_ID Score Collect )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [qw( next advance get_doc_id score )],
     }
-}
+);
 
 __COPYRIGHT__
 

@@ -1,3 +1,4 @@
+#define C_KINO_DIRMANIP
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

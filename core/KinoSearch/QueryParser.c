@@ -1,3 +1,7 @@
+#define C_KINO_QUERYPARSER
+#define C_KINO_PARSERCLAUSE
+#define C_KINO_PARSERTOKEN
+#define C_KINO_VIEWCHARBUF
 #include <stdlib.h>
 #include <ctype.h>
 #include "KinoSearch/Util/ToolSet.h"

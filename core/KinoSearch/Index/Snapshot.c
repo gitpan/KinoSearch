@@ -1,3 +1,4 @@
+#define C_KINO_SNAPSHOT
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/Snapshot.h"

@@ -1,3 +1,5 @@
+#define C_KINO_REQUIREDOPTIONALQUERY
+#define C_KINO_REQUIREDOPTIONALCOMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/RequiredOptionalQuery.h"

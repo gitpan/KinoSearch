@@ -1,3 +1,5 @@
+#define C_KINO_OBJ
+#define C_KINO_VTABLE
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 

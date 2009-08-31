@@ -37,6 +37,9 @@ class KinoSearch::Posting cnick Post extends KinoSearch::Util::Stepper {
     public void
     Set_Doc_ID(Posting *self, i32_t doc_id);
 
+    public i32_t 
+    Get_Doc_ID(Posting *self);
+
     /** Factory method for creating a Matcher.
      */
     abstract incremented Matcher*

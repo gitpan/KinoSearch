@@ -4,14 +4,15 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Analysis::Analyzer" => {
-        bind_methods      => [ qw( Transform Transform_Text Split ) ],
-        make_constructors => ["new"],
-        make_pod          => { synopsis => "    # Abstract base class.\n", }
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Analysis::Analyzer",
+    bind_methods      => [qw( Transform Transform_Text Split )],
+    bind_constructors => ["new"],
+    make_pod          => { synopsis => "    # Abstract base class.\n", }
+);
 
 __COPYRIGHT__
 

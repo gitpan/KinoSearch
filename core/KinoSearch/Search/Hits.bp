@@ -8,6 +8,7 @@ class KinoSearch::Search::Hits extends KinoSearch::Obj {
 
     Searchable *searchable;
     TopDocs    *top_docs;
+    VArray     *match_docs;
     u32_t       offset;
 
     inert incremented Hits*

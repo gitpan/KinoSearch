@@ -16,11 +16,11 @@ sub new {
 sub add_dumpables {
     my ( $self, $class ) = @_;
     confess( $class->get_class_name . " isn't dumpable" )
-        unless $class->is('dumpable');
+        unless $class->has_attribute('dumpable');
 
     # Inherit Dump/Load from parent if no novel member vars.
     my $parent = $class->get_parent;
-    if ( $parent and $parent->is('dumpable') ) {
+    if ( $parent and $parent->has_attribute('dumpable') ) {
         return unless scalar $class->novel_member_vars;
     }
 
@@ -42,7 +42,7 @@ sub _make_method_obj {
         parcel      => $class->get_parcel,
     );
     my $self_type = Boilerplater::Type::Object->new(
-        specifier   => $class->get_struct_name,
+        specifier   => $class->get_struct_sym,
         indirection => 1,
         parcel      => $class->get_parcel,
     );
@@ -78,7 +78,7 @@ sub _make_method_obj {
         class_name  => $class->get_class_name,
         class_cnick => $class->get_cnick,
         param_list  => $param_list,
-        macro_name  => $dump_or_load,
+        macro_sym   => $dump_or_load,
         exposure    => 'public',
     );
 }
@@ -88,14 +88,14 @@ sub _add_dump_method {
     my $method = $self->_make_method_obj( $class, 'Dump' );
     $class->add_method($method);
     my $full_func_sym = $method->full_func_sym;
-    my $full_struct   = 'kino_' . $class->get_struct_name;
+    my $full_struct   = $class->full_struct_sym;
     my $autocode;
     my @members;
     my $parent = $class->get_parent;
 
-    if ( $parent and $parent->is('dumpable') ) {
+    if ( $parent and $parent->has_attribute('dumpable') ) {
         my $super_dump = 'kino_' . $parent->get_cnick . '_dump';
-        my $super_type = 'kino_' . $parent->get_struct_name;
+        my $super_type = $parent->full_struct_sym;
         $autocode = <<END_STUFF;
 kino_Obj*
 $full_func_sym($full_struct *self)
@@ -113,7 +113,7 @@ $full_func_sym($full_struct *self)
     Kino_Hash_Store_Str(dump, "_class", 6,
         (kino_Obj*)Kino_CB_Clone(Kino_Obj_Get_Class_Name(self)));
 END_STUFF
-        @members = $class->get_member_vars;
+        @members = $class->member_vars;
         shift @members;    # skip self->vtable
         shift @members;    # skip refcount self->ref
     }
@@ -155,14 +155,14 @@ sub _add_load_method {
     my $method = $self->_make_method_obj( $class, 'Load' );
     $class->add_method($method);
     my $full_func_sym = $method->full_func_sym;
-    my $full_struct   = 'kino_' . $class->get_struct_name;
+    my $full_struct   = $class->full_struct_sym;
     my $autocode;
     my @members;
     my $parent = $class->get_parent;
 
-    if ( $parent and $parent->is('dumpable') ) {
+    if ( $parent and $parent->has_attribute('dumpable') ) {
         my $super_load = 'kino_' . $parent->get_cnick . '_load';
-        my $super_type = 'kino_' . $parent->get_struct_name;
+        my $super_type = $parent->full_struct_sym;
         $autocode = <<END_STUFF;
 kino_Obj*
 $full_func_sym($full_struct *self, kino_Obj *dump)
@@ -186,7 +186,7 @@ $full_func_sym($full_struct *self, kino_Obj *dump)
     $full_struct *loaded = ($full_struct*)Kino_VTable_Make_Obj(vtable);
     CHY_UNUSED_VAR(self);
 END_STUFF
-        @members = $class->get_member_vars;
+        @members = $class->member_vars;
         shift @members;    # skip self->vtable
         shift @members;    # skip refcount self->ref
     }
@@ -200,17 +200,17 @@ END_STUFF
 
 sub _process_load_member {
     my ( $self, $class, $member ) = @_;
-    my $type        = $member->get_type;
-    my $type_str    = $type->to_c;
-    my $name        = $member->micro_sym;
-    my $len         = length($name);
-    my $struct_name = $type->get_specifier;
-    my $vtable_var  = uc($struct_name);
+    my $type       = $member->get_type;
+    my $type_str   = $type->to_c;
+    my $name       = $member->micro_sym;
+    my $len        = length($name);
+    my $struct_sym = $type->get_specifier;
+    my $vtable_var = uc($struct_sym);
     my $extraction
         = $type->is_integer  ? qq|($type_str)Kino_Obj_To_I64(var)|
         : $type->is_floating ? qq|($type_str)Kino_Obj_To_F64(var)|
         : $type->is_object
-        ? qq|($struct_name*)KINO_ASSERT_IS_A(Kino_Obj_Load(var, var), $vtable_var)|
+        ? qq|($struct_sym*)KINO_ASSERT_IS_A(Kino_Obj_Load(var, var), $vtable_var)|
         : confess( "Don't know how to load " . $type->get_specifier );
     return <<END_STUFF;
     {
@@ -229,6 +229,22 @@ __POD__
 =head1 NAME
 
 Boilerplater::Dumpable - Auto-generate code for "dumpable" classes.
+
+=head1 DESCRIPTION
+
+If a class declares that it has the attribute "dumpable", but does not declare
+either Dump or Load(), Boilerplater::Dumpable will attempt to auto-generate
+those methods if methods inherited from the parent class do not suffice.
+
+    class Foo::Bar extends Foo : dumpable {
+        Thing *thing;
+
+        public inert incremented Bar*
+        new();
+
+        void
+        Destroy(Bar *self);
+    }
 
 =head1 COPYRIGHT AND LICENSE
 

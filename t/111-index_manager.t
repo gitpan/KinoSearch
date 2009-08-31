@@ -5,9 +5,19 @@ package NonMergingIndexManager;
 use base qw( KinoSearch::Index::IndexManager );
 sub recycle { [] }
 
+package BogusManager;
+use base qw( KinoSearch::Index::IndexManager );
+
+# Adds a bogus dupe.
+sub recycle { 
+    my $recyclables = shift->SUPER::recycle(@_);
+    if (@$recyclables) { push @$recyclables, $recyclables->[0] }
+    return $recyclables;
+}
+
 package main;
 
-use Test::More tests => 15;
+use Test::More tests => 16;
 use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
@@ -92,3 +102,14 @@ is( $manager->get_deletion_lock_timeout, 5, "set/get deletion lock timeout" );
 $manager->set_deletion_lock_interval(6);
 is( $manager->get_deletion_lock_interval,
     6, "set/get deletion lock interval" );
+
+SKIP: {
+    skip( 1, "Known leak" ) if $ENV{KINO_VALGRIND};
+    my $indexer = KinoSearch::Indexer->new(
+        index   => $folder,
+        manager => BogusManager->new,
+    );
+    eval { $indexer->commit };
+    like( $@, qr/recycle/i, "duplicated segment via recycle triggers error" );
+}
+

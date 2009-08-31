@@ -4,25 +4,28 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
     my $doc        = $doc_reader->fetch($doc_id);
 END_SYNOPSIS
 
-{   "KinoSearch::Index::DocReader" => {
-        make_constructors => ["new"],
-        bind_methods      => [qw( Fetch )],
-        make_pod          => {
-            synopsis => $synopsis,
-            methods  => [qw( fetch aggregator )],
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DocReader",
+    bind_constructors => ["new"],
+    bind_methods      => [qw( Fetch )],
+    make_pod          => {
+        synopsis => $synopsis,
+        methods  => [qw( fetch aggregator )],
     },
-    "KinoSearch::Index::DefaultDocReader" => { 
-        make_constructors => ["new"], 
-    }
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DefaultDocReader",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

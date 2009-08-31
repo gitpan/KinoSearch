@@ -1,3 +1,5 @@
+#define C_KINO_DELETIONSWRITER
+#define C_KINO_DEFAULTDELETIONSWRITER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <math.h>
@@ -86,7 +88,7 @@ DefDelWriter_init(DefaultDeletionsWriter *self, Schema *schema,
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
         BitVector *bit_vec    = BitVec_new(SegReader_Doc_Max(seg_reader));
         DeletionsReader *del_reader = (DeletionsReader*)SegReader_Fetch(
-            seg_reader, DELETIONSREADER->name);
+            seg_reader, VTable_Get_Name(DELETIONSREADER));
         Matcher *seg_dels = del_reader 
                           ? DelReader_Iterator(del_reader) : NULL;
 
@@ -149,7 +151,8 @@ DefDelWriter_finish(DefaultDeletionsWriter *self)
             BitVec_Grow(deldocs, new_max);
 
             /* Write deletions data and clean up. */
-            OutStream_Write_Bytes(outstream, (char*)deldocs->bits, byte_size);
+            OutStream_Write_Bytes(outstream,
+                (char*)BitVec_Get_Raw_Bits(deldocs), byte_size);
             OutStream_Close(outstream);
             DECREF(outstream);
             DECREF(filename);
@@ -208,7 +211,7 @@ DefDelWriter_seg_deletions(DefaultDeletionsWriter *self,
 
     if (tick_obj) {
         DeletionsReader *del_reader = (DeletionsReader*)SegReader_Obtain(
-            candidate, DELETIONSREADER->name);
+            candidate, VTable_Get_Name(DELETIONSREADER));
         if (self->updated[tick] || DelReader_Del_Count(del_reader)) {
             BitVector *deldocs = (BitVector*)VA_Fetch(self->bit_vecs, tick);
             deletions = (Matcher*)BitVecMatcher_new(deldocs);
@@ -241,7 +244,7 @@ DefDelWriter_delete_by_term(DefaultDeletionsWriter *self,
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
         PostingsReader *post_reader = (PostingsReader*)SegReader_Fetch(
-            seg_reader, POSTINGSREADER->name);
+            seg_reader, VTable_Get_Name(POSTINGSREADER));
         BitVector *bit_vec = (BitVector*)VA_Fetch(self->bit_vecs, i);
         PostingList *plist = post_reader 
             ? PostReader_Posting_List(post_reader, field, term) : NULL;
@@ -370,8 +373,9 @@ S_zap_segment(DefaultDeletionsWriter *self, SegReader *reader,
                          * new file to be written out. */
                         i32_t count = (i32_t)Obj_To_I64(
                             Hash_Fetch_Str(mini_meta, "count", 5));
-                        DeletionsReader *del_reader = (DeletionsReader*)
-                            SegReader_Obtain(candidate, DELETIONSREADER->name);
+                        DeletionsReader *del_reader 
+                            = (DeletionsReader*) SegReader_Obtain(candidate,
+                                VTable_Get_Name(DELETIONSREADER));
                         if (count == DelReader_Del_Count(del_reader)) {
                             self->updated[i] = true;
                         }

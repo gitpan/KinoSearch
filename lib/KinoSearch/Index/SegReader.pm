@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $polyreader = KinoSearch::Index::IndexReader->open(
@@ -23,15 +23,16 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Index::SegReader" => {
-        bind_methods      => [qw( Get_Seg_Name Get_Seg_Num Register )],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis => $synopsis,
-            methods  => [qw( Get_Seg_Name Get_Seg_Num )],
-        },
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::SegReader",
+    bind_methods      => [qw( Get_Seg_Name Get_Seg_Num Register )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis => $synopsis,
+        methods  => [qw( Get_Seg_Name Get_Seg_Num )],
+    },
+);
 
 __COPYRIGHT__
 

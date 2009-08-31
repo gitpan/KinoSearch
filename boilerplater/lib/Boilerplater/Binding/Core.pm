@@ -1,0 +1,202 @@
+use strict;
+use warnings;
+
+package Boilerplater::Binding::Core;
+use Boilerplater::Util qw( a_isa_b verify_args );
+use Boilerplater::Binding::Core::File;
+use File::Spec::Functions qw( catfile );
+use Fcntl;
+
+our %new_PARAMS = (
+    hierarchy => undef,
+    dest      => undef,
+    header    => '',
+    footer    => '',
+);
+
+sub new {
+    my $either = shift;
+    verify_args( \%new_PARAMS, @_ ) or confess $@;
+    my $self = bless { %new_PARAMS, @_ }, ref($either) || $either;
+
+    # Validate.
+    for (qw( dest hierarchy )) {
+        confess("Missing required param '$_'") unless defined $self->{$_};
+    }
+    confess("Not a Hierarchy")
+        unless a_isa_b( $self->{hierarchy}, "Boilerplater::Hierarchy" );
+
+    return $self;
+}
+
+sub write_all_modified {
+    my ( $self, $modified ) = @_;
+    my $hierarchy = $self->{hierarchy};
+    my $header    = $self->{header};
+    my $footer    = $self->{footer};
+    my $dest      = $self->{dest};
+
+    $modified = $hierarchy->propagate_modified($modified);
+
+    my %written;
+    for my $file ( $hierarchy->files ) {
+        next unless $file->get_modified;
+        my $source_class = $file->get_source_class;
+        next if $written{$source_class};
+        $written{$source_class} = 1;
+        Boilerplater::Binding::Core::File->write_h(
+            file     => $file,
+            dest_dir => $dest,
+            header   => $header,
+            footer   => $footer,
+        );
+        Boilerplater::Binding::Core::File->write_c(
+            file     => $file,
+            dest_dir => $dest,
+            header   => $header,
+            footer   => $footer,
+        );
+    }
+
+    return $modified;
+}
+
+sub write_boil_h {
+    my $self     = shift;
+    my @ordered  = $self->{hierarchy}->ordered_classes;
+    my $typedefs = "";
+
+    for my $class (@ordered) {
+        next if $class->inert;
+        my $full_struct = $class->full_struct_sym;
+        $typedefs .= "typedef struct $full_struct $full_struct;\n";
+    }
+    my $filepath = catfile( $self->{dest}, "boil.h" );
+    unlink $filepath;
+    sysopen( my $fh, $filepath, O_CREAT | O_EXCL | O_WRONLY )
+        or confess("Can't open '$filepath': $!");
+    print $fh <<END_STUFF;
+$self->{header}
+#ifndef BOIL_H
+#define BOIL_H 1
+
+#include <stddef.h>
+#include "charmony.h"
+
+$typedefs
+
+/* Refcount / host object */
+typedef union {
+    size_t  count;
+    void   *host_obj;
+} boil_ref_t;
+
+/* Generic method pointer.
+ */
+typedef void
+(*boil_method_t)(const void *vself);
+
+/* Access the function pointer for a given method from the vtable.
+ */
+#define KINO_METHOD(_vtable, _class_nick, _meth_name) \\
+     kino_method(_vtable, \\
+     Kino_ ## _class_nick ## _ ## _meth_name ## _OFFSET)
+
+static CHY_INLINE boil_method_t
+kino_method(const void *vtable, size_t offset) 
+{
+    union { char *cptr; boil_method_t *fptr; } ptr;
+    ptr.cptr = (char*)vtable + offset;
+    return ptr.fptr[0];
+}
+
+/* Access the function pointer for the given method in the superclass's
+ * vtable. */
+#define KINO_SUPER_METHOD(_vtable, _class_nick, _meth_name) \\
+     kino_super_method(_vtable, \\
+     Kino_ ## _class_nick ## _ ## _meth_name ## _OFFSET)
+
+extern size_t kino_VTable_offset_of_parent;
+static CHY_INLINE boil_method_t
+kino_super_method(const void *vtable, size_t offset) 
+{
+    char *vt_as_char = (char*)vtable;
+    kino_VTable **parent_ptr 
+        = (kino_VTable**)(vt_as_char + kino_VTable_offset_of_parent);
+    return kino_method(*parent_ptr, offset);
+}
+
+/* Return a boolean indicating whether a method has been overridden.
+ */
+#define KINO_OVERRIDDEN(_self, _class_nick, _meth_name, _micro_name) \\
+        (kino_method(*((kino_VTable**)_self), \\
+            Kino_ ## _class_nick ## _ ## _meth_name ## _OFFSET )\\
+            != (boil_method_t)kino_ ## _class_nick ## _ ## _micro_name )
+
+#ifdef KINO_USE_SHORT_NAMES
+  #define METHOD                   KINO_METHOD
+  #define SUPER_METHOD             KINO_SUPER_METHOD
+  #define OVERRIDDEN               KINO_OVERRIDDEN
+#endif
+
+typedef struct kino_Callback {
+    const char    *name;
+    size_t         name_len;
+    boil_method_t  func;
+    size_t         offset;
+} kino_Callback;
+
+#define BOIL_THROW KINO_THROW
+#define BOIL_ERR   KINO_ERR
+
+#endif /* BOIL_H */
+
+$self->{footer}
+
+END_STUFF
+}
+
+1;
+
+__END__
+
+__POD__
+
+=head1 NAME
+
+Boilerplater::Binding::Core - Generate core C code for a Boilerplater::Hierarchy.
+
+=head1 METHODS
+
+=head2 new
+
+    my $binding = Boilerplater::Binding::Core->new(
+        hierarchy => $hierarchy,
+        dest      => '/path/to/autogen',    # required
+        header    => $header,               # default: ''
+        footer    => $footer,               # default: ''
+    );
+
+=over
+
+=item * B<hierarchy> - A L<Boilerplater::Hierarchy>.
+
+=item * B<dest> - The directory where C output files will be written.
+
+=item * B<header> - Text which will be prepended to each generated C file --
+typically, an "autogenerated file" warning.
+
+=item * B<footer> - Text to be appended to the end of each generated C file --
+typically copyright information.
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2008-2009 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=cut
+

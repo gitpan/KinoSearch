@@ -84,18 +84,15 @@ class KinoSearch::Util::SortExternal cnick SortEx
     void
     Add_Run(SortExternal *self, SortExRun *run);
 
+    u32_t
+    Cache_Count(SortExternal *self);
+
+    u32_t
+    Get_Num_Runs(SortExternal *self);
+
     void
     Destroy(SortExternal *self);
 }
-
-__C__
-#define KINO_SORTEX_CACHE_COUNT(_self) \
-    (_self->cache_max - _self->cache_tick)
-
-#ifdef KINO_USE_SHORT_NAMES
-  #define SORTEX_CACHE_COUNT(_self)     KINO_SORTEX_CACHE_COUNT(_self)
-#endif 
-__END_C__
 
 /* Copyright 2006-2009 Marvin Humphrey
  *

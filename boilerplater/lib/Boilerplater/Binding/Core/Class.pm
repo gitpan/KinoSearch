@@ -19,10 +19,11 @@ sub new {
         unless a_isa_b( $client, "Boilerplater::Class" );
 
     # Cache some vars.
-    $self->{class_name}   = $client->get_class_name;
-    $self->{struct_name}  = $client->get_struct_name;
-    $self->{cnick}        = $client->get_cnick;
-    $self->{source_class} = $client->get_source_class;
+    $self->{class_name}      = $client->get_class_name;
+    $self->{full_struct_sym} = $client->full_struct_sym;
+    $self->{struct_sym}      = $client->get_struct_sym;
+    $self->{cnick}           = $client->get_cnick;
+    $self->{source_class}    = $client->get_source_class;
 
     return $self;
 }
@@ -55,7 +56,7 @@ sub include_h {
 }
 
 # The name of the global VTable object for this class.
-sub vtable_var { uc( shift->{struct_name} ) }
+sub vtable_var { uc( shift->{struct_sym} ) }
 
 # The name of the global Callbacks list for this class.
 sub callbacks_var { shift->vtable_var . '_CALLBACKS' }
@@ -92,7 +93,7 @@ sub vtable_definition {
     my $self       = shift;
     my $client     = $self->{client};
     my $parent     = $client->get_parent;
-    my @methods    = $client->get_methods;
+    my @methods    = $client->methods;
     my $name_var   = $self->name_var;
     my $vtable_var = $self->vtable_var;
     my $vt         = $vtable_var . "_vt";
@@ -122,7 +123,7 @@ $PREFIX$vt_type $PREFIX$vt = {
     (${prefix}CharBuf*)&${PREFIX}$name_var,
     ${PREFIX}VTABLE_F_IMMORTAL, /* flags */
     NULL, /* "void *x" member reserved for future use */
-    sizeof(${prefix}$self->{struct_name}), /* obj_alloc_size */
+    sizeof($self->{full_struct_sym}), /* obj_alloc_size */
     offsetof(${prefix}VTable, methods) 
         + $num_methods * sizeof(boil_method_t), /* vt_alloc_size */
     (${prefix}Callback**)&${PREFIX}${vtable_var}_CALLBACKS,  /* callbacks */
@@ -139,10 +140,10 @@ sub struct_definition {
     my $self                = shift;
     my $prefix              = $self->get_prefix;
     my $member_declarations = join( "\n    ",
-        map { $_->local_declaration } $self->{client}->get_member_vars );
+        map { $_->local_declaration } $self->{client}->member_vars );
 
     return <<END_STRUCT
-struct $prefix$self->{struct_name} {
+struct $self->{full_struct_sym} {
     $member_declarations
 };
 END_STRUCT
@@ -151,16 +152,17 @@ END_STRUCT
 # Return C representation of class.
 sub to_c_header {
     my $self = shift;
-    my ( $client, $cnick, $struct_name )
-        = @{$self}{qw( client cnick struct_name )};
-    my @functions     = $client->get_functions;
-    my @methods       = $client->get_methods;
+    my $client        = $self->{client};
+    my $cnick         = $self->{cnick};
+    my @functions     = $client->functions;
+    my @methods       = $client->methods;
     my @novel_methods = $client->novel_methods;
-    my @inert_vars    = $client->get_inert_vars;
+    my @inert_vars    = $client->inert_vars;
     my $vtable_var    = $self->vtable_var;
     my $struct_def    = $self->struct_definition;
     my $prefix        = $self->get_prefix;
     my $PREFIX        = $self->get_PREFIX;
+    my $c_file_sym    = "C_" . uc( $client->full_struct_sym );
 
     # If class inherits from something, include the parent class's header.
     my $parent_include = "";
@@ -179,14 +181,16 @@ sub to_c_header {
 
     # Declare class (a.k.a. "inert") variables.
     my $inert_vars = "";
-    for my $inert_var ( $client->get_inert_vars ) {
+    for my $inert_var ( $client->inert_vars ) {
         $inert_vars .= "extern " . $inert_var->global_c . ";\n";
     }
 
     # Declare typedefs for novel methods, to ease casting.
     my $method_typedefs = '';
     for my $method (@novel_methods) {
-        $method_typedefs .= $method->typedef_dec . "\n";
+        $method_typedefs
+            .= Boilerplater::Binding::Core::Method->typedef_dec($method)
+            . "\n";
     }
 
     # Define method invocation syntax.
@@ -209,13 +213,16 @@ sub to_c_header {
     my $callback_declarations = "";
     for my $method (@novel_methods) {
         next unless $method->public || $method->abstract;
-        $callback_declarations .= $method->callback_dec . "\n";
+        $callback_declarations
+            .= Boilerplater::Binding::Core::Method->callback_dec($method);
     }
 
     # Define short names.
     my $short_names = '';
     for my $function (@functions) {
-        $short_names .= $function->short_func_sym;
+        my $short_func_sym = $function->short_sym;
+        my $full_func_sym  = $function->full_sym;
+        $short_names .= "  #define $short_func_sym $full_func_sym\n";
     }
     for my $inert_var (@inert_vars) {
         my $short_name = "$self->{cnick}_" . $inert_var->micro_sym;
@@ -223,12 +230,19 @@ sub to_c_header {
     }
     if ( !$client->inert ) {
         for my $method (@novel_methods) {
-            $short_names .= $method->short_typedef
-                unless $method->isa("Boilerplater::Method::Overridden");
-            $short_names .= $method->short_func_sym;
+            if ( !$method->isa("Boilerplater::Method::Overridden") ) {
+                my $short_typedef = $method->short_typedef;
+                my $full_typedef  = $method->full_typedef;
+                $short_names .= "  #define $short_typedef $full_typedef\n";
+            }
+            my $short_func_sym = $method->short_func_sym;
+            my $full_func_sym  = $method->full_func_sym;
+            $short_names .= "  #define $short_func_sym $full_func_sym\n";
         }
         for my $method (@methods) {
-            $short_names .= $method->short_method_macro($cnick);
+            my $short_method_sym = $method->short_method_sym($cnick);
+            my $full_method_sym  = $method->full_method_sym($cnick);
+            $short_names .= "  #define $short_method_sym $full_method_sym\n";
         }
     }
 
@@ -260,7 +274,9 @@ END_INERT
 #include "boil.h"
 $parent_include
 
+#ifdef $c_file_sym
 $struct_def
+#endif /* $c_file_sym */
 
 $inert_vars
 
@@ -287,7 +303,7 @@ $vt
 $vtable_object
 
 #ifdef ${PREFIX}USE_SHORT_NAMES
-  #define $struct_name $prefix$struct_name
+  #define $self->{struct_sym} $self->{full_struct_sym} 
   #define $vtable_var $PREFIX$vtable_var
 $short_names
 #endif /* ${PREFIX}USE_SHORT_NAMES */
@@ -317,15 +333,16 @@ sub to_c {
     my @class_callbacks;
     my %novel = map { ( $_->micro_sym => $_ ) } $client->novel_methods;
 
-    for my $method ( $client->get_methods ) {
+    for my $method ( $client->methods ) {
         my $offset = "(offsetof($vt_type, methods)"
             . " + $meth_num * sizeof(boil_method_t))";
-        my $var_name = $method->offset_var_name( $self->{cnick} );
+        my $var_name = $method->full_offset_sym( $self->{cnick} );
         $offsets .= "size_t $var_name = $offset;\n";
 
         if ( $method->abstract ) {
             if ( $novel{ $method->micro_sym } ) {
-                $callback_funcs .= $method->abstract_method_def . "\n";
+                $callback_funcs .= Boilerplater::Binding::Core::Method
+                    ->abstract_method_def($method) . "\n";
             }
         }
 
@@ -334,10 +351,15 @@ sub to_c {
         if ( $method->public or $method->abstract ) {
             my $callback_sym = $method->full_callback_sym;
             if ( $novel{ $method->micro_sym } ) {
-                $callback_funcs .= $method->callback_def . "\n";
-                my $callback_obj = $method->callback_obj( offset => $offset );
+                $callback_funcs
+                    .= Boilerplater::Binding::Core::Method->callback_def(
+                    $method)
+                    . "\n";
                 $callbacks
-                    .= "${prefix}Callback $callback_sym = $callback_obj;\n";
+                    .= Boilerplater::Binding::Core::Method->callback_obj_def(
+                    method => $method,
+                    offset => $offset,
+                    );
             }
             push @class_callbacks, "&$callback_sym";
         }

@@ -1,3 +1,5 @@
+#define C_KINO_ORMATCHER
+#define C_KINO_ORSCORER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/ORMatcher.h"

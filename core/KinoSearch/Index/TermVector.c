@@ -1,3 +1,5 @@
+#define C_KINO_TERMVECTOR
+#define C_KINO_I32ARRAY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/TermVector.h"

@@ -1,3 +1,5 @@
+#define C_KINO_RANGEQUERY
+#define C_KINO_RANGECOMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/RangeQuery.h"
@@ -184,7 +186,7 @@ RangeCompiler_make_matcher(RangeCompiler *self, SegReader *reader,
 {
     RangeQuery *parent = (RangeQuery*)self->parent;
     SortReader *sort_reader 
-        = (SortReader*)SegReader_Fetch(reader, SORTREADER->name);
+        = (SortReader*)SegReader_Fetch(reader, VTable_Get_Name(SORTREADER));
     SortCache *sort_cache = sort_reader
         ? SortReader_Fetch_Sort_Cache(sort_reader, parent->field) 
         : NULL;

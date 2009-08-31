@@ -1,3 +1,4 @@
+#define C_KINO_TESTCHARBUF
 #include "KinoSearch/Util/ToolSet.h"
 #include <stdarg.h>
 #include <string.h>

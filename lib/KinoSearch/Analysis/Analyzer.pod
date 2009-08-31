@@ -13,6 +13,8 @@ KinoSearch::Analysis::Analyzer - Tokenize/modify/filter text.
 
 =head1 DESCRIPTION
 
+Tokenize/modify/filter text.
+
 An Analyzer is a filter which processes text, transforming it from one form
 into another.  For instance, an analyzer might break up a long text into
 smaller pieces (L<Tokenizer|KinoSearch::Analysis::Tokenizer>), or it might

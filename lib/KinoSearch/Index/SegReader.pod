@@ -26,6 +26,8 @@ KinoSearch::Index::SegReader - Single-segment IndexReader.
 
 =head1 DESCRIPTION
 
+Single-segment IndexReader.
+
 SegReader interprets the data within a single segment of an index.
 
 Generally speaking, only advanced users writing subclasses which manipulate

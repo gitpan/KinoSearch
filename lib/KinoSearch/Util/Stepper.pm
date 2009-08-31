@@ -4,12 +4,13 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Util::Stepper" => {
-        bind_methods      => [qw( Read_Record )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Util::Stepper",
+    bind_methods => [qw( Read_Record )],
+);
 
 __COPYRIGHT__
 

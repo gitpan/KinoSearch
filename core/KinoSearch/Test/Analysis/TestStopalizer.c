@@ -1,3 +1,4 @@
+#define C_KINO_TESTSTOPALIZER
 #include "KinoSearch/Util/ToolSet.h"
 #include <stdarg.h>
 

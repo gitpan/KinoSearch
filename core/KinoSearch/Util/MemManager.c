@@ -1,3 +1,4 @@
+#define C_KINO_MEMMANAGER
 #include <stdlib.h>
 #include <stdio.h>
 #define KINO_USE_SHORT_NAMES

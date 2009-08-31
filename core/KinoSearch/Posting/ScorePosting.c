@@ -1,3 +1,7 @@
+#define C_KINO_SCOREPOSTING
+#define C_KINO_SCOREPOSTINGSCORER
+#define C_KINO_RAWPOSTING
+#define C_KINO_TOKEN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Posting/ScorePosting.h"
@@ -35,10 +39,11 @@ ScorePosting*
 ScorePost_init(ScorePosting *self, Similarity *sim)
 {
     MatchPost_init((MatchPosting*)self, sim);
-    self->freq        = 0;
-    self->weight      = 0.0;
-    self->prox        = NULL;
-    self->prox_cap    = 0;
+    self->norm_decoder = Sim_Get_Norm_Decoder(sim);
+    self->freq         = 0;
+    self->weight       = 0.0;
+    self->prox         = NULL;
+    self->prox_cap     = 0;
     return self;
 }
 
@@ -67,18 +72,21 @@ ScorePost_destroy(ScorePosting *self)
     SUPER_DESTROY(self, SCOREPOSTING);
 }
 
+u32_t*
+ScorePost_get_prox(ScorePosting *self) { return self->prox; }
+
 void
 ScorePost_add_inversion_to_pool(ScorePosting *self, PostingPool *post_pool, 
                                 Inversion *inversion, FieldType *type, 
                                 i32_t doc_id, float doc_boost, 
                                 float length_norm)
 {
-    MemoryPool  *mem_pool = post_pool->mem_pool;
-    Similarity  *sim = self->sim;
-    float        field_boost = doc_boost * type->boost * length_norm;
-    const u8_t   field_boost_byte  = Sim_Encode_Norm(sim, field_boost);
-    Token      **tokens;
-    u32_t        freq;
+    MemoryPool *mem_pool = PostPool_Get_Mem_Pool(post_pool);
+    Similarity *sim = self->sim;
+    float       field_boost = doc_boost * FType_Get_Boost(type) * length_norm;
+    const u8_t  field_boost_byte  = Sim_Encode_Norm(sim, field_boost);
+    Token     **tokens;
+    u32_t       freq;
 
     Inversion_Reset(inversion);
     while ( (tokens = Inversion_Next_Cluster(inversion, &freq)) != NULL ) {
@@ -140,7 +148,7 @@ ScorePost_read_record(ScorePosting *self, InStream *instream)
         self->freq = NumUtil_decode_c32(&buf);
 
     /* Decode boost/norm byte. */
-    self->weight = self->sim->norm_decoder[ *(u8_t*)buf ];
+    self->weight = self->norm_decoder[ *(u8_t*)buf ];
     buf++;
 
     /* Read positions. */

@@ -1,3 +1,4 @@
+#define C_KINO_NOTSCORER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/NOTScorer.h"

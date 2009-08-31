@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     use Scalar::Util qw( blessed );
@@ -24,12 +24,12 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   
-    "KinoSearch::Obj::Err" => {
-        bind_methods => [qw( Cat_Mess )],
-        make_pod => { synopsis => $synopsis },
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Obj::Err",
+    bind_methods => [qw( Cat_Mess )],
+    make_pod     => { synopsis => $synopsis },
+);
 
 __COPYRIGHT__
 

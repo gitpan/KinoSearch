@@ -1,3 +1,5 @@
+#define C_KINO_HASH
+#define C_KINO_ZOMBIECHARBUF
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 
@@ -134,7 +136,7 @@ Hash_load(Hash *self, Obj *dump)
             Obj_load_t load = (Obj_load_t)METHOD(vtable, Obj, Load);
             if (load == Obj_load) {
                 THROW(ERR, "Abstract method Load() not defined for %o", 
-                    vtable->name);
+                    VTable_Get_Name(vtable));
             }
             else if (load != (Obj_load_t)Hash_load) { /* stop inf loop */
                 return load(NULL, dump);

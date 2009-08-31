@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $constructor = <<'END_CONSTRUCTOR';
     package MyHitCollector;
@@ -18,26 +18,30 @@ my $constructor = <<'END_CONSTRUCTOR';
     }
 END_CONSTRUCTOR
 
-{   "KinoSearch::Search::HitCollector" => {
-        bind_methods => [
-            qw(
-                Collect
-                Set_Reader
-                Set_Base
-                Set_Matcher
-                Need_Score
-                )
-        ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => "    # Abstract base class.\n",
-            constructor => { sample => $constructor },
-            methods     => [qw( collect )],
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::HitCollector",
+    bind_methods => [
+        qw(
+            Collect
+            Set_Reader
+            Set_Base
+            Set_Matcher
+            Need_Score
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => "    # Abstract base class.\n",
+        constructor => { sample => $constructor },
+        methods     => [qw( collect )],
     },
-    "KinoSearch::Search::HitCollector::OffsetCollector" =>
-        { make_constructors => ["new"], },
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::HitCollector::OffsetCollector",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

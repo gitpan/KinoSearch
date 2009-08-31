@@ -1,3 +1,4 @@
+#define C_KINO_SERIESMATCHER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/SeriesMatcher.h"

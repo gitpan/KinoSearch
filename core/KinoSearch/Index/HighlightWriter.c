@@ -1,3 +1,6 @@
+#define C_KINO_HIGHLIGHTWRITER
+#define C_KINO_DEFAULTHIGHLIGHTWRITER
+#define C_KINO_TOKEN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <stdio.h>
@@ -125,14 +128,14 @@ HLWriter_add_inverted_doc(HighlightWriter *self, Inverter *inverter,
 ByteBuf*
 HLWriter_tv_buf(HighlightWriter *self, Inversion *inversion)
 {
-    char        *last_text = "";
-    size_t       last_len = 0;
-    ByteBuf     *tv_buf = BB_new(20 + inversion->size * 8); /* generous */
-    u32_t        num_postings = 0;
-    char        *dest;
-    Token      **tokens;
-    u32_t        freq;
-    UNUSED_VAR(self); /* heh. */
+    char     *last_text = "";
+    size_t    last_len = 0;
+    ByteBuf  *tv_buf = BB_new(20 + Inversion_Get_Size(inversion) * 8); 
+    u32_t     num_postings = 0;
+    char     *dest;
+    Token   **tokens;
+    u32_t    freq;
+    UNUSED_VAR(self);
 
     /* Leave space for a c32 indicating the number of postings. */
     BB_Set_Size(tv_buf, C32_MAX_BYTES);
@@ -204,8 +207,8 @@ HLWriter_add_segment(HighlightWriter *self, SegReader *reader,
     }
     else {
         DefaultHighlightReader *hl_reader = (DefaultHighlightReader*)
-            ASSERT_IS_A(SegReader_Obtain(reader, HIGHLIGHTREADER->name),
-            DEFAULTHIGHLIGHTREADER);
+            ASSERT_IS_A(SegReader_Obtain(reader, 
+                VTable_Get_Name(HIGHLIGHTREADER)), DEFAULTHIGHLIGHTREADER);
         OutStream *dat_out = S_lazy_init(self);
         OutStream *ix_out  = self->ix_out;
         i32_t      orig;

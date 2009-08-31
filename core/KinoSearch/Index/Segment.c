@@ -1,3 +1,4 @@
+#define C_KINO_SEGMENT
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/Segment.h"

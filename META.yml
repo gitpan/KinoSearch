@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.30_06
+version: 0.30_07
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -42,7 +42,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_06
+    version: 0.30_07
   KinoSearch::Analysis::Inversion:
     file: lib/KinoSearch.pm
   KinoSearch::Analysis::Stemmer:
@@ -125,26 +125,28 @@ no_index:
     - MANIFEST			This list of files
     - Makefile.PL
     - boilerplater/lib/Boilerplater.pm
+    - boilerplater/lib/Boilerplater/Binding/Core.pm
     - boilerplater/lib/Boilerplater/Binding/Core/Class.pm
+    - boilerplater/lib/Boilerplater/Binding/Core/File.pm
     - boilerplater/lib/Boilerplater/Binding/Core/Function.pm
     - boilerplater/lib/Boilerplater/Binding/Core/Method.pm
     - boilerplater/lib/Boilerplater/Binding/Perl.pm
+    - boilerplater/lib/Boilerplater/Binding/Perl/Class.pm
+    - boilerplater/lib/Boilerplater/Binding/Perl/Constructor.pm
+    - boilerplater/lib/Boilerplater/Binding/Perl/Method.pm
+    - boilerplater/lib/Boilerplater/Binding/Perl/Subroutine.pm
     - boilerplater/lib/Boilerplater/Binding/Perl/TypeMap.pm
-    - boilerplater/lib/Boilerplater/Binding/Perl/XSub.pm
-    - boilerplater/lib/Boilerplater/Binding/Perl/XSub/Constructor.pm
-    - boilerplater/lib/Boilerplater/Binding/Perl/XSub/Method.pm
-    - boilerplater/lib/Boilerplater/Binding/Perl/XSub/MultiAccessor.pm
+    - boilerplater/lib/Boilerplater/CBlock.pm
     - boilerplater/lib/Boilerplater/Class.pm
-    - boilerplater/lib/Boilerplater/Class/Final.pm
     - boilerplater/lib/Boilerplater/DocuComment.pm
     - boilerplater/lib/Boilerplater/Dumpable.pm
     - boilerplater/lib/Boilerplater/File.pm
     - boilerplater/lib/Boilerplater/Function.pm
+    - boilerplater/lib/Boilerplater/Hierarchy.pm
     - boilerplater/lib/Boilerplater/Method.pm
     - boilerplater/lib/Boilerplater/ParamList.pm
     - boilerplater/lib/Boilerplater/Parcel.pm
     - boilerplater/lib/Boilerplater/Parser.pm
-    - boilerplater/lib/Boilerplater/Session.pm
     - boilerplater/lib/Boilerplater/Symbol.pm
     - boilerplater/lib/Boilerplater/Type.pm
     - boilerplater/lib/Boilerplater/Type/Arbitrary.pm
@@ -177,10 +179,14 @@ no_index:
     - boilerplater/t/300-variable.t
     - boilerplater/t/301-param_list.t
     - boilerplater/t/400-class.t
-    - boilerplater/t/401-final_class.t
+    - boilerplater/t/401-c_block.t
     - boilerplater/t/402-parcel.t
-    - boilerplater/t/500-session.t
+    - boilerplater/t/403-file.t
+    - boilerplater/t/500-hierarchy.t
     - boilerplater/t/600-parser.t
+    - boilerplater/t/bpsource/Animal.bp
+    - boilerplater/t/bpsource/Animal/Dog.bp
+    - boilerplater/t/bpsource/Animal/Util.bp
     - buildlib/KinoSearch/Build.pm
     - buildlib/KinoSearch/Redacted.pm
     - buildlib/KinoSearch/Test/TestUtils.pm
@@ -597,17 +603,17 @@ no_index:
     - core/KinoSearch/Util/Compat/ProcessID.h
     - core/KinoSearch/Util/Compat/Sleep.c
     - core/KinoSearch/Util/Compat/Sleep.h
+    - core/KinoSearch/Util/Debug.bp
     - core/KinoSearch/Util/Debug.c
-    - core/KinoSearch/Util/Debug.h
+    - core/KinoSearch/Util/Freezer.bp
     - core/KinoSearch/Util/Freezer.c
-    - core/KinoSearch/Util/Freezer.h
     - core/KinoSearch/Util/I32Array.bp
     - core/KinoSearch/Util/I32Array.c
     - core/KinoSearch/Util/IndexFileNames.bp
     - core/KinoSearch/Util/IndexFileNames.c
     - core/KinoSearch/Util/Json.bp
+    - core/KinoSearch/Util/MemManager.bp
     - core/KinoSearch/Util/MemManager.c
-    - core/KinoSearch/Util/MemManager.h
     - core/KinoSearch/Util/MemoryPool.bp
     - core/KinoSearch/Util/MemoryPool.c
     - core/KinoSearch/Util/NumberUtils.bp
@@ -618,12 +624,12 @@ no_index:
     - core/KinoSearch/Util/SortExRun.c
     - core/KinoSearch/Util/SortExternal.bp
     - core/KinoSearch/Util/SortExternal.c
+    - core/KinoSearch/Util/SortUtils.bp
     - core/KinoSearch/Util/SortUtils.c
-    - core/KinoSearch/Util/SortUtils.h
     - core/KinoSearch/Util/Stepper.bp
     - core/KinoSearch/Util/Stepper.c
+    - core/KinoSearch/Util/StringHelper.bp
     - core/KinoSearch/Util/StringHelper.c
-    - core/KinoSearch/Util/StringHelper.h
     - core/KinoSearch/Util/ToolSet.h
     - devel/benchmarks/README.txt
     - devel/benchmarks/extract_reuters.plx

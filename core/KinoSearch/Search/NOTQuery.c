@@ -1,3 +1,5 @@
+#define C_KINO_NOTQUERY
+#define C_KINO_NOTCOMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/NOTQuery.h"

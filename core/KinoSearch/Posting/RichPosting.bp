@@ -42,7 +42,7 @@ class KinoSearch::Posting::RichPosting cnick RichPost
                           i32_t doc_id, float doc_boost, 
                           float length_norm);
 
-    public incremented RichPostingScorer*
+    incremented RichPostingScorer*
     Make_Matcher(RichPosting *self, Similarity *sim, PostingList *plist, 
                  Compiler *compiler, bool_t need_score);
 }

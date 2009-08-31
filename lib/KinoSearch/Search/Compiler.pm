@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     # (Compiler is an abstract base class.)
@@ -26,38 +26,39 @@ my $constructor = <<'END_CONSTRUCTOR_CODE_SAMPLE';
     );
 END_CONSTRUCTOR_CODE_SAMPLE
 
-{   "KinoSearch::Search::Compiler" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::Compiler",
+    bind_methods => [
+        qw(
+            Make_Matcher
+            Get_Parent
+            Get_Similarity
+            Get_Weight
+            Sum_Of_Squared_Weights
+            Apply_Norm_Factor
+            Normalize
+            Highlight_Spans
+            )
+    ],
+    bind_constructors => ["do_new"],
+    make_pod          => {
+        methods => [
             qw(
-                Make_Matcher
-                Get_Parent
-                Get_Similarity
-                Get_Weight
-                Sum_Of_Squared_Weights
-                Apply_Norm_Factor
-                Normalize
-                Highlight_Spans
+                make_matcher
+                get_weight
+                sum_of_squared_weights
+                apply_norm_factor
+                normalize
+                get_parent
+                get_similarity
+                highlight_spans
                 )
         ],
-        make_constructors => ["do_new"],
-        make_pod          => {
-            methods => [
-                qw(
-                    make_matcher
-                    get_weight
-                    sum_of_squared_weights
-                    apply_norm_factor
-                    normalize
-                    get_parent
-                    get_similarity
-                    highlight_spans
-                    )
-            ],
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        }
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
     }
-}
+);
 
 __COPYRIGHT__
 

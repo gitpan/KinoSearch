@@ -1,3 +1,4 @@
+#define C_KINO_DOCWRITER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DocWriter.h"
@@ -89,7 +90,7 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
     Inverter_Iter_Init(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
-        if (type->stored) num_stored++;
+        if (FType_Stored(type)) { num_stored++; }
     }
     OutStream_Write_C32(dat_out, num_stored);
 
@@ -97,7 +98,7 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
     while (Inverter_Next(inverter)) {
         /* Only store fields marked as "stored". */
         FieldType *type = Inverter_Get_Type(inverter);
-        if (type->stored) {
+        if (FType_Stored(type)) {
             CharBuf *field = Inverter_Get_Field_Name(inverter);
             Obj *value = Inverter_Get_Value(inverter);
             CB_Serialize(field, dat_out);
@@ -124,7 +125,8 @@ DocWriter_add_segment(DocWriter *self, SegReader *reader,
         OutStream     *const ix_out     = self->ix_out;
         ByteBuf       *const buffer     = BB_new(0);
         DefaultDocReader *const doc_reader = (DefaultDocReader*)ASSERT_IS_A(
-            SegReader_Obtain(reader, DOCREADER->name), DEFAULTDOCREADER);
+            SegReader_Obtain(reader, VTable_Get_Name(DOCREADER)), 
+                DEFAULTDOCREADER);
         i32_t i, max;
 
         for (i = 1, max = SegReader_Doc_Max(reader); i <= max; i++) {

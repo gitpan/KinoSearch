@@ -1,3 +1,5 @@
+#define C_KINO_INVERTER
+#define C_KINO_INVERTERENTRY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/Inverter.h"

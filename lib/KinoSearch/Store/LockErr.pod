@@ -25,6 +25,8 @@ KinoSearch::Store::LockErr - Lock exception.
 
 =head1 DESCRIPTION
 
+Lock exception. 
+
 LockErr is a subclass of Err which indicates that a file locking problem
 occurred.
 

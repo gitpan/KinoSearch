@@ -1,3 +1,5 @@
+#define C_KINO_TESTQUERYPARSERLOGIC
+#define C_KINO_TESTQUERYPARSER
 #include "KinoSearch/Util/ToolSet.h"
 #include <stdarg.h>
 #include <string.h>
@@ -613,9 +615,9 @@ S_create_index()
     u32_t i, max;
 
     for (i = 0, max = VA_Get_Size(doc_set); i < max; i++) {
-        static CharBuf field = ZCB_LITERAL("content");
+        static ZombieCharBuf field = ZCB_LITERAL("content");
         Doc *doc = Doc_new(NULL, 0);
-        Doc_Store(doc, &field, VA_Fetch(doc_set, i));
+        Doc_Store(doc, (CharBuf*)&field, VA_Fetch(doc_set, i));
         Indexer_Add_Doc(indexer, doc, 1.0f);
         DECREF(doc);
     }

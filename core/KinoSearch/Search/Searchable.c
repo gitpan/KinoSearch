@@ -1,3 +1,4 @@
+#define C_KINO_SEARCHABLE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/Searchable.h"

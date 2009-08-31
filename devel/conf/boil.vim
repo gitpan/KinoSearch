@@ -112,6 +112,9 @@ if version >= 508 || !exists("did_boil_syn_inits")
 
   BoilHiLink boilType			Type
 
+  :syntax include @cBlock syntax/c.vim
+  :syntax region cRegion start="^__C__" end="^__END_C__" contains=@cBlock
+
 endif
 
 delcommand BoilHiLink

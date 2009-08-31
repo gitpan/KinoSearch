@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $polyreader  = $del_writer->get_polyreader;
@@ -15,33 +15,37 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Index::DeletionsWriter" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Index::DeletionsWriter",
+    bind_methods => [
+        qw(
+            Generate_Doc_Map
+            Delete_By_Term
+            Delete_By_Query
+            Delete_By_Doc_ID
+            Updated
+            Seg_Deletions
+            Seg_Del_Count
+            )
+    ],
+    make_pod => {
+        synopsis => $synopsis,
+        methods  => [
             qw(
-                Generate_Doc_Map
                 Delete_By_Term
                 Delete_By_Query
-                Delete_By_Doc_ID
                 Updated
-                Seg_Deletions
                 Seg_Del_Count
                 )
         ],
-        make_pod => {
-            synopsis => $synopsis,
-            methods => [
-            qw(
-                Delete_By_Term
-                Delete_By_Query
-                Updated
-                Seg_Del_Count
-                )
-        ],
-        },
     },
-    "KinoSearch::Index::DefaultDeletionsWriter" =>
-        { make_constructors => ["new"], },
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DefaultDeletionsWriter",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

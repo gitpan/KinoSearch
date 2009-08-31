@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     while (1) {
@@ -22,11 +22,11 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   
-    "KinoSearch::Store::LockErr" => { 
-        make_pod => { synopsis => $synopsis }
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch::Store::LockErr",
+    make_pod   => { synopsis => $synopsis }
+);
 
 __COPYRIGHT__
 

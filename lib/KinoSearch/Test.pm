@@ -4,16 +4,9 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Test::TestSchema" => {
-        make_constructors => ["new"],
-    }
-}
-
-
-__XS__
-
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Test::TestUtils
 
 SV*
@@ -199,6 +192,14 @@ PPCODE:
     batch->run_test(batch);
     batch->destroy(batch);
 }
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Test::TestSchema",
+    xs_code           => $xs_code,
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

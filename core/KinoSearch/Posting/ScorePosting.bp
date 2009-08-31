@@ -10,6 +10,7 @@ class KinoSearch::Posting::ScorePosting cnick ScorePost
     extends KinoSearch::Posting::MatchPosting {
 
     float    weight;
+    float   *norm_decoder;
     u32_t   *prox;
     u32_t    prox_cap;
 
@@ -41,9 +42,12 @@ class KinoSearch::Posting::ScorePosting cnick ScorePost
     public void
     Reset(ScorePosting *self);
 
-    public incremented ScorePostingScorer*
+    incremented ScorePostingScorer*
     Make_Matcher(ScorePosting *self, Similarity *sim, PostingList *plist, 
                  Compiler *compiler, bool_t need_score);
+
+    u32_t*
+    Get_Prox(ScorePosting *self);
 }
 
 class KinoSearch::Posting::ScorePostingScorer cnick ScorePostScorer

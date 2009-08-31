@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $folder = KinoSearch::Store::FSFolder->new(
@@ -14,15 +14,16 @@ END_SYNOPSIS
 
 my $constructor = $synopsis;
 
-{   "KinoSearch::Store::FSFolder" => {
-        bind_methods      => [qw( Real_Exists )],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        },
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Store::FSFolder",
+    bind_methods      => [qw( Real_Exists )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+    },
+);
 
 __COPYRIGHT__
 

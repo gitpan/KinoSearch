@@ -15,12 +15,12 @@ use Boilerplater::Type::VAList;
 use Boilerplater::Type::Void;
 use Boilerplater::File;
 use Boilerplater::Class;
-use Boilerplater::Class::Final;
 use Boilerplater::Variable;
 use Boilerplater::ParamList;
 use Boilerplater::Function;
 use Boilerplater::Method;
 use Boilerplater::DocuComment;
+use Boilerplater::CBlock;
 use Carp;
 
 our $grammar = <<'END_GRAMMAR';
@@ -134,9 +134,8 @@ assignment:
     { $item[2] }
 
 type:
-      composite_type
-    | simple_type
-    { $item[1] }
+    simple_type type_postfix(s?)
+    { Boilerplater::Parser->simple_or_composite_type(\%item) }
 
 simple_type:
       object_type
@@ -149,10 +148,6 @@ simple_type:
 object_type:
     type_qualifier(s?) object_type_specifier '*'
     { Boilerplater::Parser->new_object_type(\%item); }
-
-composite_type:
-    simple_type type_postfix(s)
-    { Boilerplater::Parser->new_composite_type(\%item) }
 
 primitive_type:
       c_integer_type
@@ -264,13 +259,13 @@ identifier:
 
 docucomment:
     /\/\*\*.*?\*\//s
-    { Boilerplater::Parser->new_docucomment($item[1]) }
+    { Boilerplater::DocuComment->parse($item[1]) }
 
 embed_c:
     '__C__'
     /.*?(?=__END_C__)/s  
     '__END_C__'
-    { $item[2] }
+    { Boilerplater::CBlock->new( contents => $item[2] ) }
 
 scalar_constant:
       hex_constant
@@ -357,22 +352,30 @@ sub new_object_type {
     return Boilerplater::Type::Object->new(%args);
 }
 
-sub new_composite_type {
+sub simple_or_composite_type {
     my ( undef, $item ) = @_;
-    my %args = (
-        child       => $item->{simple_type},
-        indirection => 0,
-    );
-    for my $postfix ( @{ $item->{'type_postfix(s)'} } ) {
-        if ( $postfix =~ /\[/ ) {
-            $args{array} ||= '';
-            $args{array} .= $postfix;
-        }
-        elsif ( $postfix eq '*' ) {
-            $args{indirection}++;
-        }
+    my $simple_type = $item->{simple_type};
+    my $postfixes   = $item->{'type_postfix(s?)'};
+
+    if ( !@$postfixes ) {
+        return $simple_type;
     }
-    return Boilerplater::Type::Composite->new(%args);
+    else {
+        my %args = (
+            child       => $simple_type,
+            indirection => 0,
+        );
+        for my $postfix (@$postfixes) {
+            if ( $postfix =~ /\[/ ) {
+                $args{array} ||= '';
+                $args{array} .= $postfix;
+            }
+            elsif ( $postfix eq '*' ) {
+                $args{indirection}++;
+            }
+        }
+        return Boilerplater::Type::Composite->new(%args);
+    }
 }
 
 sub new_arbitrary_type {
@@ -412,41 +415,32 @@ sub new_param_list {
 
 sub new_sub {
     my ( undef, $item, $arg ) = @_;
-    my ( $class, $micro_sym, $macro_name );
+    my $class;
     my $modifiers  = $item->{'subroutine_modifier(s?)'};
-    my $docu_com   = $item->{'docucomment(?)'}[0];
+    my $docucom    = $item->{'docucomment(?)'}[0];
     my $exposure   = $item->{'exposure_specifier(?)'}[0];
-    my $inert      = ( scalar grep { $_ eq 'inert' } @$modifiers ) ? 1 : 0;
-    my $inline     = ( scalar grep { $_ eq 'inline' } @$modifiers ) ? 1 : 0;
-    my $abstract   = ( scalar grep { $_ eq 'abstract' } @$modifiers ) ? 1 : 0;
+    my $inert      = scalar grep { $_ eq 'inert' } @$modifiers;
     my %extra_args = $exposure ? ( exposure => $exposure ) : ();
 
     if ($inert) {
-        $class     = 'Boilerplater::Function';
-        $micro_sym = $item->{declarator};
+        $class = 'Boilerplater::Function';
+        $extra_args{micro_sym} = $item->{declarator};
+        $extra_args{inline} = scalar grep { $_ eq 'inline' } @$modifiers;
     }
     else {
-        my $final = ( scalar grep { $_ eq 'final' } @$modifiers ) ? 1 : 0;
-        $class      = 'Boilerplater::Method';
-        $macro_name = $item->{declarator};
-        %extra_args = (
-            %extra_args,
-            macro_name => $macro_name,
-            abstract   => $abstract,
-            final      => $final,
-        );
-        $micro_sym = lc($macro_name);
+        $class = 'Boilerplater::Method';
+        $extra_args{macro_sym} = $item->{declarator};
+        $extra_args{abstract} = scalar grep { $_ eq 'abstract' } @$modifiers;
+        $extra_args{final}    = scalar grep { $_ eq 'final' } @$modifiers;
     }
 
     return $class->new(
-        parcel       => $parcel,
-        docu_comment => $docu_com,
-        class_name   => $arg->{class},
-        class_cnick  => $arg->{cnick},
-        return_type  => $item->{type},
-        micro_sym    => $micro_sym,
-        param_list   => $item->{param_list},
-        inline       => $inline,
+        parcel      => $parcel,
+        docucomment => $docucom,
+        class_name  => $arg->{class},
+        class_cnick => $arg->{cnick},
+        return_type => $item->{type},
+        param_list  => $item->{param_list},
         %extra_args,
     );
 }
@@ -476,11 +470,7 @@ sub new_class {
         }
     }
 
-    my $class_class
-        = $class_modifiers{final}
-        ? 'Boilerplater::Class::Final'
-        : 'Boilerplater::Class';
-    return $class_class->create(
+    return Boilerplater::Class->create(
         parcel            => $parcel,
         class_name        => $item->{class_name},
         cnick             => $item->{'cnick(?)'}[0],
@@ -489,16 +479,12 @@ sub new_class {
         functions         => \@functions,
         methods           => \@methods,
         inert_vars        => \@inert_vars,
-        docu_comment      => $item->{'docucomment(?)'}[0],
+        docucomment       => $item->{'docucomment(?)'}[0],
         source_class      => $source_class,
         inert             => $class_modifiers{inert},
+        final             => $class_modifiers{final},
         attributes        => \%class_attributes,
     );
-}
-
-sub new_docucomment {
-    my ( undef, $text ) = @_;
-    return Boilerplater::DocuComment->new($text);
 }
 
 sub new_file {

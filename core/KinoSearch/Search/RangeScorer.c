@@ -1,3 +1,4 @@
+#define C_KINO_RANGESCORER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/RangeScorer.h"

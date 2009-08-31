@@ -1,3 +1,6 @@
+#define C_KINO_POSTINGSREADER
+#define C_KINO_POLYPOSTINGSREADER
+#define C_KINO_DEFAULTPOSTINGSREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PostingsReader.h"
@@ -90,7 +93,7 @@ PolyPostReader_posting_list(PolyPostingsReader *self, const CharBuf *field,
     if (type && FType_Indexed(type)) {
         PolyPostingList *plist = PolyPList_new(field, self->readers,
             self->offsets);
-        if (!plist->num_subs) {
+        if (!PolyPList_Get_Num_Subs(plist)) {
             DECREF(plist);
             return NULL;
         }

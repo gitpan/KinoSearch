@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $combined_length = $upper_span->get_length
@@ -24,30 +24,31 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Search::Span" => {
-        bind_methods => [
-            qw( Set_Offset
-                Get_Offset
-                Set_Length
-                Get_Length
-                Set_Weight
-                Get_Weight )
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::Span",
+    bind_methods => [
+        qw( Set_Offset
+            Get_Offset
+            Set_Length
+            Get_Length
+            Set_Weight
+            Get_Weight )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [
+            qw( set_offset
+                get_offset
+                set_length
+                get_length
+                set_weight
+                get_weight )
         ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods     => [
-                qw( set_offset
-                    get_offset
-                    set_length
-                    get_length
-                    set_weight
-                    get_weight )
-            ],
-        }
     }
-}
+);
 
 __COPYRIGHT__
 

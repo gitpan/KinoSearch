@@ -1,3 +1,10 @@
+#define C_KINO_POSTINGPOOL
+#define C_KINO_FRESHPOSTINGPOOL
+#define C_KINO_MERGEPOSTINGPOOL
+#define C_KINO_RAWPOSTINGLIST
+#define C_KINO_RAWLEXICON
+#define C_KINO_RAWPOSTING
+#define C_KINO_MEMORYPOOL
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PostingPool.h"
@@ -97,6 +104,9 @@ PostPool_compare(PostingPool *self, Obj **a, Obj **b)
 {
     return SI_compare_rawp(self, a, b);
 }
+
+MemoryPool*
+PostPool_get_mem_pool(PostingPool *self) { return self->mem_pool; }
 
 void
 PostPool_add_elem(PostingPool *self, Obj *elem)
@@ -343,10 +353,10 @@ MergePostPool_init(MergePostingPool *self, Schema *schema,
                    const CharBuf *field, MemoryPool *mem_pool,
                    SegReader *reader, I32Array *doc_map, i32_t doc_base)
 {
-    LexiconReader *lex_reader 
-        = (LexiconReader*)SegReader_Fetch(reader, LEXICONREADER->name);
-    PostingsReader *plist_reader 
-        = (PostingsReader*)SegReader_Fetch(reader, POSTINGSREADER->name);
+    LexiconReader *lex_reader = (LexiconReader*)SegReader_Fetch(reader,
+        VTable_Get_Name(LEXICONREADER));
+    PostingsReader *plist_reader = (PostingsReader*)SegReader_Fetch(reader, 
+        VTable_Get_Name(POSTINGSREADER));
 
     /* Init. */
     PostPool_init((PostingPool*)self, schema, field, mem_pool);
@@ -440,7 +450,7 @@ i32_t
 RawLex_doc_freq(RawLexicon *self)
 {
     TermInfo *tinfo = (TermInfo*)TermStepper_Get_Value(self->tinfo_stepper);
-    return tinfo ? tinfo->doc_freq : 0;
+    return tinfo ? TInfo_Get_Doc_Freq(tinfo) : 0;
 }
 
 /***************************************************************************/

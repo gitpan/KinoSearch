@@ -13,6 +13,8 @@ KinoSearch::Search::Searchable - Base class for searchers.
 
 =head1 DESCRIPTION
 
+Base class for searchers.
+
 Abstract base class for objects which search.  Core subclasses include
 L<KinoSearch::Searcher> and L<KinoSearch::Search::PolySearcher>.
 

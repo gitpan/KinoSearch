@@ -4,7 +4,19 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
+
+my $xs_code = <<'END_XS_CODE';
+MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Similarity     
+
+SV*
+get_norm_decoder(self)
+    kino_Similarity *self;
+CODE:
+    RETVAL = newSVpvn( (char*)Kino_Sim_Get_Norm_Decoder(self), 
+        (256 * sizeof(float)) );
+OUTPUT: RETVAL
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     package MySimilarity;
@@ -22,35 +34,26 @@ END_SYNOPSIS
 
 my $constructor = qq|    my \$sim = KinoSearch::Search::Similarity->new;\n|;
 
-{   "KinoSearch::Search::Similarity" => {
-        bind_methods => [
-            qw( IDF
-                TF
-                Encode_Norm
-                Decode_Norm
-                Query_Norm
-                Length_Norm 
-                Coord )
-        ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods     => [qw( length_norm )],
-        }
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::Similarity",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw( IDF
+            TF
+            Encode_Norm
+            Decode_Norm
+            Query_Norm
+            Length_Norm
+            Coord )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [qw( length_norm )],
     }
-}
-
-__XS__
-
-MODULE = KinoSearch    PACKAGE = KinoSearch::Search::Similarity     
-
-SV*
-get_norm_decoder(self)
-    kino_Similarity *self;
-CODE:
-    RETVAL = newSVpvn( (char*)self->norm_decoder, (256 * sizeof(float)) );
-OUTPUT: RETVAL
+);
 
 __COPYRIGHT__
 

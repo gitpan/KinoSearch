@@ -1,3 +1,4 @@
+#define C_KINO_SKIPSTEPPER
 #include <stdio.h>
 
 #include "KinoSearch/Util/ToolSet.h"

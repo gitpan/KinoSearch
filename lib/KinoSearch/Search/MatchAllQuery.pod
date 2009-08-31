@@ -9,6 +9,8 @@ KinoSearch::Search::MatchAllQuery - Query which matches all documents.
 
 =head1 DESCRIPTION
 
+Query which matches all documents.
+
 MatchAllQuery is a utility class which matches all documents.  Each match
 is assigned a score of 0.0, so that in composite queries, any document
 which matches against another part of the query will be ranked higher than

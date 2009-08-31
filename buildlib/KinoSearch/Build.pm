@@ -4,7 +4,18 @@ use warnings;
 package KinoSearch::Build;
 use base qw( Lucy::Build );
 
-BEGIN { Lucy::Build->use_kinosearch_mode }
+sub project_name {'KinoSearch'}
+sub project_nick {'Kino'}
+
+sub copyfoot {
+        return <<END_COPYFOOT;
+/* Copyright 2005-2009 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+END_COPYFOOT
+}
 
 1;
 

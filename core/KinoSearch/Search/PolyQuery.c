@@ -1,3 +1,5 @@
+#define C_KINO_POLYQUERY
+#define C_KINO_POLYCOMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/PolyQuery.h"

@@ -1,3 +1,4 @@
+#define C_KINO_SORTWRITER
 #include "KinoSearch/Util/ToolSet.h"
 #include <math.h>
 
@@ -135,8 +136,8 @@ SortWriter_add_segment(SortWriter *self, SegReader *reader, I32Array *doc_map)
     /* Proceed field-at-a-time, rather than doc-at-a-time. */
     for (i = 0, max = VA_Get_Size(fields); i < max; i++) {
         CharBuf *field = (CharBuf*)VA_Fetch(fields, i);
-        SortReader *sort_reader 
-            = (SortReader*)SegReader_Fetch(reader, SORTREADER->name);
+        SortReader *sort_reader = (SortReader*)SegReader_Fetch(reader, 
+            VTable_Get_Name(SORTREADER));
         SortCache *cache = sort_reader 
             ? SortReader_Fetch_Sort_Cache(sort_reader, field) : NULL;
         if (cache) {

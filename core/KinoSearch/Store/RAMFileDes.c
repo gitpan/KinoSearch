@@ -1,3 +1,5 @@
+#define C_KINO_RAMFILEDES
+#define C_KINO_FILEWINDOW
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <errno.h>

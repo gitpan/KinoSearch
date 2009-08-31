@@ -4,13 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::SegLexicon" => {
-        bind_methods      => [qw( Get_Term_Info Get_Field_Num )],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::SegLexicon",
+    bind_methods      => [qw( Get_Term_Info Get_Field_Num )],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

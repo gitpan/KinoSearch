@@ -1,3 +1,4 @@
+#define C_KINO_FOLDER
 #include "KinoSearch/Util/ToolSet.h"
 #include <ctype.h>
 

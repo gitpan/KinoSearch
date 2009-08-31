@@ -1,3 +1,4 @@
+#define C_KINO_VARRAY
 #include <string.h>
 #include <stdlib.h>
 

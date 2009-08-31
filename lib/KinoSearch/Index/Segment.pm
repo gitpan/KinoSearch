@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     # Index-time.
@@ -38,41 +38,42 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Index::Segment" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Index::Segment",
+    bind_methods => [
+        qw(
+            Add_Field
+            _store_metadata|Store_Metadata
+            Fetch_Metadata
+            Field_Num
+            Field_Name
+            Get_Name
+            Get_Number
+            Set_Count
+            Get_Count
+            Write_File
+            Read_File
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis => $synopsis,
+        methods  => [
             qw(
-                Add_Field
-                _store_metadata|Store_Metadata
-                Fetch_Metadata
-                Field_Num
-                Field_Name
-                Get_Name
-                Get_Number 
-                Set_Count
-                Get_Count
-                Write_File
-                Read_File
+                add_field
+                store_metadata
+                fetch_metadata
+                field_num
+                field_name
+                get_name
+                get_number
+                set_count
+                get_count
                 )
         ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis => $synopsis,
-            methods  => [
-                qw(
-                    add_field
-                    store_metadata
-                    fetch_metadata
-                    field_num
-                    field_name
-                    get_name
-                    get_number 
-                    set_count
-                    get_count
-                    )
-            ],
-        },
-    }
-}
+    },
+);
 
 __COPYRIGHT__
 

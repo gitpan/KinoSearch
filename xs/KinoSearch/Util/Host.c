@@ -1,3 +1,5 @@
+#define C_KINO_OBJ
+#define C_KINO_VTABLE
 #include "XSBind.h"
 
 #include "KinoSearch/Obj/VTable.h"
@@ -39,7 +41,7 @@ do_callback_sv(kino_Obj *obj, char *method, chy_u32_t num_args, va_list args);
                 kino_Obj* anObj = va_arg(_args, kino_Obj*); \
                 SV *arg_sv = anObj == NULL \
                     ? newSV(0) \
-                    : kino_XSBind_kobj_to_pobj(anObj); \
+                    : XSBind_kobj_to_pobj(anObj); \
                 XPUSHs( sv_2mortal(arg_sv) ); \
             } \
             break; \
@@ -61,7 +63,7 @@ kino_Host_callback(void *vobj, char *method, chy_u32_t num_args, ...)
     
     if (KINO_OBJ_IS_A(obj, KINO_VTABLE)) {
         vtable  = (kino_VTable*)obj;
-        invoker = XSBind_cb_to_sv(vtable->name);
+        invoker = XSBind_cb_to_sv(Kino_VTable_Get_Name(vtable));
     }
     else {
         vtable  = obj->vtable;

@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     package MyQueryParser;
@@ -31,16 +31,17 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Search::LeafQuery" => {
-        bind_methods => [qw( Get_Field Get_Text )],
-        make_constructors => ["new"],
-        make_pod          => {
-            methods => [ qw( get_field get_text ) ],
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        }
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::LeafQuery",
+    bind_methods      => [qw( Get_Field Get_Text )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        methods     => [qw( get_field get_text )],
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+    }
+);
 
 __COPYRIGHT__
 

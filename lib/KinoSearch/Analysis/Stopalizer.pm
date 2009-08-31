@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $stopalizer = KinoSearch::Analysis::Stopalizer->new(
@@ -29,14 +29,15 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Analysis::Stopalizer" => {
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor }
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Analysis::Stopalizer",
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor }
     },
-}
+);
 
 __COPYRIGHT__
 

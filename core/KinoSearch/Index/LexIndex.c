@@ -1,3 +1,5 @@
+#define C_KINO_LEXINDEX
+#define C_KINO_TERMINFO
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/LexIndex.h"
@@ -127,7 +129,7 @@ LexIndex_seek(LexIndex *self, Obj *target)
     else {
         if ( !OBJ_IS_A(target, CHARBUF)) {
             THROW(ERR, "Target is a %o, and not comparable to a %o",
-                Obj_Get_Class_Name(target), CHARBUF->name);
+                Obj_Get_Class_Name(target), VTable_Get_Name(CHARBUF));
         }
         /* TODO: 
         Obj *first_obj = VA_Fetch(terms, 0);

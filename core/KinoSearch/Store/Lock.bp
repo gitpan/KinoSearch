@@ -81,8 +81,12 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Obj {
     public abstract void
     Clear_Stale(Lock *self);
 
-    /** Accessor for object's filename attribute.
-     */
+    CharBuf*
+    Get_Name(Lock *self);
+
+    CharBuf*
+    Get_Hostname(Lock *self);
+
     CharBuf*
     Get_Filename(Lock *self);
 

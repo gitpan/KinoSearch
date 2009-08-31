@@ -1,3 +1,4 @@
+#define C_KINO_TERMINFO
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/TermInfo.h"
@@ -31,7 +32,26 @@ TInfo_clone(TermInfo *self)
 }
 
 i32_t
-TInfo_get_doc_freq(TermInfo *self) { return self->doc_freq; }
+TInfo_get_doc_freq(TermInfo *self)     { return self->doc_freq; }
+i64_t
+TInfo_get_lex_filepos(TermInfo *self)  { return self->lex_filepos; }
+i64_t
+TInfo_get_post_filepos(TermInfo *self) { return self->post_filepos; }
+i64_t
+TInfo_get_skip_filepos(TermInfo *self) { return self->skip_filepos; }
+
+void
+TInfo_set_doc_freq(TermInfo *self, i32_t doc_freq)
+    { self->doc_freq = doc_freq; }
+void
+TInfo_set_lex_filepos(TermInfo *self, i64_t filepos)
+    { self->lex_filepos = filepos; }
+void
+TInfo_set_post_filepos(TermInfo *self, i64_t filepos)
+    { self->post_filepos = filepos; }
+void
+TInfo_set_skip_filepos(TermInfo *self, i64_t filepos)
+    { self->skip_filepos = filepos; }
 
 /* TODO: this should probably be some sort of Dump variant rather than
  * To_String.

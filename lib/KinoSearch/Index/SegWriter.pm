@@ -4,29 +4,30 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::SegWriter" => {
-        make_constructors => ["new"],
-        bind_methods      => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::SegWriter",
+    bind_constructors => ["new"],
+    bind_methods      => [
+        qw(
+            Add_Writer
+            Register
+            Fetch
+            )
+    ],
+    make_pod => {
+        methods => [
             qw(
-                Add_Writer
-                Register
-                Fetch
+                add_doc
+                add_writer
+                register
+                fetch
                 )
         ],
-        make_pod => {
-            methods => [
-                qw(
-                    add_doc
-                    add_writer
-                    register
-                    fetch
-                    )
-            ],
-        }
     }
-}
+);
 
 __COPYRIGHT__
 

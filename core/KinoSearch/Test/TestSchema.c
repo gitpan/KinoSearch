@@ -1,3 +1,4 @@
+#define C_KINO_TESTSCHEMA
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"
@@ -15,7 +16,7 @@ TestSchema_new()
     return TestSchema_init(self);
 }
 
-static CharBuf content = ZCB_LITERAL("content");
+static ZombieCharBuf content = ZCB_LITERAL("content");
 
 TestSchema*
 TestSchema_init(TestSchema *self)
@@ -25,7 +26,7 @@ TestSchema_init(TestSchema *self)
 
     Schema_init((Schema*)self);
     FullTextType_Set_Highlightable(type, true);
-    Schema_Spec_Field(self, &content, (FieldType*)type);
+    Schema_Spec_Field(self, (CharBuf*)&content, (FieldType*)type);
     DECREF(type);
     DECREF(tokenizer);
 

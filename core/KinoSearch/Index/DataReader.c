@@ -1,3 +1,4 @@
+#define C_KINO_DATAREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DataReader.h"

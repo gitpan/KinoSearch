@@ -15,8 +15,7 @@ my %args = (
     class_name  => 'Boil::Foo',
     class_cnick => 'Foo',
     param_list  => $parser->param_list('(Foo *self)'),
-    micro_sym   => 'return_an_obj',
-    macro_name  => 'Return_An_Obj',
+    macro_sym   => 'Return_An_Obj',
     parcel      => 'Boil',
 );
 

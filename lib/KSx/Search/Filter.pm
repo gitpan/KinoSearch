@@ -170,12 +170,13 @@ BEGIN { our @ISA = qw( KinoSearch::Search::Matcher ) }
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KSx::Search::FilterScorer" => {
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KSx::Search::FilterScorer",
+    bind_constructors => ["new"],
+);
 
 __POD__
 

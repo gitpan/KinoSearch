@@ -14,6 +14,8 @@ KinoSearch::Index::DocReader - Retrieve stored documents.
 
 =head1 DESCRIPTION
 
+Retrieve stored documents.
+
 DocReader defines the interface by which documents (with all stored fields)
 are retrieved from the index.  The default implementation returns HitDoc
 objects.

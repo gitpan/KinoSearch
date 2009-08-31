@@ -50,6 +50,9 @@ class KinoSearch::Index::PostingPool cnick PostPool
     void
     Shrink(PostingPool *self);
 
+    MemoryPool*
+    Get_Mem_Pool(PostingPool *self);
+
     u32_t
     Refill(PostingPool *self);
 
@@ -188,7 +191,7 @@ class KinoSearch::Index::PostingPool::RawPostingList cnick RawPList
     Read_Raw(RawPostingList *self, i32_t last_doc_id, CharBuf *term_text,
              MemoryPool *mem_pool);
 
-    public Posting*
+    Posting*
     Get_Posting(RawPostingList *self);
 }
 

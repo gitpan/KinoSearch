@@ -1,3 +1,6 @@
+#define C_KINO_INVERTER
+#define C_KINO_ZOMBIECHARBUF
+#define C_KINO_INVERTERENTRY
 #include "xs/XSBind.h"
 #include "KinoSearch/Index/Inverter.h"
 #include "KinoSearch/Doc.h"

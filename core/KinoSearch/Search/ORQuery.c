@@ -1,3 +1,5 @@
+#define C_KINO_ORQUERY
+#define C_KINO_ORCOMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/ORQuery.h"

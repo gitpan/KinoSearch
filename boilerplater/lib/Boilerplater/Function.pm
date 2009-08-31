@@ -4,20 +4,20 @@ use warnings;
 package Boilerplater::Function;
 use base qw( Boilerplater::Symbol );
 use Carp;
-use Boilerplater::Util qw( verify_args );
+use Boilerplater::Util qw( verify_args a_isa_b );
 use Boilerplater::Type;
 use Boilerplater::ParamList;
 
 my %new_PARAMS = (
-    return_type  => undef,
-    class_name   => undef,
-    class_cnick  => undef,
-    param_list   => undef,
-    micro_sym    => undef,
-    docu_comment => undef,
-    parcel       => undef,
-    inline       => 0,
-    exposure     => 'parcel',
+    return_type => undef,
+    class_name  => undef,
+    class_cnick => undef,
+    param_list  => undef,
+    micro_sym   => undef,
+    docucomment => undef,
+    parcel      => undef,
+    inline      => 0,
+    exposure    => 'parcel',
 );
 
 sub new {
@@ -26,49 +26,28 @@ sub new {
     my $self = $either->SUPER::new( %new_PARAMS, @_ );
 
     # Validate.
-    for (qw( return_type class_name param_list micro_sym )) {
-        confess("$_ is mandatory")
-            unless defined $self->{$_};
+    for (qw( return_type class_name param_list )) {
+        confess("$_ is mandatory") unless defined $self->{$_};
     }
     confess("Invalid micro_sym: '$self->{micro_sym}'")
         unless $self->{micro_sym} =~ /^[a-z0-9_]+$/;
-    my $param_list = $self->{param_list};
     confess 'param_list must be a ParamList object'
-        unless ref($param_list)
-            && $param_list->isa("Boilerplater::ParamList");
-    my $return_type = $self->{return_type};
+        unless a_isa_b( $self->{param_list}, "Boilerplater::ParamList" );
     confess 'return_type must be a Type object'
-        unless ref($return_type) && $return_type->isa("Boilerplater::Type");
+        unless a_isa_b( $self->{return_type}, "Boilerplater::Type" );
 
     return $self;
 }
 
-# Accessors
-sub get_return_type  { shift->{return_type} }
-sub micro_sym        { shift->{micro_sym} }
-sub get_class_name   { shift->{class_name} }
-sub get_class_cnick  { shift->{class_cnick} }
-sub get_param_list   { shift->{param_list} }
-sub get_docu_comment { shift->{docu_comment} }
-sub inline           { shift->{inline} }
+sub get_return_type { shift->{return_type} }
+sub get_param_list  { shift->{param_list} }
+sub get_docucomment { shift->{docucomment} }
+sub inline          { shift->{inline} }
 
-# Indicate true if the function is void, false otherwise.
 sub void { shift->{return_type}->is_void }
 
-# Return the fully qualified C symbol for the function.
-sub full_func_sym {
-    my $self   = shift;
-    my $prefix = $self->get_prefix;
-    return "$prefix$self->{class_cnick}_$self->{micro_sym}";
-}
-
-# Return the pound-define for the function's short name.
-sub short_func_sym {
-    my $self       = shift;
-    my $prefix     = $self->get_prefix;
-    my $short_name = "$self->{class_cnick}_$self->{micro_sym}";
-    return "  #define $short_name $prefix$short_name\n";
-}
+sub full_func_sym  { shift->SUPER::full_sym }
+sub short_func_sym { shift->SUPER::short_sym }
 
 1;
 
@@ -85,40 +64,60 @@ Boilerplater::Function - Metadata describing a function.
 =head2 new
 
     my $type = Boilerplater::Function->new(
-        class_name   => 'MyProject::FooFactory',    # required
-        class_cnick  => 'FooFact ',                 # required
-        param_list   => $param_list,                # required
-        micro_sym    => 'count',                    # required
-        docu_comment => $docu_comment,              # default: undef
+        class_name  => 'MyProject::FooFactory',    # required
+        class_cnick => 'FooFact',                  # required
+        return_type => $void_type                  # required
+        param_list  => $param_list,                # required
+        micro_sym   => 'count',                    # required
+        docucomment => $docucomment,               # default: undef
+        parcel      => 'Boil'                      # default: special
+        exposure    => 'public'                    # default: parcel
+        inline      => 1,                          # default: false
     );
 
 =over
 
-=item *
+=item * B<class_name> - The full name of the class in whose namespace the
+function resides.
 
-B<class_name> - The full name of the class in whose namespace the function
-resides.
+=item * B<class_cnick> - The C nickname for the class. 
 
-=item *
+=item * B<return_type> - A L<Boilerplater::Type> representing the function's
+return type.
 
-B<class_cnick> - The nickname of the class.  Used for deriving the global C
-symbol for the function.
+=item * B<param_list> - A L<Boilerplater::ParamList> representing the
+function's argument list.
 
-=item *
+=item * B<micro_sym> - The lower case name of the function, without any
+namespacing prefixes.
 
-B<param_list> - A Boilerplater::ParamList object representing the function's
-argument list.
+=item * B<docucomment> - A L<Boilerplater::DocuComment> describing the
+function.
 
-=item *
+=item * B<parcel> - A L<Boilerplater::Parcel> or a parcel name.
 
-B<micro_sym> - The lower case name of the function, without any namespacing
-prefixes.
+=item * B<exposure> - The function's exposure (see L<Boilerplater::Symbol>).
 
-=item *
-
-B<docu_comment> - A Boilerplater::DocuComment describing the function.
+=item * B<inline> - Should be true if the function should be inlined by the
+compiler.
 
 =back
+
+=head2 get_return_type get_param_list get_docucomment inline 
+
+Accessors.
+
+=head2 void
+
+Returns true if the function has a void return type, false otherwise.
+
+=head2 full_func_sym
+
+A synonym for full_sym().
+
+=head2 short_func_sym
+
+A synonym for short_sym().
 
 =head1 COPYRIGHT AND LICENSE
 

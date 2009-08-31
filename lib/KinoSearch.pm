@@ -5,13 +5,13 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.30_06';
+our $VERSION = '0.30_07';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
 # See the docs for KinoSearch::Util::ToolSet.
-BEGIN { XSLoader::load( 'KinoSearch', '0.30_06' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.30_07' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -522,8 +522,9 @@ sub kdump {
 
 __END__
 
-__XS__
+__BINDING__
 
+my $ks_xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch
 
 BOOT:
@@ -535,7 +536,9 @@ CODE:
     RETVAL = 1;
 OUTPUT:
     RETVAL
+END_XS_CODE
 
+my $toolset_xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch::Util::ToolSet
 
 SV*
@@ -563,6 +566,18 @@ CODE:
     }
 }
 OUTPUT: RETVAL
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch",
+    xs_code    => $ks_xs_code,
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch::Util::Toolset",
+    xs_code    => $toolset_xs_code,
+);
 
 __COPYRIGHT__
 

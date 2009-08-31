@@ -22,6 +22,9 @@ class KinoSearch::Posting::MatchPosting cnick MatchPost
     void
     Destroy(MatchPosting *self);
 
+    i32_t
+    Get_Freq(MatchPosting *self);
+
     incremented MatchPosting*
     Clone(MatchPosting *self);
 
@@ -41,7 +44,7 @@ class KinoSearch::Posting::MatchPosting cnick MatchPost
     public void
     Reset(MatchPosting *self);
 
-    public incremented MatchPostingScorer*
+    incremented MatchPostingScorer*
     Make_Matcher(MatchPosting *self, Similarity *sim, PostingList *plist, 
                  Compiler *compiler, bool_t need_score);
 

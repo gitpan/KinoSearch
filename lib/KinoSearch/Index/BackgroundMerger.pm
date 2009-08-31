@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $bg_merger = KinoSearch::Index::BackgroundMerger->new(
@@ -20,28 +20,29 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Index::BackgroundMerger" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Index::BackgroundMerger",
+    bind_methods => [
+        qw(
+            Commit
+            Prepare_Commit
+            Optimize
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        methods => [
             qw(
-                Commit
-                Prepare_Commit
-                Optimize
+                commit
+                prepare_commit
+                optimize
                 )
         ],
-        make_constructors => ["new"],
-        make_pod          => {
-            methods => [
-                qw(
-                    commit
-                    prepare_commit
-                    optimize
-                    )
-            ],
-            synopsis     => $synopsis,
-            constructors => [ { sample => $constructor } ],
-        },
-    }
-}
+        synopsis     => $synopsis,
+        constructors => [ { sample => $constructor } ],
+    },
+);
 
 __COPYRIGHT__
 

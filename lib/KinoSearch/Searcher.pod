@@ -18,6 +18,8 @@ KinoSearch::Searcher - Execute searches against a single index.
 
 =head1 DESCRIPTION
 
+Execute searches against a single index.
+
 Use the Searcher class to perform search queries against an index.  (For
 searching multiple indexes at once, see
 L<PolySearcher|KinoSearch::Search::PolySearcher>).

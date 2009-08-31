@@ -1,3 +1,4 @@
+#define C_KINO_LOCKFACTORY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <errno.h>

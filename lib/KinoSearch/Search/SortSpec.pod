@@ -22,6 +22,8 @@ KinoSearch::Search::SortSpec - Specify a custom sort order for search results.
 
 =head1 DESCRIPTION
 
+Specify a custom sort order for search results.
+
 By default, searches return results in order of relevance; SortSpec allows
 you to indicate an alternate order via an array of SortRules.
 

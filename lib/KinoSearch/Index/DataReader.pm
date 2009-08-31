@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     # Abstract base class.
@@ -20,24 +20,27 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Index::DataReader" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Index::DataReader",
+    bind_methods => [
+        qw(
+            Get_Schema
+            Get_Folder
+            Get_Segments
+            Get_Snapshot
+            Get_Seg_Tick
+            Get_Segment
+            Aggregator
+            Close
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor, },
+        methods     => [
             qw(
-                Get_Schema
-                Get_Folder
-                Get_Segments
-                Get_Snapshot
-                Get_Seg_Tick
-                Get_Segment
-                Aggregator
-                Close
-                )
-        ],
-        make_constructors => ["new"],
-        make_pod => {
-            synopsis => $synopsis,
-            constructor => { sample => $constructor, },
-            methods => [qw(
                 get_schema
                 get_folder
                 get_snapshot
@@ -45,10 +48,10 @@ END_CONSTRUCTOR
                 get_segment
                 get_seg_tick
                 aggregator
-            )]
-        },
-    }
-}
+                )
+        ]
+    },
+);
 
 __COPYRIGHT__
 

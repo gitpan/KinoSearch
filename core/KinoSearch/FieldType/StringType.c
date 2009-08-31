@@ -1,3 +1,4 @@
+#define C_KINO_STRINGTYPE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/FieldType/StringType.h"

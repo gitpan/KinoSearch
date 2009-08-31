@@ -1,3 +1,5 @@
+#define C_KINO_HITQUEUE
+#define C_KINO_MATCHDOC
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/HitQueue.h"

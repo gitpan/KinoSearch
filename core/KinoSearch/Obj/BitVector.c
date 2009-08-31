@@ -1,3 +1,4 @@
+#define C_KINO_BITVECTOR
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <math.h>
@@ -93,6 +94,8 @@ BitVec_clone(BitVector *self)
     return evil_twin;
 }
 
+u8_t*
+BitVec_get_raw_bits(BitVector *self) { return self->bits; }
 u32_t
 BitVec_get_cap(BitVector *self) { return self->cap; }
 

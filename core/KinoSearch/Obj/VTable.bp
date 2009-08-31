@@ -91,6 +91,9 @@ class KinoSearch::Obj::VTable extends KinoSearch::Obj {
 
     CharBuf*
     Get_Name(VTable *self);
+
+    VTable*
+    Get_Parent(VTable *self);
     
     incremented VTable* 
     Clone(VTable *self);

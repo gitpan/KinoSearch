@@ -4,14 +4,19 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Test::Util::BBSortEx" => { make_constructors => ["new"], },
-    "KinoSearch::Test::Util::BBSortExRun" => {
-        make_constructors => ["new"],
-        bind_methods      => [qw( Set_Mem_Thresh )],
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Test::Util::BBSortEx",
+    bind_constructors => ["new"],
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Test::Util::BBSortExRun",
+    bind_constructors => ["new"],
+    bind_methods      => [qw( Set_Mem_Thresh )],
+);
 
 __COPYRIGHT__
 

@@ -41,7 +41,38 @@ use Env qw( @PATH );
 use Fcntl;
 use Carp;
 
-unshift @PATH, curdir();
+BEGIN { unshift @PATH, curdir() }
+
+sub project_name {'Lucy'}
+sub project_nick {'Lucy'}
+
+sub xs_filepath { shift->project_name . ".xs" }
+sub autobind_pm_path {
+    catfile( 'lib', shift->project_name, 'Autobinding.pm' );
+}
+
+sub extra_ccflags {
+    my $self          = shift;
+    my $debug_env_var = uc( $self->project_nick ) . "_DEBUG";
+
+    my $extra_ccflags = "";
+    if ( defined $ENV{$debug_env_var} ) {
+        $extra_ccflags .= "-D$debug_env_var ";
+        # Allow override when Perl was compiled with an older version.
+        my $gcc_version = $ENV{REAL_GCC_VERSION} || $Config{gccversion};
+        if ( defined $gcc_version ) {
+            $gcc_version =~ /^(\d+(\.\d+)?)/ or die "no match";
+            $gcc_version = $1;
+            $extra_ccflags .= "-DPERL_GCC_PEDANTIC -ansi -pedantic -Wall "
+                . "-std=c89 -Wno-long-long ";
+            $extra_ccflags .= "-Wextra " if $gcc_version >= 3.4;    # correct
+            $extra_ccflags .= "-Wno-variadic-macros "
+                if $gcc_version > 3.4;    # at least not on gcc 3.4
+        }
+    }
+
+    return $extra_ccflags;
+}
 
 =for Rationale
 
@@ -63,52 +94,8 @@ my $CHARMONIZER_GEN_DIR  = catdir( $CHARMONIZER_ORIG_DIR, 'gen' );
 my $CORE_SOURCE_DIR      = catdir( $base_dir, 'core' );
 my $AUTOGEN_DIR          = 'autogen';
 my $XS_SOURCE_DIR        = 'xs';
-my $AUTOBIND_PM_PATH     = catfile(qw( lib KinoSearch Autobinding.pm ));
-my $AUTOBIND_XS_PATH     = catfile(qw( lib KinoSearch Autobinding.xs ));
 
-my $EXTRA_CCFLAGS = '';
-if ( defined $ENV{LUCY_DEBUG} || defined $ENV{KINO_DEBUG} ) {
-    $EXTRA_CCFLAGS .= "-DKINO_DEBUG ";
-    # allow override when Perl was compiled with an older version
-    my $gcc_version = $ENV{REAL_GCC_VERSION} || $Config{gccversion};
-    if ( defined $gcc_version ) {
-        $gcc_version =~ /^(\d+(\.\d+)?)/ or die "no match";
-        $gcc_version = $1;
-        $EXTRA_CCFLAGS .= "-DPERL_GCC_PEDANTIC -ansi -pedantic -Wall "
-            . "-std=c89 -Wno-long-long ";
-        $EXTRA_CCFLAGS .= "-Wextra " if $gcc_version >= 3.4;    # correct
-        $EXTRA_CCFLAGS .= "-Wno-variadic-macros "
-            if $gcc_version > 3.4;    # at least not on gcc 3.4
-    }
-}
-my $VALGRIND = $ENV{CHARM_VALGRIND} ? "valgrind --leak-check=yes " : "";
-
-=begin comment
-
-Lucy::Build serves double duty as a build tool for both Lucy and KinoSearch,
-in order to facilitate synchronization.
-
-Since they will never be built at the same time, and since Module::Build pulls
-some hocus pocus when creating objects that is difficult to control, we set a
-few class variables rather than use instance variables to adapt the behavior
-to one or the other.  
-
-=end comment
-=cut
-
-my $XS_FILEPATH = 'Lucy.xs';
-my ( $PREFIX, $Prefix, $prefix ) = qw( LUCY_ Lucy_ lucy_ );
-my $kino_or_lucy = 'lucy';
-
-sub use_kinosearch_mode {
-    $XS_FILEPATH = 'KinoSearch.xs';
-    ( $PREFIX, $Prefix, $prefix ) = qw( KINO_ Kino_ kino_ );
-    $kino_or_lucy = 'kino';
-}
-
-sub new {
-    return shift->SUPER::new( recursive_test_files => 1, @_ );
-}
+sub new { shift->SUPER::new( recursive_test_files => 1, @_ ) }
 
 # Collect all relevant Charmonizer files.
 sub ACTION_metaquote {
@@ -158,7 +145,7 @@ sub ACTION_charmonizer {
         $cbuilder->compile(
             source               => $_,
             include_dirs         => [$CHARMONIZER_GEN_DIR],
-            extra_compiler_flags => $EXTRA_CCFLAGS,
+            extra_compiler_flags => $self->extra_ccflags,
         );
     }
 
@@ -185,7 +172,7 @@ sub ACTION_charmony {
 
     # Write the infile with which to communicate args to charmonize.
     my $os_name   = lc( $Config{osname} );
-    my $flags     = "$Config{ccflags} $EXTRA_CCFLAGS";
+    my $flags     = "$Config{ccflags} " . $self->extra_ccflags;
     my $verbosity = $ENV{DEBUG_CHARM} ? 2 : 1;
     my $cc        = "$Config{cc}";
     unlink $charmony_in;
@@ -200,8 +187,9 @@ sub ACTION_charmony {
     |;
     close $infile_fh or die "Can't close '$charmony_in': $!";
 
-    if ($VALGRIND) {
-        system("$VALGRIND ./$CHARMONIZE_EXE_PATH $charmony_in")
+    if ( $ENV{CHARM_VALGRIND} ) {
+        system(
+            "valgrind --leak-check=yes ./$CHARMONIZE_EXE_PATH $charmony_in")
             and die "Failed to write charmony.h";
     }
     else {
@@ -213,64 +201,46 @@ sub ACTION_charmony {
 sub _compile_boilerplater {
     my $self = shift;
 
-    my $xs_code = "";
-    my %auto_xs;
-
-    require Boilerplater::Session;
+    require Boilerplater::Hierarchy;
     require Boilerplater::Binding::Perl;
+    require Boilerplater::Binding::Perl::Class;
 
-    # Concatenate all XS frags, process all AUTO_XS blocks.
+    # Compile Boilerplater.
+    my $hierarchy = Boilerplater::Hierarchy->new(
+        source => $CORE_SOURCE_DIR,
+        dest   => $AUTOGEN_DIR,
+    );
+    $hierarchy->build;
+
+    # Process all __BINDING__ blocks.
     my $pm_filepaths = $self->rscan_dir( 'lib', qr/\.pm$/ );
     my @pm_filepaths_with_xs;
     for my $pm_filepath (@$pm_filepaths) {
         open( my $pm_fh, '<', $pm_filepath )
             or die "Can't open '$pm_filepath': $!";
         my $pm_content = do { local $/; <$pm_fh> };
-        my ($xs_frag) = $pm_content =~ /^__XS__\s*(.*?)(?:^__\w+__|\Z)/sm;
-        if ($xs_frag) {
-            $xs_code .= $xs_frag;
-        }
-        my ($auto_xs_frag)
-            = $pm_content =~ /^__AUTO_XS__\s*(.*?)(?:^__\w+__|\Z)/sm;
-        if ($auto_xs_frag) {
-            my $to_bind = eval $auto_xs_frag;
-            confess("invalid __AUTO_XS__ from $pm_filepath: $@")
-                unless ref($to_bind) eq 'HASH';
-            while ( my ( $class, $directives ) = each %$to_bind ) {
-                confess "$class already registered"
-                    if defined $auto_xs{$class};
-                $auto_xs{$class} = $directives;
-            }
-        }
-
-        if ( $xs_frag || $auto_xs_frag ) {
+        my ($autobind_frag)
+            = $pm_content =~ /^__BINDING__\s*(.*?)(?:^__\w+__|\Z)/sm;
+        if ($autobind_frag) {
             push @pm_filepaths_with_xs, $pm_filepath;
+            eval $autobind_frag;
+            confess("Invalid __BINDING__ from $pm_filepath: $@") if $@;
         }
     }
-
-    my $session = Boilerplater::Session->new(
-        base_dir => $CORE_SOURCE_DIR,
-        dest_dir => $AUTOGEN_DIR,
-        header   => $self->autogen_header,
-        footer   => $self->copyfoot,
-    );
-    $session->build;
 
     my $binding = Boilerplater::Binding::Perl->new(
-        session     => $session,
-        pm_path     => $AUTOBIND_PM_PATH,
-        xs_path     => $XS_FILEPATH,
-        xs_code     => $xs_code,
-        boot_class  => 'KinoSearch',
-        boot_func   => $kino_or_lucy . "_Boot_bootstrap",
-        boot_h_file => $kino_or_lucy . "_boot.h",
-        boot_c_file => $kino_or_lucy . "_boot.c",
+        hierarchy   => $hierarchy,
+        pm_path     => $self->autobind_pm_path,
+        xs_path     => $self->xs_filepath,
+        boot_class  => $self->project_name,
+        boot_func   => lc( $self->project_nick ) . "_Boot_bootstrap",
+        boot_h_file => lc( $self->project_nick ) . "_boot.h",
+        boot_c_file => lc( $self->project_nick ) . "_boot.c",
+        header      => $self->autogen_header,
+        footer      => $self->copyfoot,
     );
-    while ( my ( $class_name, $lists ) = each %auto_xs ) {
-        $binding->add_class( class_name => $class_name, %$lists );
-    }
 
-    return ( $session, $binding, \@pm_filepaths_with_xs );
+    return ( $hierarchy, $binding, \@pm_filepaths_with_xs );
 }
 
 sub ACTION_pod { shift->_write_pod(@_) }
@@ -280,12 +250,20 @@ sub _write_pod {
     if ( !$binding ) {
         ( undef, $binding ) = $self->_compile_boilerplater;
     }
-    my $pod_files = $binding->write_pod( lib_dir => 'lib' );
-    $self->add_to_cleanup(@$pod_files);
+    my $pod_files = $binding->prepare_pod( lib_dir => 'lib' );
+    while ( my ( $filepath, $pod ) = each %$pod_files ) {
+        $self->add_to_cleanup($filepath);
+        unlink $filepath;
+        print "Writing $filepath...\n";
+        sysopen( my $pod_fh, $filepath, O_CREAT | O_EXCL | O_WRONLY )
+            or confess("Can't open '$filepath': $!");
+        print $pod_fh $pod;
+    }
 }
 
 sub ACTION_boilerplater {
-    my $self = shift;
+    my $self        = shift;
+    my $xs_filepath = $self->xs_filepath;
 
     $self->dispatch('charmony');
 
@@ -302,38 +280,51 @@ sub ACTION_boilerplater {
     return
         if $self->up_to_date(
         [ @$bp_filepaths, @$pm_filepaths ],
-        [ $XS_FILEPATH,   $AUTOGEN_DIR, ]
+        [ $xs_filepath,   $AUTOGEN_DIR, ]
         );
 
     # Write out all autogenerated files.
-    my ( $session, $binding, $pm_filepaths_with_xs )
+    my ( $hierarchy, $perl_binding, $pm_filepaths_with_xs )
         = $self->_compile_boilerplater;
-    my $modified = $session->write_all_modified;
-    $session->write_boil_h if $modified;
+    require Boilerplater::Binding::Core;
+    my $core_binding = Boilerplater::Binding::Core->new(
+        hierarchy => $hierarchy,
+        dest      => $AUTOGEN_DIR,
+        header    => $self->autogen_header,
+        footer    => $self->copyfoot,
+    );
+    my $modified = $core_binding->write_all_modified;
+    if ($modified) {
+        $core_binding->write_boil_h;
+        unlink('typemap');
+        print "Writing typemap...\n";
+        $self->add_to_cleanup('typemap');
+        $perl_binding->write_xs_typemap;
+    }
 
     # Rewrite XS if either any .bp files or relevant .pm files were modified.
     $modified ||=
-        $self->up_to_date( \@$pm_filepaths_with_xs, $XS_FILEPATH )
+        $self->up_to_date( \@$pm_filepaths_with_xs, $xs_filepath )
         ? 0
         : 1;
 
     if ($modified) {
-        $self->add_to_cleanup($XS_FILEPATH);
-        $self->add_to_cleanup($AUTOBIND_PM_PATH);
-        $binding->write_boot;
-        $binding->write_bindings;
-        $self->_write_pod($binding);
+        $self->add_to_cleanup($xs_filepath);
+        $self->add_to_cleanup( $self->autobind_pm_path );
+        $perl_binding->write_boot;
+        $perl_binding->write_bindings;
+        $self->_write_pod($perl_binding);
     }
 
     # Touch autogenerated files in case the modifications were inconsequential
     # and didn't trigger a rewrite, so that we won't have to check them again
     # next pass.
     if (!$self->up_to_date(
-            [ @$bp_filepaths, @$pm_filepaths_with_xs ], $XS_FILEPATH
+            [ @$bp_filepaths, @$pm_filepaths_with_xs ], $xs_filepath
         )
         )
     {
-        utime( time, time, $XS_FILEPATH );    # touch
+        utime( time, time, $xs_filepath );    # touch
     }
     if (!$self->up_to_date(
             [ @$bp_filepaths, @$pm_filepaths_with_xs ], $AUTOGEN_DIR
@@ -373,12 +364,15 @@ sub ACTION_suppressions {
 }
 
 sub _valgrind_base_command {
+    my $self             = shift;
+    my $suppfile         = lc( $self->project_nick ) . "perl.supp";
+    my $valgrind_env_var = uc( $self->project_nick ) . "_VALGRIND";
     return
-          "PERL_DESTRUCT_LEVEL=2 KINO_VALGRIND=1 valgrind "
+          "PERL_DESTRUCT_LEVEL=2 $valgrind_env_var=1 valgrind "
         . "--leak-check=yes "
         . "--show-reachable=yes "
         . "--num-callers=10 "
-        . "--suppressions=../devel/conf/kinoperl.supp ";
+        . "--suppressions=../devel/conf/$suppfile ";
 }
 
 sub ACTION_test_valgrind {
@@ -439,11 +433,14 @@ sub ACTION_test_valgrind {
 }
 
 sub ACTION_compile_custom_xs {
-    my $self = shift;
+    my $self         = shift;
+    my $project_name = $self->project_name;
+    my $xs_filepath  = $self->xs_filepath;
+
     require ExtUtils::ParseXS;
 
     my $cbuilder = Lucy::Build::CBuilder->new;
-    my $archdir = catdir( $self->blib, 'arch', 'auto', 'KinoSearch' );
+    my $archdir = catdir( $self->blib, 'arch', 'auto', $project_name );
     mkpath( $archdir, 0, 0777 ) unless -d $archdir;
     my @include_dirs = (
         curdir(), $CORE_SOURCE_DIR, $AUTOGEN_DIR, $XS_SOURCE_DIR,
@@ -464,34 +461,34 @@ sub ACTION_compile_custom_xs {
         $self->add_to_cleanup($o_file);
         $cbuilder->compile(
             source               => $c_file,
-            extra_compiler_flags => $EXTRA_CCFLAGS,
+            extra_compiler_flags => $self->extra_ccflags,
             include_dirs         => \@include_dirs,
             object_file          => $o_file,
         );
     }
 
     # .xs => .c
-    my $ks_c_file = 'KinoSearch.c';
-    $self->add_to_cleanup($ks_c_file);
-    if ( !$self->up_to_date( $XS_FILEPATH, $ks_c_file ) ) {
+    my $perl_binding_c_file = "$project_name.c";
+    $self->add_to_cleanup($perl_binding_c_file);
+    if ( !$self->up_to_date( $xs_filepath, $perl_binding_c_file ) ) {
         ExtUtils::ParseXS::process_file(
-            filename   => $XS_FILEPATH,
+            filename   => $xs_filepath,
             prototypes => 0,
-            output     => $ks_c_file,
+            output     => $perl_binding_c_file,
         );
     }
 
     # .c => .o
-    my $version   = $self->dist_version;
-    my $ks_o_file = "KinoSearch$Config{_o}";
-    unshift @objects, $ks_o_file;
-    $self->add_to_cleanup($ks_o_file);
-    if ( !$self->up_to_date( $ks_c_file, $ks_o_file ) ) {
+    my $version             = $self->dist_version;
+    my $perl_binding_o_file = "$project_name$Config{_o}";
+    unshift @objects, $perl_binding_o_file;
+    $self->add_to_cleanup($perl_binding_o_file);
+    if ( !$self->up_to_date( $perl_binding_c_file, $perl_binding_o_file ) ) {
         $cbuilder->compile(
-            source               => $ks_c_file,
-            extra_compiler_flags => $EXTRA_CCFLAGS,
+            source               => $perl_binding_c_file,
+            extra_compiler_flags => $self->extra_ccflags,
             include_dirs         => \@include_dirs,
-            object_file          => $ks_o_file,
+            object_file          => $perl_binding_o_file,
             # 'defines' is an undocumented parameter to compile(), so we
             # should officially roll our own variant and generate compiler
             # flags.  However, that involves writing a bunch of
@@ -505,26 +502,26 @@ sub ACTION_compile_custom_xs {
     }
 
     # Create .bs bootstrap file, needed by Dynaloader.
-    my $ks_bs_file = catfile( $archdir, 'KinoSearch.bs' );
-    $self->add_to_cleanup($ks_bs_file);
-    if ( !$self->up_to_date( $ks_o_file, $ks_bs_file ) ) {
+    my $bs_file = catfile( $archdir, "$project_name.bs" );
+    $self->add_to_cleanup($bs_file);
+    if ( !$self->up_to_date( $perl_binding_o_file, $bs_file ) ) {
         require ExtUtils::Mkbootstrap;
-        ExtUtils::Mkbootstrap::Mkbootstrap($ks_bs_file);
-        if ( !-f $ks_bs_file ) {
+        ExtUtils::Mkbootstrap::Mkbootstrap($bs_file);
+        if ( !-f $bs_file ) {
             # Create file in case Mkbootstrap didn't do anything.
-            open( my $fh, '>', $ks_bs_file )
-                or confess "Can't open $ks_bs_file: $!";
+            open( my $fh, '>', $bs_file )
+                or confess "Can't open $bs_file: $!";
         }
-        utime( (time) x 2, $ks_bs_file );    # touch
+        utime( (time) x 2, $bs_file );    # touch
     }
 
     # .o => .(a|bundle)
-    my $ks_lib_file = catfile( $archdir, "KinoSearch.$Config{dlext}" );
-    if ( !$self->up_to_date( [ @objects, $AUTOGEN_DIR ], $ks_lib_file ) ) {
+    my $lib_file = catfile( $archdir, "$project_name.$Config{dlext}" );
+    if ( !$self->up_to_date( [ @objects, $AUTOGEN_DIR ], $lib_file ) ) {
         $cbuilder->link(
-            module_name => 'KinoSearch',
+            module_name => $project_name,
             objects     => \@objects,
-            lib_file    => $ks_lib_file,
+            lib_file    => $lib_file,
         );
     }
 }
@@ -533,7 +530,6 @@ sub ACTION_code {
     my $self = shift;
 
     $self->dispatch('boilerplater');
-    $self->dispatch('write_typemap');
     $self->dispatch('compile_custom_xs');
 
     $self->SUPER::ACTION_code;
@@ -575,18 +571,7 @@ END_AUTOGEN
 }
 
 sub copyfoot {
-
-    if ( $kino_or_lucy eq 'kino' ) {
-        return <<END_COPYFOOT;
-/* Copyright 2008-2009 Marvin Humphrey
- *
- * This program is free software; you can redistribute it and/or modify
- * under the same terms as Perl itself.
- */
-END_COPYFOOT
-    }
-    else {
-        return <<END_COPYFOOT;
+    return <<END_COPYFOOT;
 /**
  * Copyright 2008 The Apache Software Foundation
  *
@@ -603,144 +588,7 @@ END_COPYFOOT
  * limitations under the License.
  */
 END_COPYFOOT
-    }
 }
-
-=for Rationale
-
-All of our C-struct types share the same typemap profile, but can't be mapped
-to a single type.  Instead of tediously hand-editing the typemap file, we
-autogenerate the file. 
-
-=cut
-
-# Write the typemap file.
-sub ACTION_write_typemap {
-    my $self = shift;
-
-    my $pm_filepaths = $self->rscan_dir( 'lib', qr/\.pm$/ );
-    return
-        if ( -e 'typemap' and $self->up_to_date( $pm_filepaths, 'typemap' ) );
-
-    # Build up a list of C-struct classes.
-    my @struct_classes;
-    my $bp_filepaths = $self->rscan_dir( $CORE_SOURCE_DIR, qr/\.bp$/ );
-    for my $bp_path (@$bp_filepaths) {
-        open( my $bp_fh, '<', $bp_path ) or die "Can't open '$bp_path': $!";
-        my $content = do { local $/; <$bp_fh> };
-        while ( $content =~ /class\s+(\w+::[\w:]+)/mgs ) {
-            push @struct_classes, $1;
-        }
-    }
-
-    my $typemap_start  = _typemap_start();
-    my $typemap_input  = _typemap_input_start();
-    my $typemap_output = _typemap_output_start();
-
-    for my $struct_class (@struct_classes) {
-        my ($ctype) = $struct_class =~ /([^:]+$)/;
-        my $vtable = $PREFIX . uc($ctype);
-        my $uc_ctype = $vtable . "_";
-        $ctype         .= ' *';
-        $typemap_start .= "$ctype\t$uc_ctype\n";
-        $typemap_start .= $prefix . "$ctype\t$uc_ctype\n";
-        $typemap_input .= <<END_INPUT;
-$uc_ctype
-    \$var = ($prefix$ctype)XSBind_sv_to_kobj(\$arg, $vtable);
-
-END_INPUT
-
-        $typemap_output .= <<END_OUTPUT;
-$uc_ctype
-    \$arg = (SV*)Kino_Obj_To_Host(\$var);
-    KINO_DECREF(\$var);
-
-END_OUTPUT
-    }
-
-    # Blast it out.
-    print "Writing typemap\n";
-    unlink 'typemap';
-    sysopen( my $typemap_fh, 'typemap', O_CREAT | O_WRONLY | O_EXCL )
-        or die "Couldn't open 'typemap' for writing: $!";
-    print $typemap_fh "$typemap_start $typemap_input $typemap_output"
-        or die "Print to 'typemap' failed: $!";
-    $self->add_to_cleanup('typemap');
-}
-
-my @int_types = qw( i8 u8 i16 u16 i32 u32 i64 u64);
-
-sub _typemap_start {
-    my $content = <<END_STUFF;
-# Auto-generated file.
-
-TYPEMAP
-chy_bool_t\tCHY_BOOL
-chy_i8_t\tCHY_SIGNED_INT
-chy_i16_t\tCHY_SIGNED_INT
-chy_i32_t\tCHY_SIGNED_INT
-chy_i64_t\tCHY_BIG_INT
-chy_u8_t\tCHY_UNSIGNED_INT
-chy_u16_t\tCHY_UNSIGNED_INT
-chy_u32_t\tCHY_UNSIGNED_INT
-chy_u64_t\tCHY_BIG_INT
-
-kino_ClassNameBuf \tCLASSNAMEBUF
-${prefix}CharBuf\tCHARBUF_NOT_POINTER
-END_STUFF
-
-    return $content;
-}
-
-sub _typemap_input_start {
-    return <<END_STUFF;
-    
-INPUT
-
-CHY_BOOL
-    \$var = (\$type)SvTRUE(\$arg);
-
-CHY_SIGNED_INT 
-    \$var = (\$type)SvIV(\$arg);
-
-CHY_UNSIGNED_INT
-    \$var = (\$type)SvUV(\$arg);
-
-CHY_BIG_INT 
-    \$var = (\$type)SvNV(\$arg);
-
-CLASSNAMEBUF
-    \$var = XSBind_sv_to_class_name(\$arg);
-
-CHARBUF_NOT_POINTER
-        \$var.ref.count = 1;
-        \$var.vtable    = ${PREFIX}ZOMBIECHARBUF;
-        \$var.ptr       = SvPVutf8_nolen(\$arg);
-        \$var.size      = SvCUR(\$arg);
-
-END_STUFF
-}
-
-sub _typemap_output_start {
-    return <<'END_STUFF';
-
-OUTPUT
-
-CHY_BOOL
-    sv_setiv($arg, (IV)$var);
-
-CHY_SIGNED_INT
-    sv_setiv($arg, (IV)$var);
-
-CHY_UNSIGNED_INT
-    sv_setuv($arg, (UV)$var);
-
-CHY_BIG_INT
-    sv_setnv($arg, (NV)$var);
-
-END_STUFF
-}
-
 
 sub ACTION_dist {
     my $self = shift;
@@ -749,7 +597,7 @@ sub ACTION_dist {
 
     # We build our Perl release tarball from $REPOS_ROOT/perl, rather than
     # from the top-level.
-    # 
+    #
     # Because some items we need are outside this directory, we need to copy a
     # bunch of stuff.  After the tarball is packaged up, we delete the copied
     # directories.
@@ -797,11 +645,13 @@ sub _gen_pause_exclusion_list {
     }
 
     # Exclude redacted modules.
-    require 'buildlib/KinoSearch/Redacted.pm';
-    my @redacted = map {
+    my $project_name = $self->project_name;
+    require "buildlib/$project_name/Redacted.pm";
+    my $redacted_package = $project_name . "::Redacted";
+    my @redacted         = map {
         my @parts = split( /\W+/, $_ );
         catfile( 'lib', @parts ) . '.pm'
-    } KinoSearch::Redacted->redacted, KinoSearch::Redacted->hidden;
+    } $redacted_package->redacted, $redacted_package->hidden;
     push @excluded_files, @redacted;
 
     my %uniquifier;

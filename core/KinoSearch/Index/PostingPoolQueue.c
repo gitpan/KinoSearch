@@ -1,3 +1,4 @@
+#define C_KINO_POSTINGPOOLQUEUE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PostingPoolQueue.h"

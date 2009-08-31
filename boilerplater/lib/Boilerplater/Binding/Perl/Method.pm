@@ -1,8 +1,8 @@
 use strict;
 use warnings;
 
-package Boilerplater::Binding::Perl::XSub::Method;
-use base qw( Boilerplater::Binding::Perl::XSub );
+package Boilerplater::Binding::Perl::Method;
+use base qw( Boilerplater::Binding::Perl::Subroutine );
 use Carp;
 use Boilerplater::Binding::Perl::TypeMap qw( from_perl to_perl );
 
@@ -16,7 +16,7 @@ sub new {
         : ( retval_type => $method->get_return_type );
     my $self = $either->SUPER::new(
         param_list         => $method->get_param_list,
-        aliases            => [ $method->micro_sym ],
+        alias              => $method->micro_sym,
         class_name         => $method->get_class_name,
         use_labeled_params => $method->get_param_list->num_vars > 2 ? 1 : 0,
         @extra_args,
@@ -44,7 +44,7 @@ sub _abstract_check {
         return
               "ABSTRACT_METHOD_CHECK(self, "
             . $self->{method}->get_class_cnick . ", "
-            . $self->{method}->get_macro_name . ", "
+            . $self->{method}->get_macro_sym . ", "
             . $self->{method}->micro_sym . ");\n";
     }
     return "";

@@ -1,3 +1,4 @@
+#define C_KINO_TERMSTEPPER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/TermStepper.h"

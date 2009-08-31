@@ -1,3 +1,4 @@
+#define C_KINO_SIMILARITY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "math.h"
@@ -38,6 +39,9 @@ Sim_destroy(Similarity *self)
     FREEMEM(self->prox_decoder);
     SUPER_DESTROY(self, SIMILARITY);
 }
+
+float*
+Sim_get_norm_decoder(Similarity *self) { return self->norm_decoder; }
 
 Obj*
 Sim_dump(Similarity *self)

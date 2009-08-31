@@ -4,17 +4,18 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch     PACKAGE = KinoSearch::Obj
 
 chy_bool_t
 is_a(self, class_name)
     kino_Obj *self;
-    kino_CharBuf class_name;
+    kino_ZombieCharBuf class_name;
 CODE:
 {
-    kino_VTable *target = kino_VTable_fetch_vtable(&class_name);
+    kino_VTable *target = kino_VTable_fetch_vtable((kino_CharBuf*)&class_name);
     RETVAL = Kino_Obj_Is_A(self, target);
 }
 OUTPUT: RETVAL
@@ -105,8 +106,7 @@ PPCODE:
     }
     */
     Kino_Obj_Destroy(self);
-
-__AUTO_XS__
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     package MyObj;
@@ -185,39 +185,48 @@ All KinoSearch classes implement a DESTROY method; if you override it in a
 subclass, you must call C<< $self->SUPER::DESTROY >> to avoid leaking memory.
 END_DESCRIPTION
 
-{   "KinoSearch::Obj" => {
-        bind_methods => [
-            qw( Get_RefCount
-                Inc_RefCount
-                Dec_RefCount
-                Get_VTable
-                To_String
-                To_I64
-                To_F64
-                Dump
-                _load|Load
-                Clone
-                Mimic
-                Equals
-                Hash_Code
-                Serialize
-                Deserialize )
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Obj",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw( Get_RefCount
+            Inc_RefCount
+            Dec_RefCount
+            Get_VTable
+            To_String
+            To_I64
+            To_F64
+            Dump
+            _load|Load
+            Clone
+            Mimic
+            Equals
+            Hash_Code
+            Serialize
+            Deserialize )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        description => $description,
+        methods     => [
+            qw(
+                to_string
+                to_i64
+                to_f64
+                equals
+                dump
+                load
+                )
         ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            description => $description,
-            methods     => [
-                qw(
-                    to_string
-                    to_i64
-                    to_f64
-                    equals
-                    dump
-                    load
-                    )
-            ],
-        }
-    },
-}
+    }
+);
+
+__COPYRIGHT__
+
+Copyright 2005-2009 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify
+under the same terms as Perl itself.
 

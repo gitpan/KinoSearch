@@ -4,20 +4,20 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::TermVector" => {
-        make_constructors => ["new"],
-        bind_methods      => [
-            qw(
-                Get_Positions
-                Get_Start_Offsets
-                Get_End_Offsets
-                )
-        ],
-        make_getters => [qw( text field )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::TermVector",
+    bind_constructors => ["new"],
+    bind_methods      => [
+        qw(
+            Get_Positions
+            Get_Start_Offsets
+            Get_End_Offsets
+            )
+    ],
+);
 
 __COPYRIGHT__
 

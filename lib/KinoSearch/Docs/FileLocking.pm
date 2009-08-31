@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     use Sys::Hostname qw( hostname );
@@ -27,10 +27,11 @@ my $synopsis = <<'END_SYNOPSIS';
     my $searcher = KinoSearch::Searcher->new( index => $reader );
 END_SYNOPSIS
 
-{   "KinoSearch::Docs::FileLocking" => {
-        make_pod => { synopsis => $synopsis, },
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch::Docs::FileLocking",
+    make_pod   => { synopsis => $synopsis, },
+);
 
 __COPYRIGHT__
 

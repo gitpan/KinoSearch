@@ -1,3 +1,5 @@
+#define C_KINO_HITS
+#define C_KINO_MATCHDOC
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/Hits.h"
@@ -19,6 +21,7 @@ Hits_init(Hits *self, Searchable *searchable, TopDocs *top_docs, u32_t offset)
 {
     self->searchable = (Searchable*)INCREF(searchable);
     self->top_docs   = (TopDocs*)INCREF(top_docs);
+    self->match_docs = (VArray*)INCREF(TopDocs_Get_Match_Docs(top_docs));
     self->offset     = offset;
     return self;
 }
@@ -28,14 +31,14 @@ Hits_destroy(Hits *self)
 {
     DECREF(self->searchable);
     DECREF(self->top_docs);
+    DECREF(self->match_docs);
     SUPER_DESTROY(self, HITS);
 }
 
 Obj*
 Hits_next(Hits *self)
 {
-    MatchDoc *match_doc 
-        = (MatchDoc*)VA_Fetch(self->top_docs->match_docs, self->offset);
+    MatchDoc *match_doc = (MatchDoc*)VA_Fetch(self->match_docs, self->offset);
     self->offset++;
 
     if (!match_doc) {

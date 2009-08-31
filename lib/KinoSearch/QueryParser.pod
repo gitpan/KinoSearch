@@ -18,6 +18,8 @@ KinoSearch::QueryParser - Transform a string into a Query object.
 
 =head1 DESCRIPTION
 
+Transform a string into a Query object.
+
 QueryParser accepts search strings as input and produces
 L<KinoSearch::Search::Query> objects, suitable for feeding into
 KinoSearch::Searcher and other L<Searchable|KinoSearch::Search::Searchable>

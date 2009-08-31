@@ -1,3 +1,5 @@
+#define C_KINO_TESTHASH
+#define C_KINO_HASH
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"

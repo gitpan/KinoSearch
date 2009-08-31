@@ -1,3 +1,6 @@
+#define C_KINO_TESTINSTREAM
+#define C_KINO_INSTREAM
+#define C_KINO_FILEWINDOW
 #include "KinoSearch/Util/ToolSet.h"
 
 #define CHAZ_USE_SHORT_NAMES

@@ -1,3 +1,4 @@
+#define C_KINO_INDEXER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Indexer.h"
@@ -426,8 +427,24 @@ S_maybe_merge(Indexer *self, VArray *seg_readers)
         DECREF(merge_lock);
     }
 
+    /* Get a list of segments to recycle.  Validate and confirm that there are
+     * no dupes in the list. */
     to_merge = IxManager_Recycle(self->manager, self->polyreader, 
         self->del_writer, cutoff, self->optimize);
+    {
+        Hash *seen = Hash_new(VA_Get_Size(to_merge));
+        for (i = 0, max = VA_Get_Size(to_merge); i < max; i++) {
+            SegReader *seg_reader = (SegReader*)ASSERT_IS_A(
+                VA_Fetch(to_merge, i), SEGREADER);
+            CharBuf *seg_name = SegReader_Get_Seg_Name(seg_reader);
+            if (Hash_Fetch(seen, (Obj*)seg_name)) {
+                THROW(KINO_ERR, "Recycle() tried to merge segment '%o' twice",
+                    seg_name);
+            }
+            Hash_Store(seen, (Obj*)seg_name, INCREF(&EMPTY));
+        }
+        DECREF(seen);
+    }
 
     /* Consolidate segments if either sparse or optimizing forced. */
     for (i = 0, max = VA_Get_Size(to_merge); i < max; i++) {
@@ -552,6 +569,8 @@ Indexer_commit(Indexer *self)
 
 SegWriter*
 Indexer_get_seg_writer(Indexer *self) { return self->seg_writer; }
+Doc*
+Indexer_get_stock_doc(Indexer *self)  { return self->stock_doc; }
 
 static void
 S_release_write_lock(Indexer *self)

@@ -14,13 +14,16 @@ is( $sortex->cache_count, 1, "feed elem into cache" );
 $sortex->feed( 'b', 1 );
 $sortex->feed( 'd', 1 );
 $sortex->sort_cache;
-$cache = $sortex->_peek_cache;
-is_deeply( $cache, [qw( b c d )], "sort cache" );
+SKIP: {
+    skip( "Restore when porting test to C", 1 );
+    $cache = $sortex->_peek_cache;
+    is_deeply( $cache, [qw( b c d )], "sort cache" );
+}
 
 $sortex->feed( 'a', 1 );
 is( $sortex->cache_count, 0,
     "cache flushed automatically when mem_thresh crossed" );
-is( $sortex->get_runs->get_size, 1, "run added" );
+is( $sortex->get_num_runs, 1, "run added" );
 
 my $run = KinoSearch::Test::Util::BBSortExRun->new(
     external => to_bytebufs(qw( x y z )) );

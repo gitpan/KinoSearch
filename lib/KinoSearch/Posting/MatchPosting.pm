@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     # MatchPosting is used indirectly, by specifying in FieldType subclass.
@@ -16,14 +16,15 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Posting::MatchPosting" => {
-        make_constructors  => ["new"],
-        make_getters       => [qw( freq )],
-#        make_pod => {
-#            synopsis => $synopsis,
-#        }
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Posting::MatchPosting",
+    bind_constructors => ["new"],
+    bind_methods      => [qw( Get_Freq )],
+#    make_pod => {
+#        synopsis => $synopsis,
+#    }
+);
 
 __COPYRIGHT__
 

@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch     PACKAGE = KinoSearch::Doc
 
 SV*
@@ -15,8 +16,7 @@ CODE:
     CHY_UNUSED_VAR(items);
     RETVAL = newRV_inc( (SV*)Kino_Doc_Get_Fields(self) );
 OUTPUT: RETVAL
-
-__AUTO_XS__
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     my $doc = KinoSearch::Doc->new(
@@ -32,16 +32,18 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Doc" => {
-        make_constructors => ['new'],
-        bind_methods => [ qw( Set_Doc_ID Get_Doc_ID Set_Fields ) ],
-        make_pod => {
-            methods     => [qw( get_fields )],
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        }
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Doc",
+    xs_code           => $xs_code,
+    bind_constructors => ['new'],
+    bind_methods      => [qw( Set_Doc_ID Get_Doc_ID Set_Fields )],
+    make_pod          => {
+        methods     => [qw( get_fields )],
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+    }
+);
 
 __COPYRIGHT__
 

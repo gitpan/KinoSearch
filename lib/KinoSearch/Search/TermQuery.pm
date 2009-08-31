@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $term_query_xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Search::TermQuery
 
 SV*
@@ -22,8 +23,7 @@ CODE:
     }
 }
 OUTPUT: RETVAL
-
-__AUTO_XS__
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     my $term_query = KinoSearch::Search::TermQuery->new(
@@ -40,17 +40,22 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Search::TermQuery" => {
-        bind_methods      => [qw( Get_Field )],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::TermQuery",
+    xs_code           => $term_query_xs_code,
+    bind_methods      => [qw( Get_Field )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
     },
-    "KinoSearch::Search::TermCompiler" =>
-        { make_constructors => ["do_new"], },
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::TermCompiler",
+    bind_constructors => ["do_new"],
+);
 
 __COPYRIGHT__
 

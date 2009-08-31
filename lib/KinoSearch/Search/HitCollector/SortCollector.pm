@@ -4,13 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Search::HitCollector::SortCollector" => {
-        bind_methods      => [qw( Pop_Match_Docs Get_Total_Hits )],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::HitCollector::SortCollector",
+    bind_methods      => [qw( Pop_Match_Docs Get_Total_Hits )],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

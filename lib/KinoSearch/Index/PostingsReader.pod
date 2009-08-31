@@ -18,6 +18,8 @@ KinoSearch::Index::PostingsReader - Read postings data.
 
 =head1 DESCRIPTION
 
+Read postings data.
+
 PostingsReaders produce L<PostingList|KinoSearch::Index::PostingList>
 objects which convey document matching information.
 

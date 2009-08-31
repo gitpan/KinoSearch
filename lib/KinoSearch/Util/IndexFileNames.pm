@@ -4,15 +4,16 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Util::IndexFileNames
 
 IV
 extract_gen(name)
-    kino_CharBuf name;
+    kino_ZombieCharBuf name;
 CODE:
-    RETVAL = kino_IxFileNames_extract_gen(&name);
+    RETVAL = kino_IxFileNames_extract_gen((kino_CharBuf*)&name);
 OUTPUT: RETVAL
 
 SV*
@@ -25,6 +26,13 @@ CODE:
     KINO_DECREF(latest);
 }
 OUTPUT: RETVAL
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch::Util::IndexFileNames",
+    xs_code    => $xs_code,
+);
 
 __COPYRIGHT__
 

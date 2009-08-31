@@ -1,3 +1,4 @@
+#define C_KINO_DOC
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Doc.h"

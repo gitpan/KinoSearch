@@ -13,6 +13,8 @@ KinoSearch::FieldType - Define a field's behavior.
 
 =head1 DESCRIPTION
 
+Define a field's behavior. 
+
 FieldType is an abstract class defining a set of traits and behaviors which
 may be associated with one or more field names.
 

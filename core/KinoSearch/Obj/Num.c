@@ -1,3 +1,10 @@
+#define C_KINO_NUM
+#define C_KINO_INTNUM
+#define C_KINO_FLOATNUM
+#define C_KINO_INTEGER32
+#define C_KINO_INTEGER64
+#define C_KINO_FLOAT32
+#define C_KINO_FLOAT64
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 

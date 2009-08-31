@@ -162,7 +162,8 @@ __C__
 #define KINO_ABSTRACT_CLASS_CHECK(_self, _vtable) \
     do { \
         kino_Obj *const _obj = (kino_Obj*)_self; \
-        if (_obj->vtable == _vtable) { \
+        kino_VTable *const _my_vtable = *(kino_VTable**)_self; \
+        if (_my_vtable == _vtable) { \
             KINO_DECREF(_obj); \
             KINO_THROW(KINO_ERR, "%o is an abstract class", \
                 Kino_VTable_Get_Name(_vtable)); \

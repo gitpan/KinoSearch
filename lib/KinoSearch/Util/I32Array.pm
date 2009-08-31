@@ -4,23 +4,29 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch PACKAGE = KinoSearch::Util::I32Array
 
 SV*
-new(class_name, ...) 
-    kino_ClassNameBuf class_name;
+new(either_sv, ...) 
+    SV *either_sv;
 CODE:
 {
-    HV *const args_hash = XSBind_build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Util::I32Array::new_PARAMS");
-    AV *ints_av = XSBind_maybe_extract_av(args_hash, SNL("ints"));
+    SV *ints_sv = NULL;
+    AV *ints_av = NULL;
     kino_I32Array *self = NULL;
-    kino_VTable *vtable 
-        = kino_VTable_singleton((kino_CharBuf*)&class_name, NULL);
 
-    if (ints_av) {
+    XSBind_allot_params( &(ST(0)), 1, items, 
+        "KinoSearch::Util::I32Array::new_PARAMS",
+        &ints_sv, SNL("ints"),
+        NULL);
+    if (XSBind_sv_defined(ints_sv) && SvROK(ints_sv)) {
+        ints_av = (AV*)SvRV(ints_sv);
+    }
+
+    if (ints_av && SvTYPE(ints_av) == SVt_PVAV) {
         chy_i32_t size  = av_len(ints_av) + 1;
         chy_i32_t *ints = KINO_MALLOCATE(size, chy_i32_t);
         chy_i32_t i;
@@ -31,11 +37,11 @@ CODE:
                     ? SvIV(*sv_ptr) 
                     : 0;
         }
-        self = (kino_I32Array*)Kino_VTable_Make_Obj(vtable);
+        self = (kino_I32Array*)XSBind_new_blank_obj(either_sv);
         kino_I32Arr_init(self, ints, size);
     }
     else {
-        THROW(KINO_ERR, "Missing required param 'ints'");
+        THROW(KINO_ERR, "Required param 'ints' isn't an arrayref");
     }
     
     KOBJ_TO_SV_NOINC(self, RETVAL);
@@ -60,13 +66,14 @@ CODE:
     RETVAL = newRV_noinc((SV*)out_av);
 }
 OUTPUT: RETVAL
+END_XS_CODE
 
-__AUTO_XS__
-
-{   "KinoSearch::Util::I32Array" => {
-        bind_methods => [qw( Get Get_Size )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Util::I32Array",
+    xs_code      => $xs_code,
+    bind_methods => [qw( Get Get_Size )],
+);
 
 __COPYRIGHT__
 

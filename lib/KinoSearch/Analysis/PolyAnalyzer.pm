@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $schema = KinoSearch::Schema->new;
@@ -32,15 +32,16 @@ my $constructor = <<'END_CONSTRUCTOR';
         analyzers => [ $case_folder, $whitespace_tokenizer, $stemmer, ], );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Analysis::PolyAnalyzer" => {
-        make_constructors => ["new"],
-        make_pod          => {
-            methods     => [qw( get_analyzers )],
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Analysis::PolyAnalyzer",
+    bind_constructors => ["new"],
+    make_pod          => {
+        methods     => [qw( get_analyzers )],
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
     },
-}
+);
 
 __COPYRIGHT__
 

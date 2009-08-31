@@ -18,6 +18,8 @@ KinoSearch::Obj::BitVector - An array of bits.
 
 =head1 DESCRIPTION
 
+An array of bits.
+
 BitVector is a growable array of bits.  All bits are initially zero.
 
 =head1 CONSTRUCTORS

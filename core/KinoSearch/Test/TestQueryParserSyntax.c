@@ -1,3 +1,5 @@
+#define C_KINO_TESTQUERYPARSERSYNTAX
+#define C_KINO_TESTQUERYPARSER
 #include "KinoSearch/Util/ToolSet.h"
 #include <stdarg.h>
 #include <string.h>

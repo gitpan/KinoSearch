@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Obj::VArray
 
 SV*
@@ -53,6 +54,17 @@ CODE:
     KOBJ_TO_SV_NOINC(Kino_VA_Delete(self, tick), RETVAL);
 OUTPUT: RETVAL
 
+void
+store(self, tick, value);
+    kino_VArray *self; 
+    chy_u32_t    tick;
+    kino_Obj    *value;
+PPCODE:
+{
+    if (value) { KINO_INCREF(value); }
+    kino_VA_store(self, tick, value);
+}
+
 SV*
 fetch(self, tick)
     kino_VArray *self;
@@ -60,24 +72,24 @@ fetch(self, tick)
 CODE:
     KOBJ_TO_SV(Kino_VA_Fetch(self, tick), RETVAL);
 OUTPUT: RETVAL
+END_XS_CODE
 
-__AUTO_XS__
-
-{   "KinoSearch::Obj::VArray" => {
-        bind_positional => [qw( Store )],
-        bind_methods    => [
-            qw(
-                Push
-                Push_VArray
-                Unshift
-                Splice
-                Resize
-                Get_Size
-                )
-        ],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Obj::VArray",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw(
+            Push
+            Push_VArray
+            Unshift
+            Splice
+            Resize
+            Get_Size
+            )
+    ],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

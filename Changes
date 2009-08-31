@@ -1,5 +1,14 @@
 Revision history for KinoSearch
 
+0.30_07  2009-08-30
+
+  Bugfixes:
+
+    * Revisit the bug in IndexManager's recycle().  The 0.30_06 fix attempt
+      had made it manifest less often, but had not completely eliminated it.
+    * Throw an error in Indexer if recycle() returns duplicated segments.
+
+
 0.30_06  2009-08-17
 
   Bugfixes:

@@ -6,7 +6,7 @@ class KinoSearch::Test::Util::NumPriorityQueue cnick NumPriQ
     inert incremented NumPriorityQueue*
     new(u32_t max_size);
 
-    public bool_t
+    bool_t
     Less_Than(NumPriorityQueue *self, Obj *a, Obj *b);
 }
 

@@ -1,3 +1,5 @@
+#define C_KINO_PHRASEQUERY
+#define C_KINO_PHRASECOMPILER
 #include <stdarg.h>
 
 #include "KinoSearch/Util/ToolSet.h"
@@ -238,7 +240,7 @@ PhraseCompiler_make_matcher(PhraseCompiler *self, SegReader *reader,
                             bool_t need_score)
 {
     PostingsReader *const post_reader = (PostingsReader*)SegReader_Fetch(
-        reader, POSTINGSREADER->name);
+        reader, VTable_Get_Name(POSTINGSREADER));
     PhraseQuery *const parent = (PhraseQuery*)self->parent;
     VArray  *const terms      = parent->terms;
     u32_t    num_terms        = VA_Get_Size(terms);
@@ -320,7 +322,7 @@ PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable,
         if (i == 0) {
             /* Set initial positions from first term. */
             u32_t j;
-            I32Array *positions = term_vector->positions;
+            I32Array *positions = TV_Get_Positions(term_vector);
             for (j = I32Arr_Get_Size(positions); j > 0; j--) {
                 BitVec_Set(posit_vec, I32Arr_Get(positions, j - 1));
             }
@@ -328,7 +330,7 @@ PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable,
         else {
             /* Filter positions using logical "and". */
             u32_t j;
-            I32Array *positions = term_vector->positions;
+            I32Array *positions = TV_Get_Positions(term_vector);
 
             BitVec_Clear_All(other_posit_vec);
             for (j = I32Arr_Get_Size(positions); j > 0; j--) {
@@ -347,10 +349,10 @@ PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable,
         TermVector *first_tv = (TermVector*)VA_Fetch(term_vectors, 0);
         TermVector *last_tv  
             = (TermVector*)VA_Fetch(term_vectors, num_tvs - 1);
-        I32Array *tv_start_positions = first_tv->positions;
-        I32Array *tv_end_positions   = last_tv->positions;
-        I32Array *tv_start_offsets   = first_tv->start_offsets;
-        I32Array *tv_end_offsets     = last_tv->end_offsets;
+        I32Array *tv_start_positions = TV_Get_Positions(first_tv);
+        I32Array *tv_end_positions   = TV_Get_Positions(last_tv);
+        I32Array *tv_start_offsets   = TV_Get_Start_Offsets(first_tv);
+        I32Array *tv_end_offsets     = TV_Get_End_Offsets(last_tv);
         u32_t     terms_max          = num_terms - 1;
         I32Array *valid_posits       = BitVec_To_Array(posit_vec);
         u32_t     num_valid_posits   = I32Arr_Get_Size(valid_posits);

@@ -57,6 +57,27 @@ class KinoSearch::Analysis::Token extends KinoSearch::Obj {
     inert int 
     compare(void *context, const void *va, const void *vb);
 
+    u32_t
+    Get_Start_Offset(Token *self);
+
+    u32_t
+    Get_End_Offset(Token *self);
+
+    float
+    Get_Boost(Token *self);
+
+    i32_t
+    Get_Pos_Inc(Token *self);
+
+    char*
+    Get_Text(Token *self);
+
+    size_t
+    Get_Len(Token *self);
+
+    void
+    Set_Text(Token *self, char *text, size_t len);
+
     void 
     Destroy(Token *token);
 }

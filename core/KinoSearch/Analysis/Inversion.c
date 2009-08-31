@@ -1,3 +1,5 @@
+#define C_KINO_INVERSION
+#define C_KINO_TOKEN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Analysis/Inversion.h"
@@ -45,6 +47,9 @@ Inversion_destroy(Inversion *self)
     FREEMEM(self->cluster_counts);
     SUPER_DESTROY(self, INVERSION);
 }
+
+u32_t
+Inversion_get_size(Inversion *self) { return self->size; }
 
 Token*
 Inversion_next(Inversion *self) 

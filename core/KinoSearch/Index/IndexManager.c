@@ -1,3 +1,4 @@
+#define C_KINO_INDEXMANAGER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/IndexManager.h"
@@ -133,41 +134,51 @@ IxManager_recycle(IndexManager *self, PolyReader *reader,
                   DeletionsWriter *del_writer, i32_t cutoff, bool_t optimize)
 {
     VArray *seg_readers = PolyReader_Get_Seg_Readers(reader);
-    VArray *recyclables = VA_Grep(seg_readers, S_check_cutoff, &cutoff);
+    VArray *candidates  = VA_Grep(seg_readers, S_check_cutoff, &cutoff);
+    VArray *recyclables = VA_new(VA_Get_Size(candidates));
     u32_t i;
     u32_t total_docs = 0;
     u32_t threshold = 0;
-    const u32_t num_seg_readers = VA_Get_Size(recyclables);
+    const u32_t num_candidates = VA_Get_Size(candidates);
     UNUSED_VAR(self);
 
-    if (optimize) { return recyclables; }
+    if (optimize) { 
+        DECREF(recyclables);
+        return candidates; 
+    }
 
     /* Sort by ascending size in docs. */
-    VA_Sort(recyclables, S_compare_doc_count, NULL);
+    VA_Sort(candidates, S_compare_doc_count, NULL);
 
     /* Find sparsely populated segments. */
-    for (i = 0; i < num_seg_readers; i++) {
-        u32_t num_segs_when_done = num_seg_readers - threshold + 1;
-        SegReader *seg_reader = (SegReader*)VA_Fetch(recyclables, i);
+    for (i = 0; i < num_candidates; i++) {
+        u32_t num_segs_when_done = num_candidates - threshold + 1;
+        SegReader *seg_reader = (SegReader*)VA_Fetch(candidates, i);
         total_docs += SegReader_Doc_Count(seg_reader);
         if (total_docs < S_fibonacci(num_segs_when_done + 5)) {
             threshold = i + 1;
         }
     }
-    VA_Splice(recyclables, threshold, num_seg_readers);
+    for (i = 0; i < threshold; i++) {
+        VA_Store(recyclables, i, VA_Delete(candidates, i));
+    }
 
     /* Find segments where at least 10% of all docs have been deleted. */
-    for (i = threshold + 1; i < num_seg_readers; i++) {
-        SegReader *seg_reader = (SegReader*)VA_Fetch(seg_readers, i);
+    for (i = threshold; i < num_candidates; i++) {
+        SegReader *seg_reader = (SegReader*)VA_Delete(candidates, i);
         CharBuf   *seg_name   = SegReader_Get_Seg_Name(seg_reader);
         double doc_max = SegReader_Doc_Max(seg_reader);
         double num_deletions = DelWriter_Seg_Del_Count(del_writer, seg_name);
         double del_proportion = num_deletions / doc_max;
         if (del_proportion >= 0.1) {
-            VA_Push(recyclables, INCREF(seg_reader));
+            VA_Push(recyclables, (Obj*)seg_reader);
+        }
+        else {
+            DECREF(seg_reader);
         }
     }
 
+    DECREF(candidates);
     return recyclables;
 }
 

@@ -1,3 +1,4 @@
+#define C_KINO_TESTOBJ
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"
@@ -6,11 +7,11 @@
 static Obj*
 S_new_testobj()
 {
-    static CharBuf klass = ZCB_LITERAL("TestObj");
+    static ZombieCharBuf klass = ZCB_LITERAL("TestObj");
     Obj *obj;
-    VTable *vtable = VTable_fetch_vtable(&klass);
+    VTable *vtable = VTable_fetch_vtable((CharBuf*)&klass);
     if (!vtable) {
-        vtable = VTable_singleton(&klass, OBJ);
+        vtable = VTable_singleton((CharBuf*)&klass, OBJ);
     }
     obj = VTable_Make_Obj(vtable);
     return Obj_init(obj);

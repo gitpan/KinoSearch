@@ -1,3 +1,4 @@
+#define C_KINO_STRINGHELPER
 #include <string.h>
 
 #define KINO_USE_SHORT_NAMES
@@ -9,7 +10,7 @@
 #include "KinoSearch/Obj/Err.h"
 #include "KinoSearch/Util/MemManager.h"
 
-const u8_t UTF8_SKIP[] = {
+const u8_t StrHelp_UTF8_SKIP[] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -20,7 +21,7 @@ const u8_t UTF8_SKIP[] = {
     3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4
 };
 
-const u8_t UTF8_TRAILING[] = {
+const u8_t StrHelp_UTF8_TRAILING[] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -218,7 +219,7 @@ StrHelp_decode_utf8_char(const char *ptr)
 {
     const u8_t *const string = (const u8_t*)ptr;
     u32_t retval = *string;
-    int trailing = UTF8_TRAILING[retval];
+    int trailing = StrHelp_UTF8_TRAILING[retval];
 
     switch (trailing) {
         case 0:

@@ -1,3 +1,4 @@
+#define C_KINO_SORTRULE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/SortRule.h"

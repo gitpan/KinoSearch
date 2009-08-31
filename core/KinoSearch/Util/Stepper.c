@@ -1,3 +1,4 @@
+#define C_KINO_STEPPER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/Stepper.h"

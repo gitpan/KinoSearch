@@ -1,3 +1,6 @@
+#define C_KINO_DELETIONSREADER
+#define C_KINO_POLYDELETIONSREADER
+#define C_KINO_DEFAULTDELETIONSREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DeletionsReader.h"

@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch  PACKAGE = KinoSearch::Indexer
 
 chy_i32_t
@@ -55,18 +56,18 @@ PPCODE:
     else if (XSBind_sv_defined(doc_sv) && SvROK(doc_sv)) {
         HV *maybe_fields = (HV*)SvRV(doc_sv);
         if (SvTYPE((SV*)maybe_fields) == SVt_PVHV) {
-            doc = self->stock_doc;
+            doc = Kino_Indexer_Get_Stock_Doc(self);
             Kino_Doc_Set_Fields(doc, maybe_fields);
         }
     }
     if (!doc) {
-        THROW(KINO_ERR, "Need either a hashref or a %o", KINO_DOC->name);
+        THROW(KINO_ERR, "Need either a hashref or a %o",
+            Kino_VTable_Get_Name(KINO_DOC));
     }
 
     Kino_Indexer_Add_Doc(self, doc, boost);
 }
-
-__AUTO_XS__
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     my $indexer = KinoSearch::Indexer->new(
@@ -153,34 +154,37 @@ B<boost> - A floating point weight which affects how this document scores.
 
 END_ADD_DOC_POD
 
-{   "KinoSearch::Indexer" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Indexer",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw(
+            Delete_By_Term
+            Delete_By_Query
+            Add_Index
+            Commit
+            Prepare_Commit
+            Optimize
+            )
+    ],
+    bind_constructors => ["_new|init"],
+    make_pod          => {
+        methods => [
+            { name => 'add_doc', pod => $add_doc_pod },
             qw(
-                Delete_By_Term
-                Delete_By_Query
-                Add_Index
-                Commit
-                Prepare_Commit
-                Optimize 
+                add_index
+                optimize
+                commit
+                prepare_commit
+                delete_by_term
+                delete_by_query
                 )
         ],
-        make_constructors => ["_new|init"],
-        make_getters      => [qw( seg_writer )],
-        make_pod          => {
-            methods => [
-                { name => 'add_doc', pod => $add_doc_pod },
-                'add_index',
-                'optimize',
-                'commit',
-                'prepare_commit',
-                'delete_by_term',
-                'delete_by_query',
-            ],
-            synopsis     => $synopsis,
-            constructors => [$constructor],
-        },
-    }
-}
+        synopsis     => $synopsis,
+        constructors => [$constructor],
+    },
+);
 
 __COPYRIGHT__
 

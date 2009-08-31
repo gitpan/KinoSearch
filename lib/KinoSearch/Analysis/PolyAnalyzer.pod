@@ -21,6 +21,8 @@ KinoSearch::Analysis::PolyAnalyzer - Multiple Analyzers in series.
 
 =head1 DESCRIPTION
 
+Multiple Analyzers in series.
+
 A PolyAnalyzer is a series of L<Analyzers|KinoSearch::Analysis::Analyzer>,
 each of which will be called upon to "analyze" text in turn.  You can
 either provide the Analyzers yourself, or you can specify a supported

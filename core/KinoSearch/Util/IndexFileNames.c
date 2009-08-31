@@ -1,3 +1,4 @@
+#define C_KINO_INDEXFILENAMES
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/IndexFileNames.h"

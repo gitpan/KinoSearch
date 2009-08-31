@@ -1,3 +1,7 @@
+#define C_KINO_POSTINGSWRITER
+#define C_KINO_RAWPOSTING
+#define C_KINO_TERMINFO
+#define C_KINO_SKIPSTEPPER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PostingsWriter.h"
@@ -158,11 +162,12 @@ PostWriter_add_inverted_doc(PostingsWriter *self, Inverter *inverter,
     Inverter_Iter_Init(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
-        if (type->indexed) {
+        if (FType_Indexed(type)) {
             CharBuf     *field       = Inverter_Get_Field_Name(inverter);
             Similarity  *sim         = Inverter_Get_Similarity(inverter);
             Inversion   *inversion   = Inverter_Get_Inversion(inverter);
-            float        length_norm = Sim_Length_Norm(sim, inversion->size);
+            float        length_norm = Sim_Length_Norm(sim, 
+                                          Inversion_Get_Size(inversion));
             S_add_inversion(self, inversion, (CharBuf*)field, doc_id,
                 doc_boost, length_norm);
         }
@@ -191,7 +196,7 @@ S_add_inversion(PostingsWriter *self, Inversion *inversion,
         length_norm);
 
     /* Check if we've crossed the memory threshold and it's time to flush. */
-    if (self->mem_pool->consumed > self->mem_thresh)
+    if (MemPool_Get_Consumed(self->mem_pool) > self->mem_thresh)
         S_flush_pools(self);
 }
 
@@ -210,7 +215,7 @@ S_flush_pools(PostingsWriter *self)
                 = (FreshPostingPool*)ASSERT_IS_A(
                     VA_Fetch(field_post_pools, 0), FRESHPOSTINGPOOL);
 
-            if (post_pool->cache_max != post_pool->cache_tick) {
+            if (PostPool_Cache_Count(post_pool) > 0) {
                 CharBuf *field_name = Seg_Field_Name(segment, i);
                 RawPostingStreamer *streamer = RawPostStreamer_new(
                     (DataWriter*)self, self->post_outstream);
@@ -248,7 +253,7 @@ S_flush_pools(PostingsWriter *self)
 
                 /* Store away this pool and start another. */
                 FreshPostPool_Shrink(post_pool);
-                S_init_posting_pool(self, post_pool->field);
+                S_init_posting_pool(self, field_name);
             }
         }
     }
@@ -268,8 +273,10 @@ S_write_terms_and_postings(PostingsWriter *self, Obj *raw_post_source,
     TermInfo         *const skip_tinfo      = TInfo_new(0);
     SkipStepper      *const skip_stepper    = self->skip_stepper;
     LexiconWriter    *const lex_writer      = self->lex_writer;
-    const i32_t       skip_interval         = lex_writer->skip_interval;
+    Schema           *const schema          = self->schema;
+    Architecture     *const arch            = Schema_Get_Architecture(schema);
     CharBuf          *const last_term_text  = CB_new(0);
+    const i32_t       skip_interval         = Arch_Skip_Interval(arch);
     char             *last_text_buf;     
     u32_t             last_text_size;
     i32_t             last_doc_id           = 0;
@@ -447,7 +454,7 @@ void
 PostWriter_add_segment(PostingsWriter *self, SegReader *reader,
                        I32Array *doc_map)
 {
-    Segment   *other_segment  = reader->segment;
+    Segment   *other_segment  = SegReader_Get_Segment(reader);
     u32_t      i, max;
     VArray    *post_pools     = self->post_pools;
     Schema    *schema         = self->schema;

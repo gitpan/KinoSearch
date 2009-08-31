@@ -13,6 +13,8 @@ KinoSearch::Index::DataReader - Abstract base class for reading index data.
 
 =head1 DESCRIPTION
 
+Abstract base class for reading index data.
+
 DataReader is the companion class to DataWriter.  Every index
 component will implement one of each.
 

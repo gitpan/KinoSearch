@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     # Query is an abstract base class.
@@ -27,20 +27,21 @@ my $constructor = <<'END_CONSTRUCTOR_CODE_SAMPLE';
     );
 END_CONSTRUCTOR_CODE_SAMPLE
 
-{   "KinoSearch::Search::Query" => {
-        bind_methods => [
-            qw( Set_Boost
-                Get_Boost
-                _make_compiler|Make_Compiler )
-        ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods     => [qw( make_compiler set_boost get_boost )],
-        },
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::Query",
+    bind_methods => [
+        qw( Set_Boost
+            Get_Boost
+            _make_compiler|Make_Compiler )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [qw( make_compiler set_boost get_boost )],
+    },
+);
 
 __COPYRIGHT__
 

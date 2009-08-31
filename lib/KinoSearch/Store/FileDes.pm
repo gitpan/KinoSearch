@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch     PACKAGE = KinoSearch::Store::FileDes
 
 =for comment
@@ -31,13 +32,14 @@ _BUF_SIZE()
 CODE:
    RETVAL = KINO_IO_STREAM_BUF_SIZE;
 OUTPUT: RETVAL
+END_XS_CODE
 
-__AUTO_XS__
-
-{   "KinoSearch::Store::FileDes" => {
-        bind_methods => [qw( Length Close )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Store::FileDes",
+    xs_code      => $xs_code,
+    bind_methods => [qw( Length Close )],
+);
 
 __COPYRIGHT__
 

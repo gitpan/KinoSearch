@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
@@ -28,26 +28,27 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::FieldType::FullTextType" => {
-        make_constructors => ["new|init2"],
-        bind_methods      => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::FieldType::FullTextType",
+    bind_constructors => ["new|init2"],
+    bind_methods      => [
+        qw(
+            Set_Highlightable
+            Highlightable
+            )
+    ],
+    make_pod => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [
             qw(
-                Set_Highlightable
-                Highlightable 
+                set_highlightable
+                highlightable
                 )
         ],
-        make_pod => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods     => [
-                qw(
-                    set_highlightable
-                    highlightable 
-                    )
-            ],
-        },
-    }
-}
+    },
+);
 
 __COPYRIGHT__
 

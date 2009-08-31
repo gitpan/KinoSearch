@@ -14,6 +14,8 @@ KinoSearch::Search::Matcher - Match a set of document ids.
 
 =head1 DESCRIPTION
 
+Match a set of document ids.
+
 A Matcher iterates over an ascending set of document ids.  Some Matchers
 implement score() and can assign relevance scores to the docs that they
 match.  Other implementations may be match-only.

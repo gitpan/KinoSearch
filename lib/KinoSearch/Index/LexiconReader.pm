@@ -4,25 +4,28 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $lex_reader = $seg_reader->obtain("KinoSearch::Index::LexiconReader");
     my $lexicon    = $lex_reader->lexicon( field => 'title' );
 END_SYNOPSIS
 
-{   "KinoSearch::Index::LexiconReader" => {
-        bind_methods      => [qw( Lexicon Doc_Freq Fetch_Term_Info )],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis => $synopsis,
-            methods  => [qw( lexicon doc_freq )],
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::LexiconReader",
+    bind_methods      => [qw( Lexicon Doc_Freq Fetch_Term_Info )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis => $synopsis,
+        methods  => [qw( lexicon doc_freq )],
     },
-    "KinoSearch::Index::DefaultLexiconReader" => {
-        make_constructors => ["new"],
-    }
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DefaultLexiconReader",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

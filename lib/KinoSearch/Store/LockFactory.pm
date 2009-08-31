@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     use Sys::Hostname qw( hostname );
@@ -30,17 +30,17 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Store::LockFactory" => {
-        bind_methods      => [qw( Make_Lock Make_Shared_Lock )],
-        make_getters      => [qw( folder hostname )],
-        make_constructors => ["new"],
-        make_pod          => {
-            methods => [ qw( make_lock make_shared_lock) ],
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        }
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Store::LockFactory",
+    bind_methods      => [qw( Make_Lock Make_Shared_Lock )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        methods     => [qw( make_lock make_shared_lock)],
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
     }
-}
+);
 
 __COPYRIGHT__
 

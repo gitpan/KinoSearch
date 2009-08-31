@@ -26,6 +26,8 @@ KinoSearch::Index::IndexReader - Read from an inverted index.
 
 =head1 DESCRIPTION
 
+Read from an inverted index.
+
 IndexReader is the interface through which Searchers access the content of
 an index.
 

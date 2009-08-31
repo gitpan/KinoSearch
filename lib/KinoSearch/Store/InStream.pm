@@ -4,19 +4,18 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch::Store::InStream
 
 SV*
-new(class_name, file_des)
-    kino_ClassNameBuf class_name;
+new(either_sv, file_des)
+    SV           *either_sv;
     kino_FileDes *file_des;
 CODE:
 {
-    kino_VTable *vtable 
-        = kino_VTable_singleton((kino_CharBuf*)&class_name, NULL);
-    kino_InStream *self = (kino_InStream*)Kino_VTable_Make_Obj(vtable);
+    kino_InStream *self = (kino_InStream*)XSBind_new_blank_obj(either_sv);
     kino_InStream_init(self, file_des);
     KOBJ_TO_SV_NOINC(self, RETVAL);
 }
@@ -25,11 +24,11 @@ OUTPUT: RETVAL
 kino_InStream*
 reopen(self, filename, offset, len)
     kino_InStream *self;
-    kino_CharBuf filename;
+    kino_ZombieCharBuf filename;
     chy_u64_t offset;
     chy_u64_t len;
 CODE:
-    RETVAL = Kino_InStream_Reopen(self, &filename, offset, len);
+    RETVAL = Kino_InStream_Reopen(self, (kino_CharBuf*)&filename, offset, len);
 OUTPUT: RETVAL
 
 void
@@ -103,31 +102,31 @@ CODE:
     SvCUR_set(buffer_sv, RETVAL);
 }
 OUTPUT: RETVAL
+END_XS_CODE
 
-__AUTO_XS__
-
-{   "KinoSearch::Store::InStream" => {
-        bind_methods => [
-            qw(
-                Seek
-                Tell
-                Length
-                Close
-                Read_I8
-                Read_I32
-                Read_I64
-                Read_U8
-                Read_U32
-                Read_U64
-                Read_C32
-                Read_C64
-                Read_F32
-                Read_F64
-                )
-        ],
-        make_getters => [qw( offset file_des )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Store::InStream",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw(
+            Seek
+            Tell
+            Length
+            Close
+            Read_I8
+            Read_I32
+            Read_I64
+            Read_U8
+            Read_U32
+            Read_U64
+            Read_C32
+            Read_C64
+            Read_F32
+            Read_F64
+            )
+    ],
+);
 
 __COPYRIGHT__
 

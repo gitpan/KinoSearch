@@ -12,10 +12,10 @@ use Boilerplater::Util qw(
     a_isa_b
 );
 use Boilerplater::Dumpable;
-use File::Spec::Functions qw( splitpath catfile );
+use File::Spec::Functions qw( catfile );
 use Scalar::Util qw( reftype );
 
-our %new_PARAMS = (
+our %create_PARAMS = (
     source_class      => undef,
     class_name        => undef,
     cnick             => undef,
@@ -24,8 +24,9 @@ our %new_PARAMS = (
     functions         => undef,
     member_vars       => undef,
     inert_vars        => undef,
-    docu_comment      => undef,
+    docucomment       => undef,
     inert             => undef,
+    final             => undef,
     parcel            => undef,
     attributes        => undef,
     exposure          => 'parcel',
@@ -47,26 +48,21 @@ sub fetch_singleton {
     my ( undef, %args ) = @_;
     verify_args( \%fetch_singleton_PARAMS, %args ) or confess $@;
 
-    # Acquire a Parcel.
-    my $parcel = $args{parcel};
-    if ( !defined $parcel ) {
-        $parcel = Boilerplater::Parcel->default_parcel;
-    }
-    elsif ( blessed($parcel) ) {
-        confess("Not a Boilerplater::Parcel")
-            unless $parcel->isa('Boilerplater::Parcel');
-    }
-    else {
-        $parcel = Boilerplater::Parcel->singleton( name => $args{parcel} );
-    }
-
-    # Get the class identifier.
+    # Start with the class identifier.
     my $class_name = $args{class_name};
     confess("Missing required param 'class_name'") unless defined $class_name;
-    $class_name =~ /(\w+)$/ or confess("No match");
-    my $class_identifier = $1;
+    $class_name =~ /(\w+)$/ or confess("Invalid class name: '$class_name'");
+    my $key = $1;
 
-    my $key = $parcel->get_prefix . $class_identifier;
+    # Maybe prepend parcel prefix.
+    my $parcel = $args{parcel};
+    if ( defined $parcel ) {
+        if ( !a_isa_b( $parcel, "Boilerplater::Parcel" ) ) {
+            $parcel = Boilerplater::Parcel->singleton( name => $parcel );
+        }
+        $key = $parcel->get_prefix . $key;
+    }
+
     return $registry{$key};
 }
 
@@ -74,35 +70,33 @@ sub new { confess("The constructor for Boilerplater::Class is create()") }
 
 sub create {
     my ( $class_class, %args ) = @_;
-    verify_args( \%new_PARAMS, %args ) or confess $@;
+    verify_args( \%create_PARAMS, %args ) or confess $@;
     $args{class_cnick} = $args{cnick};
     my $self = $class_class->SUPER::new(
-        %new_PARAMS,
-        struct_name       => undef,
-        methods           => [],
-        overridden        => {},
-        functions         => [],
-        member_vars       => [],
-        novel_member_vars => undef,
-        children          => [],
-        parent            => undef,
-        attributes        => {},
-        autocode          => '',
+        %create_PARAMS,
+        micro_sym   => 'class',
+        struct_sym  => undef,
+        methods     => [],
+        overridden  => {},
+        functions   => [],
+        member_vars => [],
+        children    => [],
+        parent      => undef,
+        attributes  => {},
+        autocode    => '',
+        tree_grown  => 0,
         %args,
     );
     $self->{cnick} ||= $self->{class_cnick};
 
-    # Keep track of member vars defined by this class rather than inherited.
-    $self->{novel_member_vars} = [ @{ $self->{member_vars} } ];
-
     # Make it possible to look up methods and functions by name.
-    $self->{meth_by_name}{ $_->micro_sym } = $_ for $self->get_methods;
-    $self->{func_by_name}{ $_->micro_sym } = $_ for $self->get_functions;
+    $self->{meth_by_name}{ $_->micro_sym } = $_ for $self->methods;
+    $self->{func_by_name}{ $_->micro_sym } = $_ for $self->functions;
 
     # Derive struct name.
     confess("Missing required param 'class_name'") unless $self->{class_name};
     $self->{class_name} =~ /(\w+)$/;
-    $self->{struct_name} = $1;
+    $self->{struct_sym} = $1;
 
     # Verify that members of supplied arrays meet "is a" requirements.
     for ( @{ $self->{functions} } ) {
@@ -127,7 +121,7 @@ sub create {
         unless reftype( $self->{attributes} ) eq 'HASH';
 
     # Store in registry.
-    my $key      = $self->get_prefix . $self->{struct_name};
+    my $key      = $self->full_struct_sym;
     my $existing = $registry{$key};
     if ($existing) {
         confess(  "New class $self->{class_name} conflicts with previously "
@@ -135,14 +129,13 @@ sub create {
     }
     $registry{$key} = $self;
 
+    # Validate inert param.
+    confess("Inert classes can't have methods")
+        if ( $self->{inert} and @{ $self->{methods} } );
+
     return $self;
 }
 
-#     # /path/to/Foo/Bar.c, if source class is Foo::Bar.
-#     my $path = $class->file_path( '/path/to', '.c' );
-#
-# Provide an OS-specific path for a file relating to this class could be
-# found, by joining together the components of the "source class" name.
 sub file_path {
     my ( $self, $base_dir, $ext ) = @_;
     my @components = split( '::', $self->{source_class} );
@@ -152,8 +145,6 @@ sub file_path {
     return catfile(@components);
 }
 
-# Return a relative path to a C header file, appropriately formatted for a
-# pound-include directive.
 sub include_h {
     my $self = shift;
     my @components = split( '::', $self->{source_class} );
@@ -161,38 +152,52 @@ sub include_h {
     return join( '/', @components );
 }
 
-# Accessors.
-sub is                    { exists $_[0]->{attributes}{ $_[1] } }
+sub has_attribute { exists $_[0]->{attributes}{ $_[1] } }
+
 sub get_cnick             { shift->{cnick} }
-sub get_struct_name       { shift->{struct_name} }
+sub get_struct_sym        { shift->{struct_sym} }
 sub get_parent_class_name { shift->{parent_class_name} }
 sub get_source_class      { shift->{source_class} }
-sub get_docu_comment      { shift->{docu_comment} }
-sub get_functions         { @{ shift->{functions} } }
-sub get_methods           { @{ shift->{methods} } }
-sub get_member_vars       { @{ shift->{member_vars} } }
-sub novel_member_vars     { @{ shift->{novel_member_vars} } }
-sub get_inert_vars        { @{ shift->{inert_vars} } }
-sub get_children          { @{ shift->{children} } }
+sub get_docucomment       { shift->{docucomment} }
 sub get_parent            { shift->{parent} }
 sub get_autocode          { shift->{autocode} }
 sub inert                 { shift->{inert} }
+sub final                 { shift->{final} }
 
 sub set_parent { $_[0]->{parent} = $_[1] }
 
-# Append auxiliary C code.
-sub append_autocode { $_[0]->{autocode} .= $_[1] }
-
-# The name of the global VTable object for this class.
-sub vtable_var { uc( shift->{struct_name} ) }
-
-# The C type specifier for this class's vtable.  Each vtable needs to have its
-# own type because each has a variable number of methods at the end of the
-# struct, and it's not possible to initialize a static struct with a flexible
-# array at the end under C89.
+sub vtable_var  { uc( shift->{struct_sym} ) }
 sub vtable_type { shift->vtable_var . '_VT' }
 
-# Return the Method object for the supplied micro_sym, if any.
+sub full_struct_sym { $_[0]->get_prefix . $_[0]->{struct_sym} }
+sub full_vtable_var { $_[0]->get_PREFIX . $_[0]->vtable_var }
+
+sub append_autocode { $_[0]->{autocode} .= $_[1] }
+
+sub functions   { @{ shift->{functions} } }
+sub methods     { @{ shift->{methods} } }
+sub member_vars { @{ shift->{member_vars} } }
+sub inert_vars  { @{ shift->{inert_vars} } }
+sub children    { @{ shift->{children} } }
+
+sub novel_methods {
+    my $self = shift;
+    return
+        grep { $_->get_class_cnick eq $self->{cnick} } @{ $self->{methods} };
+}
+
+sub novel_member_vars {
+    my $self = shift;
+    return
+        grep { $_->get_class_cnick eq $self->{cnick} }
+        @{ $self->{member_vars} };
+}
+
+sub function {
+    my ( $self, $micro_sym ) = @_;
+    return $self->{func_by_name}{ lc($micro_sym) };
+}
+
 sub method {
     my ( $self, $micro_sym ) = @_;
     return $self->{meth_by_name}{ lc($micro_sym) };
@@ -211,24 +216,17 @@ sub novel_method {
     }
 }
 
-# Return the Function object for the supplied micro_sym, if any.
-sub function {
-    my ( $self, $micro_sym ) = @_;
-    return $self->{func_by_name}{ lc($micro_sym) };
-}
-
-# Inheriting is allowed.
-sub is_final {0}
-
-# Add a child to this class.
 sub add_child {
     my ( $self, $child ) = @_;
+    confess("Can't call add_child after grow_tree") if $self->{tree_grown};
     push @{ $self->{children} }, $child;
 }
 
-# Add a method to the class.  Valid only before _bequeath_methods is called.
 sub add_method {
     my ( $self, $method ) = @_;
+    confess("Not a Method") unless a_isa_b( $method, "Boilerplater::Method" );
+    confess("Can't call add_method after grow_tree") if $self->{tree_grown};
+    confess("Can't add_method to an inert class")    if $self->{inert};
     push @{ $self->{methods} }, $method;
     $self->{meth_by_name}{ $method->micro_sym } = $method;
 }
@@ -236,26 +234,27 @@ sub add_method {
 # Create dumpable functions unless hand coded versions were supplied.
 sub _create_dumpables {
     my $self = shift;
-    $dumpable->add_dumpables($self) if $self->is('dumpable');
+    $dumpable->add_dumpables($self) if $self->has_attribute('dumpable');
 }
 
-# Bequeath all inherited methods and members to children.
 sub grow_tree {
     my $self = shift;
-    $self->_establish_parentage;
+    confess("Can't call grow_tree more than once") if $self->{tree_grown};
+    $self->_establish_ancestry;
     $self->_bequeath_member_vars;
     $self->_generate_automethods;
     $self->_bequeath_methods;
+    $self->{tree_grown} = 1;
 }
 
 # Let the children know who their parent class is.
-sub _establish_parentage {
+sub _establish_ancestry {
     my $self = shift;
     for my $child ( @{ $self->{children} } ) {
         # This is a circular reference and thus a memory leak, but we don't
         # care, because we have to have everything in memory at once anyway.
         $child->{parent} = $self;
-        $child->_establish_parentage;
+        $child->_establish_ancestry;
     }
 }
 
@@ -303,25 +302,20 @@ sub _bequeath_methods {
         for my $meth ( @common_methods, @{ $child->{methods} } ) {
             next if $seen{ $meth->micro_sym };
             $seen{ $meth->micro_sym } = 1;
-            $meth = $meth->finalize if $child->is_final;
+            if ( $child->final ) {
+                $meth = $meth->finalize if $child->final;
+                $child->{meth_by_name}{ $meth->micro_sym } = $meth;
+            }
             push @new_method_set, $meth;
         }
         $child->{methods} = \@new_method_set;
 
         # Pass it all down to the next generation.
         $child->_bequeath_methods;
+        $child->{tree_grown} = 1;
     }
 }
 
-# Collect non-inherited methods.
-sub novel_methods {
-    my $self = shift;
-    return
-        grep { $_->get_class_cnick eq $self->{cnick} } @{ $self->{methods} };
-}
-
-# Return this class and all its child classes as an array, where all children
-# appear after their parent nodes.
 sub tree_to_ladder {
     my $self   = shift;
     my @ladder = ($self);
@@ -340,6 +334,212 @@ __POD__
 =head1 NAME
 
 Boilerplater::Class - An object representing a single class definition.
+
+=head1 CONSTRUCTORS
+
+Boilerplater::Class objects are stored as quasi-singletons, one for each
+unique parcel/class_name combination.
+
+=head2 fetch_singleton 
+
+    my $class = Boilerplater::Class->fetch_singleton(
+        parcel     => 'Boil',
+        class_name => 'Foo::Bar',
+    );
+
+Retrieve a Class, if one has already been created.
+
+=head2 create
+
+    my $class = Boilerplater::Class->create(
+        parcel            => 'Boil',        # default: special
+        class_name        => 'Foo::FooJr',  # required
+        cnick             => 'FooJr',       # default: derived from class_name
+        exposure          => 'public',      # default: 'parcel'
+        source_class      => 'Foo',         # default: same as class_name
+        parent_class_name => 'Obj',         # default: undef
+        inert             => undef,         # default: undef
+        methods           => \@methods,     # default: []
+        functions         => \@funcs,       # default: []
+        member_vars       => \@members,     # default: []
+        inert_vars        => \@inert_vars,  # default: []
+        docucomment       => $documcom,     # default: undef,
+        attributes        => \%attributes,  # default: {}
+    );
+
+Create and register a quasi-singleton.  May only be called once for each
+unique parcel/class_name combination.
+
+=over
+
+=item * B<parcel>, B<class_name>, B<cnick>, B<exposure> - see
+L<Boilerplater::Symbol>.
+
+=item * B<source_class> - The name of the class that owns the file in which
+this class was declared.  Should be "Foo" if "Foo::FooJr" is defined in
+C<Foo.bp>.
+
+=item * B<parent_class_name> - The name of this class's parent class.  Needed
+in order to establish the class hierarchy.
+
+=item * B<inert> - Should be true if the class is inert, i.e. cannot be
+instantiated.
+
+=item * B<methods> - An array where each element is a Boilerplater::Method.
+
+=item * B<functions> - An array where each element is a Boilerplater::Method.
+
+=item * B<member_vars> - An array where each element is a
+Boilerplater::Variable and should be a member variable in each instantiated
+object.
+
+=item * B<inert_vars> - An array where each element is a
+Boilerplater::Variable and should be a shared (class) variable.
+
+=item * B<docucomment> - A Boilerplater::DocuComment describing this Class.
+
+=item * B<attributes> - An arbitrary hash of attributes.
+
+=back
+
+=head1 METHODS
+
+=head2 get_cnick get_struct_sym get_parent_class_name get_source_class
+get_docucomment get_parent get_autocode inert final
+
+Accessors.
+
+=head2 set_parent
+
+    $class->set_parent($ancestor);
+
+Set the parent class.
+
+=head2 add_child
+
+    $class->add_child($child_class);
+
+Add a child class. 
+
+=head2 add_method
+
+    $class->add_method($method);
+
+Add a Method to the class.  Valid only before grow_tree() is called.
+
+=head2 function 
+
+    my $do_stuff_function = $class->function("do_stuff");
+
+Return the inert Function object for the supplied C<micro_sym>, if any.
+
+=head2 method
+
+    my $do_stuff_method = $class->method("Do_Stuff");
+
+Return the Method object for the supplied C<micro_sym> / C<macro_sym>, if any.
+
+=head2 novel_method
+
+    my $do_stuff_method = $class->novel_method("Do_Stuff");
+
+Return a Method object if the Method corresponding to the supplied string is
+novel.
+
+=head2 children 
+
+    my @child_classes = $class->children;
+
+Return all child classes as a list.
+
+=head2 functions
+
+    my @functions = $class->functions;
+
+Return all (inert) functions as a list.
+
+=head2 methods
+
+    my @methods = $class->methods;
+
+Return all methods as a list.
+
+=head2 inert_vars
+
+    my @inert_vars = $class->inert_vars;
+
+Return all inert (shared, class) variables as a list.
+
+=head2 member_vars
+
+    my @members = $class->member_vars;
+
+Return all member variables as a list.
+
+=head2 novel_methods
+
+    my @novel_methods = $class->novel_methods;
+
+Return all novel methods as a list.
+
+=head2 novel_member_vars
+
+    my @new_members = $class->novel_member_vars;
+
+Return all novel member variables as a list.
+
+=head2 grow_tree
+
+    $class->grow_tree;
+
+Bequeath all inherited methods and members to children.
+
+=head2 tree_to_ladder
+
+    my @ordered = $class->tree_to_ladder;
+
+Return this class and all its child classes as an array, where all children
+appear after their parent nodes.
+
+=head2 file_path
+
+    # /path/to/Foo/Bar.c, if source class is Foo::Bar.
+    my $path = $class->file_path( '/path/to', '.c' );
+
+Provide an OS-specific path for a file relating to this class could be found,
+by joining together the components of the C<source_class> name.
+
+=head2 include_h
+
+    my $relative_path = $class->include_h;
+
+Return a relative path to a C header file, appropriately formatted for a
+pound-include directive.
+
+=head2 append_autocode
+
+    $class->append_autocode($code);
+
+Append auxiliary C code.
+
+=head2 vtable_var
+
+The name of the global VTable object for this class.
+
+=head2 vtable_type
+
+The C type specifier for this class's vtable.  Each vtable needs to have its
+own type because each has a variable number of methods at the end of the
+struct, and it's not possible to initialize a static struct with a flexible
+array at the end under C89.
+
+=head2 full_vtable_var
+
+Fully qualified vtable variable name, including the parcel prefix.
+
+=head2 full_struct_sym
+
+Fully qualified struct symbol, including the parcel prefix.
 
 =head1 COPYRIGHT AND LICENSE
 

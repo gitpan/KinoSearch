@@ -1,3 +1,6 @@
+#define C_KINO_PHRASESCORER
+#define C_KINO_POSTING
+#define C_KINO_SCOREPOSTING
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/PhraseScorer.h"

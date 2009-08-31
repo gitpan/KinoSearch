@@ -1,3 +1,4 @@
+#define C_KINO_FILEPURGER
 #include <ctype.h>
 #include "KinoSearch/Util/ToolSet.h"
 

@@ -1,3 +1,4 @@
+#define C_KINO_SEGWRITER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegWriter.h"

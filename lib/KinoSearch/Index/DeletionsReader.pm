@@ -4,17 +4,20 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::DeletionsReader" => {
-        make_constructors => ['new'],
-        bind_methods => [qw( Iterator Del_Count )],
-    },
-    "KinoSearch::Index::DefaultDeletionsReader" => {
-        make_constructors => ['new'],
-        bind_methods      => [qw( Read_Deletions )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DeletionsReader",
+    bind_constructors => ['new'],
+    bind_methods      => [qw( Iterator Del_Count )],
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DefaultDeletionsReader",
+    bind_constructors => ['new'],
+    bind_methods      => [qw( Read_Deletions )],
+);
 
 __COPYRIGHT__
 

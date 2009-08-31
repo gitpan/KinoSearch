@@ -4,14 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::DocVector" => {
-        bind_methods =>
-            [ qw( Term_Vector Field_Buf Add_Field_Buf ) ],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DocVector",
+    bind_methods      => [qw( Term_Vector Field_Buf Add_Field_Buf )],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

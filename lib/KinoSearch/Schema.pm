@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     use KinoSearch::Schema;
@@ -26,42 +26,43 @@ my $constructor = <<'END_CONSTRUCTOR';
     my $schema = MySchema->new;
 END_CONSTRUCTOR
 
-{   "KinoSearch::Schema" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Schema",
+    bind_methods => [
+        qw(
+            Architecture
+            Get_Architecture
+            Get_Similarity
+            Fetch_Type
+            Fetch_Analyzer
+            Fetch_Sim
+            Fetch_Posting
+            Num_Fields
+            All_Fields
+            Spec_Field
+            Write
+            Eat
+            )
+    ],
+    bind_constructors => [qw( new )],
+    make_pod          => {
+        methods => [
             qw(
-                Architecture
-                Get_Architecture
-                Get_Similarity
-                Fetch_Type
-                Fetch_Analyzer
-                Fetch_Sim
-                Fetch_Posting
-                Num_Fields
-                All_Fields
-                Spec_Field
-                Write
-                Eat
+                spec_field
+                num_fields
+                all_fields
+                fetch_type
+                fetch_sim
+                architecture
+                get_architecture
+                get_similarity
                 )
         ],
-        make_constructors => [qw( new )],
-        make_pod          => {
-            methods => [
-                qw(
-                    spec_field
-                    num_fields
-                    all_fields
-                    fetch_type
-                    fetch_sim
-                    architecture
-                    get_architecture
-                    get_similarity
-                    )
-            ],
-            synopsis     => $synopsis,
-            constructors => [ { sample => $constructor } ],
-        },
-    }
-}
+        synopsis     => $synopsis,
+        constructors => [ { sample => $constructor } ],
+    },
+);
 
 __COPYRIGHT__
 

@@ -1,3 +1,5 @@
+#define C_KINO_HEATMAP
+#define C_KINO_SPAN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Highlight/HeatMap.h"
@@ -192,6 +194,9 @@ HeatMap_generate_proximity_boosts(HeatMap *self, VArray *spans)
 
     return boosts;
 }
+
+VArray*
+HeatMap_get_spans(HeatMap *self) { return self->spans; }
 
 /* Copyright 2006-2009 Marvin Humphrey
  *

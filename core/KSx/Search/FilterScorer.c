@@ -1,3 +1,4 @@
+#define C_KINO_FILTERSCORER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KSx/Search/FilterScorer.h"

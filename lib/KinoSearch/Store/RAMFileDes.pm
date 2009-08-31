@@ -4,14 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Store::RAMFileDes" => {
-        bind_methods      => [qw( Contents )],
-        make_constructors => ['new'],
-        make_getters      => [qw( len )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Store::RAMFileDes",
+    bind_methods      => [qw( Contents )],
+    bind_constructors => ['new'],
+);
 
 __COPYRIGHT__
 

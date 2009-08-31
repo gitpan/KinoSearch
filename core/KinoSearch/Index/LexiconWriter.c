@@ -1,3 +1,4 @@
+#define C_KINO_LEXICONWRITER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/LexiconWriter.h"

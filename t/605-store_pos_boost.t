@@ -19,7 +19,7 @@ sub transform {
                 my $boost = ( $1 eq 'a' and $this_time ) ? 100 : 1;
                 $new_inversion->append(
                     KinoSearch::Analysis::Token->new(
-                        text         => $1,
+                        text         => "$1",
                         start_offset => $-[0],
                         end_offset   => $+[0],
                         boost        => $boost,

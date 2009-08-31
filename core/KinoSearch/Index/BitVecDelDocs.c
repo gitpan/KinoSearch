@@ -1,3 +1,4 @@
+#define C_KINO_BITVECDELDOCS
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/BitVecDelDocs.h"

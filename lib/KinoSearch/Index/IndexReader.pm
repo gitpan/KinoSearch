@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch::Index::IndexReader
 
 void
@@ -14,7 +15,7 @@ set_race_condition_debug1(val_sv)
 PPCODE:
     KINO_DECREF(kino_PolyReader_race_condition_debug1);
     kino_PolyReader_race_condition_debug1 =
-        (kino_CharBuf*)kino_XSBind_maybe_sv_to_kobj(val_sv, KINO_CHARBUF);
+        (kino_CharBuf*)XSBind_maybe_sv_to_kobj(val_sv, KINO_CHARBUF);
     if (kino_PolyReader_race_condition_debug1)
         (void)KINO_INCREF(kino_PolyReader_race_condition_debug1);
 
@@ -23,8 +24,7 @@ debug1_num_passes()
 CODE: 
     RETVAL = kino_PolyReader_debug1_num_passes;
 OUTPUT: RETVAL
-
-__AUTO_XS__
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     my $reader = KinoSearch::Index::IndexReader->open(
@@ -51,38 +51,42 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Index::IndexReader" => {
-        bind_methods => [
-            qw( Doc_Max
-                Doc_Count 
-                Del_Count
-                Fetch
-                Obtain
-                Seg_Readers
-                _offsets|Offsets
-                Get_Components
-                )
-        ],
-        make_constructors => ['open|do_open'],
-        make_pod => {
-            synopsis => $synopsis,
-            constructor => {
-                name   => 'open',
-                func   => 'do_open',
-                sample => $constructor,
-            },
-            methods => [qw(
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Index::IndexReader",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw( Doc_Max
+            Doc_Count
+            Del_Count
+            Fetch
+            Obtain
+            Seg_Readers
+            _offsets|Offsets
+            Get_Components
+            )
+    ],
+    bind_constructors => ['open|do_open'],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => {
+            name   => 'open',
+            func   => 'do_open',
+            sample => $constructor,
+        },
+        methods => [
+            qw(
                 doc_max
-                doc_count 
+                doc_count
                 del_count
                 seg_readers
                 offsets
                 fetch
                 obtain
-            )]
-        },
-    }
-}
+                )
+        ]
+    },
+);
 
 __COPYRIGHT__
 

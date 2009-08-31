@@ -1,3 +1,4 @@
+#define C_KINO_MATCHER
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 

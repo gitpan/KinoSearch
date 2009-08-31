@@ -1,3 +1,4 @@
+#define C_KINO_OUTSTREAM
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/OutStream.h"

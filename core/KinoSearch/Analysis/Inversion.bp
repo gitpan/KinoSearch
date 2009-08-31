@@ -55,6 +55,9 @@ class KinoSearch::Analysis::Inversion extends KinoSearch::Obj {
     Token** 
     Next_Cluster(Inversion *self, u32_t *count);
 
+    u32_t
+    Get_Size(Inversion *self);
+
     void 
     Destroy(Inversion *self);
 }

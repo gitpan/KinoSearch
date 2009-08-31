@@ -1,3 +1,4 @@
+#define C_KINO_COMPOUNDFILEWRITER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/CompoundFileWriter.h"

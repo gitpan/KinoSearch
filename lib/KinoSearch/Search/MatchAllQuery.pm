@@ -4,20 +4,18 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
-
+__BINDING__
 
 my $constructor = <<'END_CONSTRUCTOR';
     my $match_all_query = KinoSearch::Search::MatchAllQuery->new;
 END_CONSTRUCTOR
 
-{   "KinoSearch::Search::MatchAllQuery" => {
-        make_constructors => ["new"],
-                make_pod => {
-            constructor => { sample => $constructor },
-        }
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::MatchAllQuery",
+    bind_constructors => ["new"],
+    make_pod          => { constructor => { sample => $constructor }, }
+);
 
 __COPYRIGHT__
 

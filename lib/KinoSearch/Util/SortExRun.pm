@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch::Util::SortExRun
 
 int
@@ -35,20 +36,14 @@ CODE:
     RETVAL = newRV_noinc( (SV*)out_av );
 }
 OUTPUT: RETVAL
+END_XS_CODE
 
-chy_u32_t
-cache_count(self)
-    kino_SortExRun *self;
-CODE:
-    RETVAL = KINO_SORTEXRUN_CACHE_COUNT(self);
-OUTPUT: RETVAL
-
-__AUTO_XS__
-
-{   "KinoSearch::Util::SortExRun" => {
-        bind_methods => [ qw( Refill Peek_Last Read_Elem ) ],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Util::SortExRun",
+    xs_code      => $xs_code,
+    bind_methods => [qw( Refill Peek_Last Read_Elem Cache_Count )],
+);
 
 __COPYRIGHT__
 

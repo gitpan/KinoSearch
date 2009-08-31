@@ -1,3 +1,6 @@
+#define C_KINO_DOCREADER
+#define C_KINO_DEFAULTDOCREADER
+#define C_KINO_ZOMBIECHARBUF
 #include "xs/XSBind.h"
 
 #include "KinoSearch/Index/DocReader.h"

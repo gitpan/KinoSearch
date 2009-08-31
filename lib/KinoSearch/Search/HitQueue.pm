@@ -4,12 +4,13 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Search::HitQueue" => {
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::HitQueue",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

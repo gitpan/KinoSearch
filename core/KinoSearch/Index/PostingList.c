@@ -1,3 +1,4 @@
+#define C_KINO_POSTINGLIST
 #include <string.h>
 
 #include "KinoSearch/Util/ToolSet.h"

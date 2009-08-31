@@ -1,3 +1,4 @@
+#define C_KINO_POLYREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PolyReader.h"
@@ -110,7 +111,7 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
 
     {
         DeletionsReader *del_reader = (DeletionsReader*)Hash_Fetch(
-            self->components, (Obj*)DELETIONSREADER->name);
+            self->components, (Obj*)VTable_Get_Name(DELETIONSREADER));
         self->del_count = del_reader ? DelReader_Del_Count(del_reader) : 0;
     }
 }

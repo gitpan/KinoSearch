@@ -1,3 +1,4 @@
+#define C_KINO_TOKEN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Analysis/Token.h"
@@ -57,6 +58,31 @@ Token_compare(void *context, const void *va, const void *vb)
     }
 
     return comparison;
+}
+
+u32_t
+Token_get_start_offset(Token *self) { return self->start_offset; }
+u32_t
+Token_get_end_offset(Token *self)   { return self->end_offset; }
+float
+Token_get_boost(Token *self)        { return self->boost; }
+i32_t
+Token_get_pos_inc(Token *self)      { return self->pos_inc; }
+char*
+Token_get_text(Token *self)         { return self->text; }
+size_t
+Token_get_len(Token *self)          { return self->len; }
+
+void
+Token_set_text(Token *self, char *text, size_t len)
+{
+    if (len > self->len) {
+        FREEMEM(self->text);
+        self->text = MALLOCATE(len + 1, char);
+    }
+    memcpy(self->text, text, len);
+    self->text[len] = '\0';
+    self->len = len;
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

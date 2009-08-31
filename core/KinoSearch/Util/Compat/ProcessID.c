@@ -1,3 +1,4 @@
+#define C_KINO_PROCESSID
 #include "KinoSearch/Util/Compat/ProcessID.h"
 #include "charmony.h"
 

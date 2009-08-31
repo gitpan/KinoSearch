@@ -4,14 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::SegPostingList" => {
-        bind_methods      => [qw( Set_Doc_Base )],
-        make_getters      => [qw( post_stream count )], # testing only
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::SegPostingList",
+    bind_methods      => [qw( Set_Doc_Base Get_Post_Stream Get_Count )],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

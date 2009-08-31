@@ -1,3 +1,5 @@
+#define C_KINO_OBJ
+#define C_KINO_VTABLE
 #include "xs/XSBind.h"
 
 #include "KinoSearch/Obj/VTable.h"

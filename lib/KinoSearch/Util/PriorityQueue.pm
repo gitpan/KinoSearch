@@ -4,22 +4,23 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Util::PriorityQueue" => {
-        bind_methods => [
-            qw(
-                Less_Than
-                Insert
-                Pop
-                Pop_All
-                Peek
-                Get_Size
-                )
-        ],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Util::PriorityQueue",
+    bind_methods => [
+        qw(
+            Less_Than
+            Insert
+            Pop
+            Pop_All
+            Peek
+            Get_Size
+            )
+    ],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

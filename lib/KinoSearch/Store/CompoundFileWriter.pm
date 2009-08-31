@@ -4,13 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Store::CompoundFileWriter" => {
-        bind_methods      => [qw( Consolidate )],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Store::CompoundFileWriter",
+    bind_methods      => [qw( Consolidate )],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

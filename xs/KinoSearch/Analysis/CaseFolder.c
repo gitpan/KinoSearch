@@ -1,3 +1,6 @@
+#define C_KINO_CASEFOLDER
+#define C_KINO_BYTEBUF
+#define C_KINO_TOKEN
 #include "xs/XSBind.h"
 
 #include "KinoSearch/Analysis/CaseFolder.h"
@@ -33,7 +36,7 @@ S_lc_to_work_buf(kino_CaseFolder *self, chy_u8_t *source, size_t len,
         }
         memcpy(dest, utf8_buf, buf_utf8_len);
 
-        source += KINO_STRHELP_UTF8_SKIP[*source];
+        source += kino_StrHelp_UTF8_SKIP[*source];
         dest += buf_utf8_len;
     }
 

@@ -1,3 +1,4 @@
+#define C_KINO_TESTRANGEQUERY
 #include "KinoSearch/Util/ToolSet.h"
 #include <math.h>
 

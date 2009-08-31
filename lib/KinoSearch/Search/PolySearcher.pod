@@ -25,6 +25,8 @@ KinoSearch::Search::PolySearcher - Aggregate results from multiple searchers.
 
 =head1 DESCRIPTION
 
+Aggregate results from multiple searchers.
+
 The primary use for PolySearcher is to aggregate results from several
 remote searchers via L<KSx::Remote::SearchClient>, diffusing the cost of
 searching a large corpus over multiple machines.  It is also possible to

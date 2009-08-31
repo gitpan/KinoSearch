@@ -53,6 +53,9 @@ class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Obj {
      */
     public abstract Obj*
     Get_Term(Lexicon *self);
+
+    public CharBuf*
+    Get_Field(Lexicon *self);
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

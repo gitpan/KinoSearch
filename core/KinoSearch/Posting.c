@@ -1,3 +1,5 @@
+#define C_KINO_POSTING
+#define C_KINO_POSTINGSTREAMER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Posting.h"
@@ -19,6 +21,8 @@ Post_init(Posting *self)
 
 void
 Post_set_doc_id(Posting *self, i32_t doc_id) { self->doc_id = doc_id; }
+i32_t
+Post_get_doc_id(Posting *self) { return self->doc_id; }
 
 PostingStreamer*
 PostStreamer_init(PostingStreamer *self, DataWriter *writer, i32_t field_num)

@@ -1,3 +1,5 @@
+#define C_KINO_TEXTTYPE
+#define C_KINO_TEXTTERMSTEPPER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/FieldType/TextType.h"

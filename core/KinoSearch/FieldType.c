@@ -1,3 +1,4 @@
+#define C_KINO_FIELDTYPE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/FieldType.h"

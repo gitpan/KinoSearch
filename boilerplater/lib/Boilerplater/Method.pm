@@ -2,80 +2,102 @@ use strict;
 use warnings;
 
 package Boilerplater::Method;
-use Carp;
 use base qw( Boilerplater::Function );
+use Boilerplater::Util qw( verify_args );
+use Carp;
+
+my %new_PARAMS = (
+    return_type => undef,
+    class_name  => undef,
+    class_cnick => undef,
+    param_list  => undef,
+    macro_sym   => undef,
+    docucomment => undef,
+    parcel      => undef,
+    abstract    => undef,
+    final       => undef,
+    exposure    => 'parcel',
+    # Private, used only by finalize().
+    novel         => undef,
+    short_typedef => undef,
+);
 
 sub new {
     my ( $class, %args ) = @_;
-    my $abstract   = delete $args{abstract};
-    my $final      = delete $args{final};
-    my $macro_name = delete $args{macro_name};
-    confess "macro_name is required" unless $macro_name;
-    $args{micro_sym} ||= lc($macro_name);
+    verify_args( \%new_PARAMS, %args ) or confess $@;
+    my $abstract      = delete $args{abstract};
+    my $final         = delete $args{final};
+    my $macro_sym     = delete $args{macro_sym};
+    my $novel         = delete $args{novel};
+    my $short_typedef = delete $args{short_typedef};
+
+    # Validate macro_sym, derive micro_sym.
+    confess("macro_sym is required") unless defined $macro_sym;
+    confess("Invalid macro_sym: '$macro_sym'")
+        unless $macro_sym =~ /^[A-Z][A-Za-z0-9]*(?:_[A-Z0-9][A-Za-z0-9]*)*$/;
+    $args{micro_sym} = lc($macro_sym);
+
+    # Create self, add in novel member vars.
     my $self = $class->SUPER::new(%args);
-    $self->{macro_name} = $macro_name;
-    $self->{abstract}   = $abstract;
-    $self->{final}      = $final;
-    my $param_list = $self->get_param_list;
-    my $args       = $param_list->get_variables;
+    $self->{macro_sym} = $macro_sym;
+    $self->{abstract}  = $abstract;
+    $self->{final}     = $final;
 
     # Assume that this method is novel until we discover when applying
     # inheritance that it was overridden.
-    $self->{novel} = 1;
-
-    # Count the number of arguments and produce a symbolic list.
-    $self->{arg_names} = join ', ', map { $_->micro_sym } @$args;
+    $self->{novel} = defined $novel ? $novel : 1;
 
     # Verify that the first element in the arg list is a self.
-    confess "not enough args" unless @$args;
+    my $args = $self->get_param_list->get_variables;
+    confess "Not enough args" unless @$args;
     my $specifier = $args->[0]->get_type->get_specifier;
-    my ($struct_name) = $self->{class_name} =~ /(\w+)$/;
+    my ($struct_sym) = $self->{class_name} =~ /(\w+)$/;
     confess
         "First arg type doesn't match class: $self->{class_name} $specifier"
-        unless $specifier eq $self->get_prefix . $struct_name;
+        unless $specifier eq $self->get_prefix . $struct_sym;
 
-    # Transform method_name to Method_Name, validate.
-    if ( !defined $self->{macro_name} ) {
-        $self->{macro_name} = $self->{micro_sym};
-        $self->{macro_name} =~ s/((?:^|_).)/\U$1/g;
-    }
-    confess("Invalid macro_name: '$self->{macro_name}'")
-        unless $self->{macro_name}
-            =~ /^[A-Z][A-Za-z0-9]*(?:_[A-Z0-9][A-Za-z0-9]*)*$/;
-
-    if ( !defined $self->{typedef} ) {
-        $self->{typedef}     = $self->_gen_typedef;
-        $self->{typedef_dec} = $self->_gen_typedef_dec;
-    }
+    # Cache typedef.
+    $self->{short_typedef}
+        = defined $short_typedef
+        ? $short_typedef
+        : "$self->{class_cnick}_$self->{micro_sym}_t";
 
     return $self;
 }
 
-sub abstract       { shift->{abstract} }
-sub novel          { shift->{novel} }
-sub final          { shift->{final} }
-sub get_macro_name { shift->{macro_name} }
-
-sub full_macro_name {
-    my ( $self, $invoker ) = @_;
-    return $self->get_Prefix . $invoker . "_$self->{macro_name}";
-}
+sub abstract      { shift->{abstract} }
+sub novel         { shift->{novel} }
+sub final         { shift->{final} }
+sub get_macro_sym { shift->{macro_sym} }
 
 sub self_type { shift->get_param_list->get_variables->[0]->get_type }
 
-=begin comment
+sub short_method_sym {
+    my ( $self, $invoker ) = @_;
+    confess("Missing invoker") unless $invoker;
+    return $invoker . "_$self->{macro_sym}";
+}
 
-Let a Boilerplater::Method object know that it is overriding a method which
-was defined in a parent class.
+sub full_method_sym {
+    my ( $self, $invoker ) = @_;
+    return $self->get_Prefix . $self->short_method_sym($invoker);
+}
 
-All methods start out as plain old Method objects, because we don't know about
-inheritance until we build the hierarchy after all files have been parsed.
-override() is a way of going back and relabeling a method as overridden when
-new information has become available: in this case, that a parent class has
-defined a method with the same name.
+# The name of the variable which stores the method's vtable offset.
+sub full_offset_sym {
+    my ( $self, $invoker ) = @_;
+    confess("Missing invoker") unless $invoker;
+    return $self->get_Prefix . "$invoker\_$self->{macro_sym}_OFFSET";
+}
 
-=end comment
-=cut 
+sub full_callback_sym { shift->full_func_sym . "_CALLBACK" }
+sub full_override_sym { shift->full_func_sym . "_OVERRIDE" }
+
+sub short_typedef { shift->{short_typedef} }
+sub full_typedef {
+    my $self = shift;
+    return $self->get_prefix . $self->{short_typedef};
+}
 
 sub override {
     my ( $self, $orig ) = @_;
@@ -84,7 +106,7 @@ sub override {
     confess(  "Attempt to override final method '$orig->{micro_sym}' from "
             . "$orig->{class_cnick} by $self->{class_cnick}" )
         if $orig->final;
-    if ( !$self->_compatible($orig) ) {
+    if ( !$self->compatible($orig) ) {
         my $func_name = $self->full_func_sym;
         my $orig_func = $orig->full_func_sym;
         confess("Non-matching signatures for $func_name and $orig_func");
@@ -94,244 +116,44 @@ sub override {
     $self->{novel} = 0;
 }
 
-# Return true if the method signature is compatible.
-sub _compatible {
+sub compatible {
     my ( $self, $other ) = @_;
-    return 0 if !$self->public && $other->public;
-    my $arg_vars       = $self->{param_list}->get_variables;
-    my $other_vars     = $other->{param_list}->get_variables;
-    my $initial_values = $self->{param_list}->get_initial_values;
-    my $other_values   = $other->{param_list}->get_initial_values;
+    return 0 unless $self->{macro_sym} eq $other->{macro_sym};
+    return 0 if ( $self->public xor $other->public );
+    my $param_list       = $self->get_param_list;
+    my $other_param_list = $other->get_param_list;
+    my $arg_vars         = $param_list->get_variables;
+    my $other_vars       = $other_param_list->get_variables;
+    my $initial_vals     = $param_list->get_initial_values;
+    my $other_vals       = $other_param_list->get_initial_values;
     return 0 unless @$arg_vars == @$other_vars;
+    return 0 unless @$initial_vals == @$other_vals;
 
+    # Validate initial values.
     for ( my $i = 1; $i <= $#$arg_vars; $i++ ) {
         return 0 unless $other_vars->[$i]->equals( $arg_vars->[$i] );
-        next
-            unless defined( $other_values->[$i] )
-                && defined( $initial_values->[$i] );
-        return 0 unless $other_values->[$i] eq $initial_values->[$i];
+        my $val       = $initial_vals->[$i];
+        my $other_val = $other_vals->[$i];
+        if ( defined $val ) {
+            return 0 unless defined $other_val;
+            return 0 unless $val eq $other_val;
+        }
+        else {
+            return 0 if defined $other_val;
+        }
     }
+
     return 1;
 }
 
-=begin comment
-
-As with override, above, this is for going back and changing the nature of a
-Method object after new information has become available -- typically, when we
-discover that the method has been inherited by a "final" class.
-
-However, we don't rebless the object as with override().  Inherited Method
-objects are shared between parent and child classes; if a shared Method object
-were to become final, it would interfere with its own inheritance.  So, we
-make a copy, slightly modified to make it "final".
-
-=end comment
-=cut
-
 sub finalize {
     my $self = shift;
-    return bless {
-        %$self,
-        # These are needed in case this method is overriding another.
-        typedef_dec => $self->typedef_dec,
-        typedef     => $self->typedef,
-        final       => 1,
-        },
-        ref($self);
-}
-
-# Create the name of the function pointer typedef for the method's
-# implementing function.
-sub typedef { shift->{typedef} }
-
-sub _gen_typedef {
-    my $self = shift;
-    return "$self->{class_cnick}_$self->{micro_sym}_t";
-}
-
-# Create a function pointer typedef.
-sub typedef_dec { shift->{typedef_dec} }
-
-sub _gen_typedef_dec {
-    my $self        = shift;
-    my $prefix      = $self->get_prefix;
-    my $params      = $self->{param_list}->to_c;
-    my $return_type = $self->{return_type}->to_c;
-    return <<END_STUFF;
-typedef $return_type
-(*$prefix$self->{class_cnick}_$self->{micro_sym}_t)($params);
-END_STUFF
-}
-
-# The typedef's short name.
-sub short_typedef {
-    my $self       = shift;
-    my $prefix     = $self->get_prefix;
-    my $short_name = "$self->{class_cnick}_$self->{micro_sym}_t";
-    return "  #define $short_name $prefix$short_name\n";
-}
-
-# The method macro's short name.
-sub short_method_macro {
-    my ( $self, $invoker ) = @_;
-    my $Prefix     = $self->get_Prefix;
-    my $short_name = $invoker . "_$self->{macro_name}";
-    return "  #define $short_name $Prefix$short_name\n";
-}
-
-# The name of the variable which stores the method's vtable offset.
-sub offset_var_name {
-    my ( $self, $invoker ) = @_;
-    return $self->get_Prefix . "$invoker\_$self->{macro_name}_OFFSET";
-}
-
-sub abstract_method_def {
-    my $self            = shift;
-    my $params          = $self->{param_list}->to_c;
-    my $full_func_sym   = $self->full_func_sym;
-    my $vtable          = uc( $self->self_type->get_specifier );
-    my $return_type     = $self->{return_type};
-    my $return_type_str = $return_type->to_c;
-    my $prefix          = $self->get_prefix;
-    my $Prefix          = $self->get_Prefix;
-
-    # Build list of unused params and create an unreachable return statement
-    # if necessary, in order to thwart compiler warnings.
-    my $param_vars = $self->{param_list}->get_variables;
-    my $unused     = "";
-    for ( my $i = 1; $i < @$param_vars; $i++ ) {
-        my $var_name = $param_vars->[$i]->micro_sym;
-        $unused .= "\n    CHY_UNUSED_VAR($var_name);";
-    }
-    my $ret_statement = '';
-    if ( !$return_type->is_void ) {
-        $ret_statement = "\n    CHY_UNREACHABLE_RETURN($return_type_str);";
-    }
-
-    return <<END_ABSTRACT_DEF;
-$return_type_str
-$full_func_sym($params)
-{
-    ${prefix}CharBuf *klass = self ? ${Prefix}Obj_Get_Class_Name(self) : $vtable->name;$unused
-    BOIL_THROW(BOIL_ERR, "Abstract method '$self->{macro_name}' not defined by %o", klass);$ret_statement
-}
-END_ABSTRACT_DEF
-}
-
-sub callback_def {
-    my $self        = shift;
-    my $return_type = $self->get_return_type;
-    return
-          $return_type->is_void   ? _void_callback_def($self)
-        : $return_type->is_object ? _obj_callback_def($self)
-        :                           _primitive_callback_def($self);
-}
-
-sub _callback_params {
-    my $self       = shift;
-    my $micro_sym  = $self->micro_sym;
-    my $param_list = $self->{param_list};
-    my $num_params = $param_list->num_vars - 1;
-    my $arg_vars   = $param_list->get_variables;
-    my $PREFIX     = $self->get_PREFIX;
-    my @params;
-    for my $var ( @$arg_vars[ 1 .. $#$arg_vars ] ) {
-        my $name = $var->micro_sym;
-        my $type = $var->get_type;
-        my $param
-            = $type->is_string_type ? qq|${PREFIX}ARG_STR("$name", $name)|
-            : $type->is_object      ? qq|${PREFIX}ARG_OBJ("$name", $name)|
-            : $type->is_integer     ? qq|${PREFIX}ARG_I32("$name", $name)|
-            :                         qq|${PREFIX}ARG_F("$name", $name)|;
-        push @params, $param;
-    }
-    return join( ', ', 'self', qq|"$micro_sym"|, $num_params, @params );
-}
-
-sub _void_callback_def {
-    my $self            = shift;
-    my $override_sym    = $self->full_override_sym;
-    my $callback_params = _callback_params($self);
-    my $params          = $self->{param_list}->to_c;
-    my $prefix          = $self->get_prefix;
-    return <<END_CALLBACK_DEF;
-void
-$override_sym($params)
-{
-    ${prefix}Host_callback($callback_params);
-}
-END_CALLBACK_DEF
-}
-
-sub _primitive_callback_def {
-    my $self            = shift;
-    my $override_sym    = $self->full_override_sym;
-    my $callback_params = _callback_params($self);
-    my $params          = $self->{param_list}->to_c;
-    my $return_type     = $self->{return_type}->to_c;
-    my $prefix          = $self->get_prefix;
-    my $nat_func
-        = $self->{return_type}->is_floating ? "${prefix}Host_callback_f"
-        : $self->{return_type}->is_integer  ? "${prefix}Host_callback_i"
-        : $return_type eq 'void*' ? "${prefix}Host_callback_nat"
-        :   confess("unrecognized type: $return_type");
-    return <<END_CALLBACK_DEF;
-$return_type
-$override_sym($params)
-{
-    return ($return_type)$nat_func($callback_params);
-}
-END_CALLBACK_DEF
-}
-
-sub _obj_callback_def {
-    my $self            = shift;
-    my $override_sym    = $self->full_override_sym;
-    my $callback_params = _callback_params($self);
-    my $params          = $self->{param_list}->to_c;
-    my $return_type     = $self->{return_type}->to_c;
-    my $prefix          = $self->get_prefix;
-    my $PREFIX          = $self->get_PREFIX;
-    my $cb_func_name
-        = $self->{return_type}->is_string_type
-        ? "${prefix}Host_callback_str"
-        : "${prefix}Host_callback_obj";
-    if ( $self->{return_type}->incremented ) {
-        return <<END_CALLBACK_DEF;
-$return_type
-$override_sym($params)
-{
-    return ($return_type)$cb_func_name($callback_params);
-}
-END_CALLBACK_DEF
-    }
-    else {
-        return <<END_CALLBACK_DEF;
-$return_type
-$override_sym($params)
-{
-    $return_type retval = ($return_type)$cb_func_name($callback_params);
-    ${PREFIX}DECREF(retval);
-    return retval;
-}
-END_CALLBACK_DEF
-    }
-}
-
-sub full_callback_sym { shift->full_func_sym . "_CALLBACK" }
-sub full_override_sym { shift->full_func_sym . "_OVERRIDE" }
-
-sub callback_dec {
-    my $self         = shift;
-    my $callback_sym = $self->full_callback_sym;
-    return qq|extern kino_Callback $callback_sym;|;
-}
-
-sub callback_obj {
-    my ( $self, %args ) = @_;
-    my $func_sym = $self->full_override_sym;
-    return qq|KINO_CALLBACK_DEC("$self->{macro_name}", |
-        . qq|$func_sym, $args{offset})|;
+    my %args;
+    $args{$_} = $self->{$_} for keys %new_PARAMS;    # including short_typedef
+    $args{final} = 1;
+    my $finalized = $self->new(%args);
+    $finalized->{novel} = $self->{novel};
+    return $finalized;
 }
 
 1;
@@ -358,48 +180,135 @@ VTable.
 =head2 new
 
     my $type = Boilerplater::Method->new(
-        class_name   => 'MyProject::FooFactory',    # required
-        param_list   => $param_list,                # required
-        micro_sym    => 'count',                    # required
-        macro_name   => 'Count',                    # required
-        class_cnick  => 'FooFact ',                 # default: special 
-        docu_comment => $docu_comment,              # default: undef
-        abstract     => undef,                      # default: undef
-        exposure     => undef,                      # default: 'parcel' 
+        parcel      => 'MyProject'                 # default: special
+        class_name  => 'MyProject::FooFactory',    # required
+        class_cnick => 'FooFact ',                 # default: special
+        macro_sym   => 'Count',                    # required
+        return_type => $void_type                  # required
+        param_list  => $param_list,                # required
+        exposure    => undef,                      # default: 'parcel'
+        docucomment => $docucomment,               # default: undef
+        abstract    => undef,                      # default: undef
+        final       => 1,                          # default: undef 
     );
 
 =over
 
-=item *
-
-B<param_list> - A Boilerplater::ParamList.  The first element must be an
+=item * B<param_list> - A Boilerplater::ParamList.  The first element must be an
 object of the class identified by C<class_name>.
 
-=item *
-
-B<micro_sym> - The lower case name of the function which implements the
+=item * B<macro_sym> - The mixed case name which will be used when invoking the
 method.
 
-=item *
+=item * B<abstract> - Indicate whether the method is abstract.
 
-B<macro_name> - The mixed case name which will be used when invoking the
-method.
+=item * B<final> - Indicate whether the method is final.
 
-=item *
-
-B<abstract> - Indicate whether the method is abstract.  A function body must
-still be defined.
-
-=item *
-
-B<exposure> - The scope at which the method is exposed.  Must be one of
-'public', 'parcel' or 'private'.
-
-=item *
-
-B<class_name>, B<class_cnick>, B<docu_comment>, see L<Boilerplater::Function>.
+=item * B<parcel>, B<class_name>, B<class_cnick>, B<return_type>,
+B<docucomment>, - see L<Boilerplater::Function>.
 
 =back
+
+=head2 abstract final get_macro_sym 
+
+Getters.
+
+=head2 novel
+
+Returns true if the method's class is the first in the inheritance hierarchy
+in which the method was declared -- i.e. the method is neither inherited nor
+overridden.
+
+=head2 self_type
+
+Return the L<Boilerplater::Type> for C<self>.
+
+=head2 short_method_sym
+
+    # e.g. "FooFactJr_Do_Stuff"
+    my $short_sym = $method->short_method_sym("FooFactJr");
+
+Returns the symbol used to invoke the method (minus the parcel Prefix).
+
+=head2 full_method_sym
+
+    # e.g. "MyProj_FooFactJr_Do_Stuff"
+    my $full_sym = $method->full_method_sym("FooFactJr");
+
+Returns the fully-qualified symbol used to invoke the method.
+
+=head2 full_offset_sym
+
+    # e.g. "MyProj_FooFactJr_Do_Stuff_OFFSET"
+    my $offset_sym = $method->full_offset_sym("FooFactJr");
+
+Returns the fully qualified name of the variable which stores the method's
+vtable offset.
+
+=head2 full_callback_sym
+
+    # e.g. "myproj_FooFactJr_do_stuff_CALLBACK"
+    my $callback_sym = $method->full_calback_sym("FooFactJr");
+
+Returns the fully qualified name of the variable which stores the method's
+Callback object.
+
+=head2 full_override_sym
+
+    # e.g. "myproj_FooFactJr_do_stuff_OVERRIDE"
+    my $override_func_sym = $method->full_override_sym("FooFactJr");
+
+Returns the fully qualified name of the function which implements the callback
+to the host in the event that a host method has been defined which overrides
+this method.
+
+=head2 short_typedef
+
+    # e.g. "FooFactJr_do_stuff_t"
+    my $short_typedef = $method->short_typedef;
+
+Returns the typedef symbol for this method, which is derived from the class
+nick of the first class in which the method was declared.
+
+=head2 full_typedef
+
+    # e.g. "myproj_FooFactJr_do_stuff_t"
+    my $full_typedef = $method->full_typedef;
+
+Returns the fully-qualified typedef symbol including parcel prefix.
+
+=head2 override
+
+    $method->override($method_being_overridden);
+
+Let the Method know that it is overriding a method which was defined in a
+parent class, and verify that the override is valid.
+
+All methods start out believing that they are "novel", because we don't know
+about inheritance until we build the hierarchy after all files have been
+parsed.  override() is a way of going back and relabeling a method as
+overridden when new information has become available: in this case, that a
+parent class has defined a method with the same name.
+
+=head2 finalize
+
+    my $final_method = $method->finalize;
+
+As with override, above, this is for going back and changing the nature of a
+Method after new information has become available -- typically, when we
+discover that the method has been inherited by a "final" class.
+
+However, we don't modify the original Method as with override().  Inherited
+Method objects are shared between parent and child classes; if a shared Method
+object were to become final, it would interfere with its own inheritance.  So,
+we make a copy, slightly modified to indicate that it is "final".
+
+=head2 compatible
+
+    confess("Can't override") unless $method->compatible($other);
+
+Returns true if the methods have signatures and attributes which allow
+one to override the other.
 
 =head1 COPYRIGHT AND LICENSE
 

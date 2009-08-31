@@ -1,3 +1,4 @@
+#define C_KINO_BLOBTYPE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/FieldType/BlobType.h"

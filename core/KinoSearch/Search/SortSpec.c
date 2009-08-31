@@ -1,3 +1,4 @@
+#define C_KINO_SORTSPEC
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/SortSpec.h"

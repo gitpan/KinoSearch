@@ -4,16 +4,9 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Obj::VTable" => {
-        bind_methods => [qw( Get_Name )],
-        make_getters => [qw( parent )],
-    }
-}
-
-__XS__
-
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Obj::VTable
 
 SV*
@@ -23,6 +16,14 @@ CODE:
         kino_VTable_init_registry();
     RETVAL = Kino_Obj_To_Host(kino_VTable_registry);
 OUTPUT: RETVAL
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Obj::VTable",
+    xs_code      => $xs_code,
+    bind_methods => [qw( Get_Name Get_Parent )],
+);
 
 __COPYRIGHT__
 

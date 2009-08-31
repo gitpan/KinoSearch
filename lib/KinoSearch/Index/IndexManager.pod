@@ -30,6 +30,8 @@ KinoSearch::Index::IndexManager - Policies governing index updating, locking, an
 
 =head1 DESCRIPTION
 
+Policies governing index updating, locking, and file deletion. 
+
 IndexManager is an advanced-usage class for controlling index locking,
 updating, merging, and deletion behaviors.
 

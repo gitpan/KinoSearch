@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $lock = $lock_factory->make_lock(
@@ -26,39 +26,46 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Store::Lock" => {
-        bind_methods => [
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Store::Lock",
+    bind_methods => [
+        qw(
+            Obtain
+            Request
+            Is_Locked
+            Release
+            Clear_Stale
+            Get_Name
+            Get_Filename
+            Get_Hostname
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [
             qw(
-                Obtain
-                Request
-                Is_Locked
-                Release
-                Clear_Stale
+                obtain
+                request
+                release
+                is_locked
+                clear_stale
                 )
         ],
-        make_getters => [qw( folder timeout name hostname filename )],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods     => [
-                qw(
-                    obtain
-                    request
-                    release
-                    is_locked
-                    clear_stale
-                    )
-            ],
-        },
     },
-    "KinoSearch::Store::LockFileLock" => {
-        make_constructors => ["new"],
-    },
-    "KinoSearch::Store::SharedLock" => {
-        make_constructors => ["new"],
-    },
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Store::LockFileLock",
+    bind_constructors => ["new"],
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Store::SharedLock",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

@@ -13,6 +13,8 @@ KinoSearch::Highlight::HeatMap - Density of relevant data in a string.
 
 =head1 DESCRIPTION
 
+Density of relevant data in a string.
+
 A HeatMap stores a number for each location in a string, indicating the
 "heat" (density) of relevant data in areas which match a search query.
 

@@ -1,3 +1,4 @@
+#define C_KINO_TERMSCORER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/TermScorer.h"
@@ -76,7 +77,7 @@ TermScorer_advance(TermScorer *self, i32_t target)
 i32_t 
 TermScorer_get_doc_id(TermScorer* self) 
 {
-    return self->posting->doc_id;
+    return Post_Get_Doc_ID(self->posting);
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

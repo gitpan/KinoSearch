@@ -1,3 +1,5 @@
+#define C_KINO_LOCK
+#define C_KINO_LOCKFILELOCK
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <errno.h>
@@ -45,7 +47,11 @@ Lock_destroy(Lock *self)
 }
 
 CharBuf*
+Lock_get_name(Lock *self)     { return self->name; }
+CharBuf*
 Lock_get_filename(Lock *self) { return self->filename; }
+CharBuf*
+Lock_get_hostname(Lock *self) { return self->hostname; }
 
 bool_t
 Lock_obtain(Lock *self)

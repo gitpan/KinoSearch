@@ -1,3 +1,4 @@
+#define C_KINO_SLEEP
 #include "KinoSearch/Util/Compat/Sleep.h"
 #include "charmony.h"
 

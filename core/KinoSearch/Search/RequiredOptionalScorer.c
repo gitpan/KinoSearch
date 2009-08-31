@@ -1,3 +1,4 @@
+#define C_KINO_REQUIREDOPTIONALSCORER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/RequiredOptionalScorer.h"

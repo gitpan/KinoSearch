@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Search::SortRule
 
 chy_i32_t
@@ -25,8 +26,7 @@ DOC_ID()
 CODE:
     RETVAL = kino_SortRule_DOC_ID;
 OUTPUT: RETVAL
-
-__AUTO_XS__
+END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';
     my $sort_spec = KinoSearch::Search::SortSpec->new(
@@ -47,16 +47,18 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Search::SortRule" => {
-        make_constructors => ["_new"],
-        bind_methods      => [qw( Get_Field Get_Reverse )],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods     => [qw( get_field get_reverse )],
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::SortRule",
+    xs_code           => $xs_code,
+    bind_constructors => ["_new"],
+    bind_methods      => [qw( Get_Field Get_Reverse )],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [qw( get_field get_reverse )],
     },
-}
+);
 
 __COPYRIGHT__
 

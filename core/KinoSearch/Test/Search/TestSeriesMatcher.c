@@ -1,3 +1,4 @@
+#define C_KINO_TESTSERIESMATCHER
 #include "KinoSearch/Util/ToolSet.h"
 #include <math.h>
 

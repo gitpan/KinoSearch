@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 BEGIN { use_ok('Boilerplater::Function') }
 use Boilerplater::Parser;
@@ -29,3 +29,15 @@ like( $@, qr/extra_arg/, "Extra arg kills constructor" );
 eval { Boilerplater::Function->new( %args, micro_sym => 'Uh_Oh' ); };
 like( $@, qr/Uh_Oh/, "invalid micro_sym kills constructor" );
 
+my %sub_args = ( class => 'Boil::Obj', cnick => 'Obj' );
+
+isa_ok(
+    $parser->subroutine_declaration_statement( $_, 0, %sub_args, inert => 1 )
+        ->{declared},
+    "Boilerplater::Function",
+    "function declaration: $_"
+    )
+    for (
+    'inert int running_count(int biscuit);',
+    'public inert Hash* init_fave_hash(i32_t num_buckets, bool_t o_rly);',
+    );

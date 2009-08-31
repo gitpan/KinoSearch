@@ -21,6 +21,8 @@ KinoSearch::Index::PostingList - Term-Document pairings.
 
 =head1 DESCRIPTION
 
+Term-Document pairings.
+
 PostingList is an iterator which supplies a list of document ids that match
 a given term.  
 

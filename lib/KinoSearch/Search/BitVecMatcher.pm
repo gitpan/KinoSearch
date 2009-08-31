@@ -4,12 +4,13 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Search::BitVecMatcher" => {
-        make_constructors => [qw( new )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::BitVecMatcher",
+    bind_constructors => [qw( new )],
+);
 
 __COPYRIGHT__
 

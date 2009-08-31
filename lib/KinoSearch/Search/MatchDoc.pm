@@ -4,22 +4,23 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Search::MatchDoc" => {
-        bind_methods => [
-            qw(
-                Get_Doc_ID
-                Set_Doc_ID
-                Get_Score
-                Set_Score
-                Get_Values
-                Set_Values
-                )
-        ],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::MatchDoc",
+    bind_methods => [
+        qw(
+            Get_Doc_ID
+            Set_Doc_ID
+            Get_Score
+            Set_Score
+            Get_Values
+            Set_Values
+            )
+    ],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

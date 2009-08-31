@@ -1,3 +1,5 @@
+#define C_KINO_SORTEXTERNAL
+#define C_KINO_SORTEXRUN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/SortExternal.h"
@@ -195,7 +197,7 @@ S_refill_runs(SortExternal *self)
     /* Make sure all runs have at least one item in the cache. */
     while (i < self->num_runs) {
         SortExRun *const run = self->runs[i];
-        if (SORTEXRUN_CACHE_COUNT(run) > 0 || SortExRun_Refill(run) > 0) {
+        if (SortExRun_Cache_Count(run) > 0 || SortExRun_Refill(run) > 0) {
             /* Run has some elements, so keep. */
             i++;
         }
@@ -330,6 +332,15 @@ S_merge_slices(SortExternal *self, Obj ***slice_starts, u32_t *slice_sizes,
         num_slices = j;
     }
 }
+
+u32_t
+SortEx_cache_count(SortExternal *self)
+{
+    return self->cache_max - self->cache_tick;
+}
+
+u32_t
+SortEx_get_num_runs(SortExternal *self) { return self->num_runs; }
 
 /* Copyright 2006-2009 Marvin Humphrey
  *

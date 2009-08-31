@@ -19,6 +19,8 @@ KinoSearch::Store::Lock - Abstract class representing an interprocess mutex lock
 
 =head1 DESCRIPTION
 
+Abstract class representing an interprocess mutex lock.
+
 The Lock class produces an interprocess mutex lock.  The default subclass
 uses dot-lock files, but alternative implementations are possible.
 

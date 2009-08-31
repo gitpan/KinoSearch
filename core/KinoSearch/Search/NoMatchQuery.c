@@ -1,3 +1,4 @@
+#define C_KINO_NOMATCHQUERY
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/NoMatchQuery.h"

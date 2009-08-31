@@ -1,3 +1,4 @@
+#define C_KINO_POLYPOSTINGLIST
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PolyPostingList.h"
@@ -58,6 +59,9 @@ PolyPList_destroy(PolyPostingList* self)
     DECREF(self->field);
     SUPER_DESTROY(self, POLYPOSTINGLIST);
 }
+
+u32_t
+PolyPList_get_num_subs(PolyPostingList *self) { return self->num_subs; }
 
 void
 PolyPList_seek(PolyPostingList *self, Obj *target)

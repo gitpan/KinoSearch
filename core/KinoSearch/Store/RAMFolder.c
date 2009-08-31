@@ -1,3 +1,4 @@
+#define C_KINO_RAMFOLDER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/RAMFolder.h"

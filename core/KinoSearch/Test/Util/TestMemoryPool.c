@@ -1,3 +1,5 @@
+#define C_KINO_TESTMEMORYPOOL
+#define C_KINO_MEMORYPOOL
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"

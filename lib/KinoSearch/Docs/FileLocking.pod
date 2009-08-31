@@ -30,6 +30,8 @@ KinoSearch::Docs::FileLocking - Manage indexes on shared volumes.
 
 =head1 DESCRIPTION
 
+Manage indexes on shared volumes.
+
 Normally, index locking is an invisible process.  Exclusive write access is
 controlled via lockfiles within the index directory and problems only arise
 if multiple processes attempt to acquire the write lock simultaneously;

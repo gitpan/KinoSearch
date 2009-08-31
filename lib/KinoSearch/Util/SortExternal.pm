@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch::Util::SortExternal
 
 void
@@ -19,7 +20,9 @@ PPCODE:
     if (sv_derived_from(elem_sv, "KinoSearch::Obj")) {
         kino_Obj *elem;
         if (items < 3) THROW(KINO_ERR, "Must supply size along with object");
-        if (!sv_isobject(elem_sv)) THROW(KINO_ERR, "Not a %o.", KINO_OBJ->name);
+        if (!sv_isobject(elem_sv)) {
+            THROW(KINO_ERR, "Not a %o", Kino_VTable_Get_Name(KINO_OBJ));
+        }
         elem = XSBind_sv_to_kobj(elem_sv, KINO_OBJ);
         Kino_SortEx_Feed(self, elem, size);
     }
@@ -27,7 +30,7 @@ PPCODE:
         STRLEN len;
         char *ptr = SvPV(elem_sv, len);
         kino_ByteBuf *bb = kino_BB_new_bytes(ptr, len);
-        if (items < 3) size = len + sizeof(kino_ByteBuf);
+        if (items < 3) size = len + 20; /* 20 = approx. sizeof(ByteBuf) */
         Kino_SortEx_Feed(self, (kino_Obj*)bb, size);
         KINO_DECREF(bb);
     }
@@ -38,59 +41,26 @@ _DEFAULT_MEM_THRESHOLD()
 CODE:
     RETVAL = KINO_SORTEX_DEFAULT_MEM_THRESHOLD;
 OUTPUT: RETVAL
+END_XS_CODE
 
-SV*
-_peek_cache(self)
-    kino_SortExternal *self;
-CODE:
-{
-    AV *out_av = newAV();
-    chy_u32_t i;
-    for (i = self->cache_tick; i < self->cache_max; i++) {
-        SV *elem_sv = XSBind_kobj_to_pobj(self->cache[i]);
-        av_push(out_av, elem_sv);
-    }
-    RETVAL = newRV_noinc((SV*)out_av);
-}
-OUTPUT: RETVAL
-
-chy_u32_t
-cache_count(self)
-    kino_SortExternal *self;
-CODE:
-    RETVAL = KINO_SORTEX_CACHE_COUNT(self);
-OUTPUT: RETVAL
-
-void
-_set_or_get2(self, ...)
-    kino_SortExternal *self;
-ALIAS:
-    get_runs = 2
-PPCODE:
-{
-    START_SET_OR_GET_SWITCH
-
-    case 2:  {
-                chy_u32_t i;
-                kino_VArray *runs = kino_VA_new(self->num_runs);
-                for (i = 0; i < self->num_runs; i++) {
-                    Kino_VA_Push(runs, KINO_INCREF(self->runs[i]));
-                }
-                retval = Kino_Obj_To_Host(runs);
-                KINO_DECREF(runs);
-             }
-             break;
-    
-    END_SET_OR_GET_SWITCH
-}
-
-__AUTO_XS__
-
-{   "KinoSearch::Util::SortExternal" => {
-        bind_methods =>
-            [ qw( Fetch Flush Flip Add_Run Peek Sort_Cache Clear_Cache ) ],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Util::SortExternal",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw(
+            Fetch
+            Flush
+            Flip
+            Add_Run
+            Peek
+            Sort_Cache
+            Clear_Cache
+            Cache_Count
+            Get_Num_Runs
+            )
+    ],
+);
 
 __COPYRIGHT__
 

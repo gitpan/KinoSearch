@@ -54,6 +54,8 @@ KinoSearch::Architecture - Configure major components of an index.
 
 =head1 DESCRIPTION
 
+Configure major components of an index.
+
 By default, a KinoSearch index consists of several main parts: lexicon,
 postings, stored documents, deletions, and highlight data.  The readers and
 writers for that data are spawned by Architecture.  Each component operates

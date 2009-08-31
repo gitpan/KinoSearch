@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $postings_reader 
@@ -15,18 +15,21 @@ my $synopsis = <<'END_SYNOPSIS';
     );
 END_SYNOPSIS
 
-{   "KinoSearch::Index::PostingsReader" => {
-        make_constructors => ["new"],
-        bind_methods      => [qw( Posting_List Get_Lex_Reader )],
-        make_pod          => {
-            synopsis => $synopsis,
-            methods  => [qw( posting_list )],
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::PostingsReader",
+    bind_constructors => ["new"],
+    bind_methods      => [qw( Posting_List Get_Lex_Reader )],
+    make_pod          => {
+        synopsis => $synopsis,
+        methods  => [qw( posting_list )],
     },
-    "KinoSearch::Index::DefaultPostingsReader" => {
-        make_constructors => ["new"],
-    }
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DefaultPostingsReader",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

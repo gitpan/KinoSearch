@@ -21,6 +21,9 @@ class KinoSearch::Index::PolyPostingList cnick PolyPList
     init(PolyPostingList *self, const CharBuf *field, VArray *readers,
          I32Array *starts);
 
+    u32_t
+    Get_Num_Subs(PolyPostingList *self);
+
     void
     Destroy(PolyPostingList *self);
 
@@ -37,7 +40,7 @@ class KinoSearch::Index::PolyPostingList cnick PolyPList
     Next(PolyPostingList *self);
 
     public void
-    Seek(PolyPostingList *self, Obj *target);
+    Seek(PolyPostingList *self, Obj *target = NULL);
 
     public i32_t
     Advance(PolyPostingList *self, i32_t target);

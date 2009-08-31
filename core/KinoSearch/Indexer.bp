@@ -123,6 +123,9 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
     public SegWriter*
     Get_Seg_Writer(Indexer *self);
 
+    Doc*
+    Get_Stock_Doc(Indexer *self);
+
     void
     Destroy(Indexer *self);
 }

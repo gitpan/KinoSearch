@@ -1,3 +1,4 @@
+#define C_KINO_BITVECMATCHER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/BitVecMatcher.h"

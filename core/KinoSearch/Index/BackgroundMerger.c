@@ -1,3 +1,4 @@
+#define C_KINO_BACKGROUNDMERGER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/BackgroundMerger.h"
@@ -267,7 +268,7 @@ S_merge_updated_deletions(BackgroundMerger *self)
                 if (old_del_count != new_del_count) {
                     DeletionsReader *del_reader = (DeletionsReader*)
                         SegReader_Obtain(new_seg_reader, 
-                        DELETIONSREADER->name);
+                        VTable_Get_Name(DELETIONSREADER));
                     if (!updated_deletions) {
                         updated_deletions = Hash_new(max);
                     }

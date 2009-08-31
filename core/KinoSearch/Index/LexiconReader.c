@@ -1,3 +1,6 @@
+#define C_KINO_LEXICONREADER
+#define C_KINO_POLYLEXICONREADER
+#define C_KINO_DEFAULTLEXICONREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/LexiconReader.h"
@@ -86,7 +89,7 @@ PolyLexReader_lexicon(PolyLexiconReader *self, const CharBuf *field,
         FieldType *type = Schema_Fetch_Type(schema, field);
         if (type != NULL) {
             lexicon = PolyLex_new(field, self->readers);
-            if (!VA_Get_Size(lexicon->seg_lexicons)) {
+            if (!PolyLex_Get_Num_Seg_Lexicons(lexicon)) {
                 DECREF(lexicon);
                 return NULL;
             }

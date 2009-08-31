@@ -21,6 +21,8 @@ KinoSearch::FieldType::FullTextType - Full-text search field type.
 
 =head1 DESCRIPTION
 
+Full-text search field type.
+
 KinoSearch::FieldType::FullTextType is an implementation of
 L<KinoSearch::FieldType> tuned for "full text search".  
 

@@ -1,3 +1,4 @@
+#define C_KINO_DATAWRITER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DataWriter.h"

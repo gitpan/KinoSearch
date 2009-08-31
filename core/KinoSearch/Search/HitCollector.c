@@ -1,3 +1,6 @@
+#define C_KINO_HITCOLLECTOR
+#define C_KINO_BITCOLLECTOR
+#define C_KINO_OFFSETCOLLECTOR
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/HitCollector.h"

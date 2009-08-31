@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $type   = KinoSearch::FieldType::StringType->new;
@@ -21,14 +21,15 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::FieldType::StringType" => {
-        make_constructors => ["new|init2"],
-        make_pod => {
-            synopsis => $synopsis,
-            constructor => { sample => $constructor },
-        },
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::FieldType::StringType",
+    bind_constructors => ["new|init2"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+    },
+);
 
 __COPYRIGHT__
 

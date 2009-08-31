@@ -1,3 +1,4 @@
+#define C_KINO_DOCVECTOR
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DocVector.h"

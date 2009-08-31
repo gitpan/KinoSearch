@@ -7,8 +7,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Util::Debug
 
 #include "KinoSearch/Util/Debug.h"
@@ -76,6 +77,13 @@ num_globals()
 CODE:
     RETVAL = kino_Debug_num_globals;
 OUTPUT: RETVAL
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch::Util::Debug",
+    xs_code    => $xs_code,
+);
 
 __COPYRIGHT__
 

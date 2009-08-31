@@ -1,3 +1,4 @@
+#define C_KINO_SCHEMA
 #include <string.h>
 #include <ctype.h>
 #include "KinoSearch/Util/ToolSet.h"

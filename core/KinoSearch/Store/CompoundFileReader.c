@@ -1,3 +1,4 @@
+#define C_KINO_COMPOUNDFILEREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/CompoundFileReader.h"

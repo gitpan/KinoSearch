@@ -65,18 +65,14 @@ class KinoSearch::Util::SortExRun extends KinoSearch::Obj {
     void
     Clear_Cache(SortExRun *self);
 
+    /** Return the number of items presently in the cache.
+     */
+    u32_t
+    Cache_Count(SortExRun *self);
+
     void
     Destroy(SortExRun *self);
 }
-
-__C__
-#define KINO_SORTEXRUN_CACHE_COUNT(_run) \
-    (_run->cache_max - _run->cache_tick)
-
-#ifdef KINO_USE_SHORT_NAMES
-  #define SORTEXRUN_CACHE_COUNT(_run)     KINO_SORTEXRUN_CACHE_COUNT(_run)
-#endif 
-__END_C__
 
 /* Copyright 2006-2009 Marvin Humphrey
  *

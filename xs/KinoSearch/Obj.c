@@ -1,3 +1,5 @@
+#define C_KINO_OBJ
+
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"

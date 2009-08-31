@@ -1,3 +1,10 @@
+#define C_KINO_MATCHPOSTING
+#define C_KINO_MATCHPOSTINGSCORER
+#define C_KINO_MATCHPOSTINGSTREAMER
+#define C_KINO_MATCHTERMINFOSTEPPER
+#define C_KINO_RAWPOSTING
+#define C_KINO_TERMINFO
+#define C_KINO_TOKEN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Posting/MatchPosting.h"
@@ -52,6 +59,9 @@ MatchPost_clone(MatchPosting *self)
     return MatchPost_init(evil_twin, self->sim);
 }
 
+i32_t
+MatchPost_get_freq(MatchPosting *self) { return self->freq; }
+
 void
 MatchPost_reset(MatchPosting *self)
 {
@@ -97,7 +107,7 @@ MatchPost_add_inversion_to_pool(MatchPosting *self, PostingPool *post_pool,
                                 i32_t doc_id, float doc_boost, 
                                 float length_norm)
 {
-    MemoryPool  *mem_pool = post_pool->mem_pool;
+    MemoryPool  *mem_pool = PostPool_Get_Mem_Pool(post_pool);
     Token      **tokens;
     u32_t        freq;
 

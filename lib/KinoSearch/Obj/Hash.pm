@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE =  KinoSearch    PACKAGE = KinoSearch::Obj::Hash
 
 SV*
@@ -20,10 +21,21 @@ OUTPUT: RETVAL
 SV*
 _fetch(self, key)
     kino_Hash *self;
-    kino_CharBuf key;
+    kino_ZombieCharBuf key;
 CODE:
-    KOBJ_TO_SV( Kino_Hash_Fetch(self, (kino_Obj*)&key), RETVAL );
+    KOBJ_TO_SV( kino_Hash_fetch(self, (kino_Obj*)&key), RETVAL );
 OUTPUT: RETVAL
+
+void
+store(self, key, value);
+    kino_Hash          *self; 
+    kino_ZombieCharBuf  key;
+    kino_Obj           *value;
+PPCODE:
+{
+    if (value) { KINO_INCREF(value); }
+    kino_Hash_store(self, (kino_Obj*)&key, value);
+}
 
 void
 iter_next(self)
@@ -45,26 +57,26 @@ PPCODE:
         XSRETURN_EMPTY;
     }
 }
+END_XS_CODE
 
-__AUTO_XS__
-
-{   "KinoSearch::Obj::Hash" => {
-        bind_positional => [qw( Store )],
-        bind_methods    => [
-            qw(
-                Fetch
-                Delete
-                Keys
-                Values
-                Find_Key
-                Clear
-                Iter_Init
-                Get_Size
-                )
-        ],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Obj::Hash",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw(
+            Fetch
+            Delete
+            Keys
+            Values
+            Find_Key
+            Clear
+            Iter_Init
+            Get_Size
+            )
+    ],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

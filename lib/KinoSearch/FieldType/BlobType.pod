@@ -17,6 +17,8 @@ KinoSearch::FieldType::BlobType - Default behaviors for binary fields.
 
 =head1 DESCRIPTION
 
+Default behaviors for binary fields.
+
 BlobType is an implementation of FieldType tuned for use with fields
 containing binary data, which cannot be indexed or searched -- only stored.
 

@@ -65,7 +65,7 @@ class KinoSearch::Obj::Float32 extends KinoSearch::Obj::FloatNum {
     public double
     To_F64(Float32 *self);
 
-    public i32_t
+    i32_t
     Hash_Code(Float32 *self);
 
     public void
@@ -74,7 +74,7 @@ class KinoSearch::Obj::Float32 extends KinoSearch::Obj::FloatNum {
     public incremented Float32*
     Deserialize(Float32 *self, InStream *instream);
 
-    public incremented Float32*
+    incremented Float32*
     Clone(Float32 *self);
 }
 
@@ -105,7 +105,7 @@ class KinoSearch::Obj::Float64 extends KinoSearch::Obj::FloatNum {
     public double
     To_F64(Float64 *self);
 
-    public i32_t
+    i32_t
     Hash_Code(Float64 *self);
 
     public void
@@ -114,7 +114,7 @@ class KinoSearch::Obj::Float64 extends KinoSearch::Obj::FloatNum {
     public incremented Float64*
     Deserialize(Float64 *self, InStream *instream);
 
-    public incremented Float64*
+    incremented Float64*
     Clone(Float64 *self);
 }
 
@@ -146,7 +146,7 @@ class KinoSearch::Obj::Integer32 cnick Int32
     public double
     To_F64(Integer32 *self);
 
-    public i32_t
+    i32_t
     Hash_Code(Integer32 *self);
 
     public void
@@ -155,7 +155,7 @@ class KinoSearch::Obj::Integer32 cnick Int32
     public incremented Integer32*
     Deserialize(Integer32 *self, InStream *instream);
 
-    public incremented Integer32*
+    incremented Integer32*
     Clone(Integer32 *self);
 }
 
@@ -188,7 +188,7 @@ class KinoSearch::Obj::Integer64 cnick Int64
     public double
     To_F64(Integer64 *self);
 
-    public i32_t
+    i32_t
     Hash_Code(Integer64 *self);
 
     public bool_t
@@ -200,7 +200,7 @@ class KinoSearch::Obj::Integer64 cnick Int64
     public incremented Integer64*
     Deserialize(Integer64 *self, InStream *instream);
 
-    public incremented Integer64*
+    incremented Integer64*
     Clone(Integer64 *self);
 }
 

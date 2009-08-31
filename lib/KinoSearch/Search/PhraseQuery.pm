@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $phrase_query = KinoSearch::Search::PhraseQuery->new( 
@@ -14,18 +14,22 @@ my $synopsis = <<'END_SYNOPSIS';
     my $hits = $searcher->hits( query => $phrase_query );
 END_SYNOPSIS
 
-{   "KinoSearch::Search::PhraseQuery" => {
-        bind_methods      => [qw( Get_Field Get_Terms )],
-        make_constructors => ["new"],
-        make_pod          => {
-            constructor => { sample => '' },
-            synopsis => $synopsis,
-            methods => [qw( get_field get_terms )],
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::PhraseQuery",
+    bind_methods      => [qw( Get_Field Get_Terms )],
+    bind_constructors => ["new"],
+    make_pod          => {
+        constructor => { sample => '' },
+        synopsis    => $synopsis,
+        methods     => [qw( get_field get_terms )],
     },
-    "KinoSearch::Search::PhraseCompiler" =>
-        { make_constructors => ["do_new"], },
-}
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::PhraseCompiler",
+    bind_constructors => ["do_new"],
+);
 
 __COPYRIGHT__
 

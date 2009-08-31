@@ -20,6 +20,8 @@ KinoSearch::Search::NOTQuery - Invert the result set of another Query.
 
 =head1 DESCRIPTION
 
+Invert the result set of another Query.
+
 A NOTQuery wraps another Query and matches against its inverse document
 set.  All matching docs recieve a score of 0.0.
 

@@ -59,7 +59,8 @@ class KinoSearch::Index::LexiconWriter cnick LexWriter
     Add_Term(LexiconWriter* self, CharBuf* term_text, TermInfo* tinfo);
 
     public void
-    Add_Segment(LexiconWriter *self, SegReader *reader, I32Array *doc_map);
+    Add_Segment(LexiconWriter *self, SegReader *reader, 
+                I32Array *doc_map = NULL);
 
     public void
     Delete_Segment(LexiconWriter *self, SegReader *reader);

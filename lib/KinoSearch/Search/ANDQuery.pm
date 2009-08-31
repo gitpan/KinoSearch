@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $foo_and_bar_query = KinoSearch::Search::ANDQuery->new(
@@ -20,15 +20,16 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Search::ANDQuery" => {
-        make_constructors => ["new"],
-        make_pod          => {
-            methods     => [qw( add_child )],
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::ANDQuery",
+    bind_constructors => ["new"],
+    make_pod          => {
+        methods     => [qw( add_child )],
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
     },
-}
+);
 
 __COPYRIGHT__
 

@@ -4,16 +4,9 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::SortCache" => {
-        make_constructors => ["new"],
-        bind_methods      => [qw( Ordinal Find )],
-    }
-}
-
-__XS__
-
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Index::SortCache
 
 SV*
@@ -21,15 +14,33 @@ value(self, ...)
     kino_SortCache *self;
 CODE:
 {
-    HV *const args_hash = XSBind_build_args_hash( &(ST(0)), 1, items,
-        "KinoSearch::Index::SortCache::value_PARAMS");
-    chy_i32_t ord = XSBind_extract_iv(args_hash, SNL("ord"));
-    kino_Obj *blank = Kino_SortCache_Make_Blank(self);
-    kino_Obj *value = Kino_SortCache_Value(self, ord, blank);
-    RETVAL = XSBind_kobj_to_pobj(value);
-    KINO_DECREF(blank);
+    SV *ord_sv = NULL;
+    chy_i32_t ord = 0;
+
+    XSBind_allot_params( &(ST(0)), 1, items, 
+        "KinoSearch::Index::SortCache::value_PARAMS",
+        &ord_sv, SNL("ord"), 
+        NULL);
+    if (ord_sv) { ord = SvIV(ord_sv); }
+    else { THROW(KINO_ERR, "Missing required param 'ord'"); }
+
+    {
+        kino_Obj *blank = Kino_SortCache_Make_Blank(self);
+        kino_Obj *value = Kino_SortCache_Value(self, ord, blank);
+        RETVAL = XSBind_kobj_to_pobj(value);
+        KINO_DECREF(blank);
+    }
 }
 OUTPUT: RETVAL
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::SortCache",
+    xs_code           => $xs_code,
+    bind_constructors => ["new"],
+    bind_methods      => [qw( Ordinal Find )],
+);
 
 __COPYRIGHT__
 

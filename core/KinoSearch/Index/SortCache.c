@@ -1,3 +1,4 @@
+#define C_KINO_SORTCACHE
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SortCache.h"

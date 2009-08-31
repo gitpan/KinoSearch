@@ -1,3 +1,4 @@
+#define C_KINO_TOPDOCS
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/TopDocs.h"

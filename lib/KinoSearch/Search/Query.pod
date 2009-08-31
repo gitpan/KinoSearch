@@ -24,6 +24,8 @@ KinoSearch::Search::Query - A specification for a search query.
 
 =head1 DESCRIPTION
 
+A specification for a search query.
+
 Query objects are simple containers which contain the minimum information
 necessary to define a search query.  
 

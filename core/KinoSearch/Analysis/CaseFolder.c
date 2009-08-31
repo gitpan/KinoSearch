@@ -1,3 +1,4 @@
+#define C_KINO_CASEFOLDER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Analysis/CaseFolder.h"

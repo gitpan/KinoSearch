@@ -20,6 +20,8 @@ same languages.
 
 =head1 DESCRIPTION
 
+Reduce related words to a shared root.
+
 Stemmer is an L<Analyzer|KinoSearch::Analysis::Analyzer> which reduces
 related words to a root form (using the "Snowball" stemming library).  For
 instance, "horse", "horses", and "horsing" all become "hors" -- so that a

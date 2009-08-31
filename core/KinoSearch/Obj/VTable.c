@@ -1,3 +1,6 @@
+#define C_KINO_VTABLE
+#define C_KINO_OBJ
+#define C_KINO_ZOMBIECHARBUF
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 
@@ -82,7 +85,9 @@ VTable_override(VTable *self, boil_method_t method, size_t offset)
 }
 
 CharBuf*
-VTable_get_name(VTable *self) { return self->name; }
+VTable_get_name(VTable *self)   { return self->name; }
+VTable*
+VTable_get_parent(VTable *self) { return self->parent; }
 
 void
 VTable_init_registry()

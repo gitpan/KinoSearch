@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $whitespace_tokenizer
@@ -28,15 +28,16 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Analysis::Tokenizer" => {
-        bind_methods      => [qw( Set_Token_RE )],
-        make_constructors => ["_new"],
-        make_pod          => {
-            constructor => { sample => $constructor },
-            synopsis    => $synopsis,
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Analysis::Tokenizer",
+    bind_methods      => [qw( Set_Token_RE )],
+    bind_constructors => ["_new"],
+    make_pod          => {
+        constructor => { sample => $constructor },
+        synopsis    => $synopsis,
     },
-}
+);
 
 __COPYRIGHT__
 

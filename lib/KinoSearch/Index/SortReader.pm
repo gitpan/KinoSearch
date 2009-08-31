@@ -4,16 +4,19 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::SortReader" => {
-        make_constructors => ["new"],
-        bind_methods      => [qw( Fetch_Sort_Cache )],
-    },
-    "KinoSearch::Index::DefaultSortReader" => {
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::SortReader",
+    bind_constructors => ["new"],
+    bind_methods      => [qw( Fetch_Sort_Cache )],
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DefaultSortReader",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

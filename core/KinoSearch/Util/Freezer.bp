@@ -1,18 +1,19 @@
-#ifndef H_KINO_FREEZER
-#define H_KINO_FREEZER 1
+parcel KinoSearch cnick Kino;
 
-#include "KinoSearch/Obj.h"
+inert class KinoSearch::Util::Freezer {
 
-/* Store an arbitrary object to the outstream.
- */
-void
-kino_Freezer_freeze(kino_Obj *obj, kino_OutStream *outstream);
+    /** Store an arbitrary object to the outstream.
+     */
+    inert void
+    freeze(Obj *obj, OutStream *outstream);
 
-/* Retrieve an arbitrary object from the instream.
- */
-kino_Obj*
-kino_Freezer_thaw(kino_InStream *instream);
+    /** Retrieve an arbitrary object from the instream.
+     */
+    inert incremented Obj*
+    thaw(InStream *instream);
+}
 
+__C__
 #define KINO_FREEZE(_obj, _outstream) \
     kino_Freezer_freeze((Obj*)(_obj), (outstream))
 
@@ -20,13 +21,10 @@ kino_Freezer_thaw(kino_InStream *instream);
     kino_Freezer_thaw(instream)
 
 #ifdef KINO_USE_SHORT_NAMES
-  #define Freezer_freeze        kino_Freezer_freeze
-  #define Freezer_thaw          kino_Freezer_thaw
   #define FREEZE                KINO_FREEZE 
   #define THAW                  KINO_THAW
 #endif
-
-#endif /* H_KINO_FREEZER */
+__END_C__
 
 /* Copyright 2007-2009 Marvin Humphrey
  *

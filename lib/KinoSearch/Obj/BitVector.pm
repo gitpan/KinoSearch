@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis    = <<'END_SYNOPSIS';
     my $bit_vec = KinoSearch::Obj::BitVector->new( capacity => 8 );
@@ -20,49 +20,50 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-{   "KinoSearch::Obj::BitVector" => {
-        bind_methods => [
-            qw( Get 
-                Set 
-                Clear 
-                Clear_All 
-                And 
-                Or
-                And_Not 
-                Xor 
-                Flip 
-                Flip_Block 
-                Next_Set_Bit
-                To_Array
-                Grow 
-                Count 
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Obj::BitVector",
+    bind_methods => [
+        qw( Get
+            Set
+            Clear
+            Clear_All
+            And
+            Or
+            And_Not
+            Xor
+            Flip
+            Flip_Block
+            Next_Set_Bit
+            To_Array
+            Grow
+            Count
+            Get_Cap
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis    => $synopsis,
+        constructor => { sample => $constructor },
+        methods     => [
+            qw( get
+                set
+                clear
+                clear_all
+                and
+                or
+                and_not
+                xor
+                flip
+                flip_block
+                next_set_bit
+                to_array
+                grow
+                count
                 )
         ],
-        make_getters      => [qw( cap )],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis    => $synopsis,
-            constructor => { sample => $constructor },
-            methods     => [
-                qw( get 
-                    set 
-                    clear 
-                    clear_all 
-                    and 
-                    or
-                    and_not 
-                    xor 
-                    flip 
-                    flip_block 
-                    next_set_bit 
-                    to_array 
-                    grow 
-                    count 
-                    )
-            ],
-        }
-    },
-}
+    }
+);
 
 __COPYRIGHT__
 

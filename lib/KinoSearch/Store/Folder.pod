@@ -13,6 +13,8 @@ KinoSearch::Store::Folder - Abstract class representing a directory.
 
 =head1 DESCRIPTION
 
+Abstract class representing a directory.
+
 The archetypal implementation of Folder,
 L<FSFolder|KinoSearch::Store::FSFolder>, is a single directory on the file
 system holding a collection of files.  However, to allow alternative

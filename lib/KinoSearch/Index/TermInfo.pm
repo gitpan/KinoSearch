@@ -4,17 +4,26 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::TermInfo" => {
-        bind_methods      => [qw( Reset )],
-        make_constructors => ["new"],
-        make_getters =>
-            [qw( doc_freq post_filepos skip_filepos lex_filepos )],
-        make_setters =>
-            [qw( doc_freq post_filepos skip_filepos lex_filepos )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Index::TermInfo",
+    bind_methods => [
+        qw(
+            Get_Doc_Freq
+            Get_Lex_FilePos
+            Get_Post_FilePos
+            Get_Skip_FilePos
+            Set_Doc_Freq
+            Set_Lex_FilePos
+            Set_Post_FilePos
+            Set_Skip_FilePos
+            Reset
+            )
+    ],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

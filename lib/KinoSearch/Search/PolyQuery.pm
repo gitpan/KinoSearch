@@ -4,14 +4,15 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Search::PolyQuery" => {
-        bind_methods      => [qw( Add_Child Set_Children Get_Children )],
-        make_constructors => ["new"],
-        make_pod          => { }
-    },
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Search::PolyQuery",
+    bind_methods      => [qw( Add_Child Set_Children Get_Children )],
+    bind_constructors => ["new"],
+    make_pod          => {}
+);
 
 __COPYRIGHT__
 

@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package Boilerplater::Binding::Perl::XSub;
+package Boilerplater::Binding::Perl::Subroutine;
 use Carp;
 use Boilerplater::Class;
 use Boilerplater::Function;
@@ -12,7 +12,7 @@ use Boilerplater::Util qw( verify_args );
 
 our %new_PARAMS = (
     param_list         => undef,
-    aliases            => undef,
+    alias              => undef,
     class_name         => undef,
     use_labeled_params => undef,
     retval_type        => undef,
@@ -22,26 +22,20 @@ sub new {
     my $either = shift;
     verify_args( \%new_PARAMS, @_ ) or confess $@;
     my $self = bless { %new_PARAMS, @_, }, ref($either) || $either;
-    confess("at least one alias required")
-        unless scalar @{ $self->{aliases} };
-    for (qw( param_list class_name )) {
+    for (qw( param_list class_name alias )) {
         confess("$_ is required") unless defined $self->{$_};
     }
     return $self;
 }
 
-sub max_alias_num      { $#{ shift->{aliases} } }
 sub get_class_name     { shift->{class_name} }
 sub use_labeled_params { shift->{use_labeled_params} }
 
-sub perl_name { shift->full_alias(0) }
 
 # Fully-qualified perl sub name.
-sub full_alias {
-    my ( $self, $alias_num ) = @_;
-    my $micro_sym = $self->{aliases}[$alias_num];
-    return unless $micro_sym;
-    return "$self->{class_name}::$micro_sym";
+sub perl_name { 
+    my $self = shift;
+    return "$self->{class_name}::$self->{alias}";
 }
 
 # Name of the C function that implements the XSUB.

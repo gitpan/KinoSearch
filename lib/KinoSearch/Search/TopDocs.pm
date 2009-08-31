@@ -4,18 +4,20 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Search::TopDocs" => {
-        bind_methods => [qw( 
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::TopDocs",
+    bind_methods => [
+        qw(
             Get_Match_Docs
             Get_Total_Hits
             Set_Total_Hits
-        )],
-        make_constructors => ["new"],
-    }
-}
-
+            )
+    ],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

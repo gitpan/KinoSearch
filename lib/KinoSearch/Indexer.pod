@@ -24,6 +24,8 @@ KinoSearch::Indexer - Build inverted indexes.
 
 =head1 DESCRIPTION
 
+Build inverted indexes.
+
 The Indexer class is KinoSearch's primary tool for managing the content of
 inverted indexes, which may later be searched using
 L<KinoSearch::Searcher>.

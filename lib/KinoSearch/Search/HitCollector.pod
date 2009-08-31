@@ -13,6 +13,8 @@ KinoSearch::Search::HitCollector - Process hits.
 
 =head1 DESCRIPTION
 
+Process hits.
+
 A HitCollector decides what to do with the hits that a Matcher iterates
 through, based on how the abstract collect() method is implemented.
 

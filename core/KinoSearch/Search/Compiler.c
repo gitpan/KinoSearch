@@ -1,3 +1,4 @@
+#define C_KINO_COMPILER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/Compiler.h"

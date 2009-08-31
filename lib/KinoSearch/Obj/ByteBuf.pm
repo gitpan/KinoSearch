@@ -4,21 +4,20 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch     PACKAGE = KinoSearch::Obj::ByteBuf
 
 SV*
-new(class_name, sv)
-    kino_ClassNameBuf class_name;
+new(either_sv, sv)
+    SV *either_sv;
     SV *sv;
 CODE:
 {
     STRLEN size;
     char *ptr = SvPV(sv, size);
-    kino_VTable *vtable 
-        = kino_VTable_singleton((kino_CharBuf*)&class_name, NULL);
-    kino_ByteBuf *self = (kino_ByteBuf*)Kino_VTable_Make_Obj(vtable);
+    kino_ByteBuf *self = (kino_ByteBuf*)XSBind_new_blank_obj(either_sv);
     kino_BB_init(self, size);
     Kino_BB_Mimic_Bytes(self, ptr, size);
     KOBJ_TO_SV_NOINC(self, RETVAL);
@@ -41,18 +40,20 @@ bb_compare(bb_a, bb_b)
 CODE: 
     RETVAL = kino_BB_compare(&bb_a, &bb_b);
 OUTPUT: RETVAL
+END_XS_CODE
 
-__AUTO_XS__
-
-{   "KinoSearch::Obj::ByteBuf" => {
-        bind_methods => [
-            qw( Get_Size
-                Get_Capacity
-                Cat
-                )
-        ],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Obj::ByteBuf",
+    xs_code      => $xs_code,
+    bind_methods => [
+        qw(
+            Get_Size
+            Get_Capacity
+            Cat
+            )
+    ],
+);
 
 __COPYRIGHT__
 

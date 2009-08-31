@@ -4,15 +4,18 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::HighlightReader" => {
-        make_constructors => ["new"],
-    },
-    "KinoSearch::Index::DefaultHighlightReader" => {
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::HighlightReader",
+    bind_constructors => ["new"],
+);
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::DefaultHighlightReader",
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 

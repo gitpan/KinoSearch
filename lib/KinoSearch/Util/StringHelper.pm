@@ -4,8 +4,9 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Util::StringHelper
 
 =for comment 
@@ -94,6 +95,13 @@ PPCODE:
     if (SvUTF8(sv)) { KINO_THROW(KINO_ERR, "Can't cat_bytes onto a UTF-8 SV"); }
     sv_catpvn(sv, ptr, len);
 }
+END_XS_CODE
+
+Boilerplater::Binding::Perl::Class->register(
+    parcel     => "KinoSearch",
+    class_name => "KinoSearch::Util::StringHelper",
+    xs_code    => $xs_code,
+);
 
 __COPYRIGHT__
 

@@ -1,3 +1,4 @@
+#define C_KINO_TESTDOCWRITER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"

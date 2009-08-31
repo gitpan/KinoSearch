@@ -25,6 +25,8 @@ KinoSearch::Analysis::Tokenizer - Split a string into tokens.
 
 =head1 DESCRIPTION
 
+Split a string into tokens.
+
 Generically, "tokenizing" is a process of breaking up a string into an
 array of "tokens".  For instance, the string "three blind mice" might be
 tokenized into "three", "blind", "mice".

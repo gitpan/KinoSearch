@@ -1,3 +1,7 @@
+#define C_KINO_RICHPOSTING
+#define C_KINO_RICHPOSTINGSCORER
+#define C_KINO_RAWPOSTING
+#define C_KINO_TOKEN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Posting/RichPosting.h"
@@ -68,7 +72,7 @@ RichPost_clone(RichPosting *self)
 void
 RichPost_read_record(RichPosting *self, InStream *instream)
 {
-    float *const norm_decoder = self->sim->norm_decoder;
+    float *const norm_decoder = self->norm_decoder;
     u32_t  doc_code;
     u32_t  num_prox = 0;
     u32_t  position = 0; 
@@ -114,11 +118,11 @@ RichPost_add_inversion_to_pool(RichPosting *self, PostingPool *post_pool,
                                i32_t doc_id, float doc_boost,
                                float length_norm)
 {
-    MemoryPool  *mem_pool = post_pool->mem_pool;
-    Similarity  *sim = self->sim;
-    float        field_boost = doc_boost * type->boost * length_norm;
-    Token      **tokens;
-    u32_t        freq;
+    MemoryPool *mem_pool = PostPool_Get_Mem_Pool(post_pool);
+    Similarity *sim = self->sim;
+    float       field_boost = doc_boost * FType_Get_Boost(type) * length_norm;
+    Token     **tokens;
+    u32_t       freq;
 
     Inversion_Reset(inversion);
     while ( (tokens = Inversion_Next_Cluster(inversion, &freq)) != NULL ) {

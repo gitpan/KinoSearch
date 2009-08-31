@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     while ( my $hit_doc = $hits->next ) {
@@ -14,15 +14,16 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Doc::HitDoc" => {
-        make_constructors => ['new'],
-        bind_methods      => [qw( Set_Score Get_Score )],
-        make_pod          => {
-            methods  => [qw( set_score get_score )],
-            synopsis => $synopsis,
-        },
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Doc::HitDoc",
+    bind_constructors => ['new'],
+    bind_methods      => [qw( Set_Score Get_Score )],
+    make_pod          => {
+        methods  => [qw( set_score get_score )],
+        synopsis => $synopsis,
     },
-}
+);
 
 __COPYRIGHT__
 

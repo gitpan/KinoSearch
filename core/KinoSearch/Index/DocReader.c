@@ -1,3 +1,6 @@
+#define C_KINO_DOCREADER
+#define C_KINO_POLYDOCREADER
+#define C_KINO_DEFAULTDOCREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DocReader.h"

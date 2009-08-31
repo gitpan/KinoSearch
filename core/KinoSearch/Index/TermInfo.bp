@@ -27,6 +27,27 @@ class KinoSearch::Index::TermInfo cnick TInfo extends KinoSearch::Obj {
     public i32_t
     Get_Doc_Freq(TermInfo *self);
 
+    public i64_t
+    Get_Lex_FilePos(TermInfo *self);
+
+    public i64_t
+    Get_Post_FilePos(TermInfo *self);
+
+    public i64_t
+    Get_Skip_FilePos(TermInfo *self);
+
+    public void
+    Set_Doc_Freq(TermInfo *self, i32_t doc_freq);
+
+    public void
+    Set_Lex_FilePos(TermInfo *self, i64_t filepos);
+
+    public void
+    Set_Post_FilePos(TermInfo *self, i64_t filepos);
+
+    public void
+    Set_Skip_FilePos(TermInfo *self, i64_t filepos);
+
     /** "Zero out" the TermInfo.
      */
     void

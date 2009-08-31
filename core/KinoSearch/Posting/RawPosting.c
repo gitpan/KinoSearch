@@ -1,3 +1,6 @@
+#define C_KINO_RAWPOSTING
+#define C_KINO_RAWPOSTINGSTREAMER
+#define C_KINO_TERMINFO
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <string.h>

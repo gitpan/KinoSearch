@@ -1,3 +1,4 @@
+#define C_KINO_TESTNUMBERUTILS
 #include "KinoSearch/Util/ToolSet.h"
 #include <stdlib.h>
 #include <time.h>

@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     # RichPosting is used indirectly, by specifying in FieldType subclass.
@@ -16,13 +16,14 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Posting::RichPosting" => {
-        make_constructors  => ["new"],
-#        make_pod => {
-#            synopsis => $synopsis,
-#        }
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Posting::RichPosting",
+    bind_constructors => ["new"],
+#    make_pod => {
+#        synopsis => $synopsis,
+#    }
+);
 
 __COPYRIGHT__
 

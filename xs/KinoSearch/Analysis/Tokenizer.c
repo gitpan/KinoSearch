@@ -1,3 +1,5 @@
+#define C_KINO_TOKENIZER
+#define C_KINO_TOKEN
 #include "xs/XSBind.h"
 
 #include "KinoSearch/Analysis/Tokenizer.h"
@@ -109,13 +111,13 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
 
         /* Get start and end offsets in Unicode code points. */
         for( ; string_arg < start_ptr; num_code_points++) {
-            string_arg += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*string_arg];
+            string_arg += kino_StrHelp_UTF8_SKIP[(chy_u8_t)*string_arg];
             if (string_arg > string_end)
                 THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }
         start = num_code_points;
         for( ; string_arg < end_ptr; num_code_points++) {
-            string_arg += KINO_STRHELP_UTF8_SKIP[(chy_u8_t)*string_arg];
+            string_arg += kino_StrHelp_UTF8_SKIP[(chy_u8_t)*string_arg];
             if (string_arg > string_end)
                 THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }

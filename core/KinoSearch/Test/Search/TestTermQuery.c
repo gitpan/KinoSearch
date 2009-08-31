@@ -1,3 +1,4 @@
+#define C_KINO_TESTTERMQUERY
 #include "KinoSearch/Util/ToolSet.h"
 #include <math.h>
 

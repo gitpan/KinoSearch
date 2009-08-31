@@ -1,3 +1,4 @@
+#define C_KINO_SEGLEXICON
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegLexicon.h"
@@ -120,7 +121,7 @@ SegLex_seek(SegLexicon *self, Obj *target)
         TInfo_Mimic(my_tinfo, (Obj*)target_tinfo);
         TermStepper_Set_Value(self->term_stepper, lex_index_term);
         DECREF(lex_index_term);
-        InStream_Seek(self->instream, target_tinfo->lex_filepos);
+        InStream_Seek(self->instream, TInfo_Get_Lex_FilePos(target_tinfo));
     }
     self->term_num = LexIndex_Get_Term_Num(lex_index);
 

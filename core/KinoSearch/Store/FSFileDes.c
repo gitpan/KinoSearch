@@ -1,3 +1,5 @@
+#define C_KINO_FSFILEDES
+#define C_KINO_FILEWINDOW
 #include "KinoSearch/Util/ToolSet.h"
 
 #include <errno.h>

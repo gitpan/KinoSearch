@@ -1,3 +1,6 @@
+#define C_KINO_SEGPOSTINGLIST
+#define C_KINO_POSTING
+#define C_KINO_SKIPSTEPPER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegPostingList.h"
@@ -124,6 +127,11 @@ SegPList_get_doc_id(SegPostingList *self)
 {
     return self->posting->doc_id;
 }
+
+u32_t
+SegPList_get_count(SegPostingList *self) { return self->count; }
+InStream*
+SegPList_get_post_stream(SegPostingList *self) { return self->post_stream; }
 
 /* TODO: This is unsafe to call except right after constructor. */
 void
@@ -255,8 +263,9 @@ S_seek_tinfo(SegPostingList *self, TermInfo *tinfo)
     }
     else {
         /* Transfer doc_freq, seek main stream. */
+        i64_t post_filepos = TInfo_Get_Post_FilePos(tinfo);
         self->doc_freq     = TInfo_Get_Doc_Freq(tinfo);
-        InStream_Seek(self->post_stream, tinfo->post_filepos);
+        InStream_Seek(self->post_stream, post_filepos);
 
         /* Prepare posting. */
         Post_Reset(self->posting);
@@ -266,8 +275,8 @@ S_seek_tinfo(SegPostingList *self, TermInfo *tinfo)
         self->skip_count    = 0;
         self->num_skips     = self->doc_freq / self->skip_interval;
         SkipStepper_Set_ID_And_Filepos(self->skip_stepper, self->doc_base,
-            (u64_t)tinfo->post_filepos);
-        InStream_Seek(self->skip_stream, tinfo->skip_filepos);
+            (u64_t)post_filepos);
+        InStream_Seek(self->skip_stream, TInfo_Get_Skip_FilePos(tinfo));
     }
 }
 

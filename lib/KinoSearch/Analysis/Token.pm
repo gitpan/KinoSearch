@@ -4,64 +4,89 @@ use KinoSearch;
 
 __END__
 
-__XS__
+__BINDING__
 
+my $xs = <<'END_XS';
 MODULE = KinoSearch    PACKAGE = KinoSearch::Analysis::Token
 
 SV*
-new(class_name, ...)
-    kino_ClassNameBuf class_name;
+new(either_sv, ...)
+    SV *either_sv;
 CODE:
 {
-    kino_VTable *vtable 
-        = kino_VTable_singleton((kino_CharBuf*)&class_name, NULL);
-    STRLEN len;
-    HV *const args_hash    = XSBind_build_args_hash( &(ST(0)), 1, items,
-            "KinoSearch::Analysis::Token::new_PARAMS");
-    SV *text_sv         = XSBind_extract_sv(args_hash, SNL("text"));
-    char *text          = SvPV(text_sv, len);
-    chy_u32_t start_off = XSBind_extract_uv(args_hash, SNL("start_offset"));
-    chy_u32_t end_off   = XSBind_extract_uv(args_hash, SNL("end_offset"));
-    chy_i32_t pos_inc   = XSBind_extract_iv(args_hash, SNL("pos_inc"));
-    float boost         = (float)XSBind_extract_nv(args_hash, SNL("boost"));
-    kino_Token *self    = (kino_Token*)Kino_VTable_Make_Obj(vtable);
-    kino_Token_init(self, text, len, start_off, end_off, boost, 
-        pos_inc);
-    KOBJ_TO_SV_NOINC(self, RETVAL);
+    SV *text_sv         = NULL;
+    SV *start_offset_sv = NULL;
+    SV *end_offset_sv   = NULL;
+    SV *pos_inc_sv      = NULL;
+    SV *boost_sv        = NULL;
+
+    XSBind_allot_params( &(ST(0)), 1, items, 
+        "KinoSearch::Analysis::Token::new_PARAMS",
+        &text_sv, SNL("text"), 
+        &start_offset_sv, SNL("start_offset"), 
+        &end_offset_sv, SNL("end_offset"), 
+        &pos_inc_sv, SNL("pos_inc"), 
+        &boost_sv, SNL("boost"), 
+        NULL);
+
+    if (!XSBind_sv_defined(text_sv)) { 
+        THROW(KINO_ERR, "Missing required param 'text'"); 
+    }
+    if (!XSBind_sv_defined(start_offset_sv)) { 
+        THROW(KINO_ERR, "Missing required param 'start_offset'"); 
+    }
+    if (!XSBind_sv_defined(end_offset_sv)) { 
+        THROW(KINO_ERR, "Missing required param 'end_offset'"); 
+    }
+
+    {
+        STRLEN len;
+        char *text = SvPVutf8(text_sv, len);
+        chy_u32_t start_off = SvUV(start_offset_sv);
+        chy_u32_t end_off   = SvUV(end_offset_sv);
+        chy_i32_t pos_inc   = pos_inc_sv ? SvIV(pos_inc_sv) : 1;
+        float boost         = boost_sv ? (float)SvNV(boost_sv) : 1.0f;
+        kino_Token *self    = (kino_Token*)XSBind_new_blank_obj(either_sv);
+        kino_Token_init(self, text, len, start_off, end_off, boost, 
+            pos_inc);
+        KOBJ_TO_SV_NOINC(self, RETVAL);
+    }
 }
 OUTPUT: RETVAL
 
-void
-_set_or_get2(self, ...)
+SV*
+get_text(self)
     kino_Token *self;
-ALIAS:
-    set_text         = 1
-    get_text         = 2
+CODE:
+    RETVAL = newSVpvn(Kino_Token_Get_Text(self), Kino_Token_Get_Len(self));
+    SvUTF8_on(RETVAL);
+OUTPUT: RETVAL
+
+void
+set_text(self, sv)
+    kino_Token *self;
+    SV *sv;
 PPCODE:
 {
-    START_SET_OR_GET_SWITCH
-
-    case 1:  KINO_FREEMEM(self->text);
-             {
-                 STRLEN len;
-                 char *str = SvPVutf8( ST(1), len);
-                 self->text = kino_StrHelp_strndup(str, len);
-                 self->len = len;
-             }
-
-    case 2:  retval = newSVpvn(self->text, self->len);
-             SvUTF8_on(retval);
-             break;
-
-    END_SET_OR_GET_SWITCH
+    STRLEN len;
+    char *ptr = SvPVutf8(sv, len);
+    Kino_Token_Set_Text(self, ptr, len);
 }
+END_XS
 
-__AUTO_XS__
-
-{   "KinoSearch::Analysis::Token" => {
-        make_getters      => [qw( start_offset end_offset boost pos_inc )],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Analysis::Token",
+    bind_methods => [
+        qw(
+            Get_Start_Offset
+            Get_End_Offset
+            Get_Boost
+            Get_Pos_Inc
+            )
+    ],
+    xs_code => $xs,
+);
 
 __POD__
 

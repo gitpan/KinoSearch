@@ -1,3 +1,4 @@
+#define C_KINO_SORTEXRUN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/SortExRun.h"
@@ -128,6 +129,12 @@ SortExRun_clear_cache(SortExRun *self)
 
     self->cache_max   = 0;
     self->cache_tick  = 0;
+}
+
+u32_t
+SortExRun_cache_count(SortExRun *self)
+{
+    return self->cache_max - self->cache_tick;
 }
 
 /* Copyright 2006-2009 Marvin Humphrey

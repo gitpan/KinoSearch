@@ -1,8 +1,8 @@
 use strict;
 use warnings;
 
-package Boilerplater::Binding::Perl::XSub::Constructor;
-use base qw( Boilerplater::Binding::Perl::XSub );
+package Boilerplater::Binding::Perl::Constructor;
+use base qw( Boilerplater::Binding::Perl::Subroutine );
 use Carp;
 use Boilerplater::Binding::Perl::TypeMap qw( from_perl );
 use Boilerplater::ParamList;
@@ -14,7 +14,7 @@ sub new {
     my $init_func_name = $alias =~ s/^(\w+)\|(\w+)$/$1/ ? $2 : 'init';
     my $class_name     = $class->get_class_name;
     my $func;
-    for my $function ( $class->get_functions ) {
+    for my $function ( $class->functions ) {
         next unless $function->micro_sym eq $init_func_name;
         $func = $function;
         last;
@@ -27,7 +27,7 @@ sub new {
         retval_type        => $func->get_return_type,
         class_name         => $class_name,
         use_labeled_params => 1,
-        aliases            => [$alias],
+        alias              => $alias,
         %args
     );
     $self->{init_func} = $func;

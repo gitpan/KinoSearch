@@ -28,7 +28,7 @@ class KinoSearch::Obj::Err extends KinoSearch::Obj {
     public incremented CharBuf*
     To_String(Err *self);
 
-    public void*
+    void*
     To_Host(Err *self);
 
     /** Concatenate the supplied argument onto the internal "mess". 
@@ -132,17 +132,12 @@ __C__
   KINO_MAKE_MESS(char* format, ...);
 #endif
 
-#define KINO_ABSTRACT_DEATH(self, method) \
-    KINO_THROW(KINO_ERR, "Abstract method '" method "' not defined by %o", \
-        Kino_Obj_Get_Class_Name(self));
-
 #define KINO_ASSERT_IS_A(_obj, _vtable) \
     kino_Err_assert_is_a((kino_Obj*)_obj, (_vtable), \
         __FILE__, __LINE__, KINO_ERR_FUNC_MACRO)
 
 #ifdef KINO_USE_SHORT_NAMES
   #define THROW             KINO_THROW
-  #define ABSTRACT_DEATH    KINO_ABSTRACT_DEATH  
   #define WARN              KINO_WARN
   #define MAKE_MESS         KINO_MAKE_MESS
   #define ERR_FUNC_MACRO    KINO_ERR_FUNC_MACRO

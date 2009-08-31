@@ -1,3 +1,4 @@
+#define C_KINO_POLYLEXICON
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PolyLexicon.h"
@@ -183,6 +184,12 @@ Obj*
 PolyLex_get_term(PolyLexicon *self)
 {
     return self->term;
+}
+
+u32_t
+PolyLex_get_num_seg_lexicons(PolyLexicon *self)
+{
+    return VA_Get_Size(self->seg_lexicons);
 }
 
 SegLexQueue*

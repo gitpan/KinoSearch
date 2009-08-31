@@ -1,3 +1,5 @@
+#define C_KINO_STOPALIZER
+#define C_KINO_TOKEN
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Analysis/Stopalizer.h"

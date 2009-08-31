@@ -1,3 +1,4 @@
+#define C_KINO_INDEXREADER
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/IndexReader.h"

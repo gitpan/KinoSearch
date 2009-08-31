@@ -4,7 +4,7 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $hits = $searcher->hits(
@@ -17,20 +17,21 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-{   "KinoSearch::Search::Hits" => {
-        bind_methods => [
-            qw(
-                Total_Hits
-                Next
-                )
-        ],
-        make_constructors => ["new"],
-        make_pod          => {
-            synopsis => $synopsis,
-            methods  => [qw( next total_hits )],
-        }
+Boilerplater::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KinoSearch::Search::Hits",
+    bind_methods => [
+        qw(
+            Total_Hits
+            Next
+            )
+    ],
+    bind_constructors => ["new"],
+    make_pod          => {
+        synopsis => $synopsis,
+        methods  => [qw( next total_hits )],
     }
-}
+);
 
 __COPYRIGHT__
 

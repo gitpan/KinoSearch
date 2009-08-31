@@ -1,3 +1,5 @@
+#define C_KINO_SORTCOLLECTOR
+#define C_KINO_MATCHDOC
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/HitCollector/SortCollector.h"
@@ -197,7 +199,7 @@ void
 SortColl_set_reader(SortCollector *self, SegReader *reader) 
 {
     SortReader *sort_reader 
-        = (SortReader*)SegReader_Fetch(reader, SORTREADER->name);
+        = (SortReader*)SegReader_Fetch(reader, VTable_Get_Name(SORTREADER));
 
     /* Reset threshold variables and trigger auto-action behavior. */
     self->bumped->doc_id = I32_MAX;

@@ -4,13 +4,14 @@ use KinoSearch;
 
 __END__
 
-__AUTO_XS__
+__BINDING__
 
-{   "KinoSearch::Index::FilePurger" => {
-        bind_methods      => [qw( Purge )],
-        make_constructors => ["new"],
-    }
-}
+Boilerplater::Binding::Perl::Class->register(
+    parcel            => "KinoSearch",
+    class_name        => "KinoSearch::Index::FilePurger",
+    bind_methods      => [qw( Purge )],
+    bind_constructors => ["new"],
+);
 
 __COPYRIGHT__
 
