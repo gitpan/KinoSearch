@@ -10,9 +10,9 @@
 #elif defined(_MSC_VER)
     static CompilerSpec spec = { "MSVC", "/I", "/Fo", "/Fe" };
 #else
-  #error "Couldn't detect a supported compiler"
+    /* Assume a generic GCC-compatible compiler and hope for the best. */
+    static CompilerSpec spec = { "cc", "-I ", "-o ", "-o " };
 #endif
-
 
 chaz_CompilerSpec*
 chaz_CCSpec_find_spec()

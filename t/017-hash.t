@@ -1,11 +1,12 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 22;
 use List::Util qw( shuffle );
 use Storable qw( nfreeze thaw );
 use KinoSearch::Test;
 use KinoSearch::Util::StringHelper qw( utf8ify );
+use KinoSearch::Util::ToolSet qw( to_perl to_kino );
 
 my ( $hash, @orig, @got );
 my ( %source, $dest_ref );
@@ -124,3 +125,9 @@ $outstream->close;
 my $instream     = KinoSearch::Store::InStream->new($ram_file);
 my $deserialized = $hash->deserialize($instream);
 is_deeply( $hash->to_perl, $deserialized->to_perl, "serialize/deserialize" );
+
+my %hash_with_utf8_keys = ( "\x{263a}" => "foo" );
+my $round_tripped = to_perl( to_kino( \%hash_with_utf8_keys ) );
+is_deeply( $round_tripped, \%hash_with_utf8_keys,
+    "Round trip conversion of hash with UTF-8 keys" );
+

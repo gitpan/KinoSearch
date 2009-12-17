@@ -39,12 +39,22 @@ static void
 S_set_token_re_but_not_pattern(kino_Tokenizer *self, void *token_re)
 {
     MAGIC *magic = NULL;
+    REGEXP *rx;
+#if (PERL_VERSION > 10)
+    rx = SvRX((SV*)token_re);
+#else
     if (SvMAGICAL((SV*)token_re))
         magic = mg_find((SV*)token_re, PERL_MAGIC_qr); 
     if (!magic)
         THROW(KINO_ERR, "token_re is not a qr// entity");
+    rx = (REGEXP*)magic->mg_obj;
+#endif
+    if (rx == NULL) {
+        THROW(KINO_ERR, "Failed to extract REGEXP from token_re '%s'", 
+            SvPV_nolen((SV*)token_re));
+    }
     if (self->token_re) ReREFCNT_dec(((REGEXP*)self->token_re));
-    self->token_re = magic->mg_obj;
+    self->token_re = rx;
     (void)ReREFCNT_inc(((REGEXP*)self->token_re));
 }
 
@@ -80,7 +90,13 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
 {
     chy_u32_t  num_code_points = 0;
     SV        *wrapper    = sv_newmortal();
+#if (PERL_VERSION > 10)
     REGEXP    *rx         = (REGEXP*)self->token_re;
+    regexp    *rx_struct  = (regexp*)SvANY(rx);
+#else 
+    REGEXP    *rx         = (REGEXP*)self->token_re;
+    regexp    *rx_struct  = rx;
+#endif
     char      *string_beg = (char*)string;
     char      *string_end = string_beg + string_len;
     char      *string_arg = string_beg;
@@ -100,12 +116,12 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
     while (
         pregexec(rx, string_arg, string_end, string_arg, 1, wrapper, 1)
     ) {
-#if ((PERL_VERSION > 9) || (PERL_VERSION == 9 && PERL_SUBVERSION >= 5))
-        char *const start_ptr = string_arg + rx->offs[0].start;
-        char *const end_ptr   = string_arg + rx->offs[0].end;
+#if ((PERL_VERSION >= 10) || (PERL_VERSION == 9 && PERL_SUBVERSION >= 5))
+        char *const start_ptr = string_arg + rx_struct->offs[0].start;
+        char *const end_ptr   = string_arg + rx_struct->offs[0].end;
 #else 
-        char *const start_ptr = string_arg + rx->startp[0];
-        char *const end_ptr   = string_arg + rx->endp[0];
+        char *const start_ptr = string_arg + rx_struct->startp[0];
+        char *const end_ptr   = string_arg + rx_struct->endp[0];
 #endif
         chy_u32_t start, end;
 

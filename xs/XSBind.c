@@ -275,8 +275,13 @@ static SV*
 khash_to_phash(kino_Hash *hash)
 {
     HV *perl_hash = newHV();
+    SV *key_sv    = newSV(1);
     kino_CharBuf *key;
     kino_Obj     *val;
+
+    /* Prepare the SV key. */
+    SvPOK_on(key_sv);
+    SvUTF8_on(key_sv);
 
     Kino_Hash_Iter_Init(hash);
     while (Kino_Hash_Iter_Next(hash, (kino_Obj**)&key, &val)) {
@@ -286,9 +291,16 @@ khash_to_phash(kino_Hash *hash)
                 "Can't convert a key of class %o to a Perl hash key",
                 Kino_Obj_Get_Class_Name(key));
         }
-        hv_store(perl_hash, (char*)Kino_CB_Get_Ptr8(key), 
-            Kino_CB_Get_Size(key), val_sv, 0);
+        else {
+            STRLEN key_size = Kino_CB_Get_Size(key);
+            char *key_sv_ptr = SvGROW(key_sv, key_size + 1); 
+            memcpy(key_sv_ptr, Kino_CB_Get_Ptr8(key), key_size);
+            SvCUR_set(key_sv, key_size);
+            *SvEND(key_sv) = '\0';
+            hv_store_ent(perl_hash, key_sv, val_sv, 0);
+        }
     }
+    SvREFCNT_dec(key_sv);
 
     return newRV_noinc((SV*)perl_hash);
 }

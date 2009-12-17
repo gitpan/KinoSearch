@@ -138,7 +138,8 @@ DefDelWriter_finish(DefaultDeletionsWriter *self)
         if (self->updated[i]) {
             BitVector *deldocs   = (BitVector*)VA_Fetch(self->bit_vecs, i);
             i32_t      doc_max   = SegReader_Doc_Max(seg_reader);
-            u32_t      byte_size = (u32_t)ceil(doc_max/ 8.0);
+            double     used      = (doc_max + 1) / 8.0;
+            u32_t      byte_size = (u32_t)ceil(used);
             u32_t      new_max   = byte_size * 8 - 1;
             CharBuf   *filename  = S_del_filename(self, seg_reader);
             Snapshot  *snapshot  = DefDelWriter_Get_Snapshot(self);

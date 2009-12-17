@@ -46,20 +46,18 @@ empty array, we get consistently quick performance:
         manager => NoMergeManager->new,
     );
     ...
+    $indexer->commit;
 
 However, we can't procrastinate forever.  Eventually, we'll have to run an
 ordinary, uncontrolled indexing session, potentially triggering a large
 rewrite of lots of small and/or degraded segments:
 
-    my $indexer = KinoSearch::Indexer->new( index => '/path/to/index', );
-    $indexer->optimize;    # optional
-    $indexer->finish;
-
-Calling optimize() is optional; it may improve search-time performance or it
-may not, and it will almost always cost more.  But if you're already, say,
-taking a machine offline for index consolidation, it may make sense to
-optimize() and stretch out the interval before meaningful search-time
-performance degradation sets in.
+    my $indexer = KinoSearch::Indexer->new( 
+        index => '/path/to/index', 
+        # manager => NoMergeManager->new,
+    );
+    ...
+    $indexer->commit;
 
 =head1 Acceptable worst-case update time, slower degradation
 
@@ -136,11 +134,6 @@ once again near the end.  Under normal loads, the internal retry logic will
 resolve conflicts, but if it's not acceptable to miss an insert, you probably
 want to catch LockErr exceptions thrown by Indexer.  In contrast, a LockErr
 from BackgroundMerger probably just needs to be logged.
-
-Like Indexer, BackgroundMerger offers an optimize() option, but it's generally
-not a good idea to call it if you're deploying BackgroundMerger often, as it
-will cause needless churn.  Instead, simply ask BackgroundMerger to commit(),
-and let it decide how much it needs to recycle -- if anything.
 
 =head1 COPYRIGHT
 

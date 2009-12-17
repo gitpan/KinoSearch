@@ -1,5 +1,20 @@
 Revision history for KinoSearch
 
+0.30_071 2009-12-16
+
+  Bugfixes:
+
+    * Fix an intermittent problem with lost deletions.
+    * Handle UTF-8 hash keys properly within JSON writing code, fixing
+      serialization of non-English stoplists.
+    * Fix a build-time memory error that could cause some platforms (e.g.
+      FreeBSD 7.x) to abort the build.
+    * Update Tokenizer for compatibility with Perl 5.11.
+    * Improve compatibility with unrecognized compiler platforms.
+    * Fix a theoretical bug with truncated offsets for index files > 2 GB.
+    * Reword and de-glitch the FastUpdates cookbook entry.
+
+
 0.30_07  2009-08-30
 
   Bugfixes:

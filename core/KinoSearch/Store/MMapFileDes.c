@@ -256,7 +256,7 @@ bool_t
 MMapFileDes_read(MMapFileDes *self, char *dest, u64_t offset, u32_t len)
 {
     /* Seek. */
-    i64_t check_val = lseek(self->fd, (long)offset, SEEK_SET);
+    i64_t check_val = lseek(self->fd, offset, SEEK_SET);
     if (check_val == -1) {
         if (!self->mess) { self->mess = CB_new(50); }
         CB_catf(self->mess, "lseek to %u64 on %o failed: %s", 
