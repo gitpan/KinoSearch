@@ -1,5 +1,11 @@
 Revision history for KinoSearch
 
+0.30_072 2009-12-23
+
+  Bugfixes:
+
+    * Update XS binding code for improved compatibility with Perl 5.11.x.
+
 0.30_071 2009-12-16
 
   Bugfixes:

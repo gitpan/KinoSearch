@@ -1,6 +1,6 @@
 ---
 name: KinoSearch
-version: 0.30_071
+version: 0.30_072
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 abstract: Search engine library.
@@ -44,7 +44,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_071
+    version: 0.30_072
   KinoSearch::Analysis::Inversion:
     file: lib/KinoSearch.pm
   KinoSearch::Analysis::Stemmer:
