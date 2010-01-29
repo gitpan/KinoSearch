@@ -11,10 +11,10 @@ DataReader*
 DataReader_init(DataReader *self, Schema *schema, Folder *folder, 
                 Snapshot *snapshot, VArray *segments, i32_t seg_tick)
 {
-    self->schema   = schema   ? (Schema*)INCREF(schema)     : NULL;
-    self->folder   = folder   ? (Folder*)INCREF(folder)     : NULL;
-    self->snapshot = snapshot ? (Snapshot*)INCREF(snapshot) : NULL;
-    self->segments = segments ? (VArray*)INCREF(segments)   : NULL;
+    self->schema   = (Schema*)INCREF(schema);
+    self->folder   = (Folder*)INCREF(folder);
+    self->snapshot = (Snapshot*)INCREF(snapshot);
+    self->segments = (VArray*)INCREF(segments);
     self->seg_tick = seg_tick;
     if (seg_tick != -1) {
         if (!segments) {
@@ -67,7 +67,7 @@ Segment*
 DataReader_get_segment(DataReader *self) 
     { return self->segment; }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

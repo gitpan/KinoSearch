@@ -1,7 +1,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Analysis/Stopalizer.h"
-#include "KinoSearch/Util/Host.h"
+#include "KinoSearch/Object/Host.h"
 
 Hash*
 Stopalizer_gen_stoplist(const CharBuf *language)
@@ -10,7 +10,7 @@ Stopalizer_gen_stoplist(const CharBuf *language)
         ARG_STR("language", language));
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

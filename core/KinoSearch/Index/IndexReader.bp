@@ -48,20 +48,21 @@ class KinoSearch::Index::IndexReader cnick IxReader
             IndexManager *manager = NULL);
 
     /** Return the maximum number of documents available to the reader, which
-     * is also the highest possible document id.  Documents which have been
-     * marked as deleted but not yet purged from the index are included in
-     * this count.
+     * is also the highest possible internal document id.  Documents which
+     * have been marked as deleted but not yet purged from the index are
+     * included in this count.
      */
     public abstract i32_t
     Doc_Max(IndexReader *self);
 
-    /** Return the number documents available to the reader, subtracting
+    /** Return the number of documents available to the reader, subtracting
      * any that are marked as deleted.
      */
     public abstract i32_t
     Doc_Count(IndexReader *self);
 
-    /** Return the number of documents which have been marked as deleted.
+    /** Return the number of documents which have been marked as deleted but
+     * not yet purged from the index.
      */
     public abstract i32_t
     Del_Count(IndexReader *self);
@@ -100,11 +101,11 @@ class KinoSearch::Index::IndexReader cnick IxReader
     Hash*
     Get_Components(IndexReader *self);
 
-    void
+    public void
     Destroy(IndexReader *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

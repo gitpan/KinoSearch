@@ -37,7 +37,7 @@ class KinoSearch::Index::RawPosting cnick RawPost
     u32_t
     Get_RefCount(RawPosting* self);
 
-    public incremented RawPosting*
+    incremented RawPosting*
     Inc_RefCount(RawPosting* self);
 
     u32_t 
@@ -45,7 +45,7 @@ class KinoSearch::Index::RawPosting cnick RawPost
 
     /** Throws an error.
      */
-    void
+    public void
     Destroy(RawPosting *self);
 }
 
@@ -56,12 +56,14 @@ class KinoSearch::Posting::RawPostingStreamer cnick RawPostStreamer
     i32_t      last_doc_id;
 
     inert incremented RawPostingStreamer*
-    new(DataWriter *writer, OutStream *outstream);
+    new(Schema *schema, Snapshot *snapshot, Segment *segment, 
+        PolyReader *polyreader, OutStream *outstream);
 
     inert RawPostingStreamer*
-    init(RawPostingStreamer *self, DataWriter *writer, OutStream *outstream);
+    init(RawPostingStreamer *self, Schema *schema, Snapshot *snapshot, 
+         Segment *segment, PolyReader *polyreader, OutStream *outstream);
 
-    void
+    public void
     Destroy(RawPostingStreamer *self);
 
     void
@@ -82,7 +84,7 @@ extern kino_RawPosting KINO_RAWPOSTING_BLANK;
 #endif
 __END_C__
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

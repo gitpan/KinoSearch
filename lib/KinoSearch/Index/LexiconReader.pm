@@ -1,3 +1,4 @@
+package KinoSearch::Index::LexiconReader;
 use KinoSearch;
 
 1;
@@ -11,7 +12,7 @@ my $synopsis = <<'END_SYNOPSIS';
     my $lexicon    = $lex_reader->lexicon( field => 'title' );
 END_SYNOPSIS
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Index::LexiconReader",
     bind_methods      => [qw( Lexicon Doc_Freq Fetch_Term_Info )],
@@ -21,7 +22,7 @@ Boilerplater::Binding::Perl::Class->register(
         methods  => [qw( lexicon doc_freq )],
     },
 );
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Index::DefaultLexiconReader",
     bind_constructors => ["new"],
@@ -29,7 +30,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

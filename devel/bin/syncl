@@ -4,68 +4,64 @@ use warnings;
 
 use Text::Diff qw( diff );
 use File::Find::Parallel;
-use File::Spec::Functions qw( catfile );
+use File::Spec::Functions qw( catfile rel2abs );
 use File::Slurp qw( slurp );
-use Getopt::Long;
 
-my ( $source_proj, $dest_proj );
-my ( $l2k, $k2l, $f2l, $l2f, $f2k, $k2f );
-GetOptions(
-    l2k => \$l2k,
-    k2l => \$k2l,
-    f2l => \$f2l,
-    l2f => \$l2f,
-    f2k => \$f2k,
-    k2f => \$k2f
-);
-
-if ( $l2k || $l2f ) {
-    $source_proj = 'Lucy';
-}
-elsif ( $k2l || $k2f ) {
-    $source_proj = 'KinoSearch';
-}
-elsif ( $f2k || $f2l ) {
-    $source_proj = 'Ferret';
-}
-else {
-    die "Must specify a conversion via --k2l, --f2k, etc ";
-}
-if ( $k2l || $f2l ) {
-    $dest_proj = 'Lucy';
-}
-elsif ( $l2k || $f2k ) {
-    $dest_proj = 'KinoSearch';
-}
-elsif ( $l2f || $k2f ) {
-    $dest_proj = 'Ferret';
-}
-die "usage: syncl --[conversion_spec] SOURCE_ROOT DEST_ROOT"
+die "usage: syncl SOURCE_ROOT DEST_ROOT"
     unless @ARGV == 2;
 
-my ( $source_root, $dest_root ) = @ARGV[ 0, 1 ];
+my $source_root = rel2abs( $ARGV[0] );
+my $dest_root   = rel2abs( $ARGV[1] );
+my ( $source_proj, $dest_proj );
+if ( $source_root =~ m#/ks/|kino#i and $dest_root =~ /lucy/i ) {
+    $source_proj = 'KinoSearch';
+    $dest_proj   = 'Lucy';
+}
+elsif ( $source_root =~ /lucy/i and $dest_root =~ m#/ks/|kino#i ) {
+    $source_proj = 'Lucy';
+    $dest_proj   = 'KinoSearch';
+}
+else {
+    die "Can't divine project identities from path names";
+}
 
 my %swaps = (
-    KinoSearch => { prefix => 'kino_', Prefix => 'Kino_', PREFIX => 'KINO_' },
-    Lucy       => { prefix => 'lucy_', Prefix => 'Lucy_', PREFIX => 'LUCY_' },
-    Ferret     => { prefix => 'frt_',  Prefix => 'Frt_',  PREFIX => 'FRT_' },
+    KinoSearch => {
+        prefix   => 'kino_',
+        Prefix   => 'Kino_',
+        PREFIX   => 'KINO_',
+        lc_cnick => 'kino',
+        parcel   => 'parcel KinoSearch cnick Kino',
+        project  => 'KinoSearch',
+    },
+    Lucy => {
+        prefix   => 'lucy_',
+        Prefix   => 'Lucy_',
+        PREFIX   => 'LUCY_',
+        lc_cnick => 'lucy',
+        parcel   => 'parcel Lucy',
+        project  => 'Lucy',
+    },
 );
+my $source_swap = $swaps{$source_proj};
+my $dest_swap   = $swaps{$dest_proj};
 
 my $exclude = qr/(svn|cvs|(^|\/)\.[^.]|\.o$)/;
 
 my $file_finder = File::Find::Parallel->new( $source_root, $dest_root );
 my $iterator = $file_finder->any_iterator;
 FILE: while ( my $component = $iterator->() ) {
-    my $source_path =
-        -f $source_root
+    next if $component =~ $exclude;
+
+    my $source_path
+        = -f $source_root
         ? $source_root
         : catfile( $source_root, $component );
-    my $dest_path =
-        -f $dest_root
+    my $dest_path
+        = -f $dest_root
         ? $dest_root
         : catfile( $dest_root, $component );
-
-    next if $component =~ $exclude;
+    $dest_path =~ s/$source_swap->{project}/$dest_swap->{project}/;
 
     # Warn and skip files that aren't common.
     for ( $source_path, $dest_path ) {
@@ -74,6 +70,10 @@ FILE: while ( my $component = $iterator->() ) {
             next FILE;
         }
         next FILE unless -f $_;
+        if ( !-T $_ ) {
+            print("$_ isn't a text file... skipping...\n");
+            next FILE;
+        }
     }
 
     # Generate a diff if there are changes, otherwise skip.
@@ -82,17 +82,17 @@ FILE: while ( my $component = $iterator->() ) {
     my $edited         = modify( $source_content, $dest_content );
 
     # Search and replace prefixes, project name.
-    my $source_swap = $swaps{$source_proj};
-    my $dest_swap   = $swaps{$dest_proj};
     for ($edited) {
-        s/$source_proj/$dest_proj/g;
+        s/$source_swap->{parcel}/$dest_swap->{parcel}/g;
         s/$source_swap->{prefix}/$dest_swap->{prefix}/g;
         s/$source_swap->{Prefix}/$dest_swap->{Prefix}/g;
         s/$source_swap->{PREFIX}/$dest_swap->{PREFIX}/g;
+        s/$source_swap->{lc_cnick}/$dest_swap->{lc_cnick}/g;
+        s/\b$source_proj\b/$dest_proj/g;
     }
 
     if ( $edited eq $dest_content ) {
-        print "No change to $component\n";
+        print "No change to $dest_path\n";
         next;
     }
 
@@ -127,6 +127,10 @@ sub extract_copyright {
     {
         return ( $content, $1 );
     }
+    if ($content =~ s#(^__COPYRIGHT__.*?)(?=^__|\Z)#COPYRIGHT_PLACEHOLDER#sm )
+    {
+        return ( $content, $1 );
+    }
     if ( $content =~ s#(/\*[\s*]*Copyright.*?\*/)#COPYRIGHT_PLACEHOLDER#s ) {
         return ( $content, $1 );
     }
@@ -156,7 +160,7 @@ Marvin Humphrey
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2007-2009 Marvin Humphrey
+Copyright 2007-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

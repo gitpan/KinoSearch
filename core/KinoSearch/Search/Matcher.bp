@@ -7,7 +7,7 @@ parcel KinoSearch cnick Kino;
  * match.  Other implementations may be match-only.
  */
 
-abstract class KinoSearch::Search::Matcher extends KinoSearch::Obj {
+abstract class KinoSearch::Search::Matcher extends KinoSearch::Object::Obj {
 
     /** Abstract constructor. 
      */
@@ -56,7 +56,7 @@ abstract class KinoSearch::Search::Matcher extends KinoSearch::Obj {
             Matcher *deletions = NULL);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

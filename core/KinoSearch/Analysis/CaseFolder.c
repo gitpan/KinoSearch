@@ -33,7 +33,7 @@ CaseFolder_equals(CaseFolder *self, Obj *other)
     CaseFolder *const evil_twin = (CaseFolder*)other;
     if (evil_twin == self) return true;
     UNUSED_VAR(self);
-    if (!OBJ_IS_A(evil_twin, CASEFOLDER)) return false;
+    if (!Obj_Is_A(other, CASEFOLDER)) return false;
     return true;
 }
 
@@ -54,7 +54,7 @@ CaseFolder_load(CaseFolder *self, Obj *dump)
     return CaseFolder_init(loaded);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -35,7 +35,7 @@ PolyQuery_destroy(PolyQuery *self)
 void
 PolyQuery_add_child(PolyQuery *self, Query *query)
 {
-    ASSERT_IS_A(query, QUERY);
+    CERTIFY(query, QUERY);
     VA_Push(self->children, INCREF(query));
 }
 
@@ -85,7 +85,7 @@ PolyQuery_equals(PolyQuery *self, Obj *other)
 {
     PolyQuery *evil_twin = (PolyQuery*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, POLYQUERY)) return false;
+    if (!Obj_Is_A(other, POLYQUERY)) return false;
     if (self->boost != evil_twin->boost) return false;
     if (!VA_Equals(evil_twin->children, (Obj*)self->children)) return false;
     return true;
@@ -127,7 +127,7 @@ PolyCompiler_sum_of_squared_weights(PolyCompiler *self)
 {
     float sum = 0;
     u32_t i, max;
-    float my_boost = Compiler_Get_Boost(self);
+    float my_boost = PolyCompiler_Get_Boost(self);
 
     for (i = 0, max = VA_Get_Size(self->children); i < max; i++) {
         Compiler *child = (Compiler*)VA_Fetch(self->children, i);
@@ -157,7 +157,7 @@ PolyCompiler_highlight_spans(PolyCompiler *self, Searchable *searchable,
     VArray *spans = VA_new(0);
     u32_t i, max;
     for (i = 0, max = VA_Get_Size(self->children); i < max; i++) {
-        Query *child = (Query*)VA_Fetch(self->children, i);
+        Compiler *child = (Compiler*)VA_Fetch(self->children, i);
         VArray *child_spans = Compiler_Highlight_Spans(child, searchable,
             doc_vec, field);
         if (child_spans) {
@@ -171,7 +171,7 @@ PolyCompiler_highlight_spans(PolyCompiler *self, Searchable *searchable,
 void
 PolyCompiler_serialize(PolyCompiler *self, OutStream *outstream)
 {
-    CB_Serialize(Obj_Get_Class_Name(self), outstream);
+    CB_Serialize(PolyCompiler_Get_Class_Name(self), outstream);
     VA_Serialize(self->children, outstream);
     Compiler_serialize((Compiler*)self, outstream);
 }
@@ -189,7 +189,7 @@ PolyCompiler_deserialize(PolyCompiler *self, InStream *instream)
     return (PolyCompiler*)Compiler_deserialize((Compiler*)self, instream);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

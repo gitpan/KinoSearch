@@ -55,7 +55,7 @@ S_flattened_but_empty_spans(VArray *spans)
 {
     VArray     *flattened;
     const u32_t num_spans  = VA_Get_Size(spans);
-    i32_t      *bounds     = MALLOCATE(num_spans * 2, i32_t);
+    i32_t      *bounds     = (i32_t*)MALLOCATE((num_spans * 2) * sizeof(i32_t));
     u32_t       num_bounds;
     u32_t       i;
     i32_t       last;
@@ -198,7 +198,7 @@ HeatMap_generate_proximity_boosts(HeatMap *self, VArray *spans)
 VArray*
 HeatMap_get_spans(HeatMap *self) { return self->spans; }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

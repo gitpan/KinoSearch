@@ -10,7 +10,7 @@ KinoSearch::Index::IndexManager - Policies governing index updating, locking, an
     use Sys::Hostname qw( hostname );
     my $hostname = hostname() or die "Can't get unique hostname";
     my $manager = KinoSearch::Index::IndexManager->new( 
-        hostname => $hostname,
+        host => $hostname,
     );
 
     # Index time:
@@ -45,14 +45,14 @@ process to process.
 =head2 new( I<[labeled params]> )
 
     my $manager = KinoSearch::Index::IndexManager->new(
-        hostname  => $hostname,  # default: ""
+        host => $hostname,    # default: ""
     );
 
 =over
 
 =item *
 
-B<hostname> - An identifier which should be unique per-machine.
+B<host> - An identifier which should be unique per-machine.
 
 =item *
 
@@ -109,9 +109,9 @@ their own Folder instance.
 
 Getter for C<< folder >> member.
 
-=head2 get_hostname()
+=head2 get_host()
 
-Getter for C<< hostname >> member.
+Getter for C<< host >> member.
 
 =head2 set_write_lock_timeout(timeout)
 
@@ -135,12 +135,12 @@ Getter for write lock retry interval.
 
 =head1 INHERITANCE
 
-KinoSearch::Index::IndexManager isa L<KinoSearch::Obj>.
+KinoSearch::Index::IndexManager isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

@@ -11,7 +11,6 @@
 #include "KinoSearch/Index/SortCache/TextSortCache.h"
 #include "KinoSearch/Index/SortWriter.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/I32Array.h"
 
 SortReader*
 SortReader_init(SortReader *self, Schema *schema, Folder *folder,
@@ -70,11 +69,11 @@ DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
 
     /* Either extract or fake up the "counts" hash. */
     if (metadata) {
-        self->counts = (Hash*)INCREF(ASSERT_IS_A(
+        self->counts = (Hash*)INCREF(CERTIFY(
             Hash_Fetch_Str(metadata, "counts", 6), HASH));
         self->null_ords = (Hash*)Hash_Fetch_Str(metadata, "null_ords", 9);
         if (self->null_ords) {
-            ASSERT_IS_A(self->null_ords, HASH);
+            CERTIFY(self->null_ords, HASH);
             INCREF(self->null_ords);
         }
         else {
@@ -172,7 +171,7 @@ DefSortReader_fetch_sort_cache(DefaultSortReader *self, const CharBuf *field)
     return cache;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -7,7 +7,7 @@ use base qw( KinoSearch::Index::IndexManager );
 sub recycle { [] }
 
 package main;
-use Test::More tests => 14;
+use Test::More tests => 15;
 use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
@@ -48,9 +48,18 @@ is( $searcher->hits( query => 'b' )->total_hits,
 is( $searcher->hits( query => $_ )->total_hits, 1, "term $_ still present" )
     for qw( a c d e );
 
+# Simulate failed background merge.
+$bg_merger = KinoSearch::Index::BackgroundMerger->new( index => $folder );
+$bg_merger->prepare_commit;
+undef $bg_merger;
+$folder->delete("merge.lock");
+die "test set up failed" unless $folder->exists("merge.json");
+
 $indexer = KinoSearch::Indexer->new( index => $folder );
 $indexer->optimize;
 $indexer->commit;
+
+ok( !$folder->exists("merge.json"), "Cleaned up after failed bg merge");
 
 $searcher = KinoSearch::Searcher->new( index => $folder );
 is( $searcher->hits( query => 'b' )->total_hits,
@@ -61,5 +70,5 @@ is( $searcher->hits( query => $_ )->total_hits,
 
 sub count_segs {
     my $folder = shift;
-    return scalar grep {m/segmeta\.json/} @{ $folder->list };
+    return scalar grep {m/segmeta\.json/} @{ $folder->list_r };
 }

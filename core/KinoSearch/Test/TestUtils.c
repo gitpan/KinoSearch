@@ -11,6 +11,57 @@
 #include "KinoSearch/Search/NOTQuery.h"
 #include "KinoSearch/Search/ORQuery.h"
 #include "KinoSearch/Search/RangeQuery.h"
+#include "KinoSearch/Store/InStream.h"
+#include "KinoSearch/Store/OutStream.h"
+#include "KinoSearch/Store/RAMFile.h"
+#include "KinoSearch/Util/Freezer.h"
+
+u64_t
+TestUtils_random_u64()
+{
+    u64_t num =    ((u64_t)rand() << 60)
+                 | ((u64_t)rand() << 45)
+                 | ((u64_t)rand() << 30)
+                 | ((u64_t)rand() << 15) 
+                 | ((u64_t)rand() << 0);
+    return num;
+}
+
+i64_t*
+TestUtils_random_i64s(i64_t *buf, size_t count, i64_t min, i64_t limit) 
+{
+    u64_t  range = min < limit ? limit - min : 0;
+    i64_t *ints = buf ? buf : (i64_t*)CALLOCATE(count, sizeof(i64_t));
+    size_t i;
+    for (i = 0; i < count; i++) {
+        ints[i] = min + TestUtils_random_u64() % range;
+    }
+    return ints;
+}
+
+u64_t*
+TestUtils_random_u64s(u64_t *buf, size_t count, u64_t min, u64_t limit) 
+{
+    u64_t  range = min < limit ? limit - min : 0;
+    u64_t *ints = buf ? buf : (u64_t*)CALLOCATE(count, sizeof(u64_t));
+    size_t i;
+    for (i = 0; i < count; i++) {
+        ints[i] = min + TestUtils_random_u64() % range;
+    }
+    return ints;
+}
+
+double*
+TestUtils_random_f64s(double *buf, size_t count) 
+{
+    double *f64s = buf ? buf : (double*)CALLOCATE(count, sizeof(double));
+    size_t i;
+    for (i = 0; i < count; i++) {
+        u64_t num = TestUtils_random_u64();
+        f64s[i] = (double)num / U64_MAX;
+    }
+    return f64s;
+}
 
 VArray*
 TestUtils_doc_set()
@@ -119,7 +170,29 @@ TestUtils_make_range_query(const char *field, const char *lower_term,
         include_lower, include_upper);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+Obj*
+TestUtils_freeze_thaw(Obj *object)
+{
+    if (object) {
+        RAMFile *ram_file = RAMFile_new(NULL, false);
+        OutStream *outstream = OutStream_open((Obj*)ram_file);
+        FREEZE(object, outstream);
+        OutStream_Close(outstream);
+        DECREF(outstream);
+        {
+            InStream *instream = InStream_open((Obj*)ram_file);
+            Obj *retval = THAW(instream);
+            DECREF(instream);
+            DECREF(ram_file);
+            return retval;
+        }
+    }
+    else {
+        return NULL;
+    }
+}
+
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

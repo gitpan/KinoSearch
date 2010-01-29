@@ -6,24 +6,27 @@ package NonMergingIndexManager;
 use base qw( KinoSearch::Index::IndexManager );
 
 sub recycle {
-    return KinoSearch::Obj::VArray->new( capacity => 0 );
+    return KinoSearch::Object::VArray->new( capacity => 0 );
 }
 
 package SortSchema;
 use base qw( KinoSearch::Schema );
 
 sub new {
-    my $self       = shift->SUPER::new(@_);
-    my $unsortable = KinoSearch::FieldType::FullTextType->new(
-        analyzer => KinoSearch::Analysis::Tokenizer->new, );
-    my $type = KinoSearch::FieldType::StringType->new( sortable => 1 );
-    $self->spec_field( name => 'name',   type => $type );
-    $self->spec_field( name => 'speed',  type => $type );
-    $self->spec_field( name => 'weight', type => $type );
-    $self->spec_field( name => 'home',   type => $type );
-    $self->spec_field( name => 'cat',    type => $type );
-    $self->spec_field( name => 'wheels', type => $type );
-    $self->spec_field( name => 'unused', type => $type );
+    my $self          = shift->SUPER::new(@_);
+    my $fulltext_type = KinoSearch::FieldType::FullTextType->new(
+        analyzer => KinoSearch::Analysis::Tokenizer->new,
+        sortable => 1,
+    );
+    my $string_type = KinoSearch::FieldType::StringType->new( sortable => 1 );
+    my $unsortable = KinoSearch::FieldType::StringType->new;
+    $self->spec_field( name => 'name',   type => $fulltext_type );
+    $self->spec_field( name => 'speed',  type => $string_type );
+    $self->spec_field( name => 'weight', type => $string_type );
+    $self->spec_field( name => 'home',   type => $string_type );
+    $self->spec_field( name => 'cat',    type => $string_type );
+    $self->spec_field( name => 'wheels', type => $string_type );
+    $self->spec_field( name => 'unused', type => $string_type );
     $self->spec_field( name => 'nope',   type => $unsortable );
     return $self;
 }
@@ -39,6 +42,7 @@ my $airplane = {
     home   => 'air',
     cat    => 'vehicle',
     wheels => 3,
+    nope   => 'nyet',
 };
 my $bike = {
     name   => 'bike',
@@ -129,7 +133,7 @@ $indexer->add_doc($elephant);
 $indexer->optimize;
 $indexer->commit;
 
-my $num_old_seg_files = scalar grep {m/seg_[12]/} @{ $folder->list };
+my $num_old_seg_files = scalar grep {m/seg_[12]/} @{ $folder->list_r };
 is( $num_old_seg_files, 0, "all files from earlier segments zapped" );
 
 $polyreader  = KinoSearch::Index::IndexReader->open( index => $folder );

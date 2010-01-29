@@ -3,7 +3,7 @@ use warnings;
 
 package KSx::Index::ByteBufDocReader;
 use base qw( KinoSearch::Index::DocReader );
-use KinoSearch::Obj::ByteBuf;
+use KinoSearch::Object::ByteBuf;
 use Carp;
 
 # Inside-out member vars.
@@ -26,7 +26,7 @@ sub new {
         }
         my $filename = $segment->get_name . "/bytebufdocs.dat";
         $instream{$$self} = $self->get_folder->open_in($filename)
-            or confess("Can't open '$filename'");
+            or confess KinoSearch->error;
     }
 
     return $self;
@@ -38,7 +38,7 @@ sub fetch {
     my $buf;
     $self->read_record( $doc_id, \$buf );
     if ($buf) {
-        return KinoSearch::Obj::ByteBuf->new($buf);
+        return KinoSearch::Object::ByteBuf->new($buf);
     }
     else {
         return undef;
@@ -51,7 +51,7 @@ sub read_record {
     if ($instream) {
         my $width = $width{$$self};
         $instream->seek( $width * $doc_id );
-        $instream->read_bytes( $$buf, $width );
+        $instream->read( $$buf, $width );
     }
 }
 
@@ -89,7 +89,7 @@ fetching documents.  It is unsupported.
 
 =head1 COPYRIGHT
 
-Copyright 2009 Marvin Humphrey
+Copyright 2009-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

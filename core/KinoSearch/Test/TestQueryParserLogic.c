@@ -635,7 +635,7 @@ void
 TestQPLogic_run_tests()
 {
     u32_t i;
-    TestBatch   *batch = Test_new_batch("TestQueryParserLogic", 178, NULL);
+    TestBatch   *batch        = TestBatch_new(178);
     Folder      *folder       = S_create_index();
     Searcher    *searcher     = Searcher_new((Obj*)folder);
     QueryParser *or_parser    = QParser_new(Searcher_Get_Schema(searcher), 
@@ -646,7 +646,7 @@ TestQPLogic_run_tests()
     QParser_Set_Heed_Colons(or_parser, true);
     QParser_Set_Heed_Colons(and_parser, true);
 
-    PLAN(batch);
+    TestBatch_Plan(batch);
 
     /* Run logical tests with default boolop of OR. */
     for (i = 0; logical_test_funcs[i] != NULL; i++) {
@@ -689,7 +689,7 @@ TestQPLogic_run_tests()
         kino_TestQPLogic_prune_test_t test_func = prune_test_funcs[i];
         TestQueryParser *test_case = test_func();
         CharBuf *qstring = test_case->tree 
-                         ? Obj_To_String(test_case->tree)
+                         ? Query_To_String(test_case->tree)
                          : CB_new_from_trusted_utf8("(NULL)", 6);
         Query *tree = test_case->tree;
         Query *wanted = test_case->expanded;
@@ -715,9 +715,9 @@ TestQPLogic_run_tests()
     DECREF(or_parser);
     DECREF(searcher);
     DECREF(folder);
-    batch->destroy(batch);
+    DECREF(batch);
 }
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

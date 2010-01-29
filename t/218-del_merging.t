@@ -78,7 +78,7 @@ for ( 1 .. 10 ) {
     );
     $indexer->delete_by_term( field => 'bar', term => 'y' );
     $indexer->commit;
-    my @num_seg_1_bv_files = grep {/deletions-seg_1.bv/} @{ $folder->list };
+    my @num_seg_1_bv_files = grep {/deletions-seg_1.bv/} @{ $folder->list_r };
     is( scalar @num_seg_1_bv_files,
         1, "seg_1 deletions file carried forward" );
 
@@ -90,7 +90,7 @@ for ( 1 .. 10 ) {
     $indexer->delete_by_term( field => 'bar', term => 'new' );
     $indexer->add_doc( { foo => 'foo', bar => 'new' } );
     $indexer->commit;
-    @num_seg_1_bv_files = grep {/deletions-seg_1.bv/} @{ $folder->list };
+    @num_seg_1_bv_files = grep {/deletions-seg_1.bv/} @{ $folder->list_r };
     is( scalar @num_seg_1_bv_files,
         1, "seg_1 deletions file carried forward" );
 

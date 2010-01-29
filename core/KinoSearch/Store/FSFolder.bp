@@ -8,8 +8,6 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Store::FSFolder extends KinoSearch::Store::Folder {
 
-    Hash    *cf_readers;
-
     inert incremented FSFolder*
     new(const CharBuf *path);
 
@@ -33,51 +31,44 @@ class KinoSearch::Store::FSFolder extends KinoSearch::Store::Folder {
     public bool_t
     Check(FSFolder *self);
 
-    void
-    Destroy(FSFolder *self);
-
-    incremented OutStream*
-    Open_Out(FSFolder *self, const CharBuf *filepath);
-
-    public incremented InStream*
-    Open_In(FSFolder *self, const CharBuf *filepath);
-
-    incremented FileDes*
-    Open_FileDes(FSFolder *self, const CharBuf *filepath);
-
     public void
-    MkDir(FSFolder *self, const CharBuf *path);
+    Close(FSFolder *self);
 
-    incremented VArray*
-    List(FSFolder *self);
+    incremented FileHandle*
+    Local_Open_FileHandle(FSFolder *self, const CharBuf *name, 
+                          u32_t flags);
+
+    incremented DirHandle*
+    Local_Open_Dir(FSFolder *self);
+
+    bool_t 
+    Local_MkDir(FSFolder *self, const CharBuf *name);
 
     bool_t
-    Exists(FSFolder *self, const CharBuf *filepath);
+    Local_Exists(FSFolder *self, const CharBuf *name);
 
     bool_t
-    Real_Exists(FSFolder *self, const CharBuf *filepath);
+    Local_Is_Directory(FSFolder *self, const CharBuf *name);
 
-    void
+    Folder*
+    Local_Find_Folder(FSFolder *self, const CharBuf *name);
+
+    bool_t 
+    Local_Delete(FSFolder *self, const CharBuf *name);
+
+    public bool_t 
     Rename(FSFolder *self, const CharBuf* from, const CharBuf *to);
 
     public bool_t
-    Hard_Link(FSFolder *self, const CharBuf *source, const CharBuf *target);
+    Hard_Link(FSFolder *self, const CharBuf *from, const CharBuf *to);
 
-
-    bool_t 
-    Delete(FSFolder *self, const CharBuf *filepath);
-
-    bool_t
-    Delete_Real(FSFolder *self, const CharBuf *filepath);
-
-    void
-    Finish_Segment(FSFolder *self, const CharBuf *seg_name);
-
-    void
-    Close(FSFolder *self);
+    /** Transform a relative path into an abolute path.
+     */
+    inert incremented CharBuf*
+    absolutify(const CharBuf *path);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

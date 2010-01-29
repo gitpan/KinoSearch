@@ -1,3 +1,4 @@
+package KinoSearch::Util::Debug;
 use strict;
 use warnings;
 
@@ -79,7 +80,7 @@ CODE:
 OUTPUT: RETVAL
 END_XS_CODE
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel     => "KinoSearch",
     class_name => "KinoSearch::Util::Debug",
     xs_code    => $xs_code,
@@ -87,7 +88,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

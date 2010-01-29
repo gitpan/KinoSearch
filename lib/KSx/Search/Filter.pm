@@ -43,7 +43,7 @@ sub serialize {
     $self->SUPER::serialize($outstream);
     my $frozen = nfreeze( $query{$$self} );
     $outstream->write_c32( bytes::length($frozen) );
-    $outstream->write_bytes($frozen);
+    $outstream->print($frozen);
 }
 
 sub deserialize {
@@ -51,7 +51,7 @@ sub deserialize {
     $self->SUPER::deserialize($instream);
     my $len = $instream->read_c32;
     my $frozen;
-    $instream->read_bytes( $frozen, $len );
+    $instream->read( $frozen, $len );
     $query{$$self} = thaw($frozen);
     return $self;
 }
@@ -76,7 +76,7 @@ sub _bits {
 
     # Fill the cache.
     if ( !defined $cached_bits ) {
-        $cached_bits = KinoSearch::Obj::BitVector->new(
+        $cached_bits = KinoSearch::Object::BitVector->new(
             capacity => $seg_reader->doc_max + 1 );
         $self->_store_cached_bits( $seg_reader, $cached_bits );
 
@@ -172,7 +172,7 @@ __END__
 
 __BINDING__
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KSx::Search::FilterScorer",
     bind_constructors => ["new"],
@@ -246,7 +246,7 @@ SearchServer and SearchClient.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, etc.
 

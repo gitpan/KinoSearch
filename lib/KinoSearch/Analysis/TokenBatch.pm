@@ -1,3 +1,4 @@
+package KinoSearch::Analysis::TokenBatch;
 use KinoSearch;
 
 1;
@@ -16,7 +17,7 @@ TokenBatch has been removed from the KinoSearch suite as of version 0.30.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

@@ -7,7 +7,7 @@ KinoSearch::Search::HitCollector::BitCollector - HitCollector which records doc 
 
 =head1 SYNOPSIS
 
-    my $bit_vec = KinoSearch::Obj::BitVector->new(
+    my $bit_vec = KinoSearch::Object::BitVector->new(
         capacity => $searcher->doc_max + 1,
     );
     my $bit_collector = KinoSearch::Search::HitCollector::BitCollector->new(
@@ -40,7 +40,7 @@ set of documents which matches a query.
 
 =item *
 
-B<bit_vector> - A KinoSearch::Obj::BitVector.
+B<bit_vector> - A KinoSearch::Object::BitVector.
 
 =back
 
@@ -58,12 +58,12 @@ Set bit in the object's BitVector for the supplied doc id.
 
 =head1 INHERITANCE
 
-KinoSearch::Search::HitCollector::BitCollector isa L<KinoSearch::Search::HitCollector> isa L<KinoSearch::Obj>.
+KinoSearch::Search::HitCollector::BitCollector isa L<KinoSearch::Search::HitCollector> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

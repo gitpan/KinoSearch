@@ -6,7 +6,7 @@
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Posting.h"
 #include "KinoSearch/Index/Lexicon.h"
-#include "KinoSearch/Util/MemManager.h"
+#include "KinoSearch/Util/Memory.h"
 
 PostingList*
 PList_init(PostingList *self)
@@ -15,17 +15,7 @@ PList_init(PostingList *self)
     return self;
 }
 
-i32_t
-PList_advance(PostingList *self, i32_t target) 
-{
-    while (1) {
-        i32_t doc_id = PList_Next(self);
-        if (doc_id == 0 || doc_id >= target)
-            return doc_id; 
-    }
-}
-
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

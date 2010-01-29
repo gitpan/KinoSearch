@@ -54,12 +54,12 @@ B<rules> - An array of SortRules.
 
 =head1 INHERITANCE
 
-KinoSearch::Search::SortSpec isa L<KinoSearch::Obj>.
+KinoSearch::Search::SortSpec isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

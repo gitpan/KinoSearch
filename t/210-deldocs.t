@@ -44,6 +44,7 @@ $del_writer = KinoSearch::Index::DefaultDeletionsWriter->new(
 );
 $del_writer->delete_by_term( field => 'content', term => 'a' );
 $del_writer->delete_by_doc_id(2);
+$folder->mkdir('seg_2');    # ordinarily done by Indexer
 $del_writer->finish;
 $new_seg->write_file($folder);
 $snapshot->add_entry( $new_seg->get_name . "/segmeta.json" );
@@ -70,7 +71,7 @@ is_deeply(
 
 is( $deldocs->count, 2,
     "finish() and read_deldocs() save/recover num_deletions correctly" );
-is( $deldocs->get_cap, 8, "finish() wrote correct number of bytes" );
+is( $deldocs->get_capacity, 8, "finish() wrote correct number of bytes" );
 
 $folder = KinoSearch::Store::RAMFolder->new;
 my $schema  = KinoSearch::Test::TestSchema->new;

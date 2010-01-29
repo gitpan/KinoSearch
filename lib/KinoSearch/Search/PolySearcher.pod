@@ -61,12 +61,12 @@ B<searchables> - An array of Searchables.
 
 =head1 INHERITANCE
 
-KinoSearch::Search::PolySearcher isa L<KinoSearch::Search::Searchable> isa L<KinoSearch::Obj>.
+KinoSearch::Search::PolySearcher isa L<KinoSearch::Search::Searchable> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

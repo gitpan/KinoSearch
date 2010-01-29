@@ -42,14 +42,7 @@ TermStepper_set_value(TermStepper *self, Obj *value)
     self->value = value ? INCREF(value) : NULL;
 }
 
-void
-TermStepper_mimic(TermStepper *self, Obj *other)
-{
-    TermStepper *evil_twin = (TermStepper*)ASSERT_IS_A(other, TERMSTEPPER);
-    Obj_Mimic(self, evil_twin->value);
-}
-
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

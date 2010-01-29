@@ -20,7 +20,6 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 static OutStream*
 S_lazy_init(HighlightWriter *self);
@@ -60,21 +59,25 @@ S_lazy_init(HighlightWriter *self)
         Folder   *folder   = self->folder;
         Snapshot *snapshot = HLWriter_Get_Snapshot(self);
         CharBuf  *seg_name = Seg_Get_Name(segment);
-        CharBuf  *ix_file  = CB_newf("%o/highlight.ix", seg_name);
-        CharBuf  *dat_file = CB_newf("%o/highlight.dat", seg_name);
 
         /* Open outstreams. */
-        Snapshot_Add_Entry(snapshot, ix_file);
-        Snapshot_Add_Entry(snapshot, dat_file);
-        self->ix_out  = Folder_Open_Out(folder, ix_file);
-        self->dat_out = Folder_Open_Out(folder, dat_file);
-        if (!self->ix_out)  { THROW(ERR, "Can't open %o", ix_file); }
-        if (!self->dat_out) { THROW(ERR, "Can't open %o", dat_file); }
-        DECREF(ix_file);
-        DECREF(dat_file);
+        {
+            CharBuf *ix_file = CB_newf("%o/highlight.ix", seg_name);
+            self->ix_out = Folder_Open_Out(folder, ix_file);
+            Snapshot_Add_Entry(snapshot, ix_file);
+            DECREF(ix_file);
+            if (!self->ix_out) { RETHROW(INCREF(Err_get_error())); }
+        }
+        {
+            CharBuf *dat_file = CB_newf("%o/highlight.dat", seg_name);
+            self->dat_out = Folder_Open_Out(folder, dat_file);
+            Snapshot_Add_Entry(snapshot, dat_file);
+            DECREF(dat_file);
+            if (!self->dat_out) { RETHROW(INCREF(Err_get_error())); }
+        }
 
         /* Go past invalid doc 0. */
-        OutStream_Write_U64(self->ix_out, 0);
+        OutStream_Write_I64(self->ix_out, 0);
     }
 
     return self->dat_out;
@@ -95,14 +98,14 @@ HLWriter_add_inverted_doc(HighlightWriter *self, Inverter *inverter,
         THROW(ERR, "Expected doc id %i32 but got %i32", expected, doc_id);
 
     /* Write index data. */
-    OutStream_Write_U64(ix_out, filepos);
+    OutStream_Write_I64(ix_out, filepos);
 
     /* Count, then write number of highlightable fields. */
     Inverter_Iter_Init(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
-        if (   OBJ_IS_A(type, FULLTEXTTYPE) 
-            && FullTextType_Highlightable(type)
+        if (   FType_Is_A(type, FULLTEXTTYPE) 
+            && FullTextType_Highlightable((FullTextType*)type)
         ) {
             num_highlightable++;
         }
@@ -112,8 +115,8 @@ HLWriter_add_inverted_doc(HighlightWriter *self, Inverter *inverter,
     Inverter_Iter_Init(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
-        if (   OBJ_IS_A(type, FULLTEXTTYPE) 
-            && FullTextType_Highlightable(type)
+        if (   FType_Is_A(type, FULLTEXTTYPE) 
+            && FullTextType_Highlightable((FullTextType*)type)
         ) {
             CharBuf   *field     = Inverter_Get_Field_Name(inverter);
             Inversion *inversion = Inverter_Get_Inversion(inverter);
@@ -143,7 +146,7 @@ HLWriter_tv_buf(HighlightWriter *self, Inversion *inversion)
     Inversion_Reset(inversion);
     while ( (tokens = Inversion_Next_Cluster(inversion, &freq)) != NULL ) {
         Token *token = *tokens;
-        i32_t overlap = StrHelp_string_diff(last_text, token->text, 
+        i32_t overlap = StrHelp_overlap(last_text, token->text, 
             last_len, token->len);
         char *ptr;
         char *orig;
@@ -207,7 +210,7 @@ HLWriter_add_segment(HighlightWriter *self, SegReader *reader,
     }
     else {
         DefaultHighlightReader *hl_reader = (DefaultHighlightReader*)
-            ASSERT_IS_A(SegReader_Obtain(reader, 
+            CERTIFY(SegReader_Obtain(reader, 
                 VTable_Get_Name(HIGHLIGHTREADER)), DEFAULTHIGHLIGHTREADER);
         OutStream *dat_out = S_lazy_init(self);
         OutStream *ix_out  = self->ix_out;
@@ -220,7 +223,7 @@ HLWriter_add_segment(HighlightWriter *self, SegReader *reader,
                 continue;
 
             /* Write file pointer. */
-            OutStream_Write_U64( ix_out, OutStream_Tell(dat_out) );
+            OutStream_Write_I64( ix_out, OutStream_Tell(dat_out) );
             
             /* Copy the raw record. */
             DefHLReader_Read_Record(hl_reader, orig, bb);
@@ -252,7 +255,7 @@ HLWriter_finish(HighlightWriter *self)
         /* Write one final file pointer, so that we can derive the length of
          * the last record. */
         i64_t end = OutStream_Tell(self->dat_out);
-        OutStream_Write_U64(self->ix_out, end);
+        OutStream_Write_I64(self->ix_out, end);
         
         /* Close down the output streams. */
         OutStream_Close(self->dat_out);
@@ -269,7 +272,7 @@ HLWriter_format(HighlightWriter *self)
     return HLWriter_current_file_format;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

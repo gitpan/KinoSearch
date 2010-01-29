@@ -80,11 +80,11 @@ class KinoSearch::Analysis::Tokenizer
     public bool_t
     Equals(Tokenizer *self, Obj *other);
 
-    void
+    public void
     Destroy(Tokenizer *self);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

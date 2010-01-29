@@ -28,7 +28,7 @@ bool_t
 NoMatchQuery_equals(NoMatchQuery *self, Obj *other)
 {
     NoMatchQuery *evil_twin = (NoMatchQuery*)other;
-    if (!OBJ_IS_A(evil_twin, NOMATCHQUERY)) return false;
+    if (!Obj_Is_A(other, NOMATCHQUERY)) return false;
     if (self->boost != evil_twin->boost) return false;
     return true;
 }
@@ -83,7 +83,7 @@ NoMatchCompiler_make_matcher(NoMatchCompiler *self, SegReader *reader,
     return (Matcher*)NoMatchScorer_new();
 }
 
-/* Copyright 2008-2009 Marvin Humphrey
+/* Copyright 2008-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

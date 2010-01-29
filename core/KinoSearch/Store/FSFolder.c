@@ -7,27 +7,49 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
+#ifdef CHY_HAS_SYS_TYPES_H
+  #include <sys/types.h>
+#endif
+
+/* For rmdir, (hard) link. */
+#ifdef CHY_HAS_UNISTD_H
+  #include <unistd.h>
+#endif
+
+/* For CreateHardLink. */
+#ifdef CHY_HAS_WINDOWS_H
+  #include <windows.h>
+#endif
+
+/* For mkdir, rmdir. */
+#ifdef CHY_HAS_DIRECT_H
+  #include <direct.h>
+#endif
+
 #include "KinoSearch/Store/FSFolder.h"
 #include "KinoSearch/Store/CompoundFileReader.h"
 #include "KinoSearch/Store/CompoundFileWriter.h"
-#include "KinoSearch/Store/FSFileDes.h"
-#include "KinoSearch/Store/MMapFileDes.h"
+#include "KinoSearch/Store/FSDirHandle.h"
+#include "KinoSearch/Store/FSFileHandle.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/Compat/DirManip.h"
+#include "KinoSearch/Util/IndexFileNames.h"
 
+/* Return a new CharBuf containing a platform-specific absolute filepath. */
 static CharBuf*
-S_full_path(FSFolder *self, const CharBuf *filepath);
+S_fullpath(FSFolder *self, const CharBuf *path);
 
-/* If the file might belong in a virtual file and the appropriate compound
- * files can be found, return a CompoundFileReader.
- */
-static CompoundFileReader*
-S_get_cf_reader(FSFolder *self, const CharBuf *filepath);
+/* Return true if the supplied path is a directory. */
+static bool_t
+S_dir_ok(const CharBuf *path);
 
-/* Extract a segment name from a filepath. */
-static ZombieCharBuf 
-S_derive_seg_name(const CharBuf *filepath);
+/* Create a directory, or set Err_error and return false. */
+bool_t
+S_create_dir(const CharBuf *path);
+
+/* Return true unless the supplied path contains a slash. */
+bool_t
+S_is_local_entry(const CharBuf *path);
 
 FSFolder*
 FSFolder_new(const CharBuf *path) 
@@ -39,352 +61,262 @@ FSFolder_new(const CharBuf *path)
 FSFolder*
 FSFolder_init(FSFolder *self, const CharBuf *path)
 {
-    Folder_init((Folder*)self, path);
-    self->cf_readers = Hash_new(0);
+    CharBuf *abs_path = FSFolder_absolutify(path);
+    Folder_init((Folder*)self, abs_path);
+    DECREF(abs_path);
     return self;
-}
-
-void
-FSFolder_destroy(FSFolder *self)
-{
-    DECREF(self->cf_readers);
-    SUPER_DESTROY(self, FSFOLDER);
 }
 
 void
 FSFolder_initialize(FSFolder *self)
 {
-    if (!DirManip_dir_ok(self->path)) {
-        DirManip_create_dir(self->path);
+    if (!S_dir_ok(self->path)) {
+        if (!S_create_dir(self->path)) {
+            RETHROW(INCREF(Err_get_error()));
+        }
     }
 }
 
 bool_t
 FSFolder_check(FSFolder *self)
 {
-    return DirManip_dir_ok(self->path);
+    return S_dir_ok(self->path);
 }
 
-OutStream*
-FSFolder_open_out(FSFolder *self, const CharBuf *filepath)
+FileHandle*
+FSFolder_local_open_filehandle(FSFolder *self, const CharBuf *name, u32_t flags)
 {
-    CharBuf   *fullpath  = S_full_path(self, filepath);
-    FSFileDes *file_des  = FSFileDes_new(fullpath, "w");
-    OutStream *outstream = file_des == NULL
-        ? NULL
-        : OutStream_new((FileDes*)file_des);
-
-    /* Leave 1 refcount in file_des's new owner, outstream. */
-    DECREF(file_des);
+    CharBuf      *fullpath = S_fullpath(self, name);
+    FSFileHandle *fh = FSFH_open(fullpath, flags);
+    if (!fh) {
+        ERR_ADD_FRAME(Err_get_error());
+    }
     DECREF(fullpath);
-
-    return outstream;
+    return (FileHandle*)fh;
 }
 
-InStream*
-FSFolder_open_in(FSFolder *self, const CharBuf *filepath)
+bool_t
+FSFolder_local_mkdir(FSFolder *self, const CharBuf *name)
 {
-    InStream           *instream  = NULL;
-    ZombieCharBuf       seg_name  = S_derive_seg_name(filepath);
-    CompoundFileReader *cf_reader = (CompoundFileReader*)Hash_Fetch(
-        self->cf_readers, (Obj*)&seg_name);
-
-    /* If we already have a CompoundFileReader loaded, try that first. */
-    if (   cf_reader != NULL
-        && cf_reader != (CompoundFileReader*)UNDEF
-        && CFReader_Exists(cf_reader, filepath)
-    ) {
-        instream = CFReader_Open_In(cf_reader, filepath);
-    }
-
-    /* No virtual file?  Maybe there's a real file. */
-    if (instream == NULL && FSFolder_Real_Exists(self, filepath)) {
-        FileDes *file_des = FSFolder_Open_FileDes(self, filepath);
-        instream = InStream_new(file_des);
-
-        /* Leave 1 refcount in file_des's new owner, instream. */
-        DECREF(file_des);
-    }
-
-    /* Still no?  Try harder to get a virtual file. */
-    if (instream == NULL) {
-        cf_reader = S_get_cf_reader(self, filepath);
-        if (    cf_reader != NULL
-            &&  cf_reader != (CompoundFileReader*)UNDEF
-            && CFReader_Exists(cf_reader, filepath)
-        ) {
-            instream = CFReader_Open_In(cf_reader, filepath);
-        }
-    }
-
-    return instream;
-}
-
-FileDes*
-FSFolder_open_filedes(FSFolder *self, const CharBuf *filepath)
-{
-    CharBuf *fullpath = S_full_path(self, filepath);
-#if (defined(CHY_HAS_SYS_MMAN_H) || defined(CHY_HAS_WINDOWS_H))
-    MMapFileDes *file_des = MMapFileDes_new(fullpath);
-#else
-    FSFileDes *file_des = FSFileDes_new(fullpath, "r");
-#endif
-
-    DECREF(fullpath);
-
-    if (file_des == NULL)
-        THROW(ERR, "Can't open '%o': %s", filepath, strerror(errno));
-
-    return (FileDes*)file_des;
-}
-
-void
-FSFolder_mkdir(FSFolder *self, const CharBuf *path)
-{
-    CharBuf *dir = S_full_path(self, path);
-    DirManip_create_dir(dir);
+    CharBuf *dir = S_fullpath(self, name);
+    bool_t result = S_create_dir(dir);
     DECREF(dir);
+    if (!result) {
+        ERR_ADD_FRAME(Err_get_error());
+    }
+    return result;
 }
 
-VArray*
-FSFolder_list(FSFolder *self)
+DirHandle*
+FSFolder_local_open_dir(FSFolder *self)
 {
-    VArray *real_files = DirManip_list_files(self->path);
-    u32_t   num_files  = real_files ? VA_Get_Size(real_files) : 0;
-    VArray *files      = VA_new(num_files);
-    VArray *vfiles     = VA_new(num_files);
-    u32_t i, max;
-    u32_t num_vfiles = 0;
-
-    /* Accumulate virtual files. */
-    for (i = 0; i < num_files; i++) {
-        CharBuf *filepath = (CharBuf*)VA_Fetch(real_files, i);
-        if (CB_Ends_With_Str(filepath, "cfmeta.json", 11)) {
-            CompoundFileReader *cf_reader = S_get_cf_reader(self, filepath);
-            if (cf_reader) {
-                VArray *seg_vfiles = CFReader_List(cf_reader);
-                num_vfiles += VA_Get_Size(seg_vfiles);
-                VA_Push(vfiles, (Obj*)seg_vfiles);
-            }
-        }
-        else if (CB_Ends_With_Str(filepath, ".cf", 3)) { }
-        else if (CB_Ends_With_Str(filepath, "cf.dat", 6)) { }
-        else {
-            VA_Push(files, INCREF(filepath));
-        }
-    }
-
-    /* Add virtual files to output array. */
-    VA_Grow(files, VA_Get_Size(files) + num_vfiles);
-    for (i = 0, max = VA_Get_Size(vfiles); i < max; i++) {
-        VArray *seg_vfiles = (VArray*)VA_Fetch(vfiles, i);
-        VA_Push_VArray(files, seg_vfiles);
-    }
-    DECREF(real_files);
-    DECREF(vfiles);
-
-    return files;
-}
-
-ZombieCharBuf
-S_derive_seg_name(const CharBuf *filepath)
-{
-    ZombieCharBuf retval = ZCB_make(filepath);
-    if (CB_Starts_With_Str(filepath, "seg_", 4)) {
-        ZombieCharBuf temp = ZCB_make(filepath);
-        size_t len = ZCB_Nip(&temp, 4);
-        while (isalnum(ZCB_Code_Point_At(&temp, 0))) {
-            len += ZCB_Nip(&temp, 1);
-        }
-        ZCB_Truncate(&retval, len);
-    }
-    else {
-        ZCB_Set_Size(&retval, 0);
-    }
-    return retval;
-}
-
-static CompoundFileReader*
-S_get_cf_reader(FSFolder *self, const CharBuf *filepath)
-{
-    ZombieCharBuf seg_name = S_derive_seg_name(filepath);
-    CompoundFileReader *cf_reader = (CompoundFileReader*)Hash_Fetch(
-        self->cf_readers, (Obj*)&seg_name);
-
-    if (CB_Ends_With_Str(filepath, "segmeta.json", 12)) { return NULL; } 
-    else if (cf_reader == (CompoundFileReader*)UNDEF) { return NULL; }
-    else if (cf_reader == NULL) {
-        CharBuf *cf_file         = CB_newf("%o/cf.dat", &seg_name);
-        CharBuf *cfmeta_file     = CB_newf("%o/cfmeta.json", &seg_name);
-        if (   FSFolder_Real_Exists(self, cf_file)
-            && FSFolder_Real_Exists(self, cfmeta_file)
-        ) {
-            cf_reader = CFReader_new(self, (CharBuf*)&seg_name);
-            if (cf_reader) {
-                Hash_Store(self->cf_readers, (Obj*)&seg_name, 
-                    (Obj*)cf_reader);
-            }
-        }
-        else {
-            Hash_Store(self->cf_readers, (Obj*)&seg_name, (Obj*)UNDEF);
-        }
-        DECREF(cf_file);
-        DECREF(cfmeta_file);
-    }
-
-    return cf_reader;
+    DirHandle *dh = (DirHandle*)FSDH_open(self->path);
+    if (!dh) { ERR_ADD_FRAME(Err_get_error()); }
+    return dh;
 }
 
 bool_t
-FSFolder_exists(FSFolder *self, const CharBuf *filepath)
+FSFolder_local_exists(FSFolder *self, const CharBuf *name)
 {
-    CompoundFileReader *cf_reader;
-    if (NULL != (cf_reader = S_get_cf_reader(self, filepath))) {
-        return CFReader_Exists(cf_reader, filepath);
+    if (Hash_Fetch(self->entries, (Obj*)name)) {
+        return true;
+    }
+    else if (!S_is_local_entry(name)) {
+        return false;
     }
     else {
-        return FSFolder_Real_Exists(self, filepath);
+        struct stat stat_buf;
+        CharBuf *fullpath = S_fullpath(self, name);
+        bool_t retval = false;
+        if (stat((char*)CB_Get_Ptr8(fullpath), &stat_buf) != -1)
+            retval = true;
+        DECREF(fullpath);
+        return retval;
     }
 }
 
 bool_t
-FSFolder_real_exists(FSFolder *self, const CharBuf *filepath)
+FSFolder_local_is_directory(FSFolder *self, const CharBuf *name)
 {
-    struct stat sb;
-    CharBuf *fullpath = S_full_path(self, filepath);
-    bool_t retval = false;
-    if (stat((char*)CB_Get_Ptr8(fullpath), &sb) != -1)
-        retval = true;
-    DECREF(fullpath);
-    return retval;
+    /* Check for a cached object, then fall back to a system call. */
+    Obj *elem = Hash_Fetch(self->entries, (Obj*)name);
+    if (elem && Obj_Is_A(elem, FOLDER)) { 
+        return true; 
+    }
+    else {
+        CharBuf *fullpath = S_fullpath(self, name);
+        bool_t result = S_dir_ok(fullpath);
+        DECREF(fullpath);
+        return result;
+    }
 }
 
-void
+bool_t
 FSFolder_rename(FSFolder *self, const CharBuf* from, const CharBuf *to)
 {
-    CharBuf *from_path = S_full_path(self, from);
-    CharBuf *to_path   = S_full_path(self, to);
-    if (rename((char*)CB_Get_Ptr8(from_path), (char*)CB_Get_Ptr8(to_path)) ) {
-        THROW(ERR, "rename from '%o' to '%o' failed: %s", from_path, to_path, 
-            strerror(errno));
+    CharBuf *from_path = S_fullpath(self, from);
+    CharBuf *to_path   = S_fullpath(self, to);
+    bool_t   retval    = !rename((char*)CB_Get_Ptr8(from_path), 
+        (char*)CB_Get_Ptr8(to_path));
+    if (!retval) {
+        Err_set_error(Err_new(CB_newf("rename from '%o' to '%o' failed: %s",
+            from_path, to_path, strerror(errno))));
     }
     DECREF(to_path);
     DECREF(from_path);
-}
-
-bool_t
-FSFolder_hard_link(FSFolder *self, const CharBuf *source, 
-                   const CharBuf *target)
-{
-    CharBuf *source_path = S_full_path(self, source);
-    CharBuf *target_path = S_full_path(self, target);
-    bool_t retval = DirManip_hard_link(source_path, target_path);
-    DECREF(source_path);
-    DECREF(target_path);
     return retval;
 }
 
 bool_t
-FSFolder_delete(FSFolder *self, const CharBuf *filepath)
+FSFolder_hard_link(FSFolder *self, const CharBuf *from, 
+                   const CharBuf *to)
 {
-    CompoundFileReader *cf_reader;
-
-    if (   NULL != (cf_reader = S_get_cf_reader(self, filepath))
-        && CFReader_Exists(self, filepath)
-    ) {
-        i32_t num_left = CFReader_Get_Size(cf_reader);
-        if (num_left > 1) {
-            CFReader_Delete_Virtual(cf_reader, filepath);
-            return true;
-        }
-        else { /* last virtual file */
-            ZombieCharBuf seg_name = S_derive_seg_name(filepath);
-            CharBuf *cf_file = CB_newf("%o%s%o%scf.dat", self->path,
-                DIR_SEP, &seg_name, DIR_SEP);
-            CharBuf *cfmeta_file = CB_newf("%o%s%o%scfmeta.json", self->path,
-                DIR_SEP, &seg_name, DIR_SEP);
-
-            /* Try to delete the data file first.  If unsuccessful, return
-             * false, leaving the virtual file alone. */
-            CFReader_Close(cf_reader);
-            if ( !DirManip_delete(cf_file) ) {
-                DECREF(cf_file);
-                DECREF(cfmeta_file);
-                return false;
-            }
-
-            /* Now try to delete the metadata file.  If the data file gets
-             * deleted but this stays behind it's a problem, so throw an
-             * exception.
-             */
-            if ( !DirManip_delete(cfmeta_file) ) {
-                CharBuf *mess = MAKE_MESS( "Couldn't delete cf meta file "
-                    "while deleting virtual file '%o'", filepath);
-                DECREF(cf_file);
-                DECREF(cfmeta_file);
-                Err_throw_mess(ERR, mess);
-            }
-
-            CFReader_Delete_Virtual(cf_reader, filepath);
-            Hash_Delete(self->cf_readers, (Obj*)&seg_name);
-            DECREF(cf_reader);
-            DECREF(cf_file);
-            DECREF(cfmeta_file);
-            return true;
-        }
+    CharBuf *from_path = S_fullpath(self, from);
+    CharBuf *to_path   = S_fullpath(self, to);
+    char    *from8     = (char*)CB_Get_Ptr8(from_path);
+    char    *to8       = (char*)CB_Get_Ptr8(to_path);
+#ifdef CHY_HAS_UNISTD_H
+    bool_t retval;
+    if (-1 == link(from8, to8)) {
+        retval = false;
+        Err_set_error(Err_new(CB_newf(
+            "hard link for new file '%o' from '%o' failed: %s",
+                to_path, from_path, strerror(errno))));
     }
     else {
-        return FSFolder_Delete_Real(self, filepath);
+        retval = true;
     }
+#elif defined(CHY_HAS_WINDOWS_H)
+    bool_t retval = !!CreateHardLink(to8, from8, NULL);
+    if (!retval) {
+        char *win_error = Err_win_error();
+        Err_set_error(Err_new(CB_newf(
+            "CreateHardLink for new file '%o' from '%o' failed: %s",
+                to_path, from_path, win_error)));
+        FREEMEM(win_error);
+    }
+#endif
+    DECREF(to_path);
+    DECREF(from_path);
+    return retval;
 }
 
 bool_t
-FSFolder_delete_real(FSFolder *self, const CharBuf *filepath)
+FSFolder_local_delete(FSFolder *self, const CharBuf *name)
 {
-    CharBuf *fullpath = S_full_path(self, filepath);
-    bool_t result;
-    if (   CB_Ends_With_Str(filepath, ".cf", 3)
-        || CB_Ends_With_Str(filepath, ".cfmeta", 7)
-        || CB_Ends_With_Str(filepath, "cf.dat", 6)
-        || CB_Ends_With_Str(filepath, "cfmeta.json", 11)
-    ) {
-        ZombieCharBuf seg_name = S_derive_seg_name(filepath);
-        DECREF(Hash_Delete(self->cf_readers, (Obj*)&seg_name));
-    }
-    result = DirManip_delete(fullpath);
+    CharBuf *fullpath = S_fullpath(self, name);
+    char    *path_ptr = (char*)CB_Get_Ptr8(fullpath);
+#ifdef CHY_REMOVE_ZAPS_DIRS
+    bool_t result = !remove(path_ptr);
+#else 
+    bool_t result = !rmdir(path_ptr) || !remove(path_ptr); 
+#endif
     DECREF(fullpath);
+    DECREF(Hash_Delete(self->entries, (Obj*)name));
     return result;
 }
 
 void
 FSFolder_close(FSFolder *self)
 {
-    UNUSED_VAR(self);
+    Hash_Clear(self->entries);
 }
 
-void
-FSFolder_finish_segment(FSFolder *self, const CharBuf *seg_name)
+Folder*
+FSFolder_local_find_folder(FSFolder *self, const CharBuf *name)
 {
-    CompoundFileWriter *cf_writer = CFWriter_new(self, seg_name);
-    CFWriter_Consolidate(cf_writer);
-    DECREF(Hash_Delete(self->cf_readers, (Obj*)seg_name));
-    DECREF(cf_writer);
+    Folder *subfolder = NULL;
+    if (!name || !CB_Get_Size(name)) {
+        /* No entity can be identified by NULL or empty string. */
+        return NULL;
+    }
+    else if (!S_is_local_entry(name)) {
+        return NULL;
+    }
+    else if (NULL != (subfolder = (Folder*)Hash_Fetch(self->entries, (Obj*)name))) {
+        if (Folder_Is_A(subfolder, FOLDER)) {
+            return subfolder;
+        }
+        else {
+            return NULL;
+        }
+    }
+
+    {
+        CharBuf *fullpath = S_fullpath(self, name);
+        static ZombieCharBuf cfmeta_file = ZCB_LITERAL("cfmeta.json");
+        if (S_dir_ok(fullpath)) {
+            subfolder = (Folder*)FSFolder_new(fullpath);
+            if (!subfolder) {
+                THROW(ERR, "Failed to open FSFolder at '%o'", fullpath);
+            }
+            /* Try to open a CompoundFileReader. On failure, just use the
+             * existing folder. */
+            if (Folder_Local_Exists(subfolder, (CharBuf*)&cfmeta_file)) {
+                CompoundFileReader *cf_reader = CFReader_open(subfolder);
+                if (cf_reader) {
+                    DECREF(subfolder);
+                    subfolder = (Folder*)cf_reader;
+                }
+            }
+            Hash_Store(self->entries, (Obj*)name, (Obj*)subfolder);
+            DECREF(fullpath);
+            return subfolder;
+        }
+        else {
+            DECREF(fullpath);
+        }
+    }
+
+    return NULL;
 }
 
 static CharBuf*
-S_full_path(FSFolder *self, const CharBuf *filepath)
+S_fullpath(FSFolder *self, const CharBuf *path)
 {
     CharBuf *fullpath = CB_new(200);
     CB_Cat(fullpath, self->path);
     CB_Cat_Trusted_Str(fullpath, DIR_SEP, sizeof(DIR_SEP) - 1);
-    CB_Cat(fullpath, filepath);
+    CB_Cat(fullpath, path);
     if (DIR_SEP[0] != '/') {
         CB_Swap_Chars(fullpath, '/', DIR_SEP[0]);
     }
     return fullpath;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+static bool_t
+S_dir_ok(const CharBuf *path)
+{
+    struct stat stat_buf;
+    if (stat((char*)CB_Get_Ptr8(path), &stat_buf) != -1) {
+        if (stat_buf.st_mode & S_IFDIR) return true;
+    }
+    return false;
+}
+
+bool_t
+S_create_dir(const CharBuf *path)
+{
+    if (-1 == chy_makedir((char*)CB_Get_Ptr8(path), 0777)) {
+        Err_set_error(Err_new(CB_newf(
+            "Couldn't create directory '%o': %s", path, strerror(errno))));
+        return false;
+    }
+    return true;
+}
+
+bool_t
+S_is_local_entry(const CharBuf *path)
+{
+    ZombieCharBuf scratch = ZCB_make(path);
+    u32_t code_point;
+    while (0 != (code_point = ZCB_Nip_One(&scratch))) {
+        if (code_point == '/') { return false; }
+    }
+    return true;
+}
+
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

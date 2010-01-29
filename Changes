@@ -1,10 +1,53 @@
 Revision history for KinoSearch
 
+0.30_08 2010-01-28
+
+  Improvements:
+
+    * FullTextType fields may now be sortable.
+    * QueryParser's parse() method now invokes tree(), expand(), and prune()
+      as methods, so that overriding one of them in a subclass affects 
+      parse().
+
+  Bugfixes:
+
+    * Search speed improvement for AND conjunctions: the "skipping"
+      optimization for posting lists has been fixed and re-enabled.
+    * Fixed a problem where a stale, invalid "write.lock.temp" written after
+      disk fillup could block subsequent indexing.
+    * Permission problems with subfolders in indexes now trigger exceptions
+      rather than segfaults.
+
+  Moved, but compatibility stubs retained:
+
+    * KinoSearch::Architecture   -> KinoSearch::Plan::Architecture
+    * KinoSearch::Obj            -> KinoSearch::Object::Obj
+    * KinoSearch::Obj::BitVector -> KinoSearch::Object::BitVector
+
+  Moved:
+
+    * KinoSearch::Index::PostingsReader 
+        -> KinoSearch::Index::PostingListReader
+
+  Classes with API Changes:
+
+    * KinoSearch::Index::IndexManager
+      o new() - "hostname" param replaced by "host".
+      o get_hostname() - replaced by get_host().
+
+    * KinoSearch::Store::LockFactory
+      o new() - "hostname" param replaced by "host".
+
+    * KinoSearch::Store::Lock
+      o new() - "hostname" param replaced by "host".
+
+
 0.30_072 2009-12-23
 
   Bugfixes:
 
     * Update XS binding code for improved compatibility with Perl 5.11.x.
+
 
 0.30_071 2009-12-16
 
@@ -90,7 +133,7 @@ Revision history for KinoSearch
 
   Moved:
   
-    * KinoSearch::Util::BitVector -> KinoSearch::Obj::BitVector.
+    * KinoSearch::Util::BitVector -> KinoSearch::Object::BitVector.
       (Compatibility subclass left in place for now.)
 
   Bugfixes:

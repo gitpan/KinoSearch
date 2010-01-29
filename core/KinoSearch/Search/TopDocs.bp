@@ -5,7 +5,7 @@ parcel KinoSearch cnick Kino;
  * A TopDocs object encapsulates the highest-scoring N documents and their
  * associated scores.
  */
-class KinoSearch::Search::TopDocs extends KinoSearch::Obj {
+class KinoSearch::Search::TopDocs extends KinoSearch::Object::Obj {
 
     VArray *match_docs;
     u32_t   total_hits;
@@ -42,11 +42,11 @@ class KinoSearch::Search::TopDocs extends KinoSearch::Obj {
     public incremented TopDocs*
     Deserialize(TopDocs *self, InStream *instream);
 
-    void
+    public void
     Destroy(TopDocs *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

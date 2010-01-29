@@ -1,142 +1,201 @@
 #define C_KINO_OBJ
 #define C_KINO_ZOMBIECHARBUF
 #include "XSBind.h"
-#include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/StringHelper.h"
 
 /* Convert a Perl hash into a KS Hash.  Caller takes responsibility for a
  * refcount.
  */
 static kino_Hash*
-phash_to_khash(HV *phash);
+S_perl_hash_to_kino_hash(HV *phash);
 
 /* Convert a Perl array into a KS VArray.  Caller takes responsibility for a
  * refcount.
  */
 static kino_VArray*
-parray_to_karray(AV *parray);
+S_perl_array_to_kino_array(AV *parray);
+
+/* Convert a VArray to a Perl array.  Caller takes responsibility for a
+ * refcount.
+ */ 
+static SV*
+S_kino_array_to_perl_array(kino_VArray *varray);
+
+/* Convert a Hash to a Perl hash.  Caller takes responsibility for a
+ * refcount.
+ */ 
+static SV*
+S_kino_hash_to_perl_hash(kino_Hash *hash);
 
 kino_Obj*
 XSBind_new_blank_obj(SV *either_sv)
 {
     kino_VTable *vtable;
 
-    /* Get a vtable. */
+    /* Get a VTable. */
     if (   sv_isobject(either_sv) 
-        && sv_derived_from(either_sv, "KinoSearch::Obj")
+        && sv_derived_from(either_sv, "KinoSearch::Object::Obj")
     ) {
+        /* Use the supplied object's VTable. */
         IV iv_ptr = SvIV(SvRV(either_sv));
         kino_Obj *self = INT2PTR(kino_Obj*, iv_ptr);
         vtable = self->vtable;
     }
     else {
+        /* Use the supplied class name string to find a VTable. */
         STRLEN len;
         char *ptr = SvPVutf8(either_sv, len);
         kino_ZombieCharBuf klass = kino_ZCB_make_str(ptr, len);
         vtable = kino_VTable_singleton((kino_CharBuf*)&klass, NULL);
     }
 
+    /* Use the VTable to allocate a new blank object of the right size. */
     return Kino_VTable_Make_Obj(vtable);
 }
 
-chy_bool_t
-XSBind_sv_defined(SV *sv)
-{
-    if (!sv || !SvANY(sv)) { return false; }
-    if (SvGMAGICAL(sv)) { mg_get(sv); }
-    return SvOK(sv);
-}
-
 kino_Obj*
-XSBind_sv_to_kobj(SV *sv, kino_VTable *vtable) 
+XSBind_sv_to_kino_obj(SV *sv, kino_VTable *vtable, kino_ZombieCharBuf *zcb)
 {
-    kino_Obj *retval = XSBind_maybe_sv_to_kobj(sv, vtable);
-    if (!retval) THROW(KINO_ERR, "Not a %o", Kino_VTable_Get_Name(vtable));
+    kino_Obj *retval = XSBind_maybe_sv_to_kino_obj(sv, vtable, zcb);
+    if (!retval) {
+        THROW(KINO_ERR, "Not a %o", Kino_VTable_Get_Name(vtable));
+    }
     return retval;
 }
 
 kino_Obj*
-XSBind_sv_to_kobj_or_zcb(SV *sv, kino_VTable *vtable, kino_ZombieCharBuf *zcb)
+XSBind_maybe_sv_to_kino_obj(SV *sv, kino_VTable *vtable, 
+                            kino_ZombieCharBuf *zcb) 
 {
     kino_Obj *retval = NULL;
-    if (!sv || !XSBind_sv_defined(sv)) {
-        THROW(KINO_ERR, "Need a %o, but got NULL or undef", 
-            Kino_VTable_Get_Name(vtable));
-    }
-    else if (   sv_isobject(sv) 
-             && sv_derived_from(sv,
-                 (char*)Kino_CB_Get_Ptr8(Kino_VTable_Get_Name(vtable)))
-    ) {
-        IV tmp = SvIV( SvRV(sv) );
-        retval = INT2PTR(kino_Obj*, tmp);
-    }
-    else if (   vtable == KINO_ZOMBIECHARBUF
-             || vtable == KINO_VIEWCHARBUF
-             || vtable == KINO_CHARBUF
-             || vtable == KINO_OBJ
-    ) {
-        STRLEN size;
-        char *ptr = SvPVutf8(sv, size);
-        Kino_ViewCB_Assign_Str(zcb, ptr, size);
-        retval = (kino_Obj*)zcb;
-    }
-    else THROW(KINO_ERR, "Not a %o", Kino_VTable_Get_Name(vtable));
-    return retval;
-}
-
-kino_Obj*
-XSBind_maybe_sv_to_kobj(SV *sv, kino_VTable *vtable) 
-{
-    kino_Obj *retval = NULL;
-    if (sv && XSBind_sv_defined(sv)) {
+    if (XSBind_sv_defined(sv)) {
         if (   sv_isobject(sv) 
             && sv_derived_from(sv, 
                  (char*)Kino_CB_Get_Ptr8(Kino_VTable_Get_Name(vtable)))
         ) {
+            /* Unwrap a real KinoSearch object. */
             IV tmp = SvIV( SvRV(sv) );
             retval = INT2PTR(kino_Obj*, tmp);
         }
+        else if (   zcb &&
+                 (  vtable == KINO_ZOMBIECHARBUF
+                 || vtable == KINO_VIEWCHARBUF
+                 || vtable == KINO_CHARBUF
+                 || vtable == KINO_OBJ)
+        ) {
+            /* Wrap the string from an ordinary Perl scalar inside a
+             * ZombieCharBuf. */
+            STRLEN size;
+            char *ptr = SvPVutf8(sv, size);
+            Kino_ZCB_Assign_Str(zcb, ptr, size);
+            retval = (kino_Obj*)zcb;
+        }
         else if (SvROK(sv)) {
+            /* Attempt to convert Perl hashes and arrays into their KinoSearch
+             * analogues. */
             SV *inner = SvRV(sv);
-            if (SvTYPE(inner) == SVt_PVAV) {
-                if (   vtable == KINO_VARRAY
-                    || vtable == KINO_OBJ
-                ) {
-                    retval = (kino_Obj*)parray_to_karray((AV*)inner);
-                }
+            if (SvTYPE(inner) == SVt_PVAV && vtable == KINO_VARRAY) {
+                retval = (kino_Obj*)S_perl_array_to_kino_array((AV*)inner);
             }
-            else if (SvTYPE(inner) == SVt_PVHV) {
-                if (   vtable == KINO_HASH
-                    || vtable == KINO_OBJ
-                ) {
-                    retval = (kino_Obj*)phash_to_khash((HV*)inner);
-                }
+            else if (SvTYPE(inner) == SVt_PVHV && vtable == KINO_HASH) {
+                retval = (kino_Obj*)S_perl_hash_to_kino_hash((HV*)inner);
             }
 
             if(retval) {
-                /* Mortalize the KS-ified copy of the Perl data structure. */
-                SV *mortal = Kino_Obj_To_Host(retval);
+                 /* Mortalize the converted object -- which is somewhat
+                  * dangerous, but is the only way to avoid requiring that the
+                  * caller take responsibility for a refcount. */
+                SV *mortal = (SV*)Kino_Obj_To_Host(retval);
                 KINO_DECREF(retval);
                 sv_2mortal(mortal);
             }
         }
     }
+
     return retval;
 }
 
-kino_ZombieCharBuf
-XSBind_sv_to_class_name(SV* either_sv) 
+SV*
+XSBind_kino_to_perl(kino_Obj *obj)
 {
-    if (sv_isobject(either_sv)) {
-        char *name = HvNAME(SvSTASH(SvRV(either_sv)));
-        return kino_ZCB_make_str(name, strlen(name));
+    if (obj == NULL) {
+        return newSV(0);
+    }
+    else if (Kino_Obj_Is_A(obj, KINO_CHARBUF)) {
+        return XSBind_cb_to_sv((kino_CharBuf*)obj);
+    }
+    else if (Kino_Obj_Is_A(obj, KINO_BYTEBUF)) {
+        return XSBind_bb_to_sv((kino_ByteBuf*)obj);
+    }
+    else if (Kino_Obj_Is_A(obj, KINO_VARRAY)) {
+        return S_kino_array_to_perl_array((kino_VArray*)obj);
+    }
+    else if (Kino_Obj_Is_A(obj, KINO_HASH)) {
+        return S_kino_hash_to_perl_hash((kino_Hash*)obj);
+    }
+    else if (Kino_Obj_Is_A(obj, KINO_FLOATNUM)) {
+        return newSVnv(Kino_Obj_To_F64(obj));
+    }
+    else if (sizeof(IV) == 8 && Kino_Obj_Is_A(obj, KINO_INTNUM)) {
+        chy_i64_t num = Kino_Obj_To_I64(obj);
+        return newSViv((IV)num);
+    }
+    else if (sizeof(IV) == 4 && Kino_Obj_Is_A(obj, KINO_INTEGER32)) {
+        chy_i32_t num = (chy_i32_t)Kino_Obj_To_I64(obj);
+        return newSViv((IV)num);
+    }
+    else if (sizeof(IV) == 4 && Kino_Obj_Is_A(obj, KINO_INTEGER64)) {
+        chy_i64_t num = Kino_Obj_To_I64(obj);
+        return newSVnv((double)num); /* lossy */
     }
     else {
-        STRLEN size;
-        char *name = SvPVutf8(either_sv, size);
-        return kino_ZCB_make_str(name, size);
+        return (SV*)Kino_Obj_To_Host(obj);
     }
+}
+
+kino_Obj*
+XSBind_perl_to_kino(SV *sv)
+{
+    kino_Obj *retval = NULL;
+
+    if (XSBind_sv_defined(sv)) {
+        if (SvROK(sv)) {
+            /* Deep conversion of references. */
+            SV *inner = SvRV(sv);
+            if (SvTYPE(inner) == SVt_PVAV) {
+                retval = (kino_Obj*)S_perl_array_to_kino_array((AV*)inner);
+            }
+            else if (SvTYPE(inner) == SVt_PVHV) {
+                retval = (kino_Obj*)S_perl_hash_to_kino_hash((HV*)inner);
+            }
+            else if (   sv_isobject(sv) 
+                     && sv_derived_from(sv, "KinoSearch::Object::Obj")
+            ) {
+                IV tmp = SvIV(inner);
+                retval = INT2PTR(kino_Obj*, tmp);
+                (void)KINO_INCREF(retval);
+            }
+        }
+
+        /* It's either a plain scalar or a non-KinoSearch Perl object, so
+         * stringify. */
+        if (!retval) {
+            STRLEN len;
+            char *ptr = SvPVutf8(sv, len);
+            retval = (kino_Obj*)kino_CB_new_from_trusted_utf8(ptr, len);
+        }
+    }
+    else if (sv) {
+        /* Deep conversion of raw AVs and HVs. */
+        if (SvTYPE(sv) == SVt_PVAV) {
+            retval = (kino_Obj*)S_perl_array_to_kino_array((AV*)sv);
+        }
+        else if (SvTYPE(sv) == SVt_PVHV) {
+            retval = (kino_Obj*)S_perl_hash_to_kino_hash((HV*)sv);
+        }
+    }
+
+    return retval;
 }
 
 SV*
@@ -150,7 +209,9 @@ XSBind_bb_to_sv(const kino_ByteBuf *bb)
 SV*
 XSBind_cb_to_sv(const kino_CharBuf *cb) 
 {
-    if (!cb) return newSV(0);
+    if (!cb) { 
+        return newSV(0);
+    }
     else {
         SV *sv = newSVpvn((char*)Kino_CB_Get_Ptr8(cb), Kino_CB_Get_Size(cb));
         SvUTF8_on(sv);
@@ -159,7 +220,7 @@ XSBind_cb_to_sv(const kino_CharBuf *cb)
 }
 
 static kino_Hash*
-phash_to_khash(HV *phash)
+S_perl_hash_to_kino_hash(HV *phash)
 {
     chy_u32_t  num_keys = hv_iterinit(phash);
     kino_Hash *retval   = kino_Hash_new(num_keys);
@@ -179,6 +240,8 @@ phash_to_khash(HV *phash)
             SV *key_sv = HeSVKEY_force(entry);
             key = SvPVutf8(key_sv, key_len);
         }
+
+        /* Recurse for each value. */
         Kino_Hash_Store_Str(retval, key, key_len, 
             XSBind_perl_to_kino(value_sv));
     }
@@ -187,12 +250,13 @@ phash_to_khash(HV *phash)
 }
 
 static kino_VArray*
-parray_to_karray(AV *parray)
+S_perl_array_to_kino_array(AV *parray)
 {
     const chy_u32_t size = av_len(parray) + 1;
     kino_VArray *retval = kino_VA_new(size);
     chy_u32_t i;
 
+    /* Iterate over array elems. */
     for (i = 0; i < size; i++) {
         SV **elem_sv = av_fetch(parray, i, false);
         if (elem_sv) {
@@ -205,54 +269,13 @@ parray_to_karray(AV *parray)
     return retval;
 }
 
-kino_Obj*
-XSBind_perl_to_kino(SV *sv)
-{
-    kino_Obj *retval = NULL;
-
-    if (sv && XSBind_sv_defined(sv)) {
-        if (SvROK(sv)) {
-            SV *inner = SvRV(sv);
-            if (SvTYPE(inner) == SVt_PVAV) {
-                retval = (kino_Obj*)parray_to_karray((AV*)inner);
-            }
-            else if (SvTYPE(inner) == SVt_PVHV) {
-                retval = (kino_Obj*)phash_to_khash((HV*)inner);
-            }
-            else if (   sv_isobject(sv) 
-                     && sv_derived_from(sv, "KinoSearch::Obj")
-            ) {
-                IV tmp = SvIV(inner);
-                retval = INT2PTR(kino_Obj*, tmp);
-                (void)KINO_INCREF(retval);
-            }
-        }
-
-        /* It's either a plain scalar or a non-KinoSearch Perl object. */
-        if (!retval) {
-            STRLEN len;
-            char *ptr = SvPVutf8(sv, len);
-            retval = (kino_Obj*)kino_CB_new_from_trusted_utf8(ptr, len);
-        }
-    }
-    else if (sv) {
-        if (SvTYPE(sv) == SVt_PVAV) {
-            retval = (kino_Obj*)parray_to_karray((AV*)sv);
-        }
-        else if (SvTYPE(sv) == SVt_PVHV) {
-            retval = (kino_Obj*)phash_to_khash((HV*)sv);
-        }
-    }
-
-    return retval;
-}
-
 static SV*
-karray_to_parray(kino_VArray *varray)
+S_kino_array_to_perl_array(kino_VArray *varray)
 {
     AV *perl_array = newAV();
     chy_u32_t num_elems = Kino_VA_Get_Size(varray);
 
+    /* Iterate over array elems. */
     if (num_elems) {
         chy_u32_t i;
         av_fill(perl_array, num_elems - 1);
@@ -262,7 +285,8 @@ karray_to_parray(kino_VArray *varray)
                 continue;
             }
             else {
-                SV *const val_sv = XSBind_kobj_to_pobj(val);
+                /* Recurse for each value. */
+                SV *const val_sv = XSBind_kino_to_perl(val);
                 av_store(perl_array, i, val_sv);
             }
         }
@@ -272,7 +296,7 @@ karray_to_parray(kino_VArray *varray)
 }
 
 static SV*
-khash_to_phash(kino_Hash *hash)
+S_kino_hash_to_perl_hash(kino_Hash *hash)
 {
     HV *perl_hash = newHV();
     SV *key_sv    = newSV(1);
@@ -283,13 +307,15 @@ khash_to_phash(kino_Hash *hash)
     SvPOK_on(key_sv);
     SvUTF8_on(key_sv);
 
+    /* Iterate over key-value pairs. */
     Kino_Hash_Iter_Init(hash);
     while (Kino_Hash_Iter_Next(hash, (kino_Obj**)&key, &val)) {
-        SV *val_sv = XSBind_kobj_to_pobj(val);
-        if (!KINO_OBJ_IS_A(key, KINO_CHARBUF)) {
+        /* Recurse for each value. */
+        SV *val_sv = XSBind_kino_to_perl(val);
+        if (!Kino_Obj_Is_A((kino_Obj*)key, KINO_CHARBUF)) {
             KINO_THROW(KINO_ERR, 
                 "Can't convert a key of class %o to a Perl hash key",
-                Kino_Obj_Get_Class_Name(key));
+                Kino_Obj_Get_Class_Name((kino_Obj*)key));
         }
         else {
             STRLEN key_size = Kino_CB_Get_Size(key);
@@ -303,37 +329,6 @@ khash_to_phash(kino_Hash *hash)
     SvREFCNT_dec(key_sv);
 
     return newRV_noinc((SV*)perl_hash);
-}
-
-SV*
-XSBind_kobj_to_pobj(kino_Obj *obj)
-{
-    if (obj == NULL) 
-        return newSV(0);
-    else if (KINO_OBJ_IS_A(obj, KINO_CHARBUF))
-        return XSBind_cb_to_sv((kino_CharBuf*)obj);
-    else if (KINO_OBJ_IS_A(obj, KINO_BYTEBUF))
-        return XSBind_bb_to_sv((kino_ByteBuf*)obj);
-    else if (KINO_OBJ_IS_A(obj, KINO_VARRAY))
-        return karray_to_parray((kino_VArray*)obj);
-    else if (KINO_OBJ_IS_A(obj, KINO_HASH))
-        return khash_to_phash((kino_Hash*)obj);
-    else if (KINO_OBJ_IS_A(obj, KINO_FLOATNUM))
-        return newSVnv(Kino_Num_To_F64(obj));
-    else if (sizeof(IV) == 8 && KINO_OBJ_IS_A(obj, KINO_INTNUM)) {
-        chy_i64_t num = Kino_Num_To_I64(obj);
-        return newSViv((IV)num);
-    }
-    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER32)) {
-        chy_i32_t num = (chy_i32_t)Kino_Num_To_I64(obj);
-        return newSViv((IV)num);
-    }
-    else if (sizeof(IV) == 4 && KINO_OBJ_IS_A(obj, KINO_INTEGER64)) {
-        chy_i64_t num = Kino_Num_To_I64(obj);
-        return newSVnv((double)num); /* lossy */
-    }
-    else 
-        return (SV*)Kino_Obj_To_Host(obj);
 }
 
 void
@@ -365,48 +360,42 @@ XSBind_enable_overload(void *pobj)
      * and just update every time.
      */
     stash = gv_stashpvn((char*)package_name, size, true);
-    /* Gv_AMupdate() changed in Perl 5.11 to take a second argument.
-     * http://www.mail-archive.com/perl5-changes@perl.org/msg23145.html
-     */
-#if (PERL_VERSION > 10)
-    Gv_AMupdate(stash, 1);
-#else
     Gv_AMupdate(stash);
-#endif
-
     SvAMAGIC_on(perl_obj);
 }
 
 void
 XSBind_allot_params(SV** stack, chy_i32_t start, chy_i32_t num_stack_elems, 
-                    char* defaults_hash_name, ...)
+                    char* params_hash_name, ...)
 {
     va_list args;
-    HV *defaults_hash = get_hv(defaults_hash_name, 0);
+    HV *params_hash = get_hv(params_hash_name, 0);
     SV **target;
     chy_i32_t i;
     chy_i32_t args_left = (num_stack_elems - start) / 2;
 
-    /* NOTE: the defaults hash must be declared using "our". */
-    if (defaults_hash == NULL)
-        THROW(KINO_ERR, "Can't find hash named %s", defaults_hash_name);
+    /* Retrieve the params hash, which must be a package global. */
+    if (params_hash == NULL) {
+        THROW(KINO_ERR, "Can't find hash named %s", params_hash_name);
+    }
 
     /* Verify that our args come in pairs. Bail if there are no args. */
-    if (num_stack_elems == start) return;
-    if ((num_stack_elems - start) % 2 != 0)
+    if (num_stack_elems == start) { return; }
+    if ((num_stack_elems - start) % 2 != 0) {
         THROW(KINO_ERR, "Expecting hash-style params, got odd number of args");
+    }
 
     /* Validate param names. */
     for (i = start; i < num_stack_elems; i += 2) {
         SV *const key_sv = stack[i];
         STRLEN key_len;
         const char *key = SvPV(key_sv, key_len); /* assume ASCII labels */
-        if (!hv_exists(defaults_hash, key, key_len)) {
+        if (!hv_exists(params_hash, key, key_len)) {
             THROW(KINO_ERR, "Invalid parameter: '%s'", key);
         }
     }
 
-    va_start(args, defaults_hash_name); 
+    va_start(args, params_hash_name); 
     while (args_left && NULL != (target = va_arg(args, SV**))) {
         char *label = va_arg(args, char*);
         int label_len = va_arg(args, int);
@@ -416,19 +405,19 @@ XSBind_allot_params(SV** stack, chy_i32_t start, chy_i32_t num_stack_elems,
         for (i = num_stack_elems; i >= start + 2; i -= 2) {
             chy_i32_t tick = i - 2;
             SV *const key_sv = stack[tick];
-            const chy_i32_t comparison = kino_StrHelp_compare_strings(
-                label, SvPVX(key_sv), label_len, SvCUR(key_sv));
-            if (comparison == 0) {
-                *target = stack[tick + 1];
-                args_left--;
-                break;
+            if (SvCUR(key_sv) == (STRLEN)label_len) {
+                if (memcmp(SvPVX(key_sv), label, label_len) == 0) {
+                    *target = stack[tick + 1];
+                    args_left--;
+                    break;
+                }
             }
         }
     }
     va_end(args);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

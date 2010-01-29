@@ -106,9 +106,10 @@ B<collector> - A HitCollector.
 
 =head2 doc_max()
 
-Return the maximum number of docs in the collection represented by
-the Searchable, which is also the highest possible doc id.  Deleted
-docs are included in this count.
+Return the maximum number of docs in the collection represented by the
+Searchable, which is also the highest possible internal doc id.
+Documents which have been marked as deleted but not yet purged are
+included in this count.
 
 =head2 doc_freq( I<[labeled params]> )
 
@@ -152,12 +153,12 @@ subcomponent of another.
 
 =head1 INHERITANCE
 
-KinoSearch::Search::Searchable isa L<KinoSearch::Obj>.
+KinoSearch::Search::Searchable isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

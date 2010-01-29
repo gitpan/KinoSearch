@@ -17,7 +17,9 @@ Token_init(Token *self, const char* text, size_t len, u32_t start_offset,
            u32_t end_offset, float boost, i32_t pos_inc) 
 {
     /* Allocate and assign. */
-    self->text = StrHelp_strndup(text, len);
+    self->text = (char*)MALLOCATE(len + 1);
+    self->text[len] = '\0';
+    memcpy(self->text, text, len);
 
     /* Assign. */
     self->len          = len;
@@ -78,14 +80,14 @@ Token_set_text(Token *self, char *text, size_t len)
 {
     if (len > self->len) {
         FREEMEM(self->text);
-        self->text = MALLOCATE(len + 1, char);
+        self->text = (char*)MALLOCATE(len + 1);
     }
     memcpy(self->text, text, len);
     self->text[len] = '\0';
     self->len = len;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

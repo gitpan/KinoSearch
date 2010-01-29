@@ -1,3 +1,4 @@
+package KinoSearch::Search::Compiler;
 use KinoSearch;
 
 1;
@@ -26,7 +27,7 @@ my $constructor = <<'END_CONSTRUCTOR_CODE_SAMPLE';
     );
 END_CONSTRUCTOR_CODE_SAMPLE
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Search::Compiler",
     bind_methods => [
@@ -62,7 +63,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

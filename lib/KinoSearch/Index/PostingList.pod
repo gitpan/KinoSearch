@@ -7,9 +7,9 @@ KinoSearch::Index::PostingList - Term-Document pairings.
 
 =head1 SYNOPSIS
 
-    my $postings_reader 
-        = $seg_reader->obtain("KinoSearch::Index::PostingsReader");
-    my $posting_list = $postings_reader->posting_list( 
+    my $posting_list_reader 
+        = $seg_reader->obtain("KinoSearch::Index::PostingListReader");
+    my $posting_list = $posting_list_reader->posting_list( 
         field => 'content',
         term  => 'foo',
     );
@@ -89,12 +89,12 @@ B<target> - The term to match.  If undef, the iterator will be empty.
 
 =head1 INHERITANCE
 
-KinoSearch::Index::PostingList isa L<KinoSearch::Search::Matcher> isa L<KinoSearch::Obj>.
+KinoSearch::Index::PostingList isa L<KinoSearch::Search::Matcher> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

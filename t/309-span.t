@@ -4,6 +4,7 @@ use lib 'buildlib';
 
 use Test::More tests => 6;
 
+use KinoSearch::Test;
 use KinoSearch::Search::Span;
 
 my $span = KinoSearch::Search::Span->new(

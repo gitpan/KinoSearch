@@ -26,21 +26,21 @@ class KinoSearch::Store::SharedLock cnick ShLock
     extends KinoSearch::Store::LockFileLock {
 
     inert incremented SharedLock*
-    new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
+    new(Folder *folder, const CharBuf *name, const CharBuf *host, 
         i32_t timeout = 0, i32_t interval = 100);
 
     /**
      * @param folder The KinoSearch::Store::Folder where the lock file will
      * reside.
      * @param name String identifying the resource to be locked.
-     * @param hostname An identifier which should be unique per-machine.
+     * @param host An identifier which should be unique per-machine.
      * @param timeout Time in milliseconds to keep retrying before abandoning
      * the attempt to Obtain() a lock.
      * @param interval Time in milliseconds between retries.
      */
     public inert SharedLock*
     init(SharedLock *self, Folder *folder, const CharBuf *name, 
-         const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
+         const CharBuf *host, i32_t timeout = 0, i32_t interval = 100);
 
     public bool_t
     Shared(SharedLock *self);
@@ -58,7 +58,7 @@ class KinoSearch::Store::SharedLock cnick ShLock
     Clear_Stale(SharedLock *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

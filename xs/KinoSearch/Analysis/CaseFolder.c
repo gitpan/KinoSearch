@@ -6,8 +6,8 @@
 #include "KinoSearch/Analysis/CaseFolder.h"
 #include "KinoSearch/Analysis/Token.h"
 #include "KinoSearch/Analysis/Inversion.h"
-#include "KinoSearch/Obj/ByteBuf.h"
-#include "KinoSearch/Util/MemManager.h"
+#include "KinoSearch/Object/ByteBuf.h"
+#include "KinoSearch/Util/Memory.h"
 #include "KinoSearch/Util/StringHelper.h"
 
 static size_t
@@ -58,7 +58,7 @@ kino_CaseFolder_transform(kino_CaseFolder *self, kino_Inversion *inversion)
             token->len, &buf, &limit);
         if (size > token->len) {
             KINO_FREEMEM(token->text);
-            token->text = KINO_MALLOCATE(size + 1, char);
+            token->text = (char*)KINO_MALLOCATE(size + 1);
         }
         memcpy(token->text, buf, size);
         token->text[size] = '\0';
@@ -83,7 +83,7 @@ kino_CaseFolder_transform_text(kino_CaseFolder *self, kino_CharBuf *text)
     return retval;
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

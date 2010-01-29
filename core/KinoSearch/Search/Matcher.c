@@ -3,8 +3,8 @@
 #define CHY_USE_SHORT_NAMES
 
 #include "KinoSearch/Search/Matcher.h"
-#include "KinoSearch/Obj/Err.h"
-#include "KinoSearch/Obj/VTable.h"
+#include "KinoSearch/Object/Err.h"
+#include "KinoSearch/Object/VTable.h"
 #include "KinoSearch/Search/HitCollector.h"
 
 Matcher*
@@ -74,7 +74,7 @@ Matcher_collect(Matcher *self, HitCollector *collector, Matcher *deletions)
     HC_Set_Matcher(collector, NULL);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

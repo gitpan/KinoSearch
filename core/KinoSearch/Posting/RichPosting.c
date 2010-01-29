@@ -55,8 +55,8 @@ RichPost_clone(RichPosting *self)
 
     if (self->freq) {
         evil_twin->prox_cap = evil_twin->freq;
-        evil_twin->prox = MALLOCATE(evil_twin->freq, u32_t);
-        evil_twin->prox_boosts = MALLOCATE(evil_twin->freq, float);
+        evil_twin->prox = (u32_t*)MALLOCATE(evil_twin->freq * sizeof(u32_t));
+        evil_twin->prox_boosts = (float*)MALLOCATE(evil_twin->freq * sizeof(float));
         memcpy(evil_twin->prox, self->prox, self->freq * sizeof(u32_t));
         memcpy(evil_twin->prox_boosts, self->prox_boosts, 
             self->freq * sizeof(float));
@@ -96,8 +96,8 @@ RichPost_read_record(RichPosting *self, InStream *instream)
     /* Read positions, aggregate per-position boost byte into weight. */
     num_prox = self->freq;
     if (num_prox > self->prox_cap) {
-        self->prox        = REALLOCATE(self->prox, num_prox, u32_t);
-        self->prox_boosts = REALLOCATE(self->prox_boosts, num_prox, float);
+        self->prox        = (u32_t*)REALLOCATE(self->prox, num_prox * sizeof(u32_t));
+        self->prox_boosts = (float*)REALLOCATE(self->prox_boosts, num_prox * sizeof(float));
     }
     positions   = self->prox;
     prox_boosts = self->prox_boosts;
@@ -154,7 +154,7 @@ RichPost_add_inversion_to_pool(RichPosting *self, PostingPool *post_pool,
         raw_posting->aux_len = dest - start;
         raw_post_bytes = dest - (char*)raw_posting;
         MemPool_Resize(mem_pool, raw_posting, raw_post_bytes);
-        PostPool_Add_Elem(post_pool, (Obj*)raw_posting);
+        PostPool_Feed(post_pool, (Obj*)raw_posting);
     }
 }
 
@@ -214,7 +214,7 @@ RichPostScorer_init(RichPostingScorer *self, Similarity *sim,
         (ScorePostingScorer*)self, sim, plist, compiler);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

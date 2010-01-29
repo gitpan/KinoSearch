@@ -4,7 +4,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.30_07
+0.30_08
 
 =head1 EXTRA WARNING
 
@@ -275,6 +275,17 @@ Starting with 1.0, the following policy will be put in place:
     anticipated.  With luck, someone might even solve Perl5/CPAN's
     versioning problem before the release of KinoSearch 2.0.
 
+=head1 CLASS METHODS
+
+The KinoSearch module itself does not do much.
+
+=head2 error
+
+    my $instream = $folder->open_in( file => 'foo' ) or die KinoSearch->error;
+
+Access a shared variable which is set by some routines on failure.  It will
+always be either a L<KinoSearch::Object::Err> or undef.
+
 =head1 SEE ALSO 
 
 The KinoSearch homepage, where you'll find links to the mailing list and so
@@ -317,7 +328,7 @@ L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=KinoSearch>.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

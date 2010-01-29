@@ -67,7 +67,7 @@ StringType_dump(StringType *self)
 {
     Hash *dump = StringType_Dump_For_Schema(self);
     Hash_Store_Str(dump, "_class", 6, 
-        (Obj*)CB_Clone(Obj_Get_Class_Name(self)));
+        (Obj*)CB_Clone(StringType_Get_Class_Name(self)));
     DECREF(Hash_Delete_Str(dump, "type", 4));
     return dump;
 }
@@ -75,11 +75,12 @@ StringType_dump(StringType *self)
 StringType*
 StringType_load(StringType *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
-    VTable *vtable = (class_name != NULL && OBJ_IS_A(class_name, CHARBUF)) 
-                   ? VTable_singleton(class_name, NULL)
-                   : STRINGTYPE;
+    VTable *vtable 
+        = (class_name != NULL && Obj_Is_A((Obj*)class_name, CHARBUF))
+        ? VTable_singleton(class_name, NULL)
+        : STRINGTYPE;
     StringType *loaded   = (StringType*)VTable_Make_Obj(vtable);
     Obj *boost_dump      = Hash_Fetch_Str(source, "boost", 5);
     Obj *indexed_dump    = Hash_Fetch_Str(source, "indexed", 7);
@@ -121,7 +122,7 @@ StringType_make_posting(StringType *self, Similarity *similarity)
     }
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -4,29 +4,39 @@ use warnings;
 use Test::More tests => 3;
 use KinoSearch::Test;
 
-my $folder = KinoSearch::Store::RAMFolder->new;
-my ( @items, $packed, $template, $buf, $out, $in, $correct );
+my ( @items, $packed, $template, $buf, $file, $out, $in, $correct );
 
-$out = $folder->open_out('raw_c64s') or die "Can't open file";
+
+$file = KinoSearch::Store::RAMFile->new;
+$out = KinoSearch::Store::OutStream->open( file => $file )
+    or die KinoSearch->error;
 $out->write_c64(10000);
 $out->close;
-$in = $folder->open_in('raw_c64s');
+$in = KinoSearch::Store::InStream->open( file => $file )
+    or die KinoSearch->error;
 $in->read_raw_c64($buf);
-$correct = $folder->slurp_file('raw_c64s');
+$correct = $file->get_contents;
 is( $buf, $correct, "read_raw_c64" );
 
-$out = $folder->open_out('read_bytes') or die "Can't open file";
+$file = KinoSearch::Store::RAMFile->new;
+$out = KinoSearch::Store::OutStream->open( file => $file )
+    or die KinoSearch->error;
 $out->print("mint");
 $out->close;
-$in  = $folder->open_in('read_bytes');
 $buf = "funny";
-$in->read_bytes( $buf, 1 );
-is( $buf, "munny", 'read_bytes' );
+$in = KinoSearch::Store::InStream->open( file => $file )
+    or die KinoSearch->error;
+$in->read( $buf, 1 );
+is( $buf, "munny", 'read' );
 
-$out = $folder->open_out('read_byteso') or die "Can't open file";
+$file = KinoSearch::Store::RAMFile->new;
+$out = KinoSearch::Store::OutStream->open( file => $file )
+    or die KinoSearch->error;
 $out->print("cute");
 $out->close;
-$in  = $folder->open_in('read_byteso');
+$in = KinoSearch::Store::InStream->open( file => $file )
+    or die KinoSearch->error;
 $buf = "buzz";
-$in->read_byteso( $buf, 4, 3 );
-is( $buf, "buzzcut", 'read_byteso' );
+$in->read( $buf, 3, 4 );
+is( $buf, "buzzcut", 'read with offset' );
+

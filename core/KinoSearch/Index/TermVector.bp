@@ -4,7 +4,7 @@ parcel KinoSearch cnick Kino;
  */
 
 class KinoSearch::Index::TermVector cnick TV
-    extends KinoSearch::Obj {
+    extends KinoSearch::Object::Obj {
 
     CharBuf *field;
     CharBuf *text;
@@ -39,14 +39,14 @@ class KinoSearch::Index::TermVector cnick TV
     public bool_t
     Equals(TermVector *self, Obj *other);
 
-    void
+    public void
     Destroy(TermVector *self);
 
     public void
     Serialize(TermVector *self, OutStream *outstream);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

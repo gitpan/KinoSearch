@@ -2,12 +2,12 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"
-#include "KinoSearch/Test/TestArchitecture.h"
+#include "KinoSearch/Test/Plan/TestArchitecture.h"
 #include "KinoSearch/Test/TestSchema.h"
 #include "KinoSearch/Analysis/CaseFolder.h"
 #include "KinoSearch/Analysis/Tokenizer.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/FieldType/FullTextType.h"
+#include "KinoSearch/Plan/Architecture.h"
 
 TestSchema*
 TestSchema_new()
@@ -26,7 +26,7 @@ TestSchema_init(TestSchema *self)
 
     Schema_init((Schema*)self);
     FullTextType_Set_Highlightable(type, true);
-    Schema_Spec_Field(self, (CharBuf*)&content, (FieldType*)type);
+    TestSchema_Spec_Field(self, (CharBuf*)&content, (FieldType*)type);
     DECREF(type);
     DECREF(tokenizer);
 
@@ -46,10 +46,9 @@ test_Equals(TestBatch *batch)
     TestSchema *schema = TestSchema_new();
     TestSchema *arch_differs = TestSchema_new();
     TestSchema *spec_differs = TestSchema_new();
-    FullTextType  *type 
-        = (FullTextType*)Schema_Fetch_Type(spec_differs, (CharBuf*)&content);
+    FullTextType *type = (FullTextType*)TestSchema_Fetch_Type(spec_differs, 
+        (CharBuf*)&content);
     CaseFolder *case_folder = CaseFolder_new();
-
 
     ASSERT_TRUE(batch, TestSchema_Equals(schema, (Obj*)schema), "Equals");
 
@@ -86,14 +85,14 @@ test_Dump_and_Load(TestBatch *batch)
 void
 TestSchema_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestDocWriter", 4, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(4);
+    TestBatch_Plan(batch);
     test_Equals(batch);
     test_Dump_and_Load(batch);
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

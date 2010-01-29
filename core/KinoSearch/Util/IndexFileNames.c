@@ -2,37 +2,38 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Util/IndexFileNames.h"
+#include "KinoSearch/Store/DirHandle.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Util/StringHelper.h"
-#include "KinoSearch/Util/Json.h"
 
 CharBuf*
 IxFileNames_latest_snapshot(Folder *folder)
 {
-    VArray *file_list = Folder_List(folder);
-    CharBuf *retval   = NULL;
-    i32_t latest_gen = 0;
-    u32_t i, max;
+    DirHandle *dh = Folder_Open_Dir(folder, NULL);
+    CharBuf   *entry = dh ? DH_Get_Entry(dh) : NULL;
+    CharBuf   *retval   = NULL;
+    u64_t      latest_gen = 0;
 
-    for (i = 0, max = VA_Get_Size(file_list); i < max; i++) {
-        CharBuf *filename = (CharBuf*)VA_Fetch(file_list, i);
-        if (   CB_Starts_With_Str(filename, "snapshot_", 9)
-            && CB_Ends_With_Str(filename, ".json", 5)
+    if (!dh) { RETHROW(INCREF(Err_get_error())); }
+
+    while (DH_Next(dh)) {
+        if (   CB_Starts_With_Str(entry, "snapshot_", 9)
+            && CB_Ends_With_Str(entry, ".json", 5)
         ) {
-            i32_t gen = IxFileNames_extract_gen(filename);
+            u64_t gen = IxFileNames_extract_gen(entry);
             if (gen > latest_gen) {
                 latest_gen = gen;
-                if (!retval) retval = CB_Clone(filename);
-                else CB_Mimic(retval, (Obj*)filename);
+                if (!retval) retval = CB_Clone(entry);
+                else CB_Mimic(retval, (Obj*)entry);
             }
         }
     }
-    DECREF(file_list);
 
+    DECREF(dh);
     return retval;
 }
 
-i32_t
+u64_t
 IxFileNames_extract_gen(const CharBuf *name)
 {
     ZombieCharBuf num_string = ZCB_make(name);
@@ -45,19 +46,39 @@ IxFileNames_extract_gen(const CharBuf *name)
         else if (code_point == '_') { break; }
     }
 
-    return (i32_t)ZCB_BaseX_To_I64(&num_string, 36);
+    return (u64_t)ZCB_BaseX_To_I64(&num_string, 36);
 }
 
-int
-IxFileNames_compare_gen(const void *va, const void *vb)
+ZombieCharBuf*
+IxFileNames_local_part(const CharBuf *path, ZombieCharBuf *target)
 {
-    CharBuf *a = *(CharBuf**)va;
-    CharBuf *b = *(CharBuf**)vb;
-    return IxFileNames_extract_gen(a) - IxFileNames_extract_gen(b);
+    ZombieCharBuf scratch   = ZCB_make(path);
+    size_t local_part_start = CB_Length(path);
+    u32_t  code_point;
+
+    ZCB_Assign(target, path);
+
+    /* Trim trailing slash. */
+    while (ZCB_Code_Point_From(target, 1) == '/') {
+        ZCB_Chop(target, 1);
+        ZCB_Chop(&scratch, 1);
+        local_part_start--;
+    }
+
+    /* Substring should start after last slash. */
+    while (0 != (code_point = ZCB_Code_Point_From(&scratch, 1))) {
+        if (code_point == '/') {
+            ZCB_Nip(target, local_part_start);
+            break;
+        }
+        ZCB_Chop(&scratch, 1);
+        local_part_start--;
+    }
+
+    return target;
 }
 
-
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

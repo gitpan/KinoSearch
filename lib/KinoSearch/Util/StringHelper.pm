@@ -1,3 +1,4 @@
+package KinoSearch::Util::StringHelper;
 use KinoSearch;
 
 1;
@@ -36,12 +37,12 @@ PPCODE:
 
 SV*
 to_base36(num)
-    chy_u32_t num;
+    chy_u64_t num;
 CODE:
 {
-    kino_CharBuf *buf = kino_StrHelp_to_base36(num);
-    RETVAL = XSBind_cb_to_sv(buf);
-    KINO_DECREF(buf);
+    char base36[kino_StrHelp_MAX_BASE36_BYTES];
+    size_t size = kino_StrHelp_to_base36(num, &base36);
+    RETVAL = newSVpvn(base36, size);
 }
 OUTPUT: RETVAL
 
@@ -97,7 +98,7 @@ PPCODE:
 }
 END_XS_CODE
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel     => "KinoSearch",
     class_name => "KinoSearch::Util::StringHelper",
     xs_code    => $xs_code,
@@ -105,7 +106,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

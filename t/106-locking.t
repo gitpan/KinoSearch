@@ -19,7 +19,7 @@ BEGIN {
 my $path = init_test_index_loc();
 
 Dead_locks_are_removed: {
-    my $lock_path = catfile( $path, 'foo.lock' );
+    my $lock_path = catfile( $path, 'locks', 'foo.lock' );
 
     # Remove any existing lockfile
     unlink $lock_path;
@@ -31,7 +31,7 @@ Dead_locks_are_removed: {
         my $lock = KinoSearch::Store::LockFileLock->new(
             timeout  => 0,
             name     => 'foo',
-            hostname => '',
+            host     => '',
             @_
         );
         $lock->clear_stale;
@@ -57,8 +57,8 @@ Dead_locks_are_removed: {
     # started up with the child's pid (which would be weird).
     my $pid_active = kill( 0, $pid );
 
-    eval { make_lock( folder => $folder, hostname => 'somebody_else' ) };
-    like( $@, qr/no dice/, "different hostname fails to get lock" );
+    eval { make_lock( folder => $folder, host => 'somebody_else' ) };
+    like( $@, qr/no dice/, "different host fails to get lock" );
 
     eval { make_lock( folder => $folder ) };
     warn $@ if $@;

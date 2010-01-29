@@ -6,7 +6,11 @@
 #include <string.h>
 
 #include "KinoSearch/Posting/RawPosting.h"
+#include "KinoSearch/Index/PolyReader.h"
+#include "KinoSearch/Index/Segment.h"
+#include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/TermInfo.h"
+#include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/StringHelper.h"
 
@@ -67,19 +71,23 @@ RawPost_dec_refcount(RawPosting* self)
 /***************************************************************************/
 
 RawPostingStreamer*
-RawPostStreamer_new(DataWriter *writer, OutStream *outstream)
+RawPostStreamer_new(Schema *schema, Snapshot *snapshot, Segment *segment,
+                    PolyReader *polyreader, OutStream *outstream)
 {
     RawPostingStreamer *self 
         = (RawPostingStreamer*)VTable_Make_Obj(RAWPOSTINGSTREAMER);
-    return RawPostStreamer_init(self, writer, outstream);
+    return RawPostStreamer_init(self, schema, snapshot, segment, polyreader, 
+        outstream);
 }
 
 RawPostingStreamer*
-RawPostStreamer_init(RawPostingStreamer *self, DataWriter *writer, 
-                     OutStream *outstream)
+RawPostStreamer_init(RawPostingStreamer *self, Schema *schema, 
+                     Snapshot *snapshot, Segment *segment, 
+                     PolyReader *polyreader, OutStream *outstream)
 {
     const i32_t invalid_field_num = 0;
-    PostStreamer_init((PostingStreamer*)self, writer, invalid_field_num);
+    PostStreamer_init((PostingStreamer*)self, schema, snapshot, segment,
+        polyreader, invalid_field_num);
     self->outstream = (OutStream*)INCREF(outstream);
     self->last_doc_id = 0;
     return self;
@@ -125,7 +133,7 @@ RawPostStreamer_write_posting(RawPostingStreamer *self, RawPosting *posting)
     self->last_doc_id = doc_id;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

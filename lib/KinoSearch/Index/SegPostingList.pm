@@ -1,3 +1,4 @@
+package KinoSearch::Index::SegPostingList;
 use KinoSearch;
 
 1;
@@ -6,16 +7,16 @@ __END__
 
 __BINDING__
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Index::SegPostingList",
-    bind_methods      => [qw( Set_Doc_Base Get_Post_Stream Get_Count )],
+    bind_methods      => [qw( Get_Post_Stream Get_Count )],
     bind_constructors => ["new"],
 );
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

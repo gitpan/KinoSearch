@@ -24,31 +24,55 @@ TextSortCache_init(TextSortCache *self, Schema *schema, Folder *folder,
 {
     CharBuf   *field    = Seg_Field_Name(segment, field_num);
     CharBuf   *seg_name = Seg_Get_Name(segment);
-    CharBuf   *ord_file = CB_newf("%o/sort-%i32.ord", seg_name, field_num);
-    CharBuf   *ix_file  = CB_newf("%o/sort-%i32.ix",  seg_name, field_num);
-    CharBuf   *dat_file = CB_newf("%o/sort-%i32.dat", seg_name, field_num);
     FieldType *type     = Schema_Fetch_Type(schema, field);
-    i32_t      doc_max  = Seg_Get_Count(segment);
+    i32_t      doc_max  = (int32_t)Seg_Get_Count(segment);
     i64_t ord_len, ix_len, dat_len;
     void *ords;
 
     /* Validate. */
     if (!type || !FType_Sortable(type)) {
+        DECREF(self);
         THROW(ERR, "'%o' isn't a sortable field", field);
     }
 
     /* Open instreams. */
-    self->ord_in  = Folder_Open_In(folder, ord_file);
-    self->ix_in   = Folder_Open_In(folder, ix_file);
-    self->dat_in  = Folder_Open_In(folder, dat_file);
-    if (!self->ix_in || !self->dat_in || !self->ord_in) {
-        CharBuf *mess = MAKE_MESS("Can't open either %o, %o or %o", ord_file, 
-            ix_file, dat_file);
+    {
+        CharBuf *ord_file = CB_newf("%o/sort-%i32.ord", seg_name, field_num);
+        self->ord_in = Folder_Open_In(folder, ord_file);
         DECREF(ord_file);
-        DECREF(ix_file);
-        DECREF(dat_file);
-        Err_throw_mess(ERR, mess);
+        if (!self->ord_in) {
+            Err *error = Err_new(CB_newf(
+                "Error building sort cache for '%o': %o", 
+                field, Err_get_error()));
+            DECREF(self);
+            Err_do_throw(error);
+        }
     }
+    {
+        CharBuf *ix_file = CB_newf("%o/sort-%i32.ix", seg_name, field_num);
+        self->ix_in = Folder_Open_In(folder, ix_file);
+        DECREF(ix_file);
+        if (!self->ix_in) {
+            Err *error = Err_new(CB_newf(
+                "Error building sort cache for '%o': %o", 
+                field, Err_get_error()));
+            DECREF(self);
+            Err_do_throw(error);
+        }
+    }
+    {
+        CharBuf *dat_file = CB_newf("%o/sort-%i32.dat", seg_name, field_num);
+        self->dat_in = Folder_Open_In(folder, dat_file);
+        DECREF(dat_file);
+        if (!self->dat_in) {
+            Err *error = Err_new(CB_newf(
+                "Error building sort cache for '%o': %o", 
+                field, Err_get_error()));
+            DECREF(self);
+            Err_do_throw(error);
+        }
+    }
+
     ord_len = InStream_Length(self->ord_in);
     ix_len  = InStream_Length(self->ix_in);
     dat_len = InStream_Length(self->dat_in);
@@ -75,10 +99,6 @@ TextSortCache_init(TextSortCache *self, Schema *schema, Folder *folder,
                 "field %o", max_ords, self->doc_max, field);
         }
     }
-
-    DECREF(ord_file);
-    DECREF(ix_file);
-    DECREF(dat_file);
 
     return self;
 }
@@ -141,14 +161,15 @@ TextSortCache_value(TextSortCache *self, i32_t ord, Obj *blank)
                 THROW(ERR, "Read %i64 beyond char data limit for %o", over,
                     self->field);
             }
-            ASSERT_IS_A(blank, VIEWCHARBUF);
-            ViewCB_Assign_Str(blank, self->char_data + offset, (size_t)len);
+            CERTIFY(blank, VIEWCHARBUF);
+            ViewCB_Assign_Str((ViewCharBuf*)blank, 
+                self->char_data + offset, (size_t)len);
         }
     }
     return blank;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

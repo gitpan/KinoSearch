@@ -1,3 +1,4 @@
+package KinoSearch::Search::Span;
 use KinoSearch;
 
 1;
@@ -24,7 +25,7 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Search::Span",
     bind_methods => [
@@ -52,7 +53,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2008-2009 Marvin Humphrey
+Copyright 2008-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

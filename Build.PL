@@ -17,7 +17,6 @@ BEGIN {
 
 use lib 'buildlib';
 use KinoSearch::Build;
-use File::Spec::Functions qw( curdir );
 
 if ( $conflict and !$ENV{KINO_DEBUG} ) {
     print <<END_WARNING;
@@ -41,16 +40,33 @@ my $builder = KinoSearch::Build->new(
     requires          => {
         'Lingua::Stem::Snowball' => 0.952,
         'Lingua::StopWords'      => 0.09,
+        'Parse::RecDescent'      => 0,
         'JSON::XS'               => 1.53,
     },
     build_requires => {
-        'ExtUtils::CBuilder' => 0,
-        'ExtUtils::ParseXS'  => 0,
-        'Parse::RecDescent'  => 0,
+        'ExtUtils::CBuilder' => 0.18,
+        'ExtUtils::ParseXS'  => 2.16,
     },
     create_makefile_pl => 'passthrough',
-    add_to_cleanup =>
-        [ 'MANIFEST.bak', 'perltidy.ERR', '*.pdb', '*.manifest' ],
+    add_to_cleanup     => [
+        qw(
+            KinoSearch-*
+            MANIFEST.bak
+            perltidy.ERR
+            *.pdb
+            *.manifest
+        ),
+    ],
 );
 
 $builder->create_build_script();
+
+__END__
+
+__COPYRIGHT__
+
+Copyright 2005-2010 Marvin Humphrey
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+

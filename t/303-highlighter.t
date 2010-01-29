@@ -78,7 +78,7 @@ my $hl   = KinoSearch::Highlight::Highlighter->new(
     excerpt_length => 3,
 );
 
-my $target = KinoSearch::Obj::ViewCharBuf->_new("");
+my $target = KinoSearch::Object::ViewCharBuf->_new("");
 
 my $field_val = make_cb("a $phi $phi b c");
 my $top       = $hl->_find_best_fragment(
@@ -360,7 +360,7 @@ like( $hl->create_excerpt($hit),
     qr/\*wise\*/, "override both Encode() and Highlight()" );
 
 sub make_cb {
-    return KinoSearch::Obj::CharBuf->new(shift);
+    return KinoSearch::Object::CharBuf->new(shift);
 }
 
 sub make_heat_map {
@@ -376,7 +376,7 @@ sub make_span {
 }
 
 sub make_spans {
-    my $spans = KinoSearch::Obj::VArray->new( capacity => scalar @_ );
+    my $spans = KinoSearch::Object::VArray->new( capacity => scalar @_ );
     for my $span_spec (@_) {
         $spans->push( make_span( @{$span_spec}[ 0 .. 2 ] ) );
     }

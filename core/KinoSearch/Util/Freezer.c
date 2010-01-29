@@ -1,8 +1,6 @@
 #define C_KINO_FREEZER
 #include "KinoSearch/Util/ToolSet.h"
 
-#include <string.h>
-
 #include "KinoSearch/Util/Freezer.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -24,7 +22,7 @@ Freezer_thaw(InStream *instream)
     return Obj_Deserialize(blank, instream);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

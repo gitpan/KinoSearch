@@ -18,7 +18,7 @@ parcel KinoSearch cnick Kino;
  */
 
 class KinoSearch::Search::Similarity cnick Sim
-    extends KinoSearch::Obj : dumpable {
+    extends KinoSearch::Object::Obj : dumpable {
 
     float  *norm_decoder;
     float  *prox_decoder;
@@ -106,7 +106,7 @@ class KinoSearch::Search::Similarity cnick Sim
     float
     Prox_Coord(Similarity *self, u32_t *prox, u32_t num_prox);
 
-    void
+    public void
     Destroy(Similarity *self);
 
     public incremented Obj* 
@@ -125,7 +125,7 @@ class KinoSearch::Search::Similarity cnick Sim
     Deserialize(Similarity *self, InStream *instream);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

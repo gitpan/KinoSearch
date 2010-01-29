@@ -72,7 +72,7 @@ TInfo_to_string(TermInfo *self)
 void
 TInfo_mimic(TermInfo *self, Obj *other) 
 {
-    TermInfo *evil_twin = (TermInfo*)ASSERT_IS_A(other, TERMINFO);
+    TermInfo *evil_twin = (TermInfo*)CERTIFY(other, TERMINFO);
     self->doc_freq      = evil_twin->doc_freq;
     self->post_filepos  = evil_twin->post_filepos;
     self->skip_filepos  = evil_twin->skip_filepos;
@@ -88,7 +88,7 @@ TInfo_reset(TermInfo *self)
     self->lex_filepos   = 0;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

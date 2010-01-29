@@ -37,7 +37,7 @@ abstract class KinoSearch::Search::PolyQuery
     public bool_t
     Equals(PolyQuery *self, Obj *other);
 
-    void
+    public void
     Destroy(PolyQuery *self);
 }
 
@@ -65,7 +65,7 @@ class KinoSearch::Search::PolyCompiler extends KinoSearch::Search::Compiler {
     Highlight_Spans(PolyCompiler *self, Searchable *searchable, 
                     DocVector *doc_vec, const CharBuf *field);
 
-    void
+    public void
     Destroy(PolyCompiler *self);
 
     public void
@@ -75,7 +75,7 @@ class KinoSearch::Search::PolyCompiler extends KinoSearch::Search::Compiler {
     Deserialize(PolyCompiler *self, InStream *instream);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

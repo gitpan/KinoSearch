@@ -11,7 +11,7 @@ parcel KinoSearch cnick Kino;
  * sort-by-doc rule as the last SortRule.
  */
 
-class KinoSearch::Search::SortSpec extends KinoSearch::Obj {
+class KinoSearch::Search::SortSpec extends KinoSearch::Object::Obj {
 
     VArray        *rules;
 
@@ -33,11 +33,11 @@ class KinoSearch::Search::SortSpec extends KinoSearch::Obj {
     VArray*
     Get_Rules(SortSpec *self);
 
-    void
+    public void
     Destroy(SortSpec *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -51,7 +51,7 @@ BlobType_equals(BlobType *self, Obj *other)
 {
     BlobType *evil_twin = (BlobType*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, BLOBTYPE)) return false;
+    if (!Obj_Is_A(other, BLOBTYPE)) return false;
     return FType_equals((FieldType*)self, other);
 }
 
@@ -81,18 +81,19 @@ BlobType_dump(BlobType *self)
 {
     Hash *dump = BlobType_Dump_For_Schema(self);
     Hash_Store_Str(dump, "_class", 6, 
-        (Obj*)CB_Clone(Obj_Get_Class_Name(self)));
+        (Obj*)CB_Clone(BlobType_Get_Class_Name(self)));
     return dump;
 }
 
 BlobType*
 BlobType_load(BlobType *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
-    VTable *vtable = (class_name != NULL && OBJ_IS_A(class_name, CHARBUF)) 
-                   ? VTable_singleton(class_name, NULL)
-                   : BLOBTYPE;
+    VTable *vtable 
+        = (class_name != NULL && Obj_Is_A((Obj*)class_name, CHARBUF)) 
+        ? VTable_singleton(class_name, NULL)
+        : BLOBTYPE;
     BlobType *loaded     = (BlobType*)VTable_Make_Obj(vtable);
     Obj *boost_dump      = Hash_Fetch_Str(source, "boost", 5);
     Obj *indexed_dump    = Hash_Fetch_Str(source, "indexed", 7);
@@ -107,7 +108,7 @@ BlobType_load(BlobType *self, Obj *dump)
     return loaded;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

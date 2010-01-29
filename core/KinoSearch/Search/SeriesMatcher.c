@@ -2,7 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/SeriesMatcher.h"
-#include "KinoSearch/Util/I32Array.h"
 
 SeriesMatcher*
 SeriesMatcher_new(VArray *matchers, I32Array *offsets)
@@ -95,7 +94,7 @@ SeriesMatcher_advance(SeriesMatcher *self, i32_t target)
 i32_t 
 SeriesMatcher_get_doc_id(SeriesMatcher *self) { return self->doc_id; }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

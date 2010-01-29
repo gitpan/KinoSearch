@@ -42,8 +42,8 @@ HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
 
         self->need_values = false;
         self->num_actions = num_rules;
-        self->actions     = MALLOCATE(num_rules, u8_t);
-        self->field_types = CALLOCATE(num_rules, FieldType*);
+        self->actions     = (u8_t*)MALLOCATE(num_rules * sizeof(u8_t));
+        self->field_types = (FieldType**)CALLOCATE(num_rules, sizeof(FieldType*));
 
         for (i = 0; i < num_rules; i++) {
             SortRule *rule      = (SortRule*)VA_Fetch(rules, i);
@@ -82,7 +82,7 @@ HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
     }
     else {
         self->num_actions = 2;
-        self->actions     = MALLOCATE(self->num_actions, u8_t);
+        self->actions     = (u8_t*)MALLOCATE(self->num_actions * sizeof(u8_t));
         self->actions[0]  = COMPARE_BY_SCORE;
         self->actions[1]  = COMPARE_BY_DOC_ID;
     }
@@ -98,19 +98,19 @@ HitQ_destroy(HitQueue *self)
     for ( ; types < limit; types++) { 
         if (types) { DECREF(*types); }
     }
-    MemMan_wrapped_free(self->actions);
-    MemMan_wrapped_free(self->field_types);
+    FREEMEM(self->actions);
+    FREEMEM(self->field_types);
     SUPER_DESTROY(self, HITQUEUE);
 }
 
 Obj*
 HitQ_jostle(HitQueue *self, Obj *element)
 {
-    MatchDoc *match_doc = (MatchDoc*)ASSERT_IS_A(element, MATCHDOC);
+    MatchDoc *match_doc = (MatchDoc*)CERTIFY(element, MATCHDOC);
     HitQ_jostle_t super_jostle 
         = (HitQ_jostle_t)SUPER_METHOD(HITQUEUE, HitQ, Jostle);
     if (self->need_values) {
-        ASSERT_IS_A(match_doc->values, VARRAY);
+        CERTIFY(match_doc->values, VARRAY);
     }
     return super_jostle(self, element);
 }
@@ -173,7 +173,7 @@ HitQ_less_than(HitQueue *self, Obj *obj_a, Obj *obj_b)
     return false;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

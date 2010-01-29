@@ -2,29 +2,27 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 26;
+use Test::More tests => 25;
 use File::Spec::Functions qw( catfile );
 use Fcntl;
 use KinoSearch::Test::TestUtils qw( init_test_index_loc );
 use KinoSearch::Util::StringHelper qw( to_base36 );
 
 my $fs_index_loc = init_test_index_loc();
-my $fs_folder = KinoSearch::Store::FSFolder->new( path => $fs_index_loc, );
+my $fs_folder    = KinoSearch::Store::FSFolder->new( path => $fs_index_loc, );
+my $ram_folder   = KinoSearch::Store::RAMFolder->new;
 
-my $king      = "I'm the king of rock.";
-my $outstream = $fs_folder->open_out('king_of_rock')
-    or die "Can't open file";
-$outstream->print($king);
-$outstream->close;
-
-my $ram_folder = KinoSearch::Store::RAMFolder->new( path => $fs_index_loc, );
-
-ok( $ram_folder->exists('king_of_rock'),
-    "RAMFolder successfully reads existing FSFolder" );
+my $king = "I'm the king of rock.";
+for my $folder ( $fs_folder, $ram_folder ) {
+    my $outstream = $folder->open_out('king_of_rock')
+        or die KinoSearch->error;
+    $outstream->print($king);
+    $outstream->close;
+}
 
 for my $folder ( $fs_folder, $ram_folder ) {
 
-    my $files = $folder->list;
+    my $files = $folder->list_r;
     is_deeply( $files, ['king_of_rock'], "list lists files" );
 
     $folder->mkdir('queen');
@@ -34,13 +32,13 @@ for my $folder ( $fs_folder, $ram_folder ) {
     is( $slurped, $king, "slurp_file works" );
 
     my $lock = KinoSearch::Store::LockFileLock->new(
-        hostname => '',
+        host     => '',
         folder   => $folder,
         name     => 'lock_robster',
         timeout  => 0,
     );
     my $competing_lock = KinoSearch::Store::LockFileLock->new(
-        hostname => '',
+        host     => '',
         folder   => $folder,
         name     => 'lock_robster',
         timeout  => 0,
@@ -92,5 +90,5 @@ ok( -e $foo_path, "creating an FSFolder shouldn't wipe an unrelated file" );
 
 for ( 0 .. 100 ) {
     my $filename = '_1-' . to_base36($_) . '.stuff';
-    $ram_folder->open_out($filename) or die "Can't open $filename";
+    $ram_folder->open_out($filename) or die KinoSearch->error;
 }

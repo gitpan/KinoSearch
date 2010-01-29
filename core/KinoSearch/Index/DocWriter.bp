@@ -34,11 +34,11 @@ class KinoSearch::Index::DocWriter extends KinoSearch::Index::DataWriter {
     public i32_t
     Format(DocWriter *self);
 
-    void 
+    public void 
     Destroy(DocWriter *self);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

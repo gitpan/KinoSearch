@@ -7,32 +7,32 @@ parcel KinoSearch cnick Kino;
  * uses dot-lock files, but alternative implementations are possible.
  * 
  * Each lock must have a name which is unique per resource to be locked.  Each
- * lock also has an "hostname" which should be unique per machine; it is
- * used to help clear away stale locks.
+ * lock also has a "host" id which should be unique per machine; it is used to
+ * help clear away stale locks.
  */
 
-abstract class KinoSearch::Store::Lock extends KinoSearch::Obj {
+abstract class KinoSearch::Store::Lock extends KinoSearch::Object::Obj {
 
     Folder      *folder;
     CharBuf     *name;
-    CharBuf     *filename;
-    CharBuf     *hostname;
+    CharBuf     *lock_path;
+    CharBuf     *host;
     i32_t        timeout;
     i32_t        interval;  
 
     /** Abstract constructor.
      *
      * @param folder A Folder.
-     * @param name File-system-friendly string identifying the resource to be
-     * locked.
-     * @param hostname A unique per-machine identifier.
+     * @param name String identifying the resource to be locked, which must
+     * consist solely of characters matching [-_.A-Za-z0-9].
+     * @param host A unique per-machine identifier.
      * @param timeout Time in milliseconds to keep retrying before abandoning
      * the attempt to Obtain() a lock.
      * @param interval Time in milliseconds between retries.
      */
     public inert Lock*
     init(Lock *self, Folder *folder, const CharBuf *name, 
-         const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
+         const CharBuf *host, i32_t timeout = 0, i32_t interval = 100);
 
     /** Returns true if the Lock is shared, false if the Lock is exclusive.
      */
@@ -75,7 +75,7 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Obj {
     Is_Locked(Lock *self);
 
     /** Release all locks that meet the following three conditions: the lock
-     * name matches, the hostname matches, and the process id that the lock
+     * name matches, the host id matches, and the process id that the lock
      * was created under no longer identifies an active process.
      */
     public abstract void
@@ -85,25 +85,27 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Obj {
     Get_Name(Lock *self);
 
     CharBuf*
-    Get_Hostname(Lock *self);
+    Get_Host(Lock *self);
 
     CharBuf*
-    Get_Filename(Lock *self);
+    Get_Lock_Path(Lock *self);
 
-    void
+    public void
     Destroy(Lock *self);
 }
 
 class KinoSearch::Store::LockFileLock cnick LFLock 
     extends KinoSearch::Store::Lock {
 
+    CharBuf *link_path;
+
     inert incremented LockFileLock*
-    new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
+    new(Folder *folder, const CharBuf *name, const CharBuf *host, 
         i32_t timeout = 0, i32_t interval = 100);
 
     public inert LockFileLock*
     init(LockFileLock *self, Folder *folder, const CharBuf *name, 
-         const CharBuf *hostname, i32_t timeout = 0, i32_t interval = 100);
+         const CharBuf *host, i32_t timeout = 0, i32_t interval = 100);
 
     public bool_t
     Shared(LockFileLock *self);
@@ -123,7 +125,7 @@ class KinoSearch::Store::LockFileLock cnick LFLock
     /** Delete a given lock file which meets these conditions...
      *
      *    - lock name matches.
-     *    - hostname matches.
+     *    - host id matches.
      *
      * If delete_mine is false, don't delete a lock file which matches this
      * process's pid.  If delete_other is false, don't delete lock files which
@@ -132,6 +134,9 @@ class KinoSearch::Store::LockFileLock cnick LFLock
     bool_t
     Maybe_Delete_File(LockFileLock *self, const CharBuf *filepath, 
                       bool_t delete_mine, bool_t delete_other);
+
+    public void
+    Destroy(LockFileLock *self);
 }
 
 /** Lock exception. 
@@ -139,7 +144,7 @@ class KinoSearch::Store::LockFileLock cnick LFLock
  * LockErr is a subclass of Err which indicates that a file locking problem
  * occurred.
  */
-class KinoSearch::Store::LockErr extends KinoSearch::Obj::Err {
+class KinoSearch::Store::LockErr extends KinoSearch::Object::Err {
     
     public inert incremented LockErr*
     new(CharBuf *message);
@@ -151,7 +156,7 @@ class KinoSearch::Store::LockErr extends KinoSearch::Obj::Err {
     Make(LockErr *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

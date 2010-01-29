@@ -5,14 +5,14 @@
 
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Analysis/Analyzer.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/Posting.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/FieldType/BlobType.h"
 #include "KinoSearch/FieldType/NumericType.h"
 #include "KinoSearch/FieldType/StringType.h"
 #include "KinoSearch/FieldType/FullTextType.h"
-#include "KinoSearch/Obj.h"
+#include "KinoSearch/Object/Obj.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Util/Json.h"
@@ -81,7 +81,7 @@ Schema_equals(Schema *self, Obj *other)
 {
     Schema *evil_twin = (Schema*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, SCHEMA)) return false;
+    if (!Obj_Is_A(other, SCHEMA)) return false;
     if (!Arch_Equals(self->arch, (Obj*)evil_twin->arch)) return false;
     if (!Sim_Equals(self->sim, (Obj*)evil_twin->sim)) return false;
     if (!Hash_Equals(self->types, (Obj*)evil_twin->types)) return false;
@@ -106,16 +106,16 @@ Schema_spec_field(Schema *self, const CharBuf *field, FieldType *type)
         else { THROW(ERR, "'%o' assigned conflicting FieldType", field); }
     }
 
-    if (OBJ_IS_A(type, FULLTEXTTYPE)) {
+    if (FType_Is_A(type, FULLTEXTTYPE)) {
         S_add_text_field(self, field, type);
     }
-    else if (OBJ_IS_A(type, STRINGTYPE)) {
+    else if (FType_Is_A(type, STRINGTYPE)) {
         S_add_string_field(self, field, type);
     }
-    else if (OBJ_IS_A(type, BLOBTYPE)) {
+    else if (FType_Is_A(type, BLOBTYPE)) {
         S_add_blob_field(self, field, type);
     }
-    else if (OBJ_IS_A(type, NUMERICTYPE)) {
+    else if (FType_Is_A(type, NUMERICTYPE)) {
         S_add_numeric_field(self, field, type);
     }
     else {
@@ -126,7 +126,7 @@ Schema_spec_field(Schema *self, const CharBuf *field, FieldType *type)
 static void
 S_add_text_field(Schema *self, const CharBuf *field, FieldType *type)
 {
-    FullTextType *fttype = (FullTextType*)ASSERT_IS_A(type, FULLTEXTTYPE);
+    FullTextType *fttype    = (FullTextType*)CERTIFY(type, FULLTEXTTYPE);
     Similarity   *sim       = FullTextType_Make_Similarity(fttype);
     Posting      *posting   = FullTextType_Make_Posting(fttype, sim);
     Analyzer     *analyzer  = FullTextType_Get_Analyzer(fttype);
@@ -144,7 +144,7 @@ S_add_text_field(Schema *self, const CharBuf *field, FieldType *type)
 static void
 S_add_string_field(Schema *self, const CharBuf *field, FieldType *type)
 {
-    StringType *string_type = (StringType*)ASSERT_IS_A(type, STRINGTYPE);
+    StringType *string_type = (StringType*)CERTIFY(type, STRINGTYPE);
     Similarity *sim         = StringType_Make_Similarity(string_type);
     Posting    *posting     = StringType_Make_Posting(string_type, sim);
 
@@ -159,14 +159,14 @@ S_add_string_field(Schema *self, const CharBuf *field, FieldType *type)
 static void
 S_add_blob_field(Schema *self, const CharBuf *field, FieldType *type)
 {
-    BlobType *blob_type = (BlobType*)ASSERT_IS_A(type, BLOBTYPE);
+    BlobType *blob_type = (BlobType*)CERTIFY(type, BLOBTYPE);
     Hash_Store(self->types, (Obj*)field, INCREF(blob_type));
 }
 
 static void
 S_add_numeric_field(Schema *self, const CharBuf *field, FieldType *type)
 {
-    NumericType *num_type = (NumericType*)ASSERT_IS_A(type, NUMERICTYPE);
+    NumericType *num_type = (NumericType*)CERTIFY(type, NUMERICTYPE);
     Hash_Store(self->types, (Obj*)field, INCREF(num_type));
 }
 
@@ -208,7 +208,7 @@ Schema_fetch_posting(Schema *self, const CharBuf *field)
 u32_t
 Schema_num_fields(Schema *self)
 {
-    return VA_Get_Size(self->types);
+    return Hash_Get_Size(self->types);
 }
 
 Architecture*
@@ -251,7 +251,7 @@ Schema_dump(Schema *self)
 
     /* Record class name, store dumps of unique Analyzers. */
     Hash_Store_Str(dump, "_class", 6, 
-        (Obj*)CB_Clone(Obj_Get_Class_Name(self)));
+        (Obj*)CB_Clone(Schema_Get_Class_Name(self)));
     Hash_Store_Str(dump, "analyzers", 9, (Obj*)VA_Dump(self->uniq_analyzers));
 
     /* Dump FieldTypes. */
@@ -263,7 +263,7 @@ Schema_dump(Schema *self)
         /* Dump known types to simplified format. */
         if (type_vtable == FULLTEXTTYPE) {
             FullTextType *fttype = (FullTextType*)type;
-            Hash *type_dump = FullTextType_Dump_For_Schema(type);
+            Hash *type_dump = FullTextType_Dump_For_Schema(fttype);
             Analyzer *analyzer = FullTextType_Get_Analyzer(fttype);
             u32_t tick 
                 = S_find_in_array(self->uniq_analyzers, (Obj*)analyzer);
@@ -292,14 +292,14 @@ Schema_dump(Schema *self)
 Schema*
 Schema_load(Schema *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
-    CharBuf *class_name = (CharBuf*)ASSERT_IS_A(
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
+    CharBuf *class_name = (CharBuf*)CERTIFY(
         Hash_Fetch_Str(source, "_class", 6), CHARBUF);
     VTable *vtable = VTable_singleton(class_name, NULL);
     Schema *loaded = (Schema*)VTable_Make_Obj(vtable);
-    Hash *type_dumps = (Hash*)ASSERT_IS_A(
+    Hash *type_dumps = (Hash*)CERTIFY(
         Hash_Fetch_Str(source, "fields", 6), HASH);
-    VArray *analyzer_dumps = (VArray*)ASSERT_IS_A(
+    VArray *analyzer_dumps = (VArray*)CERTIFY(
         Hash_Fetch_Str(source, "analyzers", 9), VARRAY);
     VArray *analyzers 
         = (VArray*)VA_Load(analyzer_dumps, (Obj*)analyzer_dumps);
@@ -314,13 +314,13 @@ Schema_load(Schema *self, Obj *dump)
     Hash_Iter_Init(type_dumps);
     while (Hash_Iter_Next(type_dumps, (Obj**)&field, (Obj**)&type_dump)) {
         CharBuf *type_str;
-        ASSERT_IS_A(type_dump, HASH);
+        CERTIFY(type_dump, HASH);
         type_str = (CharBuf*)Hash_Fetch_Str(type_dump, "type", 4);
         if (type_str) {
             if (CB_Equals_Str(type_str, "fulltext", 8)) {
                 FullTextType *type = (FullTextType*)VTable_Load_Obj(
                     FULLTEXTTYPE, (Obj*)type_dump);
-                Obj *tick = ASSERT_IS_A(
+                Obj *tick = CERTIFY(
                     Hash_Fetch_Str(type_dump, "analyzer", 8), OBJ);
                 Analyzer *analyzer 
                     = (Analyzer*)VA_Fetch(analyzers, (u32_t)Obj_To_I64(tick));
@@ -372,8 +372,8 @@ Schema_load(Schema *self, Obj *dump)
             }
          }
         else {
-            FieldType *type 
-                = (FieldType*)Obj_Load(type_dump, (Obj*)type_dump);
+            FieldType *type = (FieldType*)CERTIFY(
+                Hash_Load(type_dump, (Obj*)type_dump), FIELDTYPE);
             Schema_Spec_Field(loaded, field, type);
             DECREF(type);
         }
@@ -387,7 +387,7 @@ Schema_load(Schema *self, Obj *dump)
 void
 Schema_eat(Schema *self, Schema *other)
 {
-    if (!Schema_Is_A(self, Obj_Get_VTable(other))) {
+    if (!Schema_Is_A(self, Schema_Get_VTable(other))) {
         THROW(ERR, "%o not a descendent of %o", Schema_Get_Class_Name(self),
             Schema_Get_Class_Name(other));
     }
@@ -406,13 +406,15 @@ Schema_write(Schema *self, Folder *folder, const CharBuf *filename)
 {
     Hash *dump = Schema_Dump(self);
     static ZombieCharBuf schema_temp = ZCB_LITERAL("schema.temp");
+    bool_t success;
     Folder_Delete(folder, (CharBuf*)&schema_temp); /* Just in case. */
     Json_spew_json((Obj*)dump, folder, (CharBuf*)&schema_temp);
-    Folder_Rename(folder, (CharBuf*)&schema_temp, filename);
+    success = Folder_Rename(folder, (CharBuf*)&schema_temp, filename);
     DECREF(dump);
+    if (!success) { RETHROW(INCREF(Err_get_error())); }
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -13,7 +13,7 @@ class KinoSearch::Index::SortCache::NumericSortCache cnick NumSortCache
          Segment *segment, i32_t field_num, i32_t num_unique,
          i32_t null_ord = -1, size_t unit_width);
 
-    void
+    public void
     Destroy(NumericSortCache *self);
 }
 
@@ -81,7 +81,7 @@ class KinoSearch::Index::SortCache::Int64SortCache cnick I64SortCache
     Value(Int64SortCache *self, i32_t ord, Obj *blank);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

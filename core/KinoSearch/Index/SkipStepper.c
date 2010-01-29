@@ -21,7 +21,7 @@ SkipStepper_new()
 }
 
 void
-SkipStepper_set_id_and_filepos(SkipStepper *self, i32_t doc_id, u64_t filepos)
+SkipStepper_set_id_and_filepos(SkipStepper *self, i32_t doc_id, i64_t filepos)
 {
     self->doc_id  = doc_id;
     self->filepos = filepos;
@@ -37,27 +37,27 @@ SkipStepper_read_record(SkipStepper *self, InStream *instream)
 CharBuf*
 SkipStepper_to_string(SkipStepper *self)
 {
-    char *ptr = MALLOCATE(60, char);
-    size_t len = sprintf(ptr, "skip doc: %u file pointer: %" U64P, 
+    char *ptr = (char*)MALLOCATE(60);
+    size_t len = sprintf(ptr, "skip doc: %u file pointer: %" I64P, 
         self->doc_id, self->filepos);
     return CB_new_steal_from_trusted_str(ptr, len, 60);
 }
 
 void
 SkipStepper_write_record(SkipStepper *self, OutStream *outstream, 
-    i32_t last_doc_id, u64_t last_filepos)
+    i32_t last_doc_id, i64_t last_filepos)
 {
     const i32_t delta_doc_id = self->doc_id - last_doc_id;
-    const u64_t delta_filepos = self->filepos - last_filepos;
+    const i64_t delta_filepos = self->filepos - last_filepos;
 
     /* Write delta doc id. */
     OutStream_Write_C32(outstream, delta_doc_id);
 
     /* Write delta file pointer. */
-    OutStream_Write_C64(outstream, (u64_t)delta_filepos);
+    OutStream_Write_C64(outstream, delta_filepos);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

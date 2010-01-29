@@ -9,7 +9,6 @@
 #include "KinoSearch/Search/SortRule.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/SortUtils.h"
 
 SortSpec*
@@ -26,7 +25,7 @@ SortSpec_init(SortSpec *self, VArray *rules)
     self->rules = VA_Shallow_Copy(rules);
     for (i = 0, max = VA_Get_Size(rules); i < max; i++) {
         SortRule *rule = (SortRule*)VA_Fetch(rules, i);
-        ASSERT_IS_A(rule, SORTRULE);
+        CERTIFY(rule, SORTRULE);
     }
     return self;
 }
@@ -73,7 +72,7 @@ SortSpec_serialize(SortSpec *self, OutStream *target)
     }
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

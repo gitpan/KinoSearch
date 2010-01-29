@@ -7,7 +7,6 @@
 #include "KinoSearch/Index/SegLexicon.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Util/PriorityQueue.h"
-#include "KinoSearch/Util/I32Array.h"
 
 /* Empty out, then refill the Queue, seeking all elements to [target]. */
 static void
@@ -34,7 +33,7 @@ PolyLex_init(PolyLexicon *self, const CharBuf *field, VArray *sub_readers)
     /* Derive. */
     for (i = 0; i < num_sub_readers; i++) {
         LexiconReader *lex_reader = (LexiconReader*)VA_Fetch(sub_readers, i);
-        if (lex_reader && ASSERT_IS_A(lex_reader, LEXICONREADER)) {
+        if (lex_reader && CERTIFY(lex_reader, LEXICONREADER)) {
             Lexicon *seg_lexicon = LexReader_Lexicon(lex_reader, field, NULL);
             if (seg_lexicon != NULL) {
                 VA_Push(seg_lexicons, (Obj*)seg_lexicon);
@@ -68,7 +67,7 @@ S_refresh_lex_q(SegLexQueue *lex_q, VArray *seg_lexicons, Obj *target)
 
     /* Empty out the queue. */
     while (1) {
-        SegLexicon *seg_lex = (SegLexicon*)PriQ_Pop(lex_q);
+        SegLexicon *seg_lex = (SegLexicon*)SegLexQ_Pop(lex_q);
         if (seg_lex == NULL) break;
         DECREF(seg_lex);
     }
@@ -79,7 +78,7 @@ S_refresh_lex_q(SegLexQueue *lex_q, VArray *seg_lexicons, Obj *target)
             = (SegLexicon*)VA_Fetch(seg_lexicons, i);
         SegLex_Seek(seg_lexicon, target);
         if (SegLex_Get_Term(seg_lexicon) != NULL) {
-            PriQ_Insert(lex_q, INCREF(seg_lexicon));
+            SegLexQ_Insert(lex_q, INCREF(seg_lexicon));
         }
     }
 }
@@ -94,7 +93,7 @@ PolyLex_reset(PolyLexicon *self)
 
     /* Empty out the queue. */
     while (1) {
-        SegLexicon *seg_lex = (SegLexicon*)PriQ_Pop(lex_q);
+        SegLexicon *seg_lex = (SegLexicon*)SegLexQ_Pop(lex_q);
         if (seg_lex == NULL) break;
         DECREF(seg_lex);
     }
@@ -105,7 +104,7 @@ PolyLex_reset(PolyLexicon *self)
             = (SegLexicon*)VA_Fetch(seg_lexicons, i);
         SegLex_Reset(seg_lexicon);
         if (SegLex_Next(seg_lexicon)) {
-            PriQ_Insert(self->lex_q, INCREF(seg_lexicon));
+            SegLexQ_Insert(self->lex_q, INCREF(seg_lexicon));
         }
     }
 
@@ -119,7 +118,7 @@ bool_t
 PolyLex_next(PolyLexicon *self)
 {
     SegLexQueue *lex_q   = self->lex_q;
-    SegLexicon *top_seg_lexicon = (SegLexicon*)PriQ_Peek(lex_q);
+    SegLexicon *top_seg_lexicon = (SegLexicon*)SegLexQ_Peek(lex_q);
     
     /* Churn through queue items with equal terms. */
     while (top_seg_lexicon != NULL) {
@@ -133,12 +132,12 @@ PolyLex_next(PolyLexicon *self)
             return true;
         }
         else {
-            SegLexicon *seg_lex = (SegLexicon*)PriQ_Pop(lex_q);
+            SegLexicon *seg_lex = (SegLexicon*)SegLexQ_Pop(lex_q);
             DECREF(seg_lex);
             if (SegLex_Next(top_seg_lexicon)) {
-                PriQ_Insert(lex_q, INCREF(top_seg_lexicon));
+                SegLexQ_Insert(lex_q, INCREF(top_seg_lexicon));
             }
-            top_seg_lexicon = (SegLexicon*)PriQ_Peek(lex_q);
+            top_seg_lexicon = (SegLexicon*)SegLexQ_Peek(lex_q);
         }
     }
 
@@ -211,7 +210,7 @@ SegLexQ_less_than(SegLexQueue *self, Obj *a, Obj *b)
 }
 
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -9,7 +9,7 @@
 #include "KinoSearch/FieldType/NumericType.h"
 #include "KinoSearch/FieldType/TextType.h"
 #include "KinoSearch/Index/Segment.h"
-#include "KinoSearch/Obj/ByteBuf.h"
+#include "KinoSearch/Object/ByteBuf.h"
 #include "KinoSearch/Schema.h"
 
 static kino_InverterEntry*
@@ -63,8 +63,8 @@ S_fetch_entry(kino_Inverter *self, HE *hash_entry)
 void
 kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
 {
-    HV          *const fields = Kino_Doc_Get_Fields(doc);
-    I32          num_keys     = hv_iterinit(fields);
+    HV  *const fields = (HV*)Kino_Doc_Get_Fields(doc);
+    I32  num_keys     = hv_iterinit(fields);
 
     /* Prepare for the new doc. */
     Kino_Inverter_Set_Doc(self, doc);
@@ -83,13 +83,15 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
             case kino_FType_TEXT: {
                 STRLEN val_len;
                 char *val_ptr = SvPVutf8(value_sv, val_len);
-                Kino_ViewCB_Assign_Str(inv_entry->value, val_ptr, val_len);
+                kino_ViewCharBuf *value = (kino_ViewCharBuf*)inv_entry->value;
+                Kino_ViewCB_Assign_Str(value, val_ptr, val_len);
                 break;
             }
             case kino_FType_BLOB: {
                 STRLEN val_len;
                 char *val_ptr = SvPV(value_sv, val_len);
-                Kino_ViewBB_Assign_Bytes(inv_entry->value, val_ptr, val_len);
+                kino_ViewByteBuf *value = (kino_ViewByteBuf*)inv_entry->value;
+                Kino_ViewBB_Assign_Bytes(value, val_ptr, val_len);
                 break;
             }
             case kino_FType_INT32: {
@@ -123,7 +125,7 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
     }
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

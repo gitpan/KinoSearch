@@ -52,10 +52,10 @@ Searchable_glean_query(Searchable *self, Obj *query)
     if (!query) {
         real_query = (Query*)NoMatchQuery_new();
     }
-    else if (OBJ_IS_A(query, QUERY)) {
+    else if (Obj_Is_A(query, QUERY)) {
         real_query = (Query*)INCREF(query);
     }
-    else if (OBJ_IS_A(query, CHARBUF)) {
+    else if (Obj_Is_A(query, CHARBUF)) {
         if (!self->qparser) 
             self->qparser = QParser_new(self->schema, NULL, NULL, NULL);
         real_query = QParser_Parse(self->qparser, (CharBuf*)query);
@@ -80,7 +80,7 @@ Searchable_close(Searchable *self)
     UNUSED_VAR(self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

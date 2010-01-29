@@ -23,10 +23,8 @@ sub _lazy_init {
     my $folder   = $self->get_folder;
     my $ix_file  = $self->get_segment->get_name . "/zdocs.ix";
     my $dat_file = $self->get_segment->get_name . "/zdocs.dat";
-    $ix_out{$$self} = $folder->open_out($ix_file)
-        or confess("Can't open '$ix_file'");
-    $dat_out{$$self} = $folder->open_out($dat_file)
-        or confess("Can't open '$dat_file'");
+    $ix_out{$$self}  = $folder->open_out($ix_file)  or confess KinoSearch->error;
+    $dat_out{$$self} = $folder->open_out($dat_file) or confess KinoSearch->error;
     $ix_out{$$self}->write_i64(0);
 }
 
@@ -62,7 +60,7 @@ sub add_inverted_doc {
     # Write file pointer to index file.  Write compressed serialized string to
     # main file.
     $ix_out->write_i64( $dat_out->tell );
-    $dat_out->write_bytes( compress($to_compress) );
+    $dat_out->print( compress($to_compress) );
 }
 
 sub add_segment {
@@ -87,7 +85,7 @@ sub add_segment {
         my $buf;
         $doc_reader->read_record( $i, \$buf );
         $ix_out->write_i64( $dat_out->tell );
-        $dat_out->write_bytes($buf);
+        $dat_out->print($buf);
     }
 }
 
@@ -148,7 +146,7 @@ fetching documents.  It is unsupported.
 
 =head1 COPYRIGHT
 
-Copyright 2009 Marvin Humphrey
+Copyright 2009-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

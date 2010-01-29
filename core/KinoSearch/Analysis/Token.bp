@@ -33,7 +33,7 @@ parcel KinoSearch cnick Kino;
  * will end up assigned to positions 0, 1, and 1001 -- and will no longer
  * produce a phrase match for the query <code>"three blind mice"</code>.
  */
-class KinoSearch::Analysis::Token extends KinoSearch::Obj {
+class KinoSearch::Analysis::Token extends KinoSearch::Object::Obj {
 
     char   *text;
     size_t  len;
@@ -78,11 +78,11 @@ class KinoSearch::Analysis::Token extends KinoSearch::Obj {
     void
     Set_Text(Token *self, char *text, size_t len);
 
-    void 
-    Destroy(Token *token);
+    public void 
+    Destroy(Token *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -22,7 +22,7 @@ ANDScorer_init(ANDScorer *self, VArray *children, Similarity *sim)
 
     /* Assign. */
     self->more             = self->num_kids ? true : false;
-    self->kids             = MALLOCATE(self->num_kids, Matcher*);
+    self->kids             = (Matcher**)MALLOCATE(self->num_kids * sizeof(Matcher*));
     for (i = 0; i < self->num_kids; i++) {
         Matcher *child = (Matcher*)VA_Fetch(children, i);
         self->kids[i] = child;
@@ -148,7 +148,7 @@ ANDScorer_score(ANDScorer *self)
     return score;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

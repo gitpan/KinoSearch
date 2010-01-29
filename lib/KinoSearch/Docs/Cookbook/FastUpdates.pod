@@ -137,7 +137,7 @@ from BackgroundMerger probably just needs to be logged.
 
 =head1 COPYRIGHT
 
-Copyright 2009 Marvin Humphrey
+Copyright 2009-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

@@ -1,3 +1,4 @@
+package KinoSearch::Analysis::CaseFolder;
 use KinoSearch;
 
 1;
@@ -18,7 +19,7 @@ my $constructor = <<'END_CONSTRUCTOR';
     my $case_folder = KinoSearch::Analysis::CaseFolder->new;
 END_CONSTRUCTOR
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Analysis::CaseFolder",
     bind_constructors => ["new"],
@@ -30,7 +31,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

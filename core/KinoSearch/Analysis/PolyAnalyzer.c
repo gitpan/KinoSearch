@@ -23,7 +23,7 @@ PolyAnalyzer_init(PolyAnalyzer *self, const CharBuf *language,
     if (analyzers) {
         u32_t i, max;
         for (i = 0, max = VA_Get_Size(analyzers); i < max; i++) {
-            ASSERT_IS_A(VA_Fetch(analyzers, i), ANALYZER);
+            CERTIFY(VA_Fetch(analyzers, i), ANALYZER);
         }
         self->analyzers = (VArray*)INCREF(analyzers);
     }
@@ -102,7 +102,7 @@ PolyAnalyzer_equals(PolyAnalyzer *self, Obj *other)
 {
     PolyAnalyzer *const evil_twin = (PolyAnalyzer*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, POLYANALYZER)) return false;
+    if (!Obj_Is_A(other, POLYANALYZER)) return false;
     if (!VA_Equals(evil_twin->analyzers, (Obj*)self->analyzers)) return false;
     return true;
 }
@@ -110,14 +110,14 @@ PolyAnalyzer_equals(PolyAnalyzer *self, Obj *other)
 PolyAnalyzer*
 PolyAnalyzer_load(PolyAnalyzer *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
     PolyAnalyzer_load_t super_load = (PolyAnalyzer_load_t)
         SUPER_METHOD(POLYANALYZER, PolyAnalyzer, Load);
     PolyAnalyzer *loaded = super_load(self, dump);
-    VArray *analyzer_dumps = (VArray*)ASSERT_IS_A(
+    VArray *analyzer_dumps = (VArray*)CERTIFY(
         Hash_Fetch_Str(source, "analyzers", 9), VARRAY);
-    VArray *analyzers = (VArray*)ASSERT_IS_A(
-        Obj_Load(analyzer_dumps, (Obj*)analyzer_dumps), VARRAY);
+    VArray *analyzers = (VArray*)CERTIFY(
+        VA_Load(analyzer_dumps, (Obj*)analyzer_dumps), VARRAY);
     PolyAnalyzer_init(loaded, NULL, analyzers);
     DECREF(analyzers);
     return loaded;
@@ -131,10 +131,10 @@ PolyAnalyzer_dump_equals(PolyAnalyzer *self, Obj *dump)
             PolyAnalyzer, Dump_Equals);
     if (!super_dump_equals(self, dump)) { return false; }
     else {
-        Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+        Hash *source = (Hash*)CERTIFY(dump, HASH);
         VArray *sub_dumps = (VArray*)Hash_Fetch_Str(source, "analyzers", 9);
         if (   !sub_dumps 
-            || !OBJ_IS_A(sub_dumps, VARRAY)
+            || !Obj_Is_A((Obj*)sub_dumps, VARRAY)
             || VA_Get_Size(sub_dumps) != VA_Get_Size(self->analyzers)
         ) {
             return false;
@@ -155,7 +155,7 @@ PolyAnalyzer_dump_equals(PolyAnalyzer *self, Obj *dump)
     return true;
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

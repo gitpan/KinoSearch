@@ -6,26 +6,29 @@
 #include <ctype.h>
 
 #include "KinoSearch/Store/SharedLock.h"
+#include "KinoSearch/Store/DirHandle.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
 
+static ZombieCharBuf lock_dir_name = ZCB_LITERAL("locks");
+
 SharedLock*
-ShLock_new(Folder *folder, const CharBuf *name, const CharBuf *hostname, 
+ShLock_new(Folder *folder, const CharBuf *name, const CharBuf *host, 
            i32_t timeout, i32_t interval)
 {
     SharedLock *self = (SharedLock*)VTable_Make_Obj(SHAREDLOCK);
-    return ShLock_init(self, folder, name, hostname, timeout, interval);
+    return ShLock_init(self, folder, name, host, timeout, interval);
 }
 
 SharedLock*
 ShLock_init(SharedLock *self, Folder *folder, const CharBuf *name, 
-            const CharBuf *hostname, i32_t timeout, i32_t interval)
+            const CharBuf *host, i32_t timeout, i32_t interval)
 {
-    Lock_init((Lock*)self, folder, name, hostname, timeout, interval);
+    LFLock_init((LockFileLock*)self, folder, name, host, timeout, interval);
 
     /* Override. */
-    DECREF(self->filename);
-    self->filename = (CharBuf*)INCREF(&EMPTY);
+    DECREF(self->lock_path);
+    self->lock_path = (CharBuf*)INCREF(&EMPTY);
 
     return self;
 }
@@ -40,19 +43,19 @@ ShLock_request(SharedLock *self)
     ShLock_request_t super_request 
         = (ShLock_request_t)SUPER_METHOD(SHAREDLOCK, ShLock, Request);
 
-    /* EMPTY filename indicates whether this particular instance is locked. */
-    if (   self->filename != (CharBuf*)&EMPTY 
-        && Folder_Exists(self->folder, self->filename)
+    /* EMPTY lock_path indicates whether this particular instance is locked. */
+    if (   self->lock_path != (CharBuf*)&EMPTY 
+        && Folder_Exists(self->folder, self->lock_path)
     ) {
         /* Don't allow double obtain. */
         return false;
     }
 
-    DECREF(self->filename);
-    self->filename = CB_new(CB_Get_Size(self->name) + 10);
+    DECREF(self->lock_path);
+    self->lock_path = CB_new(CB_Get_Size(self->name) + 10);
     do {
-        CB_setf(self->filename, "%o-%u32.lock", self->name, ++i);
-    } while ( Folder_Exists(self->folder, self->filename) );
+        CB_setf(self->lock_path, "locks/%o-%u32.lock", self->name, ++i);
+    } while ( Folder_Exists(self->folder, self->lock_path) );
 
     return super_request(self);
 }
@@ -60,71 +63,91 @@ ShLock_request(SharedLock *self)
 void
 ShLock_release(SharedLock *self)
 {
-    if (self->filename != (CharBuf*)&EMPTY) {
+    if (self->lock_path != (CharBuf*)&EMPTY) {
         ShLock_release_t super_release
             = (ShLock_release_t)SUPER_METHOD(SHAREDLOCK, ShLock, Release);
         super_release(self);
 
-        /* Empty out filename. */
-        DECREF(self->filename);
-        self->filename = (CharBuf*)INCREF(&EMPTY);
+        /* Empty out lock_path. */
+        DECREF(self->lock_path);
+        self->lock_path = (CharBuf*)INCREF(&EMPTY);
     }
 }
+
 
 void
 ShLock_clear_stale(SharedLock *self)
 {
-    VArray *files = Folder_List(self->folder);
-    u32_t i, max;
-    
+    DirHandle *dh;
+    CharBuf   *entry;
+    CharBuf   *candidate = NULL;
+
+    if (Folder_Find_Folder(self->folder, (CharBuf*)&lock_dir_name)) {
+        dh = Folder_Open_Dir(self->folder, (CharBuf*)&lock_dir_name);
+        if (!dh) { RETHROW(INCREF(Err_get_error())); }
+        entry = DH_Get_Entry(dh);
+    }
+    else {
+        return;
+    }
+
     /* Take a stab at any file that begins with our lock name. */
-    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *filename = (CharBuf*)VA_Fetch(files, i);
-        if (   CB_Starts_With(filename, self->name)
-            && CB_Ends_With_Str(filename, ".lock", 5)
+    while (DH_Next(dh)) {
+        if (   CB_Starts_With(entry, self->name)
+            && CB_Ends_With_Str(entry, ".lock", 5)
         ) {
-            LFLock_Maybe_Delete_File(self, filename, false, true);
+            candidate = candidate ? candidate : CB_new(0);
+            CB_setf(candidate, "%o/%o", &lock_dir_name, entry);
+            ShLock_Maybe_Delete_File(self, candidate, false, true);
         }
     }
 
-    DECREF(files);
+    DECREF(candidate);
+    DECREF(dh);
 }
 
 bool_t
 ShLock_is_locked(SharedLock *self)
 {
-    VArray *files = Folder_List(self->folder);
-    u32_t i, max;
-    bool_t locked = false;
-    
-    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *filename = (CharBuf*)VA_Fetch(files, i);
+    DirHandle *dh;
+    CharBuf   *entry;
 
+    if (Folder_Find_Folder(self->folder, (CharBuf*)&lock_dir_name)) {
+        dh = Folder_Open_Dir(self->folder, (CharBuf*)&lock_dir_name);
+        if (!dh) { RETHROW(INCREF(Err_get_error())); }
+        entry = DH_Get_Entry(dh);
+    }
+    else {
+        return false;
+    }
+    
+    while (DH_Next(dh)) {
         /* Translation: 
-         *   $locked = 1 if $filename =~ /^\Q$name-\d+\.lock$/ 
+         *   $locked = 1 if $entry =~ /^\Q$name-\d+\.lock$/ 
          */
-        if (   CB_Starts_With(filename, self->name)
-            && CB_Ends_With_Str(filename, ".lock", 5)
+        if (   CB_Starts_With(entry, self->name)
+            && CB_Ends_With_Str(entry, ".lock", 5)
         ) {
-            ZombieCharBuf temp = ZCB_make(filename);
-            ZCB_Chop(&temp, sizeof(".lock") - 1);
-            while(isdigit(ZCB_Code_Point_From(&temp, 1))) {
-                ZCB_Chop(&temp, 1);
+            ZombieCharBuf scratch = ZCB_make(entry);
+            ZCB_Chop(&scratch, sizeof(".lock") - 1);
+            while(isdigit(ZCB_Code_Point_From(&scratch, 1))) {
+                ZCB_Chop(&scratch, 1);
             }
-            if (ZCB_Code_Point_From(&temp, 1) == '-') {
-                ZCB_Chop(&temp, 1);
-                if (CB_Equals(&temp, (Obj*)self->name)) {
-                    locked = true;
+            if (ZCB_Code_Point_From(&scratch, 1) == '-') {
+                ZCB_Chop(&scratch, 1);
+                if (ZCB_Equals(&scratch, (Obj*)self->name)) {
+                    DECREF(dh);
+                    return true;
                 }
             }
         }
     }
-    DECREF(files);
 
-    return locked;
+    DECREF(dh);
+    return false;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

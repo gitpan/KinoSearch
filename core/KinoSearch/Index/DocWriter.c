@@ -13,8 +13,6 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/Host.h"
-#include "KinoSearch/Util/I32Array.h"
 
 static OutStream*
 S_lazy_init(DocWriter *self);
@@ -52,21 +50,25 @@ S_lazy_init(DocWriter *self)
         Snapshot *snapshot  = DocWriter_Get_Snapshot(self);
         Folder   *folder    = self->folder;
         CharBuf  *seg_name  = Seg_Get_Name(self->segment);
-        CharBuf  *ix_file   = CB_newf("%o/documents.ix", seg_name);
-        CharBuf  *dat_file  = CB_newf("%o/documents.dat", seg_name);
 
         /* Get streams. */
-        Snapshot_Add_Entry(snapshot, ix_file);
-        Snapshot_Add_Entry(snapshot, dat_file);
-        self->ix_out  = Folder_Open_Out(folder, ix_file);
-        self->dat_out = Folder_Open_Out(folder, dat_file);
-        if (!self->ix_out)  { THROW(ERR, "Can't open %o", ix_file); }
-        if (!self->dat_out) { THROW(ERR, "Can't open %o", dat_file); }
-        DECREF(ix_file);
-        DECREF(dat_file);
+        {
+            CharBuf *ix_file = CB_newf("%o/documents.ix", seg_name);
+            self->ix_out = Folder_Open_Out(folder, ix_file);
+            Snapshot_Add_Entry(snapshot, ix_file);
+            DECREF(ix_file);
+            if (!self->ix_out) { RETHROW(INCREF(Err_get_error())); }
+        }
+        {
+            CharBuf *dat_file = CB_newf("%o/documents.dat", seg_name);
+            self->dat_out = Folder_Open_Out(folder, dat_file);
+            Snapshot_Add_Entry(snapshot, dat_file);
+            DECREF(dat_file);
+            if (!self->dat_out) { RETHROW(INCREF(Err_get_error())); }
+        }
 
         /* Go past non-doc #0. */
-        OutStream_Write_U64(self->ix_out, 0);
+        OutStream_Write_I64(self->ix_out, 0);
     }
 
     return self->dat_out;
@@ -79,7 +81,7 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
     OutStream *dat_out         = S_lazy_init(self);
     OutStream *ix_out          = self->ix_out;
     u32_t      num_stored      = 0;
-    u64_t      start           = OutStream_Tell(dat_out);
+    i64_t      start           = OutStream_Tell(dat_out);
     i64_t      expected        = OutStream_Tell(ix_out) / 8;
 
     /* Verify doc id. */
@@ -107,7 +109,7 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
     }
 
     /* Write file pointer. */
-    OutStream_Write_U64(ix_out, start);
+    OutStream_Write_I64(ix_out, start);
 }
 
 void
@@ -124,14 +126,14 @@ DocWriter_add_segment(DocWriter *self, SegReader *reader,
         OutStream     *const dat_out    = S_lazy_init(self);
         OutStream     *const ix_out     = self->ix_out;
         ByteBuf       *const buffer     = BB_new(0);
-        DefaultDocReader *const doc_reader = (DefaultDocReader*)ASSERT_IS_A(
+        DefaultDocReader *const doc_reader = (DefaultDocReader*)CERTIFY(
             SegReader_Obtain(reader, VTable_Get_Name(DOCREADER)), 
                 DEFAULTDOCREADER);
         i32_t i, max;
 
         for (i = 1, max = SegReader_Doc_Max(reader); i <= max; i++) {
             if (I32Arr_Get(doc_map, i)) {
-                u64_t   start = OutStream_Tell(dat_out);
+                i64_t   start = OutStream_Tell(dat_out);
                 char   *buf;
                 size_t  size;
 
@@ -142,7 +144,7 @@ DocWriter_add_segment(DocWriter *self, SegReader *reader,
                 OutStream_Write_Bytes(dat_out, buf, size);
 
                 /* Write file pointer. */
-                OutStream_Write_U64(ix_out, start);
+                OutStream_Write_I64(ix_out, start);
             }
         }
 
@@ -169,7 +171,7 @@ DocWriter_finish(DocWriter *self)
         /* Write one final file pointer, so that we can derive the length of
          * the last record. */
         i64_t end = OutStream_Tell(self->dat_out);
-        OutStream_Write_U64(self->ix_out, end);
+        OutStream_Write_I64(self->ix_out, end);
         
         /* Close down output streams. */
         OutStream_Close(self->dat_out);
@@ -186,7 +188,7 @@ DocWriter_format(DocWriter *self)
     return DocWriter_current_file_format;
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

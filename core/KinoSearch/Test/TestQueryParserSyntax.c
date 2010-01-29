@@ -226,17 +226,17 @@ void
 TestQPSyntax_run_tests(Folder *index)
 {
     u32_t i;
-    TestBatch   *batch = Test_new_batch("TestQueryParserSyntax", 48, NULL);
+    TestBatch   *batch        = TestBatch_new(48);
     Searcher    *searcher     = Searcher_new((Obj*)index);
     QueryParser *qparser      = QParser_new(Searcher_Get_Schema(searcher), 
         NULL, NULL, NULL);
     QParser_Set_Heed_Colons(qparser, true);
 
-    PLAN(batch);
+    TestBatch_Plan(batch);
 
     for (i = 0; leaf_test_funcs[i] != NULL; i++) {
         kino_TestQPSyntax_test_t test_func = leaf_test_funcs[i];
-        TestQueryParser *test_case = test_func(i);
+        TestQueryParser *test_case = test_func();
         Query *tree     = QParser_Tree(qparser, test_case->query_string);
         Query *expanded = QParser_Expand_Leaf(qparser, test_case->tree);
         Query *parsed   = QParser_Parse(qparser, test_case->query_string);
@@ -257,7 +257,7 @@ TestQPSyntax_run_tests(Folder *index)
 
     for (i = 0; syntax_test_funcs[i] != NULL; i++) {
         kino_TestQPSyntax_test_t test_func = syntax_test_funcs[i];
-        TestQueryParser *test_case = test_func(i);
+        TestQueryParser *test_case = test_func();
         Query *tree   = QParser_Tree(qparser, test_case->query_string);
         Query *parsed = QParser_Parse(qparser, test_case->query_string);
         Hits  *hits   = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
@@ -272,12 +272,12 @@ TestQPSyntax_run_tests(Folder *index)
         DECREF(test_case);
     }
 
-    batch->destroy(batch);
+    DECREF(batch);
     DECREF(searcher);
     DECREF(qparser);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

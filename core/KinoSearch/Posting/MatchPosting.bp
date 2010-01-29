@@ -19,13 +19,13 @@ class KinoSearch::Posting::MatchPosting cnick MatchPost
     inert MatchPosting*
     init(MatchPosting *self, Similarity *similarity);
 
-    void
+    public void
     Destroy(MatchPosting *self);
 
     i32_t
     Get_Freq(MatchPosting *self);
 
-    incremented MatchPosting*
+    public incremented MatchPosting*
     Clone(MatchPosting *self);
 
     void
@@ -49,7 +49,8 @@ class KinoSearch::Posting::MatchPosting cnick MatchPost
                  Compiler *compiler, bool_t need_score);
 
     incremented MatchPostingStreamer*
-    Make_Streamer(MatchPosting *self, DataWriter *writer, i32_t field_num);
+    Make_Streamer(MatchPosting *self, Schema *schema, Snapshot *snapshot,
+                  Segment *segment, PolyReader *polyreader, i32_t field_num);
 
 }
 
@@ -65,7 +66,7 @@ class KinoSearch::Posting::MatchPostingScorer cnick MatchPostScorer
     public float
     Score(MatchPostingScorer *self);
 
-    void
+    public void
     Destroy(MatchPostingScorer *self);
 }
 
@@ -76,12 +77,14 @@ class KinoSearch::Posting::MatchPostingStreamer cnick MatchPostStreamer
     i32_t      last_doc_id;
 
     inert incremented MatchPostingStreamer*
-    new(DataWriter *writer, i32_t field_num);
+    new(Schema *schema, Snapshot *snapshot, Segment *segment, 
+        PolyReader *polyreader, i32_t field_num);
 
     inert MatchPostingStreamer*
-    init(MatchPostingStreamer *self, DataWriter *writer, i32_t field_num);
+    init(MatchPostingStreamer *self, Schema *schema, Snapshot *snapshot,
+         Segment *segment, PolyReader *polyreader, i32_t field_num);
 
-    void
+    public void
     Destroy(MatchPostingStreamer *self);
 
     void
@@ -122,7 +125,7 @@ class KinoSearch::Posting::MatchPosting::MatchTermInfoStepper
     Read_Delta(MatchTermInfoStepper *self, InStream *instream);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

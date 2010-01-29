@@ -9,20 +9,20 @@ parcel KinoSearch cnick Kino;
  */
 
 class KinoSearch::Store::LockFactory cnick LockFact
-    extends KinoSearch::Obj {
+    extends KinoSearch::Object::Obj {
 
     Folder  *folder;
-    CharBuf *hostname;
+    CharBuf *host;
 
     inert incremented LockFactory*
-    new(Folder *folder, const CharBuf *hostname);
+    new(Folder *folder, const CharBuf *host);
 
     /**
      * @param folder A L<KinoSearch::Store::Folder>.
-     * @param hostname An identifier which should be unique per-machine.
+     * @param host An identifier which should be unique per-machine.
      */
     public inert LockFactory*
-    init(LockFactory *self, Folder *folder, const CharBuf *hostname);
+    init(LockFactory *self, Folder *folder, const CharBuf *host);
 
     /** Return a Lock object, which, once Obtain() returns successfully,
      * maintains an exclusive lock on a resource.
@@ -51,11 +51,11 @@ class KinoSearch::Store::LockFactory cnick LockFact
     Make_Shared_Lock(LockFactory *self, const CharBuf *name, 
                      i32_t timeout = 0, i32_t interval = 100);
 
-    void
+    public void
     Destroy(LockFactory *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

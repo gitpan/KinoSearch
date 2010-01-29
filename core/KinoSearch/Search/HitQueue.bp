@@ -27,7 +27,7 @@ class KinoSearch::Search::HitQueue cnick HitQ
     init(HitQueue *self, Schema *schema = NULL, SortSpec *sort_spec = NULL, 
          u32_t wanted);
 
-    void
+    public void
     Destroy(HitQueue *self);
 
     /** If sorting on fields, first verifies that the MatchDoc has a valid
@@ -40,7 +40,7 @@ class KinoSearch::Search::HitQueue cnick HitQ
     Less_Than(HitQueue *self, Obj *a, Obj *b);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

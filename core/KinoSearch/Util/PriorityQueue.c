@@ -38,7 +38,7 @@ PriQ_init(PriorityQueue *self, u32_t max_size)
     self->max_size    = max_size;
 
     /* Allocate space for the heap, assign all slots to NULL. */
-    self->heap = CALLOCATE(heap_size, Obj*);
+    self->heap = (Obj**)CALLOCATE(heap_size, sizeof(Obj*));
 
     ABSTRACT_CLASS_CHECK(self, PRIORITYQUEUE);
     return self;
@@ -222,7 +222,7 @@ S_down_heap(PriorityQueue *self)
     self->heap[i] = node;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

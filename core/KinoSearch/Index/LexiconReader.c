@@ -12,7 +12,6 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/I32Array.h"
 
 LexiconReader*
 LexReader_init(LexiconReader *self, Schema *schema, Folder *folder,
@@ -46,7 +45,7 @@ PolyLexReader_init(PolyLexiconReader *self, VArray *readers,
     u32_t i, max;
     Schema *schema = NULL;
     for (i = 0, max = VA_Get_Size(readers); i < max; i++) {
-        LexiconReader *reader = (LexiconReader*)ASSERT_IS_A(
+        LexiconReader *reader = (LexiconReader*)CERTIFY(
             VA_Fetch(readers, i), LEXICONREADER);
         if (!schema) { schema = LexReader_Get_Schema(reader); }
     }
@@ -93,7 +92,7 @@ PolyLexReader_lexicon(PolyLexiconReader *self, const CharBuf *field,
                 DECREF(lexicon);
                 return NULL;
             }
-            if (term) { Lex_Seek(lexicon, term); }
+            if (term) { PolyLex_Seek(lexicon, term); }
         }
     }
 
@@ -245,7 +244,7 @@ DefLexReader_doc_freq(DefaultLexiconReader *self, const CharBuf *field,
     return tinfo ? TInfo_Get_Doc_Freq(tinfo) : 0;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

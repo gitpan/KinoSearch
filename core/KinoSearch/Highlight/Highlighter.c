@@ -108,10 +108,10 @@ Highlighter_create_excerpt(Highlighter *self, HitDoc *hit_doc)
     ZombieCharBuf *field_val = (ZombieCharBuf*)HitDoc_Extract(hit_doc, 
         self->field, (ViewCharBuf*)&field_val_zcb);
 
-    if (!field_val || !OBJ_IS_A(field_val, CHARBUF)) {
+    if (!field_val || !Obj_Is_A((Obj*)field_val, CHARBUF)) {
         return NULL;
     }
-    else if (!CB_Get_Size(field_val)) {
+    else if (!ZCB_Get_Size(field_val)) {
         /* Empty string yields empty string. */
         return CB_new(0);
     }
@@ -649,7 +649,7 @@ S_encode_entities(CharBuf *text, CharBuf *encoded)
 }
 
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

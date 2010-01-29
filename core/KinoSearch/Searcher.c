@@ -25,7 +25,6 @@
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"
-#include "KinoSearch/Util/I32Array.h"
 
 Searcher*
 Searcher_new(Obj *index)
@@ -37,7 +36,7 @@ Searcher_new(Obj *index)
 Searcher*
 Searcher_init(Searcher *self, Obj *index)
 {
-    if (OBJ_IS_A(index, INDEXREADER)) {
+    if (Obj_Is_A(index, INDEXREADER)) {
         self->reader = (IndexReader*)INCREF(index);
     }
     else {
@@ -119,7 +118,7 @@ Searcher_collect(Searcher *self, Query *query, HitCollector *collector)
     VArray   *const seg_readers  = self->seg_readers;
     I32Array *const seg_starts   = self->seg_starts;
     bool_t    need_score         = HC_Need_Score(collector);
-    Compiler *compiler = OBJ_IS_A(query, COMPILER)
+    Compiler *compiler = Query_Is_A(query, COMPILER)
                        ? (Compiler*)INCREF(query)
                        : Query_Make_Compiler(query, (Searchable*)self, 
                                              Query_Get_Boost(query));
@@ -155,7 +154,7 @@ Searcher_close(Searcher *self)
     UNUSED_VAR(self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

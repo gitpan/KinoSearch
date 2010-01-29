@@ -1,3 +1,4 @@
+package KinoSearch::Index::IndexReader;
 use KinoSearch;
 
 1;
@@ -14,8 +15,8 @@ set_race_condition_debug1(val_sv)
     SV *val_sv;
 PPCODE:
     KINO_DECREF(kino_PolyReader_race_condition_debug1);
-    kino_PolyReader_race_condition_debug1 =
-        (kino_CharBuf*)XSBind_maybe_sv_to_kobj(val_sv, KINO_CHARBUF);
+    kino_PolyReader_race_condition_debug1 = (kino_CharBuf*)
+        XSBind_maybe_sv_to_kino_obj(val_sv, KINO_CHARBUF, NULL);
     if (kino_PolyReader_race_condition_debug1)
         (void)KINO_INCREF(kino_PolyReader_race_condition_debug1);
 
@@ -51,7 +52,7 @@ my $constructor = <<'END_CONSTRUCTOR';
     );
 END_CONSTRUCTOR
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Index::IndexReader",
     xs_code      => $xs_code,
@@ -90,7 +91,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

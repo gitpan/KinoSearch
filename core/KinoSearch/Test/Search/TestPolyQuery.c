@@ -48,22 +48,22 @@ test_Dump_Load_and_Equals(TestBatch *batch, u32_t boolop)
 void
 TestANDQuery_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestANDQuery", 4, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(4);
+    TestBatch_Plan(batch);
     test_Dump_Load_and_Equals(batch, BOOLOP_AND);
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
 void
 TestORQuery_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestORQuery", 4, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(4);
+    TestBatch_Plan(batch);
     test_Dump_Load_and_Equals(batch, BOOLOP_OR);
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

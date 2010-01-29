@@ -23,7 +23,7 @@ sub check_scorer {
     my @intervals = @_;
     my @doc_id_arrays = map { modulo_set( $_, 100 ) } @intervals;
     my $subscorers
-        = KinoSearch::Obj::VArray->new( capacity => scalar @intervals );
+        = KinoSearch::Object::VArray->new( capacity => scalar @intervals );
     for my $doc_id_array (@doc_id_arrays) {
         my $mock = KSx::Search::MockScorer->new(
             doc_ids => $doc_id_array,

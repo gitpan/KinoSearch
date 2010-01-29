@@ -55,7 +55,7 @@ bool_t
 ANDQuery_equals(ANDQuery *self, Obj *other)
 {
     if ((ANDQuery*)other == self) return true;
-    if (!OBJ_IS_A(other, ANDQUERY)) { return false; }
+    if (!Obj_Is_A(other, ANDQUERY)) { return false; }
     return PolyQuery_equals((PolyQuery*)self, other);
 }
 
@@ -80,7 +80,7 @@ ANDCompiler_init(ANDCompiler *self, ANDQuery *parent, Searchable *searchable,
 {
     PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
         boost);
-    Compiler_Normalize(self);
+    ANDCompiler_Normalize(self);
     return self;
 }
 
@@ -116,14 +116,14 @@ ANDCompiler_make_matcher(ANDCompiler *self, SegReader *reader,
 
         { 
             Matcher *retval = (Matcher*)ANDScorer_new(child_matchers, 
-                Compiler_Get_Similarity(self));
+                ANDCompiler_Get_Similarity(self));
             DECREF(child_matchers);
             return retval;
         }
     }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

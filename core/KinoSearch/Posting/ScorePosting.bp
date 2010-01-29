@@ -20,10 +20,10 @@ class KinoSearch::Posting::ScorePosting cnick ScorePost
     inert ScorePosting*
     init(ScorePosting *self, Similarity *similarity);
 
-    void
+    public void
     Destroy(ScorePosting *self);
 
-    incremented ScorePosting*
+    public incremented ScorePosting*
     Clone(ScorePosting *self);
 
     void
@@ -62,11 +62,11 @@ class KinoSearch::Posting::ScorePostingScorer cnick ScorePostScorer
     public float
     Score(ScorePostingScorer* self);
 
-    void
+    public void
     Destroy(ScorePostingScorer *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

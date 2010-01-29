@@ -9,27 +9,29 @@ inert class KinoSearch::Util::StringHelper cnick StrHelp {
 
     /* A table where the values indicate the number of trailing bytes in a
      * UTF-8 sequence implied by the leading utf8 byte.
+     * 
+     * For bytes that are not valid UTF-8 lead bytes, the value at the
+     * corresponding table cell is 7.
+     * 
+     * Exposed for testing only.
      */
     inert const u8_t[] UTF8_TRAILING;
-
-    inert char*
-    strndup(const char *source, size_t len);
 
     /** Return the number of bytes that two strings have in common.
      */
     inert i32_t
-    string_diff(const char *a, const char *b, size_t a_len,  size_t b_len);
+    overlap(const char *a, const char *b, size_t a_len,  size_t b_len);
 
-    /** memcmp, but with lengths for both pointers, not just one.
+    /** Encode a NULL-terminated string representation of a value in base 36
+     * into <code>buffer</code>.  
+     * 
+     * @param value The number to be encoded.
+     * @param buffer A buffer at least MAX_BASE36_BYTES bytes long.
+     * @return the number of digits encoded (not including the terminating
+     * NULL).
      */
-    inert i32_t
-    compare_strings(const char *a, const char *b, 
-                                 size_t a_len,  size_t b_len);
-
-    /** Return a string representation of a number in base 36.
-     */
-    inert incremented CharBuf*
-    to_base36(u32_t num);
+    inert u32_t 
+    to_base36(u64_t value, void *buffer);
 
     /** Return true if the string is valid UTF-8, false otherwise.
      */
@@ -44,11 +46,11 @@ inert class KinoSearch::Util::StringHelper cnick StrHelp {
     /** Encode a Unicode code point to a UTF-8 sequence.  
      * 
      * @param code_point A legal unicode code point.
-     * @param buf Write buffer which must hold at least 4 bytes (the maximum 
-     * legal length for a UTF-8 char).
+     * @param buffer Write buffer which must hold at least 4 bytes (the
+     * maximum legal length for a UTF-8 char).
      */
     inert u32_t
-    encode_utf8_char(u32_t code_point, u8_t *buf);
+    encode_utf8_char(u32_t code_point, void *buffer);
 
     /** Decode a UTF-8 sequence to a Unicode code point.  Assumes valid UTF-8. 
      */
@@ -62,7 +64,17 @@ inert class KinoSearch::Util::StringHelper cnick StrHelp {
     back_utf8_char(const char *utf8, char *start);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+__C__
+/* The maximum number of bytes encoded by to_base36(), including the
+ * terminating NULL.
+ */
+#define kino_StrHelp_MAX_BASE36_BYTES 14
+#ifdef KINO_USE_SHORT_NAMES
+  #define StrHelp_MAX_BASE36_BYTES kino_StrHelp_MAX_BASE36_BYTES
+#endif
+__END_C__
+
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

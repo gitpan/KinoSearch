@@ -15,25 +15,25 @@ parcel KinoSearch cnick Kino;
  * storing metadata themselves.
  */
 
-class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Obj {
+class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Object::Obj {
 
     CharBuf     *name;
-    i32_t        count;
-    i32_t        number;
+    i64_t        count;
+    i64_t        number;
     Hash        *by_name;   /* field numbers by name */
     VArray      *by_num;    /* field names by num */
     Hash        *metadata;
 
     inert incremented Segment*
-    new(i32_t number);
+    new(i64_t number);
 
     public inert Segment*
-    init(Segment *self, i32_t number);
+    init(Segment *self, i64_t number);
 
     /** Return a segment name with a base-36-encoded segment number. 
      */
     inert incremented CharBuf*
-    num_to_name(i32_t number);
+    num_to_name(i64_t number);
 
     /** Register a new field and assign it a field number.  If the field was
      * already known, nothing happens.
@@ -88,24 +88,24 @@ class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Obj {
 
     /** Getter for the segment number. 
      */
-    public i32_t
+    public i64_t
     Get_Number(Segment *self);
 
     /** Setter for the object's document count.
      */
     public void
-    Set_Count(Segment *self, i32_t count);
+    Set_Count(Segment *self, i64_t count);
 
     /** Getter for the object's document count.
      */
-    public i32_t 
+    public i64_t 
     Get_Count(Segment *self);
 
     /** Add <code>increment</code> to the object's document count, then return
      * the new, modified total.
      */
-    i32_t
-    Increment_Count(Segment *self, i32_t increment);
+    i64_t
+    Increment_Count(Segment *self, i64_t increment);
 
     /** Get the segment metadata.
      */
@@ -130,11 +130,11 @@ class KinoSearch::Index::Segment cnick Seg extends KinoSearch::Obj {
     public i32_t
     Compare_To(Segment *self, Obj *other);
 
-    void
+    public void
     Destroy(Segment *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

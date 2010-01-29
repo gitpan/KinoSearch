@@ -94,9 +94,9 @@ SortColl_init(SortCollector *self, Schema *schema, SortSpec *sort_spec,
     self->hit_q         = HitQ_new(schema, sort_spec, wanted);
     self->rules         = rules; /* absorb refcount. */
     self->num_rules     = num_rules;
-    self->sort_caches   = CALLOCATE(num_rules, SortCache*);
-    self->ord_arrays    = CALLOCATE(num_rules, void*);
-    self->actions       = CALLOCATE(num_rules, u8_t);
+    self->sort_caches   = (SortCache**)CALLOCATE(num_rules, sizeof(SortCache*));
+    self->ord_arrays    = (void**)CALLOCATE(num_rules, sizeof(void*));
+    self->actions       = (u8_t*)CALLOCATE(num_rules, sizeof(u8_t));
 
     /* Build up an array of "actions" which we will execute during each call
      * to Collect(). Determine whether we need to track scores and field
@@ -130,7 +130,7 @@ SortColl_init(SortCollector *self, Schema *schema, SortSpec *sort_spec,
 
     /* Override our derived actions with an action which will be excecuted
      * autmatically until the queue fills up. */
-    self->auto_actions    = MALLOCATE(1, u8_t);
+    self->auto_actions    = (u8_t*)MALLOCATE(1);
     self->auto_actions[0] = wanted ? AUTO_ACCEPT : AUTO_REJECT;
     self->derived_actions = self->actions;
     self->actions         = self->auto_actions;
@@ -153,10 +153,10 @@ SortColl_destroy(SortCollector *self)
     DECREF(self->hit_q);
     DECREF(self->rules);
     DECREF(self->bumped);
-    MemMan_wrapped_free(self->sort_caches);
-    MemMan_wrapped_free(self->ord_arrays);
-    MemMan_wrapped_free(self->auto_actions);
-    MemMan_wrapped_free(self->derived_actions);
+    FREEMEM(self->sort_caches);
+    FREEMEM(self->ord_arrays);
+    FREEMEM(self->auto_actions);
+    FREEMEM(self->derived_actions);
     SUPER_DESTROY(self, SORTCOLLECTOR);
 }
 
@@ -527,7 +527,7 @@ SI_competitive(SortCollector *self, i32_t doc_id)
     return false;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

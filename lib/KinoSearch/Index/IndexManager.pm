@@ -1,3 +1,4 @@
+package KinoSearch::Index::IndexManager;
 use KinoSearch;
 
 1;
@@ -10,7 +11,7 @@ my $synopsis = <<'END_SYNOPSIS';
     use Sys::Hostname qw( hostname );
     my $hostname = hostname() or die "Can't get unique hostname";
     my $manager = KinoSearch::Index::IndexManager->new( 
-        hostname => $hostname,
+        host => $hostname,
     );
 
     # Index time:
@@ -29,11 +30,11 @@ END_SYNOPSIS
 
 my $constructor = <<'END_CONSTRUCTOR';
     my $manager = KinoSearch::Index::IndexManager->new(
-        hostname  => $hostname,  # default: ""
+        host => $hostname,    # default: ""
     );
 END_CONSTRUCTOR
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Index::IndexManager",
     bind_constructors => ["new"],
@@ -48,7 +49,7 @@ Boilerplater::Binding::Perl::Class->register(
             Make_Snapshot_Filename
             Set_Folder
             Get_Folder
-            Get_Hostname
+            Get_Host
             Set_Write_Lock_Timeout
             Get_Write_Lock_Timeout
             Set_Write_Lock_Interval
@@ -70,7 +71,7 @@ Boilerplater::Binding::Perl::Class->register(
                 recycle
                 set_folder
                 get_folder
-                get_hostname
+                get_host
                 set_write_lock_timeout
                 get_write_lock_timeout
                 set_write_lock_interval
@@ -84,7 +85,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

@@ -9,7 +9,7 @@
 #include "KinoSearch/Index/IndexReader.h"
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/PostingList.h"
-#include "KinoSearch/Index/PostingsReader.h"
+#include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
@@ -21,7 +21,6 @@
 #include "KinoSearch/Searcher.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 DeletionsWriter*
 DelWriter_init(DeletionsWriter *self, Schema *schema, Snapshot *snapshot,
@@ -36,7 +35,7 @@ I32Array*
 DelWriter_generate_doc_map(DeletionsWriter *self, Matcher *deletions,
                            i32_t doc_max, i32_t offset) 
 {
-    i32_t *doc_map = CALLOCATE(doc_max + 1, i32_t);
+    i32_t *doc_map = (i32_t*)CALLOCATE(doc_max + 1, sizeof(i32_t));
     i32_t  new_doc_id;
     i32_t  i;
     i32_t  next_deletion = deletions ? Matcher_Next(deletions) : I32_MAX;
@@ -79,7 +78,7 @@ DefDelWriter_init(DefaultDeletionsWriter *self, Schema *schema,
     num_seg_readers         = VA_Get_Size(self->seg_readers);
     self->seg_starts        = PolyReader_Offsets(polyreader);
     self->bit_vecs          = VA_new(num_seg_readers);
-    self->updated           = CALLOCATE(num_seg_readers, bool_t);
+    self->updated           = (bool_t*)CALLOCATE(num_seg_readers, sizeof(bool_t));
     self->searcher          = Searcher_new((Obj*)polyreader);
     self->name_to_tick      = Hash_new(num_seg_readers);
 
@@ -145,7 +144,7 @@ DefDelWriter_finish(DefaultDeletionsWriter *self)
             Snapshot  *snapshot  = DefDelWriter_Get_Snapshot(self);
             OutStream *outstream = Folder_Open_Out(folder, filename);
 
-            if (!outstream) { THROW(ERR, "Can't open %o", filename); }
+            if (!outstream) { RETHROW(INCREF(Err_get_error())); }
             Snapshot_Add_Entry(snapshot, filename);
 
             /* Ensure that we have 1 bit for each doc in segment. */
@@ -244,11 +243,11 @@ DefDelWriter_delete_by_term(DefaultDeletionsWriter *self,
     u32_t i, max;
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
-        PostingsReader *post_reader = (PostingsReader*)SegReader_Fetch(
-            seg_reader, VTable_Get_Name(POSTINGSREADER));
+        PostingListReader *plist_reader = (PostingListReader*)SegReader_Fetch(
+            seg_reader, VTable_Get_Name(POSTINGLISTREADER));
         BitVector *bit_vec = (BitVector*)VA_Fetch(self->bit_vecs, i);
-        PostingList *plist = post_reader 
-            ? PostReader_Posting_List(post_reader, field, term) : NULL;
+        PostingList *plist = plist_reader 
+            ? PListReader_Posting_List(plist_reader, field, term) : NULL;
         i32_t doc_id;
         i32_t num_zapped = 0;
 
@@ -348,7 +347,7 @@ S_zap_segment(DefaultDeletionsWriter *self, SegReader *reader,
             Hash_Iter_Init(files);
             while(Hash_Iter_Next(files, (Obj**)&seg, (Obj**)&mini_meta)) {
                 u32_t i, max;
-                CharBuf *filename = (CharBuf*)ASSERT_IS_A(
+                CharBuf *filename = (CharBuf*)CERTIFY(
                     Hash_Fetch_Str(mini_meta, "filename", 8), CHARBUF);
 
                 /* Remove file from snapshot. */
@@ -402,7 +401,7 @@ DefDelWriter_delete_segment(DefaultDeletionsWriter *self, SegReader *reader)
     S_zap_segment(self, reader, false);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

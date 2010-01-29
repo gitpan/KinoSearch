@@ -8,7 +8,6 @@
 #include "KinoSearch/Search/SortSpec.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 TopDocs*
 TopDocs_new(VArray *match_docs, u32_t total_hits)
@@ -63,7 +62,7 @@ void
 TopDocs_set_total_hits(TopDocs *self, u32_t total_hits) 
     { self->total_hits = total_hits; }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

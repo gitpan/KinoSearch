@@ -15,7 +15,7 @@ parcel KinoSearch cnick Kino;
  *     three
  */
 
-class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Obj {
+class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Object::Obj {
 
     CharBuf *field;
 
@@ -58,7 +58,7 @@ class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Obj {
     Get_Field(Lexicon *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

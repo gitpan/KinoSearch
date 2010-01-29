@@ -39,7 +39,7 @@ class KinoSearch::Index::PolyHighlightReader cnick PolyHLReader
     public void
     Close(PolyHighlightReader *self);
 
-    void
+    public void
     Destroy(PolyHighlightReader *self);
 }
 
@@ -73,11 +73,11 @@ class KinoSearch::Index::DefaultHighlightReader cnick DefHLReader
     public void
     Close(DefaultHighlightReader *self);
 
-    void
+    public void
     Destroy(DefaultHighlightReader *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

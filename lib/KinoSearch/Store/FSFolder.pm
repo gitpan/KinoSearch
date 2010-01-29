@@ -1,3 +1,4 @@
+package KinoSearch::Store::FSFolder;
 use KinoSearch;
 
 1;
@@ -14,10 +15,9 @@ END_SYNOPSIS
 
 my $constructor = $synopsis;
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Store::FSFolder",
-    bind_methods      => [qw( Real_Exists )],
     bind_constructors => ["new"],
     make_pod          => {
         synopsis    => $synopsis,
@@ -27,7 +27,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

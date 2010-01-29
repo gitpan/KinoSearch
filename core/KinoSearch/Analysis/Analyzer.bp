@@ -9,7 +9,7 @@ parcel KinoSearch cnick Kino;
  * (L<CaseFolder|KinoSearch::Analysis::CaseFolder>).
  */
 abstract class KinoSearch::Analysis::Analyzer 
-    extends KinoSearch::Obj : dumpable {
+    extends KinoSearch::Object::Obj : dumpable {
 
     public inert Analyzer* 
     init(Analyzer *self);
@@ -41,7 +41,7 @@ abstract class KinoSearch::Analysis::Analyzer
     Dump_Equals(Analyzer *self, Obj *dump);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

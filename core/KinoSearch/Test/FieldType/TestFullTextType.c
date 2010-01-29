@@ -32,19 +32,19 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     /* (This step is normally performed by Schema internally.) */
     FullTextType_Set_Analyzer(another_clone, (Analyzer*)tokenizer);
 
-    ASSERT_FALSE(batch, Analyzer_Equals(type, (Obj*)boost_differs),
+    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)boost_differs),
         "Equals() false with different boost");
-    ASSERT_FALSE(batch, Analyzer_Equals(type, (Obj*)other),
+    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)other),
         "Equals() false with different Analyzer");
-    ASSERT_FALSE(batch, Analyzer_Equals(type, (Obj*)not_indexed),
+    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)not_indexed),
         "Equals() false with indexed => false");
-    ASSERT_FALSE(batch, Analyzer_Equals(type, (Obj*)not_stored),
+    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)not_stored),
         "Equals() false with stored => false");
-    ASSERT_FALSE(batch, Analyzer_Equals(type, (Obj*)highlightable),
+    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)highlightable),
         "Equals() false with highlightable => true");
-    ASSERT_TRUE(batch, Analyzer_Equals(type, (Obj*)clone), 
+    ASSERT_TRUE(batch, FullTextType_Equals(type, (Obj*)clone), 
         "Dump => Load round trip");
-    ASSERT_TRUE(batch, Analyzer_Equals(type, (Obj*)another_clone), 
+    ASSERT_TRUE(batch, FullTextType_Equals(type, (Obj*)another_clone), 
         "Dump_For_Schema => Load round trip");
 
     DECREF(another_clone);
@@ -95,14 +95,14 @@ test_Compare_Values(TestBatch *batch)
 void
 TestFullTextType_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestFullTextType", 13, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(13);
+    TestBatch_Plan(batch);
     test_Dump_Load_and_Equals(batch);
     test_Compare_Values(batch);
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

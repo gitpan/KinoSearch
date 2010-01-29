@@ -33,9 +33,9 @@ sub _lazy_init {
     my $folder    = $self->get_folder;
     my $filename  = $self->get_segment->get_name . "/bytebufdocs.dat";
     my $outstream = $outstream{$$self} = $folder->open_out($filename)
-        or confess("Can't open '$filename'");
+        or confess KinoSearch->error;
     my $nulls = "\0" x $width{$$self};
-    $outstream->write_bytes($nulls);
+    $outstream->print($nulls);
 
     return $outstream;
 }
@@ -49,7 +49,7 @@ sub add_inverted_doc {
     if ( bytes::length( $fields->{$field} ) != $width ) {
         confess("Width of '$fields->{$field}' not $width");
     }
-    $outstream->write_bytes( $fields->{$field} );
+    $outstream->print( $fields->{$field} );
 }
 
 sub add_segment {
@@ -71,7 +71,7 @@ sub add_segment {
         next unless $doc_map->get($i);
         my $buf;
         $doc_reader->read_record( $i, \$buf );
-        $outstream->write_bytes($buf);
+        $outstream->print($buf);
     }
 }
 
@@ -123,7 +123,7 @@ Create an Architecture subclass which overrides register_doc_writer() and
 register_doc_reader():
 
     package MyArchitecture;
-    use base qw( KinoSearch::Architecture );
+    use base qw( KinoSearch::Plan::Architecture );
     use KSx::Index::ByteBufDocReader;
     use KSx::Index::ByteBufDocWriter;
 
@@ -190,7 +190,7 @@ fetching documents.  It is unsupported.
 
 =head1 COPYRIGHT
 
-Copyright 2009 Marvin Humphrey
+Copyright 2009-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

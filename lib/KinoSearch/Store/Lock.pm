@@ -1,3 +1,4 @@
+package KinoSearch::Store::Lock;
 use KinoSearch;
 
 1;
@@ -20,13 +21,13 @@ my $constructor = <<'END_CONSTRUCTOR';
     my $lock = KinoSearch::Store::Lock->new(
         name     => 'commit',     # required
         folder   => $folder,      # required
-        hostname => $hostname,    # required
+        host     => $hostname,    # required
         timeout  => 5000,         # default: 0
         interval => 1000,         # default: 100
     );
 END_CONSTRUCTOR
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Store::Lock",
     bind_methods => [
@@ -37,8 +38,8 @@ Boilerplater::Binding::Perl::Class->register(
             Release
             Clear_Stale
             Get_Name
-            Get_Filename
-            Get_Hostname
+            Get_Lock_Path
+            Get_Host
             )
     ],
     bind_constructors => ["new"],
@@ -56,12 +57,12 @@ Boilerplater::Binding::Perl::Class->register(
         ],
     },
 );
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Store::LockFileLock",
     bind_constructors => ["new"],
 );
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Store::SharedLock",
     bind_constructors => ["new"],
@@ -69,7 +70,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

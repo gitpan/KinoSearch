@@ -1,6 +1,10 @@
 #ifndef H_KINO_TOOLSET
 #define H_KINO_TOOLSET 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ToolSet groups together several commonly used header files, so that only
  * one pound-include directive is needed for them.
  *
@@ -18,23 +22,28 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "KinoSearch/Obj.h"
-#include "KinoSearch/Obj/BitVector.h"
-#include "KinoSearch/Obj/ByteBuf.h"
-#include "KinoSearch/Obj/CharBuf.h"
-#include "KinoSearch/Obj/Err.h"
-#include "KinoSearch/Obj/Hash.h"
-#include "KinoSearch/Obj/Num.h"
-#include "KinoSearch/Obj/Undefined.h"
-#include "KinoSearch/Obj/VArray.h"
-#include "KinoSearch/Obj/VTable.h"
+#include "KinoSearch/Object/Obj.h"
+#include "KinoSearch/Object/BitVector.h"
+#include "KinoSearch/Object/ByteBuf.h"
+#include "KinoSearch/Object/CharBuf.h"
+#include "KinoSearch/Object/Err.h"
+#include "KinoSearch/Object/Hash.h"
+#include "KinoSearch/Object/I32Array.h"
+#include "KinoSearch/Object/Num.h"
+#include "KinoSearch/Object/Undefined.h"
+#include "KinoSearch/Object/VArray.h"
+#include "KinoSearch/Object/VTable.h"
 #include "KinoSearch/Util/NumberUtils.h"
-#include "KinoSearch/Util/MemManager.h"
+#include "KinoSearch/Util/Memory.h"
 #include "KinoSearch/Util/StringHelper.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* H_KINO_TOOLSET */
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

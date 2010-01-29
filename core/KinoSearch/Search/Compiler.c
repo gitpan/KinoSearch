@@ -101,7 +101,7 @@ Compiler_equals(Compiler *self, Obj *other)
 {
     Compiler *evil_twin = (Compiler*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, COMPILER)) return false;
+    if (!Obj_Is_A(other, COMPILER)) return false;
     if (self->boost != evil_twin->boost) return false;
     if (!Query_Equals(self->parent, (Obj*)evil_twin->parent)) return false;
     if (!Sim_Equals(self->sim, (Obj*)evil_twin->sim)) return false;
@@ -127,7 +127,7 @@ Compiler_deserialize(Compiler *self, InStream *instream)
     return self;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

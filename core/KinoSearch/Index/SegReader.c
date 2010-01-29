@@ -2,7 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegReader.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DeletionsReader.h"
@@ -10,9 +9,9 @@
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/I32Array.h"
 
 SegReader*
 SegReader_new(Schema *schema, Folder *folder, Snapshot *snapshot, 
@@ -33,7 +32,7 @@ SegReader_init(SegReader *self, Schema *schema, Folder *folder,
         seg_tick, NULL);
     segment = SegReader_Get_Segment(self);
 
-    self->doc_max    = Seg_Get_Count(segment);
+    self->doc_max    = (int32_t)Seg_Get_Count(segment);
     self->seg_name   = (CharBuf*)INCREF(Seg_Get_Name(segment));
     self->seg_num    = Seg_Get_Number(segment);
     mess = SegReader_Try_Init_Components(self);
@@ -63,13 +62,13 @@ SegReader_register(SegReader *self, const CharBuf *api, DataReader *component)
     if (Hash_Fetch(self->components, (Obj*)api)) {
         THROW(ERR, "Interface '%o' already registered");
     }
-    ASSERT_IS_A(component, DATAREADER);
+    CERTIFY(component, DATAREADER);
     Hash_Store(self->components, (Obj*)api, (Obj*)component);
 }
 
 CharBuf*
 SegReader_get_seg_name(SegReader *self) { return self->seg_name; }
-i32_t
+i64_t
 SegReader_get_seg_num(SegReader *self)  { return self->seg_num; }
 
 i32_t
@@ -93,7 +92,7 @@ SegReader_doc_count(SegReader *self)
 I32Array*
 SegReader_offsets(SegReader *self)
 {
-    i32_t *ints = CALLOCATE(1, i32_t);
+    i32_t *ints = (i32_t*)CALLOCATE(1, sizeof(i32_t));
     UNUSED_VAR(self);
     return I32Arr_new_steal(ints, 1);
 }
@@ -106,7 +105,7 @@ SegReader_seg_readers(SegReader *self)
     return seg_readers;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

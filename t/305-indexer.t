@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 5;
+use Test::More tests => 4;
 use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
@@ -22,15 +22,12 @@ $indexer = KinoSearch::Indexer->new(
 );
 $indexer->add_doc( { content => 'foo' } );
 pass("Indexer ignores garbage from interrupted session");
-$indexer->optimize;
-pass("optimize works as a back-compat synonym for optimize");
 
 SKIP: {
     skip( "Known leak, though might be fixable", 2 ) if $ENV{KINO_VALGRIND};
     eval {
         my $manager
-            = KinoSearch::Index::IndexManager->new(
-            hostname => 'somebody_else' );
+            = KinoSearch::Index::IndexManager->new( host => 'somebody_else' );
         my $inv = KinoSearch::Indexer->new(
             manager => $manager,
             index   => $folder,
@@ -44,16 +41,16 @@ SKIP: {
 my $pid = 12345678;
 do {
     # Fake a write lock.
-    $folder->delete("write.lock") or die "Couldn't delete 'write.lock'";
-    my $outstream = $folder->open_out('write.lock')
-        or die "Can't open write.lock";
+    $folder->delete("locks/write.lock") or die "Couldn't delete 'write.lock'";
+    my $outstream = $folder->open_out('locks/write.lock') 
+        or die KinoSearch->error;
     while ( kill( 0, $pid ) ) {
         $pid++;
     }
     $outstream->print(
         qq|
         {  
-            "hostname": "somebody_else",
+            "host": "somebody_else",
             "pid": $pid,
             "name": "write"
         }|
@@ -62,8 +59,7 @@ do {
 
     eval {
         my $manager
-            = KinoSearch::Index::IndexManager->new(
-            hostname => 'somebody_else' );
+            = KinoSearch::Index::IndexManager->new( host => 'somebody_else' );
         my $inv = KinoSearch::Indexer->new(
             manager => $manager,
             schema  => $schema,

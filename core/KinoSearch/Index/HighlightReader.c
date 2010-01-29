@@ -13,7 +13,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/I32Array.h"
 
 HighlightReader*
 HLReader_init(HighlightReader *self, Schema *schema, Folder *folder,
@@ -48,7 +47,7 @@ PolyHLReader_init(PolyHighlightReader *self, VArray *readers,
     u32_t i, max;
     HLReader_init((HighlightReader*)self, NULL, NULL, NULL, NULL, -1);
     for (i = 0, max = VA_Get_Size(readers); i < max; i++) {
-        ASSERT_IS_A(VA_Fetch(readers, i), HIGHLIGHTREADER);
+        CERTIFY(VA_Fetch(readers, i), HIGHLIGHTREADER);
     }
     self->readers = (VArray*)INCREF(readers);
     self->offsets = (I32Array*)INCREF(offsets);
@@ -135,17 +134,23 @@ DefHLReader_init(DefaultHighlightReader *self, Schema *schema,
         CharBuf *ix_file  = CB_newf("%o/highlight.ix", seg_name);
         CharBuf *dat_file = CB_newf("%o/highlight.dat", seg_name);
         if (Folder_Exists(folder, ix_file)) {
-            self->ix_in   = Folder_Open_In(folder, ix_file);
-            self->dat_in  = Folder_Open_In(folder, dat_file);
-            if (!self->ix_in || !self->dat_in) {
-                CharBuf *mess = MAKE_MESS("Can't open either %o or %o", 
-                    ix_file, dat_file);
+            self->ix_in = Folder_Open_In(folder, ix_file);
+            if (!self->ix_in) {
+                Err *error = (Err*)INCREF(Err_get_error());
                 DECREF(ix_file);
                 DECREF(dat_file);
                 DECREF(self);
-                Err_throw_mess(ERR, mess);
-            }
-        }
+                RETHROW(error);
+            }   
+            self->dat_in = Folder_Open_In(folder, dat_file);
+            if (!self->dat_in) {
+                Err *error = (Err*)INCREF(Err_get_error());
+                DECREF(ix_file);
+                DECREF(dat_file);
+                DECREF(self);
+                RETHROW(error);
+            }   
+        }   
         DECREF(ix_file);
         DECREF(dat_file);
     }
@@ -180,11 +185,11 @@ DocVector*
 DefHLReader_fetch(DefaultHighlightReader *self, i32_t doc_id)
 {
     DocVector *doc_vec = DocVec_new();
-    u64_t file_pos;
+    i64_t file_pos;
     u32_t num_fields;
 
     InStream_Seek(self->ix_in, doc_id * 8);
-    file_pos = InStream_Read_U64(self->ix_in);
+    file_pos = InStream_Read_I64(self->ix_in);
     InStream_Seek(self->dat_in, file_pos);
 
     num_fields = InStream_Read_C32(self->dat_in);
@@ -210,8 +215,8 @@ DefHLReader_read_record(DefaultHighlightReader *self, i32_t doc_id,
 
     {
         /* Copy the whole record. */
-        u64_t   filepos = InStream_Read_U64(ix_in);
-        u64_t   end     = InStream_Read_U64(ix_in);
+        i64_t   filepos = InStream_Read_I64(ix_in);
+        i64_t   end     = InStream_Read_I64(ix_in);
         size_t  size    = (size_t)(end - filepos);
         char   *buf     = BB_Grow(target, size);
         InStream_Seek(dat_in, filepos);
@@ -220,7 +225,7 @@ DefHLReader_read_record(DefaultHighlightReader *self, i32_t doc_id,
     }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

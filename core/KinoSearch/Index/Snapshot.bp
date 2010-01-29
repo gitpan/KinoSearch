@@ -9,7 +9,7 @@ parcel KinoSearch cnick Kino;
  * IndexReader objects interpret the data associated with a single Snapshot.
  */
 
-class KinoSearch::Index::Snapshot extends KinoSearch::Obj : dumpable {
+class KinoSearch::Index::Snapshot extends KinoSearch::Object::Obj : dumpable {
 
     Hash        *entries;
     CharBuf     *filename;
@@ -82,11 +82,11 @@ class KinoSearch::Index::Snapshot extends KinoSearch::Obj : dumpable {
     public CharBuf*
     Get_Filename(Snapshot *self);
 
-    void 
+    public void 
     Destroy(Snapshot *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

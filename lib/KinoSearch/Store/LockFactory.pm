@@ -1,3 +1,4 @@
+package KinoSearch::Store::LockFactory;
 use KinoSearch;
 
 1;
@@ -13,8 +14,8 @@ my $synopsis = <<'END_SYNOPSIS';
         path => '/path/to/index', 
     );
     my $lock_factory = KinoSearch::Store::LockFactory->new(
-        folder   => $folder,
-        hostname => $hostname,
+        folder => $folder,
+        host   => $hostname,
     );
     my $write_lock = $lock_factory->make_lock(
         name     => 'write',
@@ -25,12 +26,12 @@ END_SYNOPSIS
 
 my $constructor = <<'END_CONSTRUCTOR';
     my $lock_factory = KinoSearch::Store::LockFactory->new(
-        folder   => $folder,    # required
-        hostname => $hostname,  # required
+        folder => $folder,      # required
+        host   => $hostname,    # required
     );
 END_CONSTRUCTOR
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Store::LockFactory",
     bind_methods      => [qw( Make_Lock Make_Shared_Lock )],
@@ -44,7 +45,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

@@ -2,7 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegLexicon.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/Segment.h"
@@ -12,10 +11,10 @@
 #include "KinoSearch/Index/LexiconWriter.h"
 #include "KinoSearch/Index/SegPostingList.h"
 #include "KinoSearch/Index/TermStepper.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Posting/MatchPosting.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 /* Iterate until the state is greater than or equal to the target.
  */
@@ -34,7 +33,7 @@ SegLexicon*
 SegLex_init(SegLexicon *self, Schema *schema, Folder *folder, 
             Segment *segment, const CharBuf *field)
 {
-    Hash *metadata = (Hash*)ASSERT_IS_A(
+    Hash *metadata = (Hash*)CERTIFY(
         Seg_Fetch_Metadata_Str(segment, "lexicon", 7), HASH);
     Architecture *arch      = Schema_Get_Architecture(schema);
     Hash         *counts    = (Hash*)Hash_Fetch_Str(metadata, "counts", 6);
@@ -56,7 +55,7 @@ SegLex_init(SegLexicon *self, Schema *schema, Folder *folder,
     /* Extract count from metadata. */
     if (!counts) { THROW(ERR, "Failed to extract 'counts'"); }
     else {
-        Obj *count = ASSERT_IS_A(Hash_Fetch(counts, (Obj*)field), OBJ);
+        Obj *count = CERTIFY(Hash_Fetch(counts, (Obj*)field), OBJ);
         self->size = (i32_t)Obj_To_I64(count);
     }
 
@@ -71,10 +70,10 @@ SegLex_init(SegLexicon *self, Schema *schema, Folder *folder,
     self->skip_interval  = Arch_Skip_Interval(arch);
     self->instream       = Folder_Open_In(folder, filename);
     if (!self->instream) {
-        CharBuf *mess = MAKE_MESS("Can't open %o", filename);
+        Err *error = (Err*)INCREF(Err_get_error());
         DECREF(filename);
         DECREF(self);
-        Err_throw_mess(ERR, mess);
+        RETHROW(error);
     }
     DECREF(filename);
 
@@ -201,7 +200,7 @@ S_scan_to(SegLexicon *self, Obj *target)
     } while (SegLex_Next(self));
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

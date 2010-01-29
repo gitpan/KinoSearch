@@ -41,7 +41,9 @@ Stemmer_init(Stemmer *self, const CharBuf *language)
 void
 Stemmer_destroy(Stemmer *self)
 {
-    if (self->snowstemmer) kino_Stemmer_sb_stemmer_delete(self->snowstemmer);
+    if (self->snowstemmer) {
+        kino_Stemmer_sb_stemmer_delete((struct sb_stemmer*)self->snowstemmer);
+    }
     DECREF(self->language);
     SUPER_DESTROY(self, STEMMER);
 }
@@ -50,7 +52,8 @@ Inversion*
 Stemmer_transform(Stemmer *self, Inversion *inversion)
 {
     Token *token;
-    struct sb_stemmer *const snowstemmer = self->snowstemmer;
+    struct sb_stemmer *const snowstemmer 
+        = (struct sb_stemmer*)self->snowstemmer;
 
     while (NULL != (token = Inversion_Next(inversion))) {
         sb_symbol *stemmed_text = kino_Stemmer_sb_stemmer_stem(snowstemmer, 
@@ -58,7 +61,7 @@ Stemmer_transform(Stemmer *self, Inversion *inversion)
         size_t len = kino_Stemmer_sb_stemmer_length(snowstemmer);
         if (len > token->len) {
             FREEMEM(token->text);
-            token->text = MALLOCATE(len + 1, char);
+            token->text = (char*)MALLOCATE(len + 1);
         }
         memcpy(token->text, stemmed_text, len + 1);
         token->len = len;
@@ -83,8 +86,8 @@ Stemmer_load(Stemmer *self, Obj *dump)
     Stemmer_load_t super_load 
         = (Stemmer_load_t)SUPER_METHOD(STEMMER, Stemmer, Load);
     Stemmer *loaded = super_load(self, dump);
-    Hash    *source = (Hash*)ASSERT_IS_A(dump, HASH);
-    CharBuf *language = (CharBuf*)ASSERT_IS_A(
+    Hash    *source = (Hash*)CERTIFY(dump, HASH);
+    CharBuf *language = (CharBuf*)CERTIFY(
         Hash_Fetch_Str(source, "language", 8), CHARBUF);
     return Stemmer_init(loaded, language);
 }
@@ -94,7 +97,7 @@ Stemmer_equals(Stemmer *self, Obj *other)
 {
     Stemmer *const evil_twin = (Stemmer*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, STEMMER)) return false;
+    if (!Obj_Is_A(other, STEMMER)) return false;
     if (!CB_Equals(evil_twin->language, (Obj*)self->language)) return false;
     return true;
 } 
@@ -108,7 +111,7 @@ Stemmer_dump_equals(Stemmer *self, Obj *dump)
         return false;
     }
     else {
-        Hash *const source = (Hash*)ASSERT_IS_A(dump, HASH);
+        Hash *const source = (Hash*)CERTIFY(dump, HASH);
         CharBuf *language  = (CharBuf*)Hash_Fetch_Str(source, "language", 8);
         if (!language) return false;
         if (!CB_Equals(self->language, (Obj*)language)) {
@@ -118,7 +121,7 @@ Stemmer_dump_equals(Stemmer *self, Obj *dump)
     return true;
 } 
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

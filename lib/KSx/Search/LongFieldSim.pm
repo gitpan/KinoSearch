@@ -97,7 +97,7 @@ document yield a higher score and a higher rank.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

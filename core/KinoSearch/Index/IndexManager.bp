@@ -11,10 +11,10 @@ parcel KinoSearch cnick Kino;
  * process to process.
  */
 class KinoSearch::Index::IndexManager cnick IxManager 
-    extends KinoSearch::Obj {
+    extends KinoSearch::Object::Obj {
 
     Folder      *folder;
-    CharBuf     *hostname;
+    CharBuf     *host;
     LockFactory *lock_factory;
     u32_t        write_lock_timeout;
     u32_t        write_lock_interval;
@@ -24,17 +24,17 @@ class KinoSearch::Index::IndexManager cnick IxManager
     u32_t        deletion_lock_interval;
 
     public inert incremented IndexManager*
-    new(const CharBuf *hostname = NULL, LockFactory *lock_factory = NULL);
+    new(const CharBuf *host = NULL, LockFactory *lock_factory = NULL);
 
     /**
-     * @param hostname An identifier which should be unique per-machine.
+     * @param host An identifier which should be unique per-machine.
      * @param lock_factory A LockFactory.
      */
     public inert IndexManager*
-    init(IndexManager *self, const CharBuf *hostname = NULL, 
+    init(IndexManager *self, const CharBuf *host = NULL, 
          LockFactory *lock_factory = NULL);
 
-    void
+    public void
     Destroy(IndexManager *self);
 
     /**
@@ -50,10 +50,10 @@ class KinoSearch::Index::IndexManager cnick IxManager
     public Folder* 
     Get_Folder(IndexManager *self);
 
-    /** Getter for <code>hostname</code> member.
+    /** Getter for <code>host</code> member.
      */
     public CharBuf* 
-    Get_Hostname(IndexManager *self);
+    Get_Host(IndexManager *self);
 
     /** Return an array of SegReaders representing segments that should be
      * consolidated.  Implementations must balance index-time churn against
@@ -70,7 +70,7 @@ class KinoSearch::Index::IndexManager cnick IxManager
      */
     public incremented VArray*
     Recycle(IndexManager *self, PolyReader *reader, 
-            DeletionsWriter *del_writer, i32_t cutoff, 
+            DeletionsWriter *del_writer, i64_t cutoff, 
             bool_t optimize = false);
 
     /** Create the Lock which controls access to modifying the logical content
@@ -92,7 +92,7 @@ class KinoSearch::Index::IndexManager cnick IxManager
      * fails.
      */
     public void
-    Write_Merge_Data(IndexManager *self, i32_t cutoff);
+    Write_Merge_Data(IndexManager *self, i64_t cutoff);
 
     /** Look for the "merge.json" file dropped by BackgroundMerger.  If it's
      * not there, return NULL.  If it's there but can't be decoded, return an
@@ -113,7 +113,7 @@ class KinoSearch::Index::IndexManager cnick IxManager
     /** Return the highest number for a segment directory which contains a
      * segmeta file in the snapshot.
      */
-    public i32_t
+    public i64_t
     Highest_Seg_Num(IndexManager *self, Snapshot *snapshot);
 
     /** Return the name of a new snapshot file, which shall contain a base-36
@@ -184,7 +184,7 @@ class KinoSearch::Index::IndexManager cnick IxManager
     Get_Deletion_Lock_Interval(IndexManager *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -6,7 +6,6 @@
 #include "KinoSearch/Search/HitCollector.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Search/Matcher.h"
-#include "KinoSearch/Util/I32Array.h"
 
 HitCollector*
 HC_init(HitCollector *self)
@@ -30,14 +29,14 @@ void
 HC_set_reader(HitCollector *self, SegReader *reader)
 {
     DECREF(self->reader);
-    self->reader = reader ? (SegReader*)INCREF(reader) : NULL;
+    self->reader = (SegReader*)INCREF(reader);
 }
 
 void
 HC_set_matcher(HitCollector *self, Matcher *matcher)
 {
     DECREF(self->matcher);
-    self->matcher = matcher ? (Matcher*)INCREF(matcher) : NULL;
+    self->matcher = (Matcher*)INCREF(matcher);
 }
 
 void
@@ -136,7 +135,7 @@ OffsetColl_need_score(OffsetCollector *self)
     return HC_Need_Score(self->inner_coll);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -31,13 +31,13 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 void
 TestBlobType_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestBlobType", 2, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(2);
+    TestBatch_Plan(batch);
     test_Dump_Load_and_Equals(batch);
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -17,7 +17,7 @@ MatchDoc_init(MatchDoc *self, i32_t doc_id, float score, VArray *values)
 {
     self->doc_id      = doc_id;
     self->score       = score;
-    self->values      = values ? (VArray*)INCREF(values) : NULL;
+    self->values      = (VArray*)INCREF(values);
     return self;
 }
 
@@ -65,10 +65,10 @@ void
 MatchDoc_set_values(MatchDoc *self, VArray *values)
 {
     DECREF(self->values);
-    self->values = values ? (VArray*)INCREF(values) : NULL;
+    self->values = (VArray*)INCREF(values);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

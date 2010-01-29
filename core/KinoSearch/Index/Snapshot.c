@@ -2,9 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/Snapshot.h"
-#include "KinoSearch/Architecture.h"
-#include "KinoSearch/Index/Segment.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Util/StringHelper.h"
 #include "KinoSearch/Util/IndexFileNames.h"
@@ -90,9 +87,9 @@ Snapshot_read_file(Snapshot *self, Folder *folder, const CharBuf *filename)
                    : IxFileNames_latest_snapshot(folder); 
 
     if (self->filename) {
-        Hash *snap_data = (Hash*)ASSERT_IS_A(
+        Hash *snap_data = (Hash*)CERTIFY(
             Json_slurp_json(folder, self->filename), HASH);
-        Obj *format = ASSERT_IS_A(
+        Obj *format = CERTIFY(
             Hash_Fetch_Str(snap_data, "format", 6), OBJ);
 
         /* Verify that we can read the index properly. */
@@ -104,11 +101,11 @@ Snapshot_read_file(Snapshot *self, Folder *folder, const CharBuf *filename)
         /* Build up list of entries. */
         {
             u32_t i, max;
-            VArray *list = (VArray*)ASSERT_IS_A(
+            VArray *list = (VArray*)CERTIFY(
                 Hash_Fetch_Str(snap_data, "entries", 7), VARRAY);
             Hash_Clear(self->entries);
             for (i = 0, max = VA_Get_Size(list); i < max; i++) {
-                CharBuf *entry = (CharBuf*)ASSERT_IS_A(
+                CharBuf *entry = (CharBuf*)CERTIFY(
                     VA_Fetch(list, i), CHARBUF);
                 Hash_Store(self->entries, (Obj*)entry, INCREF(&EMPTY));
             }
@@ -133,11 +130,11 @@ Snapshot_write_file(Snapshot *self, Folder *folder, const CharBuf *filename)
     }
     else {
         CharBuf *latest = IxFileNames_latest_snapshot(folder);
-        i32_t gen = latest ? IxFileNames_extract_gen(latest) + 1 : 1;
-        CharBuf *base_36 = StrHelp_to_base36(gen);
-        self->filename = CB_newf("snapshot_%o.json", base_36);
+        u64_t gen = latest ? IxFileNames_extract_gen(latest) + 1 : 1;
+        char base36[StrHelp_MAX_BASE36_BYTES];
+        StrHelp_to_base36(gen, &base36);
+        self->filename = CB_newf("snapshot_%s.json", &base36);
         DECREF(latest);
-        DECREF(base_36);
     }
 
     /* Don't overwrite. */
@@ -159,7 +156,7 @@ Snapshot_write_file(Snapshot *self, Folder *folder, const CharBuf *filename)
     DECREF(all_data);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

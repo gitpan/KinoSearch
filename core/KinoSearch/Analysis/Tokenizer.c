@@ -40,19 +40,19 @@ Tokenizer_dump(Tokenizer *self)
 {
     Tokenizer_dump_t super_dump
         = (Tokenizer_dump_t)SUPER_METHOD(TOKENIZER, Tokenizer, Dump);
-    Hash *dump = (Hash*)ASSERT_IS_A(super_dump(self), HASH);
-    Hash_Store_Str(dump, "pattern", 7, Obj_Dump(self->pattern));
+    Hash *dump = (Hash*)CERTIFY(super_dump(self), HASH);
+    Hash_Store_Str(dump, "pattern", 7, CB_Dump(self->pattern));
     return (Obj*)dump;
 }
 
 Tokenizer*
 Tokenizer_load(Tokenizer *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
     Tokenizer_load_t super_load 
         = (Tokenizer_load_t)SUPER_METHOD(TOKENIZER, Tokenizer, Load);
     Tokenizer *loaded = super_load(self, dump);
-    CharBuf *pattern = (CharBuf*)ASSERT_IS_A(
+    CharBuf *pattern = (CharBuf*)CERTIFY(
         Hash_Fetch_Str(source, "pattern", 7), CHARBUF);
     return Tokenizer_init(loaded, pattern);
 }
@@ -66,7 +66,7 @@ Tokenizer_dump_equals(Tokenizer *self, Obj *dump)
         return false;
     }
     else {
-        Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+        Hash *source = (Hash*)CERTIFY(dump, HASH);
         CharBuf *pattern = (CharBuf*)Hash_Fetch_Str(source, "pattern", 7);
         if (!pattern) return false;
         if (!CB_Equals(self->pattern, (Obj*)pattern)) return false;
@@ -79,12 +79,12 @@ Tokenizer_equals(Tokenizer *self, Obj *other)
 {
     Tokenizer *const evil_twin = (Tokenizer*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, TOKENIZER)) return false;
+    if (!Obj_Is_A(other, TOKENIZER)) return false;
     if (!CB_Equals(evil_twin->pattern, (Obj*)self->pattern)) return false;
     return true;
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -22,9 +22,9 @@ BitVecDelDocs_init(BitVecDelDocs *self, Folder *folder,
     self->filename = CB_Clone(filename);
     self->instream = Folder_Open_In(folder, filename);
     if (!self->instream) { 
-        CharBuf *mess = MAKE_MESS("Can't open %o", self->filename);
+        Err *error = (Err*)INCREF(Err_get_error());
         DECREF(self);
-        Err_throw_mess(ERR, mess);
+        RETHROW(error);
     }
     len            = (i32_t)InStream_Length(self->instream);
     self->bits     = (u8_t*)InStream_Buf(self->instream, len);
@@ -44,7 +44,7 @@ BitVecDelDocs_destroy(BitVecDelDocs *self)
     SUPER_DESTROY(self, BITVECDELDOCS);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

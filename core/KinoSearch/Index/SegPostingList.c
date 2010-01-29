@@ -4,11 +4,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegPostingList.h"
-#include "KinoSearch/Architecture.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Posting.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/FieldType.h"
-#include "KinoSearch/Index/PostingsReader.h"
+#include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SkipStepper.h"
 #include "KinoSearch/Index/TermInfo.h"
@@ -28,19 +28,19 @@ static void
 S_seek_tinfo(SegPostingList *self, TermInfo *tinfo);
 
 SegPostingList*
-SegPList_new(PostingsReader *postings_reader, const CharBuf *field)
+SegPList_new(PostingListReader *plist_reader, const CharBuf *field)
 {
     SegPostingList *self = (SegPostingList*)VTable_Make_Obj(SEGPOSTINGLIST);
-    return SegPList_init(self, postings_reader, field);
+    return SegPList_init(self, plist_reader, field);
 }
 
 SegPostingList*
-SegPList_init(SegPostingList *self, PostingsReader *postings_reader, 
+SegPList_init(SegPostingList *self, PostingListReader *plist_reader, 
               const CharBuf *field)
 {
-    Schema       *const schema   = PostReader_Get_Schema(postings_reader);
-    Folder       *const folder   = PostReader_Get_Folder(postings_reader);
-    Segment      *const segment  = PostReader_Get_Segment(postings_reader);
+    Schema       *const schema   = PListReader_Get_Schema(plist_reader);
+    Folder       *const folder   = PListReader_Get_Folder(plist_reader);
+    Segment      *const segment  = PListReader_Get_Segment(plist_reader);
     Architecture *const arch     = Schema_Get_Architecture(schema);
     CharBuf      *const seg_name = Seg_Get_Name(segment);
     i32_t         field_num      = Seg_Field_Num(segment, field);
@@ -51,7 +51,6 @@ SegPList_init(SegPostingList *self, PostingsReader *postings_reader,
     /* Init. */
     self->doc_freq        = 0;
     self->count           = 0;
-    self->doc_base        = 0;
 
     /* Init skipping vars. */
     self->skip_stepper    = SkipStepper_new();
@@ -59,7 +58,7 @@ SegPList_init(SegPostingList *self, PostingsReader *postings_reader,
     self->num_skips       = 0;
 
     /* Assign. */
-    self->post_reader     = (PostingsReader*)INCREF(postings_reader);
+    self->plist_reader    = (PostingListReader*)INCREF(plist_reader);
     self->field           = CB_Clone(field);
     self->skip_interval   = Arch_Skip_Interval(arch);
     
@@ -71,14 +70,20 @@ SegPList_init(SegPostingList *self, PostingsReader *postings_reader,
     /* Open both a main stream and a skip stream if the field exists. */
     if (Folder_Exists(folder, post_file)) {
         self->post_stream = Folder_Open_In(folder, post_file);
-        self->skip_stream = Folder_Open_In(folder, skip_file);
-        if (!self->post_stream || !self->skip_stream) { 
-            CharBuf *mess = MAKE_MESS("Can't open either %o or %o", 
-                post_file, skip_file); 
+        if (!self->post_stream) {
+            Err *error = (Err*)INCREF(Err_get_error());
             DECREF(post_file);
             DECREF(skip_file);
             DECREF(self);
-            Err_throw_mess(ERR, mess);
+            RETHROW(error);
+        }
+        self->skip_stream = Folder_Open_In(folder, skip_file);
+        if (!self->skip_stream) { 
+            Err *error = (Err*)INCREF(Err_get_error());
+            DECREF(post_file);
+            DECREF(skip_file);
+            DECREF(self);
+            RETHROW(error);
         }
     }
     else {
@@ -95,7 +100,7 @@ SegPList_init(SegPostingList *self, PostingsReader *postings_reader,
 void 
 SegPList_destroy(SegPostingList *self)
 {
-    DECREF(self->post_reader);
+    DECREF(self->plist_reader);
     DECREF(self->posting);
     DECREF(self->skip_stepper);
     DECREF(self->field);
@@ -133,13 +138,6 @@ SegPList_get_count(SegPostingList *self) { return self->count; }
 InStream*
 SegPList_get_post_stream(SegPostingList *self) { return self->post_stream; }
 
-/* TODO: This is unsafe to call except right after constructor. */
-void
-SegPList_set_doc_base(SegPostingList *self, i32_t doc_base)
-{
-    self->doc_base = doc_base;
-}
-
 i32_t
 SegPList_next(SegPostingList *self) 
 {
@@ -149,7 +147,6 @@ SegPList_next(SegPostingList *self)
     /* Bail if we're out of docs. */
     if (self->count >= self->doc_freq) {
         Post_Reset(posting);
-        Post_Set_Doc_ID(posting, self->doc_base);
         return 0;
     }
     self->count++;
@@ -180,13 +177,16 @@ SegPList_advance(SegPostingList *self, i32_t target)
          * ergo, the modulus in the following formula.
          */
         i32_t num_skipped = 0 - (self->count % skip_interval);
+        if (num_skipped == 0 && self->count != 0) { 
+            num_skipped = 0 - skip_interval; 
+        }
 
         /* See if there's anything to skip. */
         while (target > skip_stepper->doc_id) {
             new_doc_id    = skip_stepper->doc_id;
             new_filepos   = skip_stepper->filepos;
 
-            if (   skip_stepper->doc_id != self->doc_base 
+            if (   skip_stepper->doc_id != 0 
                 && skip_stepper->doc_id >= posting->doc_id
             ) {
                 num_skipped += skip_interval;
@@ -224,7 +224,7 @@ SegPList_advance(SegPostingList *self, i32_t target)
 void
 SegPList_seek(SegPostingList *self, Obj *target)
 {
-    LexiconReader *lex_reader = PostReader_Get_Lex_Reader(self->post_reader);
+    LexiconReader *lex_reader = PListReader_Get_Lex_Reader(self->plist_reader);
     TermInfo      *tinfo      = LexReader_Fetch_Term_Info(lex_reader, 
         self->field, target);
     S_seek_tinfo(self, tinfo);
@@ -238,9 +238,9 @@ SegPList_seek_lex(SegPostingList *self, Lexicon *lexicon)
     SegLexicon *const seg_lexicon = (SegLexicon*)lexicon;
 
     /* Optimized case. */
-    if (   OBJ_IS_A(lexicon, SEGLEXICON)
+    if (   Obj_Is_A((Obj*)lexicon, SEGLEXICON)
         && (SegLex_Get_Segment(seg_lexicon) ==
-            PostReader_Get_Segment(self->post_reader)) /* i.e. same segment */
+            PListReader_Get_Segment(self->plist_reader)) /* i.e. same segment */
     ) {
         S_seek_tinfo(self, SegLex_Get_Term_Info(seg_lexicon));
     }
@@ -269,13 +269,11 @@ S_seek_tinfo(SegPostingList *self, TermInfo *tinfo)
 
         /* Prepare posting. */
         Post_Reset(self->posting);
-        Post_Set_Doc_ID(self->posting, self->doc_base);
 
         /* Prepare to skip. */
         self->skip_count    = 0;
         self->num_skips     = self->doc_freq / self->skip_interval;
-        SkipStepper_Set_ID_And_Filepos(self->skip_stepper, self->doc_base,
-            (u64_t)post_filepos);
+        SkipStepper_Set_ID_And_Filepos(self->skip_stepper, 0, post_filepos);
         InStream_Seek(self->skip_stream, TInfo_Get_Skip_FilePos(tinfo));
     }
 }
@@ -296,7 +294,7 @@ SegPList_read_raw(SegPostingList *self, i32_t last_doc_id, CharBuf *term_text,
         last_doc_id, term_text, mem_pool);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

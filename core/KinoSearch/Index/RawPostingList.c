@@ -1,0 +1,61 @@
+#define C_KINO_RAWPOSTINGLIST
+#include "KinoSearch/Util/ToolSet.h"
+
+#include "KinoSearch/Index/RawPostingList.h"
+#include "KinoSearch/Posting.h"
+#include "KinoSearch/Posting/RawPosting.h"
+#include "KinoSearch/Schema.h"
+#include "KinoSearch/Store/InStream.h"
+#include "KinoSearch/Util/MemoryPool.h"
+
+RawPostingList*
+RawPList_new(Schema *schema, const CharBuf *field, InStream *instream, 
+             i64_t start, i64_t end)
+{
+    RawPostingList *self = (RawPostingList*)VTable_Make_Obj(RAWPOSTINGLIST);
+    return RawPList_init(self, schema, field, instream, start, end);
+}
+
+RawPostingList*
+RawPList_init(RawPostingList *self, Schema *schema, const CharBuf *field,
+              InStream *instream, i64_t start, i64_t end)
+{
+    Posting *posting = Schema_Fetch_Posting(schema, field);
+    PList_init((PostingList*)self);
+    self->start    = start;
+    self->end      = end;
+    self->len      = end - start;
+    self->instream = (InStream*)INCREF(instream);
+    self->posting  = (Posting*)Post_Clone(posting);
+    InStream_Seek(self->instream, self->start);
+    return self;
+}
+
+void
+RawPList_destroy(RawPostingList *self)
+{
+    DECREF(self->instream);
+    DECREF(self->posting);
+    SUPER_DESTROY(self, RAWPOSTINGLIST);
+}
+
+Posting*
+RawPList_get_posting(RawPostingList *self)
+{
+    return self->posting;
+}
+
+RawPosting*
+RawPList_read_raw(RawPostingList *self, i32_t last_doc_id, CharBuf *term_text,
+                  MemoryPool *mem_pool)
+{
+    return Post_Read_Raw(self->posting, self->instream, 
+        last_doc_id, term_text, mem_pool);
+}
+
+/* Copyright 2007-2010 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

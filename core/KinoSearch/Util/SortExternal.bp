@@ -2,7 +2,7 @@ parcel KinoSearch cnick Kino;
 
 __C__
 #include <stddef.h>
-#include "KinoSearch/Obj.h"
+#include "KinoSearch/Object/Obj.h"
 #include "KinoSearch/Util/SortUtils.h"
 
 #define KINO_SORTEX_DEFAULT_MEM_THRESHOLD 0x1000000
@@ -11,67 +11,105 @@ __C__
 #endif
 __END_C__
 
-/** External sorter.
+/** Abstract external sorter.
+ *
+ * SortExternal objects are sort pools which allow you to sort large amounts
+ * of data.  To achieve this, you Feed() all values into the SortExternal
+ * object, Flip() the object from write mode to read mode, then Fetch() the
+ * values one at a time in sorted order.
+ *
+ * It's expected that the total memory footprint of the sortable objects will
+ * eventually exceed a specified threshold; at that point, the SortExternal
+ * object will call the abstract method Flush().  It's expected that Flush()
+ * implementations will empty out the current sort cache, write a sorted "run"
+ * to external storage, and add a new child SortExternal object to the top
+ * level object's "runs" array to represent the flushed content.
+ *
+ * During the read phase, the child objects retrieve values from external
+ * storage one at a time by calling the abstract method Recover_Item().  The
+ * top-level SortExternal object then interleaves multiple sorted streams to
+ * produce a single unified stream of sorted values.
  */
-class KinoSearch::Util::SortExternal cnick SortEx
-    extends KinoSearch::Obj {
+abstract class KinoSearch::Util::SortExternal cnick SortEx
+    extends KinoSearch::Object::Obj {
 
-    Sort_compare_t     compare;
-    Obj              **cache;    /* item cache, incoming and outgoing */
-    u32_t              cache_cap;   /* allocated limit for cache */
-    u32_t              cache_max;   /* number of elems in cache */ 
-    u32_t              cache_tick;  /* index of current element */
-    Obj              **scratch;     /* memory for use by mergesort */
-    u32_t              scratch_cap; /* allocated limit for scratch */
-    u32_t              mem_thresh;  /* mem allowed for cache elems */
-    u32_t              mem_consumed; /* mem occupied by cache elems */
-    SortExRun        **runs;
-    u32_t              num_runs;
-    bool_t             flipped;      /* force flip before fetch */ 
+    Obj          **cache;
+    u32_t          cache_cap;
+    u32_t          cache_max;
+    u32_t          cache_tick;
+    Obj          **scratch;
+    u32_t          scratch_cap;
+    VArray        *runs;
+    u32_t          num_slices;
+    Obj         ***slice_starts;
+    u32_t         *slice_sizes;
+    u32_t          mem_thresh;
+    u32_t          mem_consumed;
+    bool_t         flipped;
 
     inert SortExternal*
-    init(SortExternal *self, u32_t mem_thresh = 0x1000000,
-         Sort_compare_t compare);
+    init(SortExternal *self, u32_t mem_thresh = 0x1000000);
 
-    /** Add an Obj to the sort pool.  The SortEx object takes control of the
-     * Obj, so it should not be modified post-feeding.
+    /** Compare two sortable elements.
+     */
+    abstract int
+    Compare(SortExternal *self, Obj **a, Obj **b);
+
+    /** Flush all elements currently in the cache.
+     *
+     * Presumably this entails sorting everything, writing the sorted elements
+     * to disk, spawning a child object to represent those elements, and
+     * adding that child to the top level object via Add_Run().
+     */
+    abstract void
+    Flush(SortExternal *self);
+
+    /** Recover individual elements from external storage in sorted order.
+     * Returns NULL when the object decides that the cache is full enough.
+     */
+    abstract incremented Obj*
+    Recover_Item(SortExternal *self);
+
+    /** Add an item to the sort pool.  
      * 
-     * @param obj Item to add.
-     * @param bytes_this_obj Memory footprint of the object, for calculating
-     * progress towards flush threshold.
+     * @param item The element to add.
      */
     void
-    Feed(SortExternal *self, Obj *obj, u32_t bytes_this_obj);
+    Feed(SortExternal *self, decremented Obj *item);
 
     /** Flip the sortex from write mode to read mode.
      */
     void
     Flip(SortExternal *self);
 
-    /** Fetch the next sorted item from the sort pool.  Flip() must be
-     * called first.  Returns NULL when the sortex has been exhausted.
+    /** Fetch the next sorted item from the sort pool.  Invalid prior to
+     * calling Flip(). Returns NULL when all elements have been exhausted.
      */
     incremented Obj*
     Fetch(SortExternal *self);
 
     /** Preview the next item that Fetch will return, but don't pop it.
+     * Invalid prior to calling Flip().
      */
     Obj*
     Peek(SortExternal *self);
+
+    /** Add a run to the sortex's collection.
+     */
+    void
+    Add_Run(SortExternal *self, decremented SortExternal *run);
+
+    /** Refill the cache, adding elements via Recover_Item() until it
+     * returns NULL.  Return the number of elements recovered.  May only be
+     * called when the cache is empty.
+     */
+    u32_t
+    Refill(SortExternal *self);
 
     /** Sort all items currently in the main cache.
      */
     void
     Sort_Cache(SortExternal *self);
-
-    /** Flush all elements currently in the cache.
-     *
-     * Presumably this entails sorting everything, then writing the sorted
-     * elements to disk and spawning an object which isa SortExRun to
-     * represent those elements.
-     */
-    abstract void
-    Flush(SortExternal *self);
 
     /** Release items currently held in the cache, if any.  Reset all cache
      * variables (mem_consumed, cache_max, etc).
@@ -79,22 +117,24 @@ class KinoSearch::Util::SortExternal cnick SortEx
     void
     Clear_Cache(SortExternal *self);
 
-    /** Add a run to the sortex's collection.
+    /** Return the number of items presently in the cache.
      */
-    void
-    Add_Run(SortExternal *self, SortExRun *run);
-
     u32_t
     Cache_Count(SortExternal *self);
 
-    u32_t
-    Get_Num_Runs(SortExternal *self);
-
+    /** Allocate more memory to the cache.
+     */
     void
+    Grow_Cache(SortExternal *self, u32_t new_cache_cap);
+
+    void 
+    Set_Mem_Thresh(SortExternal *self, u32_t mem_thresh);
+
+    public void
     Destroy(SortExternal *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

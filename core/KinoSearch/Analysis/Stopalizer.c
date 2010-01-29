@@ -66,7 +66,7 @@ Stopalizer_dump_equals(Stopalizer *self, Obj *dump)
         return false;
     }
     else {
-        Hash *source   = (Hash*)ASSERT_IS_A(dump, HASH);
+        Hash *source   = (Hash*)CERTIFY(dump, HASH);
         Hash *stoplist = (Hash*)Hash_Fetch_Str(source, "stoplist", 8);
         if (!stoplist) return false;
         if (!Hash_Equals(self->stoplist, (Obj*)stoplist)) return false;
@@ -79,14 +79,14 @@ Stopalizer_equals(Stopalizer *self, Obj *other)
 {
     Stopalizer *const evil_twin = (Stopalizer*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, STOPALIZER)) return false;
+    if (!Obj_Is_A(other, STOPALIZER)) return false;
     if (!Hash_Equals(evil_twin->stoplist, (Obj*)self->stoplist)) {
         return false;
     }
     return true;
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -5,10 +5,8 @@
 #define CHY_USE_SHORT_NAMES
 
 #include "KinoSearch/Util/StringHelper.h"
-
-#include "KinoSearch/Obj/CharBuf.h"
-#include "KinoSearch/Obj/Err.h"
-#include "KinoSearch/Util/MemManager.h"
+#include "KinoSearch/Object/Err.h"
+#include "KinoSearch/Util/Memory.h"
 
 const u8_t StrHelp_UTF8_SKIP[] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -17,73 +15,43 @@ const u8_t StrHelp_UTF8_SKIP[] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4
+    1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+    3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,6,6,7,7
 };
+#define SKIP_MASK 0x7
 
 const u8_t StrHelp_UTF8_TRAILING[] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,7,7,7,7,7,7,7,7,7,7,7
 };
-
-char* 
-StrHelp_strndup(const char *source, size_t size) 
-{
-    char *ptr = MALLOCATE(size + 1, char);
-    if (ptr == NULL) 
-        THROW(ERR, "Out of memory");
-    ptr[size] = '\0';
-    memcpy(ptr, source, size);
-    return ptr;
-}
+#define TRAILING_MASK 0x7
 
 i32_t
-StrHelp_string_diff(const char *a, const char *b, 
-                    size_t a_len,  size_t b_len) 
+StrHelp_overlap(const char *a, const char *b, size_t a_len,  size_t b_len)
 {
     size_t i;
     const size_t len = a_len <= b_len ? a_len : b_len;
 
     for (i = 0; i < len; i++) {
-        if (*a++ != *b++) 
-            break;
+        if (*a++ != *b++) { break; }
     }
     return i;
 }
 
-i32_t
-StrHelp_compare_strings(const char *a, const char *b, 
-                        size_t a_len,  size_t b_len) 
-{
-    i32_t comparison = 0;
-    const size_t len = a_len < b_len? a_len : b_len;
-
-    if (a == NULL  || b == NULL)
-        THROW(ERR, "Internal error: can't compare unallocated pointers");
-    
-    if (len > 0)
-        comparison = memcmp(a, b, len);
-
-    /* If a is a substring of b, it's less than b, so return a neg num. */
-    if (comparison == 0) 
-        comparison = a_len - b_len;
-
-    return comparison;
-}
-
 static const char base36_chars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-CharBuf*
-StrHelp_to_base36(u32_t num) 
+u32_t
+StrHelp_to_base36(u64_t num, void *buffer) 
 {
-    char buffer[11];
-    char *buf = buffer + 10;
+    char  my_buf[StrHelp_MAX_BASE36_BYTES];
+    char *buf = my_buf + StrHelp_MAX_BASE36_BYTES - 1;
+    char *end = buf;
 
     /* Null terminate. */
     *buf = '\0';
@@ -94,7 +62,11 @@ StrHelp_to_base36(u32_t num)
         num /= 36;
     } while (num > 0);
 
-    return CB_new_from_trusted_utf8(buf, strlen(buf));
+    {
+        u32_t size = end - buf;
+        memcpy(buffer, buf, size + 1);
+        return size;
+    }
 }
 
 /* This function is adapted from sample code in RFC 2640. */
@@ -115,8 +87,8 @@ StrHelp_utf8_valid(const char *ptr, size_t size)
                 /* Need to check 2nd byte for proper range? */
                 if (byte2_range_mask) {
                     /* Reset mask if byte passes, otherwise fail. */
-                    if (c & byte2_range_mask) byte2_range_mask = 0x00;
-                    else return false;
+                    if (c & byte2_range_mask) { byte2_range_mask = 0x00; }
+                    else                      { return false; }
                 }
                 trailing--;
             } 
@@ -129,25 +101,17 @@ StrHelp_utf8_valid(const char *ptr, size_t size)
         }
         else if ((c & 0xE0) == 0xC0) { /* 2-byte UTF-8 */
             /* Verify UTF-8 byte in range. */
-            if (c & 0x1E) trailing = 1;
-            else return false;
+            if (c & 0x1E) { trailing = 1; }
+            else          { return false; }
         }
         else if ((c & 0xF0) == 0xE0) { /* 3-byte UTF-8 */
-            if (!(c & 0x0F)) byte2_range_mask = 0x20;
+            if (!(c & 0x0F)) { byte2_range_mask = 0x20; }
             trailing = 2;
         } 
-        else if ((c & 0xF8) == 0xF0) { /* 4-byte UTF-8 */
-            if (!(c & 0x07)) byte2_range_mask = 0x30;
+        else if (c >= 0xF0 && c <= 0xF4) { /* 4-byte UTF-8 */
+            if (!(c & 0x07)) { byte2_range_mask = 0x30; }
             trailing = 3;
         }
-        else if ((c & 0xFC) == 0xF8) { /* 5-byte UTF-8 */
-            if (!(c & 0x03)) byte2_range_mask = 0x38;
-            trailing = 4;
-        } 
-        else if ((c & 0xFE) == 0xFC) { /* 6-byte UTF-8 */
-            if (!(c & 0x01)) byte2_range_mask = 0x3C;
-            trailing = 5;
-        } 
         else {
             return false;
         }
@@ -157,8 +121,9 @@ StrHelp_utf8_valid(const char *ptr, size_t size)
 }
 
 u32_t
-StrHelp_encode_utf8_char(u32_t code_point, u8_t *buf)
+StrHelp_encode_utf8_char(u32_t code_point, void *buffer)
 {
+    u8_t *buf = (u8_t*)buffer;
     if (code_point <= 0x7F) { /* ASCII */
         buf[0] = (u8_t)code_point;
         return 1;
@@ -174,7 +139,7 @@ StrHelp_encode_utf8_char(u32_t code_point, u8_t *buf)
         buf[2] = (u8_t)(0x80 | ( code_point       & 0x3f));
         return 3;
     }
-    else if (code_point <= 0x1FFFFF) { /* 4 byte range */
+    else if (code_point <= 0x10FFFF) { /* 4 byte range */
         buf[0] = (u8_t)(0xF0 | ( code_point >> 18        ));
         buf[1] = (u8_t)(0x80 | ((code_point >> 12) & 0x3F));
         buf[2] = (u8_t)(0x80 | ((code_point >> 6 ) & 0x3F));
@@ -221,7 +186,7 @@ StrHelp_decode_utf8_char(const char *ptr)
     u32_t retval = *string;
     int trailing = StrHelp_UTF8_TRAILING[retval];
 
-    switch (trailing) {
+    switch (trailing & TRAILING_MASK) {
         case 0:
             break;
 
@@ -243,16 +208,8 @@ StrHelp_decode_utf8_char(const char *ptr)
                      |  (string[3] & 0x3F);
             break;
 
-        case 4: 
-            retval =   ((retval    & 0x03) << 24)
-                     | ((string[1] & 0x3F) << 18)
-                     | ((string[2] & 0x3F) << 12)
-                     | ((string[3] & 0x3F) << 6)
-                     |  (string[4] & 0x3F);
-            break;
-
         default:
-            THROW(ERR, "unexpected value for trailing: %i32", (i32_t)trailing);
+            THROW(ERR, "Invalid UTF-8 header byte: %x32", retval);
     }
 
     return retval;
@@ -262,12 +219,12 @@ const char*
 StrHelp_back_utf8_char(const char *ptr, char *start)
 {
     while (--ptr >= start) {
-        if ((*ptr & 0xC0) != 0x80) return ptr;
+        if ((*ptr & 0xC0) != 0x80) { return ptr; }
     }
     return NULL;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

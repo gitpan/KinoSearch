@@ -33,7 +33,7 @@ bool_t
 ORQuery_equals(ORQuery *self, Obj *other)
 {
     if ((ORQuery*)other == self)   { return true;  }
-    if (!OBJ_IS_A(other, ORQUERY)) { return false; }
+    if (!Obj_Is_A(other, ORQUERY)) { return false; }
     return PolyQuery_equals((PolyQuery*)self, other);
 }
 
@@ -76,7 +76,7 @@ ORCompiler_init(ORCompiler *self, ORQuery *parent, Searchable *searchable,
 {
     PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
         boost);
-    Compiler_Normalize(self);
+    ORCompiler_Normalize(self);
     return self;
 }
 
@@ -118,7 +118,7 @@ ORCompiler_make_matcher(ORCompiler *self, SegReader *reader,
             return submatcher;
         }
         else {
-            Similarity *sim    = Compiler_Get_Similarity(self);
+            Similarity *sim    = ORCompiler_Get_Similarity(self);
             Matcher    *retval = need_score
                 ? (Matcher*)ORScorer_new(submatchers, sim)
                 : (Matcher*)ORMatcher_new(submatchers);
@@ -128,7 +128,7 @@ ORCompiler_make_matcher(ORCompiler *self, SegReader *reader,
     }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

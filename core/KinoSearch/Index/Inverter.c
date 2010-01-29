@@ -130,8 +130,9 @@ Inverter_add_field(Inverter *self, InverterEntry *entry)
         Inversion_Invert(entry->inversion);
     }
     else if (entry->indexed || entry->highlightable) {
-        size_t token_len = ViewCB_Get_Size(entry->value);
-        Token *seed = Token_new((char*)ViewCB_Get_Ptr8(entry->value), 
+        ViewCharBuf *value = (ViewCharBuf*)entry->value;
+        size_t token_len = ViewCB_Get_Size(value);
+        Token *seed = Token_new((char*)ViewCB_Get_Ptr8(value), 
             token_len, 0, token_len, 1.0f, 1);
         DECREF(entry->inversion);
         entry->inversion = Inversion_new(seed);
@@ -182,12 +183,13 @@ InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field_name,
         else                { THROW(ERR, "Unknown field: '%o'", field_name); }
         self->value      = FType_Make_Blank(self->type);
         self->indexed    = FType_Indexed(self->type);
-        if (self->indexed && OBJ_IS_A(self->type, NUMERICTYPE)) {
+        if (self->indexed && FType_Is_A(self->type, NUMERICTYPE)) {
             THROW(ERR, "Field '%o' spec'd as indexed, but numerical types cannot "
                 "be indexed yet", field_name);
         }
-        if (OBJ_IS_A(self->type, FULLTEXTTYPE)) {
-            self->highlightable = FullTextType_Highlightable(self->type);
+        if (FType_Is_A(self->type, FULLTEXTTYPE)) {
+            self->highlightable 
+                = FullTextType_Highlightable((FullTextType*)self->type);
         }
     }
     return self;
@@ -219,7 +221,7 @@ InvEntry_compare_to(InverterEntry *self, Obj *other)
     return self->field_num - competitor->field_num;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

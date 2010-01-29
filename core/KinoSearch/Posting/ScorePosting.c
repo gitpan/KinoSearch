@@ -55,7 +55,7 @@ ScorePost_clone(ScorePosting *self)
 
     if (self->freq) {
         evil_twin->prox_cap = evil_twin->freq;
-        evil_twin->prox = MALLOCATE(evil_twin->freq, u32_t);
+        evil_twin->prox = (u32_t*)MALLOCATE(evil_twin->freq * sizeof(u32_t));
         memcpy(evil_twin->prox, self->prox, self->freq * sizeof(u32_t));
     }
     else {
@@ -117,7 +117,7 @@ ScorePost_add_inversion_to_pool(ScorePosting *self, PostingPool *post_pool,
         raw_posting->aux_len = dest - start;
         raw_post_bytes = dest - (char*)raw_posting;
         MemPool_Resize(mem_pool, raw_posting, raw_post_bytes);
-        PostPool_Add_Elem(post_pool, (Obj*)raw_posting);
+        PostPool_Feed(post_pool, (Obj*)raw_posting);
     }
 }
 
@@ -154,7 +154,7 @@ ScorePost_read_record(ScorePosting *self, InStream *instream)
     /* Read positions. */
     num_prox = self->freq;
     if (num_prox > self->prox_cap) {
-        self->prox = REALLOCATE(self->prox, num_prox, u32_t);
+        self->prox = (u32_t*)REALLOCATE(self->prox, num_prox * sizeof(u32_t));
         self->prox_cap = num_prox;
     }
     positions = self->prox;
@@ -229,7 +229,7 @@ ScorePostScorer_init(ScorePostingScorer *self, Similarity *sim,
     TermScorer_init((TermScorer*)self, sim, plist, compiler);
 
     /* Fill score cache. */
-    self->score_cache = MALLOCATE(TERMSCORER_SCORE_CACHE_SIZE, float);
+    self->score_cache = (float*)MALLOCATE(TERMSCORER_SCORE_CACHE_SIZE * sizeof(float));
     for (i = 0; i < TERMSCORER_SCORE_CACHE_SIZE; i++) {
         self->score_cache[i] = Sim_TF(sim, (float)i) * self->weight;
     }
@@ -261,7 +261,7 @@ ScorePostScorer_destroy(ScorePostingScorer *self)
     SUPER_DESTROY(self, SCOREPOSTINGSCORER);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

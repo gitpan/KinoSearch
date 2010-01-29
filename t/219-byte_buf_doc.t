@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package MyArchitecture;
-use base qw( KinoSearch::Architecture );
+use base qw( KinoSearch::Plan::Architecture );
 
 use KSx::Index::ByteBufDocWriter;
 use KSx::Index::ByteBufDocReader;
@@ -56,6 +56,7 @@ sub new {
 
 package main;
 use Test::More tests => 4;
+use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = MySchema->new;

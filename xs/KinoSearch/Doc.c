@@ -1,10 +1,10 @@
 #define C_KINO_DOC
 #include "xs/XSBind.h"
 #include "KinoSearch/Doc.h"
+#include "KinoSearch/Object/Host.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/Host.h"
-#include "KinoSearch/Util/MemManager.h"
+#include "KinoSearch/Util/Memory.h"
 
 kino_Doc*
 kino_Doc_init(kino_Doc *self, void *fields, chy_i32_t doc_id)
@@ -40,12 +40,16 @@ kino_Doc_store(kino_Doc *self, const kino_CharBuf *field, kino_Obj *value)
 {
     char   *key      = (char*)Kino_CB_Get_Ptr8(field);
     size_t  key_size = Kino_CB_Get_Size(field);
+    SV *key_sv = newSVpvn(key, key_size); 
     SV *val_sv = value == NULL
                ? newSV(0)
-               : KINO_OBJ_IS_A(value, KINO_CHARBUF) 
+               : Kino_Obj_Is_A(value, KINO_CHARBUF) 
                ? XSBind_cb_to_sv((kino_CharBuf*)value)
-               : Kino_Obj_To_Host(value);
-    hv_store((HV*)self->fields, key, key_size, val_sv, 0);
+               : (SV*)Kino_Obj_To_Host(value);
+    SvUTF8_on(key_sv);
+    hv_store_ent((HV*)self->fields, key_sv, val_sv, 0);
+    /* TODO: make this a thread-local instead of creating it every time? */
+    SvREFCNT_dec(key_sv);
 }
 
 void
@@ -74,12 +78,12 @@ kino_Doc_extract(kino_Doc *self, kino_CharBuf *field,
                  kino_ViewCharBuf *target) 
 {
     kino_Obj *retval = NULL;
-    SV **sv_ptr = hv_fetch(self->fields, (char*)Kino_CB_Get_Ptr8(field), 
+    SV **sv_ptr = hv_fetch((HV*)self->fields, (char*)Kino_CB_Get_Ptr8(field), 
         Kino_CB_Get_Size(field), 0);
 
     if (sv_ptr && XSBind_sv_defined(*sv_ptr)) {
         SV *const sv = *sv_ptr;
-        if (sv_isobject(sv) && sv_derived_from(sv, "KinoSearch::Obj")) {
+        if (sv_isobject(sv) && sv_derived_from(sv, "KinoSearch::Object::Obj")) {
             IV tmp = SvIV( SvRV(sv) );
             retval = INT2PTR(kino_Obj*, tmp);
         }
@@ -99,7 +103,7 @@ kino_Doc_to_host(kino_Doc *self)
 {
     kino_Doc_to_host_t super_to_host 
         = (kino_Doc_to_host_t)KINO_SUPER_METHOD(KINO_DOC, Doc, To_Host);
-    SV *perl_obj = super_to_host(self);
+    SV *perl_obj = (SV*)super_to_host(self);
     XSBind_enable_overload(perl_obj);
     return perl_obj;
 }
@@ -109,26 +113,27 @@ kino_Doc_dump(kino_Doc *self)
 {
     kino_Hash *dump = kino_Hash_new(0);
     Kino_Hash_Store_Str(dump, "_class", 6, 
-        (kino_Obj*)Kino_CB_Clone(Kino_Obj_Get_Class_Name(self)));
+        (kino_Obj*)Kino_CB_Clone(Kino_Doc_Get_Class_Name(self)));
     Kino_Hash_Store_Str(dump, "doc_id", 7, 
         (kino_Obj*)kino_CB_newf("%i32", self->doc_id));
-    kino_Hash_store_str(dump, "fields", 6, XSBind_perl_to_kino(self->fields));
+    Kino_Hash_Store_Str(dump, "fields", 6, 
+        XSBind_perl_to_kino((SV*)self->fields));
     return dump;
 }
 
 kino_Doc*
 kino_Doc_load(kino_Doc *self, kino_Obj *dump)
 {
-    kino_Hash *source = (kino_Hash*)KINO_ASSERT_IS_A(dump, KINO_HASH);
-    kino_CharBuf *class_name = (kino_CharBuf*)KINO_ASSERT_IS_A(
+    kino_Hash *source = (kino_Hash*)KINO_CERTIFY(dump, KINO_HASH);
+    kino_CharBuf *class_name = (kino_CharBuf*)KINO_CERTIFY(
         Kino_Hash_Fetch_Str(source, "_class", 6), KINO_CHARBUF);
     kino_VTable *vtable = kino_VTable_singleton(class_name, NULL);
     kino_Doc *loaded = (kino_Doc*)Kino_VTable_Make_Obj(vtable);
-    kino_Obj *doc_id = KINO_ASSERT_IS_A(
+    kino_Obj *doc_id = KINO_CERTIFY(
         Kino_Hash_Fetch_Str(source, "doc_id", 7), KINO_OBJ);
-    kino_Hash *fields = (kino_Hash*)KINO_ASSERT_IS_A(
+    kino_Hash *fields = (kino_Hash*)KINO_CERTIFY(
         Kino_Hash_Fetch_Str(source, "fields", 6), KINO_HASH);
-    SV *fields_sv = XSBind_kobj_to_pobj((kino_Obj*)fields);
+    SV *fields_sv = XSBind_kino_to_perl((kino_Obj*)fields);
     CHY_UNUSED_VAR(self);
 
     loaded->doc_id = (chy_i32_t)Kino_Obj_To_I64(doc_id);
@@ -147,7 +152,7 @@ kino_Doc_equals(kino_Doc *self, kino_Obj *other)
     I32 num_fields;
 
     if (evil_twin == self)                    { return true;  }
-    if (!KINO_OBJ_IS_A(evil_twin, KINO_DOC))  { return false; }
+    if (!Kino_Obj_Is_A(other, KINO_DOC))      { return false; }
     if (!self->doc_id == evil_twin->doc_id)   { return false; }
     if (!!self->fields ^ !!evil_twin->fields) { return false; }
 
@@ -176,7 +181,7 @@ kino_Doc_destroy(kino_Doc *self)
     KINO_SUPER_DESTROY(self, KINO_DOC);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

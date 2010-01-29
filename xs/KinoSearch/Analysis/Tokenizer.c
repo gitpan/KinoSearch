@@ -5,8 +5,8 @@
 #include "KinoSearch/Analysis/Tokenizer.h"
 #include "KinoSearch/Analysis/Token.h"
 #include "KinoSearch/Analysis/Inversion.h"
-#include "KinoSearch/Util/Host.h"
-#include "KinoSearch/Util/MemManager.h"
+#include "KinoSearch/Object/Host.h"
+#include "KinoSearch/Util/Memory.h"
 #include "KinoSearch/Util/StringHelper.h"
 
 static void
@@ -28,7 +28,7 @@ kino_Tokenizer_init(kino_Tokenizer *self, const kino_CharBuf *pattern)
                       sizeof(DEFAULT_PATTERN) - 1);
 
     /* Acquire a compiled regex engine for matching one token. */
-    token_re_sv = kino_Host_callback_nat(KINO_TOKENIZER,
+    token_re_sv = (SV*)kino_Host_callback_host(KINO_TOKENIZER,
         "compile_token_re", 1, KINO_ARG_STR("pattern", self->pattern));
     S_set_token_re_but_not_pattern(self, SvRV(token_re_sv));
 
@@ -153,7 +153,7 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
     }
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

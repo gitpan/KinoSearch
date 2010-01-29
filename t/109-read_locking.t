@@ -34,8 +34,7 @@ $indexer->delete_by_term( field => 'content', term => $_ ) for qw( a b c );
 $indexer->add_doc( { content => 'x' } );
 
 # Artificially create deletion lock.
-my $outstream = $folder->open_out('deletion.lock')
-    or die "Can't open deletion.lock";
+my $outstream = $folder->open_out('locks/deletion.lock') or die KinoSearch->error;
 $outstream->print("{}");
 $outstream->close;
 {
@@ -46,13 +45,13 @@ $outstream->close;
         "Indexer warns if it can't get a deletion lock" );
 }
 
-ok( $folder->exists('deletion.lock'),
+ok( $folder->exists('locks/deletion.lock'),
     "Indexer doesn't delete deletion lock when it can't get it" );
-my $num_ds_files = grep {m/documents\.dat$/} @{ $folder->list };
+my $num_ds_files = grep {m/documents\.dat$/} @{ $folder->list_r };
 cmp_ok( $num_ds_files, '>', 1,
     "Indexer doesn't process deletions when it can't get deletion lock" );
 
-my $num_snap_files = grep {m/snapshot/} @{ $folder->list };
+my $num_snap_files = grep {m/snapshot/} @{ $folder->list_r };
 is( $num_snap_files, 2, "didn't zap the old snap file" );
 
 my $reader;
@@ -62,13 +61,13 @@ SKIP: {
     eval {
         $reader = KinoSearch::Index::IndexReader->open(
             index   => $folder,
-            manager => FastIndexManager->new( hostname => 'me' ),
+            manager => FastIndexManager->new( host => 'me' ),
         );
     };
     like( $@, qr/deletion/,
         "IndexReader dies if it can't get deletion lock" );
 }
-$folder->delete('deletion.lock') or die "Can't delete 'deletion.lock'";
+$folder->delete('locks/deletion.lock') or die "Can't delete 'deletion.lock'";
 
 Test_race_condition_1: {
     my $latest_snapshot_file = latest_snapshot($folder);
@@ -77,14 +76,16 @@ Test_race_condition_1: {
     # PolyReader was expecting to see were zapped after a snapshot file was
     # picked.
     $folder->rename( from => $latest_snapshot_file, to => 'temp' );
-    $folder->rename( from => $_, to => "$_.hidden" )
-        for grep {m#^seg_1/.#} @{ $folder->list };
+    $folder->rename(
+        from => 'seg_1',
+        to   => 'seg_1.hidden',
+    );
     KinoSearch::Index::IndexReader::set_race_condition_debug1(
-        KinoSearch::Obj::CharBuf->new($latest_snapshot_file) );
+        KinoSearch::Object::CharBuf->new($latest_snapshot_file) );
 
     $reader = KinoSearch::Index::IndexReader->open(
         index   => $folder,
-        manager => FastIndexManager->new( hostname => 'me' ),
+        manager => FastIndexManager->new( host => 'me' ),
     );
     is( $reader->doc_count, 1,
         "reader overcomes race condition of index update after read lock" );
@@ -92,10 +93,10 @@ Test_race_condition_1: {
         2, "reader retried before succeeding" );
 
     # Clean up our artificial mess.
-    for my $entry ( @{ $folder->list } ) {
-        next unless $entry =~ m#(.*)\.hidden#;
-        $folder->rename( from => $entry, to => $1 );
-    }
+    $folder->rename(
+        from => 'seg_1.hidden',
+        to   => 'seg_1',
+    );
     KinoSearch::Index::IndexReader::set_race_condition_debug1(undef);
 
     $reader->close;
@@ -130,7 +131,7 @@ $folder = create_index(qw( a b c x ));
 # Establish read lock.
 $reader = KinoSearch::Index::IndexReader->open(
     index   => $folder,
-    manager => FastIndexManager->new( hostname => 'me' ),
+    manager => FastIndexManager->new( host => 'me' ),
 );
 
 $indexer = KinoSearch::Indexer->new(
@@ -141,7 +142,7 @@ $indexer->delete_by_term( field => 'content', term => 'a' );
 $indexer->optimize;
 $indexer->commit;
 
-my $files = $folder->list;
+my $files = $folder->list_r;
 $num_snap_files = scalar grep {m/snapshot_\w+\.json$/} @$files;
 is( $num_snap_files, 2, "lock preserved last snapshot file" );
 my $num_del_files = scalar grep {m/deletions-seg_1\.bv$/} @$files;
@@ -161,7 +162,7 @@ $indexer = KinoSearch::Indexer->new(
 $indexer->optimize;
 $indexer->commit;
 
-$files = $folder->list;
+$files = $folder->list_r;
 $num_del_files = scalar grep {m/deletions/} @$files;
 is( $num_del_files, 0, "lock freed, del files optimized away" );
 $num_snap_files = scalar grep {m/snapshot_\w+\.json$/} @$files;

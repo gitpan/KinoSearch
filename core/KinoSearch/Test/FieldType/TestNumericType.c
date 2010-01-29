@@ -24,9 +24,9 @@ test_Dump_Load_and_Equals(TestBatch *batch)
         "Dump => Load round trip");
     ASSERT_TRUE(batch, Float64Type_Equals(type, (Obj*)another_clone), 
         "Dump_For_Schema => Load round trip");
-    ASSERT_TRUE(batch, OBJ_IS_A(clone, FLOAT64TYPE), "Dump => Load Obj_Is_A");
-    ASSERT_TRUE(batch, OBJ_IS_A(another_clone, FLOAT64TYPE), 
-        "Dump_For_Schema => Load Obj_Is_A");
+    ASSERT_TRUE(batch, Obj_Is_A(clone, FLOAT64TYPE), "Dump => Load Is_A");
+    ASSERT_TRUE(batch, Obj_Is_A((Obj*)another_clone, FLOAT64TYPE), 
+        "Dump_For_Schema => Load Is_A");
 
     DECREF(another_clone);
     DECREF(another_dump);
@@ -70,14 +70,14 @@ test_Compare_Values(TestBatch *batch)
 void
 TestNumericType_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestNumericType", 11, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(11);
+    TestBatch_Plan(batch);
     test_Dump_Load_and_Equals(batch);
     test_Compare_Values(batch);
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

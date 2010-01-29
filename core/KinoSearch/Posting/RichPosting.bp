@@ -23,10 +23,10 @@ class KinoSearch::Posting::RichPosting cnick RichPost
     inert RichPosting*
     init(RichPosting *self, Similarity *similarity);
 
-    void
+    public void
     Destroy(RichPosting *self);
 
-    incremented RichPosting*
+    public incremented RichPosting*
     Clone(RichPosting *self);
 
     void
@@ -55,7 +55,7 @@ class KinoSearch::Posting::RichPostingScorer cnick RichPostScorer
          PostingList *posting_list, Compiler *compiler);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

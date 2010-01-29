@@ -5,13 +5,13 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.30_072';
+our $VERSION = '0.30_08';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
 # See the docs for KinoSearch::Util::ToolSet.
-BEGIN { XSLoader::load( 'KinoSearch', '0.30_072' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.30_08' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -27,6 +27,8 @@ sub kdump {
     $kdumper->Indent(1);
     warn $kdumper->Dump;
 }
+
+sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Util::IndexFileNames;
@@ -137,6 +139,12 @@ sub kdump {
 }
 
 {
+    package KinoSearch::Architecture;
+    # Temporary back compat.
+    BEGIN { push our @ISA, 'KinoSearch::Plan::Architecture' }
+}
+
+{
     package KinoSearch::Doc;
     use KinoSearch::Util::ToolSet qw( nfreeze thaw );
     use bytes;
@@ -150,32 +158,43 @@ sub kdump {
         my ( $self, $outstream ) = @_;
         my $buf = nfreeze( $self->get_fields );
         $outstream->write_c32( bytes::length($buf) );
-        $outstream->write_bytes($buf);
+        $outstream->print($buf);
     }
 
     sub deserialize_fields {
         my ( $self, $instream ) = @_;
         my $len = $instream->read_c32;
         my $buf;
-        $instream->read_bytes( $buf, $len );
+        $instream->read( $buf, $len );
         $self->set_fields( thaw($buf) );
     }
 }
 
 {
-    package KinoSearch::Obj;
+    package KinoSearch::Object::I32Array;
+    our %new_PARAMS = ( ints => undef );
+}
+
+
+{
+    package KinoSearch::Object::LockFreeRegistry;
+    sub DESTROY { }    # leak all
+}
+
+{
+    package KinoSearch::Object::Obj;
     use KinoSearch::Util::ToolSet qw( to_kino to_perl );
     sub load { return $_[0]->_load( to_kino( $_[1] ) ) }
 }
 
 {
-    package KinoSearch::Obj::VTable;
+    package KinoSearch::Object::VTable;
 
     sub find_parent_class {
         my ( undef, $package ) = @_;
         no strict 'refs';
         for my $parent ( @{"$package\::ISA"} ) {
-            return $parent if $parent->isa('KinoSearch::Obj');
+            return $parent if $parent->isa('KinoSearch::Object::Obj');
         }
         return;
     }
@@ -185,11 +204,11 @@ sub kdump {
         no strict 'refs';
         my $stash = \%{"$package\::"};
         my $methods
-            = KinoSearch::Obj::VArray->new( capacity => scalar keys %$stash );
+            = KinoSearch::Object::VArray->new( capacity => scalar keys %$stash );
         while ( my ( $symbol, $glob ) = each %$stash ) {
             next if ref $glob;
             next unless *$glob{CODE};
-            $methods->push( KinoSearch::Obj::CharBuf->new($symbol) );
+            $methods->push( KinoSearch::Object::CharBuf->new($symbol) );
         }
         return $methods;
     }
@@ -219,9 +238,9 @@ sub kdump {
         return;
     }
     sub posting_list {
-        my $self        = shift;
-        my $post_reader = $self->fetch("KinoSearch::Index::PostingsReader");
-        return $post_reader->posting_list(@_) if $post_reader;
+        my $self         = shift;
+        my $plist_reader = $self->fetch("KinoSearch::Index::PostingListReader");
+        return $plist_reader->posting_list(@_) if $plist_reader;
         return;
     }
     sub offsets { shift->_offsets->to_arrayref }
@@ -238,7 +257,7 @@ sub kdump {
         eval {
             $snapshot->read_file( folder => $folder, filename => $filename );
         };
-        if   ($@) { return KinoSearch::Obj::CharBuf->new($@) }
+        if   ($@) { return KinoSearch::Object::CharBuf->new($@) }
         else      { return undef }
     }
 
@@ -248,7 +267,7 @@ sub kdump {
         my $folder   = $self->get_folder;
         my $snapshot = $self->get_snapshot;
         my $seg_readers
-            = KinoSearch::Obj::VArray->new( capacity => scalar @$segments );
+            = KinoSearch::Object::VArray->new( capacity => scalar @$segments );
         my $segs = to_kino($segments);    # FIXME: Don't convert twice.
         eval {
             # Create a SegReader for each segment in the index.
@@ -265,7 +284,7 @@ sub kdump {
             }
         };
         if ($@) {
-            return KinoSearch::Obj::CharBuf->new($@);
+            return KinoSearch::Object::CharBuf->new($@);
         }
         return $seg_readers;
     }
@@ -288,7 +307,7 @@ sub kdump {
         my $self = shift;
         my $arch = $self->get_schema->get_architecture;
         eval { $arch->init_seg_reader($self); };
-        if ($@) { return KinoSearch::Obj::CharBuf->new($@); }
+        if ($@) { return KinoSearch::Object::CharBuf->new($@); }
         return;
     }
 }
@@ -356,39 +375,32 @@ sub kdump {
 }
 
 {
-    package KinoSearch::Obj::BitVector;
+    package KinoSearch::Object::BitVector;
     sub to_arrayref { shift->to_array->to_arrayref }
 
     # Temporary back compat.
     package KinoSearch::Util::BitVector;
-    BEGIN { push our @ISA, 'KinoSearch::Obj::BitVector' }
+    BEGIN { push our @ISA, 'KinoSearch::Object::BitVector' }
+    package KinoSearch::Obj::BitVector;
+    BEGIN { push our @ISA, 'KinoSearch::Object::BitVector' }
 }
 
 {
-    package KinoSearch::Obj::ByteBuf;
-    BEGIN {
-        push our @ISA, 'Exporter';
-        our @EXPORT_OK = qw( bb_compare );    # testing only
-    }
-
+    package KinoSearch::Object::ByteBuf;
     {
         # Override autogenerated deserialize binding.
         no warnings 'redefine';
         sub deserialize { shift->_deserialize(@_) }
     }
 
-    package KinoSearch::Obj::ViewByteBuf;
+    package KinoSearch::Object::ViewByteBuf;
     use KinoSearch::Util::ToolSet qw( confess );
 
     sub new { confess "ViewByteBuf objects can only be created from C." }
 }
 
 {
-    package KinoSearch::Obj::CharBuf;
-    BEGIN {
-        push our @ISA, 'Exporter';
-        our @EXPORT_OK = qw( cb_compare );
-    }
+    package KinoSearch::Object::CharBuf;
 
     {
         # Defeat obscure bugs in the XS auto-generation by redefining clone()
@@ -400,12 +412,12 @@ sub kdump {
         sub deserialize { shift->_deserialize(@_) }
     }
 
-    package KinoSearch::Obj::ViewCharBuf;
+    package KinoSearch::Object::ViewCharBuf;
     use KinoSearch::Util::ToolSet qw( confess );
 
     sub new { confess "ViewCharBuf has no public constructor." }
 
-    package KinoSearch::Obj::ZombieCharBuf;
+    package KinoSearch::Object::ZombieCharBuf;
     use KinoSearch::Util::ToolSet qw( confess );
 
     sub new { confess "ZombieCharBuf objects can only be created from C." }
@@ -414,37 +426,107 @@ sub kdump {
 }
 
 {
-    package KinoSearch::Obj::Err;
+    package KinoSearch::Object::Err;
     sub do_to_string { shift->to_string }
+    use KinoSearch::Util::ToolSet qw( blessed );
     use Carp qw( longmess );
     use overload
         '""'     => \&do_to_string,
         fallback => 1;
+
+    sub new {
+        my ( $either, $message ) = @_;
+        my ( undef, $file, $line ) = caller;
+        $message .= ", $file line $line\n";
+        return $either->_new(
+            mess => KinoSearch::Object::CharBuf->new($message) );
+    }
 
     sub do_throw {
         my $err = shift;
         $err->cat_mess( longmess() );
         die $err;
     }
+
+    our $error;
+    sub set_error {
+        my $val = $_[1];
+        if ( defined $val ) {
+            confess("Not a KinoSearch::Object::Err")
+                unless ( blessed($val)
+                && $val->isa("KinoSearch::Object::Err") );
+        }
+        $error = $val;
+    }
+    sub get_error {$error}
 }
 
 {
-    package KinoSearch::Obj::Hash;
+    package KinoSearch::Object::Hash;
     no warnings 'redefine';
     sub deserialize { shift->_deserialize(@_) }
 }
 
 {
-    package KinoSearch::Obj::VArray;
+    package KinoSearch::Object::VArray;
     no warnings 'redefine';
     sub clone       { CORE::shift->_clone }
     sub deserialize { CORE::shift->_deserialize(@_) }
 }
 
 {
-    package KinoSearch::Util::Compat::DirManip;
+    package KinoSearch::Store::FileHandle;
+    BEGIN {
+        push our @ISA, 'Exporter';
+        our @EXPORT_OK = qw( build_fh_flags );
+    }
+
+    sub build_fh_flags {
+        my $args  = shift;
+        my $flags = 0;
+        $flags |= FH_CREATE     if delete $args->{create};
+        $flags |= FH_READ_ONLY  if delete $args->{read_only};
+        $flags |= FH_WRITE_ONLY if delete $args->{write_only};
+        $flags |= FH_EXCLUSIVE  if delete $args->{exclusive};
+        return $flags;
+    }
+
+    sub open {
+        my ( $either, %args ) = @_;
+        $args{flags} ||= 0;
+        $args{flags} |= build_fh_flags( \%args );
+        return $either->_open(%args);
+    }
+}
+
+{
+    package KinoSearch::Store::FSFileHandle;
+
+    sub open {
+        my ( $either, %args ) = @_;
+        $args{flags} ||= 0;
+        $args{flags}
+            |= KinoSearch::Store::FileHandle::build_fh_flags( \%args );
+        return $either->_open(%args);
+    }
+}
+
+{
+    package KinoSearch::Store::FSFolder;
     use File::Spec::Functions qw( rel2abs );
     sub absolutify { return rel2abs( $_[1] ) }
+}
+
+{
+    package KinoSearch::Store::RAMFileHandle;
+
+    sub open {
+        my ( $either, %args ) = @_;
+        $args{flags} ||= 0;
+        $args{flags}
+            |= KinoSearch::Store::FileHandle::build_fh_flags( \%args );
+        return $either->_open(%args);
+    }
 }
 
 {
@@ -465,13 +547,8 @@ sub kdump {
 }
 
 {
-    package KinoSearch::Util::I32Array;
-    our %new_PARAMS = ( ints => undef );
-}
-
-{
     package KinoSearch::Util::Json;
-    use KinoSearch::Util::ToolSet qw( to_kino );
+    use KinoSearch::Util::ToolSet qw( blessed to_kino );
 
     use JSON::XS qw();
 
@@ -479,23 +556,46 @@ sub kdump {
 
     sub slurp_json {
         my ( undef, %args ) = @_;
-        my $instream = $args{folder}->open_in( $args{filename} );
-        return unless $instream;
+        my $instream = $args{folder}->open_in( $args{path} )
+            or return;
         my $len = $instream->length;
         my $json;
-        $instream->read_bytes( $json, $len );
+        $instream->read( $json, $len );
         my $result = eval { to_kino( $json_encoder->decode($json) ) };
-        return if $@;
+        if ( $@ or !$result ) {
+            KinoSearch::Object::Err->set_error(
+                KinoSearch::Object::Err->new( $@ || "Failed to decode JSON" )
+            );
+            return;
+        }
         return $result;
     }
 
     sub spew_json {
         my ( undef, %args ) = @_;
-        my $json      = $json_encoder->encode( $args{'dump'} );
-        my $outstream = $args{folder}->open_out( $args{filename} );
+        my $json = eval { $json_encoder->encode( $args{'dump'} ) };
+        if ( !defined $json ) {
+            KinoSearch::Object::Err->set_error(
+                KinoSearch::Object::Err->new($@) );
+            return 0;
+        }
+        my $outstream = $args{folder}->open_out( $args{path} );
         return 0 unless $outstream;
-        $outstream->print($json);
-        $outstream->close;
+        eval {
+            $outstream->print($json);
+            $outstream->close;
+        };
+        if ($@) {
+            my $error;
+            if ( blessed($@) && $@->isa("KinoSearch::Object::Err") ) {
+                $error = $@;
+            }
+            else {
+                $error = KinoSearch::Object::Err->new($@);
+            }
+            KinoSearch::Object::Err->set_error($error);
+            return 0;
+        }
         return 1;
     }
 
@@ -510,10 +610,10 @@ sub kdump {
 }
 
 {
-    package KinoSearch::Util::Host;
+    package KinoSearch::Object::Host;
     BEGIN {
-        if ( !__PACKAGE__->isa('KinoSearch::Obj') ) {
-            push our @ISA, 'KinoSearch::Obj';
+        if ( !__PACKAGE__->isa('KinoSearch::Object::Obj') ) {
+            push our @ISA, 'KinoSearch::Object::Obj';
         }
     }
 }
@@ -528,7 +628,7 @@ my $ks_xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch
 
 BOOT:
-    kino_Boot_bootstrap();
+    kino_KinoSearch_bootstrap();
 
 IV
 _dummy_function()
@@ -547,7 +647,7 @@ to_kino(sv)
 CODE:
 {
     kino_Obj *obj = XSBind_perl_to_kino(sv);
-    KOBJ_TO_SV_NOINC(obj, RETVAL);
+    RETVAL = KINO_OBJ_TO_SV_NOINC(obj);
 }
 OUTPUT: RETVAL
 
@@ -556,10 +656,10 @@ to_perl(sv)
     SV *sv;
 CODE:
 {
-    if (sv_isobject(sv) && sv_derived_from(sv, "KinoSearch::Obj")) {
+    if (sv_isobject(sv) && sv_derived_from(sv, "KinoSearch::Object::Obj")) {
         IV tmp = SvIV(SvRV(sv));
         kino_Obj* obj = INT2PTR(kino_Obj*, tmp);
-        RETVAL = XSBind_kobj_to_pobj(obj);
+        RETVAL = XSBind_kino_to_perl(obj);
     }
     else {
         RETVAL = newSVsv(sv);
@@ -568,12 +668,12 @@ CODE:
 OUTPUT: RETVAL
 END_XS_CODE
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel     => "KinoSearch",
     class_name => "KinoSearch",
     xs_code    => $ks_xs_code,
 );
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel     => "KinoSearch",
     class_name => "KinoSearch::Util::Toolset",
     xs_code    => $toolset_xs_code,
@@ -581,7 +681,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

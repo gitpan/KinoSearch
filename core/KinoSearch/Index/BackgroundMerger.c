@@ -2,7 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/BackgroundMerger.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DeletionsReader.h"
 #include "KinoSearch/Index/DeletionsWriter.h"
@@ -13,11 +12,11 @@
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/SegWriter.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"
 #include "KinoSearch/Store/Lock.h"
-#include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
 
@@ -97,14 +96,14 @@ BGMerger_init(BackgroundMerger *self, Obj *index, IndexManager *manager)
     /* Clone the PolyReader's schema. */
     {
         Hash *dump = Schema_Dump(PolyReader_Get_Schema(self->polyreader));
-        self->schema = (Schema*)ASSERT_IS_A(
+        self->schema = (Schema*)CERTIFY(
             VTable_Load_Obj(SCHEMA, (Obj*)dump), SCHEMA);
         DECREF(dump);
     }
 
     /* Create new Segment. */
     {
-        i32_t new_seg_num 
+        i64_t new_seg_num 
             = IxManager_Highest_Seg_Num(self->manager, self->snapshot) + 1;
         VArray *fields = Schema_All_Fields(self->schema);
         u32_t i, max;
@@ -164,10 +163,10 @@ S_init_folder(Obj *index)
     Folder *folder = NULL;
 
     /* Validate or acquire a Folder. */
-    if (OBJ_IS_A(index, FOLDER)) {
+    if (Obj_Is_A(index, FOLDER)) {
         folder = (Folder*)INCREF(index);
     }
-    else if (OBJ_IS_A(index, CHARBUF)) {
+    else if (Obj_Is_A(index, CHARBUF)) {
         folder = (Folder*)FSFolder_new((CharBuf*)index);
     }
     else {
@@ -217,12 +216,11 @@ S_maybe_merge(BackgroundMerger *self)
     for (i = 0, max = num_to_merge; i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(to_merge, i);
         CharBuf   *seg_name   = SegReader_Get_Seg_Name(seg_reader);
+        i64_t      doc_count  = Seg_Get_Count(self->segment);
         Matcher *deletions 
             = DelWriter_Seg_Deletions(self->del_writer, seg_reader);
         I32Array *doc_map = DelWriter_Generate_Doc_Map(self->del_writer,
-            deletions, SegReader_Doc_Max(seg_reader),
-            Seg_Get_Count(self->segment) 
-        );
+            deletions, SegReader_Doc_Max(seg_reader), (int32_t)doc_count);
 
         Hash_Store(self->doc_maps, (Obj*)seg_name, (Obj*)doc_map);
         SegWriter_Merge_Segment(self->seg_writer, seg_reader, doc_map);
@@ -260,7 +258,7 @@ S_merge_updated_deletions(BackgroundMerger *self)
 
             /* If this segment was merged away... */
             if (Hash_Fetch(self->doc_maps, (Obj*)seg_name)) {
-                SegReader *new_seg_reader = (SegReader*)ASSERT_IS_A(
+                SegReader *new_seg_reader = (SegReader*)CERTIFY(
                     Hash_Fetch(new_segs, (Obj*)seg_name), SEGREADER);
                 i32_t old_del_count = SegReader_Del_Count(seg_reader);
                 i32_t new_del_count = SegReader_Del_Count(new_seg_reader);
@@ -292,13 +290,13 @@ S_merge_updated_deletions(BackgroundMerger *self)
             = PolyReader_Get_Seg_Readers(merge_polyreader);
         Snapshot *latest_snapshot
             = Snapshot_Read_File(Snapshot_new(), self->folder, NULL);
-        i32_t new_seg_num
+        i64_t new_seg_num
             = IxManager_Highest_Seg_Num(self->manager, latest_snapshot) + 1;
         Segment *new_segment = Seg_new(new_seg_num);
         SegWriter *seg_writer = SegWriter_new(self->schema, self->snapshot,
             new_segment, merge_polyreader); 
         DeletionsWriter *del_writer = SegWriter_Get_Del_Writer(seg_writer);
-        i32_t    merge_seg_num = Seg_Get_Number(self->segment);
+        i64_t    merge_seg_num = Seg_Get_Number(self->segment);
         u32_t    seg_tick      = I32_MAX;
         i32_t    offset        = I32_MAX;
         CharBuf *seg_name      = NULL;
@@ -323,7 +321,7 @@ S_merge_updated_deletions(BackgroundMerger *self)
         while (  Hash_Iter_Next(updated_deletions, 
                      (Obj**)&seg_name, (Obj**)&deletions)
         ) {
-            I32Array *doc_map = (I32Array*)ASSERT_IS_A(
+            I32Array *doc_map = (I32Array*)CERTIFY(
                 Hash_Fetch(self->doc_maps, (Obj*)seg_name), I32ARRAY);
             i32_t del;
 
@@ -343,7 +341,6 @@ S_merge_updated_deletions(BackgroundMerger *self)
         /* Finish the segment and clean up. */
         DelWriter_Finish(del_writer);
         SegWriter_Finish(seg_writer);
-        Folder_Finish_Segment(self->folder, Seg_Get_Name(new_segment));
         DECREF(seg_writer);
         DECREF(new_segment);
         DECREF(latest_snapshot);
@@ -379,7 +376,6 @@ BGMerger_prepare_commit(BackgroundMerger *self)
     else {
         Folder   *folder   = self->folder;
         Snapshot *snapshot = self->snapshot;
-        CharBuf  *seg_name = Seg_Get_Name(self->segment);
 
         /* Write out new deletions. */
         if (DelWriter_Updated(self->del_writer)) {
@@ -391,7 +387,6 @@ BGMerger_prepare_commit(BackgroundMerger *self)
 
         /* Finish the segment. */
         SegWriter_Finish(self->seg_writer);
-        Folder_Finish_Segment(folder, seg_name);
 
         /* Grab the write lock. */
         S_obtain_write_lock(self);
@@ -432,7 +427,7 @@ BGMerger_prepare_commit(BackgroundMerger *self)
                     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
                         CharBuf *file = (CharBuf*)VA_Fetch(files, i);
                         if (CB_Starts_With_Str(file, "seg_", 4)) {
-                            i32_t gen = IxFileNames_extract_gen(file);
+                            i64_t gen = (i64_t)IxFileNames_extract_gen(file);
                             if (gen > self->cutoff) {
                                 Snapshot_Add_Entry(self->snapshot, file);
                             }
@@ -518,7 +513,7 @@ S_obtain_write_lock(BackgroundMerger *self)
     }
     else {
         CharBuf *message = MAKE_MESS("index is locked by '%o'", 
-            Lock_Get_Filename(write_lock));
+            Lock_Get_Lock_Path(write_lock));
         DECREF(write_lock);
         DECREF(self);
         Err_throw_mess(LOCKERR, message);
@@ -539,7 +534,7 @@ S_obtain_merge_lock(BackgroundMerger *self)
          * BackgroundMerger running. */
         CharBuf *message = MAKE_MESS(
             "Index is locked for merging by '%o'", 
-            Lock_Get_Filename(merge_lock));
+            Lock_Get_Lock_Path(merge_lock));
         DECREF(merge_lock);
         DECREF(self);
         Err_throw_mess(LOCKERR, message);
@@ -566,7 +561,7 @@ S_release_merge_lock(BackgroundMerger *self)
     }
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -50,7 +50,7 @@ is( $hc->get_total_hits, 4,
 my $match_docs = $hc->pop_match_docs;
 is( scalar @$match_docs, 0, "no hits wanted, so no hits returned" );
 
-my $bit_vec = KinoSearch::Obj::BitVector->new;
+my $bit_vec = KinoSearch::Object::BitVector->new;
 $hc = KinoSearch::Search::HitCollector::BitCollector->new(
     bit_vector => $bit_vec );
 test_collect($hc);
@@ -60,7 +60,7 @@ is_deeply(
     "BitCollector collects the right doc nums"
 );
 
-$bit_vec = KinoSearch::Obj::BitVector->new;
+$bit_vec = KinoSearch::Object::BitVector->new;
 my $inner_coll = KinoSearch::Search::HitCollector::BitCollector->new(
     bit_vector => $bit_vec );
 my $offset_coll = KinoSearch::Search::HitCollector::OffsetCollector->new(

@@ -2,8 +2,8 @@
 
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Object/Host.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/Host.h"
 
 Obj*
 PolyReader_try_open_segreaders(PolyReader *self, VArray *segments)
@@ -21,7 +21,7 @@ PolyReader_try_read_snapshot(Snapshot *snapshot, Folder *folder,
         ARG_STR("filename", filename));
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

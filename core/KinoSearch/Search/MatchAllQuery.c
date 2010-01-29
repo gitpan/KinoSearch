@@ -30,7 +30,7 @@ bool_t
 MatchAllQuery_equals(MatchAllQuery *self, Obj *other)
 {
     MatchAllQuery *evil_twin = (MatchAllQuery*)other;
-    if (!OBJ_IS_A(evil_twin, MATCHALLQUERY)) return false;
+    if (!Obj_Is_A(other, MATCHALLQUERY)) return false;
     if (self->boost != evil_twin->boost) return false;
     return true;
 }
@@ -86,7 +86,7 @@ MatchAllCompiler_make_matcher(MatchAllCompiler *self, SegReader *reader,
     return (Matcher*)MatchAllScorer_new(weight, SegReader_Doc_Max(reader));
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

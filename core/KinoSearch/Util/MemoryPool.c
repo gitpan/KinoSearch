@@ -63,7 +63,7 @@ S_init_arena(MemoryPool *self, size_t amount)
         size_t buf_size = (amount + 1) > self->arena_size 
             ? (amount + 1)
             : self->arena_size;
-        char *ptr       = MALLOCATE(buf_size, char);
+        char *ptr       = (char*)MALLOCATE(buf_size);
         if (ptr == NULL)
             THROW(ERR, "Failed to allocate memory");
         bb = BB_new_steal_bytes(ptr, buf_size - 1, buf_size);
@@ -154,7 +154,7 @@ MemPool_eat(MemoryPool *self, MemoryPool *other) {
     self->limit    = other->limit;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

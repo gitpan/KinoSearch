@@ -6,22 +6,36 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Test::Util::BBSortEx 
     extends KinoSearch::Util::SortExternal {
 
-    inert BBSortEx*
-    init(BBSortEx *self, u32_t mem_thresh = 0x1000000);
+    VArray   *external;
+    u32_t     external_tick;
 
-    /** Wrapper around BB_compare which allows (superfluous) context argument.
-     */
-    inert int
-    compare_bbs(void *context, const void *va, const void *vb);
+    inert BBSortEx*
+    new(u32_t mem_thresh = 0x1000000, VArray *external = NULL);
+
+    inert BBSortEx*
+    init(BBSortEx *self, u32_t mem_thresh = 0x1000000, 
+        VArray *external = NULL);
+
+    void
+    Feed(BBSortEx *self, decremented Obj *item);
 
     void
     Flush(BBSortEx *self);
 
     void
     Flip(BBSortEx *self);
+
+    int
+    Compare(BBSortEx *self, Obj **a, Obj **b);
+
+    incremented Obj* 
+    Recover_Item(BBSortEx *self);
+
+    public void
+    Destroy(BBSortEx *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

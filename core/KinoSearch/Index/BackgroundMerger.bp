@@ -11,7 +11,7 @@ parcel KinoSearch cnick Kino;
  * shared volume.
  */
 class KinoSearch::Index::BackgroundMerger cnick BGMerger
-    extends KinoSearch::Obj {
+    extends KinoSearch::Object::Obj {
 
     Schema            *schema;
     Folder            *folder;
@@ -26,7 +26,7 @@ class KinoSearch::Index::BackgroundMerger cnick BGMerger
     Lock              *merge_lock;
     CharBuf           *snapfile;
     Hash              *doc_maps;
-    i32_t              cutoff;
+    i64_t              cutoff;
     bool_t             optimize;
     bool_t             needs_commit;
     bool_t             prepared;
@@ -67,11 +67,11 @@ class KinoSearch::Index::BackgroundMerger cnick BGMerger
     public void
     Prepare_Commit(BackgroundMerger *self);
 
-    void
+    public void
     Destroy(BackgroundMerger *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

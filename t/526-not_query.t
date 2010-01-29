@@ -69,7 +69,7 @@ for my $num_negated ( 1 .. 26 ) {
         doc_max         => $reader->doc_max,
         negated_matcher => $mock_scorer,
     );
-    my $bit_vec = KinoSearch::Obj::BitVector->new( capacity => 30 );
+    my $bit_vec = KinoSearch::Object::BitVector->new( capacity => 30 );
     my $collector = KinoSearch::Search::HitCollector::BitCollector->new(
         bit_vector => $bit_vec, );
     $not_scorer->collect( collector => $collector );

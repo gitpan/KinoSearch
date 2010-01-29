@@ -3,11 +3,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/LexIndex.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/TermStepper.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
@@ -50,14 +50,20 @@ LexIndex_init(LexIndex *self, Schema *schema, Folder *folder,
     INCREF(self->field_type);
     self->term_stepper = FType_Make_Term_Stepper(self->field_type);
     self->ixix_in = Folder_Open_In(folder, ixix_file);
-    self->ix_in   = Folder_Open_In(folder, ix_file);
-    if (!self->ixix_in || !self->ix_in) {
-        CharBuf *mess =
-             MAKE_MESS("Can't open either %o or %o", ix_file, ixix_file);
+    if (!self->ixix_in) {
+        Err *error = (Err*)INCREF(Err_get_error());
         DECREF(ix_file);
         DECREF(ixix_file);
         DECREF(self);
-        Err_throw_mess(ERR, mess);
+        RETHROW(error);
+    }
+    self->ix_in = Folder_Open_In(folder, ix_file);
+    if (!self->ix_in) {
+        Err *error = (Err*)INCREF(Err_get_error());
+        DECREF(ix_file);
+        DECREF(ixix_file);
+        DECREF(self);
+        RETHROW(error);
     }
     self->index_interval = Arch_Index_Interval(arch);
     self->skip_interval  = Arch_Skip_Interval(arch);
@@ -127,7 +133,7 @@ LexIndex_seek(LexIndex *self, Obj *target)
         return;
     }
     else {
-        if ( !OBJ_IS_A(target, CHARBUF)) {
+        if ( !Obj_Is_A(target, CHARBUF)) {
             THROW(ERR, "Target is a %o, and not comparable to a %o",
                 Obj_Get_Class_Name(target), VTable_Get_Name(CHARBUF));
         }
@@ -170,7 +176,7 @@ LexIndex_seek(LexIndex *self, Obj *target)
     S_read_entry(self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

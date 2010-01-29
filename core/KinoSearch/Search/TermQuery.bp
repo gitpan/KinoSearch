@@ -48,7 +48,7 @@ class KinoSearch::Search::TermQuery extends KinoSearch::Search::Query
     public bool_t
     Equals(TermQuery *self, Obj *other);
 
-    void
+    public void
     Destroy(TermQuery *self);
 }
 
@@ -91,7 +91,7 @@ class KinoSearch::Search::TermCompiler extends KinoSearch::Search::Compiler {
     Deserialize(TermCompiler *self, InStream *instream);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

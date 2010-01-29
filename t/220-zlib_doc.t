@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package MyArchitecture;
-use base qw( KinoSearch::Architecture );
+use base qw( KinoSearch::Plan::Architecture );
 
 use KSx::Index::ZlibDocWriter;
 use KSx::Index::ZlibDocReader;
@@ -61,6 +61,7 @@ sub new {
 
 package main;
 use Test::More tests => 7;
+use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = MySchema->new;

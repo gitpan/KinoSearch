@@ -9,9 +9,7 @@ __BINDING__
 my $synopsis = <<'END_SYNOPSIS';
     use Sys::Hostname qw( hostname );
     my $hostname = hostname() or die "Can't get unique hostname";
-    my $manager = KinoSearch::Index::IndexManager->new( 
-        hostname => $hostname,
-    );
+    my $manager = KinoSearch::Index::IndexManager->new( host => $hostname );
 
     # Index time:
     my $indexer = KinoSearch::Indexer->new(
@@ -27,7 +25,7 @@ my $synopsis = <<'END_SYNOPSIS';
     my $searcher = KinoSearch::Searcher->new( index => $reader );
 END_SYNOPSIS
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel     => "KinoSearch",
     class_name => "KinoSearch::Docs::FileLocking",
     make_pod   => { synopsis => $synopsis, },
@@ -35,7 +33,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

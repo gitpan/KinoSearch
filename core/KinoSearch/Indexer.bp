@@ -12,7 +12,7 @@ parcel KinoSearch cnick Kino;
  * If an index is located on a shared volume, each writer application must
  * identify itself by supplying an
  * L<IndexManager|KinoSearch::Index::IndexManager> with a unique
- * <code>hostname</code> to Indexer's constructor or index corruption will
+ * <code>host</code> id to Indexer's constructor or index corruption will
  * occur.  See L<KinoSearch::Docs::FileLocking> for a detailed discussion.
  *
  * Note: at present, Delete_By_Term() and Delete_By_Query() only affect
@@ -20,7 +20,7 @@ parcel KinoSearch cnick Kino;
  * documents added this indexing session but not yet committed.  This may
  * change in a future update.
  */
-class KinoSearch::Indexer extends KinoSearch::Obj {
+class KinoSearch::Indexer extends KinoSearch::Object::Obj {
 
     Schema            *schema;
     Folder            *folder;
@@ -126,11 +126,11 @@ class KinoSearch::Indexer extends KinoSearch::Obj {
     Doc*
     Get_Stock_Doc(Indexer *self);
 
-    void
+    public void
     Destroy(Indexer *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

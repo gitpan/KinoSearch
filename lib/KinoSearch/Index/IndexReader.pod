@@ -110,18 +110,19 @@ component must implement.
 =head2 doc_max()
 
 Return the maximum number of documents available to the reader, which
-is also the highest possible document id.  Documents which have been
-marked as deleted but not yet purged from the index are included in
-this count.
+is also the highest possible internal document id.  Documents which
+have been marked as deleted but not yet purged from the index are
+included in this count.
 
 =head2 doc_count()
 
-Return the number documents available to the reader, subtracting
+Return the number of documents available to the reader, subtracting
 any that are marked as deleted.
 
 =head2 del_count()
 
-Return the number of documents which have been marked as deleted.
+Return the number of documents which have been marked as deleted but
+not yet purged from the index.
 
 =head2 seg_readers()
 
@@ -137,12 +138,12 @@ segment doc_id start offset.
 
 =head1 INHERITANCE
 
-KinoSearch::Index::IndexReader isa L<KinoSearch::Index::DataReader> isa L<KinoSearch::Obj>.
+KinoSearch::Index::IndexReader isa L<KinoSearch::Index::DataReader> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

@@ -17,46 +17,85 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Store::CompoundFileReader cnick CFReader
     extends KinoSearch::Store::Folder {
 
-    CharBuf      *seg_name;
-    Hash         *entries;
+    Folder       *real_folder;
+    Hash         *records;
     InStream     *instream;
+    i32_t         format;
 
-    /* Constructor.  May return NULL if a compound file can't be found.
-     */
     inert incremented CompoundFileReader*
-    new(FSFolder *folder, const CharBuf *seg_name);
+    open(Folder *folder);
 
+    /** Return a new CompoundFileReader or set Err_error and return NULL.
+     *
+     * @param folder A folder containing compound files.
+     */
     inert CompoundFileReader*
-    init(CompoundFileReader *self, FSFolder *folder, const CharBuf *seg_name);
+    do_open(CompoundFileReader *self, Folder *folder);
 
-    /** Remove the entry associated with a virtual file, rendering it
-     * inaccessible.
-     */
-    bool_t
-    Delete_Virtual(CompoundFileReader *self, const CharBuf *filepath);
-
-    /** Return the number of virtual files. 
-     */
-    i32_t
-    Get_Size(CompoundFileReader *self);
-
-    public incremented InStream*
-    Open_In(CompoundFileReader *self, const CharBuf *filepath);
-
-    bool_t
-    Exists(CompoundFileReader *self, const CharBuf *filepath);
-
-    incremented VArray*
-    List(CompoundFileReader *self);
+    Folder*
+    Get_Real_Folder(CompoundFileReader *self);
 
     void
+    Set_Path(CompoundFileReader *self, const CharBuf *path);
+
+    public void
     Close(CompoundFileReader *self);
 
-    void
+    public void
     Destroy(CompoundFileReader *self);
+
+    bool_t
+    Local_Delete(CompoundFileReader *self, const CharBuf *name);
+
+    bool_t
+    Local_Exists(CompoundFileReader *self, const CharBuf *name);
+
+    bool_t
+    Local_Is_Directory(CompoundFileReader *self, const CharBuf *name);
+
+    incremented FileHandle*
+    Local_Open_FileHandle(CompoundFileReader *self, const CharBuf *name, 
+                          u32_t flags);
+
+    incremented InStream*
+    Local_Open_In(CompoundFileReader *self, const CharBuf *name);
+
+    bool_t
+    Local_MkDir(CompoundFileReader *self, const CharBuf *name);
+
+    Folder*
+    Local_Find_Folder(CompoundFileReader *self, const CharBuf *name);
+
+    DirHandle*
+    Local_Open_Dir(CompoundFileReader *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/** DirHandle for CompoundFileReader.
+ */
+class KinoSearch::Store::CFReaderDirHandle cnick CFReaderDH
+    extends KinoSearch::Store::DirHandle {
+
+    CompoundFileReader *cf_reader;
+    VArray             *elems;
+    i32_t               tick;
+
+    inert incremented CFReaderDirHandle*
+    new(CompoundFileReader *cf_reader);
+
+    inert CFReaderDirHandle*
+    init(CFReaderDirHandle *self, CompoundFileReader *cf_reader);
+
+    bool_t
+    Next(CFReaderDirHandle *self);
+
+    bool_t
+    Entry_Is_Dir(CFReaderDirHandle *self);
+
+    bool_t
+    Close(CFReaderDirHandle *self);
+}
+
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

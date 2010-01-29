@@ -25,19 +25,16 @@ i32_t
 Post_get_doc_id(Posting *self) { return self->doc_id; }
 
 PostingStreamer*
-PostStreamer_init(PostingStreamer *self, DataWriter *writer, i32_t field_num)
+PostStreamer_init(PostingStreamer *self, Schema *schema, Snapshot *snapshot,
+                  Segment *segment, PolyReader *polyreader, i32_t field_num)
 {
-    Schema     *schema     = DataWriter_Get_Schema(writer);
-    Snapshot   *snapshot   = DataWriter_Get_Snapshot(writer);
-    Segment    *segment    = DataWriter_Get_Segment(writer);
-    PolyReader *polyreader = DataWriter_Get_PolyReader(writer);
     DataWriter_init((DataWriter*)self, schema, snapshot, segment,
         polyreader);
     self->field_num = field_num;
     return self;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

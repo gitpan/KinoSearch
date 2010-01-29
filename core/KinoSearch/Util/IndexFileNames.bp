@@ -10,23 +10,27 @@ inert class KinoSearch::Util::IndexFileNames cnick IxFileNames {
      *
      * @return a generation number, or 0 if no number can be extracted.
      */
-    inert i32_t
+    inert u64_t
     extract_gen(const CharBuf *name);
-
-    /** qsort-friendly routine for comparing CharBufs according to
-     * StrHelp_extract_generation. */
-    inert int
-    compare_gen(const void *va, const void *vb);
-
 
     /** Return the name of the latest generation snapshot file in the Folder,
      * or NULL if no such file exists.
      */
     inert incremented CharBuf*
     latest_snapshot(Folder *folder);
+
+    /** Split the <code>path</code> on '/' and assign the last component to
+     * <code>target</code>, which will remain valid only as long as
+     * <code>path</code> is unmodified.  Trailing slashes will be stripped.  
+     *
+     * @param target The target string to assign to.
+     * @return target, allowing an assignment idiom.
+     */
+    inert incremented ZombieCharBuf*
+    local_part(const CharBuf *path, ZombieCharBuf *target);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -17,14 +17,13 @@
 #include "KinoSearch/Search/TopDocs.h"
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Searcher.h"
-#include "KinoSearch/Util/I32Array.h"
 
 PolySearcher*
 PolySearcher_init(PolySearcher *self, Schema *schema, VArray *searchables)
 {
     const u32_t num_searchables = VA_Get_Size(searchables);
     u32_t i;
-    i32_t *starts_array = MALLOCATE(num_searchables, i32_t);
+    i32_t *starts_array = (i32_t*)MALLOCATE(num_searchables * sizeof(i32_t));
     i32_t doc_max = 0;
 
     Searchable_init((Searchable*)self, schema);
@@ -33,16 +32,16 @@ PolySearcher_init(PolySearcher *self, Schema *schema, VArray *searchables)
 
     for (i = 0; i < num_searchables; i++) {
         Searchable *searchable 
-            = (Searchable*)ASSERT_IS_A(VA_Fetch(searchables, i), SEARCHABLE);
+            = (Searchable*)CERTIFY(VA_Fetch(searchables, i), SEARCHABLE);
         Schema *candidate    = Searchable_Get_Schema(searchable);
-        VTable *orig_vt      = Obj_Get_VTable(schema);
-        VTable *candidate_vt = Obj_Get_VTable(candidate);
+        VTable *orig_vt      = Schema_Get_VTable(schema);
+        VTable *candidate_vt = Schema_Get_VTable(candidate);
 
         /* Confirm that searchables all use the same schema. */
         if (orig_vt != candidate_vt) {
             THROW(ERR, "Conflicting schemas: '%o', '%o'",
-                Obj_Get_Class_Name(schema), 
-                Obj_Get_Class_Name(candidate));
+                Schema_Get_Class_Name(schema), 
+                Schema_Get_Class_Name(candidate));
         }
 
         /* Derive doc_max and relative start offsets. */
@@ -126,7 +125,7 @@ PolySearcher_top_docs(PolySearcher *self, Query *query, u32_t num_wanted,
                           ? HitQ_new(schema, sort_spec, num_wanted)
                           : HitQ_new(NULL, NULL, num_wanted);
     u32_t     total_hits  = 0;
-    Compiler *compiler    = OBJ_IS_A(query, COMPILER) 
+    Compiler *compiler    = Query_Is_A(query, COMPILER) 
                           ? ((Compiler*)INCREF(query))
                           : Query_Make_Compiler(query, (Searchable*)self,
                                 Query_Get_Boost(query));
@@ -180,7 +179,7 @@ PolySearcher_collect(PolySearcher *self, Query *query,
     }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

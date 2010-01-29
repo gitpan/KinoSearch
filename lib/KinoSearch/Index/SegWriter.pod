@@ -13,12 +13,13 @@ Write one segment of an index.
 
 SegWriter is a conduit through which information fed to Indexer passes.  It
 manages Segment and Inverter, invokes the Analyzer chain, and feeds low
-level DataWriters such as PostingsWriter and DocWriter.  
+level DataWriters such as PostingListWriter and DocWriter.  
 
 The sub-components of a SegWriter are determined by
-L<Architecture|KinoSearch::Architecture>.  DataWriter components which are
-added to the stack of writers via add_writer() have add_inverted_doc()
-invoked for each document supplied to SegWriter's add_doc().
+L<Architecture|KinoSearch::Plan::Architecture>.  DataWriter components
+which are added to the stack of writers via add_writer() have
+add_inverted_doc() invoked for each document supplied to SegWriter's
+add_doc().
 
 
 
@@ -72,12 +73,12 @@ implements.
 
 =head1 INHERITANCE
 
-KinoSearch::Index::SegWriter isa L<KinoSearch::Index::DataWriter> isa L<KinoSearch::Obj>.
+KinoSearch::Index::SegWriter isa L<KinoSearch::Index::DataWriter> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

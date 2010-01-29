@@ -10,12 +10,12 @@ parcel KinoSearch cnick Kino;
  * .lexx stream; it is a filepointer to a locations in the main .lex file.
  */
 
-class KinoSearch::Index::TermInfo cnick TInfo extends KinoSearch::Obj {
+class KinoSearch::Index::TermInfo cnick TInfo extends KinoSearch::Object::Obj {
 
     i32_t doc_freq;
-    u64_t post_filepos;
-    u64_t skip_filepos;
-    u64_t lex_filepos;
+    i64_t post_filepos;
+    i64_t skip_filepos;
+    i64_t lex_filepos;
 
 
     inert incremented TermInfo*
@@ -56,14 +56,14 @@ class KinoSearch::Index::TermInfo cnick TInfo extends KinoSearch::Obj {
     public void
     Mimic(TermInfo *self, Obj *other);
 
-    incremented TermInfo*
+    public incremented TermInfo*
     Clone(TermInfo *self);
 
     public incremented CharBuf*
     To_String(TermInfo *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

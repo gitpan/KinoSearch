@@ -24,7 +24,7 @@ class KinoSearch::Search::PhraseScorer extends KinoSearch::Search::Matcher {
     init(PhraseScorer *self, Similarity *similarity, VArray *posting_lists, 
          Compiler *compiler);
 
-    void
+    public void
     Destroy(PhraseScorer *self);
 
     public i32_t
@@ -45,7 +45,7 @@ class KinoSearch::Search::PhraseScorer extends KinoSearch::Search::Matcher {
     Calc_Phrase_Freq(PhraseScorer *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

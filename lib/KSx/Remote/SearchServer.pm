@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package KSx::Remote::SearchServer;
-BEGIN { our @ISA = qw( KinoSearch::Obj ) }
+BEGIN { our @ISA = qw( KinoSearch::Object::Obj ) }
 use Carp;
 use Storable qw( nfreeze thaw );
 use bytes;
@@ -216,7 +216,7 @@ Open a listening socket on localhost and wait for SearchClients to connect.
 
 =head1 COPYRIGHT
 
-Copyright 2006-2009 Marvin Humphrey
+Copyright 2006-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

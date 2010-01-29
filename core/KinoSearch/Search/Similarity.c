@@ -22,8 +22,8 @@ Sim_init(Similarity *self)
     u32_t i;
 
     /* Cache decoded norms and proximity boost factors. */
-    self->norm_decoder = MALLOCATE(256, float);
-    self->prox_decoder = MALLOCATE(256, float);
+    self->norm_decoder = (float*)MALLOCATE(256 * sizeof(float));
+    self->prox_decoder = (float*)MALLOCATE(256 * sizeof(float));
     for (i = 0; i < 256; i++) {
         self->norm_decoder[i] = Sim_Decode_Norm(self, i);
         self->prox_decoder[i] = Sim_Prox_Boost(self, i);
@@ -48,15 +48,15 @@ Sim_dump(Similarity *self)
 {
     Hash *dump = Hash_new(0);
     Hash_Store_Str(dump, "_class", 6, 
-        (Obj*)CB_Clone(Obj_Get_Class_Name(self)));
+        (Obj*)CB_Clone(Sim_Get_Class_Name(self)));
     return (Obj*)dump;
 }
 
 Similarity*
 Sim_load(Similarity *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
-    CharBuf *class_name = (CharBuf*)ASSERT_IS_A(
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
+    CharBuf *class_name = (CharBuf*)CERTIFY(
         Hash_Fetch_Str(source, "_class", 6), CHARBUF);
     VTable *vtable = VTable_singleton(class_name, NULL);
     Similarity *loaded = (Similarity*)VTable_Make_Obj(vtable);
@@ -68,7 +68,7 @@ void
 Sim_serialize(Similarity *self, OutStream *target)
 {
     /* Only the class name. */
-    CB_Serialize(Obj_Get_Class_Name(self), target);
+    CB_Serialize(Sim_Get_Class_Name(self), target);
 }
 
 Similarity*
@@ -79,8 +79,8 @@ Sim_deserialize(Similarity *self, InStream *instream)
         VTable *vtable = VTable_singleton(class_name, SIMILARITY);
         self = (Similarity*)VTable_Make_Obj(vtable);
     }
-    else if (!CB_Equals(class_name, (Obj*)Obj_Get_Class_Name(self))) {
-        THROW(ERR, "Class name mismatch: '%o' '%o'", Obj_Get_Class_Name(self),
+    else if (!CB_Equals(class_name, (Obj*)Sim_Get_Class_Name(self))) {
+        THROW(ERR, "Class name mismatch: '%o' '%o'", Sim_Get_Class_Name(self),
             class_name);
     }
     DECREF(class_name);
@@ -92,7 +92,7 @@ Sim_deserialize(Similarity *self, InStream *instream)
 bool_t
 Sim_equals(Similarity *self, Obj *other)
 {
-    if (Obj_Get_VTable(self) != Obj_Get_VTable(other)) return false;
+    if (Sim_Get_VTable(self) != Obj_Get_VTable(other)) return false;
     return true;
 }
 
@@ -174,7 +174,7 @@ Sim_length_norm(Similarity *self, u32_t num_tokens)
     if (num_tokens == 0) /* guard against div by zero */
         return 0;
     else
-        return (float)( 1.0 / sqrt(num_tokens) );
+        return (float)( 1.0 / sqrt((double)num_tokens) );
 }
 
 float
@@ -235,7 +235,7 @@ Sim_coord(Similarity *self, u32_t overlap, u32_t max_overlap)
         return (float)overlap / (float)max_overlap;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

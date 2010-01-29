@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package MyHash;
-use base qw( KinoSearch::Obj::Hash );
+use base qw( KinoSearch::Object::Hash );
 
 sub oodle { }
 
@@ -15,7 +15,7 @@ sub open_in {
 }
 
 package OnceRemoved;
-use base qw( KinoSearch::Obj );
+use base qw( KinoSearch::Object::Obj );
 
 our $serialize_was_called = 0;
 sub serialize {
@@ -46,7 +46,7 @@ use Storable qw( nfreeze );
 }
 
 my $stringified;
-my $storage = KinoSearch::Obj::Hash->new;
+my $storage = KinoSearch::Object::Hash->new;
 
 {
     my $subclassed_hash = MyHash->new;
@@ -66,13 +66,13 @@ isa_ok( $resurrected, "MyHash", "subclass name survived Perl destruction" );
 is( $resurrected->to_string, $stringified,
     "It's the same Hash from earlier (though a different Perl object)" );
 
-my $booga = KinoSearch::Obj::CharBuf->new("booga");
+my $booga = KinoSearch::Object::CharBuf->new("booga");
 $resurrected->store( "ooga", $booga );
 
 is( $resurrected->fetch("ooga"),
     "booga", "subclassed object still performs correctly at the C level" );
 
-my $methods = KinoSearch::Obj::VTable->novel_host_methods('MyHash');
+my $methods = KinoSearch::Object::VTable->novel_host_methods('MyHash');
 is_deeply( $methods->to_perl, ['oodle'], "novel_host_methods" );
 
 my $folder = RAMFolderOfDeath->new;

@@ -3,35 +3,19 @@ parcel KinoSearch cnick Kino;
 /** In-memory Folder implementation.
  * 
  * RAMFolder is an entirely in-memory implementation of
- * KinoSearch::Store::Folder.  It serves two main purposes.
- * 
- * First, it's possible to load an existing FSFolder into memory, which can
- * improve search-speed -- if you have that kind of RAM to spare.  Needless to
- * say, any FSFolder you try to load this way should be appropriately modest
- * in size.
- * 
- * Second, RAMFolder is handy for testing and development.
+ * KinoSearch::Store::Folder, primarily used for testing and development.
  */
 
 class KinoSearch::Store::RAMFolder extends KinoSearch::Store::Folder {
-
-    Hash *elems;
 
     inert incremented RAMFolder*
     new(const CharBuf *path = NULL);
 
     /**
-     * @param path If supplied, attempt to read an FSFolder at that location
-     * into memory; otherwise the Folder starts out empty.
+     * @param path Relative path, used for subfolders.
      */
     public inert RAMFolder*
     init(RAMFolder *self, const CharBuf *path = NULL);
-
-    /** Return the underlying RAMFileDes for the specified filepath.
-     * Throw an error if the file doesn't exist.
-     */
-    incremented RAMFileDes*
-    RAM_File(RAMFolder *self, const CharBuf *filepath);
 
     public void
     Initialize(RAMFolder *self);
@@ -39,38 +23,38 @@ class KinoSearch::Store::RAMFolder extends KinoSearch::Store::Folder {
     public bool_t 
     Check(RAMFolder *self);
 
-    void
-    Destroy(RAMFolder *self);
-
-    incremented OutStream*
-    Open_Out(RAMFolder *self, const CharBuf *filepath);
-
-    incremented FileDes*
-    Open_FileDes(RAMFolder *self, const CharBuf *filepath);
-
     public void
-    MkDir(RAMFolder *self, const CharBuf *path);
+    Close(RAMFolder *self);
 
-    incremented VArray*
-    List(RAMFolder *self);
+    incremented FileHandle*
+    Local_Open_FileHandle(RAMFolder *self, const CharBuf *name, u32_t flags);
+
+    incremented DirHandle*
+    Local_Open_Dir(RAMFolder *self);
+
+    bool_t 
+    Local_MkDir(RAMFolder *self, const CharBuf *name);
 
     bool_t
-    Exists(RAMFolder *self, const CharBuf *filepath);
+    Local_Exists(RAMFolder *self, const CharBuf *name);
 
-    void
+    bool_t
+    Local_Is_Directory(RAMFolder *self, const CharBuf *name);
+
+    Folder*
+    Local_Find_Folder(RAMFolder *self, const CharBuf *name);
+
+    bool_t
+    Local_Delete(RAMFolder *self, const CharBuf *name);
+
+    public bool_t 
     Rename(RAMFolder *self, const CharBuf* from, const CharBuf *to);
 
     public bool_t
-    Hard_Link(RAMFolder *self, const CharBuf *source, const CharBuf *target);
-
-    bool_t
-    Delete(RAMFolder *self, const CharBuf *filepath);
-
-    void
-    Close(RAMFolder *self);
+    Hard_Link(RAMFolder *self, const CharBuf *from, const CharBuf *to);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

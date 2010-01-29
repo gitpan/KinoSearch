@@ -7,6 +7,7 @@
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Store/DirHandle.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/Lock.h"
 #include "KinoSearch/Store/LockFactory.h"
@@ -15,22 +16,20 @@
 #include "KinoSearch/Util/StringHelper.h"
 
 IndexManager*
-IxManager_new(const CharBuf *hostname, LockFactory *lock_factory)
+IxManager_new(const CharBuf *host, LockFactory *lock_factory)
 {
     IndexManager *self = (IndexManager*)VTable_Make_Obj(INDEXMANAGER);
-    return IxManager_init(self, hostname, lock_factory);
+    return IxManager_init(self, host, lock_factory);
 }
 
 IndexManager*
-IxManager_init(IndexManager *self, const CharBuf *hostname, 
+IxManager_init(IndexManager *self, const CharBuf *host, 
                LockFactory *lock_factory)
 {
-    self->hostname            = hostname 
-                              ? CB_Clone(hostname) 
+    self->host                = host 
+                              ? CB_Clone(host) 
                               : CB_new_from_trusted_utf8("", 0);
-    self->lock_factory        = lock_factory 
-                              ? (LockFactory*)INCREF(lock_factory) 
-                              : NULL;
+    self->lock_factory        = (LockFactory*)INCREF(lock_factory);
     self->folder              = NULL;
     self->write_lock_timeout  = 1000;
     self->write_lock_interval = 100;
@@ -45,55 +44,55 @@ IxManager_init(IndexManager *self, const CharBuf *hostname,
 void
 IxManager_destroy(IndexManager *self)
 {
-    DECREF(self->hostname);
+    DECREF(self->host);
     DECREF(self->folder);
     DECREF(self->lock_factory);
     SUPER_DESTROY(self, INDEXMANAGER);
 }
 
-i32_t
+i64_t
 IxManager_highest_seg_num(IndexManager *self, Snapshot *snapshot)
 {
     VArray *files = Snapshot_List(snapshot);
     u32_t i, max;
-    i32_t highest_seg_num = 0;
+    u64_t highest_seg_num = 0;
     UNUSED_VAR(self);
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
         CharBuf *file = (CharBuf*)VA_Fetch(files, i);
         if (CB_Ends_With_Str(file, "segmeta.json", 12)) {
-            i32_t seg_num = IxFileNames_extract_gen(file);
+            u64_t seg_num = IxFileNames_extract_gen(file);
             if (seg_num > highest_seg_num) { highest_seg_num = seg_num; }
         }
     }
     DECREF(files);
-    return highest_seg_num;
+    return (i64_t)highest_seg_num;
 }
 
 CharBuf*
 IxManager_make_snapshot_filename(IndexManager *self)
 {
-    Folder *folder = (Folder*)ASSERT_IS_A(self->folder, FOLDER);
-    VArray *files = Folder_List(folder);
-    u32_t i, max;
-    i32_t max_gen = 0;
+    Folder *folder = (Folder*)CERTIFY(self->folder, FOLDER);
+    DirHandle *dh = Folder_Open_Dir(folder, NULL);
+    CharBuf *entry;
+    u64_t max_gen = 0;
 
-    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *file = (CharBuf*)VA_Fetch(files, i);
-        if (    CB_Starts_With_Str(file, "snapshot_", 9)
-            && CB_Ends_With_Str(file, ".json", 5)
+    if (!dh) { RETHROW(INCREF(Err_get_error())); }
+    entry = DH_Get_Entry(dh);
+    while (DH_Next(dh)) {
+        if (    CB_Starts_With_Str(entry, "snapshot_", 9)
+            && CB_Ends_With_Str(entry, ".json", 5)
         ) {
-            i32_t gen = IxFileNames_extract_gen(file);
+            u64_t gen = IxFileNames_extract_gen(entry);
             if (gen > max_gen) { max_gen = gen; }
         }
     }
-    DECREF(files);
+    DECREF(dh);
 
     {
-        i32_t    new_gen = max_gen + 1;
-        CharBuf *base_36 = StrHelp_to_base36(new_gen);
-        CharBuf *snapfile = CB_newf("snapshot_%o.json", base_36);
-        DECREF(base_36);
-        return snapfile;
+        u64_t new_gen = max_gen + 1;
+        char  base36[StrHelp_MAX_BASE36_BYTES];
+        StrHelp_to_base36(new_gen, &base36);
+        return CB_newf("snapshot_%s.json", &base36);
     }
 }
 
@@ -110,7 +109,7 @@ static bool_t
 S_check_cutoff(VArray *array, u32_t tick, void *data)
 {
     SegReader *seg_reader = (SegReader*)VA_Fetch(array, tick);
-    i32_t cutoff = *(i32_t*)data;
+    i64_t cutoff = *(i64_t*)data;
     return SegReader_Get_Seg_Num(seg_reader) > cutoff;
 }
 
@@ -131,7 +130,7 @@ S_fibonacci(u32_t n) {
 
 VArray*
 IxManager_recycle(IndexManager *self, PolyReader *reader, 
-                  DeletionsWriter *del_writer, i32_t cutoff, bool_t optimize)
+                  DeletionsWriter *del_writer, i64_t cutoff, bool_t optimize)
 {
     VArray *seg_readers = PolyReader_Get_Seg_Readers(reader);
     VArray *candidates  = VA_Grep(seg_readers, S_check_cutoff, &cutoff);
@@ -189,7 +188,7 @@ S_obtain_lock_factory(IndexManager *self)
         if (!self->folder) { 
             THROW(ERR, "Can't create a LockFactory without a Folder");
         }
-        self->lock_factory = LockFact_new(self->folder, self->hostname);
+        self->lock_factory = LockFact_new(self->folder, self->host);
     }
     return self->lock_factory;
 }
@@ -222,12 +221,12 @@ IxManager_make_merge_lock(IndexManager *self)
 }
 
 void
-IxManager_write_merge_data(IndexManager *self, i32_t cutoff)
+IxManager_write_merge_data(IndexManager *self, i64_t cutoff)
 {
     static ZombieCharBuf merge_json = ZCB_LITERAL("merge.json");
     Hash *data = Hash_new(1);
     bool_t success;
-    Hash_Store_Str(data, "cutoff", 6, (Obj*)CB_newf("%i32", cutoff));
+    Hash_Store_Str(data, "cutoff", 6, (Obj*)CB_newf("%i64", cutoff));
     success = Json_spew_json((Obj*)data, self->folder, (CharBuf*)&merge_json);
     DECREF(data);
     if (!success) {
@@ -243,7 +242,7 @@ IxManager_read_merge_data(IndexManager *self)
         Hash *stuff 
             = (Hash*)Json_slurp_json(self->folder, (CharBuf*)&merge_json);
         if (stuff) {
-            ASSERT_IS_A(stuff, HASH);
+            CERTIFY(stuff, HASH);
             return stuff;
         }
         else {
@@ -284,7 +283,7 @@ void
 IxManager_set_folder(IndexManager *self, Folder *folder)
 {
     DECREF(self->folder);
-    self->folder = folder ? (Folder*)INCREF(folder) : NULL;
+    self->folder = (Folder*)INCREF(folder);
 }
 
 Folder*
@@ -292,8 +291,8 @@ IxManager_get_folder(IndexManager *self)
     { return self->folder; }
 
 CharBuf*
-IxManager_get_hostname(IndexManager *self) 
-    { return self->hostname; }
+IxManager_get_host(IndexManager *self) 
+    { return self->host; }
 u32_t
 IxManager_get_write_lock_timeout(IndexManager *self) 
     { return self->write_lock_timeout; }
@@ -332,7 +331,7 @@ void
 IxManager_set_deletion_lock_interval(IndexManager *self, u32_t interval)
     { self->deletion_lock_interval = interval; }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

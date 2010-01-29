@@ -40,7 +40,7 @@ class KinoSearch::Index::SegLexicon cnick SegLex
     Segment* 
     Get_Segment(SegLexicon *self);
 
-    void
+    public void
     Destroy(SegLexicon *self);
 
     public void
@@ -59,7 +59,7 @@ class KinoSearch::Index::SegLexicon cnick SegLex
     Next(SegLexicon *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

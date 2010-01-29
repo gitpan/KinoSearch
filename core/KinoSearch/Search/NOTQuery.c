@@ -52,7 +52,7 @@ bool_t
 NOTQuery_equals(NOTQuery *self, Obj *other)
 {
     if ((NOTQuery*)other == self)   { return true; }
-    if (!OBJ_IS_A(other, NOTQUERY)) { return false; }
+    if (!Obj_Is_A(other, NOTQUERY)) { return false; }
     return PolyQuery_equals((PolyQuery*)self, other);
 }
 
@@ -77,7 +77,7 @@ NOTCompiler_init(NOTCompiler *self, NOTQuery *parent, Searchable *searchable,
 {
     PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
         boost);
-    Compiler_Normalize(self);
+    NOTCompiler_Normalize(self);
     return self;
 }
 
@@ -103,16 +103,18 @@ Matcher*
 NOTCompiler_make_matcher(NOTCompiler *self, SegReader *reader, 
                          bool_t need_score)
 {
+    Compiler *negated_compiler = (Compiler*)CERTIFY(
+        VA_Fetch(self->children, 0), COMPILER);
     Matcher *negated_matcher 
-        = Compiler_Make_Matcher(VA_Fetch(self->children, 0), reader, false);
+        = Compiler_Make_Matcher(negated_compiler, reader, false);
     UNUSED_VAR(need_score);
 
     if (negated_matcher == NULL) {
-        float weight = Compiler_Get_Weight(self);
+        float weight = NOTCompiler_Get_Weight(self);
         i32_t doc_max = SegReader_Doc_Max(reader);
         return (Matcher*)MatchAllScorer_new(weight, doc_max);
     }
-    else if (OBJ_IS_A(negated_matcher, MATCHALLSCORER)) {
+    else if (Obj_Is_A((Obj*)negated_matcher, MATCHALLSCORER)) {
         DECREF(negated_matcher);
         return NULL;
     }
@@ -124,7 +126,7 @@ NOTCompiler_make_matcher(NOTCompiler *self, SegReader *reader,
     }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

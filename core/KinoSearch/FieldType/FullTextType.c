@@ -17,12 +17,13 @@ FullTextType_new(Analyzer *analyzer)
 FullTextType*
 FullTextType_init(FullTextType *self, Analyzer *analyzer)
 {
-    return FullTextType_init2(self, analyzer, 1.0, true, true, false);
+    return FullTextType_init2(self, analyzer, 1.0, true, true, false, false);
 }
 
 FullTextType*
 FullTextType_init2(FullTextType *self, Analyzer *analyzer, float boost,
-                bool_t indexed, bool_t stored, bool_t highlightable)
+                   bool_t indexed, bool_t stored, bool_t sortable, 
+                   bool_t highlightable)
 {
     FType_init((FieldType*)self);
 
@@ -30,8 +31,9 @@ FullTextType_init2(FullTextType *self, Analyzer *analyzer, float boost,
     self->boost         = boost;
     self->indexed       = indexed;
     self->stored        = stored;
+    self->sortable      = sortable;
     self->highlightable = highlightable;
-    self->analyzer      = analyzer ? (Analyzer*)INCREF(analyzer) : NULL;
+    self->analyzer      = (Analyzer*)INCREF(analyzer);
 
     return self;
 }
@@ -48,9 +50,10 @@ FullTextType_equals(FullTextType *self, Obj *other)
 {
     FullTextType *evil_twin = (FullTextType*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, FULLTEXTTYPE)) return false;
+    if (!Obj_Is_A(other, FULLTEXTTYPE)) return false;
     if (!FType_equals((FieldType*)self, other)) return false;
     if (!!self->analyzer ^ !!evil_twin->analyzer) return false;
+    if (!!self->sortable != !!evil_twin->sortable) return false;
     if (!!self->highlightable != !!evil_twin->highlightable) return false;
     if (self->analyzer) {
         if (!Analyzer_Equals(self->analyzer, (Obj*)evil_twin->analyzer)) {
@@ -76,6 +79,9 @@ FullTextType_dump_for_schema(FullTextType *self)
     if (!self->stored) {
         Hash_Store_Str(dump, "stored", 6, (Obj*)CB_newf("0"));
     }
+    if (self->sortable) {
+        Hash_Store_Str(dump, "sortable", 8, (Obj*)CB_newf("1"));
+    }
     if (self->highlightable) {
         Hash_Store_Str(dump, "highlightable", 13, (Obj*)CB_newf("1"));
     }
@@ -88,7 +94,7 @@ FullTextType_dump(FullTextType *self)
 {
     Hash *dump = FullTextType_Dump_For_Schema(self);
     Hash_Store_Str(dump, "_class", 6, 
-        (Obj*)CB_Clone(Obj_Get_Class_Name(self)));
+        (Obj*)CB_Clone(FullTextType_Get_Class_Name(self)));
     if (self->analyzer) {
         Hash_Store_Str(dump, "analyzer", 8, 
             (Obj*)Analyzer_Dump(self->analyzer));
@@ -101,25 +107,27 @@ FullTextType_dump(FullTextType *self)
 FullTextType*
 FullTextType_load(FullTextType *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
-    VTable *vtable = (class_name != NULL && OBJ_IS_A(class_name, CHARBUF)) 
-                   ? VTable_singleton(class_name, NULL)
-                   : FULLTEXTTYPE;
+    VTable *vtable 
+        = (class_name != NULL && Obj_Is_A((Obj*)class_name, CHARBUF)) 
+        ? VTable_singleton(class_name, NULL)
+        : FULLTEXTTYPE;
     FullTextType *loaded = (FullTextType*)VTable_Make_Obj(vtable);
     Hash *analyzer_dump  = (Hash*)Hash_Fetch_Str(source, "analyzer", 8);
     Analyzer *analyzer = NULL;
     Obj *boost_dump    = Hash_Fetch_Str(source, "boost", 5);
     Obj *indexed_dump  = Hash_Fetch_Str(source, "indexed", 7);
     Obj *stored_dump   = Hash_Fetch_Str(source, "stored", 6);
+    Obj *sort_dump     = Hash_Fetch_Str(source, "sortable", 8);
     Obj *hl_dump       = Hash_Fetch_Str(source, "highlightable", 13);
     UNUSED_VAR(self);
 
     /** Allow Schema to pollute the dump with an "analyzer" key that means
      * something else. */
-    if (analyzer_dump && OBJ_IS_A(analyzer_dump, HASH)) {
-        analyzer = (Analyzer*)ASSERT_IS_A(
-            Obj_Load(analyzer_dump, (Obj*)analyzer_dump), ANALYZER);
+    if (analyzer_dump && Obj_Is_A((Obj*)analyzer_dump, HASH)) {
+        analyzer = (Analyzer*)CERTIFY(
+            Obj_Load((Obj*)analyzer_dump, (Obj*)analyzer_dump), ANALYZER);
     }
 
     FullTextType_init(loaded, analyzer);
@@ -127,6 +135,7 @@ FullTextType_load(FullTextType *self, Obj *dump)
     if (boost_dump)   { loaded->boost    = (float)Obj_To_F64(boost_dump);    }
     if (indexed_dump) { loaded->indexed  = (bool_t)Obj_To_I64(indexed_dump); }
     if (stored_dump)  { loaded->stored   = (bool_t)Obj_To_I64(stored_dump);  }
+    if (sort_dump)    { loaded->sortable = (bool_t)Obj_To_I64(sort_dump);    }
     if (hl_dump)      { loaded->highlightable = (bool_t)Obj_To_I64(hl_dump); }
 
     return loaded;
@@ -147,13 +156,6 @@ Analyzer*
 FullTextType_get_analyzer(FullTextType *self)  { return self->analyzer; }
 bool_t
 FullTextType_highlightable(FullTextType *self) { return self->highlightable; }
-
-void
-FullTextType_set_sortable(FullTextType *self, bool_t sortable)
-{
-    UNUSED_VAR(self);
-    if (sortable) { THROW(ERR, "FullTextType fields can't be sortable"); }
-}
 
 Similarity*
 FullTextType_make_similarity(FullTextType *self)
@@ -176,7 +178,7 @@ FullTextType_make_posting(FullTextType *self, Similarity *similarity)
     }
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

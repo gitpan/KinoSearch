@@ -12,7 +12,7 @@
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/PostingList.h"
-#include "KinoSearch/Index/PostingsReader.h"
+#include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/SegPostingList.h"
 #include "KinoSearch/Index/TermVector.h"
 #include "KinoSearch/Search/PhraseScorer.h"
@@ -22,7 +22,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
-#include "KinoSearch/Util/I32Array.h"
 
 /* Shared initialization routine which assumes that it's ok to assume control
  * over [field] and [terms], eating their refcounts. */
@@ -56,7 +55,7 @@ S_do_init(PhraseQuery *self, CharBuf *field, VArray *terms, float boost)
     u32_t i, max;
     Query_init((Query*)self, boost);
     for (i = 0, max = VA_Get_Size(terms); i < max; i++) {
-        ASSERT_IS_A(VA_Fetch(terms, i), OBJ);
+        CERTIFY(VA_Fetch(terms, i), OBJ);
     }
     self->field = field;
     self->terms = terms;
@@ -86,7 +85,7 @@ PhraseQuery_equals(PhraseQuery *self, Obj *other)
 {
     PhraseQuery *evil_twin = (PhraseQuery*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, PHRASEQUERY)) return false;
+    if (!Obj_Is_A(other, PHRASEQUERY)) return false;
     if (self->boost != evil_twin->boost) return false;
     if (self->field && !evil_twin->field) return false;
     if (!self->field && evil_twin->field) return false;
@@ -207,7 +206,7 @@ bool_t
 PhraseCompiler_equals(PhraseCompiler *self, Obj *other)
 {
     PhraseCompiler *evil_twin = (PhraseCompiler*)other;
-    if (!OBJ_IS_A(evil_twin, PHRASECOMPILER)) return false;
+    if (!Obj_Is_A(other, PHRASECOMPILER)) return false;
     if (!Compiler_equals((Compiler*)self, other)) return false;
     if (self->idf != evil_twin->idf) return false;
     if (self->raw_weight != evil_twin->raw_weight) return false;
@@ -239,8 +238,8 @@ Matcher*
 PhraseCompiler_make_matcher(PhraseCompiler *self, SegReader *reader,
                             bool_t need_score)
 {
-    PostingsReader *const post_reader = (PostingsReader*)SegReader_Fetch(
-        reader, VTable_Get_Name(POSTINGSREADER));
+    PostingListReader *const plist_reader = (PostingListReader*)SegReader_Fetch(
+        reader, VTable_Get_Name(POSTINGLISTREADER));
     PhraseQuery *const parent = (PhraseQuery*)self->parent;
     VArray  *const terms      = parent->terms;
     u32_t    num_terms        = VA_Get_Size(terms);
@@ -255,17 +254,19 @@ PhraseCompiler_make_matcher(PhraseCompiler *self, SegReader *reader,
     if (!num_terms) return NULL;
 
     /* Bail unless field is valid and posting type supports positions. */
-    if (posting == NULL || !OBJ_IS_A(posting, SCOREPOSTING)) return NULL;
+    if (posting == NULL || !Obj_Is_A((Obj*)posting, SCOREPOSTING)) {
+        return NULL;
+    }
 
-    /* Bail if there's no PostingsReader for this segment. */
-    if (!post_reader) { return NULL; }
+    /* Bail if there's no PostingListReader for this segment. */
+    if (!plist_reader) { return NULL; }
 
     /* Look up each term. */
     plists = VA_new(num_terms);
     for (i = 0; i < num_terms; i++) {
         Obj *term = VA_Fetch(terms, i);
         PostingList *plist 
-            = PostReader_Posting_List(post_reader, parent->field, term);
+            = PListReader_Posting_List(plist_reader, parent->field, term);
 
         /* Bail if any one of the terms isn't in the index. */
         if (!plist || !PList_Get_Doc_Freq(plist)) {
@@ -277,7 +278,7 @@ PhraseCompiler_make_matcher(PhraseCompiler *self, SegReader *reader,
     }
 
     retval = (Matcher*)PhraseScorer_new(
-        Compiler_Get_Similarity(self),
+        PhraseCompiler_Get_Similarity(self),
         plists, 
         (Compiler*)self
     );
@@ -358,7 +359,7 @@ PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable,
         u32_t     num_valid_posits   = I32Arr_Get_Size(valid_posits);
         u32_t j = 0;
         u32_t posit_tick;
-        float weight = Compiler_Get_Weight(self);
+        float weight = PhraseCompiler_Get_Weight(self);
         i = 0;
 
         /* Add only those starts/ends that belong to a valid position. */
@@ -396,7 +397,7 @@ PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable,
     return spans;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

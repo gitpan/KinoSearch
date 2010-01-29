@@ -92,7 +92,7 @@ sub test_search {
     );
     if (@$dels) {
         my $bit_vec
-            = KinoSearch::Obj::BitVector->new( capacity => $dels->[-1] + 1 );
+            = KinoSearch::Object::BitVector->new( capacity => $dels->[-1] + 1 );
         $bit_vec->set($_) for @$dels;
         $del_enum = KinoSearch::Search::BitVecMatcher->new(
             bit_vector => $bit_vec );

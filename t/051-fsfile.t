@@ -24,12 +24,20 @@ my $foo;
 sub new_outstream {
     undef $outstream;
     unlink $filepath;
-    return $folder->open_out($filename) || die "can't open $filename";
+    my $fh = KinoSearch::Store::FSFileHandle->open(
+        path       => $filepath,
+        create     => 1,
+        write_only => 1,
+        exclusive  => 1,
+    );
+    my $outstream = KinoSearch::Store::OutStream->open( file => $fh )
+        or confess KinoSearch->error;
+    return $outstream;
 }
 
 sub new_instream {
     undef $instream;
-    return $folder->open_in($filename) || die "can't open $filename";
+    return $folder->open_in($filename) || confess KinoSearch->error;
 }
 
 $outstream = new_outstream();
@@ -37,7 +45,7 @@ $outstream->print("foo");
 $outstream->close;
 $instream = new_instream();
 undef $foo;
-$instream->read_bytes( $foo, 3 );
+$instream->read( $foo, 3 );
 is( $foo, "foo", "outstream writes, instream reads" );
 $instream->close;
 
@@ -47,10 +55,10 @@ $outstream->print( 'foo', $long_string );
 $outstream->close;
 $instream = new_instream();
 undef $foo;
-$instream->read_bytes( $foo, 5003 );
+$instream->read( $foo, 5003 );
 is( $foo, "foo$long_string", "long string" );
 
-eval { my $blah; $instream->read_bytes( $blah, 2 ) };
+eval { my $blah; $instream->read( $blah, 2 ) };
 like( $@, qr/EOF/, "reading past EOF throws an error" );
 undef $instream;
 
@@ -62,12 +70,16 @@ $outstream->close;
 $instream = new_instream();
 $instream->seek(1024);
 undef $foo;
-$instream->read_bytes( $foo, 3 );
+$instream->read( $foo, 3 );
 is( $foo, 'foo', "InStream seek" );
 
-my $dupe = $instream->reopen( 'foo', 1023, 4 );
+my $dupe = $instream->reopen(
+    filename => 'foo',
+    offset   => 1023,
+    len      => 4
+);
 undef $foo;
-$dupe->read_bytes( $foo, 4 );
+$dupe->read( $foo, 4 );
 
 is( $foo, 'afoo', "reopened instream" );
 

@@ -3,7 +3,6 @@
 
 #include "KinoSearch/Indexer.h"
 #include "KinoSearch/Analysis/Analyzer.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/Doc.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/FieldType/FullTextType.h"
@@ -17,12 +16,12 @@
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/SegWriter.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Search/Query.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"
 #include "KinoSearch/Store/Lock.h"
-#include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
 
@@ -90,7 +89,7 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
     }
     else {
         CharBuf *message = MAKE_MESS("index is locked by '%o'", 
-            Lock_Get_Filename(write_lock));
+            Lock_Get_Lock_Path(write_lock));
         DECREF(write_lock);
         DECREF(self);
         Err_throw_mess(LOCKERR, message);
@@ -114,7 +113,7 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
             CharBuf *schema_file = S_find_schema_file(latest_snapshot);
             Hash *dump = (Hash*)Json_slurp_json(folder, schema_file);
             if (dump) { /* read file successfully */
-                self->schema = (Schema*)ASSERT_IS_A(
+                self->schema = (Schema*)CERTIFY(
                     VTable_Load_Obj(SCHEMA, (Obj*)dump), SCHEMA);
                 schema = self->schema;
                 DECREF(dump);
@@ -161,7 +160,7 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
 
     /* Create a new segment. */
     {
-        i32_t new_seg_num 
+        i64_t new_seg_num 
             = IxManager_Highest_Seg_Num(self->manager, latest_snapshot) + 1;
         Lock *merge_lock = IxManager_Make_Merge_Lock(self->manager);
         u32_t i, max;
@@ -179,7 +178,7 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
                 THROW(ERR, "Background merge detected, but can't read merge data");
             }
             else {
-                i32_t cutoff = (i32_t)Obj_To_I64(cutoff_obj);
+                i64_t cutoff = Obj_To_I64(cutoff_obj);
                 if (cutoff >= new_seg_num) {
                     new_seg_num = cutoff + 1;
                 }
@@ -244,10 +243,10 @@ S_init_folder(Obj *index, bool_t create)
     Folder *folder = NULL;
 
     /* Validate or acquire a Folder. */
-    if (OBJ_IS_A(index, FOLDER)) {
+    if (Obj_Is_A(index, FOLDER)) {
         folder = (Folder*)INCREF(index);
     }
-    else if (OBJ_IS_A(index, CHARBUF)) {
+    else if (Obj_Is_A(index, CHARBUF)) {
         folder = (Folder*)FSFolder_new((CharBuf*)index);
     }
     else {
@@ -284,8 +283,8 @@ Indexer_delete_by_term(Indexer *self, CharBuf *field, Obj *term)
         THROW(ERR, "%o is not an indexed field", field);
 
     /* Analyze term if appropriate, then zap. */
-    if (OBJ_IS_A(type, FULLTEXTTYPE)) {
-        ASSERT_IS_A(term, CHARBUF);
+    if (FType_Is_A(type, FULLTEXTTYPE)) {
+        CERTIFY(term, CHARBUF);
         {
             Analyzer *analyzer = Schema_Fetch_Analyzer(schema, field);
             VArray *terms = Analyzer_Split(analyzer, (CharBuf*)term);
@@ -314,10 +313,10 @@ Indexer_add_index(Indexer *self, Obj *index)
     Folder *other_folder = NULL;
     IndexReader *reader  = NULL;
     
-    if (OBJ_IS_A(index, FOLDER)) {
+    if (Obj_Is_A(index, FOLDER)) {
         other_folder = (Folder*)INCREF(index);
     }
-    else if (OBJ_IS_A(index, CHARBUF)) {
+    else if (Obj_Is_A(index, CHARBUF)) {
         other_folder = (Folder*)FSFolder_new((CharBuf*)index);
     }
     else {
@@ -355,7 +354,7 @@ Indexer_add_index(Indexer *self, Obj *index)
                                : NULL;
             I32Array *doc_map = DelWriter_Generate_Doc_Map(self->del_writer,
                 deletions, SegReader_Doc_Max(seg_reader),
-                Seg_Get_Count(self->segment) 
+                (int32_t)Seg_Get_Count(self->segment) 
             );
             SegWriter_Add_Segment(self->seg_writer, seg_reader, doc_map);
             DECREF(deletions);
@@ -400,7 +399,7 @@ S_maybe_merge(Indexer *self, VArray *seg_readers)
     u32_t   num_seg_readers = VA_Get_Size(seg_readers);
     Lock   *merge_lock      = IxManager_Make_Merge_Lock(self->manager);
     bool_t  got_merge_lock  = Lock_Obtain(merge_lock);
-    i32_t   cutoff;
+    i64_t   cutoff;
     VArray *to_merge;
     u32_t   i, max;
 
@@ -414,15 +413,15 @@ S_maybe_merge(Indexer *self, VArray *seg_readers)
         if (merge_data) {
             Obj *cutoff_obj = Hash_Fetch_Str(merge_data, "cutoff", 6);
             if (cutoff_obj) {
-                cutoff = (i32_t)Obj_To_I64(cutoff_obj);
+                cutoff = Obj_To_I64(cutoff_obj);
             }
             else {
-                cutoff = I32_MAX;
+                cutoff = I64_MAX;
             }
             DECREF(merge_data);
         }
         else {
-            cutoff = I32_MAX;
+            cutoff = I64_MAX;
         }
         DECREF(merge_lock);
     }
@@ -434,7 +433,7 @@ S_maybe_merge(Indexer *self, VArray *seg_readers)
     {
         Hash *seen = Hash_new(VA_Get_Size(to_merge));
         for (i = 0, max = VA_Get_Size(to_merge); i < max; i++) {
-            SegReader *seg_reader = (SegReader*)ASSERT_IS_A(
+            SegReader *seg_reader = (SegReader*)CERTIFY(
                 VA_Fetch(to_merge, i), SEGREADER);
             CharBuf *seg_name = SegReader_Get_Seg_Name(seg_reader);
             if (Hash_Fetch(seen, (Obj*)seg_name)) {
@@ -449,15 +448,15 @@ S_maybe_merge(Indexer *self, VArray *seg_readers)
     /* Consolidate segments if either sparse or optimizing forced. */
     for (i = 0, max = VA_Get_Size(to_merge); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(to_merge, i);
-        i32_t seg_num = SegReader_Get_Seg_Num(seg_reader);
+        i64_t seg_num = SegReader_Get_Seg_Num(seg_reader);
         Matcher *deletions 
             = DelWriter_Seg_Deletions(self->del_writer, seg_reader);
         I32Array *doc_map = DelWriter_Generate_Doc_Map(self->del_writer,
             deletions, SegReader_Doc_Max(seg_reader),
-            Seg_Get_Count(self->segment) 
+            (int32_t)Seg_Get_Count(self->segment) 
         );
         if (seg_num <= cutoff) {
-            THROW(ERR, "Segment %o violates cutoff (%i32 <= %i32)",
+            THROW(ERR, "Segment %o violates cutoff (%i64 <= %i64)",
                 SegReader_Get_Seg_Name(seg_reader), seg_num, cutoff);
         }
         SegWriter_Merge_Segment(self->seg_writer, seg_reader, doc_map);
@@ -503,19 +502,19 @@ Indexer_prepare_commit(Indexer *self)
         Folder   *folder   = self->folder;
         Schema   *schema   = self->schema;
         Snapshot *snapshot = self->snapshot;
-        CharBuf  *seg_name = Seg_Get_Name(self->segment);
         CharBuf  *old_schema_name = S_find_schema_file(snapshot);
-        i32_t     schema_gen = old_schema_name
+        u64_t     schema_gen = old_schema_name
                              ? IxFileNames_extract_gen(old_schema_name) + 1
                              : 1;
-        CharBuf  *base36 = StrHelp_to_base36(schema_gen);
-        CharBuf  *new_schema_name = CB_newf("schema_%o.json", base36);
-        DECREF(base36);
+        char      base36[StrHelp_MAX_BASE36_BYTES];
+        CharBuf  *new_schema_name;
+        
+        StrHelp_to_base36(schema_gen, &base36);
+        new_schema_name = CB_newf("schema_%s.json", base36);
 
         /* Finish the segment, write schema file. */
         SegWriter_Finish(self->seg_writer);
         Schema_Write(schema, folder, new_schema_name);
-        Folder_Finish_Segment(folder, seg_name);
         if (old_schema_name) {
             Snapshot_Delete_Entry(snapshot, old_schema_name);
         }
@@ -551,12 +550,15 @@ Indexer_commit(Indexer *self)
     }
 
     if (self->needs_commit) {
+        bool_t success;
+
         /* Rename temp snapshot file. */
         CharBuf *temp_snapfile = CB_Clone(self->snapfile);
         CB_Chop(self->snapfile, sizeof(".temp") - 1);
         Snapshot_Set_Filename(self->snapshot, self->snapfile);
-        Folder_Rename(self->folder, temp_snapfile, self->snapfile);
+        success = Folder_Rename(self->folder, temp_snapfile, self->snapfile);
         DECREF(temp_snapfile);
+        if (!success) { RETHROW(INCREF(Err_get_error())); }
 
         /* Purge obsolete files. */
         FilePurger_Purge(self->file_purger);
@@ -592,7 +594,7 @@ S_release_merge_lock(Indexer *self)
     }
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

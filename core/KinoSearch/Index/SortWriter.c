@@ -15,9 +15,8 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/MemManager.h"
+#include "KinoSearch/Util/Memory.h"
 #include "KinoSearch/Util/SortUtils.h"
-#include "KinoSearch/Util/I32Array.h"
 
 i32_t SortWriter_current_file_format = 2;
 
@@ -84,9 +83,9 @@ S_get_blank(SortWriter *self, i32_t field_num)
 {
     Obj *blank = VA_Fetch(self->blanks, field_num);
     if (!blank) {
-        CharBuf *field_name = (CharBuf*)ASSERT_IS_A(
+        CharBuf *field_name = (CharBuf*)CERTIFY(
             Seg_Field_Name(self->segment, field_num), CHARBUF);
-        FieldType *type = (FieldType*)ASSERT_IS_A(
+        FieldType *type = (FieldType*)CERTIFY(
             Schema_Fetch_Type(self->schema, field_name), FIELDTYPE);
         blank = FType_Make_Blank(type);
         VA_Store(self->blanks, field_num, (Obj*)blank);
@@ -175,7 +174,7 @@ SortWriter_delete_segment(SortWriter *self, SegReader *reader)
     Hash     *metadata = (Hash*)Seg_Fetch_Metadata_Str(segment, "sort", 4);
 
     if (metadata) {
-        Hash *counts = (Hash*)ASSERT_IS_A(
+        Hash *counts = (Hash*)CERTIFY(
             Hash_Fetch_Str(metadata, "counts", 6), HASH);
         CharBuf *field;
         Obj     *count;
@@ -359,34 +358,43 @@ S_finish_field(SortWriter *self, i32_t field_num, VArray *doc_vals,
     Snapshot  *snapshot  = SortWriter_Get_Snapshot(self);
     Folder    *folder    = SortWriter_Get_Folder(self);
     CharBuf   *seg_name  = Seg_Get_Name(self->segment);
-    CharBuf   *ord_file  = CB_newf("%o/sort-%i32.ord", seg_name, field_num);
-    CharBuf   *ix_file   = CB_newf("%o/sort-%i32.ix",  seg_name, field_num);
-    CharBuf   *dat_file  = CB_newf("%o/sort-%i32.dat", seg_name, field_num);
-    OutStream *ord_out   = Folder_Open_Out(folder, ord_file);
-    OutStream *ix_out    = var_width
-                         ? Folder_Open_Out(folder, ix_file)
-                         : NULL;
-    OutStream *dat_out   = Folder_Open_Out(folder, dat_file);
     i32_t      doc_max   = Seg_Get_Count(self->segment);
     bool_t     has_nulls = S_has_nulls(doc_vals, doc_max);
     i32_t      num_uniq  = Hash_Get_Size(uniques) + has_nulls;
     i32_t      width     = S_calc_width(num_uniq);
     size_t     size      = (doc_max + 1) * sizeof(i32_t);
-    i32_t     *sorted    = MALLOCATE(doc_max + 1, i32_t);
-    void      *ords      = MALLOCATE(doc_max + 1, i32_t);
+    i32_t     *sorted    = (i32_t*)MALLOCATE((doc_max + 1) * sizeof(i32_t));
+    void      *ords      = (i32_t*)MALLOCATE((doc_max + 1) * sizeof(i32_t));
     i32_t      count     = 0;
+    OutStream *ord_out   = NULL;
+    OutStream *ix_out    = NULL;
+    OutStream *dat_out   = NULL;
     Obj       *last_val;
     u32_t      i;
     kino_SortWriter_sort_context context;
 
-    if (!ord_out)              { THROW(ERR, "Can't open '%o'", ord_file); }
-    if (var_width && !ix_out)  { THROW(ERR, "Can't open '%o'", ix_file); }
-    if (!dat_out)              { THROW(ERR, "Can't open '%o'", dat_file); }
-
-    /* Add files to Snapshot. */
-    Snapshot_Add_Entry(snapshot, ord_file);
-    if (var_width) { Snapshot_Add_Entry(snapshot, ix_file); }
-    Snapshot_Add_Entry(snapshot, dat_file);
+    /* Open streams. */
+    {
+        CharBuf *ord_file = CB_newf("%o/sort-%i32.ord", seg_name, field_num);
+        ord_out = Folder_Open_Out(folder, ord_file);
+        Snapshot_Add_Entry(snapshot, ord_file);
+        DECREF(ord_file);
+        if (!ord_out) { RETHROW(INCREF(Err_get_error())); }
+    }
+    if (var_width) {
+        CharBuf *ix_file = CB_newf("%o/sort-%i32.ix", seg_name, field_num);
+        ix_out = Folder_Open_Out(folder, ix_file);
+        Snapshot_Add_Entry(snapshot, ix_file);
+        DECREF(ix_file);
+        if (!ix_out) { RETHROW(INCREF(Err_get_error())); }
+    }
+    {
+        CharBuf *dat_file = CB_newf("%o/sort-%i32.dat", seg_name, field_num);
+        dat_out = Folder_Open_Out(folder, dat_file);
+        Snapshot_Add_Entry(snapshot, dat_file);
+        DECREF(dat_file);
+        if (!dat_out) { RETHROW(INCREF(Err_get_error())); }
+    }
 
     /* Get an array of sorted doc nums.  Leave 0 as 0. */
     for (i = 0; i <= (u32_t)doc_max; i++) { sorted[i] = i; }
@@ -442,14 +450,11 @@ S_finish_field(SortWriter *self, i32_t field_num, VArray *doc_vals,
     OutStream_Close(ord_out);
     if (ix_out) { OutStream_Close(ix_out); }
     OutStream_Close(dat_out);
-    MemMan_wrapped_free(ords);
-    MemMan_wrapped_free(sorted);
+    FREEMEM(ords);
+    FREEMEM(sorted);
     DECREF(dat_out);
     DECREF(ix_out);
     DECREF(ord_out);
-    DECREF(dat_file);
-    DECREF(ix_file);
-    DECREF(ord_file);
 
     count++;
     if (count != num_uniq) {
@@ -504,7 +509,7 @@ SortWriter_format(SortWriter *self)
     return SortWriter_current_file_format;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

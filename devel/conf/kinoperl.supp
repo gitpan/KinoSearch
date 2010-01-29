@@ -1,86 +1,78 @@
 {
    <insert a suppression name here>
    Memcheck:Leak
+   fun:calloc
+   fun:kino_Memory_wrapped_calloc
+   fun:kino_VTable_make_obj
+   fun:kino_LFReg_new
+   fun:kino_VTable_init_registry
+   fun:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
    fun:malloc
-   fun:kino_MemMan_wrapped_malloc
+   fun:kino_Memory_wrapped_malloc
+   fun:kino_LFReg_register
+   fun:kino_VTable_add_to_registry
+   fun:kino_VTable_singleton
+   fun:*
+}
+
+{
+   <Class name key for VTable_registry (malloc)>
+   Memcheck:Leak
+   fun:malloc
+   fun:kino_Memory_wrapped_malloc
    fun:kino_CB_new_from_trusted_utf8
    fun:kino_CB_clone
-   fun:kino_Hash_make_key
-   fun:kino_Hash_do_store
-   fun:kino_Hash_store
    fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
    fun:*
 }
+
 {
-   <insert a suppression name here>
+   <Class name key for VTable_registry (calloc)>
    Memcheck:Leak
    fun:calloc
-   fun:kino_MemMan_wrapped_calloc
+   fun:kino_Memory_wrapped_calloc
    fun:kino_VTable_make_obj
-   fun:kino_Hash_new
-   fun:kino_VTable_init_registry
+   fun:kino_CB_new_from_trusted_utf8
+   fun:kino_CB_clone
    fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
    fun:*
 }
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:kino_MemMan_wrapped_malloc
-   fun:kino_Hash_do_store
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
-   fun:*
-}
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:kino_MemMan_wrapped_malloc
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
-   fun:*
-}
+
 {
    <insert a suppression name here>
    Memcheck:Leak
    fun:calloc
-   fun:kino_MemMan_wrapped_calloc
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
+   fun:kino_Memory_wrapped_calloc
+   fun:kino_VTable_clone
+   fun:kino_VTable_singleton
    fun:*
 }
+
 {
-   <insert a suppression name here>
+   <Add class name to child VTable (malloc)>
    Memcheck:Leak
    fun:malloc
-   fun:kino_MemMan_wrapped_malloc
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
-   fun:*
-}
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:kino_MemMan_wrapped_malloc
+   fun:kino_Memory_wrapped_malloc
    fun:kino_CB_new_from_trusted_utf8
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
+   fun:kino_CB_clone
+   fun:kino_VTable_singleton
+   fun:*
+}
+
+{
+   <Add class name to child VTable (calloc)>
+   Memcheck:Leak
+   fun:calloc
+   fun:kino_Memory_wrapped_calloc
+   fun:kino_VTable_make_obj
+   fun:kino_CB_new_from_trusted_utf8
+   fun:kino_CB_clone
+   fun:kino_VTable_singleton
    fun:*
 }
 
@@ -93,69 +85,4 @@
    fun:*
 }
 
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:kino_MemMan_wrapped_malloc
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
-   fun:*
-}
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:calloc
-   fun:kino_MemMan_wrapped_calloc
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
-   fun:*
-}
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:kino_MemMan_wrapped_malloc
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
-   fun:*
-}
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:kino_MemMan_wrapped_malloc
-   fun:kino_CB_new_from_trusted_utf8
-   fun:kino_Hash_store
-   fun:kino_VTable_add_to_registry
-   fun:kino_Boot_bootstrap
-   fun:boot_KinoSearch
-   fun:*
-}
-
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:calloc
-   fun:kino_MemMan_wrapped_calloc
-   fun:kino_Hash_do_store
-   fun:kino_Hash_store
-   fun:kino_VTable_singleton
-   fun:*
-}
-
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:calloc
-   fun:kino_MemMan_wrapped_calloc
-   fun:kino_Hash_rebuild_hash
-   fun:*
-}
 

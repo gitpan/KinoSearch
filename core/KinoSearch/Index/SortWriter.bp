@@ -39,11 +39,11 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     public void
     Finish(SortWriter *self);
 
-    void
+    public void
     Destroy(SortWriter *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

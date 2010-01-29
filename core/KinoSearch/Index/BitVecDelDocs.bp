@@ -1,6 +1,6 @@
 parcel KinoSearch cnick Kino;
 
-class KinoSearch::Index::BitVecDelDocs extends KinoSearch::Obj::BitVector {
+class KinoSearch::Index::BitVecDelDocs extends KinoSearch::Object::BitVector {
 
     InStream  *instream;
     CharBuf   *filename;
@@ -11,11 +11,11 @@ class KinoSearch::Index::BitVecDelDocs extends KinoSearch::Obj::BitVector {
     inert BitVecDelDocs*
     init(BitVecDelDocs *self, Folder *folder, const CharBuf *filename);
 
-    void
+    public void
     Destroy(BitVecDelDocs *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -1,3 +1,4 @@
+package KinoSearch::Index::PostingList;
 use KinoSearch;
 
 1;
@@ -7,9 +8,9 @@ __END__
 __BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
-    my $postings_reader 
-        = $seg_reader->obtain("KinoSearch::Index::PostingsReader");
-    my $posting_list = $postings_reader->posting_list( 
+    my $posting_list_reader 
+        = $seg_reader->obtain("KinoSearch::Index::PostingListReader");
+    my $posting_list = $posting_list_reader->posting_list( 
         field => 'content',
         term  => 'foo',
     );
@@ -18,7 +19,7 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Index::PostingList",
     bind_methods => [
@@ -46,7 +47,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

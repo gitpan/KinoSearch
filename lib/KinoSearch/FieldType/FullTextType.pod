@@ -29,7 +29,7 @@ L<KinoSearch::FieldType> tuned for "full text search".
 Full text fields are associated with an Analyzer, which is used to tokenize
 and normalize the text so that it can be searched for individual words.
 
-For a sortable, single-value field type using character data, see
+For an exact-match, single value field type using character data, see
 L<StringType|KinoSearch::FieldType::StringType>.
 
 =head1 CONSTRUCTORS
@@ -41,6 +41,7 @@ L<StringType|KinoSearch::FieldType::StringType>.
         boost         => 2.0,          # default: 1.0
         indexed       => 1,            # default: true
         stored        => 1,            # default: true
+        sortable      => 1,            # default: false
         highlightable => 1,            # default: false
     );
 
@@ -61,6 +62,10 @@ B<indexed> - boolean indicating whether the field should be indexed.
 =item *
 
 B<stored> - boolean indicating whether the field should be stored.
+
+=item *
+
+B<sortable> - boolean indicating whether the field should be sortable.
 
 =item *
 
@@ -89,12 +94,12 @@ Accessor for "highlightable" property.
 
 =head1 INHERITANCE
 
-KinoSearch::FieldType::FullTextType isa L<KinoSearch::FieldType::TextType> isa L<KinoSearch::FieldType> isa L<KinoSearch::Obj>.
+KinoSearch::FieldType::FullTextType isa L<KinoSearch::FieldType::TextType> isa L<KinoSearch::FieldType> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

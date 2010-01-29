@@ -160,11 +160,11 @@ PrefixCompiler is make_matcher().
         my ( $self, %args ) = @_;
         my $seg_reader = $args{reader};
 
-        # Retrieve low-level components LexiconReader and PostingsReader.
+        # Retrieve low-level components LexiconReader and PostingListReader.
         my $lex_reader
             = $seg_reader->obtain("KinoSearch::Index::LexiconReader");
-        my $post_reader
-            = $seg_reader->obtain("KinoSearch::Index::PostingsReader");
+        my $plist_reader
+            = $seg_reader->obtain("KinoSearch::Index::PostingListReader");
         
         # Acquire a Lexicon and seek it to our query string.
         my $substring = $self->get_parent->get_query_string;
@@ -178,7 +178,7 @@ PrefixCompiler is make_matcher().
         my @posting_lists;
         while ( defined( my $term = $lexicon->get_term ) ) {
             last unless $term =~ /^\Q$substring/;
-            my $posting_list = $post_reader->posting_list(
+            my $posting_list = $plist_reader->posting_list(
                 field => $field,
                 term  => $term,
             );
@@ -195,7 +195,7 @@ PrefixCompiler is make_matcher().
 PrefixCompiler gets access to a L<SegReader|KinoSearch::Search::SegReader>
 object when make_matcher() gets called.  From the SegReader and its
 sub-components L<LexiconReader|KinoSearch::Index::LexiconReader> and
-L<PostingsReader|KinoSearch::Index::PostingsReader>, we acquire a
+L<PostingListReader|KinoSearch::Index::PostingListReader>, we acquire a
 L<Lexicon|KinoSearch::Index::Lexicon>, scan through the Lexicon's unique
 terms, and acquire a L<PostingList|KinoSearch::Index::PostingList> for each
 term that matches our prefix.
@@ -297,7 +297,7 @@ prefix conflation -- is not perfectly compatible with prefix searches.
 
 =head1 COPYRIGHT
 
-Copyright 2008-2009 Marvin Humphrey
+Copyright 2008-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

@@ -69,13 +69,13 @@ S_ormatcher_init2(ORMatcher *self, VArray *children, Similarity *sim)
     self->max_size = VA_Get_Size(children);
 
     /* Allocate. */
-    self->heap = CALLOCATE(self->max_size + 1, HeapedMatcherDoc*);
+    self->heap = (HeapedMatcherDoc**)CALLOCATE(self->max_size + 1, sizeof(HeapedMatcherDoc*));
 
     /* Create a pool of HMDs.  Encourage CPU cache hits by using a single
      * allocation for all of them. */
     amount_to_malloc = (self->max_size + 1) * sizeof(HeapedMatcherDoc);
-    self->blob = MALLOCATE(amount_to_malloc, char);
-    self->pool = CALLOCATE(self->max_size + 1, HeapedMatcherDoc*);
+    self->blob = (char*)MALLOCATE(amount_to_malloc);
+    self->pool = (HeapedMatcherDoc**)CALLOCATE(self->max_size + 1, sizeof(HeapedMatcherDoc*));
     for (i = 1; i <= self->max_size; i++) {
         size_t offset = i * sizeof(HeapedMatcherDoc);
         HeapedMatcherDoc *hmd = (HeapedMatcherDoc*)(self->blob + offset);
@@ -294,7 +294,7 @@ ORScorer_init(ORScorer *self, VArray *children, Similarity *sim)
 {
     S_ormatcher_init2((ORMatcher*)self, children, sim);
     self->doc_id           = 0;
-    self->scores           = MALLOCATE(self->num_kids, float);
+    self->scores           = (float*)MALLOCATE(self->num_kids * sizeof(float));
 
     /* Establish the state of all child matchers being past the current doc
      * id, by invoking ORMatcher's Next() method. */
@@ -401,7 +401,7 @@ ORScorer_score(ORScorer *self)
     return score;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

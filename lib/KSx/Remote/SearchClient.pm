@@ -167,7 +167,7 @@ socket connection.
 
 =head1 COPYRIGHT
 
-Copyright 2006-2009 Marvin Humphrey
+Copyright 2006-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

@@ -13,8 +13,8 @@ KinoSearch::Store::LockFactory - Create Locks.
         path => '/path/to/index', 
     );
     my $lock_factory = KinoSearch::Store::LockFactory->new(
-        folder   => $folder,
-        hostname => $hostname,
+        folder => $folder,
+        host   => $hostname,
     );
     my $write_lock = $lock_factory->make_lock(
         name     => 'write',
@@ -38,8 +38,8 @@ alternatives such as flock() are possible.
 =head2 new( I<[labeled params]> )
 
     my $lock_factory = KinoSearch::Store::LockFactory->new(
-        folder   => $folder,    # required
-        hostname => $hostname,  # required
+        folder => $folder,      # required
+        host   => $hostname,    # required
     );
 
 =over
@@ -50,7 +50,7 @@ B<folder> - A L<KinoSearch::Store::Folder>.
 
 =item *
 
-B<hostname> - An identifier which should be unique per-machine.
+B<host> - An identifier which should be unique per-machine.
 
 =back
 
@@ -111,12 +111,12 @@ B<interval> - Time in milliseconds between retries.
 
 =head1 INHERITANCE
 
-KinoSearch::Store::LockFactory isa L<KinoSearch::Obj>.
+KinoSearch::Store::LockFactory isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

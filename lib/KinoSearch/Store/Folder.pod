@@ -15,15 +15,13 @@ KinoSearch::Store::Folder - Abstract class representing a directory.
 
 Abstract class representing a directory.
 
-The archetypal implementation of Folder,
-L<FSFolder|KinoSearch::Store::FSFolder>, is a single directory on the file
-system holding a collection of files.  However, to allow alternative
-implementations such as RAMFolder, i/o and file manipulation are abstracted
-out rather than executed directly by KinoSearch's classes.
+A "file" within a Folder might be a real file on disk -- or it might be a
+RAM buffer.  Similarly, delete() might delete a file from the file system, or
+a key-value pair from a hash, or something else.  
 
-A "file" within an folder might be a real file on disk -- or it might be a
-ram file.  Similarly, delete() might delete a file from the file system, or
-a key-value pair from a hash, or something else.
+The archetypal implementation of Folder,
+L<FSFolder|KinoSearch::Store::FSFolder>, represents a directory on
+the file system holding a collection of files.
 
 
 
@@ -33,12 +31,12 @@ a key-value pair from a hash, or something else.
 
 =head1 INHERITANCE
 
-KinoSearch::Store::Folder isa L<KinoSearch::Obj>.
+KinoSearch::Store::Folder isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

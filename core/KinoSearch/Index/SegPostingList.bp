@@ -6,27 +6,26 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::SegPostingList cnick SegPList
     extends KinoSearch::Index::PostingList {
 
-    PostingsReader *post_reader;
-    CharBuf        *field;
-    Posting        *posting;
-    InStream       *post_stream;
-    InStream       *skip_stream;
-    SkipStepper    *skip_stepper;
-    i32_t           skip_interval;
-    i32_t           doc_base;
-    u32_t           count;
-    u32_t           doc_freq;
-    u32_t           skip_count;
-    u32_t           num_skips;
-    i32_t           field_num;
+    PostingListReader *plist_reader;
+    CharBuf           *field;
+    Posting           *posting;
+    InStream          *post_stream;
+    InStream          *skip_stream;
+    SkipStepper       *skip_stepper;
+    i32_t              skip_interval;
+    u32_t              count;
+    u32_t              doc_freq;
+    u32_t              skip_count;
+    u32_t              num_skips;
+    i32_t              field_num;
 
     /* Constructor.
      */
     inert incremented SegPostingList*
-    new(PostingsReader *postings_reader, const CharBuf *field);
+    new(PostingListReader *plist_reader, const CharBuf *field);
 
     inert SegPostingList*
-    init(SegPostingList *self, PostingsReader *postings_reader, 
+    init(SegPostingList *self, PostingListReader *plist_reader, 
          const CharBuf *field);
 
     InStream*
@@ -35,14 +34,7 @@ class KinoSearch::Index::SegPostingList cnick SegPList
     u32_t
     Get_Count(SegPostingList *self);
 
-    /* Set a base which will be added to the document id of all postings.
-     * 
-     * This should not be called after Seek.
-     */
-    void
-    Set_Doc_Base(SegPostingList *self, i32_t doc_base);
-
-    void
+    public void
     Destroy(SegPostingList *self);
 
     public u32_t
@@ -57,10 +49,8 @@ class KinoSearch::Index::SegPostingList cnick SegPList
     public i32_t
     Next(SegPostingList *self);
 
-    /* 
-    i32_t
+    public i32_t
     Advance(SegPostingList *self, i32_t target);
-    */
 
     public void
     Seek(SegPostingList *self, Obj *target = NULL);
@@ -79,7 +69,7 @@ class KinoSearch::Index::SegPostingList cnick SegPList
              MemoryPool *mem_pool);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -10,14 +10,14 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 {
     CaseFolder *case_folder = CaseFolder_new();
     CaseFolder *other       = CaseFolder_new();
-    Obj        *dump        = Obj_Dump(case_folder);
-    CaseFolder *clone       = (CaseFolder*)Obj_Load(other, dump);
+    Obj        *dump        = (Obj*)CaseFolder_Dump(case_folder);
+    CaseFolder *clone       = (CaseFolder*)CaseFolder_Load(other, dump);
 
-    ASSERT_TRUE(batch, Obj_Equals(case_folder, (Obj*)other), "Equals");
+    ASSERT_TRUE(batch, CaseFolder_Equals(case_folder, (Obj*)other), "Equals");
     ASSERT_TRUE(batch, CaseFolder_Dump_Equals(case_folder, (Obj*)dump), 
         "Dump_Equals");
-    ASSERT_FALSE(batch, Obj_Equals(case_folder, (Obj*)&EMPTY), "Not Equals");
-    ASSERT_TRUE(batch, Obj_Equals(case_folder, (Obj*)clone), 
+    ASSERT_FALSE(batch, CaseFolder_Equals(case_folder, (Obj*)&EMPTY), "Not Equals");
+    ASSERT_TRUE(batch, CaseFolder_Equals(case_folder, (Obj*)clone), 
         "Dump => Load round trip");
 
     DECREF(case_folder);
@@ -29,17 +29,17 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 void
 TestCaseFolder_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestCaseFolder", 4, NULL);
+    TestBatch *batch = TestBatch_new(4);
 
-    PLAN(batch);
+    TestBatch_Plan(batch);
 
     test_Dump_Load_and_Equals(batch);
 
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

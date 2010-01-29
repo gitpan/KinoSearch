@@ -68,7 +68,7 @@ bool_t
 ReqOptQuery_equals(RequiredOptionalQuery *self, Obj *other)
 {
     if ((RequiredOptionalQuery*)other == self)   { return true;  }
-    if (!OBJ_IS_A(other, REQUIREDOPTIONALQUERY)) { return false; }
+    if (!Obj_Is_A(other, REQUIREDOPTIONALQUERY)) { return false; }
     return PolyQuery_equals((PolyQuery*)self, other);
 }
 
@@ -97,7 +97,7 @@ ReqOptCompiler_init(RequiredOptionalCompiler *self,
 {
     PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
         boost);
-    Compiler_Normalize(self);
+    ReqOptCompiler_Normalize(self);
     return self;
 }
 
@@ -131,7 +131,7 @@ ReqOptCompiler_make_matcher(RequiredOptionalCompiler *self, SegReader *reader,
     }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

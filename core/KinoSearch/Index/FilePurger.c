@@ -7,6 +7,7 @@
 #include "KinoSearch/Index/IndexManager.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Store/DirHandle.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/Lock.h"
 
@@ -18,7 +19,7 @@ S_discover_unused(FilePurger *self, VArray **purgables, VArray **snapfiles);
 /* Clean up after a failed background merge session, adding all dead files to
  * the list of candidates to be zapped. */
 static void
-S_zap_dead_merge(FilePurger *self, VArray *files, Hash *candidates);
+S_zap_dead_merge(FilePurger *self, Hash *candidates);
 
 FilePurger*
 FilePurger_new(Folder *folder, Snapshot *snapshot, IndexManager *manager)
@@ -32,7 +33,7 @@ FilePurger_init(FilePurger *self, Folder *folder, Snapshot *snapshot,
                 IndexManager *manager) 
 {
     self->folder       = (Folder*)INCREF(folder);
-    self->snapshot     = snapshot ? (Snapshot*)INCREF(snapshot) : NULL;
+    self->snapshot     = (Snapshot*)INCREF(snapshot);
     self->manager      = manager 
                        ? (IndexManager*)INCREF(manager)
                        : IxManager_new(NULL, NULL);
@@ -101,7 +102,7 @@ FilePurger_purge(FilePurger *self)
 }
 
 static void
-S_zap_dead_merge(FilePurger *self, VArray *files, Hash *candidates)
+S_zap_dead_merge(FilePurger *self, Hash *candidates)
 {
     IndexManager *manager = self->manager;
     Lock *merge_lock   = IxManager_Make_Merge_Lock(manager);
@@ -114,19 +115,27 @@ S_zap_dead_merge(FilePurger *self, VArray *files, Hash *candidates)
                      : NULL;
 
         if (cutoff) {
-            CharBuf *cutoff_seg = Seg_num_to_name((i32_t)Obj_To_I64(cutoff));
-            u32_t i, max;
-            static ZombieCharBuf merge_json = ZCB_LITERAL("merge.json");
+            CharBuf *cutoff_seg = Seg_num_to_name(Obj_To_I64(cutoff));
+            if (Folder_Exists(self->folder, cutoff_seg)) {
+                static ZombieCharBuf merge_json = ZCB_LITERAL("merge.json");
+                DirHandle *dh = Folder_Open_Dir(self->folder, cutoff_seg);
+                CharBuf *entry = dh ? DH_Get_Entry(dh) : NULL;
+                CharBuf *filepath = CB_new(32);
 
-            Hash_Store(candidates, (Obj*)&merge_json, INCREF(&EMPTY));
-            CB_Cat_Char(cutoff_seg, '/');
-            for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-                CharBuf *filename = (CharBuf*)VA_Fetch(files, i);
-                if (CB_Starts_With(filename, cutoff_seg)) {
-                    Hash_Store(candidates, (Obj*)filename, INCREF(&EMPTY));
+                if (!dh) {
+                    THROW(ERR, "Can't open segment dir '%o'", filepath);
                 }
-            }
 
+                Hash_Store(candidates, (Obj*)cutoff_seg, INCREF(&EMPTY));
+                Hash_Store(candidates, (Obj*)&merge_json, INCREF(&EMPTY));
+                while (DH_Next(dh)) {
+                    /* TODO: recursively delete subdirs within seg dir. */
+                    CB_setf(filepath, "%o/%o", cutoff_seg, entry);
+                    Hash_Store(candidates, (Obj*)filepath, INCREF(&EMPTY));
+                }
+                DECREF(filepath);
+                DECREF(dh);
+            }
             DECREF(cutoff_seg);
         }
 
@@ -142,12 +151,19 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
                   VArray **snapfiles_ptr)
 {
     Folder      *folder       = self->folder;
-    VArray      *files        = Folder_List(folder);
     VArray      *current      = VA_new(1);
-    Hash        *candidates   = Hash_new(VA_Get_Size(files));
+    Hash        *candidates   = Hash_new(64);
     VArray      *snapfiles    = VA_new(1);
     CharBuf     *snapfile     = NULL;
+    DirHandle   *dh           = Folder_Open_Dir(folder, NULL);
+    CharBuf     *entry        = dh ? DH_Get_Entry(dh) : NULL;
     u32_t        i, max;
+
+    if (!dh) {
+        DECREF(current);
+        DECREF(snapfiles);
+        RETHROW(INCREF(Err_get_error()));
+    }
 
     /* Start off with the list of files in the current snapshot. */
     if (self->snapshot) {
@@ -158,16 +174,15 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
         if (snapfile) { VA_Push(current, INCREF(snapfile)); }
     }
 
-    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *file = (CharBuf*)VA_Fetch(files, i);
-        if      (!CB_Starts_With_Str(file, "snapshot_", 9))   { continue; }
-        else if (!CB_Ends_With_Str(file, ".json", 5))         { continue; }
-        else if (snapfile && CB_Equals(file, (Obj*)snapfile)) { continue; }
+    while (DH_Next(dh)) {
+        if      (!CB_Starts_With_Str(entry, "snapshot_", 9))   { continue; }
+        else if (!CB_Ends_With_Str(entry, ".json", 5))         { continue; }
+        else if (snapfile && CB_Equals(entry, (Obj*)snapfile)) { continue; }
         else {
             Snapshot *snapshot 
-                = Snapshot_Read_File(Snapshot_new(), folder, file);
+                = Snapshot_Read_File(Snapshot_new(), folder, entry);
             Lock *lock
-                = IxManager_Make_Snapshot_Read_Lock(self->manager, file);
+                = IxManager_Make_Snapshot_Read_Lock(self->manager, entry);
 
             /* DON'T obtain the lock -- only see whether another
              * entity holds a lock on the snapshot file. */
@@ -178,7 +193,7 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
                 u32_t new_size = VA_Get_Size(current) 
                                + VA_Get_Size(some_files)  + 1;
                 VA_Grow(current, new_size);
-                VA_Push(current, INCREF(file));
+                VA_Push(current, (Obj*)CB_Clone(entry));
                 VA_Push_VArray(current, some_files);
                 DECREF(some_files);
             }
@@ -191,7 +206,7 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
                     CharBuf *file = (CharBuf*)VA_Fetch(some_files, i);
                     Hash_Store(candidates, (Obj*)file, INCREF(&EMPTY));
                 }
-                VA_Push(snapfiles, INCREF(file));
+                VA_Push(snapfiles, (Obj*)CB_Clone(entry));
                 DECREF(some_files);
             }
 
@@ -199,9 +214,10 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
             DECREF(lock);
         }
     }
+    DECREF(dh);
 
     /* Clean up after a dead segment consolidation. */
-    S_zap_dead_merge(self, files, candidates);
+    S_zap_dead_merge(self, candidates);
 
     /* Eliminate any current files from the list of files to be purged. */
     for (i = 0, max = VA_Get_Size(current); i < max; i++) {
@@ -214,11 +230,10 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
     *snapfiles_ptr = snapfiles;
 
     DECREF(candidates);
-    DECREF(files);
     DECREF(current);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

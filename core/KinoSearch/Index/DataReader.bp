@@ -6,7 +6,7 @@ parcel KinoSearch cnick Kino;
  * component will implement one of each.
  */
 
-class KinoSearch::Index::DataReader extends KinoSearch::Obj {
+class KinoSearch::Index::DataReader extends KinoSearch::Object::Obj {
 
     Schema      *schema;
     Folder      *folder;
@@ -77,11 +77,11 @@ class KinoSearch::Index::DataReader extends KinoSearch::Obj {
     public abstract void
     Close(DataReader *self);
 
-    void
+    public void
     Destroy(DataReader *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

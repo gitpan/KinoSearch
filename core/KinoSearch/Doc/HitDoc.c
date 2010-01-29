@@ -52,11 +52,11 @@ HitDoc_dump(HitDoc *self)
 HitDoc*
 HitDoc_load(HitDoc *self, Obj *dump)
 {
-    Hash *source = (Hash*)ASSERT_IS_A(dump, HASH);
+    Hash *source = (Hash*)CERTIFY(dump, HASH);
     HitDoc_load_t super_load 
         = (HitDoc_load_t)SUPER_METHOD(HITDOC, HitDoc, Load);
     HitDoc *loaded = super_load(self, dump);
-    Obj *score = ASSERT_IS_A(Hash_Fetch_Str(source, "score", 5), OBJ);
+    Obj *score = CERTIFY(Hash_Fetch_Str(source, "score", 5), OBJ);
     loaded->score = (float)Obj_To_F64(score);
     return loaded;
 }
@@ -66,13 +66,13 @@ HitDoc_equals(HitDoc *self, Obj *other)
 {
     HitDoc *evil_twin = (HitDoc*)other;
     if (evil_twin == self)                { return true;  }
-    if (!OBJ_IS_A(evil_twin, HITDOC))     { return false; }
+    if (!Obj_Is_A(other, HITDOC))         { return false; }
     if (!Doc_equals((Doc*)self, other))   { return false; }
-    if (!self->score == evil_twin->score) { return false; }
+    if (self->score != evil_twin->score)  { return false; }
     return true;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

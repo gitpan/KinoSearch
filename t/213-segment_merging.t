@@ -8,7 +8,7 @@ package NonMergingIndexManager;
 use base qw( KinoSearch::Index::IndexManager );
 
 sub recycle {
-    return KinoSearch::Obj::VArray->new( capacity => 0 );
+    return KinoSearch::Object::VArray->new( capacity => 0 );
 }
 
 # BiggerSchema is like TestSchema, but it has an extra field named "aux".
@@ -45,12 +45,12 @@ my $num_reps;
             index  => $index_loc,
             schema => $schema,
         );
-        my $num_cf_files = num_cf_files($index_loc);
-        if ( $num_reps > 2 and $num_cf_files > 1 ) {
+        my $num_segmeta = num_segmeta($index_loc);
+        if ( $num_reps > 2 and $num_segmeta > 1 ) {
             $indexer->optimize;
             $indexer->commit;
-            $num_cf_files = num_cf_files($index_loc);
-            is( $num_cf_files, 1, 'commit after optimize' );
+            $num_segmeta = num_segmeta($index_loc);
+            is( $num_segmeta, 1, 'commit after optimize' );
             last;
         }
         else {
@@ -103,8 +103,8 @@ for my $num_letters ( reverse 1 .. 10 ) {
     $indexer->add_index($another_folder);
     $indexer->add_index($yet_another_folder);
     $indexer->commit;
-    cmp_ok( num_cf_files($index_loc),
-        '>', 1, "non-merging Indexer should produce multi-seg index" );
+    cmp_ok( num_segmeta($index_loc), '>', 1,
+        "non-merging Indexer should produce multi-seg index" );
 }
 
 {
@@ -137,8 +137,7 @@ for my $num_letters ( reverse 1 .. 10 ) {
     $indexer->commit;
 }
 
-is( num_cf_files($index_loc), 1,
-    "merged segment files successfully deleted" );
+is( num_segmeta($index_loc), 1, "merged segment files successfully deleted" );
 
 {
     my $folder = KinoSearch::Store::RAMFolder->new;
@@ -169,18 +168,18 @@ is( num_cf_files($index_loc), 1,
     );
 }
 
-is( KinoSearch::Store::FileDes::object_count(),
-    0, "All FileDes objects have been cleaned up" );
+is( KinoSearch::Store::FileHandle::object_count(),
+    0, "All FileHandle objects have been cleaned up" );
 
-sub num_cf_files {
-    my $dir          = shift;
-    my $num_cf_files = 0;
+sub num_segmeta {
+    my $dir         = shift;
+    my $num_segmeta = 0;
     find(
         {   no_chdir => 1,
             wanted =>
-                sub { $num_cf_files++ if $File::Find::name =~ /cf\.dat/ },
+                sub { $num_segmeta++ if $File::Find::name =~ /segmeta.json/ },
         },
         $dir,
     );
-    return $num_cf_files;
+    return $num_segmeta;
 }

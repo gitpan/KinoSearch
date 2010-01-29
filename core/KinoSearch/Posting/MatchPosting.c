@@ -10,13 +10,14 @@
 #include "KinoSearch/Posting/MatchPosting.h"
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Analysis/Token.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/PostingPool.h"
+#include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/TermInfo.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Posting/RawPosting.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
@@ -124,7 +125,7 @@ MatchPost_add_inversion_to_pool(MatchPosting *self, PostingPool *post_pool,
             MemPool_Grab(mem_pool, raw_post_bytes), doc_id, freq,
             token->text, token->len
         );
-        PostPool_Add_Elem(post_pool, (Obj*)raw_posting);
+        PostPool_Feed(post_pool, (Obj*)raw_posting);
     }
 }
 
@@ -141,11 +142,13 @@ MatchPost_make_matcher(MatchPosting *self, Similarity *sim,
 }
 
 MatchPostingStreamer*
-MatchPost_make_streamer(MatchPosting *self, DataWriter *writer, 
-                        i32_t field_num)
+MatchPost_make_streamer(MatchPosting *self, Schema *schema, 
+                        Snapshot *snapshot, Segment *segment, 
+                        PolyReader *polyreader, i32_t field_num)
 {
     UNUSED_VAR(self);
-    return MatchPostStreamer_new(writer, field_num);
+    return MatchPostStreamer_new(schema, snapshot, segment, polyreader, 
+        field_num);
 }
 
 /***************************************************************************/
@@ -160,7 +163,7 @@ MatchPostScorer_init(MatchPostingScorer *self, Similarity *sim,
     TermScorer_init((TermScorer*)self, sim, plist, compiler);
 
     /* Fill score cache. */
-    self->score_cache = MALLOCATE(TERMSCORER_SCORE_CACHE_SIZE, float);
+    self->score_cache = (float*)MALLOCATE(TERMSCORER_SCORE_CACHE_SIZE * sizeof(float));
     for (i = 0; i < TERMSCORER_SCORE_CACHE_SIZE; i++) {
         self->score_cache[i] = Sim_TF(sim, (float)i) * self->weight;
     }
@@ -189,26 +192,28 @@ MatchPostScorer_destroy(MatchPostingScorer *self)
 /***************************************************************************/
 
 MatchPostingStreamer*
-MatchPostStreamer_new(DataWriter *writer, i32_t field_num)
+MatchPostStreamer_new(Schema *schema, Snapshot *snapshot, Segment *segment, 
+                      PolyReader *polyreader, i32_t field_num)
 {
     MatchPostingStreamer *self 
         = (MatchPostingStreamer*)VTable_Make_Obj(MATCHPOSTINGSTREAMER);
-    return MatchPostStreamer_init(self, writer, field_num);
+    return MatchPostStreamer_init(self, schema, snapshot, segment, polyreader,
+        field_num);
 }
 
 MatchPostingStreamer*
-MatchPostStreamer_init(MatchPostingStreamer *self, DataWriter *writer, 
-                       i32_t field_num)
+MatchPostStreamer_init(MatchPostingStreamer *self, Schema *schema, 
+                       Snapshot *snapshot, Segment *segment, 
+                       PolyReader *polyreader, i32_t field_num)
 {
-    Folder   *folder   = DataWriter_Get_Folder(writer);
-    Segment  *segment  = DataWriter_Get_Segment(writer);
-    Snapshot *snapshot = DataWriter_Get_Snapshot(writer);
+    Folder  *folder = PolyReader_Get_Folder(polyreader);
     CharBuf *filename 
         = CB_newf("%o/postings-%i32.dat", Seg_Get_Name(segment), field_num);
-    PostStreamer_init((PostingStreamer*)self, writer, field_num);
+    PostStreamer_init((PostingStreamer*)self, schema, snapshot, segment,
+        polyreader, field_num);
     Snapshot_Add_Entry(snapshot, filename);
     self->outstream = Folder_Open_Out(folder, filename);
-    if (!self->outstream) { THROW(ERR, "Failed to open %o", filename); }
+    if (!self->outstream) { RETHROW(INCREF(Err_get_error())); }
     DECREF(filename);
     return self;
 }
@@ -278,14 +283,14 @@ MatchTInfoStepper_init(MatchTermInfoStepper *self, Schema *schema)
 void
 MatchTInfoStepper_reset(MatchTermInfoStepper *self)
 {
-    TInfo_Reset(self->value);
+    TInfo_Reset((TermInfo*)self->value);
 }
 
 void
 MatchTInfoStepper_write_key_frame(MatchTermInfoStepper *self, 
                                   OutStream *outstream, Obj *value)
 {
-    TermInfo *tinfo = (TermInfo*)ASSERT_IS_A(value, TERMINFO);
+    TermInfo *tinfo = (TermInfo*)CERTIFY(value, TERMINFO);
     i32_t doc_freq  = TInfo_Get_Doc_Freq(tinfo);
 
     /* Write doc_freq. */
@@ -299,14 +304,14 @@ MatchTInfoStepper_write_key_frame(MatchTermInfoStepper *self,
         OutStream_Write_C64(outstream, tinfo->skip_filepos);
     }
 
-    TInfo_Mimic(self->value, (Obj*)tinfo);
+    TInfo_Mimic((TermInfo*)self->value, (Obj*)tinfo);
 }
 
 void
 MatchTInfoStepper_write_delta(MatchTermInfoStepper *self, 
                               OutStream *outstream, Obj *value)
 {
-    TermInfo *tinfo      = (TermInfo*)ASSERT_IS_A(value, TERMINFO);
+    TermInfo *tinfo      = (TermInfo*)CERTIFY(value, TERMINFO);
     TermInfo *last_tinfo = (TermInfo*)self->value;
     i32_t     doc_freq   = TInfo_Get_Doc_Freq(tinfo);
     i64_t     post_delta = tinfo->post_filepos - last_tinfo->post_filepos;
@@ -322,7 +327,7 @@ MatchTInfoStepper_write_delta(MatchTermInfoStepper *self,
         OutStream_Write_C64(outstream, tinfo->skip_filepos);
     }
 
-    TInfo_Mimic(self->value, (Obj*)tinfo);
+    TInfo_Mimic((TermInfo*)self->value, (Obj*)tinfo);
 }
 
 void
@@ -366,7 +371,7 @@ MatchTInfoStepper_read_delta(MatchTermInfoStepper *self, InStream *instream)
     }
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

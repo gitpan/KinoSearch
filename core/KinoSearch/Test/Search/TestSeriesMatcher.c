@@ -6,7 +6,6 @@
 #include "KinoSearch/Test/Search/TestSeriesMatcher.h"
 #include "KinoSearch/Search/BitVecMatcher.h"
 #include "KinoSearch/Search/SeriesMatcher.h"
-#include "KinoSearch/Util/I32Array.h"
 
 static SeriesMatcher*
 S_make_series_matcher(I32Array *doc_ids, I32Array *offsets, i32_t doc_max)
@@ -45,7 +44,7 @@ static I32Array*
 S_generate_match_list(i32_t first, i32_t max, i32_t doc_inc) 
 {
     i32_t  count     = (i32_t)ceil(((float)max - first) / doc_inc);
-    i32_t *doc_ids   = MALLOCATE(count, i32_t);
+    i32_t *doc_ids   = (i32_t*)MALLOCATE(count * sizeof(i32_t));
     i32_t  doc_id    = first;
     i32_t  i         = 0; 
 
@@ -116,13 +115,13 @@ test_matrix(TestBatch *batch)
 void
 TestSeriesMatcher_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestSeriesMatcher", 135, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(135);
+    TestBatch_Plan(batch);
     test_matrix(batch);
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

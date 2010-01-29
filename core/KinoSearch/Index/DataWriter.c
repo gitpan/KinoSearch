@@ -9,7 +9,6 @@
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Store/Folder.h"
-#include "KinoSearch/Util/I32Array.h"
 
 DataWriter*
 DataWriter_init(DataWriter *self, Schema *schema, Snapshot *snapshot,
@@ -63,7 +62,7 @@ DataWriter_metadata(DataWriter *self)
     return metadata;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

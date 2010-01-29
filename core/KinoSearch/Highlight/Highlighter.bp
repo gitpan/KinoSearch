@@ -7,7 +7,7 @@ parcel KinoSearch cnick Kino;
  * and phrases correctly and efficiently, using special-purpose data generated
  * at index-time.  
 */
-class KinoSearch::Highlight::Highlighter extends KinoSearch::Obj {
+class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
 
     Searchable *searchable;
     Query      *query;
@@ -151,11 +151,11 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Obj {
     Highlight_Excerpt(Highlighter *self, VArray *spans, 
                       CharBuf *raw_excerpt, CharBuf *highlighted, i32_t top);
 
-    void
+    public void
     Destroy(Highlighter *self);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

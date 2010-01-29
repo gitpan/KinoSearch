@@ -6,7 +6,7 @@ parcel KinoSearch cnick Kino;
  * defines a single level of sorting.  For example, sorting first by
  * "category" then by score requires a SortSpec with two SortRule elements.
  */
-class KinoSearch::Search::SortRule extends KinoSearch::Obj {
+class KinoSearch::Search::SortRule extends KinoSearch::Object::Obj {
 
     i32_t     type;
     CharBuf  *field;
@@ -51,11 +51,11 @@ class KinoSearch::Search::SortRule extends KinoSearch::Obj {
     public void
     Serialize(SortRule *self, OutStream *outstream);
 
-    void
+    public void
     Destroy(SortRule *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -77,7 +77,7 @@ we'll add highlighted excerpts from the "content" field to our search results.
 
 =head1 COPYRIGHT
 
-Copyright 2008-2009 Marvin Humphrey
+Copyright 2008-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

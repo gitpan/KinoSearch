@@ -112,7 +112,7 @@ See L<KinoSearch::Docs::Cookbook::CustomQueryParser>.
 
 =head1 COPYRIGHT
 
-Copyright 2008-2009 Marvin Humphrey
+Copyright 2008-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

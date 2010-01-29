@@ -10,7 +10,7 @@ parcel KinoSearch cnick Kino;
  * Components may be specified per index by subclassing Architecture.
  */
 
-public class KinoSearch::Index::DataWriter extends KinoSearch::Obj {
+public class KinoSearch::Index::DataWriter extends KinoSearch::Object::Obj {
 
     Snapshot    *snapshot;
     Segment     *segment;
@@ -118,11 +118,11 @@ public class KinoSearch::Index::DataWriter extends KinoSearch::Obj {
     public Folder*
     Get_Folder(DataWriter *self);
 
-    void
+    public void
     Destroy(DataWriter *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -4,7 +4,7 @@ use warnings;
 use Test::More tests => 19;
 
 package TestObj;
-use base qw( KinoSearch::Obj );
+use base qw( KinoSearch::Object::Obj );
 
 our $version = $KinoSearch::VERSION;
 
@@ -31,13 +31,14 @@ use base qw( TestObj );
 }
 
 package BadSerialize;
-use base qw( KinoSearch::Obj );
+use base qw( KinoSearch::Object::Obj );
 {
     sub serialize { }
 }
 
 package main;
 use Storable qw( freeze thaw );
+use KinoSearch::Test;
 
 ok( defined $TestObj::version,
     "Using base class should grant access to "
@@ -45,32 +46,32 @@ ok( defined $TestObj::version,
 );
 
 # TODO: Port this test to C.
-eval { my $foo = KinoSearch::Obj->new };
+eval { my $foo = KinoSearch::Object::Obj->new };
 like( $@, qr/abstract/i, "Obj is an abstract class" );
 
 my $object = TestObj->new;
-isa_ok( $object, "KinoSearch::Obj",
+isa_ok( $object, "KinoSearch::Object::Obj",
     "KinoSearch objects can be subclassed outside the KinoSearch hierarchy" );
 
 # TODO: Port this test to C.
 eval { my $evil_twin = $object->clone };
 like( $@, qr/abstract/i, "clone throws an abstract method exception" );
 
-ok( $object->is_a("KinoSearch::Obj"),     "custom is_a correct" );
-ok( !$object->is_a("KinoSearch::Object"), "custom is_a too long" );
-ok( !$object->is_a("KinoSearch"),         "custom is_a substring" );
-ok( !$object->is_a(""),                   "custom is_a blank" );
-ok( !$object->is_a("thing"),              "custom is_a wrong" );
+ok( $object->is_a("KinoSearch::Object::Obj"), "custom is_a correct" );
+ok( !$object->is_a("KinoSearch::Object"),     "custom is_a too long" );
+ok( !$object->is_a("KinoSearch"),             "custom is_a substring" );
+ok( !$object->is_a(""),                       "custom is_a blank" );
+ok( !$object->is_a("thing"),                  "custom is_a wrong" );
 
 eval { my $another_obj = TestObj->new( kill_me_now => 1 ) };
 like( $@, qr/kill_me_now/, "reject bad param" );
 
 my $stringified_perl_obj = "$object";
-require KinoSearch::Obj::Hash;
-my $hash = KinoSearch::Obj::Hash->new;
+require KinoSearch::Object::Hash;
+my $hash = KinoSearch::Object::Hash->new;
 $hash->store( foo => $object );
-is( $object->get_refcount, 2, "refcount increased via KS C code" );
-is( $object->get_refcount, 2, "refcount increased via KS C code" );
+is( $object->get_refcount, 2, "refcount increased via C code" );
+is( $object->get_refcount, 2, "refcount increased via C code" );
 undef $object;
 $object = $hash->fetch("foo");
 is( "$object", $stringified_perl_obj, "same perl object as before" );
@@ -78,7 +79,7 @@ is( "$object", $stringified_perl_obj, "same perl object as before" );
 is( $object->get_refcount, 2, "correct refcount after retrieval" );
 undef $hash;
 is( $object->get_refcount, 1,
-    "correct refcount after destruction of ks ref" );
+    "correct refcount after destruction of ref" );
 
 my $copy = thaw( freeze($object) );
 is( ref($copy), ref($object), "freeze/thaw" );

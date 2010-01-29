@@ -17,7 +17,7 @@ parcel KinoSearch cnick Kino;
  * documents. 
  */
 
-class KinoSearch::Search::Query extends KinoSearch::Obj : dumpable {
+class KinoSearch::Search::Query extends KinoSearch::Object::Obj : dumpable {
 
     float boost;
 
@@ -56,7 +56,7 @@ class KinoSearch::Search::Query extends KinoSearch::Obj : dumpable {
     Deserialize(Query *self, InStream *instream);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

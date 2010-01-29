@@ -1,109 +1,117 @@
 parcel KinoSearch cnick Kino;
 
-/** Filehandles for writing to an index.
+/** Write index files.
+ *
+ * OutStream objects are the primary interface for writing index files.  They
+ * are media-agnostic wrappers around low-level, media-specific, unbuffered
+ * FileHandle objects, providing output buffering and routines for writing
+ * common constructs such as big-endian or compressed integers.
  * 
- * The OutStream class abstracts all of KinoSearch's output operations. 
- * 
- * Unlike its counterpart InStream, OutStream cannot be assigned an arbitrary
- * length or offset.
- * 
- * OutStream objects maintain their own buffers and write their contents to
- * disk on their own schedules.
+ * OutStreams are write-once and cannot seek -- they must write all their data
+ * in order.  Furthermore, each OutStream is associated with exactly one,
+ * unique FileHandle -- unlike InStreams, which can share a common FileHandle.
  */ 
-
-final class KinoSearch::Store::OutStream extends KinoSearch::Obj {
+class KinoSearch::Store::OutStream extends KinoSearch::Object::Obj {
 
     char          *buf;
-    u64_t          buf_start;
-    u32_t          buf_pos;
-    FileDes       *file_des;
+    i64_t          buf_start;
+    size_t         buf_pos;
+    FileHandle    *file_handle;
     CharBuf       *path;
 
     inert incremented OutStream* 
-    new(FileDes *file_des);
+    open(Obj *file);
 
+    /** Return a new OutStream or set Err_error and return NULL on failure.
+     */
     inert OutStream* 
-    init(OutStream *self, FileDes *file_des);
+    do_open(OutStream *self, Obj *file);
 
     /** Return the current file position. 
      */
-    u64_t 
+    final i64_t 
     Tell(OutStream *self);
 
-    /** Flush output buffer to target FileDes.
+    /** Flush output buffer to target FileHandle.
      */
-    void
+    final void
     Flush(OutStream *self);
 
     /** Return the current length of the file in bytes.
      */
-    u64_t 
+    final i64_t 
     Length(OutStream *self);
 
-    /** Write [len] bytes from [buf] to the OutStream.
+    /** Advisory call informing the OutStream that it should prepare to occupy
+     * <code>length</code> bytes.
      */
     void
+    Grow(OutStream *self, i64_t length);
+
+    /** Write <code>len</code> bytes from <code>buf</code> to the OutStream.
+     */
+    final void
     Write_Bytes(OutStream *self, const void *buf, size_t len);
 
-    /** Write a single signed byte to the OutStream. 
+    /** Write a signed 8-bit integer. 
      */
-    void
+    final void
     Write_I8(OutStream *self, i8_t value);
 
-    /** Write a single unsigned byte to the OutStream. 
+    /** Write an unsigned 8-bit integer. 
      */
-    void
+    final void
     Write_U8(OutStream *self, u8_t value);
 
-    /** Write a signed 32-bit integer to the OutStream.
+    /** Write a signed 32-bit integer.
      */
-    void
+    final void
     Write_I32(OutStream *self, i32_t value);
 
-    /** Write an unsigned 32-bit integer to the OutStream.
+    /** Write an unsigned 32-bit integer.
      */
-    void
+    final void
     Write_U32(OutStream *self, u32_t value);
 
-    /** Write a signed 64-bit integer to the OutStream.
+    /** Write a signed 64-bit integer.
      */
-    void
+    final void
     Write_I64(OutStream *self, i64_t value);
 
-    /** Write an unsigned 64-bit integer to the OutStream.
+    /** Write an unsigned 64-bit integer.
      */
-    void
+    final void
     Write_U64(OutStream *self, u64_t value);
 
     /** Write a 32-bit integer using a compressed format.
      */
-    void
+    final void
     Write_C32(OutStream *self, u32_t value);
 
     /** Write a 64-bit integer using a compressed format.
      */
-    void
+    final void
     Write_C64(OutStream *self, u64_t value);
 
     /** Write an IEEE 764 32-bit floating point number in big-endian byte
      * order.
      */
-    void
+    final void
     Write_F32(OutStream *self, float value);
 
     /** Write an IEEE 764 64-bit double-precision floating point number in
      * big-endian byte order.
      */
-    void
+    final void
     Write_F64(OutStream *self, double value);
 
     /** Write a string as a C32 indicating length of content in bytes,
      * followed by the content.
      */
-    void 
+    final void 
     Write_String(OutStream *self, const char *buf, size_t len);
 
-    /** Write the entire contents of an instream to an outstream.
+    /** Write the entire contents of an InStream to the OutStream.
      */
     void 
     Absorb(OutStream *self, InStream *instream);
@@ -113,11 +121,11 @@ final class KinoSearch::Store::OutStream extends KinoSearch::Obj {
     void 
     Close(OutStream *self);
 
-    void 
+    public void 
     Destroy(OutStream *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

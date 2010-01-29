@@ -6,7 +6,7 @@ abstract class KinoSearch::Index::TermStepper
     Obj *value;
 
     public inert TermStepper*
-    init();
+    init(TermStepper *self);
 
     public void
     Set_Value(TermStepper *self, Obj *value);
@@ -15,13 +15,10 @@ abstract class KinoSearch::Index::TermStepper
     Get_Value(TermStepper *self);
 
     public void
-    Mimic(TermStepper *self, Obj *other);
-
-    void
     Destroy(TermStepper *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

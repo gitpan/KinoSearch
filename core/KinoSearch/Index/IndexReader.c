@@ -11,7 +11,6 @@
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/Lock.h"
-#include "KinoSearch/Util/I32Array.h"
 
 IndexReader*
 IxReader_open(Obj *index, Snapshot *snapshot, IndexManager *manager)
@@ -63,7 +62,7 @@ IxReader_close(IndexReader *self)
         while (
             Hash_Iter_Next(self->components, (Obj**)&key, (Obj**)&component)
         ) {
-            if (OBJ_IS_A(component, DATAREADER)) { 
+            if (Obj_Is_A((Obj*)component, DATAREADER)) { 
                 DataReader_Close(component); 
             }
         }
@@ -110,7 +109,7 @@ IxReader_fetch(IndexReader *self, const CharBuf *api)
     return (DataReader*)Hash_Fetch(self->components, (Obj*)api);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

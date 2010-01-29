@@ -1,3 +1,4 @@
+package KinoSearch::Store::OutStream;
 use KinoSearch;
 
 1;
@@ -8,18 +9,6 @@ __BINDING__
 
 my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch     PACKAGE = KinoSearch::Store::OutStream
-
-SV*
-new(either_sv, file_des)
-    SV           *either_sv;
-    kino_FileDes *file_des;
-CODE:
-{
-    kino_OutStream *self = (kino_OutStream*)XSBind_new_blank_obj(either_sv);
-    kino_OutStream_init(self, file_des);
-    KOBJ_TO_SV_NOINC(self, RETVAL);
-}
-OUTPUT: RETVAL
 
 void
 print(self, ...)
@@ -45,26 +34,14 @@ PPCODE:
     Kino_OutStream_Write_C32(self, len);
     Kino_OutStream_Write_Bytes(self, ptr, len);
 }
-
-void
-write_bytes(self, aSV)
-    kino_OutStream *self;
-    SV *aSV;
-PPCODE:
-{
-    STRLEN len;
-    char *ptr = SvPV(aSV, len);
-    Kino_OutStream_Write_Bytes(self, ptr, len);
-}
 END_XS_CODE
 
 my $synopsis = <<'END_SYNOPSIS';    # Don't use this yet.
-    my $outstream = $folder->open_out($filename) 
-        or die "Can't open $filename";
+    my $outstream = $folder->open_out($filename) or die $@;
     $outstream->write_u64($file_position);
 END_SYNOPSIS
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Store::OutStream",
     xs_code      => $xs_code,
@@ -87,11 +64,12 @@ Boilerplater::Binding::Perl::Class->register(
             Write_F64
             )
     ],
+    bind_constructors => ['open|do_open'],
 );
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

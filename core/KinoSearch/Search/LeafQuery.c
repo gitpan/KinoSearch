@@ -41,7 +41,7 @@ LeafQuery_equals(LeafQuery *self, Obj *other)
 {
     LeafQuery *evil_twin = (LeafQuery*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, LEAFQUERY)) return false;
+    if (!Obj_Is_A(other, LEAFQUERY)) return false;
     if (self->boost != evil_twin->boost) return false;
     if (!!self->field ^ !!evil_twin->field) return false;
     if (self->field) {
@@ -98,7 +98,7 @@ LeafQuery_make_compiler(LeafQuery *self, Searchable *searchable, float boost)
     UNREACHABLE_RETURN(Compiler*);
 }
 
-/* Copyright 2008-2009 Marvin Humphrey
+/* Copyright 2008-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

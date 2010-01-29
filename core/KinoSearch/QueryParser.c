@@ -118,7 +118,7 @@ QParser_init(QueryParser *self, Schema *schema, Analyzer *analyzer,
 
     /* Assign. */
     self->schema         = (Schema*)INCREF(schema);
-    self->analyzer       = analyzer ? (Analyzer*)INCREF(analyzer) : NULL;
+    self->analyzer       = (Analyzer*)INCREF(analyzer);
     self->default_boolop = default_boolop
                          ? CB_Clone(default_boolop)
                          : CB_new_from_trusted_utf8("OR", 2);
@@ -127,7 +127,7 @@ QParser_init(QueryParser *self, Schema *schema, Analyzer *analyzer,
         u32_t i, max;
         self->fields = VA_Shallow_Copy(fields);
         for (i = 0, max = VA_Get_Size(fields); i < max; i++) {
-            ASSERT_IS_A(VA_Fetch(fields, i), CHARBUF);
+            CERTIFY(VA_Fetch(fields, i), CHARBUF);
         }
         VA_Sort(self->fields, NULL, NULL);
     }
@@ -200,9 +200,9 @@ QParser_parse(QueryParser *self, const CharBuf *query_string)
     CharBuf *qstring = query_string 
                      ? CB_Clone(query_string) 
                      : CB_new_from_trusted_utf8("", 0);
-    Query *tree = QParser_tree(self, qstring);
-    Query *expanded = QParser_expand(self, tree);
-    Query *pruned = QParser_prune(self, expanded);
+    Query *tree     = QParser_Tree(self, qstring);
+    Query *expanded = QParser_Expand(self, tree);
+    Query *pruned   = QParser_Prune(self, expanded);
     DECREF(expanded);
     DECREF(tree);
     DECREF(qstring);
@@ -241,7 +241,7 @@ S_parse_flat_string(QueryParser *self, CharBuf *query_string)
         }
     }
 
-    while (CB_Get_Size(&qstring)) {
+    while (ViewCB_Get_Size(&qstring)) {
         ViewCharBuf  temp  = ZCB_BLANK;
         ParserToken *token = NULL;
 
@@ -296,7 +296,7 @@ S_splice_out_token_type(VArray *elems, u32_t token_type_mask)
     u32_t i;
     for (i = VA_Get_Size(elems); i--; ) {
         ParserToken *token = (ParserToken*)VA_Fetch(elems, i);
-        if (OBJ_IS_A(token, PARSERTOKEN)) {
+        if (Obj_Is_A((Obj*)token, PARSERTOKEN)) {
             if (token->type & token_type_mask) VA_Splice(elems, i, 1);
         }
     }
@@ -388,11 +388,11 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
     /* Apply +, -, NOT. */
     for (i = VA_Get_Size(elems); i--; ) {
         ParserClause *clause = (ParserClause*)VA_Fetch(elems, i);
-        if (OBJ_IS_A(clause, PARSERCLAUSE)) {
+        if (Obj_Is_A((Obj*)clause, PARSERCLAUSE)) {
             u32_t j;
             for (j = i; j--; ) {
                 ParserToken *token = (ParserToken*)VA_Fetch(elems, j);
-                if (OBJ_IS_A(token, PARSERTOKEN)) {
+                if (Obj_Is_A((Obj*)token, PARSERTOKEN)) {
                     if (   token->type == TOKEN_MINUS
                         || token->type == TOKEN_NOT
                     ) {
@@ -417,7 +417,7 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
     /* Wrap negated queries with NOTQuery objects. */
     for (i = 0, max = VA_Get_Size(elems); i < max; i++) {
         ParserClause *clause = (ParserClause*)VA_Fetch(elems, i);
-        if (OBJ_IS_A(clause, PARSERCLAUSE) && clause->occur == MUST_NOT) {
+        if (Obj_Is_A((Obj*)clause, PARSERCLAUSE) && clause->occur == MUST_NOT) {
             Query *not_query = QParser_Make_NOT_Query(self, clause->query);
             DECREF(clause->query);
             clause->query = not_query;
@@ -428,20 +428,20 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
      * 'OR a AND AND OR b AND'. */
     for (i = 0, max = VA_Get_Size(elems); i < max; i++) {
         ParserToken *token = (ParserToken*)VA_Fetch(elems, i);
-        if (OBJ_IS_A(token, PARSERTOKEN)) {
+        if (Obj_Is_A((Obj*)token, PARSERTOKEN)) {
             u32_t j, jmax;
             u32_t num_to_zap = 0;
             ParserClause *preceding = (ParserClause*)VA_Fetch(elems, i - 1);
             ParserClause *following = (ParserClause*)VA_Fetch(elems, i + 1);
-            if (!preceding || !OBJ_IS_A(preceding, PARSERCLAUSE)) {
+            if (!preceding || !Obj_Is_A((Obj*)preceding, PARSERCLAUSE)) {
                 num_to_zap = 1;
             }
-            if (!following || !OBJ_IS_A(following, PARSERCLAUSE)) {
+            if (!following || !Obj_Is_A((Obj*)following, PARSERCLAUSE)) {
                 num_to_zap = 1;
             }
             for (j = i + 1, jmax = VA_Get_Size(elems); j < jmax; j++) {
                 ParserClause *clause = (ParserClause*)VA_Fetch(elems, j);
-                if (OBJ_IS_A(clause, PARSERCLAUSE)) break;
+                if (Obj_Is_A((Obj*)clause, PARSERCLAUSE)) break;
                 else num_to_zap++;
             }
             if (num_to_zap) VA_Splice(elems, i, num_to_zap);
@@ -451,7 +451,7 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
     /* Apply AND. */
     for (i = 0; i + 2 < VA_Get_Size(elems); i++) {
         ParserToken *token = (ParserToken*)VA_Fetch(elems, i + 1);
-        if (OBJ_IS_A(token, PARSERTOKEN) && token->type == TOKEN_AND) {
+        if (Obj_Is_A((Obj*)token, PARSERTOKEN) && token->type == TOKEN_AND) {
             ParserClause *preceding  = (ParserClause*)VA_Fetch(elems, i);
             VArray       *children   = VA_new(2);
             u32_t         num_to_zap = 0;
@@ -468,13 +468,13 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
                 ParserToken  *maybe_and = (ParserToken*)VA_Fetch(elems, j);
                 ParserClause *following 
                     = (ParserClause*)VA_Fetch(elems, j + 1);
-                if (   !OBJ_IS_A(maybe_and, PARSERTOKEN)
+                if (   !Obj_Is_A((Obj*)maybe_and, PARSERTOKEN)
                     || maybe_and->type != TOKEN_AND
                 ) {
                     break;
                 }
                 else { 
-                    ASSERT_IS_A(following, PARSERCLAUSE); 
+                    CERTIFY(following, PARSERCLAUSE); 
                 } 
                 VA_Push(children, INCREF(following->query));
             }
@@ -493,7 +493,7 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
     /* Apply OR. */
     for (i = 0; i + 2 < VA_Get_Size(elems); i++) {
         ParserToken *token = (ParserToken*)VA_Fetch(elems, i + 1);
-        if (OBJ_IS_A(token, PARSERTOKEN) && token->type == TOKEN_OR) {
+        if (Obj_Is_A((Obj*)token, PARSERTOKEN) && token->type == TOKEN_OR) {
             ParserClause *preceding  = (ParserClause*)VA_Fetch(elems, i);
             VArray       *children   = VA_new(2);
             u32_t         num_to_zap = 0;
@@ -510,13 +510,13 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
                 ParserToken  *maybe_or = (ParserToken*)VA_Fetch(elems, j);
                 ParserClause *following 
                     = (ParserClause*)VA_Fetch(elems, j + 1);
-                if (   !OBJ_IS_A(maybe_or, PARSERTOKEN)
+                if (   !Obj_Is_A((Obj*)maybe_or, PARSERTOKEN)
                     || maybe_or->type != TOKEN_OR
                 ) {
                     break;
                 }
                 else {
-                    ASSERT_IS_A(following, PARSERCLAUSE);
+                    CERTIFY(following, PARSERCLAUSE);
                 }
                 VA_Push(children, INCREF(following->query));
             }
@@ -640,9 +640,9 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
 static bool_t
 S_has_valid_clauses(Query *query)
 {
-    if (OBJ_IS_A(query, NOTQUERY)) return false;
-    else if (OBJ_IS_A(query, MATCHALLQUERY)) return false;
-    else if (OBJ_IS_A(query, ORQUERY) || OBJ_IS_A(query, ANDQUERY)) {
+    if (Query_Is_A(query, NOTQUERY)) return false;
+    else if (Query_Is_A(query, MATCHALLQUERY)) return false;
+    else if (Query_Is_A(query, ORQUERY) || Query_Is_A(query, ANDQUERY)) {
         PolyQuery *polyquery = (PolyQuery*)query;
         VArray    *children  = PolyQuery_Get_Children(polyquery);
         u32_t i, max;
@@ -658,11 +658,11 @@ S_has_valid_clauses(Query *query)
 static void
 S_do_prune(QueryParser *self, Query *query)
 {
-    if (OBJ_IS_A(query, NOTQUERY)) {
+    if (Query_Is_A(query, NOTQUERY)) {
         /* Don't allow double negatives. */
         NOTQuery *not_query = (NOTQuery*)query;
         Query *neg_query = NOTQuery_Get_Negated_Query(not_query);
-        if (   !OBJ_IS_A(neg_query, MATCHALLQUERY) 
+        if (   !Query_Is_A(neg_query, MATCHALLQUERY) 
             && !S_has_valid_clauses(neg_query)
         ) {
             MatchAllQuery *matchall = MatchAllQuery_new();
@@ -670,7 +670,7 @@ S_do_prune(QueryParser *self, Query *query)
             DECREF(matchall);
         }
     }
-    else if (OBJ_IS_A(query, POLYQUERY)) {
+    else if (Query_Is_A(query, POLYQUERY)) {
         PolyQuery *polyquery = (PolyQuery*)query;
         VArray    *children  = PolyQuery_Get_Children(polyquery);
         u32_t i, max;
@@ -681,11 +681,11 @@ S_do_prune(QueryParser *self, Query *query)
             S_do_prune(self, child);
         }
 
-        if (   OBJ_IS_A(query, REQUIREDOPTIONALQUERY)
-            || OBJ_IS_A(query, ORQUERY)
+        if (   PolyQuery_Is_A(polyquery, REQUIREDOPTIONALQUERY)
+            || PolyQuery_Is_A(polyquery, ORQUERY)
         ) {
             /* Don't allow 'foo OR (-bar)'. */
-            VArray *children = PolyQuery_Get_Children(query);
+            VArray *children = PolyQuery_Get_Children(polyquery);
             for (i = 0, max = VA_Get_Size(children); i < max; i++) {
                 Query *child = (Query*)VA_Fetch(children, i);
                 if (!S_has_valid_clauses(child)) {
@@ -693,10 +693,10 @@ S_do_prune(QueryParser *self, Query *query)
                 }
             }
         }
-        else if (OBJ_IS_A(query, ANDQUERY)) {
+        else if (PolyQuery_Is_A(polyquery, ANDQUERY)) {
             /* Don't allow '(-bar AND -baz)'. */
-            if (!S_has_valid_clauses(query)) {
-                VArray *children = PolyQuery_Get_Children(query);
+            if (!S_has_valid_clauses((Query*)polyquery)) {
+                VArray *children = PolyQuery_Get_Children(polyquery);
                 VA_Clear(children);
             }
         }
@@ -707,12 +707,12 @@ Query*
 QParser_prune(QueryParser *self, Query *query)
 {
     if (   !query 
-        || OBJ_IS_A(query, NOTQUERY) 
-        || OBJ_IS_A(query, MATCHALLQUERY)
+        || Query_Is_A(query, NOTQUERY) 
+        || Query_Is_A(query, MATCHALLQUERY)
     ) {
         return (Query*)NoMatchQuery_new();
     }
-    else if (OBJ_IS_A(query, POLYQUERY)) {
+    else if (Query_Is_A(query, POLYQUERY)) {
         S_do_prune(self, query);
     }
     return (Query*)INCREF(query);
@@ -774,12 +774,12 @@ S_consume_field(ViewCharBuf *qstring, ViewCharBuf *target)
 static bool_t
 S_consume_non_whitespace(ViewCharBuf *qstring, ViewCharBuf *target)
 {
-    u32_t code_point = ZCB_Code_Point_At(qstring, 0);
+    u32_t code_point = ViewCB_Code_Point_At(qstring, 0);
     bool_t success = false;
     ViewCB_Assign(target, (CharBuf*)qstring);
     while (code_point && !StrHelp_is_whitespace(code_point)) {
-        ZCB_Nip_One(qstring);
-        code_point = ZCB_Code_Point_At(qstring, 0);
+        ViewCB_Nip_One(qstring);
+        code_point = ViewCB_Code_Point_At(qstring, 0);
         success = true;
     }
     if (!success) {
@@ -797,10 +797,10 @@ QParser_expand(QueryParser *self, Query *query)
 {
     Query *retval = NULL;
 
-    if (OBJ_IS_A(query, LEAFQUERY)) {
+    if (Query_Is_A(query, LEAFQUERY)) {
         retval = QParser_Expand_Leaf(self, query);
     }
-    else if (OBJ_IS_A(query, ORQUERY) || OBJ_IS_A(query, ANDQUERY)) {
+    else if (Query_Is_A(query, ORQUERY) || Query_Is_A(query, ANDQUERY)) {
         PolyQuery *polyquery = (PolyQuery*)query;
         VArray *children = PolyQuery_Get_Children(polyquery);
         VArray *new_kids = VA_new(VA_Get_Size(children));
@@ -825,7 +825,7 @@ QParser_expand(QueryParser *self, Query *query)
 
         DECREF(new_kids);
     }
-    else if (OBJ_IS_A(query, NOTQUERY)) {
+    else if (Query_Is_A(query, NOTQUERY)) {
         NOTQuery *not_query = (NOTQuery*)query;
         Query *negated_query = NOTQuery_Get_Negated_Query(not_query);
         negated_query = QParser_Expand(self, negated_query);
@@ -838,7 +838,7 @@ QParser_expand(QueryParser *self, Query *query)
             retval = (Query*)MatchAllQuery_new();
         }
     }
-    else if (OBJ_IS_A(query, REQUIREDOPTIONALQUERY)) {
+    else if (Query_Is_A(query, REQUIREDOPTIONALQUERY)) {
         RequiredOptionalQuery *req_opt_query = (RequiredOptionalQuery*)query;
         Query *req_query = ReqOptQuery_Get_Required_Query(req_opt_query);
         Query *opt_query = ReqOptQuery_Get_Optional_Query(req_opt_query);
@@ -912,7 +912,7 @@ QParser_expand_leaf(QueryParser *self, Query *query)
     u32_t          i, max;
 
     /* Determine whether we can actually process the input. */
-    if (!OBJ_IS_A(leaf_query, LEAFQUERY)) return NULL;
+    if (!Query_Is_A(query, LEAFQUERY)) return NULL;
     if (!CB_Get_Size(LeafQuery_Get_Text(leaf_query))) return NULL;
     else ZCB_Assign(&source_text, LeafQuery_Get_Text(leaf_query));
     unescaped = ZCB_Clone(&source_text);
@@ -946,7 +946,7 @@ QParser_expand_leaf(QueryParser *self, Query *query)
                             ? self->analyzer 
                             : Schema_Fetch_Analyzer(schema, field);
 
-        if (!analyzer || (type && !OBJ_IS_A(type, FULLTEXTTYPE))) {
+        if (!analyzer || (type && !FType_Is_A(type, FULLTEXTTYPE))) {
             VA_Push(queries,
                 (Obj*)QParser_Make_Term_Query(self, field, 
                     (Obj*)&source_text));
@@ -1198,7 +1198,7 @@ ParserToken_destroy(ParserToken *self)
     SUPER_DESTROY(self, PARSERTOKEN);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

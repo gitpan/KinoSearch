@@ -28,13 +28,14 @@ sub read_record {
 
 package main;
 use Test::More tests => 1;
+use KinoSearch::Test;
 
 my $folder = KinoSearch::Store::RAMFolder->new;
-my $outstream = $folder->open_out("foo") or die "Can't open outstream";
+my $outstream = $folder->open_out("foo") or die KinoSearch->error;
 $outstream->write_c32(10) for 1 .. 5;
 $outstream->close;
-my $instream = $folder->open_in("foo");
-my $stepper  = MyStepper->new;
+my $instream = $folder->open_in("foo") or die KinoSearch->error;
+my $stepper = MyStepper->new;
 
 my @got;
 while ( $instream->tell < $instream->length ) {

@@ -11,7 +11,6 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 DocReader*
 DocReader_init(DocReader *self, Schema *schema, Folder *folder, 
@@ -41,7 +40,7 @@ PolyDocReader_init(PolyDocReader *self, VArray *readers, I32Array *offsets)
     u32_t i, max;
     DocReader_init((DocReader*)self, NULL, NULL, NULL, NULL, -1);
     for (i = 0, max = VA_Get_Size(readers); i < max; i++) {
-        ASSERT_IS_A(VA_Fetch(readers, i), DOCREADER);
+        CERTIFY(VA_Fetch(readers, i), DOCREADER);
     }
     self->readers = (VArray*)INCREF(readers);
     self->offsets = (I32Array*)INCREF(offsets);
@@ -152,15 +151,21 @@ DefDocReader_init(DefaultDocReader *self, Schema *schema, Folder *folder,
 
         /* Get streams. */
         if (Folder_Exists(folder, ix_file)) {
-            self->ix_in  = Folder_Open_In(folder, ix_file);
-            self->dat_in = Folder_Open_In(folder, dat_file);
-            if (!self->ix_in || !self->dat_in) {
-                CharBuf *mess = MAKE_MESS("Can't open either %o or %o",
-                    ix_file, dat_file);
+            self->ix_in = Folder_Open_In(folder, ix_file);
+            if (!self->ix_in) {
+                Err *error = (Err*)INCREF(Err_get_error());
                 DECREF(ix_file);
                 DECREF(dat_file);
                 DECREF(self);
-                Err_throw_mess(ERR, mess);
+                RETHROW(error);
+            }
+            self->dat_in = Folder_Open_In(folder, dat_file);
+            if (!self->dat_in) {
+                Err *error = (Err*)INCREF(Err_get_error());
+                DECREF(ix_file);
+                DECREF(dat_file);
+                DECREF(self);
+                RETHROW(error);
             }
         }
         DECREF(ix_file);
@@ -174,16 +179,16 @@ void
 DefDocReader_read_record(DefaultDocReader *self, ByteBuf *buffer,
                          i32_t doc_id)
 {
-    i64_t  start;
-    i64_t  end;
-    i32_t  size;
-    char  *buf;
+    i64_t   start;
+    i64_t   end;
+    size_t  size;
+    char   *buf;
 
     /* Find start and length of variable length record. */
     InStream_Seek(self->ix_in, (i64_t)doc_id * 8);
-    start = InStream_Read_U64(self->ix_in);
-    end   = InStream_Read_U64(self->ix_in);
-    size  = (i32_t)(end - start);
+    start = InStream_Read_I64(self->ix_in);
+    end   = InStream_Read_I64(self->ix_in);
+    size  = (size_t)(end - start);
 
     /* Read in the record. */
     buf = BB_Grow(buffer, size);
@@ -192,7 +197,7 @@ DefDocReader_read_record(DefaultDocReader *self, ByteBuf *buffer,
     BB_Set_Size(buffer, size);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

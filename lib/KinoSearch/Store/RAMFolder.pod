@@ -11,7 +11,7 @@ KinoSearch::Store::RAMFolder - In-memory Folder implementation.
     
     # or sometimes...
     my $folder = KinoSearch::Store::RAMFolder->new(
-        path   => '/path/to/folder',
+        path => $relative_path,
     );
 
 
@@ -21,29 +21,21 @@ KinoSearch::Store::RAMFolder - In-memory Folder implementation.
 In-memory Folder implementation.
 
 RAMFolder is an entirely in-memory implementation of
-KinoSearch::Store::Folder.  It serves two main purposes.
-
-First, it's possible to load an existing FSFolder into memory, which can
-improve search-speed -- if you have that kind of RAM to spare.  Needless to
-say, any FSFolder you try to load this way should be appropriately modest
-in size.
-
-Second, RAMFolder is handy for testing and development.
+KinoSearch::Store::Folder, primarily used for testing and development.
 
 =head1 CONSTRUCTORS
 
 =head2 new( I<[labeled params]> )
 
     my $folder = KinoSearch::Store::RAMFolder->new(
-        path   => '/path/to/folder',   # optional
+        path => $relative_path,   # default: empty string
     );
 
 =over
 
 =item *
 
-B<path> - If supplied, attempt to read an FSFolder at that location
-into memory; otherwise the Folder starts out empty.
+B<path> - Relative path, used for subfolders.
 
 =back
 
@@ -55,12 +47,12 @@ into memory; otherwise the Folder starts out empty.
 
 =head1 INHERITANCE
 
-KinoSearch::Store::RAMFolder isa L<KinoSearch::Store::Folder> isa L<KinoSearch::Obj>.
+KinoSearch::Store::RAMFolder isa L<KinoSearch::Store::Folder> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

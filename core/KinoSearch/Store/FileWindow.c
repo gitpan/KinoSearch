@@ -4,20 +4,15 @@
 #include "KinoSearch/Store/FileWindow.h"
 
 FileWindow*
-FileWindow_new(char *buf, i64_t offset, i64_t len, i64_t cap)
+FileWindow_new()
 {
     FileWindow *self = (FileWindow*)VTable_Make_Obj(FILEWINDOW);
-    return FileWindow_init(self, buf, offset, len, cap);
+    return FileWindow_init(self);
 }
 
 FileWindow*
-FileWindow_init(FileWindow *self, char *buf, i64_t offset, i64_t len, 
-                i64_t cap)
+FileWindow_init(FileWindow *self)
 {
-    self->buf     = buf;
-    self->offset  = offset;
-    self->len     = len;
-    self->cap     = cap;
     return self;
 }
 
@@ -33,7 +28,15 @@ FileWindow_set_offset(FileWindow *self, i64_t offset)
     self->offset = offset;
 }
 
-/* Copyright 2008-2009 Marvin Humphrey
+void
+FileWindow_set_window(FileWindow *self, char *buf, i64_t offset, i64_t len)
+{
+    self->buf    = buf;
+    self->offset = offset;
+    self->len    = len;
+}
+
+/* Copyright 2008-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

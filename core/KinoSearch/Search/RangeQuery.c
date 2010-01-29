@@ -15,7 +15,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
-#include "KinoSearch/Util/I32Array.h"
 
 /* Determine the lowest ordinal that should match. */
 static i32_t
@@ -66,7 +65,7 @@ RangeQuery_equals(RangeQuery *self, Obj *other)
 {
     RangeQuery *evil_twin = (RangeQuery*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, RANGEQUERY)) return false;
+    if (!Obj_Is_A(other, RANGEQUERY)) return false;
     if (self->boost != evil_twin->boost) return false;
     if (!CB_Equals(self->field, (Obj*)evil_twin->field)) return false;
     if (self->lower_term && !evil_twin->lower_term) return false;
@@ -272,7 +271,7 @@ S_find_upper_bound(RangeCompiler *self, SortCache *sort_cache)
     return retval;
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

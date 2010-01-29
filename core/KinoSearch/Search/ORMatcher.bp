@@ -38,7 +38,7 @@ class KinoSearch::Search::ORMatcher extends KinoSearch::Search::PolyMatcher {
     inert incremented ORMatcher*
     init(ORMatcher *self, VArray *children);
 
-    void
+    public void
     Destroy(ORMatcher *self);
 
     public i32_t
@@ -68,7 +68,7 @@ class KinoSearch::Search::ORScorer extends KinoSearch::Search::ORMatcher {
     inert ORScorer* 
     init(ORScorer *self, VArray *children, Similarity *similarity);
 
-    void
+    public void
     Destroy(ORScorer *self);
 
     public i32_t
@@ -84,7 +84,7 @@ class KinoSearch::Search::ORScorer extends KinoSearch::Search::ORMatcher {
     Get_Doc_ID(ORScorer *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

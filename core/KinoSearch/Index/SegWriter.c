@@ -2,18 +2,17 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegWriter.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/Doc.h"
 #include "KinoSearch/Schema.h"
+#include "KinoSearch/Store/DirHandle.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Index/DeletionsWriter.h"
 #include "KinoSearch/Index/Inverter.h"
 #include "KinoSearch/Index/PolyReader.h"
-#include "KinoSearch/Index/PostingsWriter.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
-#include "KinoSearch/Util/I32Array.h"
+#include "KinoSearch/Plan/Architecture.h"
 
 SegWriter*
 SegWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
@@ -49,7 +48,7 @@ SegWriter_destroy(SegWriter *self)
 void
 SegWriter_register(SegWriter *self, const CharBuf *api, DataWriter *component)
 {
-    ASSERT_IS_A(component, DATAWRITER);
+    CERTIFY(component, DATAWRITER);
     if (Hash_Fetch(self->by_api, (Obj*)api)) {
         THROW(ERR, "API %o already registered", api);
     }
@@ -71,36 +70,28 @@ SegWriter_add_writer(SegWriter *self, DataWriter *writer)
 void
 SegWriter_prep_seg_dir(SegWriter *self)
 {
-    Folder  *folder   = PolyReader_Get_Folder(self->polyreader);
+    Folder  *folder   = SegWriter_Get_Folder(self);
     CharBuf *seg_name = Seg_Get_Name(self->segment);
-    VArray  *files    = Folder_List(folder);
-    u32_t    i, max;
-
-    /* Create the segment directory. */
-    if (!Folder_Exists(folder, seg_name)) {
-        Folder_MkDir(folder, seg_name);
-    }
 
     /* Clear stale segment files from crashed indexing sessions. */
-    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *filename = (CharBuf*)VA_Fetch(files, i);
-        if (   CB_Starts_With(filename, seg_name) 
-            && !CB_Equals(filename, (Obj*)seg_name)
-        ) {
-            if (!Folder_Delete(folder, filename)) {
-                CharBuf *mess = MAKE_MESS("Can't delete '%o'", filename);
-                DECREF(files);
-                Err_throw_mess(ERR, mess);
-            }
+    if (Folder_Exists(folder, seg_name)) {
+        bool_t result = Folder_Delete_Tree(folder, seg_name);
+        if (!result) { 
+            THROW(ERR, "Couldn't completely remove '%o'", seg_name);
         }
     }
-    DECREF(files);
+
+    {
+        /* Create the segment directory. */
+        bool_t result = Folder_MkDir(folder, seg_name);
+        if (!result) { RETHROW(INCREF(Err_get_error())); }
+    }
 }
 
 void
 SegWriter_add_doc(SegWriter *self, Doc *doc, float boost)
 {
-    i32_t doc_id = Seg_Increment_Count(self->segment, 1);
+    i32_t doc_id = (int32_t)Seg_Increment_Count(self->segment, 1);
     Inverter_Invert_Doc(self->inverter, doc);
     Inverter_Set_Boost(self->inverter, boost);
     SegWriter_Add_Inverted_Doc(self, self->inverter, doc_id);
@@ -197,6 +188,7 @@ SegWriter_delete_segment(SegWriter *self, SegReader *reader)
 void
 SegWriter_finish(SegWriter *self)
 {
+    CharBuf *seg_name = Seg_Get_Name(self->segment);
     u32_t i, max;
 
     /* Finish off children. */
@@ -205,18 +197,19 @@ SegWriter_finish(SegWriter *self)
         DataWriter_Finish(writer);
     }
 
-
     /* Write segment metadata. Add segment directory and segment file to
      * snapshot. */
     {
         Snapshot *snapshot = SegWriter_Get_Snapshot(self);
-        CharBuf *seg_name  = Seg_Get_Name(self->segment);
         CharBuf *segmeta_filename = CB_newf("%o/segmeta.json", seg_name);
         Seg_Write_File(self->segment, self->folder);
         Snapshot_Add_Entry(snapshot, seg_name);
         Snapshot_Add_Entry(snapshot, segmeta_filename);
         DECREF(segmeta_filename);
     }
+
+    /* Collapse segment files into compound file. */
+    Folder_Consolidate(self->folder, seg_name);
 }
 
 void
@@ -229,15 +222,13 @@ void
 SegWriter_set_del_writer(SegWriter *self, DeletionsWriter *del_writer)
 {
     DECREF(self->del_writer);
-    self->del_writer = del_writer
-                     ? (DeletionsWriter*)INCREF(del_writer)
-                     : NULL;
+    self->del_writer = (DeletionsWriter*)INCREF(del_writer);
 }
 
 DeletionsWriter*
 SegWriter_get_del_writer(SegWriter *self) { return self->del_writer; }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -7,7 +7,7 @@ parcel KinoSearch cnick Kino;
  */
 
 abstract class KinoSearch::Search::HitCollector cnick HC
-    extends KinoSearch::Obj {
+    extends KinoSearch::Object::Obj {
 
     SegReader *reader;
     Matcher   *matcher;
@@ -18,7 +18,7 @@ abstract class KinoSearch::Search::HitCollector cnick HC
     public inert HitCollector*
     init(HitCollector *self);
 
-    void
+    public void
     Destroy(HitCollector *self);
 
     /** Do something with a doc id.  (For instance, keep track of the docs
@@ -56,12 +56,12 @@ class KinoSearch::Search::HitCollector::BitCollector cnick BitColl
     BitVector    *bit_vec;
 
     /** 
-     * @param bit_vector A KinoSearch::Obj::BitVector.
+     * @param bit_vector A KinoSearch::Object::BitVector.
      */
     public inert BitCollector*
     init(BitCollector *self, BitVector *bit_vector);
 
-    void
+    public void
     Destroy(BitCollector *self);
 
     /** Set bit in the object's BitVector for the supplied doc id.
@@ -91,7 +91,7 @@ class KinoSearch::Search::HitCollector::OffsetCollector cnick OffsetColl
     inert OffsetCollector*
     init(OffsetCollector *self, HitCollector *collector, i32_t offset);
 
-    void
+    public void
     Destroy(OffsetCollector *self);
 
     public void
@@ -110,7 +110,7 @@ class KinoSearch::Search::HitCollector::OffsetCollector cnick OffsetColl
     Set_Matcher(OffsetCollector *self, Matcher *matcher);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

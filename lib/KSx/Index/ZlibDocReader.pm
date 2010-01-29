@@ -29,10 +29,8 @@ sub new {
         my $dat_filename = $segment->get_name . "/zdocs.dat";
         my $ix_filename  = $segment->get_name . "/zdocs.ix";
         my $folder       = $self->get_folder;
-        $ix_in{$$self} = $folder->open_in($ix_filename)
-            or confess("Can't open '$ix_filename'");
-        $dat_in{$$self} = $folder->open_in($dat_filename)
-            or confess("Can't open '$dat_filename'");
+        $ix_in{$$self}  = $folder->open_in($ix_filename)  or confess KinoSearch->error;
+        $dat_in{$$self} = $folder->open_in($dat_filename) or confess KinoSearch->error;
 
         # Remember which fields are binary.
         my $schema = $self->get_schema;
@@ -65,7 +63,7 @@ sub fetch {
 
     # Read main data.
     $dat_in->seek($start);
-    $dat_in->read_bytes( $compressed, $len );
+    $dat_in->read( $compressed, $len );
     my $inflated      = uncompress($compressed);
     my $num_fields    = unpack( "w", $inflated );
     my $pack_template = "w ";
@@ -98,7 +96,7 @@ sub read_record {
         my $start = $ix_in->read_i64;
         my $len   = $ix_in->read_i64 - $start;
         $dat_in->seek($start);
-        $dat_in->read_bytes( $$buf, $len );
+        $dat_in->read( $$buf, $len );
     }
 }
 
@@ -134,7 +132,7 @@ fetching documents.  It is unsupported.
 
 =head1 COPYRIGHT
 
-Copyright 2009 Marvin Humphrey
+Copyright 2009-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

@@ -1,3 +1,4 @@
+package KinoSearch::Index::SortCache;
 use KinoSearch;
 
 1;
@@ -19,7 +20,7 @@ CODE:
 
     XSBind_allot_params( &(ST(0)), 1, items, 
         "KinoSearch::Index::SortCache::value_PARAMS",
-        &ord_sv, SNL("ord"), 
+        &ord_sv, "ord", 3, 
         NULL);
     if (ord_sv) { ord = SvIV(ord_sv); }
     else { THROW(KINO_ERR, "Missing required param 'ord'"); }
@@ -27,14 +28,14 @@ CODE:
     {
         kino_Obj *blank = Kino_SortCache_Make_Blank(self);
         kino_Obj *value = Kino_SortCache_Value(self, ord, blank);
-        RETVAL = XSBind_kobj_to_pobj(value);
+        RETVAL = XSBind_kino_to_perl(value);
         KINO_DECREF(blank);
     }
 }
 OUTPUT: RETVAL
 END_XS_CODE
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Index::SortCache",
     xs_code           => $xs_code,
@@ -44,7 +45,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

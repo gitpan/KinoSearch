@@ -1,3 +1,4 @@
+package KinoSearch::Search::PhraseQuery;
 use KinoSearch;
 
 1;
@@ -14,7 +15,7 @@ my $synopsis = <<'END_SYNOPSIS';
     my $hits = $searcher->hits( query => $phrase_query );
 END_SYNOPSIS
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Search::PhraseQuery",
     bind_methods      => [qw( Get_Field Get_Terms )],
@@ -25,7 +26,7 @@ Boilerplater::Binding::Perl::Class->register(
         methods     => [qw( get_field get_terms )],
     },
 );
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Search::PhraseCompiler",
     bind_constructors => ["do_new"],
@@ -33,7 +34,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

@@ -39,7 +39,7 @@ PhraseScorer_init(PhraseScorer *self, Similarity *similarity, VArray *plists,
 
     /* Extract posting lists for quick access. */
     self->num_elements   = VA_Get_Size(plists);
-    self->plists         = MALLOCATE(self->num_elements, PostingList*);
+    self->plists         = (PostingList**)MALLOCATE(self->num_elements * sizeof(PostingList*));
     for (i = 0; i < self->num_elements; i++) {
         PostingList *const plist = (PostingList*)VA_Fetch(plists, i);
         if (plist == NULL)
@@ -278,7 +278,7 @@ PhraseScorer_score(PhraseScorer *self)
     return score;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

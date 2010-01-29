@@ -2,15 +2,15 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 2006;
+use Test::More tests => 2004;
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder = create_index( qw( a b c ), 'c c d' );
-my $polyreader  = KinoSearch::Index::IndexReader->open( index => $folder );
-my $reader      = $polyreader->get_seg_readers->[0];
-my $post_reader = $reader->fetch("KinoSearch::Index::PostingsReader");
+my $polyreader   = KinoSearch::Index::IndexReader->open( index => $folder );
+my $reader       = $polyreader->get_seg_readers->[0];
+my $plist_reader = $reader->fetch("KinoSearch::Index::PostingListReader");
 
-my $plist = $post_reader->posting_list( field => 'content', term => 'c' );
+my $plist = $plist_reader->posting_list( field => 'content', term => 'c' );
 
 my ( @docs, @prox, @docs_from_next );
 while ( my $doc_id = $plist->next ) {
@@ -27,13 +27,6 @@ $plist->seek('c');
 $plist->next;
 is( $plist->get_posting->get_doc_id, 3, "seek" );
 
-$plist->set_doc_base(10);
-$plist->seek('c');
-my $doc_id = $plist->next;
-is( $doc_id,                         13, "set_doc_base and next" );
-is( $plist->get_posting->get_doc_id, 13, "set_doc_base" );
-$plist->set_doc_base(0);
-
 $folder = KinoSearch::Store::RAMFolder->new;
 
 my $indexer = KinoSearch::Indexer->new(
@@ -49,22 +42,22 @@ for ( 0 .. 100 ) {
     $indexer->add_doc( { content => $content } );
 }
 $indexer->commit;
-$polyreader  = KinoSearch::Index::IndexReader->open( index => $folder );
-$reader      = $polyreader->get_seg_readers->[0];
-$post_reader = $reader->fetch("KinoSearch::Index::PostingsReader");
+$polyreader   = KinoSearch::Index::IndexReader->open( index => $folder );
+$reader       = $polyreader->get_seg_readers->[0];
+$plist_reader = $reader->fetch("KinoSearch::Index::PostingListReader");
 
 for my $letter (qw( a b c d e )) {
-    my $skipping_plist = $post_reader->posting_list(
+    my $skipping_plist = $plist_reader->posting_list(
         field => 'content',
         term  => $letter,
     );
-    my $plodding_plist = $post_reader->posting_list(
+    my $plodding_plist = $plist_reader->posting_list(
         field => 'content',
         term  => $letter,
     );
 
     # Compare results of advance() to results of next().
-    for my $target ( 0 .. 99 ) {
+    for my $target ( 1 .. 100 ) {
         $skipping_plist->seek($letter);
         $plodding_plist->seek($letter);
         my $skipping_doc_id = $skipping_plist->advance($target);

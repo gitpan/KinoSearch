@@ -7,7 +7,7 @@ parcel KinoSearch cnick Kino;
  * content when appropriate, and marshalling them into an iterable form.
  */
 
-class KinoSearch::Index::Inverter extends KinoSearch::Obj {
+class KinoSearch::Index::Inverter extends KinoSearch::Object::Obj {
 
     Schema        *schema;
     Segment       *segment;
@@ -116,7 +116,7 @@ class KinoSearch::Index::Inverter extends KinoSearch::Obj {
     public Inversion*
     Get_Inversion(Inverter *self);
 
-    void
+    public void
     Destroy(Inverter *self);
 }
 
@@ -126,7 +126,7 @@ class KinoSearch::Index::Inverter extends KinoSearch::Obj {
  * field definitions are unchanging, we cache them in an InverterEntry object.
  */
 private final class KinoSearch::Index::Inverter::InverterEntry cnick InvEntry
-    extends KinoSearch::Obj {
+    extends KinoSearch::Object::Obj {
 
     i32_t        field_num;
     CharBuf     *field;
@@ -153,11 +153,11 @@ private final class KinoSearch::Index::Inverter::InverterEntry cnick InvEntry
     void
     Clear(InverterEntry *self);
 
-    void
+    public void
     Destroy(InverterEntry *self);
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

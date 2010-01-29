@@ -18,7 +18,7 @@ class KinoSearch::Search::TermScorer extends KinoSearch::Search::Matcher {
     init(TermScorer *self, Similarity *similarity, PostingList *posting_list,
          Compiler *compiler);
 
-    void
+    public void
     Destroy(TermScorer *self);
 
     public i32_t
@@ -38,7 +38,7 @@ __C__
 #endif
 __END_C__
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

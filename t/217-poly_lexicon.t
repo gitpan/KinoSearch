@@ -8,7 +8,7 @@ use strict;
 use warnings;
 
 package MyArchitecture;
-use base qw( KinoSearch::Architecture );
+use base qw( KinoSearch::Plan::Architecture );
 
 sub index_interval { confess("should be displaced via local() below") }
 

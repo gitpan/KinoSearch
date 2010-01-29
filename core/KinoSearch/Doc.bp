@@ -6,7 +6,7 @@ parcel KinoSearch cnick Kino;
  * or more fields, each of which has a value.
  */
 
-public class KinoSearch::Doc extends KinoSearch::Obj : dumpable {
+public class KinoSearch::Doc extends KinoSearch::Object::Obj : dumpable {
 
     void        *fields;
     i32_t        doc_id;
@@ -76,11 +76,11 @@ public class KinoSearch::Doc extends KinoSearch::Obj : dumpable {
     void*
     To_Host(Doc *self);
 
-    void
+    public void
     Destroy(Doc *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

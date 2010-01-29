@@ -51,7 +51,7 @@ u32_t
 TestQP_get_num_hits(TestQueryParser *self)     { return self->num_hits; }
 
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

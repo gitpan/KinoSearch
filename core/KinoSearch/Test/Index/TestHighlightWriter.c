@@ -8,13 +8,13 @@
 void
 TestHLWriter_run_tests()
 {
-    TestBatch *batch = Test_new_batch("TestHighlightWriter", 1, NULL);
-    PLAN(batch);
+    TestBatch *batch = TestBatch_new(1);
+    TestBatch_Plan(batch);
     PASS(batch, "Placeholder");
-    batch->destroy(batch);
+    DECREF(batch);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

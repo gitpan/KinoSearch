@@ -1,3 +1,4 @@
+package KinoSearch::Analysis::Token;
 use KinoSearch;
 
 1;
@@ -22,11 +23,11 @@ CODE:
 
     XSBind_allot_params( &(ST(0)), 1, items, 
         "KinoSearch::Analysis::Token::new_PARAMS",
-        &text_sv, SNL("text"), 
-        &start_offset_sv, SNL("start_offset"), 
-        &end_offset_sv, SNL("end_offset"), 
-        &pos_inc_sv, SNL("pos_inc"), 
-        &boost_sv, SNL("boost"), 
+        &text_sv, "text", 4,
+        &start_offset_sv, "start_offset", 12, 
+        &end_offset_sv, "end_offset", 10, 
+        &pos_inc_sv, "pos_inc", 7, 
+        &boost_sv, "boost", 5, 
         NULL);
 
     if (!XSBind_sv_defined(text_sv)) { 
@@ -49,7 +50,7 @@ CODE:
         kino_Token *self    = (kino_Token*)XSBind_new_blank_obj(either_sv);
         kino_Token_init(self, text, len, start_off, end_off, boost, 
             pos_inc);
-        KOBJ_TO_SV_NOINC(self, RETVAL);
+        RETVAL = KINO_OBJ_TO_SV_NOINC(self);
     }
 }
 OUTPUT: RETVAL
@@ -74,7 +75,7 @@ PPCODE:
 }
 END_XS
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Analysis::Token",
     bind_methods => [
@@ -100,7 +101,7 @@ Token's public API has been redacted.
 
 =head1 COPYRIGHT
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

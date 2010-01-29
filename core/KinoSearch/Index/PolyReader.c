@@ -13,7 +13,6 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"
 #include "KinoSearch/Store/Lock.h"
-#include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/Json.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/StringHelper.h"
@@ -64,7 +63,7 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
 {
     u32_t  i;
     u32_t  num_sub_readers = VA_Get_Size(sub_readers);
-    i32_t *starts = MALLOCATE(num_sub_readers, i32_t);
+    i32_t *starts = (i32_t*)MALLOCATE(num_sub_readers * sizeof(i32_t));
     Hash  *data_readers = Hash_new(0);
 
     DECREF(self->sub_readers);
@@ -97,12 +96,12 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
         VArray  *readers;
         Hash_Iter_Init(data_readers);
         while (Hash_Iter_Next(data_readers, (Obj**)&api, (Obj**)&readers)) {
-            DataReader *datareader = (DataReader*)ASSERT_IS_A(
+            DataReader *datareader = (DataReader*)CERTIFY(
                 S_first_non_null(readers), DATAREADER);
             DataReader *aggregator 
                 = DataReader_Aggregator(datareader, readers, self->offsets);
             if (aggregator) {
-                ASSERT_IS_A(aggregator, DATAREADER);
+                CERTIFY(aggregator, DATAREADER);
                 Hash_Store(self->components, (Obj*)api, (Obj*)aggregator);
             }
         }
@@ -129,7 +128,7 @@ PolyReader_init(PolyReader *self, Schema *schema, Folder *folder,
         VArray *segments = VA_new(num_segs);
         u32_t i;
         for (i = 0; i < num_segs; i++) {
-            SegReader *seg_reader = (SegReader*)ASSERT_IS_A(
+            SegReader *seg_reader = (SegReader*)CERTIFY(
                 VA_Fetch(sub_readers, i), SEGREADER);
             VA_Push(segments, INCREF(SegReader_Get_Segment(seg_reader)));
         }
@@ -175,7 +174,7 @@ S_try_open_elements(PolyReader *self)
     VArray  *files             = Snapshot_List(self->snapshot);
     Folder  *folder            = PolyReader_Get_Folder(self);
     u32_t    num_segs          = 0;
-    i32_t    latest_schema_gen = 0;
+    u64_t    latest_schema_gen = 0;
     CharBuf *schema_file       = NULL;
     VArray  *segments;
     u32_t    i, max;
@@ -190,7 +189,7 @@ S_try_open_elements(PolyReader *self)
         else if (   CB_Starts_With_Str(file, "schema_", 7)
                  && CB_Ends_With_Str(file, ".json", 5)
         ) {
-            i32_t gen = IxFileNames_extract_gen(file);
+            u64_t gen = IxFileNames_extract_gen(file);
             if (gen > latest_schema_gen) {
                 latest_schema_gen = gen;
                 if (!schema_file) { schema_file = CB_Clone(file); }
@@ -209,7 +208,7 @@ S_try_open_elements(PolyReader *self)
         Hash *dump = (Hash*)Json_slurp_json(folder, schema_file);
         if (dump) { /* read file successfully */
             DECREF(self->schema);
-            self->schema = (Schema*)ASSERT_IS_A(
+            self->schema = (Schema*)CERTIFY(
                 VTable_Load_Obj(SCHEMA, (Obj*)dump), SCHEMA);
             DECREF(dump);
             DECREF(schema_file);
@@ -229,7 +228,7 @@ S_try_open_elements(PolyReader *self)
 
         /* Create a Segment for each segmeta. */
         if (CB_Ends_With_Str(file, "segmeta.json", 12)) {
-            i32_t seg_num = IxFileNames_extract_gen(file);
+            i64_t seg_num = IxFileNames_extract_gen(file);
             Segment *segment = Seg_new(seg_num);
 
             /* Bail if reading the file fails (probably because it's been
@@ -268,7 +267,7 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
                    IndexManager *manager)
 {
     Folder *folder = S_derive_folder(index);
-    i32_t last_gen = 0;
+    u64_t last_gen = 0;
 
     PolyReader_init(self, NULL, folder, snapshot, manager, NULL);
     DECREF(folder);
@@ -277,7 +276,7 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
 
     while (1) {
         CharBuf *target_snap_file;
-        i32_t gen;
+        u64_t gen;
 
         /* If a Snapshot was supplied, use its file. */
         if (snapshot) {
@@ -310,8 +309,9 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
         if (PolyReader_race_condition_debug1) {
             ZombieCharBuf temp = ZCB_LITERAL("temp");
             if (Folder_Exists(folder, (CharBuf*)&temp)) {
-                Folder_Rename(folder, (CharBuf*)&temp,
+                bool_t success = Folder_Rename(folder, (CharBuf*)&temp,
                     PolyReader_race_condition_debug1);
+                if (!success) { RETHROW(INCREF(Err_get_error())); }
             }
             PolyReader_debug1_num_passes++;
         }
@@ -345,7 +345,7 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
          * not, we have a real exception, so throw an error. */
         {
             Obj *result = S_try_open_elements(self);
-            if (OBJ_IS_A(result, CHARBUF)) { /* Error occurred. */
+            if (Obj_Is_A(result, CHARBUF)) { /* Error occurred. */
                 S_release_read_lock(self);
                 DECREF(target_snap_file);
                 if (last_gen < gen) { /* Index updated, so try again. */
@@ -375,10 +375,10 @@ static Folder*
 S_derive_folder(Obj *index)
 {
     Folder *folder = NULL;
-    if (OBJ_IS_A(index, FOLDER)) {
+    if (Obj_Is_A(index, FOLDER)) {
         folder = (Folder*)INCREF(index);
     }
-    else if (OBJ_IS_A(index, CHARBUF)) {
+    else if (Obj_Is_A(index, CHARBUF)) {
         folder = (Folder*)FSFolder_new((CharBuf*)index);
     }
     else {
@@ -494,7 +494,7 @@ PolyReader_sub_tick(I32Array *offsets, i32_t doc_id)
     return hi;
 }
     
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

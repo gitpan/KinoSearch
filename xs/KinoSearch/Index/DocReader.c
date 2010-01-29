@@ -9,9 +9,9 @@
 #include "KinoSearch/FieldType/BlobType.h"
 #include "KinoSearch/FieldType/TextType.h"
 #include "KinoSearch/FieldType/NumericType.h"
+#include "KinoSearch/Object/Host.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Util/Host.h"
 
 kino_Obj*
 kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id, 
@@ -109,7 +109,7 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
     }
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

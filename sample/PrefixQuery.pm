@@ -61,11 +61,11 @@ sub make_matcher {
     my ( $self, %args ) = @_;
     my $seg_reader = $args{reader};
 
-    # Retrieve low-level components LexiconReader and PostingsReader.
+    # Retrieve low-level components LexiconReader and PostingListReader.
     my $lex_reader
         = $seg_reader->obtain("KinoSearch::Index::LexiconReader");
-    my $post_reader
-        = $seg_reader->obtain("KinoSearch::Index::PostingsReader");
+    my $plist_reader
+        = $seg_reader->obtain("KinoSearch::Index::PostingListReader");
     
     # Acquire a Lexicon and seek it to our query string.
     my $substring = $self->get_parent->get_query_string;
@@ -79,7 +79,7 @@ sub make_matcher {
     my @posting_lists;
     while ( defined( my $term = $lexicon->get_term ) ) {
         last unless $term =~ /^\Q$substring/;
-        my $posting_list = $post_reader->posting_list(
+        my $posting_list = $plist_reader->posting_list(
             field => $field,
             term  => $term,
         );
@@ -176,7 +176,7 @@ Seek L<KinoSearch::Docs::Cookbook::CustomQuery>.
 
 =head1 COPYRIGHT
 
-Copyright 2008-2009 Marvin Humphrey
+Copyright 2008-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

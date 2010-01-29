@@ -5,7 +5,7 @@ parcel KinoSearch cnick Kino;
  * It's a doc id and a score.  That's it.
  */
 
-class KinoSearch::Search::MatchDoc extends KinoSearch::Obj {
+class KinoSearch::Search::MatchDoc extends KinoSearch::Object::Obj {
 
     i32_t    doc_id;
     float    score;
@@ -41,11 +41,11 @@ class KinoSearch::Search::MatchDoc extends KinoSearch::Obj {
     void
     Set_Values(MatchDoc *self, VArray *values);
 
-    void
+    public void
     Destroy(MatchDoc *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -5,7 +5,6 @@
 #include "KinoSearch/Index/TermVector.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 TermVector*
 TV_new(const CharBuf *field, const CharBuf *text, I32Array *positions, 
@@ -85,9 +84,9 @@ TV_deserialize(TermVector *self, InStream *instream)
     I32Array *positions, *start_offsets, *end_offsets;
 
     /* Read positional data. */
-    posits    = MALLOCATE(num_pos, i32_t);
-    starts    = MALLOCATE(num_pos, i32_t);
-    ends      = MALLOCATE(num_pos, i32_t);
+    posits    = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
+    starts    = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
+    ends      = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
     for (i = 0; i < num_pos; i++) {
         posits[i] = InStream_Read_C32(instream);
         starts[i] = InStream_Read_C32(instream);
@@ -136,7 +135,7 @@ TV_equals(TermVector *self, Obj *other)
     return true;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

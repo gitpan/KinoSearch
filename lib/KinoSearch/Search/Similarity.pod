@@ -75,12 +75,12 @@ have a lot of tokens on average.
 
 =head1 INHERITANCE
 
-KinoSearch::Search::Similarity isa L<KinoSearch::Obj>.
+KinoSearch::Search::Similarity isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

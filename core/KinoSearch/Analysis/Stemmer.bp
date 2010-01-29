@@ -74,11 +74,11 @@ class KinoSearch::Analysis::Stemmer extends KinoSearch::Analysis::Analyzer
     inert void
     load_snowball();
 
-    void
+    public void
     Destroy(Stemmer *self);
 }
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

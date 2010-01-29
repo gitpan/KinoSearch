@@ -13,7 +13,6 @@
 #include "KinoSearch/Search/SeriesMatcher.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
-#include "KinoSearch/Util/I32Array.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 
 DeletionsReader*
@@ -50,7 +49,7 @@ PolyDelReader_init(PolyDeletionsReader *self, VArray *readers,
     DelReader_init((DeletionsReader*)self, NULL, NULL, NULL, NULL, -1);
     self->del_count = 0;
     for (i = 0, max = VA_Get_Size(readers); i < max; i++) {
-        DeletionsReader *reader = (DeletionsReader*) ASSERT_IS_A(
+        DeletionsReader *reader = (DeletionsReader*)CERTIFY(
             VA_Fetch(readers, i), DELETIONSREADER);
         self->del_count += DelReader_Del_Count(reader);
     }
@@ -164,15 +163,15 @@ DefDelReader_read_deletions(DefaultDeletionsReader *self)
         Hash *metadata 
             = (Hash*)Seg_Fetch_Metadata_Str(other_seg, "deletions", 9);
         if (metadata) {
-            Hash *files = (Hash*)ASSERT_IS_A(
+            Hash *files = (Hash*)CERTIFY(
                 Hash_Fetch_Str(metadata, "files", 5), HASH);
             Hash *seg_files_data 
                 = (Hash*)Hash_Fetch(files, (Obj*)my_seg_name);
             if (seg_files_data) {
-                Obj *count = (Obj*)ASSERT_IS_A(
+                Obj *count = (Obj*)CERTIFY(
                     Hash_Fetch_Str(seg_files_data, "count", 5), OBJ);
                 del_count = (i32_t)Obj_To_I64(count);
-                del_file  = (CharBuf*)ASSERT_IS_A(
+                del_file  = (CharBuf*)CERTIFY(
                     Hash_Fetch_Str(seg_files_data, "filename", 8), CHARBUF);
                 break;
             }
@@ -204,7 +203,7 @@ DefDelReader_del_count(DefaultDeletionsReader *self)
     return self->del_count; 
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

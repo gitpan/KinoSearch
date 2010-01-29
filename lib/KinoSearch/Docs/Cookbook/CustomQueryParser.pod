@@ -272,7 +272,7 @@ production which joins the leaves together with an ORQuery.
         return $tree ? $self->expand($tree) :
         KinoSearch::Search::NoMatchQuery->new;
     }
-
+    
     sub tree {
         my ( $self, $query_string ) = @_; 
         return $rd_parser{$$self}->tree($query_string);
@@ -340,7 +340,7 @@ for how they behave:
 
 =head1 COPYRIGHT
 
-Copyright 2008-2009 Marvin Humphrey
+Copyright 2008-2010 Marvin Humphrey
 
 =head1 LICENSE, DISCLAIMER, BUGS, etc.
 

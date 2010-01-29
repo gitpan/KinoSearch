@@ -74,11 +74,11 @@ class KinoSearch::Index::LexiconWriter cnick LexWriter
     public void
     Finish(LexiconWriter *self);
 
-    void
+    public void
     Destroy(LexiconWriter *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

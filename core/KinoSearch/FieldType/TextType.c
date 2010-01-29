@@ -5,6 +5,7 @@
 #include "KinoSearch/FieldType/TextType.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
+#include "KinoSearch/Util/StringHelper.h"
 
 ViewCharBuf*
 TextType_make_blank(TextType *self)
@@ -48,7 +49,7 @@ TextTermStepper_init(TextTermStepper *self)
 void
 TextTermStepper_set_value(TextTermStepper *self, Obj *value)
 {
-    ASSERT_IS_A(value, CHARBUF);
+    CERTIFY(value, CHARBUF);
     DECREF(self->value);
     self->value = INCREF(value);
 }
@@ -56,7 +57,7 @@ TextTermStepper_set_value(TextTermStepper *self, Obj *value)
 void
 TextTermStepper_reset(TextTermStepper *self)
 {
-    CB_Set_Size(self->value, 0);
+    CB_Set_Size((CharBuf*)self->value, 0);
 }
 
 void
@@ -71,7 +72,7 @@ void
 TextTermStepper_write_delta(TextTermStepper *self, OutStream *outstream,
                             Obj *value)
 {
-    CharBuf *new_value  = (CharBuf*)ASSERT_IS_A(value, CHARBUF);
+    CharBuf *new_value  = (CharBuf*)CERTIFY(value, CHARBUF);
     CharBuf *last_value = (CharBuf*)self->value;
     char    *new_text  = (char*)CB_Get_Ptr8(new_value);
     size_t   new_size  = CB_Get_Size(new_value);
@@ -79,7 +80,7 @@ TextTermStepper_write_delta(TextTermStepper *self, OutStream *outstream,
     size_t   last_size = CB_Get_Size(last_value);
 
     /* Count how many bytes the strings share at the top. */ 
-    const i32_t overlap = StrHelp_string_diff(last_text, new_text,
+    const i32_t overlap = StrHelp_overlap(last_text, new_text,
         last_size, new_size);
     const char *const diff_start_str = new_text + overlap;
     const size_t diff_len            = new_size - overlap;
@@ -89,7 +90,7 @@ TextTermStepper_write_delta(TextTermStepper *self, OutStream *outstream,
     OutStream_Write_String(outstream, diff_start_str, diff_len);
 
     /* Update value. */
-    CB_Mimic(self->value, value);
+    CB_Mimic((CharBuf*)self->value, value);
 }
 
 void
@@ -109,6 +110,11 @@ TextTermStepper_read_key_frame(TextTermStepper *self, InStream *instream)
     /* Set the value text. */
     InStream_Read_Bytes(instream, ptr, text_len);
     CB_Set_Size(value, text_len);
+    if (!StrHelp_utf8_valid(ptr, text_len)) {
+        THROW(ERR, "Invalid UTF-8 sequence in '%o' at byte %i64",
+            InStream_Get_Filename(instream), 
+            InStream_Tell(instream) - text_len);
+    }
 
     /* Null-terminate. */
     ptr[text_len] = '\0';
@@ -131,14 +137,19 @@ TextTermStepper_read_delta(TextTermStepper *self, InStream *instream)
     ptr   = CB_Grow(value, total_text_len);
 
     /* Set the value text. */
-    InStream_Read_BytesO(instream, ptr, text_overlap, finish_chars_len);
+    InStream_Read_Bytes(instream, ptr + text_overlap, finish_chars_len);
     CB_Set_Size(value, total_text_len);
+    if (!StrHelp_utf8_valid(ptr, total_text_len)) {
+        THROW(ERR, "Invalid UTF-8 sequence in '%o' at byte %i64",
+            InStream_Get_Filename(instream), 
+            InStream_Tell(instream) - finish_chars_len);
+    }
 
     /* Null-terminate. */
     ptr[total_text_len] = '\0';
 }
 
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

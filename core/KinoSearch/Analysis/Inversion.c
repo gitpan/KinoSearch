@@ -6,6 +6,10 @@
 #include "KinoSearch/Analysis/Token.h"
 #include "KinoSearch/Util/SortUtils.h"
 
+#ifndef SIZE_MAX
+  #define SIZE_MAX ((size_t)-1)
+#endif
+
 /* After inversion, record how many like tokens occur in each group.
  */
 static void
@@ -19,7 +23,7 @@ Inversion_new(Token *seed_token)
     /* Init. */
     self->cap                 = 16;
     self->size                = 0;
-    self->tokens              = CALLOCATE(self->cap, Token*);
+    self->tokens              = (Token**)CALLOCATE(self->cap, sizeof(Token*));
     self->cur                 = 0;
     self->inverted            = false;
     self->cluster_counts      = NULL;
@@ -67,37 +71,28 @@ Inversion_reset(Inversion *self)
 }
 
 static void
-S_grow(Inversion *self, size_t capacity) 
+S_grow(Inversion *self, size_t size) 
 {
-    if (capacity > self->cap) {
-        self->tokens = REALLOCATE(self->tokens, capacity, Token*); 
-        self->cap    = capacity;
+    if (size > self->cap) {
+        int64_t amount = size * sizeof(Token*);
+        /* Clip rather than wrap. */
+        if (amount > SIZE_MAX) { amount = SIZE_MAX; }
+        self->tokens = (Token**)REALLOCATE(self->tokens, amount); 
+        self->cap    = size;
         memset(self->tokens + self->size, 0,
-            (capacity - self->size) * sizeof(Token*));
+            (size - self->size) * sizeof(Token*));
     }
 }
 
 void
 Inversion_append(Inversion *self, Token *token) 
 {
-    /* Safety check. */
-    if (self->inverted)
+    if (self->inverted) {
         THROW(ERR, "Can't append tokens after inversion");
-
-    /* Minimize reallocations. */
-    if (self->size >= self->cap) {
-        if (self->cap < 100) {
-            S_grow(self, 100);
-        }
-        else if (self->size < 10000) {
-            S_grow(self, self->cap * 2);
-        }
-        else {
-            S_grow(self, self->cap + 10000);
-        }
     }
-
-    /* Inlined VA_Push. */
+    if (self->size >= self->cap) {
+        S_grow(self, Memory_oversize(self->size + 1));
+    }
     self->tokens[ self->size ] = token;
     self->size++;
 }
@@ -158,7 +153,7 @@ static void
 S_count_clusters(Inversion *self)
 {
     Token **tokens      = self->tokens;
-    u32_t  *counts      = CALLOCATE(self->size + 1, u32_t); 
+    u32_t  *counts      = (u32_t*)CALLOCATE(self->size + 1, sizeof(u32_t)); 
     u32_t   i;
 
     /* Save the cluster counts. */
@@ -193,7 +188,7 @@ S_count_clusters(Inversion *self)
     }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

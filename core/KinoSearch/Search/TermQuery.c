@@ -8,7 +8,7 @@
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/PostingList.h"
-#include "KinoSearch/Index/PostingsReader.h"
+#include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/TermVector.h"
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Search/Searchable.h"
@@ -17,7 +17,6 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
-#include "KinoSearch/Util/I32Array.h"
 
 TermQuery*
 TermQuery_new(const CharBuf *field, const Obj *term)
@@ -71,7 +70,7 @@ TermQuery_equals(TermQuery *self, Obj *other)
 {
     TermQuery *evil_twin = (TermQuery*)other;
     if (evil_twin == self) return true;
-    if (!OBJ_IS_A(evil_twin, TERMQUERY)) return false;
+    if (!Obj_Is_A(other, TERMQUERY)) return false;
     if (self->boost != evil_twin->boost) return false;
     if (!CB_Equals(self->field, (Obj*)evil_twin->field)) return false;
     if (!Obj_Equals(self->term, evil_twin->term)) return false;
@@ -135,7 +134,7 @@ TermCompiler_init(TermCompiler *self, Query *parent, Searchable *searchable,
     self->raw_weight = self->idf * self->boost;
 
     /* Make final preparations. */
-    Compiler_Normalize(self);
+    TermCompiler_Normalize(self);
 
     return self;
 }
@@ -145,7 +144,7 @@ TermCompiler_equals(TermCompiler *self, Obj *other)
 {
     TermCompiler *evil_twin = (TermCompiler*)other;
     if (!Compiler_equals((Compiler*)self, other)) return false;
-    if (!OBJ_IS_A(evil_twin, TERMCOMPILER)) return false;
+    if (!Obj_Is_A(other, TERMCOMPILER)) return false;
     if (self->idf != evil_twin->idf) return false;
     if (self->raw_weight != evil_twin->raw_weight) return false;
     if (self->query_norm_factor != evil_twin->query_norm_factor) return false;
@@ -207,10 +206,10 @@ TermCompiler_make_matcher(TermCompiler *self, SegReader *reader,
                           bool_t need_score)
 {
     TermQuery *tparent = (TermQuery*)self->parent;
-    PostingsReader *post_reader = (PostingsReader*)SegReader_Fetch(reader,
-        VTable_Get_Name(POSTINGSREADER));
-    PostingList *plist = post_reader 
-        ? PostReader_Posting_List(post_reader, tparent->field, tparent->term)
+    PostingListReader *plist_reader = (PostingListReader*)SegReader_Fetch(reader,
+        VTable_Get_Name(POSTINGLISTREADER));
+    PostingList *plist = plist_reader 
+        ? PListReader_Posting_List(plist_reader, tparent->field, tparent->term)
         : NULL;
 
     if (plist == NULL || PList_Get_Doc_Freq(plist) == 0) {
@@ -255,7 +254,7 @@ TermCompiler_highlight_spans(TermCompiler *self, Searchable *searchable,
     return spans;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -2,7 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/LexiconWriter.h"
-#include "KinoSearch/Architecture.h"
 #include "KinoSearch/FieldType.h"
 #include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/PolyReader.h"
@@ -11,10 +10,10 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/TermStepper.h"
+#include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Posting/MatchPosting.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 i32_t LexWriter_current_file_format = 3;
 
@@ -76,7 +75,7 @@ static void
 S_add_last_term_to_ix(LexiconWriter *self)
 {
     /* Write file pointer to index record. */
-    OutStream_Write_U64(self->ixix_out, OutStream_Tell(self->ix_out));
+    OutStream_Write_I64(self->ixix_out, OutStream_Tell(self->ix_out));
 
     /* Write term and file pointer to main record.  Track count of terms added
      * to ix. */
@@ -122,15 +121,15 @@ LexWriter_start_field(LexiconWriter *self, i32_t field_num)
     CB_setf(self->dat_file,  "%o/lexicon-%i32.dat",  seg_name, field_num);
     CB_setf(self->ix_file,   "%o/lexicon-%i32.ix",   seg_name, field_num);
     CB_setf(self->ixix_file, "%o/lexicon-%i32.ixix", seg_name, field_num);
+    self->dat_out = Folder_Open_Out(folder, self->dat_file);
+    if (!self->dat_out) { RETHROW(INCREF(Err_get_error())); }
+    self->ix_out = Folder_Open_Out(folder, self->ix_file);
+    if (!self->ix_out) { RETHROW(INCREF(Err_get_error())); }
+    self->ixix_out = Folder_Open_Out(folder, self->ixix_file);
+    if (!self->ixix_out) { RETHROW(INCREF(Err_get_error())); }
     Snapshot_Add_Entry(snapshot, self->dat_file);
     Snapshot_Add_Entry(snapshot, self->ix_file);
     Snapshot_Add_Entry(snapshot, self->ixix_file);
-    self->dat_out  = Folder_Open_Out(folder, self->dat_file);
-    self->ix_out   = Folder_Open_Out(folder, self->ix_file);
-    self->ixix_out = Folder_Open_Out(folder, self->ixix_file);
-    if (!self->dat_out)  { THROW(ERR, "Can't open %o", self->dat_file); }
-    if (!self->ix_out)   { THROW(ERR, "Can't open %o", self->ix_file); }
-    if (!self->ixix_out) { THROW(ERR, "Can't open %o", self->ixix_file); }
 
     /* Initialize count and ix_count, term stepper and term info stepper. */
     self->count    = 0;
@@ -250,7 +249,7 @@ void
 LexWriter_add_segment(LexiconWriter *self, SegReader *reader, 
                       I32Array *doc_map)
 {
-    /* No-op, since the data gets added via PostingsWriter. */
+    /* No-op, since the data gets added via PostingListWriter. */
     UNUSED_VAR(self);
     UNUSED_VAR(reader);
     UNUSED_VAR(doc_map);
@@ -282,7 +281,7 @@ LexWriter_format(LexiconWriter *self)
     return LexWriter_current_file_format;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

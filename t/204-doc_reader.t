@@ -9,6 +9,7 @@ sub transform { $_[1] }
 
 package main;
 use Encode qw( _utf8_on );
+use KinoSearch::Test;
 
 sub new_schema {
     my $schema   = KinoSearch::Schema->new;

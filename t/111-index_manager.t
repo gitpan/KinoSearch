@@ -23,8 +23,8 @@ use KinoSearch::Test;
 my $folder = KinoSearch::Store::RAMFolder->new;
 
 my $lock_factory = KinoSearch::Store::LockFactory->new(
-    folder   => $folder,
-    hostname => 'me',
+    folder => $folder,
+    host   => 'me',
 );
 
 my $lock = $lock_factory->make_lock(
@@ -32,16 +32,16 @@ my $lock = $lock_factory->make_lock(
     timeout => 1000,
 );
 isa_ok( $lock, 'KinoSearch::Store::Lock', "make_lock" );
-is( $lock->get_name,     "angie", "correct lock name" );
-is( $lock->get_hostname, "me",    "correct hostname" );
+is( $lock->get_name, "angie", "correct lock name" );
+is( $lock->get_host, "me",    "correct host" );
 
 $lock = $lock_factory->make_shared_lock(
     name    => 'fred',
     timeout => 0,
 );
-is( ref($lock), 'KinoSearch::Store::SharedLock', "make_shared_lock" );
-is( $lock->get_name, "fred", "correct lock name" );
-is( $lock->get_hostname, "me", "correct hostname" );
+is( ref($lock),      'KinoSearch::Store::SharedLock', "make_shared_lock" );
+is( $lock->get_name, "fred",                          "correct lock name" );
+is( $lock->get_host, "me",                            "correct host" );
 
 my $schema = KinoSearch::Test::TestSchema->new;
 $folder = KinoSearch::Store::RAMFolder->new;
@@ -58,7 +58,7 @@ for ( 1 .. 20 ) {
     $indexer->add_doc( { content => $_ } ) for 1 .. $reps;
     $indexer->commit;
 }
-my $num_segs = grep {m/segmeta.json/} @{ $folder->list };
+my $num_segs = grep {m/segmeta.json/} @{ $folder->list_r };
 is( $num_segs, 20, "no merging" );
 
 my $manager = KinoSearch::Index::IndexManager->new;
@@ -104,7 +104,7 @@ is( $manager->get_deletion_lock_interval,
     6, "set/get deletion lock interval" );
 
 SKIP: {
-    skip( 1, "Known leak" ) if $ENV{KINO_VALGRIND};
+    skip( "Known leak", 1 ) if $ENV{KINO_VALGRIND};
     my $indexer = KinoSearch::Indexer->new(
         index   => $folder,
         manager => BogusManager->new,

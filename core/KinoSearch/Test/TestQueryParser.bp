@@ -4,7 +4,7 @@ parcel KinoSearch cnick Kino;
  */
 
 class KinoSearch::Test::TestQueryParser cnick TestQP
-    extends KinoSearch::Obj {
+    extends KinoSearch::Object::Obj {
 
     CharBuf *query_string;
     Query   *tree;
@@ -34,7 +34,7 @@ class KinoSearch::Test::TestQueryParser cnick TestQP
     u32_t
     Get_Num_Hits(TestQueryParser *self);
 
-    void
+    public void
     Destroy(TestQueryParser *self);
 }
 
@@ -42,7 +42,7 @@ __C__
 
 __END_C__
 
-/* Copyright 2005-2009 Marvin Humphrey
+/* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

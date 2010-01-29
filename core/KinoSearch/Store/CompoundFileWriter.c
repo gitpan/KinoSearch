@@ -2,41 +2,38 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/CompoundFileWriter.h"
-#include "KinoSearch/Store/FSFolder.h"
+#include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/Compat/DirManip.h"
-#include "KinoSearch/Util/I32Array.h"
+#include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
 
 i32_t CFWriter_current_file_format = 1;
 
+static ZombieCharBuf cfmeta_file = ZCB_LITERAL("cfmeta.json");
+static ZombieCharBuf cfmeta_temp = ZCB_LITERAL("cfmeta.json.temp");
+static ZombieCharBuf cf_file     = ZCB_LITERAL("cf.dat");
+
 /* Helper which does the heavy lifting for CFWriter_consolidate. */
-void
-do_consolidate(CompoundFileWriter *self);
+static void
+S_do_consolidate(CompoundFileWriter *self);
 
 /* Clean up files which may be left over from previous merge attempts. */
 static void
 S_clean_up_old_temp_files(CompoundFileWriter *self);
 
-/* Write JSON-encoded metadata to .cfmeta file. */
-static void
-S_write_cfmeta(CompoundFileWriter *self, Hash *sub_files);
-
 CompoundFileWriter*
-CFWriter_new(FSFolder *folder, const CharBuf *seg_name)
+CFWriter_new(Folder *folder)
 {
     CompoundFileWriter *self 
         = (CompoundFileWriter*)VTable_Make_Obj(COMPOUNDFILEWRITER);
-    return CFWriter_init(self, folder, seg_name);
+    return CFWriter_init(self, folder);
 }
 
 CompoundFileWriter*
-CFWriter_init(CompoundFileWriter *self, FSFolder *folder, 
-              const CharBuf *seg_name)
+CFWriter_init(CompoundFileWriter *self, Folder *folder)
 {
-    self->folder   = (FSFolder*)INCREF(folder);
-    self->seg_name = CB_Clone(seg_name);
+    self->folder = (Folder*)INCREF(folder);
     return self;
 }
 
@@ -44,88 +41,82 @@ void
 CFWriter_destroy(CompoundFileWriter *self)
 {
     DECREF(self->folder);
-    DECREF(self->seg_name);
     SUPER_DESTROY(self, COMPOUNDFILEWRITER);
 }
 
 void
 CFWriter_consolidate(CompoundFileWriter *self)
 {
-    CharBuf *cfmeta_filename = CB_newf("%o/cfmeta.json", self->seg_name);
-    if (FSFolder_Real_Exists(self->folder, cfmeta_filename)) {
-        DECREF(cfmeta_filename);
-        THROW(ERR, "Merge already performed for segment %o", self->seg_name);
+    if (Folder_Exists(self->folder, (CharBuf*)&cfmeta_file)) {
+        THROW(ERR, "Merge already performed for %o", 
+            Folder_Get_Path(self->folder));
     }
     else {
-        DECREF(cfmeta_filename);
         S_clean_up_old_temp_files(self);
-        do_consolidate(self);
+        S_do_consolidate(self);
     }
 }
 
 static void
 S_clean_up_old_temp_files(CompoundFileWriter *self)
 {
-    FSFolder *folder            = self->folder;
-    CharBuf  *seg_name          = self->seg_name;
-    CharBuf  *cf_file           = CB_newf("%o/cf.dat", seg_name);
-    CharBuf  *cf_meta_temp_file = CB_newf("%o/cfmeta.json.temp", seg_name);
+    Folder *folder = self->folder;
 
-    if (FSFolder_Real_Exists(folder, cf_file)) {
-        if (!FSFolder_Delete_Real(folder, cf_file)) {
-            CharBuf *mess = MAKE_MESS("Can't delete '%o'", cf_file);
-            DECREF(cf_file);
-            DECREF(cf_meta_temp_file);
-            Err_throw_mess(ERR, mess);
+    if (Folder_Exists(folder, (CharBuf*)&cf_file)) {
+        if (!Folder_Delete(folder, (CharBuf*)&cf_file)) {
+            THROW(ERR, "Can't delete '%o'", &cf_file);
         }
     }
-    if (FSFolder_Real_Exists(folder, cf_meta_temp_file)) {
-        if (!FSFolder_Delete_Real(folder, cf_meta_temp_file)) {
-            CharBuf *mess = MAKE_MESS("Can't delete '%o'", cf_meta_temp_file);
-            DECREF(cf_file);
-            DECREF(cf_meta_temp_file);
-            Err_throw_mess(ERR, mess);
+    if (Folder_Exists(folder, (CharBuf*)&cfmeta_temp)) {
+        if (!Folder_Delete(folder, (CharBuf*)&cfmeta_temp)) {
+            THROW(ERR, "Can't delete '%o'", &cfmeta_temp);
         }
     }
-    DECREF(cf_file);
-    DECREF(cf_meta_temp_file);
 }
 
-void
-do_consolidate(CompoundFileWriter *self)
+static void
+S_do_consolidate(CompoundFileWriter *self)
 {
-    FSFolder  *folder       = self->folder;
-    CharBuf   *seg_name     = self->seg_name;
+    Folder    *folder       = self->folder;
     Hash      *metadata     = Hash_new(0);
     Hash      *sub_files    = Hash_new(0);
-    CharBuf   *folder_path  = CB_newf("%o%s%o", Folder_Get_Path(folder),
-                                DIR_SEP, seg_name);
-    VArray    *real_files   = DirManip_list_files(folder_path);
-    CharBuf   *outfilename  = CB_newf("%o/cf.dat", self->seg_name);
-    CharBuf   *infilepath   = CB_new(30);
-    OutStream *outstream    = FSFolder_Open_Out(folder, outfilename);
+    VArray    *files        = Folder_List(folder, NULL);
+    VArray    *merged       = VA_new(VA_Get_Size(files));
+    OutStream *outstream    = Folder_Open_Out(folder, (CharBuf*)&cf_file);
     u32_t      i, max;
+    bool_t     rename_success;
 
-    if (!outstream) { THROW(ERR, "Can't open %o", outfilename); }
+    if (!outstream) { RETHROW(INCREF(Err_get_error())); }
 
     /* Start metadata. */
     Hash_Store_Str(metadata, "files", 5, INCREF(sub_files));
     Hash_Store_Str(metadata, "format", 6, 
         (Obj*)CB_newf("%i32", CFWriter_current_file_format) );
 
-    VA_Sort(real_files, NULL, NULL);
-    for (i = 0, max = VA_Get_Size(real_files); i < max; i++) {
-        CharBuf *infilename = (CharBuf*)VA_Fetch(real_files, i);
-        CB_setf(infilepath, "%o/%o", seg_name, infilename);
+    /* Temporary hack!  Prepend the segment name for compatibility with
+     * earlier releases. */
+    CharBuf *infilepath = CB_new(30);
+    bool_t base_len = 0;
+    ZombieCharBuf seg_name = ZCB_BLANK;
+    IxFileNames_local_part(Folder_Get_Path(folder), &seg_name);
+    if (ZCB_Starts_With_Str(&seg_name, "seg_", 4)) {
+        CB_setf(infilepath, "%o/", &seg_name);
+        base_len = CB_Get_Size(infilepath);
+    }
 
-        if (!CB_Ends_With_Str(infilepath, ".json", 5)) {
-            InStream *instream   = FSFolder_Open_In(folder, infilepath);
-            i64_t     offset     = OutStream_Tell(outstream);
+    VA_Sort(files, NULL, NULL);
+    for (i = 0, max = VA_Get_Size(files); i < max; i++) {
+        CharBuf *infilename = (CharBuf*)VA_Fetch(files, i);
+
+        if (!CB_Ends_With_Str(infilename, ".json", 5)) {
+            InStream *instream   = Folder_Open_In(folder, infilename);
             Hash     *file_data  = Hash_new(2);
-            i64_t     len;
+            i64_t     offset, len;
+
+            if (!instream) { RETHROW(INCREF(Err_get_error())); }
 
             /* Absorb the file. */
-            if (!instream) { THROW(ERR, "Failed to open %o", infilepath); }
+            offset = OutStream_Tell(outstream);
             OutStream_Absorb(outstream, instream);
             len = OutStream_Tell(outstream) - offset;
 
@@ -134,7 +125,10 @@ do_consolidate(CompoundFileWriter *self)
                 (Obj*)CB_newf("%i64", offset) );
             Hash_Store_Str(file_data, "length", 6, 
                 (Obj*)CB_newf("%i64", len) );
+            CB_Set_Size(infilepath, base_len);
+            CB_Cat(infilepath, infilename);
             Hash_Store(sub_files, (Obj*)infilepath, (Obj*)file_data);
+            VA_Push(merged, INCREF(infilename));
 
             /* Add filler NULL bytes so that every sub-file begins on a file
              * position multiple of 8. */
@@ -147,52 +141,47 @@ do_consolidate(CompoundFileWriter *self)
             DECREF(instream);
         }
     }
+    DECREF(infilepath);
 
     /* Write metadata to cfmeta file. */
-    S_write_cfmeta(self, metadata);
+    Json_spew_json((Obj*)metadata, (Folder*)self->folder,
+        (CharBuf*)&cfmeta_temp);
+    rename_success = Folder_Rename(self->folder, (CharBuf*)&cfmeta_temp,
+        (CharBuf*)&cfmeta_file);
+    if (!rename_success) { RETHROW(INCREF(Err_get_error())); }
 
     /* Clean up. */
     OutStream_Close(outstream);
     DECREF(outstream);
-    DECREF(real_files);
-    DECREF(outfilename);
-    DECREF(infilepath);
+    DECREF(files);
     DECREF(metadata);
-    DECREF(folder_path);
     {
+        /*
         CharBuf *merged_file;
         Obj     *ignore;
         Hash_Iter_Init(sub_files);
         while (Hash_Iter_Next(sub_files, (Obj**)&merged_file, &ignore)) {
-            if (!FSFolder_Delete_Real(folder, merged_file)) {
+            if (!Folder_Delete(folder, merged_file)) {
                 CharBuf *mess = MAKE_MESS("Can't delete '%o'", merged_file);
                 DECREF(sub_files);
                 Err_throw_mess(ERR, mess);
             }
         }
+        */
     }
     DECREF(sub_files);
+    for (uint32_t i = 0, max = VA_Get_Size(merged); i < max; i++) {
+        CharBuf *merged_file = (CharBuf*)VA_Fetch(merged, i);
+        if (!Folder_Delete(folder, merged_file)) {
+            CharBuf *mess = MAKE_MESS("Can't delete '%o'", merged_file);
+            DECREF(merged);
+            Err_throw_mess(ERR, mess);
+        }
+    }
+    DECREF(merged);
 }
 
-static void
-S_write_cfmeta(CompoundFileWriter *self, Hash *sub_files)
-{ 
-    CharBuf *seg_name        = self->seg_name;
-    CharBuf *outfilename     = CB_newf("%o/cfmeta.json.temp", seg_name);
-    CharBuf *commit_filename = CB_newf("%o/cfmeta.json", seg_name);
-
-    /* Get an OutStream, blast out JSON-encoded file entries. */
-    Json_spew_json((Obj*)sub_files, (Folder*)self->folder, outfilename);
-
-    /* Perform commit. */
-    FSFolder_Rename(self->folder, outfilename, commit_filename);
-
-    /* Clean up. */ 
-    DECREF(commit_filename);
-    DECREF(outfilename);
-}
-
-/* Copyright 2007-2009 Marvin Humphrey
+/* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

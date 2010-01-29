@@ -2,36 +2,66 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Store/FileDes.h"
+#include "KinoSearch/Store/FileHandle.h"
+#include "KinoSearch/Store/FSFileHandle.h"
+#include "KinoSearch/Store/FileWindow.h"
 #include "KinoSearch/Store/InStream.h"
+#include "KinoSearch/Store/RAMFile.h"
+#include "KinoSearch/Store/RAMFileHandle.h"
 
-static INLINE void
-SI_flush(OutStream *self);
-
+/* Inlined version of OutStream_Write_Bytes. */
 static INLINE void
 SI_write_bytes(OutStream *self, const void *bytes, size_t len);
 
+/* Inlined version of OutStream_Write_C32. */
 static INLINE void
 SI_write_c32(OutStream *self, u32_t value);
 
+/* Flush content in the buffer to the FileHandle. */
+static void
+S_flush(OutStream *self);
+
 OutStream*
-OutStream_new(FileDes *file_des) 
+OutStream_open(Obj *file) 
 {
     OutStream *self = (OutStream*)VTable_Make_Obj(OUTSTREAM);
-    return OutStream_init(self, file_des);
+    return OutStream_do_open(self, file);
 }
 
 OutStream*
-OutStream_init(OutStream *self, FileDes *file_des)
+OutStream_do_open(OutStream *self, Obj *file)
 {
     /* Init. */
-    self->buf = MALLOCATE(IO_STREAM_BUF_SIZE, char);
+    self->buf = (char*)MALLOCATE(IO_STREAM_BUF_SIZE);
     self->buf_start   = 0;
     self->buf_pos     = 0;
 
-    /* Assign. */
-    self->file_des = (FileDes*)INCREF(file_des); 
-    self->path     = CB_Clone(FileDes_Get_Path(file_des));
+    /* Obtain a FileHandle. */
+    if (Obj_Is_A(file, FILEHANDLE)) {
+        self->file_handle = (FileHandle*)INCREF(file);
+    }
+    else if (Obj_Is_A(file, RAMFILE)) {
+        self->file_handle 
+            = (FileHandle*)RAMFH_open(NULL, FH_WRITE_ONLY, (RAMFile*)file);
+    }
+    else if (Obj_Is_A(file, CHARBUF)) {
+        self->file_handle = (FileHandle*)FSFH_open((CharBuf*)file,
+            FH_WRITE_ONLY | FH_CREATE | FH_EXCLUSIVE );
+    }
+    else {
+        Err_set_error(Err_new(CB_newf("Invalid type for param 'file': '%o'",
+            Obj_Get_Class_Name(file))));
+        DECREF(self);
+        return NULL;
+    }
+    if (!self->file_handle) {
+        ERR_ADD_FRAME(Err_get_error());
+        DECREF(self);
+        return NULL;
+    }
+
+    /* Derive filepath from FileHandle. */
+    self->path = CB_Clone(FH_Get_Path(self->file_handle));
 
     return self;
 }
@@ -39,9 +69,12 @@ OutStream_init(OutStream *self, FileDes *file_des)
 void
 OutStream_destroy(OutStream *self) 
 {
-    if (self->file_des != NULL) {
-        SI_flush(self);
-        DECREF(self->file_des);
+    if (self->file_handle != NULL) {
+        /* Inlined flush, ignoring errors. */
+        if (self->buf_pos) {
+            FH_Write(self->file_handle, self->buf, self->buf_pos); 
+        }
+        DECREF(self->file_handle);
     }
     DECREF(self->path);
     FREEMEM(self->buf);
@@ -52,11 +85,18 @@ void
 OutStream_absorb(OutStream *self, InStream *instream) 
 {
     char buf[IO_STREAM_BUF_SIZE];
-    u64_t  bytes_left = InStream_Length(instream);
+    i64_t  bytes_left = InStream_Length(instream);
 
+    /* Read blocks of content into an intermediate buffer, than write them to
+     * the OutStream. 
+     * 
+     * TODO: optimize by utilizing OutStream's buffer directly, while still
+     * not flushing too frequently and keeping code complexity under control.
+     * */
+    OutStream_Grow(self, OutStream_Tell(self) + bytes_left);
     while (bytes_left) {
-        const u32_t bytes_this_iter = bytes_left < IO_STREAM_BUF_SIZE
-            ? (u32_t)bytes_left
+        const size_t bytes_this_iter = bytes_left < IO_STREAM_BUF_SIZE
+            ? (size_t)bytes_left
             : IO_STREAM_BUF_SIZE;
         InStream_Read_Bytes(instream, buf, bytes_this_iter);
         SI_write_bytes(self, buf, bytes_this_iter);
@@ -64,7 +104,15 @@ OutStream_absorb(OutStream *self, InStream *instream)
     }
 }
 
-u64_t
+void
+OutStream_grow(OutStream *self, i64_t length)
+{
+    if (!FH_Grow(self->file_handle, length)) {
+        RETHROW(INCREF(Err_get_error()));
+    }
+}
+
+i64_t
 OutStream_tell(OutStream *self) 
 {
     return self->buf_start + self->buf_pos;
@@ -73,26 +121,26 @@ OutStream_tell(OutStream *self)
 void
 OutStream_flush(OutStream *self) 
 {
-    SI_flush(self);
+    S_flush(self);
 }
 
-static INLINE void
-SI_flush(OutStream *self)
+static void
+S_flush(OutStream *self)
 {
-    if (self->file_des == NULL)
+    if (self->file_handle == NULL) {
         THROW(ERR, "Can't write to a closed OutStream for %o", self->path);
-    if ( !FileDes_Write(self->file_des, self->buf, self->buf_pos) ) {
-        THROW(ERR, "Error: %o", FileDes_Get_Mess(self->file_des));
+    }
+    if ( !FH_Write(self->file_handle, self->buf, self->buf_pos) ) {
+        RETHROW(INCREF(Err_get_error()));
     }
     self->buf_start += self->buf_pos;
     self->buf_pos = 0;
 }
 
-u64_t
+i64_t
 OutStream_length(OutStream *self) 
 {
-    SI_flush(self);
-    return FileDes_Length(self->file_des);
+    return OutStream_tell(self);
 }
 
 void
@@ -106,14 +154,15 @@ SI_write_bytes(OutStream *self, const void *bytes, size_t len)
 {
     /* If this data is larger than the buffer size, flush and write. */
     if (len >= IO_STREAM_BUF_SIZE) {
-        SI_flush(self);
-        if ( !FileDes_Write(self->file_des, bytes, len) ) 
-            THROW(ERR, "Error: %o", FileDes_Get_Mess(self->file_des));
+        S_flush(self);
+        if ( !FH_Write(self->file_handle, bytes, len) ) {
+            RETHROW(INCREF(Err_get_error()));
+        }
         self->buf_start += len;
     }
     /* If there's not enough room in the buffer, flush then add. */
     else if (self->buf_pos + len >= IO_STREAM_BUF_SIZE) {
-        SI_flush(self);
+        S_flush(self);
         memcpy((self->buf + self->buf_pos), bytes, len);
         self->buf_pos += len;
     }
@@ -127,8 +176,9 @@ SI_write_bytes(OutStream *self, const void *bytes, size_t len)
 static INLINE void
 SI_write_u8(OutStream *self, u8_t value)
 {
-    if (self->buf_pos >= IO_STREAM_BUF_SIZE)
-        SI_flush(self);
+    if (self->buf_pos >= IO_STREAM_BUF_SIZE) {
+        S_flush(self);
+    }
     self->buf[ self->buf_pos++ ] = (char)value;
 }
 
@@ -172,20 +222,14 @@ OutStream_write_u32(OutStream *self, u32_t value)
 static INLINE void
 SI_write_u64(OutStream *self, u64_t value) 
 {
-    u8_t buf[8];
-
-    /* Store as big-endian. */
-    buf[0] = (value >> 56) & 0xFF;
-    buf[1] = (value >> 48) & 0xFF;
-    buf[2] = (value >> 40) & 0xFF;
-    buf[3] = (value >> 32) & 0xFF;
-    buf[4] = (value >> 24) & 0xFF;
-    buf[5] = (value >> 16) & 0xFF;
-    buf[6] = (value >> 8 ) & 0xFF;
-    buf[7] = (value      ) & 0xFF;
-
-    /* Print encoded Long to the output handle. */
-    SI_write_bytes(self, buf, 8);
+#ifdef BIG_END
+    SI_write_bytes(self, &value, 8);
+#else 
+    char  buf[sizeof(u64_t)];
+    char *buf_copy = buf;
+    NumUtil_encode_bigend_u64(value, &buf_copy);
+    SI_write_bytes(self, buf, sizeof(u64_t));
+#endif
 }
 
 void 
@@ -272,12 +316,17 @@ OutStream_write_string(OutStream *self, const char *string, size_t len)
 void
 OutStream_close(OutStream *self)
 {
-    SI_flush(self);
-    DECREF(self->file_des);
-    self->file_des = NULL;
+    if (self->file_handle) {
+        S_flush(self);
+        if (!FH_Close(self->file_handle)) {
+            RETHROW(INCREF(Err_get_error()));
+        }
+        DECREF(self->file_handle);
+        self->file_handle = NULL;
+    }
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

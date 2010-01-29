@@ -5,7 +5,6 @@
 #include "KinoSearch/Index/TermVector.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
-#include "KinoSearch/Util/I32Array.h"
 
 /* Extract a document's compressed TermVector data into ( term_text =>
  * compressed positional data ) pairs.
@@ -160,9 +159,9 @@ S_extract_tv_from_tv_buf(const CharBuf *field, const CharBuf *term_text,
 
     if (posdata != posdata_end) {
         num_pos   = NumUtil_decode_c32(&posdata);
-        positions = MALLOCATE(num_pos, i32_t);
-        starts    = MALLOCATE(num_pos, i32_t);
-        ends      = MALLOCATE(num_pos, i32_t);
+        positions = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
+        starts    = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
+        ends      = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
     }
 
     /* Expand C32s. */
@@ -188,7 +187,7 @@ S_extract_tv_from_tv_buf(const CharBuf *field, const CharBuf *term_text,
     return retval;
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

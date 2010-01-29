@@ -1,3 +1,4 @@
+package KinoSearch::Analysis::Inversion;
 use KinoSearch;
 
 1;
@@ -19,7 +20,7 @@ CODE:
         SV *text_sv = NULL;
         XSBind_allot_params( &(ST(0)), 1, items, 
             "KinoSearch::Analysis::Inversion::new_PARAMS",
-            &text_sv, SNL("text"),
+            &text_sv, "text", 4,
             NULL);
         if (XSBind_sv_defined(text_sv)) {
             STRLEN len;
@@ -28,13 +29,13 @@ CODE:
         }
     }
         
-    KOBJ_TO_SV_NOINC( kino_Inversion_new(starter_token), RETVAL );
+    RETVAL = KINO_OBJ_TO_SV_NOINC(kino_Inversion_new(starter_token));
     KINO_DECREF(starter_token);
 }
 OUTPUT: RETVAL
 END_XS
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Analysis::Inversion",
     bind_methods => [qw( Append Reset Invert Next )],
@@ -43,7 +44,7 @@ Boilerplater::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

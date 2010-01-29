@@ -4,10 +4,10 @@ use warnings;
 use Test::More tests => 7;
 
 package BasicObj;
-use base qw( KinoSearch::Obj );
+use base qw( KinoSearch::Object::Obj );
 
 package MyObj;
-use base qw( KinoSearch::Obj );
+use base qw( KinoSearch::Object::Obj );
 
 my %extra;
 
@@ -49,6 +49,7 @@ sub deserialize {
 package main;
 use Storable qw( freeze thaw );
 use KinoSearch::Test;
+use Carp;
 
 my $obj = BasicObj->new;
 run_test_cycle( $obj, sub { ref( $_[0] ) } );
@@ -56,7 +57,7 @@ run_test_cycle( $obj, sub { ref( $_[0] ) } );
 my $subclassed_obj = MyObj->new("bar");
 run_test_cycle( $subclassed_obj, sub { shift->get_extra } );
 
-my $bb = KinoSearch::Obj::ByteBuf->new("foo");
+my $bb = KinoSearch::Object::ByteBuf->new("foo");
 run_test_cycle( $bb, sub { shift->to_perl } );
 
 SKIP: {
@@ -76,11 +77,13 @@ sub run_test_cycle {
     my $thawed = thaw($frozen);
     is( $transform->($thawed), $transform->($orig), "$class: freeze/thaw" );
 
-    my $ram_file  = KinoSearch::Store::RAMFileDes->new;
-    my $outstream = KinoSearch::Store::OutStream->new($ram_file);
+    my $ram_file = KinoSearch::Store::RAMFile->new;
+    my $outstream = KinoSearch::Store::OutStream->open( file => $ram_file )
+        or confess KinoSearch->error;
     $orig->serialize($outstream);
     $outstream->close;
-    my $instream     = KinoSearch::Store::InStream->new($ram_file);
+    my $instream = KinoSearch::Store::InStream->open( file => $ram_file )
+        or confess KinoSearch->error;
     my $deserialized = $class->deserialize($instream);
 
     is( $transform->($deserialized),

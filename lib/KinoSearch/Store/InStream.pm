@@ -1,3 +1,4 @@
+package KinoSearch::Store::InStream;
 use KinoSearch;
 
 1;
@@ -9,61 +10,20 @@ __BINDING__
 my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch::Store::InStream
 
-SV*
-new(either_sv, file_des)
-    SV           *either_sv;
-    kino_FileDes *file_des;
-CODE:
-{
-    kino_InStream *self = (kino_InStream*)XSBind_new_blank_obj(either_sv);
-    kino_InStream_init(self, file_des);
-    KOBJ_TO_SV_NOINC(self, RETVAL);
-}
-OUTPUT: RETVAL
-
-kino_InStream*
-reopen(self, filename, offset, len)
-    kino_InStream *self;
-    kino_ZombieCharBuf filename;
-    chy_u64_t offset;
-    chy_u64_t len;
-CODE:
-    RETVAL = Kino_InStream_Reopen(self, (kino_CharBuf*)&filename, offset, len);
-OUTPUT: RETVAL
-
 void
-read_bytes(self, buffer_sv, len)
+read(self, buffer_sv, len, ...)
     kino_InStream *self;
     SV *buffer_sv;
     size_t len;
 PPCODE:
 {
+    UV offset = items == 4 ? SvUV(ST(3)) : 0;
     char *ptr;
+    size_t total_len = offset + len;
     SvUPGRADE(buffer_sv, SVt_PV);
-    ptr = SvGROW(buffer_sv, len + 1);
-    Kino_InStream_Read_Bytes(self, ptr, len);
-    if (!SvPOK(buffer_sv)) SvCUR_set(buffer_sv, 0);
-    SvPOK_on(buffer_sv);
-    if (SvCUR(buffer_sv) < len) {
-        SvCUR_set(buffer_sv, len);
-        *(SvEND(buffer_sv)) = '\0';
-    }
-}
-
-void
-read_byteso(self, buffer_sv, start, len)
-    kino_InStream *self;
-    SV *buffer_sv;
-    size_t start;
-    size_t len;
-PPCODE:
-{
-    size_t total_len = start + len;
-    char *ptr;
-    SvUPGRADE(buffer_sv, SVt_PV);
-    if (!SvPOK(buffer_sv)) SvCUR_set(buffer_sv, 0);
+    if (!SvPOK(buffer_sv)) { SvCUR_set(buffer_sv, 0); }
     ptr = SvGROW(buffer_sv, total_len + 1);
-    Kino_InStream_Read_BytesO(self, ptr, start, len);
+    Kino_InStream_Read_Bytes(self, ptr + offset, len);
     SvPOK_on(buffer_sv);
     if (SvCUR(buffer_sv) < total_len) {
         SvCUR_set(buffer_sv, total_len);
@@ -104,7 +64,7 @@ CODE:
 OUTPUT: RETVAL
 END_XS_CODE
 
-Boilerplater::Binding::Perl::Class->register(
+Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Store::InStream",
     xs_code      => $xs_code,
@@ -113,6 +73,7 @@ Boilerplater::Binding::Perl::Class->register(
             Seek
             Tell
             Length
+            Reopen
             Close
             Read_I8
             Read_I32
@@ -126,11 +87,12 @@ Boilerplater::Binding::Perl::Class->register(
             Read_F64
             )
     ],
+    bind_constructors => ['open|do_open'],
 );
 
 __COPYRIGHT__
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

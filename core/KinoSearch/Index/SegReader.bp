@@ -15,7 +15,7 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
 
     i32_t    doc_max;
     i32_t    del_count;
-    i32_t    seg_num;
+    i64_t    seg_num;
     CharBuf *seg_name;
 
     inert incremented SegReader*
@@ -35,7 +35,7 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
     init(SegReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot = NULL, VArray *segments, i32_t seg_tick);
 
-    void
+    public void
     Destroy(SegReader *self);
 
     /** Constructor helper.
@@ -64,7 +64,7 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
 
     /** Return the number of the segment. 
      */
-    public i32_t
+    public i64_t
     Get_Seg_Num(SegReader *self);
 
     public i32_t
@@ -83,7 +83,7 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
     Seg_Readers(SegReader *self);
 }
 
-/* Copyright 2006-2009 Marvin Humphrey
+/* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

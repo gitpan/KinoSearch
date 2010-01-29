@@ -9,9 +9,7 @@ KinoSearch::Docs::FileLocking - Manage indexes on shared volumes.
 
     use Sys::Hostname qw( hostname );
     my $hostname = hostname() or die "Can't get unique hostname";
-    my $manager = KinoSearch::Index::IndexManager->new( 
-        hostname => $hostname,
-    );
+    my $manager = KinoSearch::Index::IndexManager->new( host => $hostname );
 
     # Index time:
     my $indexer = KinoSearch::Indexer->new(
@@ -41,13 +39,13 @@ On shared volumes, however, the default locking mechanism fails, and manual
 intervention becomes necessary.
 
 Both read and write applications accessing an index on a shared volume need
-to identify themselves with a unique C<< hostname >> value.  Knowing
-the hostname makes it possible to tell which lockfiles belong to other
-machines and therefore must not be removed when the lockfile's pid number
-appears not to correspond to an active process.
+to identify themselves with a unique C<< host >> id, e.g. hostname or
+ip address.  Knowing the host id makes it possible to tell which lockfiles
+belong to other machines and therefore must not be removed when the
+lockfile's pid number appears not to correspond to an active process.
 
 At index-time, the danger is that multiple indexing processes from
-different machines which fail to specify a unique C<< hostname >> can
+different machines which fail to specify a unique C<< host >> id can
 delete each others' lockfiles and then attempt to modify the index at the
 same time, causing index corruption.  The search-time problem is more
 complex.  
@@ -85,7 +83,7 @@ Since shared locks are implemented using lockfiles located in the index
 directory (as are exclusive locks), reader applications must have write
 access for read locking to work.  Stale lock files from crashed processes
 are ordinarily cleared away the next time the same machine -- as identified
-by the C<< hostname >> parameter -- opens another IndexReader. (The
+by the C<< host >> parameter -- opens another IndexReader. (The
 classic technique of timing out lock files is not feasible because search
 processes may lie dormant indefinitely.) However, please be aware that if
 the last thing a given machine does is crash, lock files belonging to it
@@ -101,7 +99,7 @@ may persist, preventing deletion of obsolete index data.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2009 Marvin Humphrey
+Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
