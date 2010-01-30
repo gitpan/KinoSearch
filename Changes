@@ -1,5 +1,12 @@
 Revision history for KinoSearch
 
+0.30_082 2010-01-30
+
+  Bugfixes:
+    
+    * Improve compatibility with Perl 5.11.x.
+
+
 0.30_081 2010-01-29
 
   Bugfixes:
