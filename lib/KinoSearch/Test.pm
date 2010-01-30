@@ -182,6 +182,9 @@ PPCODE:
     else if (strEQ(package, "TestJson")) {
         kino_TestJson_run_tests();
     }
+    else if (strEQ(package, "TestMemory")) {
+        kino_TestMemory_run_tests();
+    }
     else if (strEQ(package, "TestIndexFileNames")) {
         kino_TestIxFileNames_run_tests();
     }

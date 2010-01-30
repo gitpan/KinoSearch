@@ -507,7 +507,8 @@ PostPool_refill(PostingPool *self)
 
         /* Add to the run's cache. */
         if (num_elems >= self->cache_cap) {
-            PostPool_Grow_Cache(self, Memory_oversize(num_elems + 1));
+            size_t new_cap = Memory_oversize(num_elems + 1, sizeof(Obj*));
+            PostPool_Grow_Cache(self, new_cap);
         }
         self->cache[ num_elems ] = (Obj*)raw_posting;
         num_elems++;

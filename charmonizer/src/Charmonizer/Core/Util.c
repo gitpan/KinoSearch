@@ -88,6 +88,15 @@ Util_flength(FILE *f)
     return len;
 }
 
+char*
+Util_strdup(const char *string)
+{
+    size_t len = strlen(string);
+    char *copy = (char*)malloc(len + 1);
+    strncpy(copy, string, len);
+    return copy;
+}
+
 void 
 Util_die(const char* format, ...) 
 {

@@ -351,9 +351,10 @@ CB_to_string(CharBuf *self)
 void
 CB_cat_char(CharBuf *self, u32_t code_point)
 {
-    const size_t MIN_SAFE_ROOM = 4;
-    if (self->size + MIN_SAFE_ROOM >= self->cap) { 
-        S_grow(self, Memory_oversize(self->size + MIN_SAFE_ROOM));
+    const size_t MAX_UTF8_BYTES = 4;
+    if (self->size + MAX_UTF8_BYTES >= self->cap) { 
+        S_grow(self, Memory_oversize(self->size + MAX_UTF8_BYTES, 
+            sizeof(char)));
     }
     self->size += StrHelp_encode_utf8_char(code_point, (u8_t*)CBEND(self));
     *CBEND(self) = '\0';
@@ -507,7 +508,10 @@ void
 CB_cat_trusted_str(CharBuf *self, const char* ptr, size_t size) 
 {
     const size_t new_size = self->size + size;
-    if (new_size >= self->cap) { S_grow(self, Memory_oversize(new_size)); }
+    if (new_size >= self->cap) { 
+        size_t amount = Memory_oversize(new_size, sizeof(char));
+        S_grow(self, amount); 
+    }
     memcpy((self->ptr + self->size), ptr, size);
     self->size = new_size;
     self->ptr[new_size] = '\0';
@@ -517,7 +521,10 @@ void
 CB_cat(CharBuf *self, const CharBuf *other) 
 {
     const size_t new_size = self->size + other->size;
-    if (new_size >= self->cap) { S_grow(self, Memory_oversize(new_size)); }
+    if (new_size >= self->cap) { 
+        size_t amount = Memory_oversize(new_size, sizeof(char));
+        S_grow(self, amount); 
+    }
     memcpy((self->ptr + self->size), other->ptr, other->size);
     self->size = new_size;
     self->ptr[new_size] = '\0';

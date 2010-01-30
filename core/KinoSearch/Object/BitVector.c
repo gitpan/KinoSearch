@@ -126,7 +126,8 @@ void
 BitVec_set(BitVector *self, u32_t tick) 
 {
     if (tick >= self->cap) {
-        BitVec_Grow(self, Memory_oversize(tick + 1));
+        uint32_t new_cap = (uint32_t)Memory_oversize(tick + 1, 0);
+        BitVec_Grow(self, new_cap);
     }
     NumUtil_u1set(self->bits, tick);
 }
@@ -306,7 +307,8 @@ void
 BitVec_flip(BitVector *self, u32_t tick) 
 {
     if (tick >= self->cap) {
-        BitVec_Grow(self, Memory_oversize(tick + 1));
+        uint32_t new_cap = (uint32_t)Memory_oversize(tick + 1, 0);
+        BitVec_Grow(self, new_cap);
     }
     NumUtil_u1flip(self->bits, tick);
 }

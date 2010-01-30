@@ -152,7 +152,9 @@ static INLINE void
 SI_cat_bytes(ByteBuf *self, const void *bytes, size_t size) 
 {
     const size_t new_size = self->size + size;
-    if (new_size > self->cap) { S_grow(self, Memory_oversize(new_size)); }
+    if (new_size > self->cap) { 
+        S_grow(self, Memory_oversize(new_size, sizeof(char))); 
+    }
     memcpy((self->buf + self->size), bytes, size);
     self->size = new_size;
 }

@@ -1,5 +1,16 @@
 Revision history for KinoSearch
 
+0.30_081 2010-01-29
+
+  Bugfixes:
+    
+    * Improve compatibility with OS X 10.4 Tiger.
+
+  Miscellaneous:
+
+    * Make build process less verbose.
+
+
 0.30_08 2010-01-28
 
   Improvements:

@@ -531,6 +531,8 @@ no_index:
     - core/KinoSearch/Test/Util/TestIndexFileNames.c
     - core/KinoSearch/Test/Util/TestJson.bp
     - core/KinoSearch/Test/Util/TestJson.c
+    - core/KinoSearch/Test/Util/TestMemory.bp
+    - core/KinoSearch/Test/Util/TestMemory.c
     - core/KinoSearch/Test/Util/TestMemoryPool.bp
     - core/KinoSearch/Test/Util/TestMemoryPool.c
     - core/KinoSearch/Test/Util/TestNumberUtils.bp
@@ -917,6 +919,7 @@ no_index:
     - t/core/036-i32_array.t
     - t/core/037-atomic.t
     - t/core/038-lock_free_registry.t
+    - t/core/039-memory.t
     - t/core/050-ram_file_handle.t
     - t/core/051-fs_file_handle.t
     - t/core/052-instream.t
@@ -1002,7 +1005,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_08
+    version: 0.30_081
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1282,4 +1285,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.30_08
+version: 0.30_081

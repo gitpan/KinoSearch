@@ -91,7 +91,8 @@ Inversion_append(Inversion *self, Token *token)
         THROW(ERR, "Can't append tokens after inversion");
     }
     if (self->size >= self->cap) {
-        S_grow(self, Memory_oversize(self->size + 1));
+        size_t new_capacity = Memory_oversize(self->size + 1, sizeof(Token*));
+        S_grow(self, new_capacity);
     }
     self->tokens[ self->size ] = token;
     self->size++;

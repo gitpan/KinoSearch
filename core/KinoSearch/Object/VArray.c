@@ -165,7 +165,7 @@ void
 VA_push(VArray *self, Obj *element) 
 {
     if (self->size == self->cap) { 
-        VA_Grow(self, Memory_oversize(self->size + 1));
+        VA_Grow(self, Memory_oversize(self->size + 1, sizeof(Obj*)));
     }
     self->elems[ self->size ] = element;
     self->size++;
@@ -178,7 +178,7 @@ VA_push_varray(VArray *self, VArray *other)
     u32_t tick = self->size;
     u32_t new_size = self->size + other->size;
     if (new_size > self->cap) { 
-        VA_Grow(self, Memory_oversize(new_size)); 
+        VA_Grow(self, Memory_oversize(new_size, sizeof(Obj*))); 
     }
     for (i = 0; i < other->size; i++, tick++) {
         Obj *elem = VA_Fetch(other, i);
@@ -202,7 +202,7 @@ void
 VA_unshift(VArray *self, Obj *elem) 
 {
     if (self->size == self->cap) { 
-        VA_Grow(self, Memory_oversize(self->size + 1));
+        VA_Grow(self, Memory_oversize(self->size + 1, sizeof(Obj*)));
     }
     memmove(self->elems + 1, self->elems, self->size * sizeof(Obj*));
     self->elems[0] = elem;
@@ -238,9 +238,11 @@ VA_fetch(VArray *self, u32_t num)
 void
 VA_store(VArray *self, u32_t tick, Obj *elem) 
 {
-    if (tick >= self->cap) { VA_Grow(self, Memory_oversize(tick + 1)); }
+    if (tick >= self->cap) {
+        VA_Grow(self, Memory_oversize(tick + 1, sizeof(Obj*))); 
+    }
     if (tick < self->size) { DECREF(self->elems[tick]); }
-    else { self->size = tick + 1; }
+    else                   { self->size = tick + 1; }
     self->elems[tick] = elem;
 }
 

@@ -510,6 +510,8 @@ core/KinoSearch/Test/Util/TestIndexFileNames.bp
 core/KinoSearch/Test/Util/TestIndexFileNames.c
 core/KinoSearch/Test/Util/TestJson.bp
 core/KinoSearch/Test/Util/TestJson.c
+core/KinoSearch/Test/Util/TestMemory.bp
+core/KinoSearch/Test/Util/TestMemory.c
 core/KinoSearch/Test/Util/TestMemoryPool.bp
 core/KinoSearch/Test/Util/TestMemoryPool.c
 core/KinoSearch/Test/Util/TestNumberUtils.bp
@@ -989,6 +991,7 @@ t/core/035-json.t
 t/core/036-i32_array.t
 t/core/037-atomic.t
 t/core/038-lock_free_registry.t
+t/core/039-memory.t
 t/core/050-ram_file_handle.t
 t/core/051-fs_file_handle.t
 t/core/052-instream.t

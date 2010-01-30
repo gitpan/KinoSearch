@@ -79,7 +79,8 @@ void
 SortEx_feed(SortExternal *self, Obj *item)
 {
     if (self->cache_max == self->cache_cap) {
-        SortEx_Grow_Cache(self, Memory_oversize(self->cache_max + 1));
+        size_t amount = Memory_oversize(self->cache_max + 1, sizeof(Obj*));
+        SortEx_Grow_Cache(self, amount);
     }
     self->cache[ self->cache_max++ ] = item;
 }
@@ -228,7 +229,8 @@ S_absorb_slices(SortExternal *self, Obj *endpost)
         if (slice_size) {
             /* Move slice content from run cache to main cache. */
             if (self->cache_max + slice_size > self->cache_cap) {
-                size_t cap = Memory_oversize(self->cache_max + slice_size);
+                size_t cap = Memory_oversize(self->cache_max + slice_size, 
+                    sizeof(Obj*));
                 SortEx_Grow_Cache(self, cap);
             }
             memcpy(self->cache + self->cache_max, 
@@ -306,7 +308,8 @@ SortEx_refill(SortExternal *self)
         Obj *elem = SortEx_Recover_Item(self);
         if (elem == NULL) break;
         if (self->cache_max == self->cache_cap) {
-            SortEx_Grow_Cache(self, Memory_oversize(self->cache_max + 1));
+            SortEx_Grow_Cache(self,
+                Memory_oversize(self->cache_max + 1, sizeof(Obj*)));
         }
         self->cache[ self->cache_max++ ] = elem;
     }
