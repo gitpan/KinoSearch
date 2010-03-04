@@ -94,6 +94,7 @@ Util_strdup(const char *string)
     size_t len = strlen(string);
     char *copy = (char*)malloc(len + 1);
     strncpy(copy, string, len);
+    copy[len] = '\0';
     return copy;
 }
 

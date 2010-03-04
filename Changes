@@ -1,5 +1,13 @@
 Revision history for KinoSearch
 
+0.30_083 2010-03-03
+
+  Bugfixes:
+
+    * r5835: Add missing NULL-termination to Charmonizer strdup() clone.
+    * r5883, r5884: fix missing get_analyzers() method in PolyAnalyzer.
+
+
 0.30_082 2010-01-30
 
   Bugfixes:

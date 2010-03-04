@@ -37,6 +37,7 @@ Clownfish::Binding::Perl::Class->register(
     parcel            => "KinoSearch",
     class_name        => "KinoSearch::Analysis::PolyAnalyzer",
     bind_constructors => ["new"],
+    bind_methods      => [qw( Get_Analyzers )],
     make_pod          => {
         methods     => [qw( get_analyzers )],
         synopsis    => $synopsis,

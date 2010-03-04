@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-use Test::More tests => 15;
+use Test::More tests => 16;
 use KinoSearch::Test::TestUtils qw( test_analyzer );
 
 my $source_text = 'Eats, shoots and leaves.';
@@ -46,3 +46,4 @@ $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
 test_analyzer( $polyanalyzer, $source_text, [ 'eat', 'shoot', 'leav' ],
     'with Stemmer' );
 
+ok( $polyanalyzer->get_analyzers(), "get_analyzers method");
