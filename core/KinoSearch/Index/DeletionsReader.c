@@ -4,11 +4,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DeletionsReader.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/BitVecDelDocs.h"
 #include "KinoSearch/Index/DeletionsWriter.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/BitVecMatcher.h"
 #include "KinoSearch/Search/SeriesMatcher.h"
 #include "KinoSearch/Store/Folder.h"

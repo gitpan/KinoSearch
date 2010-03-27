@@ -167,6 +167,16 @@ class KinoSearch::Object::Obj {
      */
     public abstract void
     Mimic(Obj *self, Obj *other);
+
+    /** Return the RAM used by the object, including its cached host object.
+     */
+    abstract size_t
+    RAM_Usage(Obj *self);
+
+    /** Return the RAM used by the cached host object, if any. 
+     */
+    size_t
+    Host_RAM_Usage(Obj *self);
 }
 
 __C__

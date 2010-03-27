@@ -1,12 +1,63 @@
 Revision history for KinoSearch
 
+0.30_09 2010-03-26
+
+  New public classes:
+
+    * KSx::Search::ProximityQuery
+
+  New documentation:
+
+    * KinoSearch - new backwards compatibility policy.
+    * KinoSearch::Docs::DevGuide
+
+  Improvements:
+
+    * Lower memory consumption while indexing sortable fields.
+    * Lower address space requirements for very large indexes with sortable
+      fields.
+    * Improved error reporting for incorrectly implemented subclasses.
+
+  Moved, but compatibility stubs retained:
+
+    * KinoSearch::Schema                  -> KinoSearch::Plan::Schema
+    * KinoSearch::Indexer                 -> KinoSearch::Index::Indexer
+    * KinoSearch::Searcher                -> KinoSearch::Search::IndexSearcher
+    * KinoSearch::FieldType               -> KinoSearch::Plan::FieldType
+    * KinoSearch::FieldType::BlobType     -> KinoSearch::Plan::BlobType
+    * KinoSearch::FieldType::FullTextType -> KinoSearch::Plan::FullTextType
+    * KinoSearch::FieldType::StringType   -> KinoSearch::Plan::StringType
+    * KinoSearch::QueryParser             -> KinoSearch::Search::QueryParser
+    * KinoSearch::Doc                     -> KinoSearch::Document::Doc
+    * KinoSearch::Doc::HitDoc             -> KinoSearch::Document::HitDoc
+    * KinoSearch::Search::Searchable      -> KinoSearch::Search::Searcher
+    * KinoSearch::Search::HitCollector    -> KinoSearch::Search::Collector
+    * KinoSearch::Search::HitCollector::BitCollector
+                                -> KinoSearch::Search::Collector::BitCollector
+
+  Public API Changes:
+
+    * KinoSearch::Highlight::Highlighter
+      o new() - param "searchable" replaced by "searcher".
+      o get_searchable() - replaced by get_searcher().
+
+    * KinoSearch::Search::PolySearcher
+      o new() - param "searchables" replaced by "searchers".
+
+    * KinoSearch::Search::Query
+      o make_compiler() - parameter "searchable" replaced by "searcher".
+
+    * KinoSearch::Search::Compiler
+      o new() - parameter "searchable" replaced by "searcher".
+      o highlight_spans() - parameter "searchable" replaced by "searcher".
+
+
 0.30_083 2010-03-03
 
   Bugfixes:
 
     * r5835: Add missing NULL-termination to Charmonizer strdup() clone.
     * r5883, r5884: fix missing get_analyzers() method in PolyAnalyzer.
-
 
 0.30_082 2010-01-30
 

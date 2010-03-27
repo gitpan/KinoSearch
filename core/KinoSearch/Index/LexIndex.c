@@ -3,12 +3,12 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/LexIndex.h"
-#include "KinoSearch/FieldType.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/TermStepper.h"
 #include "KinoSearch/Plan/Architecture.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 
@@ -35,6 +35,7 @@ LexIndex_init(LexIndex *self, Schema *schema, Folder *folder,
     Architecture *arch = Schema_Get_Architecture(schema);
 
     /* Init. */
+    Lex_init((Lexicon*)self, field);
     self->tinfo        = TInfo_new(0);
     self->tick         = 0;
 

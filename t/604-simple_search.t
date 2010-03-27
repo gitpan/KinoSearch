@@ -2,12 +2,12 @@ use strict;
 use warnings;
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => KinoSearch::Analysis::Tokenizer->new, );
     $self->spec_field( name => 'title', type => $type );
     $self->spec_field( name => 'body',  type => $type );
@@ -21,7 +21,7 @@ use KinoSearch::Test;
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = MySchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -39,15 +39,15 @@ while ( my ( $title, $body ) = each %docs ) {
 }
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
-my $or_parser = KinoSearch::QueryParser->new(
+my $or_parser = KinoSearch::Search::QueryParser->new(
     schema   => $schema,
     analyzer => $tokenizer,
     fields   => [ 'title', 'body', ],
 );
-my $and_parser = KinoSearch::QueryParser->new(
+my $and_parser = KinoSearch::Search::QueryParser->new(
     schema         => $schema,
     analyzer       => $tokenizer,
     fields         => [ 'title', 'body', ],

@@ -2,7 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/TermStepper.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/StringHelper.h"

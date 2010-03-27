@@ -21,7 +21,7 @@ END_SYNOPSIS
 my $constructor = <<'END_CONSTRUCTOR_CODE_SAMPLE';
     my $compiler = MyCompiler->SUPER::new(
         parent     => $my_query,
-        searchable => $searcher,
+        searcher   => $searcher,
         similarity => $sim,        # default: undef
         boost      => undef,       # default: see below
     );

@@ -8,9 +8,9 @@ my $path_to_index = '/path/to/index';
 use CGI;
 use Data::Pageset;
 use HTML::Entities qw( encode_entities );
-use KinoSearch::Searcher;
+use KinoSearch::Search::IndexSearcher;
 use KinoSearch::Highlight::Highlighter;
-use KinoSearch::QueryParser;
+use KinoSearch::Search::QueryParser;
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Search::ANDQuery;
 
@@ -20,9 +20,11 @@ my $offset        = $cgi->param('offset') || 0;
 my $category      = $cgi->param('category') || '';
 my $hits_per_page = 10;
 
-# Create a Searcher and a QueryParser.
-my $searcher = KinoSearch::Searcher->new( index => $path_to_index );
-my $qparser  = KinoSearch::QueryParser->new( 
+# Create an IndexSearcher and a QueryParser.
+my $searcher = KinoSearch::Search::IndexSearcher->new( 
+    index => $path_to_index,
+);
+my $qparser = KinoSearch::Search::QueryParser->new( 
     schema => $searcher->get_schema,
 );
 
@@ -48,9 +50,9 @@ my $hit_count = $hits->total_hits;
 
 # Arrange for highlighted excerpts to be created.
 my $highlighter = KinoSearch::Highlight::Highlighter->new(
-    searchable => $searcher,
-    query      => $q,
-    field      => 'content'
+    searcher => $searcher,
+    query    => $q,
+    field    => 'content'
 );
 
 # Create result list.

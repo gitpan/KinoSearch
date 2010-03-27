@@ -15,7 +15,7 @@ L<KinoSearch::Highlight::Highlighter> uses information generated at index
 time.  To save resources, highlighting is disabled by default and must be
 turned on for individual fields.
 
-    my $highlightable = KinoSearch::FieldType::FullTextType->new(
+    my $highlightable = KinoSearch::Plan::FullTextType->new(
         analyzer      => $polyanalyzer,
         highlightable => 1,
     );
@@ -27,9 +27,9 @@ To add highlighting and excerpting to the search.cgi sample app, create a
 C<$highlighter> object outside the hits iterating loop...
 
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        searchable => $searcher,
-        query      => $q,
-        field      => 'content'
+        searcher => $searcher,
+        query    => $q,
+        field    => 'content'
     );
 
 ... then modify the loop and the per-hit display to generate and include the

@@ -4,11 +4,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DocReader.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DocWriter.h"
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 

@@ -1,6 +1,5 @@
 #define C_KINO_VTABLE
 #define C_KINO_OBJ
-#define C_KINO_ZOMBIECHARBUF
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 
@@ -88,6 +87,8 @@ CharBuf*
 VTable_get_name(VTable *self)   { return self->name; }
 VTable*
 VTable_get_parent(VTable *self) { return self->parent; }
+size_t
+VTable_get_obj_alloc_size(VTable *self) { return self->obj_alloc_size; }
 
 void
 VTable_init_registry()
@@ -140,7 +141,7 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
             Hash *meths = Hash_new(num_novel);
             u32_t i;
             CharBuf *scrunched = CB_new(0);
-            ZombieCharBuf callback_name = ZCB_BLANK;
+            ZombieCharBuf *callback_name = ZCB_BLANK();
             for (i = 0; i < num_novel; i++) {
                 CharBuf *meth = (CharBuf*)VA_fetch(novel_host_methods, i);
                 S_scrunch_charbuf(meth, scrunched);
@@ -148,9 +149,9 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
             }
             for (i = 0; singleton->callbacks[i] != NULL; i++) {
                 kino_Callback *const callback = singleton->callbacks[i];
-                ZCB_Assign_Str(&callback_name, callback->name,
+                ZCB_Assign_Str(callback_name, callback->name,
                     callback->name_len);
-                S_scrunch_charbuf((CharBuf*)&callback_name, scrunched);
+                S_scrunch_charbuf((CharBuf*)callback_name, scrunched);
                 if (Hash_Fetch(meths, (Obj*)scrunched)) {
                     VTable_Override(singleton, callback->func, 
                         callback->offset);
@@ -189,6 +190,15 @@ VTable_make_obj(VTable *self)
 }
 
 Obj*
+VTable_init_obj(VTable *self, void *allocation)
+{
+    Obj *obj = (Obj*)allocation;
+    obj->vtable = self;
+    obj->ref.count = 1;
+    return obj;
+}
+
+Obj*
 VTable_load_obj(VTable *self, Obj *dump)
 {
     Obj_load_t load = (Obj_load_t)METHOD(self, Obj, Load);
@@ -201,10 +211,10 @@ VTable_load_obj(VTable *self, Obj *dump)
 static void
 S_scrunch_charbuf(CharBuf *source, CharBuf *target)
 {
-    ZombieCharBuf iterator = ZCB_make(source);
+    ZombieCharBuf *iterator = ZCB_WRAP(source);
     CB_Set_Size(target, 0);
-    while (ZCB_Get_Size(&iterator)) {
-        u32_t code_point = ZCB_Nip_One(&iterator);
+    while (ZCB_Get_Size(iterator)) {
+        u32_t code_point = ZCB_Nip_One(iterator);
         if (code_point > 127) {
             THROW(ERR, "Can't fold case for %o", source);
         }

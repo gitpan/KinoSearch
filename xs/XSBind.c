@@ -1,5 +1,4 @@
 #define C_KINO_OBJ
-#define C_KINO_ZOMBIECHARBUF
 #include "XSBind.h"
 #include "KinoSearch/Util/StringHelper.h"
 
@@ -45,8 +44,8 @@ XSBind_new_blank_obj(SV *either_sv)
         /* Use the supplied class name string to find a VTable. */
         STRLEN len;
         char *ptr = SvPVutf8(either_sv, len);
-        kino_ZombieCharBuf klass = kino_ZCB_make_str(ptr, len);
-        vtable = kino_VTable_singleton((kino_CharBuf*)&klass, NULL);
+        kino_ZombieCharBuf *klass = KINO_ZCB_WRAP_STR(ptr, len);
+        vtable = kino_VTable_singleton((kino_CharBuf*)klass, NULL);
     }
 
     /* Use the VTable to allocate a new blank object of the right size. */
@@ -54,9 +53,9 @@ XSBind_new_blank_obj(SV *either_sv)
 }
 
 kino_Obj*
-XSBind_sv_to_kino_obj(SV *sv, kino_VTable *vtable, kino_ZombieCharBuf *zcb)
+XSBind_sv_to_kino_obj(SV *sv, kino_VTable *vtable, void *allocation)
 {
-    kino_Obj *retval = XSBind_maybe_sv_to_kino_obj(sv, vtable, zcb);
+    kino_Obj *retval = XSBind_maybe_sv_to_kino_obj(sv, vtable, allocation);
     if (!retval) {
         THROW(KINO_ERR, "Not a %o", Kino_VTable_Get_Name(vtable));
     }
@@ -64,8 +63,7 @@ XSBind_sv_to_kino_obj(SV *sv, kino_VTable *vtable, kino_ZombieCharBuf *zcb)
 }
 
 kino_Obj*
-XSBind_maybe_sv_to_kino_obj(SV *sv, kino_VTable *vtable, 
-                            kino_ZombieCharBuf *zcb) 
+XSBind_maybe_sv_to_kino_obj(SV *sv, kino_VTable *vtable, void *allocation)
 {
     kino_Obj *retval = NULL;
     if (XSBind_sv_defined(sv)) {
@@ -77,7 +75,7 @@ XSBind_maybe_sv_to_kino_obj(SV *sv, kino_VTable *vtable,
             IV tmp = SvIV( SvRV(sv) );
             retval = INT2PTR(kino_Obj*, tmp);
         }
-        else if (   zcb &&
+        else if (   allocation &&
                  (  vtable == KINO_ZOMBIECHARBUF
                  || vtable == KINO_VIEWCHARBUF
                  || vtable == KINO_CHARBUF
@@ -87,8 +85,7 @@ XSBind_maybe_sv_to_kino_obj(SV *sv, kino_VTable *vtable,
              * ZombieCharBuf. */
             STRLEN size;
             char *ptr = SvPVutf8(sv, size);
-            Kino_ZCB_Assign_Str(zcb, ptr, size);
-            retval = (kino_Obj*)zcb;
+            retval = (kino_Obj*)kino_ZCB_wrap_str(allocation, ptr, size);
         }
         else if (SvROK(sv)) {
             /* Attempt to convert Perl hashes and arrays into their KinoSearch

@@ -3,14 +3,14 @@ use warnings;
 use lib 'buildlib';
 
 package MultiFieldSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $self       = shift->SUPER::new(@_);
-    my $plain_type = KinoSearch::FieldType::FullTextType->new(
+    my $plain_type = KinoSearch::Plan::FullTextType->new(
         analyzer => KinoSearch::Analysis::Tokenizer->new );
-    my $not_analyzed_type = KinoSearch::FieldType::StringType->new;
+    my $not_analyzed_type = KinoSearch::Plan::StringType->new;
     $self->spec_field( name => 'a', type => $plain_type );
     $self->spec_field( name => 'b', type => $plain_type );
     $self->spec_field( name => 'c', type => $not_analyzed_type );
@@ -22,7 +22,7 @@ use Test::More tests => 13;
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = MultiFieldSchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -33,12 +33,12 @@ $indexer->add_doc( { a => 'unit state' } );
 $indexer->add_doc( { c => 'unit' } );
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $hits = $searcher->hits( query => 'foo' );
 is( $hits->total_hits, 2, "Searcher's default is to find all fields" );
 
-my $qparser = KinoSearch::QueryParser->new( schema => $schema );
+my $qparser = KinoSearch::Search::QueryParser->new( schema => $schema );
 
 my $foo_leaf = KinoSearch::Search::LeafQuery->new( text => 'foo' );
 my $multi_field_foo = KinoSearch::Search::ORQuery->new;
@@ -94,7 +94,7 @@ $hits = $searcher->hits( query => $query );
 is( $hits->total_hits, 0,
     "no crash for non-existent fields under heed_colons" );
 
-$qparser = KinoSearch::QueryParser->new(
+$qparser = KinoSearch::Search::QueryParser->new(
     schema => $schema,
     fields => ['a'],
 );
@@ -102,7 +102,7 @@ $query = $qparser->parse('foo');
 $hits = $searcher->hits( query => $query );
 is( $hits->total_hits, 1, "QueryParser fields param works" );
 
-my $analyzer_parser = KinoSearch::QueryParser->new(
+my $analyzer_parser = KinoSearch::Search::QueryParser->new(
     schema   => $schema,
     analyzer => KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' ),
 );

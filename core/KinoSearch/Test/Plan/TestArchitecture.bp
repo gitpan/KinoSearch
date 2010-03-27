@@ -13,10 +13,10 @@ class KinoSearch::Test::Plan::TestArchitecture cnick TestArch
     inert TestArchitecture*
     init(TestArchitecture *self);
 
-    public i32_t
+    public int32_t
     Index_Interval(TestArchitecture *self);
 
-    public i32_t 
+    public int32_t 
     Skip_Interval(TestArchitecture *self);
 }
 

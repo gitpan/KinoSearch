@@ -7,7 +7,7 @@ use Storable qw( freeze thaw );
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder = create_index( 'a', 'b', 'b c', 'c', 'c d', 'd', 'e' );
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $reader = $searcher->get_reader;
 
 my $leaf_query = KinoSearch::Search::LeafQuery->new(
@@ -33,7 +33,7 @@ my $diff_text
     = KinoSearch::Search::LeafQuery->new( field => 'content', text => 'c' );
 ok( !$diff_text->equals($leaf_query), "!equals (different text)" );
 
-eval { $leaf_query->make_compiler( searchable => $searcher ); };
+eval { $leaf_query->make_compiler( searcher => $searcher ); };
 like( $@, qr/Make_Compiler/, "Make_Compiler throws error" );
 
 my $frozen = freeze($leaf_query);

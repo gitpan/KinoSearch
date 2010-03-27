@@ -5,31 +5,6 @@ use KinoSearch;
 
 __END__
 
-__BINDING__
-
-my $synopsis = <<'END_SYNOPSIS';
-    my $schema     = KinoSearch::Schema->new;
-    my $int64_type = KinoSearch::FieldType::Int64Type->new;
-    $schema->spec_field( name => 'count', type => $int64_type );
-END_SYNOPSIS
-my $constructor = <<'END_CONSTRUCTOR';
-    my $int64_type = KinoSearch::FieldType::Int64Type->new(
-        indexed  => 0,    # default true
-        stored   => 0,    # default true
-        sortable => 1,    # default false
-    );
-END_CONSTRUCTOR
-
-Clownfish::Binding::Perl::Class->register(
-    parcel            => "KinoSearch",
-    class_name        => "KinoSearch::FieldType::Int64Type",
-    bind_constructors => ["new|init2"],
-    #make_pod          => {
-    #    synopsis    => $synopsis,
-    #    constructor => { sample => $constructor },
-    #},
-);
-
 __COPYRIGHT__
 
 Copyright 2005-2010 Marvin Humphrey

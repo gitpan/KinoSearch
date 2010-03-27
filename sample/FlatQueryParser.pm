@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package FlatQueryParser;
-use base qw( KinoSearch::QueryParser );
+use base qw( KinoSearch::Search::QueryParser );
 use KinoSearch::Search::TermQuery;
 use KinoSearch::Search::PhraseQuery;
 use KinoSearch::Search::ORQuery;
@@ -100,10 +100,12 @@ FlatQueryParser - Simple query parser, with no boolean operators.
 
 =head1 SYNOPSIS
 
-    my $searcher = KinoSearch::Searcher->new( index => '/path/to/index' );
-    my $parser   = FlatQueryParser->new( $searcher->get_schema );
-    my $query    = $parser->parse($query_string);
-    my $hits     = $searcher->hits( query => $query );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( 
+        index => '/path/to/index' 
+    );
+    my $parser = FlatQueryParser->new( $searcher->get_schema );
+    my $query  = $parser->parse($query_string);
+    my $hits   = $searcher->hits( query => $query );
     ...
 
 =head1 DESCRIPTION

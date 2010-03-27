@@ -5,13 +5,13 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.30_083';
+our $VERSION = '0.30_09';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
 # See the docs for KinoSearch::Util::ToolSet.
-BEGIN { XSLoader::load( 'KinoSearch', '0.30_083' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.30_09' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -80,6 +80,46 @@ sub error {$KinoSearch::Object::Err::error}
 }
 
 {
+    # Temporary back compat.
+    package KinoSearch::Architecture;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::Architecture ) }
+    package KinoSearch::FieldType;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::FieldType ) }
+    package KinoSearch::FieldType::BlobType;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::BlobType ) }
+    package KinoSearch::FieldType::Float32Type;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::Float32Type ) }
+    package KinoSearch::FieldType::Float64Type;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::Float64Type ) }
+    package KinoSearch::FieldType::Int32Type;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::Int32Type ) }
+    package KinoSearch::FieldType::Int64Type;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::Int64Type ) }
+    package KinoSearch::FieldType::FullTextType;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::FullTextType ) }
+    package KinoSearch::FieldType::StringType;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::StringType ) }
+    package KinoSearch::Indexer;
+    BEGIN { our @ISA = qw( KinoSearch::Index::Indexer ) }
+    package KinoSearch::Obj::BitVector;
+    BEGIN { our @ISA = qw( KinoSearch::Object::BitVector ) }
+    package KinoSearch::QueryParser;
+    BEGIN { our @ISA = qw( KinoSearch::Search::QueryParser ) }
+    package KinoSearch::Search::HitCollector;
+    BEGIN { our @ISA = qw( KinoSearch::Search::Collector ) }
+    package KinoSearch::Search::HitCollector::BitCollector;
+    BEGIN { our @ISA = qw( KinoSearch::Search::Collector::BitCollector ) }
+    package KinoSearch::Search::Searchable;
+    BEGIN { our @ISA = qw( KinoSearch::Search::Searcher ) }
+    package KinoSearch::Schema;
+    BEGIN { our @ISA = qw( KinoSearch::Plan::Schema ) }
+    package KinoSearch::Searcher;
+    BEGIN { our @ISA = qw( KinoSearch::Search::IndexSearcher ) }
+    package KinoSearch::Util::BitVector;
+    BEGIN { our @ISA = qw( KinoSearch::Object::BitVector ) }
+}
+
+{
     package KinoSearch::Analysis::Inversion;
 
     our %new_PARAMS = (
@@ -139,13 +179,7 @@ sub error {$KinoSearch::Object::Err::error}
 }
 
 {
-    package KinoSearch::Architecture;
-    # Temporary back compat.
-    BEGIN { push our @ISA, 'KinoSearch::Plan::Architecture' }
-}
-
-{
-    package KinoSearch::Doc;
+    package KinoSearch::Document::Doc;
     use KinoSearch::Util::ToolSet qw( nfreeze thaw );
     use bytes;
     no bytes;
@@ -175,7 +209,6 @@ sub error {$KinoSearch::Object::Err::error}
     our %new_PARAMS = ( ints => undef );
 }
 
-
 {
     package KinoSearch::Object::LockFreeRegistry;
     sub DESTROY { }    # leak all
@@ -202,9 +235,9 @@ sub error {$KinoSearch::Object::Err::error}
     sub novel_host_methods {
         my ( undef, $package ) = @_;
         no strict 'refs';
-        my $stash = \%{"$package\::"};
-        my $methods
-            = KinoSearch::Object::VArray->new( capacity => scalar keys %$stash );
+        my $stash   = \%{"$package\::"};
+        my $methods = KinoSearch::Object::VArray->new(
+            capacity => scalar keys %$stash );
         while ( my ( $symbol, $glob ) = each %$stash ) {
             next if ref $glob;
             next unless *$glob{CODE};
@@ -225,6 +258,20 @@ sub error {$KinoSearch::Object::Err::error}
 }
 
 {
+    package KinoSearch::Index::Indexer;
+
+    sub new {
+        my ( $either, %args ) = @_;
+        my $flags = 0;
+        $flags |= CREATE   if delete $args{'create'};
+        $flags |= TRUNCATE if delete $args{'truncate'};
+        return $either->_new( %args, flags => $flags );
+    }
+
+    our %add_doc_PARAMS = ( doc => undef, boost => 1.0 );
+}
+
+{
     package KinoSearch::Index::IndexReader;
 
     sub new {
@@ -238,8 +285,9 @@ sub error {$KinoSearch::Object::Err::error}
         return;
     }
     sub posting_list {
-        my $self         = shift;
-        my $plist_reader = $self->fetch("KinoSearch::Index::PostingListReader");
+        my $self = shift;
+        my $plist_reader
+            = $self->fetch("KinoSearch::Index::PostingListReader");
         return $plist_reader->posting_list(@_) if $plist_reader;
         return;
     }
@@ -263,11 +311,11 @@ sub error {$KinoSearch::Object::Err::error}
 
     sub try_open_segreaders {
         my ( $self, $segments ) = @_;
-        my $schema   = $self->get_schema;
-        my $folder   = $self->get_folder;
-        my $snapshot = $self->get_snapshot;
-        my $seg_readers
-            = KinoSearch::Object::VArray->new( capacity => scalar @$segments );
+        my $schema      = $self->get_schema;
+        my $folder      = $self->get_folder;
+        my $snapshot    = $self->get_snapshot;
+        my $seg_readers = KinoSearch::Object::VArray->new(
+            capacity => scalar @$segments );
         my $segs = to_kino($segments);    # FIXME: Don't convert twice.
         eval {
             # Create a SegReader for each segment in the index.
@@ -318,20 +366,6 @@ sub error {$KinoSearch::Object::Err::error}
 }
 
 {
-    package KinoSearch::Indexer;
-
-    sub new {
-        my ( $either, %args ) = @_;
-        my $flags = 0;
-        $flags |= CREATE   if delete $args{'create'};
-        $flags |= TRUNCATE if delete $args{'truncate'};
-        return $either->_new( %args, flags => $flags );
-    }
-
-    our %add_doc_PARAMS = ( doc => undef, boost => 1.0 );
-}
-
-{
     package KinoSearch::Search::Compiler;
     use KinoSearch::Util::ToolSet qw( confess blessed );
 
@@ -377,12 +411,6 @@ sub error {$KinoSearch::Object::Err::error}
 {
     package KinoSearch::Object::BitVector;
     sub to_arrayref { shift->to_array->to_arrayref }
-
-    # Temporary back compat.
-    package KinoSearch::Util::BitVector;
-    BEGIN { push our @ISA, 'KinoSearch::Object::BitVector' }
-    package KinoSearch::Obj::BitVector;
-    BEGIN { push our @ISA, 'KinoSearch::Object::BitVector' }
 }
 
 {

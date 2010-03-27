@@ -3,7 +3,7 @@
 
 =head1 NAME
 
-KinoSearch::Search::Similarity - Calculate how closely two things match.
+KinoSearch::Search::Similarity - Judge how well a document matches a query.
 
 =head1 SYNOPSIS
 
@@ -15,15 +15,13 @@ KinoSearch::Search::Similarity - Calculate how closely two things match.
     }
     
     package MyFullTextType;
-    use base qw( KinoSearch::FieldType::FullTextType );
+    use base qw( KinoSearch::Plan::FullTextType );
     
     sub similarity { MySimilarity->new }
 
 
 
 =head1 DESCRIPTION
-
-Calculate how closely two things match.
 
 After determining whether a document matches a given query, a score must be
 calculated which indicates how I<well> the document matches the query.  The

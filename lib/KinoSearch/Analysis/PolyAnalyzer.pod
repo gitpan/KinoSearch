@@ -7,11 +7,11 @@ KinoSearch::Analysis::PolyAnalyzer - Multiple Analyzers in series.
 
 =head1 SYNOPSIS
 
-    my $schema = KinoSearch::Schema->new;
+    my $schema = KinoSearch::Plan::Schema->new;
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
         language => 'en',
     );
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => $polyanalyzer,
     );
     $schema->spec_field( name => 'title',   type => $type );
@@ -20,8 +20,6 @@ KinoSearch::Analysis::PolyAnalyzer - Multiple Analyzers in series.
 
 
 =head1 DESCRIPTION
-
-Multiple Analyzers in series.
 
 A PolyAnalyzer is a series of L<Analyzers|KinoSearch::Analysis::Analyzer>,
 each of which will be called upon to "analyze" text in turn.  You can

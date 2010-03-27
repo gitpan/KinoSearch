@@ -9,33 +9,33 @@ parcel KinoSearch cnick Kino;
 */
 class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
 
-    Searchable *searchable;
+    Searcher   *searcher;
     Query      *query;
     CharBuf    *field;
-    u32_t       excerpt_length;
-    u32_t       window_width;
-    u32_t       slop;
+    uint32_t    excerpt_length;
+    uint32_t    window_width;
+    uint32_t    slop;
     CharBuf    *pre_tag;
     CharBuf    *post_tag;
     Compiler   *compiler;
 
     inert incremented Highlighter*
-    new(Searchable *searchable, Obj *query, const CharBuf *field, 
-        u32_t excerpt_length = 200);
+    new(Searcher *searcher, Obj *query, const CharBuf *field, 
+        uint32_t excerpt_length = 200);
 
     /**
-     * @param searchable An object which inherits from 
-     * L<Searchable|KinoSearch::Search::Searchable>, such as a
-     * L<Searcher|KinoSearch::Searcher>.
+     * @param searcher An object which inherits from 
+     * L<Searcher|KinoSearch::Search::Searcher>, such as an
+     * L<IndexSearcher|KinoSearch::Search::IndexSearcher>.
      * @param query Query object or a query string.
      * @param field The name of the field from which to draw the excerpt.  The
      * field must marked as be C<highlightable> (see
-     * L<FieldType|KinoSearch::FieldType>).
+     * L<FieldType|KinoSearch::Plan::FieldType>).
      * @param excerpt_length Maximum length of the excerpt, in characters.
      */
     public inert Highlighter*
-    init(Highlighter *self, Searchable *searchable, Obj *query, 
-         const CharBuf *field, u32_t excerpt_length = 200);
+    init(Highlighter *self, Searcher *searcher, Obj *query, 
+         const CharBuf *field, uint32_t excerpt_length = 200);
 
     /** Take a HitDoc object and return a highlighted excerpt as a string if
      * the HitDoc has a value for the specified <code>field</code>.
@@ -65,8 +65,8 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
      * until the end of the string.
      */
     incremented VArray*
-    Find_Sentences(Highlighter *self, CharBuf *text, i32_t offset = 0, 
-                   i32_t length = 0);
+    Find_Sentences(Highlighter *self, CharBuf *text, int32_t offset = 0, 
+                   int32_t length = 0);
 
     /** Highlight a small section of text.  By default, prepends pre-tag and
      * appends post-tag.  This method is called internally by Create_Excerpt()
@@ -102,13 +102,13 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
 
     /** Accessor. 
      */
-    public u32_t 
+    public uint32_t 
     Get_Excerpt_Length(Highlighter *self);
 
     /** Accessor. 
      */
-    public Searchable*
-    Get_Searchable(Highlighter *self);
+    public Searcher*
+    Get_Searcher(Highlighter *self);
 
     /** Accessor. 
      */
@@ -116,7 +116,7 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
     Get_Query(Highlighter *self);
 
     /** Accessor for the KinoSearch::Search::Compiler object derived from
-     * <code>query</code> and <code>searchable</code>.
+     * <code>query</code> and <code>searcher</code>.
      */
     public Compiler*
     Get_Compiler(Highlighter *self);
@@ -127,7 +127,7 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
      *
      * (Helper function for Create_Excerpt only exposed for testing purposes.)
      */
-    i32_t
+    int32_t
     Find_Best_Fragment(Highlighter *self, const CharBuf *field_val, 
                        ViewCharBuf *fragment, HeatMap *heat_map);
 
@@ -137,9 +137,9 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
      *
      * (Helper function for Create_Excerpt only exposed for testing purposes.)
      */
-    i32_t
+    int32_t
     Raw_Excerpt(Highlighter *self, const CharBuf *field_val, 
-                const CharBuf *fragment, CharBuf *raw_excerpt, i32_t top, 
+                const CharBuf *fragment, CharBuf *raw_excerpt, int32_t top, 
                 HeatMap *heat_map, VArray *sentences);
 
     /** Take the text in raw_excerpt, add highlight tags, encode, and place
@@ -148,8 +148,8 @@ class KinoSearch::Highlight::Highlighter extends KinoSearch::Object::Obj {
      * (Helper function for Create_Excerpt only exposed for testing purposes.)
      */
     void
-    Highlight_Excerpt(Highlighter *self, VArray *spans, 
-                      CharBuf *raw_excerpt, CharBuf *highlighted, i32_t top);
+    Highlight_Excerpt(Highlighter *self, VArray *spans, CharBuf *raw_excerpt, 
+                      CharBuf *highlighted, int32_t top);
 
     public void
     Destroy(Highlighter *self);

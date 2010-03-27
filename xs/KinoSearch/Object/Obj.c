@@ -108,6 +108,14 @@ kino_Obj_to_host(kino_Obj *self)
     return newRV_inc((SV*)self->ref.host_obj);
 }
 
+size_t
+kino_Obj_host_ram_usage(kino_Obj *self)
+{
+    return self->ref.count < 4
+        ? 0
+        : sizeof(SV) + sizeof(struct xpvmg);
+}
+
 /* Copyright 2007-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify

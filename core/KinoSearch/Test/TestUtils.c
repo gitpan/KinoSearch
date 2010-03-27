@@ -109,17 +109,15 @@ TestUtils_make_poly_query(u32_t boolop, ...)
 TermQuery*
 TestUtils_make_term_query(const char *field, const char *term)
 {
-    ZombieCharBuf field_cb = ZCB_BLANK;
-    ZombieCharBuf term_cb  = ZCB_BLANK;
-    ZCB_Assign_Str(&field_cb, field, strlen(field));
-    ZCB_Assign_Str(&term_cb, term, strlen(term));
-    return TermQuery_new((CharBuf*)&field_cb, (Obj*)&term_cb);
+    CharBuf *field_cb = (CharBuf*)ZCB_WRAP_STR(field, strlen(field));
+    CharBuf *term_cb  = (CharBuf*)ZCB_WRAP_STR(term, strlen(term));
+    return TermQuery_new((CharBuf*)field_cb, (Obj*)term_cb);
 }
 
 PhraseQuery*
 TestUtils_make_phrase_query(const char *field, ...)
 {
-    ZombieCharBuf field_cb = ZCB_make_str((char*)field, strlen(field));
+    CharBuf *field_cb = (CharBuf*)ZCB_WRAP_STR(field, strlen(field));
     va_list args;
     VArray *terms = VA_new(0);
     PhraseQuery *query;
@@ -131,7 +129,7 @@ TestUtils_make_phrase_query(const char *field, ...)
     }
     va_end(args);
 
-    query = PhraseQuery_new((CharBuf*)&field_cb, terms);
+    query = PhraseQuery_new(field_cb, terms);
     DECREF(terms);
     return query;
 }
@@ -139,15 +137,11 @@ TestUtils_make_phrase_query(const char *field, ...)
 LeafQuery*
 TestUtils_make_leaf_query(const char *field, const char *term)
 {
-    ZombieCharBuf field_cb = ZCB_BLANK;
-    ZombieCharBuf term_cb  = ZCB_BLANK;
-    CharBuf *field_ptr     = NULL;
-    ZCB_Assign_Str(&term_cb, term, strlen(term));
-    if (field) { 
-        ZCB_Assign_Str(&field_cb, field, strlen(field));
-        field_ptr = (CharBuf*)&field_cb;
-    }
-    return LeafQuery_new(field_ptr, (CharBuf*)&term_cb);
+    CharBuf *term_cb  = (CharBuf*)ZCB_WRAP_STR(term, strlen(term));
+    CharBuf *field_cb = field 
+                      ? (CharBuf*)ZCB_WRAP_STR(field, strlen(field))
+                      : NULL;
+    return LeafQuery_new(field_cb, term_cb);
 }
 
 NOTQuery*
@@ -163,11 +157,11 @@ TestUtils_make_range_query(const char *field, const char *lower_term,
                            const char *upper_term, bool_t include_lower,
                            bool_t include_upper)
 {
-    ZombieCharBuf f = ZCB_make_str((char*)field, strlen(field));
-    ZombieCharBuf lterm = ZCB_make_str((char*)lower_term, strlen(lower_term));
-    ZombieCharBuf uterm = ZCB_make_str((char*)upper_term, strlen(upper_term));
-    return RangeQuery_new((CharBuf*)&f, (Obj*)&lterm, (Obj*)&uterm,
-        include_lower, include_upper);
+    CharBuf *f     = (CharBuf*)ZCB_WRAP_STR(field, strlen(field));
+    CharBuf *lterm = (CharBuf*)ZCB_WRAP_STR(lower_term, strlen(lower_term));
+    CharBuf *uterm = (CharBuf*)ZCB_WRAP_STR(upper_term, strlen(upper_term));
+    return RangeQuery_new(f, (Obj*)lterm, (Obj*)uterm, include_lower, 
+        include_upper);
 }
 
 Obj*

@@ -48,11 +48,11 @@ abstract class KinoSearch::Search::Matcher extends KinoSearch::Object::Obj {
 
     /** Collect hits.
      *
-     * @param collector The HitCollector to collect hits with.
+     * @param collector The Collector to collect hits with.
      * @param deletions A deletions iterator.
      */
     void
-    Collect(Matcher *self, HitCollector *collector, 
+    Collect(Matcher *self, Collector *collector, 
             Matcher *deletions = NULL);
 }
 

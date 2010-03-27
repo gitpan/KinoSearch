@@ -6,7 +6,7 @@ parcel KinoSearch cnick Kino;
  * which returns absurdly low values for Index_Interval() and Skip_Interval().
  */
 
-class KinoSearch::Test::TestSchema extends KinoSearch::Schema {
+class KinoSearch::Test::TestSchema extends KinoSearch::Plan::Schema {
     inert incremented TestSchema* 
     new();
 

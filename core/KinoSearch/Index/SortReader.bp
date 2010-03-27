@@ -10,13 +10,13 @@ abstract class KinoSearch::Index::SortReader
          Snapshot *snapshot = NULL, VArray *segments = NULL,
          i32_t seg_tick = -1);
 
-    abstract SortCache*
+    abstract nullable SortCache*
     Fetch_Sort_Cache(SortReader *self, const CharBuf *field);
 
     /** Returns NULL, since multi-segment sort caches cannot be produced by
      * the default implementation.
      */
-    public incremented DataReader*
+    public incremented nullable DataReader*
     Aggregator(SortReader *self, VArray *readers, I32Array *offsets);
     
 }
@@ -38,7 +38,7 @@ class KinoSearch::Index::DefaultSortReader cnick DefSortReader
     init(DefaultSortReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot, VArray *segments, i32_t seg_tick);
 
-    SortCache*
+    nullable SortCache*
     Fetch_Sort_Cache(DefaultSortReader *self, const CharBuf *field);
 
     public void

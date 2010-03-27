@@ -9,8 +9,6 @@ KinoSearch::Index::SegWriter - Write one segment of an index.
 
 =head1 DESCRIPTION
 
-Write one segment of an index.
-
 SegWriter is a conduit through which information fed to Indexer passes.  It
 manages Segment and Inverter, invokes the Analyzer chain, and feeds low
 level DataWriters such as PostingListWriter and DocWriter.  

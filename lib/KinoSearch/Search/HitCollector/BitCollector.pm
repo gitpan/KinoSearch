@@ -5,38 +5,6 @@ use KinoSearch;
 
 __END__
 
-__BINDING__
-
-my $synopsis = <<'END_SYNOPSIS';
-    my $bit_vec = KinoSearch::Object::BitVector->new(
-        capacity => $searcher->doc_max + 1,
-    );
-    my $bit_collector = KinoSearch::Search::HitCollector::BitCollector->new(
-        bit_vector => $bit_vec, 
-    );
-    $searcher->collect(
-        collector => $bit_collector,
-        query     => $query,
-    );
-END_SYNOPSIS
-
-my $constructor = <<'END_CONSTRUCTOR';
-    my $bit_collector = KinoSearch::Search::HitCollector::BitCollector->new(
-        bit_vector => $bit_vec,    # required
-    );
-END_CONSTRUCTOR
-
-Clownfish::Binding::Perl::Class->register(
-    parcel            => "KinoSearch",
-    class_name        => "KinoSearch::Search::HitCollector::BitCollector",
-    bind_constructors => ["new"],
-    make_pod          => {
-        synopsis    => $synopsis,
-        constructor => { sample => $constructor },
-        methods     => [qw( collect )],
-    },
-);
-
 __COPYRIGHT__
 
 Copyright 2005-2010 Marvin Humphrey

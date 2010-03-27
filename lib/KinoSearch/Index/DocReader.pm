@@ -9,7 +9,7 @@ __BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
-    my $doc        = $doc_reader->fetch($doc_id);
+    my $doc        = $doc_reader->fetch( doc_id => $doc_id );
 END_SYNOPSIS
 
 Clownfish::Binding::Perl::Class->register(

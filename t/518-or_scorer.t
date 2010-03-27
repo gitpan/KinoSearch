@@ -36,7 +36,7 @@ sub check_scorer {
         similarity => $sim,
         children   => $subscorers,
     );
-    my $collector = KinoSearch::Search::HitCollector::SortCollector->new(
+    my $collector = KinoSearch::Search::Collector::SortCollector->new(
         wanted => 100 );
     $or_scorer->collect( collector => $collector );
     my ( $got_by_score, $got_by_id ) = doc_ids_from_td_coll($collector);

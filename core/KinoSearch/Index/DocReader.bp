@@ -24,7 +24,7 @@ class KinoSearch::Index::DocReader extends KinoSearch::Index::DataReader {
      * @param readers An array of DocReaders.
      * @param offsets Doc id start offsets for each reader.
      */
-    public incremented DocReader*
+    public incremented nullable DocReader*
     Aggregator(DocReader *self, VArray *readers, I32Array *offsets);
 }
 

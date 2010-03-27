@@ -15,8 +15,6 @@ class KinoSearch::Index::PostingListWriter cnick PListWriter
     OutStream       *lex_temp_out;
     OutStream       *post_temp_out;
     OutStream       *skip_out;
-    InStream        *lex_temp_in;
-    InStream        *post_temp_in;
     u32_t            mem_thresh;
 
     inert i32_t current_file_format;

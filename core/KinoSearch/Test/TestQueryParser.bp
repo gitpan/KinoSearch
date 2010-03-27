@@ -22,13 +22,13 @@ class KinoSearch::Test::TestQueryParser cnick TestQP
     init(TestQueryParser *self, const char *query_string = NULL, 
          Query *tree = NULL, Query *expanded = NULL, u32_t num_hits);
 
-    CharBuf*
+    nullable CharBuf*
     Get_Query_String(TestQueryParser *self);
 
-    Query*
+    nullable Query*
     Get_Tree(TestQueryParser *self);
 
-    Query*
+    nullable Query*
     Get_Expanded(TestQueryParser *self);
 
     u32_t

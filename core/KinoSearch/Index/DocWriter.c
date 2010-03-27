@@ -2,15 +2,15 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DocWriter.h"
-#include "KinoSearch/Doc.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Document/Doc.h"
 #include "KinoSearch/Index/DocReader.h"
 #include "KinoSearch/Index/Inverter.h"
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
 

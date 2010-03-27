@@ -2,17 +2,17 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegLexicon.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/LexIndex.h"
 #include "KinoSearch/Index/LexiconWriter.h"
+#include "KinoSearch/Index/Posting/MatchPosting.h"
 #include "KinoSearch/Index/SegPostingList.h"
 #include "KinoSearch/Index/TermStepper.h"
 #include "KinoSearch/Plan/Architecture.h"
-#include "KinoSearch/Posting/MatchPosting.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 
@@ -43,6 +43,8 @@ SegLex_init(SegLexicon *self, Schema *schema, Folder *folder,
     FieldType    *type      = Schema_Fetch_Type(schema, field);
     CharBuf *filename = CB_newf("%o/lexicon-%i32.dat", seg_name, field_num);
 
+    Lex_init((Lexicon*)self, field);
+    
     /* Check format. */
     if (!format) { THROW(ERR, "Missing 'format'"); }
     else {
@@ -60,7 +62,6 @@ SegLex_init(SegLexicon *self, Schema *schema, Folder *folder,
     }
 
     /* Assign. */
-    self->field          = CB_Clone(field);
     self->segment        = (Segment*)INCREF(segment);
 
     /* Derive. */
@@ -93,7 +94,6 @@ SegLex_destroy(SegLexicon *self)
     DECREF(self->segment);
     DECREF(self->term_stepper);
     DECREF(self->tinfo_stepper);
-    DECREF(self->field);
     DECREF(self->lex_index);
     DECREF(self->instream);
     SUPER_DESTROY(self, SEGLEXICON);

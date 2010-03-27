@@ -12,16 +12,16 @@ use Encode qw( _utf8_on );
 use KinoSearch::Test;
 
 sub new_schema {
-    my $schema   = KinoSearch::Schema->new;
+    my $schema   = KinoSearch::Plan::Schema->new;
     my $analyzer = TestAnalyzer->new;
     my $fulltext
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $analyzer );
-    my $bin        = KinoSearch::FieldType::BlobType->new;
-    my $not_stored = KinoSearch::FieldType::FullTextType->new(
+        = KinoSearch::Plan::FullTextType->new( analyzer => $analyzer );
+    my $bin        = KinoSearch::Plan::BlobType->new;
+    my $not_stored = KinoSearch::Plan::FullTextType->new(
         analyzer => $analyzer,
         stored   => 0,
     );
-    my $float64 = KinoSearch::FieldType::Float64Type->new( indexed => 0 );
+    my $float64 = KinoSearch::Plan::Float64Type->new( indexed => 0 );
     $schema->spec_field( name => 'text',     type => $fulltext );
     $schema->spec_field( name => 'bin',      type => $bin );
     $schema->spec_field( name => 'unstored', type => $not_stored );
@@ -38,7 +38,7 @@ _utf8_on($val);
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = new_schema();
 
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
     create => 1,

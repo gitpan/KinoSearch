@@ -5,8 +5,8 @@ QueryParser.
 
 =head1 ABSTRACT
 
-Implement a custom search query language using KinoSearch::QueryParser and
-Parse::RecDescent.
+Implement a custom search query language using
+L<KinoSearch::Search::QueryParser> and L<Parse::RecDescent>.
 
 =head1 Grammar-based vs. hand-rolled
 
@@ -198,16 +198,16 @@ have to turn queries such as this...
     (title:foo OR content:foo) AND NOT (title:bar OR content:bar)
 
 Rather than continue with our own from-scratch parser class and write the
-routines to accomplish that expansion, we're now going to subclass
-KinoSearch::QueryParser and take advantage of some of its existing methods.
+routines to accomplish that expansion, we're now going to subclass QueryParser
+and take advantage of some of its existing methods.
 
 Our first parser implementation had the "content" field name and the choice of
 English PolyAnalyzer hard-coded for simplicity, but we don't need to do that
-this time -- KinoSearch::QueryParser's constructor requires a Schema which
-conveys field and Analyzer information, so we can just defer to that.
+this time -- QueryParser's constructor requires a Schema which conveys field
+and Analyzer information, so we can just defer to that.
 
     package FlatQueryParser;
-    use base qw( KinoSearch::QueryParser );
+    use base qw( KinoSearch::Search::QueryParser );
     use KinoSearch::Search::TermQuery;
     use KinoSearch::Search::PhraseQuery;
     use KinoSearch::Search::ORQuery;
@@ -279,12 +279,12 @@ production which joins the leaves together with an ORQuery.
     }
 
 
-The magic happens in KinoSearch::QueryParser's expand() method, which walks
-the ORQuery object we supply to it looking for LeafQuery objects, and calls
-expand_leaf() for each one it finds.  expand_leaf() performs field-specific
-analysis, decides whether each query should be a TermQuery or a PhraseQuery,
-and if multiple fields are required, creates an ORQuery which mults out e.g.
-C<foo> into C<(title:foo OR content:foo)>.
+The magic happens in QueryParser's expand() method, which walks the ORQuery
+object we supply to it looking for LeafQuery objects, and calls expand_leaf()
+for each one it finds.  expand_leaf() performs field-specific analysis,
+decides whether each query should be a TermQuery or a PhraseQuery, and if
+multiple fields are required, creates an ORQuery which mults out e.g.  C<foo>
+into C<(title:foo OR content:foo)>.
 
 =head1 Extending the query language
 

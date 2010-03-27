@@ -11,8 +11,8 @@ die "Invalid schema class name: $schema_class"
     unless $schema_class =~ /^\w+(::\w+)*$/;
 eval "use $schema_class";
 die $@ if $@;
-die "'$schema_class' isn't a KinoSearch::Schema"
-    unless $schema_class->isa("KinoSearch::Schema");
+die "'$schema_class' isn't a KinoSearch::Plan::Schema"
+    unless $schema_class->isa("KinoSearch::Plan::Schema");
 die "Can't open '$where'" unless -d $where;
 
 my $schema = $schema_class->new;

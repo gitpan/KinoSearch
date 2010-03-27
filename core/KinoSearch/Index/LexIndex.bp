@@ -27,10 +27,10 @@ class KinoSearch::Index::LexIndex extends KinoSearch::Index::Lexicon {
     i32_t
     Get_Term_Num(LexIndex *self);
 
-    TermInfo* 
+    nullable TermInfo* 
     Get_Term_Info(LexIndex *self);
 
-    public Obj*
+    public nullable Obj*
     Get_Term(LexIndex *self);
 
     public void

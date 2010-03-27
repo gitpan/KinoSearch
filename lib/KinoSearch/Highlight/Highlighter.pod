@@ -8,9 +8,9 @@ KinoSearch::Highlight::Highlighter - Create and highlight excerpts.
 =head1 SYNOPSIS
 
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        searchable => $searcher,
-        query      => $query,
-        field      => 'body'
+        searcher => $searcher,
+        query    => $query,
+        field    => 'body'
     );
     my $hits = $searcher->hits( query => $query );
     while ( my $hit = $hits->next ) {
@@ -22,8 +22,6 @@ KinoSearch::Highlight::Highlighter - Create and highlight excerpts.
 
 =head1 DESCRIPTION
 
-Create and highlight excerpts.
-
 The Highlighter can be used to select relevant snippets from a document,
 and to surround search terms with highlighting tags.  It handles both stems
 and phrases correctly and efficiently, using special-purpose data generated
@@ -34,7 +32,7 @@ at index-time.
 =head2 new( I<[labeled params]> )
 
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        searchable     => $searcher,    # required
+        searcher       => $searcher,    # required
         query          => $query,       # required
         field          => 'content',    # required
         excerpt_length => 150,          # default: 200
@@ -44,9 +42,9 @@ at index-time.
 
 =item *
 
-B<searchable> - An object which inherits from 
-L<Searchable|KinoSearch::Search::Searchable>, such as a
-L<Searcher|KinoSearch::Searcher>.
+B<searcher> - An object which inherits from 
+L<Searcher|KinoSearch::Search::Searcher>, such as an
+L<IndexSearcher|KinoSearch::Search::IndexSearcher>.
 
 =item *
 
@@ -56,7 +54,7 @@ B<query> - Query object or a query string.
 
 B<field> - The name of the field from which to draw the excerpt.  The
 field must marked as be C<highlightable> (see
-L<FieldType|KinoSearch::FieldType>).
+L<FieldType|KinoSearch::Plan::FieldType>).
 
 =item *
 
@@ -102,7 +100,7 @@ Setter.  The default value is "</strong>".
 
 Accessor.
 
-=head2 get_searchable()
+=head2 get_searcher()
 
 Accessor.
 
@@ -113,7 +111,7 @@ Accessor.
 =head2 get_compiler()
 
 Accessor for the KinoSearch::Search::Compiler object derived from
-C<< query >> and C<< searchable >>.
+C<< query >> and C<< searcher >>.
 
 =head2 get_excerpt_length()
 

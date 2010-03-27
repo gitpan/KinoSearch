@@ -16,14 +16,14 @@ BEGIN {
 }
 
 package SortSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $self       = shift->SUPER::new(@_);
-    my $plain_type = KinoSearch::FieldType::FullTextType->new(
+    my $plain_type = KinoSearch::Plan::FullTextType->new(
         analyzer => KinoSearch::Analysis::Tokenizer->new );
-    my $string_type = KinoSearch::FieldType::StringType->new( sortable => 1 );
+    my $string_type = KinoSearch::Plan::StringType->new( sortable => 1 );
     $self->spec_field( name => 'content', type => $plain_type );
     $self->spec_field( name => 'number',  type => $string_type );
     return $self;
@@ -43,7 +43,7 @@ if ($kid) {
 }
 else {
     my $folder  = KinoSearch::Store::RAMFolder->new;
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index  => $folder,
         schema => SortSchema->new,
     );
@@ -54,11 +54,11 @@ else {
     }
     $indexer->commit;
 
-    my $searcher = KinoSearch::Searcher->new( index => $folder );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
     my $server = KSx::Remote::SearchServer->new(
-        port       => $PORT_NUM,
-        searchable => $searcher,
-        password   => 'foo',
+        port     => $PORT_NUM,
+        searcher => $searcher,
+        password => 'foo',
     );
     $server->serve;
     exit(0);
@@ -86,7 +86,7 @@ is( $searchclient->doc_freq( field => 'content', term => 'x' ),
     3, "doc_freq" );
 is( $searchclient->doc_max, 3, "doc_max" );
 isa_ok( $searchclient->fetch_doc( doc_id => 1 ),
-    "KinoSearch::Doc::HitDoc", "fetch_doc" );
+    "KinoSearch::Document::HitDoc", "fetch_doc" );
 isa_ok(
     $searchclient->fetch_doc_vec(1),
     "KinoSearch::Index::DocVector",
@@ -102,7 +102,7 @@ is( $hits->total_hits, 1, "retrieved hit from search server" );
 my $folder_b = KinoSearch::Store::RAMFolder->new;
 my $number   = 6;
 for (qw( a b c )) {
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index  => $folder_b,
         schema => SortSchema->new,
     );
@@ -112,12 +112,13 @@ for (qw( a b c )) {
     $indexer->commit;
 }
 
-my $searcher_b = KinoSearch::Searcher->new( index => $folder_b, );
+my $searcher_b
+    = KinoSearch::Search::IndexSearcher->new( index => $folder_b, );
 is( ref( $searcher_b->get_reader ), 'KinoSearch::Index::PolyReader', );
 
 my $poly_searcher = KinoSearch::Search::PolySearcher->new(
-    schema      => SortSchema->new,
-    searchables => [ $searcher_b, $searchclient ],
+    schema    => SortSchema->new,
+    searchers => [ $searcher_b, $searchclient ],
 );
 
 $hits = $poly_searcher->hits( query => 'b' );

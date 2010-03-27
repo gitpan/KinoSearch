@@ -16,16 +16,14 @@ KinoSearch::Search::PolySearcher - Aggregate results from multiple searchers.
         );
     }
     my $poly_searcher = KinoSearch::Search::PolySearcher->new(
-        schema      => $schema,
-        searchables => \@searchers,
+        schema    => $schema,
+        searchers => \@searchers,
     );
     my $hits = $poly_searcher->hits( query => $query );
 
 
 
 =head1 DESCRIPTION
-
-Aggregate results from multiple searchers.
 
 The primary use for PolySearcher is to aggregate results from several
 remote searchers via L<KSx::Remote::SearchClient>, diffusing the cost of
@@ -37,8 +35,8 @@ aggregate results from multiple Searchers on a single machine.
 =head2 new( I<[labeled params]> )
 
     my $poly_searcher = KinoSearch::Search::PolySearcher->new(
-        schema      => $schema,
-        searchables => \@searchers,
+        schema    => $schema,
+        searchers => \@searchers,
     );
 
 =over
@@ -49,7 +47,7 @@ B<schema> - A Schema.
 
 =item *
 
-B<searchables> - An array of Searchables.
+B<searchers> - An array of Searchers.
 
 =back
 
@@ -61,7 +59,7 @@ B<searchables> - An array of Searchables.
 
 =head1 INHERITANCE
 
-KinoSearch::Search::PolySearcher isa L<KinoSearch::Search::Searchable> isa L<KinoSearch::Object::Obj>.
+KinoSearch::Search::PolySearcher isa L<KinoSearch::Search::Searcher> isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE

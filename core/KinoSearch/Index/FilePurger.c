@@ -3,10 +3,10 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/FilePurger.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/IndexManager.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/DirHandle.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/Lock.h"
@@ -117,7 +117,7 @@ S_zap_dead_merge(FilePurger *self, Hash *candidates)
         if (cutoff) {
             CharBuf *cutoff_seg = Seg_num_to_name(Obj_To_I64(cutoff));
             if (Folder_Exists(self->folder, cutoff_seg)) {
-                static ZombieCharBuf merge_json = ZCB_LITERAL("merge.json");
+                ZombieCharBuf *merge_json = ZCB_WRAP_STR("merge.json", 10);
                 DirHandle *dh = Folder_Open_Dir(self->folder, cutoff_seg);
                 CharBuf *entry = dh ? DH_Get_Entry(dh) : NULL;
                 CharBuf *filepath = CB_new(32);
@@ -127,7 +127,7 @@ S_zap_dead_merge(FilePurger *self, Hash *candidates)
                 }
 
                 Hash_Store(candidates, (Obj*)cutoff_seg, INCREF(&EMPTY));
-                Hash_Store(candidates, (Obj*)&merge_json, INCREF(&EMPTY));
+                Hash_Store(candidates, (Obj*)merge_json, INCREF(&EMPTY));
                 while (DH_Next(dh)) {
                     /* TODO: recursively delete subdirs within seg dir. */
                     CB_setf(filepath, "%o/%o", cutoff_seg, entry);

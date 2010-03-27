@@ -12,9 +12,9 @@ MODULE = KinoSearch   PACKAGE = KinoSearch::Util::IndexFileNames
 
 chy_u64_t
 extract_gen(name)
-    kino_ZombieCharBuf name;
+    const kino_CharBuf *name;
 CODE:
-    RETVAL = kino_IxFileNames_extract_gen((kino_CharBuf*)&name);
+    RETVAL = kino_IxFileNames_extract_gen(name);
 OUTPUT: RETVAL
 
 SV*

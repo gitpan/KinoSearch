@@ -7,7 +7,6 @@
 #include "KinoSearch/Test.h"
 #include "KinoSearch/Test/TestUtils.h"
 #include "KinoSearch/Test/Object/TestCharBuf.h"
-#include "KinoSearch/Search/LeafQuery.h"
 
 static char smiley[] = { (char)0xE2, (char)0x98, (char)0xBA, 0 };
 static u32_t smiley_len = 3;
@@ -238,12 +237,12 @@ test_vcatf_cb(TestBatch *batch)
 static void
 test_vcatf_obj(TestBatch *batch)
 {
-    CharBuf   *wanted = S_get_cb("ooga content:FOO booga");
-    LeafQuery *leaf_query = TestUtils_make_leaf_query("content", "FOO");
+    CharBuf   *wanted = S_get_cb("ooga 20 booga");
+    Integer32 *i32 = Int32_new(20);
     CharBuf   *got = S_get_cb("ooga");
-    CB_catf(got, " %o booga", leaf_query);
+    CB_catf(got, " %o booga", i32);
     ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%o Obj");
-    DECREF(leaf_query);
+    DECREF(i32);
     DECREF(wanted);
     DECREF(got);
 }
@@ -366,6 +365,17 @@ test_vcatf_x32(TestBatch *batch)
 }
 
 static void
+test_RAM_Usage(TestBatch *batch)
+{
+    CharBuf *short_string = CB_newf("foo");
+    CharBuf *long_string  = CB_newf("foobarbazboffo");
+    ASSERT_TRUE(batch, CB_RAM_Usage(short_string) < CB_RAM_Usage(long_string),
+        "RAM_Usage() scales with string length");
+    DECREF(short_string);
+    DECREF(long_string);
+}
+
+static void
 test_serialization(TestBatch *batch)
 {
     CharBuf *wanted = S_get_cb("foo");
@@ -379,7 +389,7 @@ test_serialization(TestBatch *batch)
 void
 TestCB_run_tests()
 {
-    TestBatch *batch = TestBatch_new(49);
+    TestBatch *batch = TestBatch_new(50);
     TestBatch_Plan(batch);
 
     test_vcatf_s(batch);
@@ -404,6 +414,7 @@ TestCB_run_tests()
     test_Trim(batch);
     test_To_F64(batch);
     test_To_I64(batch);
+    test_RAM_Usage(batch);
     test_serialization(batch);
 
     DECREF(batch);

@@ -33,7 +33,7 @@ class KinoSearch::Search::HitQueue cnick HitQ
     /** If sorting on fields, first verifies that the MatchDoc has a valid
      * values array, then invokes parent method.
      */
-    incremented Obj*
+    incremented nullable Obj*
     Jostle(HitQueue *self, decremented Obj *element); 
 
     bool_t

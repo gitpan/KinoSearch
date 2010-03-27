@@ -4,8 +4,8 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/LexiconReader.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Index/PolyLexicon.h"
 #include "KinoSearch/Index/SegLexicon.h"
 #include "KinoSearch/Index/Segment.h"

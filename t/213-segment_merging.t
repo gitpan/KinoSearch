@@ -20,7 +20,7 @@ use base qw( KinoSearch::Test::TestSchema );
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer      => KinoSearch::Analysis::Tokenizer->new,
         highlightable => 1,
     );
@@ -41,7 +41,7 @@ my $num_reps;
     # Verify that optimization truly cuts down on the number of segments.
     my $schema = KinoSearch::Test::TestSchema->new;
     for ( $num_reps = 1;; $num_reps++ ) {
-        my $indexer = KinoSearch::Indexer->new(
+        my $indexer = KinoSearch::Index::Indexer->new(
             index  => $index_loc,
             schema => $schema,
         );
@@ -63,7 +63,7 @@ my $num_reps;
 my @correct;
 for my $num_letters ( reverse 1 .. 10 ) {
     my $truncate = $num_letters == 10 ? 1 : 0;
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index    => $index_loc,
         truncate => $truncate,
     );
@@ -77,7 +77,8 @@ for my $num_letters ( reverse 1 .. 10 ) {
 }
 
 {
-    my $searcher = KinoSearch::Searcher->new( index => $index_loc );
+    my $searcher
+        = KinoSearch::Search::IndexSearcher->new( index => $index_loc );
     my $hits = $searcher->hits( query => 'b' );
     is( $hits->total_hits, 10, "correct total_hits from merged index" );
     my @got;
@@ -90,7 +91,7 @@ for my $num_letters ( reverse 1 .. 10 ) {
     # Reopen index under BiggerSchema and add some content.
     my $schema  = BiggerSchema->new;
     my $folder  = KinoSearch::Store::FSFolder->new( path => $index_loc );
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         schema  => $schema,
         index   => $folder,
         manager => NonMergingIndexManager->new,
@@ -108,7 +109,8 @@ for my $num_letters ( reverse 1 .. 10 ) {
 }
 
 {
-    my $searcher = KinoSearch::Searcher->new( index => $index_loc );
+    my $searcher
+        = KinoSearch::Search::IndexSearcher->new( index => $index_loc );
     my $hits = $searcher->hits( query => 'fish' );
     is( $hits->total_hits, 1, "correct total_hits after add_index" );
     is( $hits->next->{content},
@@ -121,7 +123,7 @@ for my $num_letters ( reverse 1 .. 10 ) {
     my $schema  = BiggerSchema->new;
     my $folder  = KinoSearch::Store::FSFolder->new( path => $index_loc );
     my $reader  = KinoSearch::Index::IndexReader->open( index => $folder );
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -129,7 +131,7 @@ for my $num_letters ( reverse 1 .. 10 ) {
     $indexer->commit;
     $reader->close;
     undef $reader;
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -144,7 +146,7 @@ is( num_segmeta($index_loc), 1, "merged segment files successfully deleted" );
     my $schema = KinoSearch::Test::TestSchema->new;
     my $number = 1;
     for ( 1 .. 3 ) {
-        my $indexer = KinoSearch::Indexer->new(
+        my $indexer = KinoSearch::Index::Indexer->new(
             index   => $folder,
             schema  => $schema,
             manager => NonMergingIndexManager->new,
@@ -152,7 +154,7 @@ is( num_segmeta($index_loc), 1, "merged segment files successfully deleted" );
         $indexer->add_doc( { content => $number++ } ) for 1 .. 20;
         $indexer->commit;
     }
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index  => $folder,
         schema => $schema,
     );

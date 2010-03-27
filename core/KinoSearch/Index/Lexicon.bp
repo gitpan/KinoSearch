@@ -20,7 +20,10 @@ class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Object::Obj {
     CharBuf *field;
 
     public inert Lexicon*
-    init(Lexicon *self);
+    init(Lexicon *self, const CharBuf *field);
+
+    public void
+    Destroy(Lexicon *self);
 
     /** Seek the Lexicon to the first iterator state which is greater than or
      * equal to <code>target</code>.  If <code>target</code> is NULL,
@@ -51,7 +54,7 @@ class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Object::Obj {
     /** Return the current term, or NULL if the iterator is not in a valid
      * state.
      */
-    public abstract Obj*
+    public abstract nullable Obj*
     Get_Term(Lexicon *self);
 
     public CharBuf*

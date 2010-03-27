@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 15;
 use List::Util qw( shuffle );
 use KinoSearch::Test;
 use bytes qw();
@@ -67,11 +67,6 @@ while ( defined( my $result = $sortex->fetch ) ) {
 is_deeply( \@sort_output, \@orig, "sort letters" );
 @orig        = ();
 @sort_output = ();
-
-$sortex = KinoSearch::Test::Util::BBSortEx->new;
-$sortex->feed( new_bytebuf($_) ) for shuffle(@orig);
-eval { $sortex->fetch; };
-like( $@, qr/flip/i, "fetch before flip throws exception" );
 
 $sortex = KinoSearch::Test::Util::BBSortEx->new;
 @orig   = qw( a a a b c d x x x x x x y y );

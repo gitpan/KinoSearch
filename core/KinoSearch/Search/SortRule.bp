@@ -32,7 +32,7 @@ class KinoSearch::Search::SortRule extends KinoSearch::Object::Obj {
 
     /** Accessor for "field" member. 
      */
-    public CharBuf*
+    public nullable CharBuf*
     Get_Field(SortRule *self);
 
     /** Accessor for "type" member. 

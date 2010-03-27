@@ -8,13 +8,12 @@
 #include "KinoSearch/Index/PostingPool.h"
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Plan/Architecture.h"
-#include "KinoSearch/Posting.h"
-#include "KinoSearch/Posting/RawPosting.h"
-#include "KinoSearch/Schema.h"
-#include "KinoSearch/FieldType.h"
+#include "KinoSearch/Plan/FieldType.h"
 #include "KinoSearch/Index/LexiconReader.h"
 #include "KinoSearch/Index/LexiconWriter.h"
 #include "KinoSearch/Index/PolyReader.h"
+#include "KinoSearch/Index/Posting.h"
+#include "KinoSearch/Index/Posting/RawPosting.h"
 #include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/RawLexicon.h"
 #include "KinoSearch/Index/RawPostingList.h"
@@ -24,6 +23,8 @@
 #include "KinoSearch/Index/SkipStepper.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/TermStepper.h"
+#include "KinoSearch/Plan/Schema.h"
+#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -35,19 +36,10 @@ static void
 S_fresh_flip(PostingPool *self, InStream *lex_temp_in, 
              InStream *post_temp_in);
 
-typedef Obj*
-(*kino_PostPool_fetch_t)(PostingPool *self);
-#define PostPool_fetch_t kino_PostPool_fetch_t
-
-/* Like Fetch(), but does not access external storage. 
- */
-static Obj*
-S_fetch_from_ram(PostingPool *self);
-
 /* Main loop. */
 static void
-S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
-                           PostPool_fetch_t fetch, OutStream *skip_stream);
+S_write_terms_and_postings(PostingPool *self, PostingWriter *post_writer,
+                           OutStream *skip_stream);
 
 PostingPool*
 PostPool_new(Schema *schema, Snapshot *snapshot, Segment *segment, 
@@ -69,7 +61,7 @@ PostPool_init(PostingPool *self, Schema *schema, Snapshot *snapshot,
               OutStream *skip_out)
 {
     /* Init. */
-    SortEx_init((SortExternal*)self, 0);
+    SortEx_init((SortExternal*)self, sizeof(Obj*));
     self->doc_base         = 0;
     self->last_doc_id      = 0;
     self->doc_map          = NULL;
@@ -97,8 +89,8 @@ PostPool_init(PostingPool *self, Schema *schema, Snapshot *snapshot,
     self->skip_out       = (OutStream*)INCREF(skip_out);
 
     /* Derive. */
-    Posting *posting = Schema_Fetch_Posting(schema, field);
-    self->posting   = (Posting*)Post_Clone(posting);
+    Similarity *sim = Schema_Fetch_Sim(schema, field);
+    self->posting   = Sim_Make_Posting(sim);
     self->type      = (FieldType*)INCREF(Schema_Fetch_Type(schema, field));
     self->field_num = Seg_Field_Num(segment, field);
 
@@ -126,26 +118,18 @@ PostPool_destroy(PostingPool *self)
     DECREF(self->posting);
     DECREF(self->skip_stepper);
     DECREF(self->type);
-    
-    /* Setting these to 0 causes SortEx_Clear_Cache to avoid 
-     * decrementing refcounts on cache elements -- which is 
-     * important because they were all zapped when MemPool went
-     * away.  */
-    self->cache_max   = 0;
-    self->cache_tick  = 0;
-
     SUPER_DESTROY(self, POSTINGPOOL);
 }
 
 int
-PostPool_compare(PostingPool *self, Obj **a, Obj **b)
+PostPool_compare(PostingPool *self, void *va, void *vb)
 {
-    RawPosting *const raw_post_a = *(RawPosting**)a;
-    RawPosting *const raw_post_b = *(RawPosting**)b;
-    const size_t a_len = raw_post_a->content_len;
-    const size_t b_len = raw_post_b->content_len;
-    const size_t len = a_len < b_len? a_len : b_len;
-    int comparison = memcmp(raw_post_a->blob, raw_post_b->blob, len);
+    RawPosting *const a     = *(RawPosting**)va;
+    RawPosting *const b     = *(RawPosting**)vb;
+    const size_t      a_len = a->content_len;
+    const size_t      b_len = b->content_len;
+    const size_t      len   = a_len < b_len? a_len : b_len;
+    int comparison = memcmp(a->blob, b->blob, len);
     UNUSED_VAR(self);
 
     if (comparison == 0) {
@@ -154,7 +138,7 @@ PostPool_compare(PostingPool *self, Obj **a, Obj **b)
 
         /* Break ties by doc id. */
         if (comparison == 0) {
-            comparison = raw_post_a->doc_id - raw_post_b->doc_id;
+            comparison = a->doc_id - b->doc_id;
         }
     }
 
@@ -173,6 +157,23 @@ PostPool_flip(PostingPool *self)
         ? self->mem_thresh / num_runs 
         : self->mem_thresh;
 
+    if (num_runs) {
+        Folder  *folder = PolyReader_Get_Folder(self->polyreader);
+        CharBuf *seg_name = Seg_Get_Name(self->segment);
+        CharBuf *lex_temp_path  = CB_newf("%o/lextemp", seg_name);
+        CharBuf *post_temp_path = CB_newf("%o/ptemp", seg_name);
+        self->lex_temp_in = Folder_Open_In(folder, lex_temp_path);
+        if (!self->lex_temp_in) { 
+            RETHROW(INCREF(Err_get_error()));
+        }
+        self->post_temp_in = Folder_Open_In(folder, post_temp_path);
+        if (!self->post_temp_in) { 
+            RETHROW(INCREF(Err_get_error()));
+        }
+        DECREF(lex_temp_path);
+        DECREF(post_temp_path);
+    }
+
     PostPool_Sort_Cache(self);
     if (num_runs && (self->cache_max - self->cache_tick) > 0) {
         uint32_t num_items = PostPool_Cache_Count(self);
@@ -182,7 +183,7 @@ PostPool_flip(PostingPool *self)
             self->mem_pool, self->lex_temp_out, self->post_temp_out, 
             self->skip_out);
         PostPool_Grow_Cache(run, num_items);
-        memcpy(run->cache, self->cache + self->cache_tick, 
+        memcpy(run->cache, ((Obj**)self->cache) + self->cache_tick, 
             num_items * sizeof(Obj*));
         run->cache_max = num_items;
         PostPool_Add_Run(self, (SortExternal*)run);
@@ -244,10 +245,10 @@ PostPool_shrink(PostingPool *self)
         size_t cache_count = PostPool_Cache_Count(self);
         size_t size        = cache_count * sizeof(Obj*);
         if (self->cache_tick > 0) {
-            Obj **start = self->cache + self->cache_tick;
+            Obj **start = ((Obj**)self->cache) + self->cache_tick;
             memmove(self->cache, start, size);
         }
-        self->cache      = (Obj**)REALLOCATE(self->cache, size);
+        self->cache      = (uint8_t*)REALLOCATE(self->cache, size);
         self->cache_tick = 0;
         self->cache_max  = cache_count;
         self->cache_cap  = cache_count;
@@ -267,15 +268,6 @@ PostPool_shrink(PostingPool *self)
      * any cache costs until Refill() gets called. */
 }
 
-static Obj*
-S_fetch_from_ram(PostingPool *self)
-{
-    if (self->cache_tick >= self->cache_max) {
-        return NULL;
-    }
-    return self->cache[ self->cache_tick++ ];
-}
-
 void 
 PostPool_flush(PostingPool *self)
 {
@@ -286,9 +278,15 @@ PostPool_flush(PostingPool *self)
         self->segment, self->polyreader, self->field, self->lex_writer, 
         self->mem_pool, self->lex_temp_out, self->post_temp_out, 
         self->skip_out);
-    PostingStreamer *streamer = (PostingStreamer*)RawPostStreamer_new(
+    PostingWriter *post_writer = (PostingWriter*)RawPostWriter_new(
         self->schema, self->snapshot, self->segment, self->polyreader, 
         self->post_temp_out);
+
+    // Borrow the cache.
+    run->cache      = self->cache;
+    run->cache_tick = self->cache_tick;
+    run->cache_max  = self->cache_max;
+    run->cache_cap  = self->cache_cap;
 
     /* Write to temp files. */
     LexWriter_Enter_Temp_Mode(self->lex_writer, self->field, 
@@ -296,17 +294,23 @@ PostPool_flush(PostingPool *self)
     run->lex_start  = OutStream_Tell(self->lex_temp_out);
     run->post_start = OutStream_Tell(self->post_temp_out);
     PostPool_Sort_Cache(self);
-    S_write_terms_and_postings(self, streamer, S_fetch_from_ram, NULL);
+    S_write_terms_and_postings(run, post_writer, NULL);
     
     run->lex_end  = OutStream_Tell(self->lex_temp_out);
     run->post_end = OutStream_Tell(self->post_temp_out);
     LexWriter_Leave_Temp_Mode(self->lex_writer);
 
-    /* Add the run to the array. */
-    PostPool_Add_Run(self, (SortExternal*)run);
+    // Return the cache and empty it.
+    run->cache      = NULL;
+    run->cache_tick = 0;
+    run->cache_max  = 0;
+    run->cache_cap  = 0;
     PostPool_Clear_Cache(self);
 
-    DECREF(streamer);
+    /* Add the run to the array. */
+    PostPool_Add_Run(self, (SortExternal*)run);
+
+    DECREF(post_writer);
 }
 
 void
@@ -315,20 +319,19 @@ PostPool_finish(PostingPool *self)
     /* Bail if there's no data. */
     if (!PostPool_Peek(self)) { return; }
 
-    PostingStreamer *streamer = Post_Make_Streamer(self->posting, 
+    Similarity *sim = Schema_Fetch_Sim(self->schema, self->field);
+    PostingWriter *post_writer = Sim_Make_Posting_Writer(sim, 
         self->schema, self->snapshot, self->segment, self->polyreader,
         self->field_num);
-    PostPool_fetch_t fetch 
-        = (PostPool_fetch_t)METHOD(PostPool_Get_VTable(self), PostPool, Fetch);
     LexWriter_Start_Field(self->lex_writer, self->field_num);
-    S_write_terms_and_postings(self, streamer, fetch, self->skip_out);
+    S_write_terms_and_postings(self, post_writer, self->skip_out);
     LexWriter_Finish_Field(self->lex_writer, self->field_num);
-    DECREF(streamer);
+    DECREF(post_writer);
 }
 
 static void
-S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
-                           PostPool_fetch_t fetch, OutStream *skip_stream)
+S_write_terms_and_postings(PostingPool *self, PostingWriter *post_writer,
+                           OutStream *skip_stream)
 {
     TermInfo      *const tinfo          = TInfo_new(0);
     TermInfo      *const skip_tinfo     = TInfo_new(0);
@@ -342,7 +345,8 @@ S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
         = Arch_Skip_Interval(Schema_Get_Architecture(self->schema));
 
     /* Prime heldover variables. */
-    RawPosting *posting = (RawPosting*)CERTIFY(fetch(self), RAWPOSTING);
+    RawPosting *posting = (RawPosting*)CERTIFY(
+        (*(RawPosting**)PostPool_Fetch(self)), RAWPOSTING);
     CB_Mimic_Str(last_term_text, posting->blob, posting->content_len);
     char *last_text_buf = (char*)CB_Get_Ptr8(last_term_text);
     u32_t last_text_size = CB_Get_Size(last_term_text);
@@ -373,7 +377,7 @@ S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
 
             /* Start each term afresh. */
             TInfo_Reset(tinfo);
-            PostStreamer_Start_Term(streamer, tinfo);
+            PostWriter_Start_Term(post_writer, tinfo);
 
             /* Init skip data in preparation for the next term. */
             skip_stepper->doc_id  = 0;
@@ -395,7 +399,7 @@ S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
         if (posting == &RAWPOSTING_BLANK) { break; }
 
         /* Write posting data. */
-        PostStreamer_Write_Posting(streamer, posting);
+        PostWriter_Write_Posting(post_writer, posting);
 
         /* Doc freq lags by one iter. */
         tinfo->doc_freq++;
@@ -414,7 +418,7 @@ S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
             last_skip_doc         = skip_stepper->doc_id;
             last_skip_filepos     = skip_stepper->filepos;
             skip_stepper->doc_id  = posting->doc_id;
-            PostStreamer_Update_Skip_Info(streamer, skip_tinfo);
+            PostWriter_Update_Skip_Info(post_writer, skip_tinfo);
             skip_stepper->filepos = skip_tinfo->post_filepos;
             SkipStepper_Write_Record(skip_stepper, skip_stream,
                  last_skip_doc, last_skip_filepos);
@@ -425,7 +429,11 @@ S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
 
         /* Retrieve the next posting from the sort pool. */
         /* DECREF(posting); */ /* No!!  DON'T destroy!!!  */
-        posting = (RawPosting*)fetch(self);
+
+        void *address = PostPool_Fetch(self);
+        posting = address 
+                ? *(RawPosting**)address
+                : NULL;
     }
 
     /* Clean up. */
@@ -433,7 +441,6 @@ S_write_terms_and_postings(PostingPool *self, PostingStreamer *streamer,
     DECREF(skip_tinfo);
     DECREF(tinfo);
 }
-
 
 u32_t
 PostPool_refill(PostingPool *self)
@@ -460,7 +467,7 @@ PostPool_refill(PostingPool *self)
 
     /* Ditch old MemoryPool and get another. */
     DECREF(self->mem_pool);
-    self->mem_pool = MemPool_new(self->mem_thresh + 4096);
+    self->mem_pool = MemPool_new(0);
     mem_pool       = self->mem_pool;
 
     while (1) {
@@ -510,7 +517,8 @@ PostPool_refill(PostingPool *self)
             size_t new_cap = Memory_oversize(num_elems + 1, sizeof(Obj*));
             PostPool_Grow_Cache(self, new_cap);
         }
-        self->cache[ num_elems ] = (Obj*)raw_posting;
+        Obj **cache = (Obj**)self->cache;
+        cache[num_elems] = (Obj*)raw_posting;
         num_elems++;
     }
 
@@ -519,20 +527,6 @@ PostPool_refill(PostingPool *self)
     self->cache_tick  = 0;
 
     return num_elems;
-}
-
-void
-PostPool_set_lex_temp_in(PostingPool *self, InStream *instream)
-{
-    DECREF(self->lex_temp_in);
-    self->lex_temp_in = instream;
-}
-
-void
-PostPool_set_post_temp_in(PostingPool *self, InStream *instream)
-{
-    DECREF(self->post_temp_in);
-    self->post_temp_in = instream;
 }
 
 void

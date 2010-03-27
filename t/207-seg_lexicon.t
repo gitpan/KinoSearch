@@ -10,11 +10,11 @@ use base qw( KinoSearch::Analysis::Analyzer );
 sub transform { $_[1] }
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => TestAnalyzer->new );
     $self->spec_field( name => 'a', type => $type );
     $self->spec_field( name => 'b', type => $type );
@@ -26,7 +26,7 @@ package main;
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = MySchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     create => 1,
     index  => $folder,
     schema => $schema,

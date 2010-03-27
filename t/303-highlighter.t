@@ -3,18 +3,18 @@ use warnings;
 use lib 'buildlib';
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $class      = shift;
     my $self       = $class->SUPER::new(@_);
     my $tokenizer  = KinoSearch::Analysis::Tokenizer->new;
-    my $plain_type = KinoSearch::FieldType::FullTextType->new(
+    my $plain_type = KinoSearch::Plan::FullTextType->new(
         analyzer      => $tokenizer,
         highlightable => 1,
     );
-    my $dunked_type = KinoSearch::FieldType::FullTextType->new(
+    my $dunked_type = KinoSearch::Plan::FullTextType->new(
         analyzer      => $tokenizer,
         highlightable => 1,
         boost         => 0.1,
@@ -54,7 +54,7 @@ $string .= '6 7 8 9 0 ' x 20;
 my $with_quotes = '"I see," said the blind man.';
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => MySchema->new,
 );
@@ -67,12 +67,12 @@ $indexer->add_doc(
 );
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $q    = qq|"x y z" AND $phi|;
 my $hits = $searcher->hits( query => $q );
 my $hl   = KinoSearch::Highlight::Highlighter->new(
-    searchable     => $searcher,
+    searcher       => $searcher,
     query          => $q,
     field          => 'content',
     excerpt_length => 3,
@@ -123,7 +123,7 @@ is( $top, 0, "correct offset" );
 undef $target;
 
 $hl = KinoSearch::Highlight::Highlighter->new(
-    searchable     => $searcher,
+    searcher       => $searcher,
     query          => $q,
     field          => 'content',
     excerpt_length => 6,
@@ -182,7 +182,7 @@ is( $target->to_perl, "Iz no\x{2026}", "Ellipsis at end" );
 is( $top, 6, "top trimmed" );
 
 $hl = KinoSearch::Highlight::Highlighter->new(
-    searchable     => $searcher,
+    searcher       => $searcher,
     query          => $q,
     field          => 'content',
     excerpt_length => 3,
@@ -224,9 +224,9 @@ like(
 );
 
 $hl = KinoSearch::Highlight::Highlighter->new(
-    searchable => $searcher,
-    query      => $q,
-    field      => 'content',
+    searcher => $searcher,
+    query    => $q,
+    field    => 'content',
 );
 
 my $hit     = $hits->next;
@@ -253,9 +253,9 @@ like( $hl->create_excerpt( $hits->next() ),
 
 $hits = $searcher->hits( query => $q = 'x "x y z" AND b' );
 $hl = KinoSearch::Highlight::Highlighter->new(
-    searchable => $searcher,
-    query      => $q,
-    field      => 'content',
+    searcher => $searcher,
+    query    => $q,
+    field    => 'content',
 );
 $excerpt = $hl->create_excerpt( $hits->next() );
 $excerpt =~ s#</?strong>##g;
@@ -265,9 +265,9 @@ like( $excerpt, qr/x y z/,
 $hits = $searcher->hits( query => $q = 'blind' );
 like(
     KinoSearch::Highlight::Highlighter->new(
-        searchable => $searcher,
-        query      => $q,
-        field      => 'content',
+        searcher => $searcher,
+        query    => $q,
+        field    => 'content',
         )->create_excerpt( $hits->next() ),
     qr/quot/,
     "HTML entity encoded properly"
@@ -276,9 +276,9 @@ like(
 $hits = $searcher->hits( query => $q = 'why' );
 unlike(
     KinoSearch::Highlight::Highlighter->new(
-        searchable => $searcher,
-        query      => $q,
-        field      => 'content',
+        searcher => $searcher,
+        query    => $q,
+        field    => 'content',
         )->create_excerpt( $hits->next() ),
     qr/\.\.\./,
     "no ellipsis for short excerpt"
@@ -292,18 +292,18 @@ $hits = $searcher->hits( query => $term_query );
 $hit = $hits->next();
 like(
     KinoSearch::Highlight::Highlighter->new(
-        searchable => $searcher,
-        query      => $term_query,
-        field      => 'content',
+        searcher => $searcher,
+        query    => $term_query,
+        field    => 'content',
         )->create_excerpt($hit),
     qr/strong/,
     "specify field highlights correct field..."
 );
 unlike(
     KinoSearch::Highlight::Highlighter->new(
-        searchable => $searcher,
-        query      => $term_query,
-        field      => 'alt',
+        searcher => $searcher,
+        query    => $term_query,
+        field    => 'alt',
         )->create_excerpt($hit),
     qr/strong/,
     "... but not another field"
@@ -311,9 +311,9 @@ unlike(
 
 my $sentence_text = 'This is a sentence. ' x 15;
 $hl = KinoSearch::Highlight::Highlighter->new(
-    searchable => $searcher,
-    query      => $q,
-    field      => 'content',
+    searcher => $searcher,
+    query    => $q,
+    field    => 'content',
 );
 my $sentences = $hl->find_sentences(
     text   => $sentence_text,
@@ -350,9 +350,9 @@ is_deeply(
 );
 
 $hl = MyHighlighter->new(
-    searchable => $searcher,
-    query      => "blind",
-    field      => 'content',
+    searcher => $searcher,
+    query    => "blind",
+    field    => 'content',
 );
 $hits = $searcher->hits( query => 'blind' );
 $hit = $hits->next;

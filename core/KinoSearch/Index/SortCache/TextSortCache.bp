@@ -8,21 +8,18 @@ class KinoSearch::Index::SortCache::TextSortCache
     InStream  *ord_in;
     InStream  *ix_in;
     InStream  *dat_in;
-    i64_t     *offsets;
-    i64_t     *offsets_limit;
-    char      *char_data;
-    char      *char_data_limit;
 
-    public inert incremented TextSortCache*
-    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num,
-        i32_t num_unique, i32_t null_ord = -1);
+    inert incremented TextSortCache*
+    new(const CharBuf *field, FieldType *type, i32_t cardinality, 
+        i32_t doc_max, i32_t null_ord = -1, InStream *ord_in, InStream *ix_in,
+        InStream *dat_in);
 
-    public inert TextSortCache*
-    init(TextSortCache *self, Schema *schema, Folder *folder, 
-         Segment *segment, i32_t field_num, i32_t num_unique, 
-         i32_t null_ord = -1);
+    inert TextSortCache*
+    init(TextSortCache *self, const CharBuf *field, FieldType *type, 
+         i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
+         InStream *ord_in, InStream *ix_in, InStream *dat_in);
 
-    public Obj*
+    public nullable Obj*
     Value(TextSortCache *self, i32_t ord, Obj *blank);
 
     public void

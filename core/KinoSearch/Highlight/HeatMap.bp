@@ -9,10 +9,10 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Highlight::HeatMap extends KinoSearch::Object::Obj {
 
     VArray *spans;
-    u32_t   window;
+    uint32_t   window;
 
     inert incremented HeatMap*
-    new(VArray *spans, u32_t window = 133);
+    new(VArray *spans, uint32_t window = 133);
 
     /**
      * @param spans An array of Spans, which need not be sorted and will not
@@ -21,7 +21,7 @@ class KinoSearch::Highlight::HeatMap extends KinoSearch::Object::Obj {
      * reinforce each other.
      */
     public inert HeatMap*
-    init(HeatMap *self, VArray *spans, u32_t window = 133);
+    init(HeatMap *self, VArray *spans, uint32_t window = 133);
 
     /** Reduce/slice overlapping spans.  Say we have two spans:
      *

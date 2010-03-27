@@ -7,14 +7,14 @@
 #include "KinoSearch/Util/SortUtils.h"
 
 HeatMap*
-HeatMap_new(VArray *spans, u32_t window)
+HeatMap_new(VArray *spans, uint32_t window)
 {
     HeatMap *self = (HeatMap*)VTable_Make_Obj(HEATMAP);
     return HeatMap_init(self, spans, window);
 }
 
 HeatMap*
-HeatMap_init(HeatMap *self, VArray *spans, u32_t window)
+HeatMap_init(HeatMap *self, VArray *spans, uint32_t window)
 {
     VArray *spans_copy = VA_Shallow_Copy(spans);
     VArray *spans_plus_boosts;
@@ -45,7 +45,7 @@ static int
 S_compare_i32(void *context, const void *va, const void *vb)
 {
     UNUSED_VAR(context);
-    return *(i32_t*)va - *(i32_t*)vb;
+    return *(int32_t*)va - *(int32_t*)vb;
 }
 
 /* Create all the spans needed by HeatMap_Flatten_Spans, based on the source
@@ -53,21 +53,20 @@ S_compare_i32(void *context, const void *va, const void *vb)
 static VArray*
 S_flattened_but_empty_spans(VArray *spans)
 {
-    VArray     *flattened;
-    const u32_t num_spans  = VA_Get_Size(spans);
-    i32_t      *bounds     = (i32_t*)MALLOCATE((num_spans * 2) * sizeof(i32_t));
-    u32_t       num_bounds;
-    u32_t       i;
-    i32_t       last;
+    const uint32_t num_spans = VA_Get_Size(spans);
+    int32_t *bounds = (int32_t*)MALLOCATE((num_spans * 2) * sizeof(int32_t));
 
     /* Assemble a list of all unique start/end boundaries. */
-    for (i = 0; i < num_spans; i++) {
+    for (uint32_t i = 0; i < num_spans; i++) {
         Span *span            = (Span*)VA_Fetch(spans, i);
         bounds[i]             = span->offset;
         bounds[i + num_spans] = span->offset + span->length; 
     }
-    Sort_quicksort(bounds, num_spans * 2, sizeof(u32_t), S_compare_i32, NULL);
-    for (i = 0, num_bounds = 0, last = U32_MAX; i < num_spans * 2; i++) {
+    Sort_quicksort(bounds, num_spans * 2, sizeof(uint32_t), 
+        S_compare_i32, NULL);
+    uint32_t num_bounds = 0;
+    int32_t  last       = U32_MAX;
+    for (uint32_t i = 0; i < num_spans * 2; i++) {
         if (bounds[i] != last) {
             bounds[num_bounds++] = bounds[i];
             last = bounds[i];
@@ -75,10 +74,10 @@ S_flattened_but_empty_spans(VArray *spans)
     }
 
     /* Create one Span for each zone between two bounds. */
-    flattened = VA_new(num_bounds - 1);
-    for (i = 0; i < num_bounds - 1; i++) {
-        i32_t  start   = bounds[i];
-        i32_t  length  = bounds[i + 1] - start;
+    VArray *flattened = VA_new(num_bounds - 1);
+    for (uint32_t i = 0; i < num_bounds - 1; i++) {
+        int32_t  start   = bounds[i];
+        int32_t  length  = bounds[i + 1] - start;
         VA_Push(flattened, (Obj*)Span_new(start, length, 0.0f));
     }
 
@@ -89,24 +88,23 @@ S_flattened_but_empty_spans(VArray *spans)
 VArray*
 HeatMap_flatten_spans(HeatMap *self, VArray *spans)
 {
-    const u32_t num_spans = VA_Get_Size(spans);
+    const uint32_t num_spans = VA_Get_Size(spans);
     UNUSED_VAR(self);
 
     if (!num_spans) {
         return VA_new(0);
     }
     else {
-        VArray      *flattened = S_flattened_but_empty_spans(spans);
-        const u32_t  num_raw_flattened = VA_Get_Size(flattened);
-        u32_t        dest_tick = 0;
-        u32_t        i;
+        VArray *flattened = S_flattened_but_empty_spans(spans);
+        const uint32_t num_raw_flattened = VA_Get_Size(flattened);
 
         /* Iterate over each of the source spans, contributing their scores to
          * any destination span that falls within range. */
-        for (i = 0; i < num_spans; i++) {
+        uint32_t dest_tick = 0;
+        for (uint32_t i = 0; i < num_spans; i++) {
             Span *source_span = (Span*)VA_Fetch(spans, i);
-            u32_t j;
-            i32_t source_span_end = source_span->offset + source_span->length;
+            int32_t source_span_end 
+                = source_span->offset + source_span->length;
 
             /* Get the location of the flattened span that shares the source
              * span's offset. */
@@ -117,7 +115,7 @@ HeatMap_flatten_spans(HeatMap *self, VArray *spans)
             }
 
             /* Fill in scores. */
-            for (j = dest_tick; j < num_raw_flattened; j++) {
+            for (uint32_t j = dest_tick; j < num_raw_flattened; j++) {
                 Span *dest_span = (Span*)VA_Fetch(flattened, j);
                 if (dest_span->offset == source_span_end)
                     break;
@@ -128,7 +126,8 @@ HeatMap_flatten_spans(HeatMap *self, VArray *spans)
         }
 
         /* Leave holes instead of spans that don't have any score. */
-        for (i = 0, dest_tick = 0; i < num_raw_flattened; i++) {
+        dest_tick = 0;
+        for (uint32_t i = 0; i < num_raw_flattened; i++) {
             Span *span = (Span*)VA_Fetch(flattened, i);
             if (span->weight) {
                 VA_Store(flattened, dest_tick++, INCREF(span));
@@ -143,16 +142,16 @@ HeatMap_flatten_spans(HeatMap *self, VArray *spans)
 float
 HeatMap_calc_proximity_boost(HeatMap *self, Span *span1, Span *span2)
 {
-    i32_t comparison = Span_Compare_To(span1, (Obj*)span2);
+    int32_t comparison = Span_Compare_To(span1, (Obj*)span2);
     Span *lower = comparison <= 0 ? span1 : span2;
     Span *upper = comparison >= 0 ? span1 : span2;
-    i32_t lower_end_offset = lower->offset + lower->length;
-    i32_t distance = upper->offset - lower_end_offset;
+    int32_t lower_end_offset = lower->offset + lower->length;
+    int32_t distance = upper->offset - lower_end_offset;
 
     /* If spans overlap, set distance to 0. */
     if (distance < 0) distance = 0;
 
-    if (distance > (i32_t)self->window) {
+    if (distance > (int32_t)self->window) {
         return 0.0f;
     }
     else {
@@ -167,15 +166,13 @@ VArray*
 HeatMap_generate_proximity_boosts(HeatMap *self, VArray *spans) 
 {
     VArray *boosts = VA_new(0);
-    const u32_t num_spans = VA_Get_Size(spans);
+    const uint32_t num_spans = VA_Get_Size(spans);
 
     if (num_spans > 1) {
-        u32_t i, max;
-        for (i = 0, max = num_spans - 1; i < max; i++ ) {
+        for (uint32_t i = 0, max = num_spans - 1; i < max; i++ ) {
             Span *span1 = (Span*)VA_Fetch(spans, i);
-            u32_t j;
 
-            for (j = i + 1; j <= max; j++) {
+            for (uint32_t j = i + 1; j <= max; j++) {
                 Span *span2 = (Span*)VA_Fetch(spans, j);
                 float prox_score 
                     = HeatMap_Calc_Proximity_Boost(self, span1, span2);
@@ -183,7 +180,7 @@ HeatMap_generate_proximity_boosts(HeatMap *self, VArray *spans)
                     break;
                 }
                 else {
-                    i32_t length = (span2->offset - span1->offset)
+                    int32_t length = (span2->offset - span1->offset)
                         + span2->length;
                     VA_Push(boosts, 
                         (Obj*)Span_new(span1->offset, length, prox_score));

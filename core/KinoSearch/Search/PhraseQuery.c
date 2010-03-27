@@ -5,19 +5,19 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/PhraseQuery.h"
-#include "KinoSearch/Posting.h"
-#include "KinoSearch/Posting/ScorePosting.h"
-#include "KinoSearch/Schema.h"
-#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Index/DocVector.h"
-#include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Index/Posting.h"
+#include "KinoSearch/Index/Posting/ScorePosting.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/SegPostingList.h"
+#include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/TermVector.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/PhraseScorer.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Search/TermQuery.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -116,7 +116,7 @@ PhraseQuery_to_string(PhraseQuery *self)
 }
 
 Compiler*
-PhraseQuery_make_compiler(PhraseQuery *self, Searchable *searchable, 
+PhraseQuery_make_compiler(PhraseQuery *self, Searcher *searcher, 
                           float boost)
 {
     if (VA_Get_Size(self->terms) == 1) {
@@ -126,12 +126,12 @@ PhraseQuery_make_compiler(PhraseQuery *self, Searchable *searchable,
         TermCompiler *term_compiler;
         TermQuery_Set_Boost(term_query, self->boost);
         term_compiler = (TermCompiler*)TermQuery_Make_Compiler(term_query,
-            searchable, boost);
+            searcher, boost);
         DECREF(term_query);
         return (Compiler*)term_compiler;
     }
     else {
-        return (Compiler*)PhraseCompiler_new(self, searchable, boost);
+        return (Compiler*)PhraseCompiler_new(self, searcher, boost);
     }
 }
 
@@ -143,17 +143,17 @@ PhraseQuery_get_terms(PhraseQuery *self) { return self->terms; }
 /*********************************************************************/
 
 PhraseCompiler*
-PhraseCompiler_new(PhraseQuery *parent, Searchable *searchable, float boost)
+PhraseCompiler_new(PhraseQuery *parent, Searcher *searcher, float boost)
 {
     PhraseCompiler *self = (PhraseCompiler*)VTable_Make_Obj(PHRASECOMPILER);
-    return PhraseCompiler_init(self, parent, searchable, boost);
+    return PhraseCompiler_init(self, parent, searcher, boost);
 }
 
 PhraseCompiler*
 PhraseCompiler_init(PhraseCompiler *self, PhraseQuery *parent, 
-                    Searchable *searchable, float boost)
+                    Searcher *searcher, float boost)
 {
-    Schema     *schema = Searchable_Get_Schema(searchable);
+    Schema     *schema = Searcher_Get_Schema(searcher);
     Similarity *sim    = Schema_Fetch_Sim(schema, parent->field);
     VArray     *terms  = parent->terms;
     u32_t i, max;
@@ -162,13 +162,13 @@ PhraseCompiler_init(PhraseCompiler *self, PhraseQuery *parent,
     if (!sim) { sim = Schema_Get_Similarity(schema); }
 
     /* Init. */
-    Compiler_init((Compiler*)self, (Query*)parent, searchable, sim, boost);
+    Compiler_init((Compiler*)self, (Query*)parent, searcher, sim, boost);
 
     /* Store IDF for the phrase. */
     self->idf = 0;
     for (i = 0, max = VA_Get_Size(terms); i < max; i++) {
         Obj *term = VA_Fetch(terms, i);
-        self->idf += Sim_IDF(sim, searchable, parent->field, term);
+        self->idf += Sim_IDF(sim, searcher, parent->field, term);
     }
 
     /* Calculate raw weight. */
@@ -238,32 +238,31 @@ Matcher*
 PhraseCompiler_make_matcher(PhraseCompiler *self, SegReader *reader,
                             bool_t need_score)
 {
-    PostingListReader *const plist_reader = (PostingListReader*)SegReader_Fetch(
-        reader, VTable_Get_Name(POSTINGLISTREADER));
-    PhraseQuery *const parent = (PhraseQuery*)self->parent;
-    VArray  *const terms      = parent->terms;
-    u32_t    num_terms        = VA_Get_Size(terms);
-    Schema  *schema           = SegReader_Get_Schema(reader);
-    Posting *posting          = Schema_Fetch_Posting(schema, parent->field);
-    VArray  *plists;
-    Matcher *retval;
-    u32_t i;
     UNUSED_VAR(need_score);
+    PhraseQuery *const parent    = (PhraseQuery*)self->parent;
+    VArray *const      terms     = parent->terms;
+    uint32_t           num_terms = VA_Get_Size(terms);
 
     /* Bail if there are no terms. */
     if (!num_terms) return NULL;
 
     /* Bail unless field is valid and posting type supports positions. */
+    Similarity *sim     = PhraseCompiler_Get_Similarity(self);
+    Posting    *posting = Sim_Make_Posting(sim);
     if (posting == NULL || !Obj_Is_A((Obj*)posting, SCOREPOSTING)) {
+        DECREF(posting);
         return NULL;
     }
+    DECREF(posting);
 
     /* Bail if there's no PostingListReader for this segment. */
+    PostingListReader *const plist_reader = (PostingListReader*)SegReader_Fetch(
+        reader, VTable_Get_Name(POSTINGLISTREADER));
     if (!plist_reader) { return NULL; }
 
     /* Look up each term. */
-    plists = VA_new(num_terms);
-    for (i = 0; i < num_terms; i++) {
+    VArray  *plists = VA_new(num_terms);
+    for (uint32_t i = 0; i < num_terms; i++) {
         Obj *term = VA_Fetch(terms, i);
         PostingList *plist 
             = PListReader_Posting_List(plist_reader, parent->field, term);
@@ -277,18 +276,14 @@ PhraseCompiler_make_matcher(PhraseCompiler *self, SegReader *reader,
         VA_Push(plists, (Obj*)plist);
     }
 
-    retval = (Matcher*)PhraseScorer_new(
-        PhraseCompiler_Get_Similarity(self),
-        plists, 
-        (Compiler*)self
-    );
+    Matcher *retval 
+        = (Matcher*)PhraseScorer_new(sim, plists, (Compiler*)self);
     DECREF(plists);
-
     return retval;
 }
 
 VArray*
-PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable, 
+PhraseCompiler_highlight_spans(PhraseCompiler *self, Searcher *searcher, 
                                DocVector *doc_vec, const CharBuf *field)
 {
     PhraseQuery *const parent = (PhraseQuery*)self->parent;
@@ -300,7 +295,7 @@ PhraseCompiler_highlight_spans(PhraseCompiler *self, Searchable *searchable,
     u32_t        i;
     const u32_t  num_terms = VA_Get_Size(terms);
     u32_t        num_tvs;
-    UNUSED_VAR(searchable);
+    UNUSED_VAR(searcher);
 
     /* Bail if no terms or field doesn't match. */
     if (!num_terms) { return spans; }

@@ -5,16 +5,16 @@
 #include "KinoSearch/Test/Analysis/TestTokenizer.h"
 #include "KinoSearch/Analysis/Tokenizer.h"
 
-static ZombieCharBuf word_char_pattern  = ZCB_LITERAL("\\w+");
-static ZombieCharBuf whitespace_pattern = ZCB_LITERAL("\\S+");
 
 static void
 test_Dump_Load_and_Equals(TestBatch *batch)
 {
+    ZombieCharBuf *word_char_pattern  = ZCB_WRAP_STR("\\w+", 3);  
+    ZombieCharBuf *whitespace_pattern = ZCB_WRAP_STR("\\S+", 3);
     Tokenizer *word_char_tokenizer =
-        Tokenizer_new((CharBuf*)&word_char_pattern);
+        Tokenizer_new((CharBuf*)word_char_pattern);
     Tokenizer *whitespace_tokenizer =
-        Tokenizer_new((CharBuf*)&whitespace_pattern);
+        Tokenizer_new((CharBuf*)whitespace_pattern);
     Obj *word_char_dump  = Tokenizer_Dump(word_char_tokenizer);
     Obj *whitespace_dump = Tokenizer_Dump(whitespace_tokenizer);
     Tokenizer *word_char_clone 

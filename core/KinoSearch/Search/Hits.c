@@ -3,23 +3,23 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/Hits.h"
-#include "KinoSearch/Doc/HitDoc.h"
+#include "KinoSearch/Document/HitDoc.h"
 #include "KinoSearch/Search/Query.h"
 #include "KinoSearch/Search/MatchDoc.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/TopDocs.h"
 
 Hits*
-Hits_new(Searchable *searchable, TopDocs *top_docs, u32_t offset)
+Hits_new(Searcher *searcher, TopDocs *top_docs, u32_t offset)
 {
     Hits *self = (Hits*)VTable_Make_Obj(HITS);
-    return Hits_init(self, searchable, top_docs, offset);
+    return Hits_init(self, searcher, top_docs, offset);
 }
 
 Hits*
-Hits_init(Hits *self, Searchable *searchable, TopDocs *top_docs, u32_t offset)
+Hits_init(Hits *self, Searcher *searcher, TopDocs *top_docs, u32_t offset)
 {
-    self->searchable = (Searchable*)INCREF(searchable);
+    self->searcher = (Searcher*)INCREF(searcher);
     self->top_docs   = (TopDocs*)INCREF(top_docs);
     self->match_docs = (VArray*)INCREF(TopDocs_Get_Match_Docs(top_docs));
     self->offset     = offset;
@@ -29,7 +29,7 @@ Hits_init(Hits *self, Searchable *searchable, TopDocs *top_docs, u32_t offset)
 void
 Hits_destroy(Hits *self)
 {
-    DECREF(self->searchable);
+    DECREF(self->searcher);
     DECREF(self->top_docs);
     DECREF(self->match_docs);
     SUPER_DESTROY(self, HITS);
@@ -48,7 +48,7 @@ Hits_next(Hits *self)
     }
     else {
         /* Lazily fetch HitDoc, set score. */
-        Obj *doc = Searchable_Fetch_Doc(self->searchable,
+        Obj *doc = Searcher_Fetch_Doc(self->searcher,
             match_doc->doc_id, match_doc->score, 0);
 
         return doc;

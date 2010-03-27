@@ -19,8 +19,6 @@ KinoSearch::Search::Span - An offset, a length, and a weight.
 
 =head1 DESCRIPTION
 
-An offset, a length, and a weight.
-
 Span objects store information about a span across an array of...
 something. The unit is context-dependent.
 

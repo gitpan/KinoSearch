@@ -20,14 +20,14 @@ TestArch_init(TestArchitecture *self)
     return self;
 }
 
-i32_t
+int32_t
 TestArch_index_interval(TestArchitecture *self)
 {
     UNUSED_VAR(self);
     return 5;
 }
 
-i32_t
+int32_t
 TestArch_skip_interval(TestArchitecture *self)
 {
     UNUSED_VAR(self);

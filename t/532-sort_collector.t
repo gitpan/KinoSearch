@@ -6,14 +6,14 @@ use KinoSearch::Test;
 use List::Util qw( shuffle );
 use KSx::Search::MockScorer;
 
-my $schema = KinoSearch::Schema->new;
-my $type = KinoSearch::FieldType::StringType->new( sortable => 1 );
+my $schema = KinoSearch::Plan::Schema->new;
+my $type = KinoSearch::Plan::StringType->new( sortable => 1 );
 $schema->spec_field( name => 'letter', type => $type );
 $schema->spec_field( name => 'number', type => $type );
 $schema->spec_field( name => 'id',     type => $type );
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -46,7 +46,7 @@ my $by_letter = KinoSearch::Search::SortSpec->new(
     ]
 );
 
-my $collector = KinoSearch::Search::HitCollector::SortCollector->new(
+my $collector = KinoSearch::Search::Collector::SortCollector->new(
     sort_spec => $by_letter,
     schema    => $schema,
     wanted    => 1,
@@ -79,7 +79,7 @@ for my $size ( 0 .. @doc_ids ) {
         doc_ids => \@doc_ids,
         scores  => \@scores,
     );
-    my $collector = KinoSearch::Search::HitCollector::SortCollector->new(
+    my $collector = KinoSearch::Search::Collector::SortCollector->new(
         wanted => $size, );
     $collector->set_matcher($matcher);
     $matcher->collect( collector => $collector );

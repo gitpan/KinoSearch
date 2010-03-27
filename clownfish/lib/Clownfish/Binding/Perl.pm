@@ -159,7 +159,6 @@ sub write_bindings {
 sub _xs_file_contents {
     my ( $self, $generated_xs, $xs_init, $hand_rolled_xs ) = @_;
     return <<END_STUFF;
-#define C_KINO_ZOMBIECHARBUF
 #include "xs/XSBind.h"
 #include "boil.h"
 #include "$self->{boot_h_file}"
@@ -295,6 +294,10 @@ sub _write_boot_c {
         my $prefix  = $class->get_prefix;
         my $PREFIX  = $class->get_PREFIX;
         my $vt_type = $PREFIX . $class->vtable_type;
+
+        # Ignore return value from VTable_add_to_registry, since it's OK if
+        # multiple threads contend for adding these permanent VTables and some
+        # fail.
         $registrations
             .= qq|    ${prefix}VTable_add_to_registry($PREFIX|
             . $class->vtable_var

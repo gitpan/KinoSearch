@@ -39,14 +39,14 @@ is_deeply( \@scores, \@correct_scores, "rank by scores first" );
 my @doc_ids = map { $_->get_doc_id } @$got;
 is_deeply( \@doc_ids, \@correct_docs, "rank by doc_id after score" );
 
-my $schema = KinoSearch::Schema->new;
-my $type = KinoSearch::FieldType::StringType->new( sortable => 1 );
+my $schema = KinoSearch::Plan::Schema->new;
+my $type = KinoSearch::Plan::StringType->new( sortable => 1 );
 $schema->spec_field( name => 'letter', type => $type );
 $schema->spec_field( name => 'number', type => $type );
 $schema->spec_field( name => 'id',     type => $type );
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );

@@ -2,14 +2,14 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegReader.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DeletionsReader.h"
 #include "KinoSearch/Index/DocReader.h"
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Plan/Architecture.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Store/Folder.h"
 

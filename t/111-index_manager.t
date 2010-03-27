@@ -9,7 +9,7 @@ package BogusManager;
 use base qw( KinoSearch::Index::IndexManager );
 
 # Adds a bogus dupe.
-sub recycle { 
+sub recycle {
     my $recyclables = shift->SUPER::recycle(@_);
     if (@$recyclables) { push @$recyclables, $recyclables->[0] }
     return $recyclables;
@@ -47,7 +47,7 @@ my $schema = KinoSearch::Test::TestSchema->new;
 $folder = KinoSearch::Store::RAMFolder->new;
 
 for ( 1 .. 20 ) {
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         schema  => $schema,
         index   => $folder,
         manager => NonMergingIndexManager->new,
@@ -105,11 +105,10 @@ is( $manager->get_deletion_lock_interval,
 
 SKIP: {
     skip( "Known leak", 1 ) if $ENV{KINO_VALGRIND};
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index   => $folder,
         manager => BogusManager->new,
     );
     eval { $indexer->commit };
     like( $@, qr/recycle/i, "duplicated segment via recycle triggers error" );
 }
-

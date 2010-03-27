@@ -6,21 +6,21 @@ parcel KinoSearch cnick Kino;
  */
 class KinoSearch::Search::Hits extends KinoSearch::Object::Obj {
 
-    Searchable *searchable;
+    Searcher   *searcher;
     TopDocs    *top_docs;
     VArray     *match_docs;
     u32_t       offset;
 
     inert incremented Hits*
-    new(Searchable *searchable, TopDocs *top_docs, u32_t offset = 0);
+    new(Searcher *searcher, TopDocs *top_docs, u32_t offset = 0);
 
     inert Hits*
-    init(Hits *self, Searchable *searchable, TopDocs *top_docs,
+    init(Hits *self, Searcher *searcher, TopDocs *top_docs,
          u32_t offset = 0);
 
     /** Return the next hit, or NULL when the iterator is exhausted.
      */
-    public incremented Obj*
+    public incremented nullable Obj*
     Next(Hits *self);
 
     /** Return the total number of documents which matched the Query used to

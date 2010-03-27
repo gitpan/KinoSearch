@@ -73,7 +73,7 @@ class KinoSearch::Index::Inverter extends KinoSearch::Object::Obj {
 
     /** Return the current doc, or NULL if there isn't one.
      */
-    public Doc*
+    public nullable Doc*
     Get_Doc(Inverter *self);
 
     /** Return the current boost.
@@ -83,37 +83,37 @@ class KinoSearch::Index::Inverter extends KinoSearch::Object::Obj {
 
     /** Return the current field's name, or NULL if the iterator is exhausted.
      */
-    public CharBuf*
+    public nullable CharBuf*
     Get_Field_Name(Inverter *self);
 
     /** Return the current field's value, or NULL if the iterator is
      * exhausted.
      */
-    public Obj*
+    public nullable Obj*
     Get_Value(Inverter *self);
 
     /** Return the FieldType for the current field, or NULL if the iterator is
      * exhausted.
      */
-    public FieldType*
+    public nullable FieldType*
     Get_Type(Inverter *self);
 
     /** Return the Analyzer for the current field, or NULL if the iterator is
      * exhausted.
      */
-    public Analyzer*
+    public nullable Analyzer*
     Get_Analyzer(Inverter *self);
 
     /** Return the Analyzer for the current field, or NULL if the iterator is
      * exhausted.
      */
-    public Similarity*
+    public nullable Similarity*
     Get_Similarity(Inverter *self);
 
     /** Return the Inversion for the current field, provided that that field
      * is indexed; return NULL if the iterator is exhausted.
      */
-    public Inversion*
+    public nullable Inversion*
     Get_Inversion(Inverter *self);
 
     public void

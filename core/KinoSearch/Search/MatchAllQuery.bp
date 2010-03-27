@@ -25,20 +25,20 @@ abstract class KinoSearch::Search::MatchAllQuery
     To_String(MatchAllQuery *self);
 
     public incremented Compiler*
-    Make_Compiler(MatchAllQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(MatchAllQuery *self, Searcher *searcher, float boost);
 }
 
 class KinoSearch::Search::MatchAllCompiler 
     extends KinoSearch::Search::Compiler {
 
     inert incremented MatchAllCompiler*
-    new(MatchAllQuery *parent, Searchable *searchable, float boost);
+    new(MatchAllQuery *parent, Searcher *searcher, float boost);
 
     inert MatchAllCompiler*
     init(MatchAllCompiler *self, MatchAllQuery *parent,
-         Searchable *searchable, float boost);
+         Searcher *searcher, float boost);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Make_Matcher(MatchAllCompiler *self, SegReader *reader, 
                  bool_t need_score);
 

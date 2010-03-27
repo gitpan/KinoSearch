@@ -8,7 +8,7 @@ use KinoSearch::Test;
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder = create_index( 'a', 'b', 'c c c d', 'c d', 'd' .. 'z', );
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $term_query
     = KinoSearch::Search::TermQuery->new( field => 'content', term => 'c' );
@@ -43,7 +43,7 @@ my $different_field = KinoSearch::Search::TermQuery->new(
 ok( !$term_query->equals($different_term),  "!equals (term)" );
 ok( !$term_query->equals($different_field), "!equals (field)" );
 
-my $term_compiler = $term_query->make_compiler( searchable => $searcher );
+my $term_compiler = $term_query->make_compiler( searcher => $searcher );
 $frozen = freeze($term_compiler);
 $thawed = thaw($frozen);
 ok( $term_compiler->equals($thawed), "freeze/thaw compiler" );

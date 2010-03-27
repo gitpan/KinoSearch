@@ -24,7 +24,7 @@ class KinoSearch::Object::VTable extends KinoSearch::Object::Obj {
      * the subclass name, it will be returned.  Otherwise, a new VTable will
      * be created using [parent] as a base.  
      * 
-     * If [parent] is null, an attempt will be made to find it using
+     * If [parent] is NULL, an attempt will be made to find it using
      * VTable_find_parent_class().  If the attempt fails, an error will
      * result.
      */
@@ -53,13 +53,13 @@ class KinoSearch::Object::VTable extends KinoSearch::Object::Obj {
     /** Find a registered class and return its vtable.  May return NULL if the
      * class is not registered.
      */
-    inert VTable*
+    inert nullable VTable*
     fetch_vtable(const CharBuf *class_name);
     
     /** Given a class name, return the name of a parent class which descends
      * from KinoSearch::Object::Obj, or NULL if such a class can't be found.
      */
-    inert CharBuf*
+    inert nullable CharBuf*
     find_parent_class(const CharBuf *class_name);
 
     /** List all of the methods that a class has overridden via the host
@@ -80,6 +80,12 @@ class KinoSearch::Object::VTable extends KinoSearch::Object::Obj {
     Obj*
     Make_Obj(VTable *self);
 
+    /** Take a raw memory allocation which is presumed to be of adequate size,
+     * assign its vtable and give it an initial refcount of 1.
+     */
+    Obj*
+    Init_Obj(VTable *self, void *allocation);
+
     /** Create a new object using the supplied dump, assuming that Load() has
      * been defined for the class.
      */
@@ -96,6 +102,9 @@ class KinoSearch::Object::VTable extends KinoSearch::Object::Obj {
 
     VTable*
     Get_Parent(VTable *self);
+
+    size_t
+    Get_Obj_Alloc_Size(VTable *self);
     
     public incremented VTable* 
     Clone(VTable *self);

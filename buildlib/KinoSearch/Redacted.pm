@@ -31,11 +31,11 @@ sub redacted {
 sub hidden {
     return qw(
         KinoSearch::Analysis::Inversion
-        KinoSearch::FieldType::Int32Type
-        KinoSearch::FieldType::Int64Type
-        KinoSearch::FieldType::Float32Type
-        KinoSearch::FieldType::Float64Type
         KinoSearch::Object::Num
+        KinoSearch::Plan::Int32Type
+        KinoSearch::Plan::Int64Type
+        KinoSearch::Plan::Float32Type
+        KinoSearch::Plan::Float64Type
         KinoSearch::Redacted
         KinoSearch::Test::Object::TestCharBuf
         KinoSearch::Test::TestUtils

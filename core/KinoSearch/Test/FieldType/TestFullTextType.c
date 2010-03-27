@@ -4,7 +4,7 @@
 #include "KinoSearch/Test.h"
 #include "KinoSearch/Test/FieldType/TestFullTextType.h"
 #include "KinoSearch/Test/TestUtils.h"
-#include "KinoSearch/FieldType/FullTextType.h"
+#include "KinoSearch/Plan/FullTextType.h"
 #include "KinoSearch/Analysis/CaseFolder.h"
 #include "KinoSearch/Analysis/Tokenizer.h"
 
@@ -64,25 +64,25 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 static void
 test_Compare_Values(TestBatch *batch)
 {
-    Tokenizer    *tokenizer     = Tokenizer_new(NULL);
-    FullTextType *type          = FullTextType_new((Analyzer*)tokenizer);
-    ZombieCharBuf a = ZCB_LITERAL("a");
-    ZombieCharBuf b = ZCB_LITERAL("b");
+    Tokenizer     *tokenizer = Tokenizer_new(NULL);
+    FullTextType  *type      = FullTextType_new((Analyzer*)tokenizer);
+    ZombieCharBuf *a         = ZCB_WRAP_STR("a", 1);
+    ZombieCharBuf *b         = ZCB_WRAP_STR("b", 1);
 
     ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, (Obj*)&a, (Obj*)&b) < 0,
+        FullTextType_Compare_Values(type, (Obj*)a, (Obj*)b) < 0,
         "a less than b");
     ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, (Obj*)&b, (Obj*)&a) > 0,
+        FullTextType_Compare_Values(type, (Obj*)b, (Obj*)a) > 0,
         "b greater than a");
     ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, (Obj*)&b, (Obj*)&b) == 0,
+        FullTextType_Compare_Values(type, (Obj*)b, (Obj*)b) == 0,
         "b equals b");
     ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, NULL, (Obj*)&b) > 0,
+        FullTextType_Compare_Values(type, NULL, (Obj*)b) > 0,
         "NULL greater than b");
     ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, (Obj*)&b, NULL) < 0,
+        FullTextType_Compare_Values(type, (Obj*)b, NULL) < 0,
         "b less than NULL");
     ASSERT_TRUE(batch, 
         FullTextType_Compare_Values(type, NULL, NULL) == 0,

@@ -33,7 +33,7 @@ sub check_scorer {
         required_matcher => $req_mock,
         optional_matcher => $opt_mock,
     );
-    my $collector = KinoSearch::Search::HitCollector::SortCollector->new(
+    my $collector = KinoSearch::Search::Collector::SortCollector->new(
         wanted => 1000 );
     $req_opt_scorer->collect( collector => $collector );
     my ( $got_by_score, $got_by_id ) = doc_ids_from_td_coll($collector);

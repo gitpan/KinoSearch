@@ -17,8 +17,6 @@ KinoSearch::Analysis::CaseFolder - Normalize case, facilitating case-insensitive
 
 =head1 DESCRIPTION
 
-Normalize case, facilitating case-insensitive search.
-
 CaseFolder normalizes text according to Unicode case-folding rules, so that
 searches will be case insensitive.
 

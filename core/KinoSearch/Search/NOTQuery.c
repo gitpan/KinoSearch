@@ -7,7 +7,7 @@
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Search/MatchAllScorer.h"
 #include "KinoSearch/Search/NOTScorer.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 
@@ -57,25 +57,25 @@ NOTQuery_equals(NOTQuery *self, Obj *other)
 }
 
 Compiler*
-NOTQuery_make_compiler(NOTQuery *self, Searchable *searchable, float boost)
+NOTQuery_make_compiler(NOTQuery *self, Searcher *searcher, float boost)
 {
-    return (Compiler*)NOTCompiler_new(self, searchable, boost);
+    return (Compiler*)NOTCompiler_new(self, searcher, boost);
 }
 
 /**********************************************************************/
 
 NOTCompiler*
-NOTCompiler_new(NOTQuery *parent, Searchable *searchable, float boost)
+NOTCompiler_new(NOTQuery *parent, Searcher *searcher, float boost)
 {
     NOTCompiler *self = (NOTCompiler*)VTable_Make_Obj(NOTCOMPILER);
-    return NOTCompiler_init(self, parent, searchable, boost);
+    return NOTCompiler_init(self, parent, searcher, boost);
 }
 
 NOTCompiler*
-NOTCompiler_init(NOTCompiler *self, NOTQuery *parent, Searchable *searchable, 
+NOTCompiler_init(NOTCompiler *self, NOTQuery *parent, Searcher *searcher, 
                  float boost)
 {
-    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
+    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searcher, 
         boost);
     NOTCompiler_Normalize(self);
     return self;
@@ -89,11 +89,11 @@ NOTCompiler_sum_of_squared_weights(NOTCompiler *self)
 }
 
 VArray*
-NOTCompiler_highlight_spans(NOTCompiler *self, Searchable *searchable, 
+NOTCompiler_highlight_spans(NOTCompiler *self, Searcher *searcher, 
                             DocVector *doc_vec, const CharBuf *field)
 {
     UNUSED_VAR(self);
-    UNUSED_VAR(searchable);
+    UNUSED_VAR(searcher);
     UNUSED_VAR(doc_vec);
     UNUSED_VAR(field);
     return VA_new(0);

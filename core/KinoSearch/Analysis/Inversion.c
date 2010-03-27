@@ -52,7 +52,7 @@ Inversion_destroy(Inversion *self)
     SUPER_DESTROY(self, INVERSION);
 }
 
-u32_t
+uint32_t
 Inversion_get_size(Inversion *self) { return self->size; }
 
 Token*
@@ -77,7 +77,7 @@ S_grow(Inversion *self, size_t size)
         int64_t amount = size * sizeof(Token*);
         /* Clip rather than wrap. */
         if (amount > SIZE_MAX) { amount = SIZE_MAX; }
-        self->tokens = (Token**)REALLOCATE(self->tokens, amount); 
+        self->tokens = (Token**)REALLOCATE(self->tokens, (size_t)amount);
         self->cap    = size;
         memset(self->tokens + self->size, 0,
             (size - self->size) * sizeof(Token*));
@@ -99,7 +99,7 @@ Inversion_append(Inversion *self, Token *token)
 }
 
 Token**
-Inversion_next_cluster(Inversion *self, u32_t *count)
+Inversion_next_cluster(Inversion *self, uint32_t *count)
 {
     Token **cluster = self->tokens + self->cur;
 
@@ -124,9 +124,9 @@ Inversion_next_cluster(Inversion *self, u32_t *count)
 void 
 Inversion_invert(Inversion *self)
 {
-    Token **tokens = self->tokens;
-    Token **limit  = tokens + self->size;
-    i32_t   token_pos = 0;
+    Token   **tokens = self->tokens;
+    Token   **limit  = tokens + self->size;
+    int32_t   token_pos = 0;
 
     /* Thwart future attempts to append. */
     if (self->inverted)
@@ -153,19 +153,19 @@ Inversion_invert(Inversion *self)
 static void
 S_count_clusters(Inversion *self)
 {
-    Token **tokens      = self->tokens;
-    u32_t  *counts      = (u32_t*)CALLOCATE(self->size + 1, sizeof(u32_t)); 
-    u32_t   i;
+    Token **tokens = self->tokens;
+    uint32_t *counts 
+        = (uint32_t*)CALLOCATE(self->size + 1, sizeof(uint32_t)); 
 
     /* Save the cluster counts. */
     self->cluster_counts_size = self->size;
     self->cluster_counts = counts;
 
-    for (i = 0; i < self->size; ) {
+    for (uint32_t i = 0; i < self->size; ) {
         Token *const base_token = tokens[i];
         char  *const base_text  = base_token->text;
         const size_t base_len   = base_token->len;
-        u32_t j = i + 1;
+        uint32_t     j          = i + 1;
 
         /* Iterate through tokens until text doesn't match. */
         while (j < self->size) {

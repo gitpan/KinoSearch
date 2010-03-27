@@ -8,7 +8,7 @@ use KinoSearch::Test::TestUtils qw( create_index );
 
 my @docs     = ( 'a b', 'a a b', 'a a a b', 'x' );
 my $folder   = create_index(@docs);
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $hits = $searcher->hits(
     query      => 'a',

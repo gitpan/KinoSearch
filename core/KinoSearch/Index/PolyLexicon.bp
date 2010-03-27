@@ -28,7 +28,7 @@ class KinoSearch::Index::PolyLexicon cnick PolyLex
     public void 
     Reset(PolyLexicon *self);
 
-    public Obj* 
+    public nullable Obj* 
     Get_Term(PolyLexicon *self);
 
     u32_t

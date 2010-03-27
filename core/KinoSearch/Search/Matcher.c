@@ -5,7 +5,7 @@
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Object/Err.h"
 #include "KinoSearch/Object/VTable.h"
-#include "KinoSearch/Search/HitCollector.h"
+#include "KinoSearch/Search/Collector.h"
 
 Matcher*
 Matcher_init(Matcher *self)
@@ -25,12 +25,12 @@ Matcher_advance(Matcher *self, i32_t target)
 }
 
 void
-Matcher_collect(Matcher *self, HitCollector *collector, Matcher *deletions)
+Matcher_collect(Matcher *self, Collector *collector, Matcher *deletions)
 {
     i32_t   doc_id         = 0;
     i32_t   next_deletion  = deletions ? 0 : I32_MAX;
 
-    HC_Set_Matcher(collector, self);
+    Coll_Set_Matcher(collector, self);
 
     /* Execute scoring loop. */
     while (1) {
@@ -64,14 +64,14 @@ Matcher_collect(Matcher *self, HitCollector *collector, Matcher *deletions)
         }
 
         if (doc_id) {
-            HC_Collect(collector, doc_id);
+            Coll_Collect(collector, doc_id);
         }
         else { 
             break; 
         }
     }
 
-    HC_Set_Matcher(collector, NULL);
+    Coll_Set_Matcher(collector, NULL);
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

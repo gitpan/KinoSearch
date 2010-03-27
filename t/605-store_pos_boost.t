@@ -38,27 +38,26 @@ sub equals {
     return 1;
 }
 
-package MySchema::boosted;
-use base qw( KinoSearch::FieldType::FullTextType );
-use KinoSearch::Posting::RichPosting;
+package RichSim;
+use base qw( KinoSearch::Search::Similarity );
+use KinoSearch::Index::Posting::RichPosting;
 
 sub make_posting {
-    if ( @_ == 2 ) {
-        return KinoSearch::Posting::RichPosting->new( similarity => $_[1] );
-    }
-    else {
-        shift;
-        return KinoSearch::Posting::RichPosting->new(@_);
-    }
+    KinoSearch::Index::Posting::RichPosting->new( similarity => shift );
 }
 
+package MySchema::boosted;
+use base qw( KinoSearch::Plan::FullTextType );
+
+sub make_similarity { RichSim->new }
+
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $self       = shift->SUPER::new(@_);
-    my $plain_type = KinoSearch::FieldType::FullTextType->new(
+    my $plain_type = KinoSearch::Plan::FullTextType->new(
         analyzer => KinoSearch::Analysis::Tokenizer->new );
     my $boosted_type
         = MySchema::boosted->new( analyzer => MyTokenizer->new, );
@@ -78,7 +77,7 @@ my $boosted = "z x x a x x x x x x x x x";
 
 my $schema  = MySchema->new;
 my $folder  = KinoSearch::Store::RAMFolder->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     schema => $schema,
     index  => $folder,
 );
@@ -88,7 +87,7 @@ for ( $good, $better, $best, $boosted ) {
 }
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $q_for_plain = KinoSearch::Search::TermQuery->new(
     field => 'plain',

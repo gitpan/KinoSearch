@@ -15,8 +15,6 @@ extern "C" {
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 
-#define C_KINO_ZOMBIECHARBUF
-
 #include "charmony.h"
 #include <limits.h>
 #include <stddef.h>

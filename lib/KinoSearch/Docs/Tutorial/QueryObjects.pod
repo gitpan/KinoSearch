@@ -13,7 +13,7 @@ chapter, we'll move towards an "advanced search" interface, by adding a
 
 =item *
 
-L<QueryParser|KinoSearch::QueryParser> - Turn a query string into a
+L<QueryParser|KinoSearch::Search::QueryParser> - Turn a query string into a
 L<Query|KinoSearch::Search::Query> object.
 
 =item *
@@ -34,7 +34,7 @@ Our new "category" field will be a StringType field rather than a FullTextType
 field, because we will only be looking for exact matches.  It needs to be
 indexed, but since we won't display its value, it doesn't need to be stored.
 
-    my $cat_type = KinoSearch::FieldType::StringType->new( stored => 0 );
+    my $cat_type = KinoSearch::Plan::StringType->new( stored => 0 );
     $schema->spec_field( name => 'category', type => $cat_type );
 
 There will be three possible values: "article", "amendment", and "preamble",
@@ -76,7 +76,7 @@ The "category" constraint will be added to our search interface using an HTML
 We'll start off by loading our new modules and extracting our new CGI
 parameter.
 
-    use KinoSearch::QueryParser;
+    use KinoSearch::Search::QueryParser;
     use KinoSearch::Search::TermQuery;
     use KinoSearch::Search::ANDQuery;
     
@@ -85,18 +85,20 @@ parameter.
     my $category = $cgi->param('category') || '';
 
 QueryParser's constructor requires a "schema" argument.  We can get that from
-our Searcher:
+our IndexSearcher:
 
-    # Create a Searcher and a QueryParser.
-    my $searcher = KinoSearch::Searcher->new( index => $path_to_index );
-    my $qparser  = KinoSearch::QueryParser->new( 
+    # Create an IndexSearcher and a QueryParser.
+    my $searcher = KinoSearch::Search::IndexSearcher->new( 
+        index => $path_to_index, 
+    );
+    my $qparser  = KinoSearch::Search::QueryParser->new( 
         schema => $searcher->get_schema,
     );
 
-Previously, we have been handing raw query strings to Searcher.  Behind the
-scenes, Searcher has been using a QueryParser to turn those query strings into
-Query objects.  Now, we will bring QueryParser into the foreground and parse
-the strings explicitly.
+Previously, we have been handing raw query strings to IndexSearcher.  Behind
+the scenes, IndexSearcher has been using a QueryParser to turn those query
+strings into Query objects.  Now, we will bring QueryParser into the
+foreground and parse the strings explicitly.
 
     my $query = $qparser->parse($q);
 

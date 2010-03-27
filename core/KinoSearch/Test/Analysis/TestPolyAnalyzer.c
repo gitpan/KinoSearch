@@ -5,14 +5,14 @@
 #include "KinoSearch/Test/Analysis/TestPolyAnalyzer.h"
 #include "KinoSearch/Analysis/PolyAnalyzer.h"
 
-static ZombieCharBuf EN = ZCB_LITERAL("en");
-static ZombieCharBuf ES = ZCB_LITERAL("es");
 
 static void
 test_Dump_Load_and_Equals(TestBatch *batch)
 {
-    PolyAnalyzer *analyzer    = PolyAnalyzer_new((CharBuf*)&EN, NULL);
-    PolyAnalyzer *other       = PolyAnalyzer_new((CharBuf*)&ES, NULL);
+    CharBuf      *EN          = (CharBuf*)ZCB_WRAP_STR("en", 2);
+    CharBuf      *ES          = (CharBuf*)ZCB_WRAP_STR("es", 2);
+    PolyAnalyzer *analyzer    = PolyAnalyzer_new(EN, NULL);
+    PolyAnalyzer *other       = PolyAnalyzer_new(ES, NULL);
     Obj          *dump        = (Obj*)PolyAnalyzer_Dump(analyzer);
     Obj          *other_dump  = (Obj*)PolyAnalyzer_Dump(other);
     PolyAnalyzer *clone       = (PolyAnalyzer*)PolyAnalyzer_Load(other, dump);

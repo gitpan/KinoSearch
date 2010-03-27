@@ -13,8 +13,6 @@ KinoSearch::Index::DataReader - Abstract base class for reading index data.
 
 =head1 DESCRIPTION
 
-Abstract base class for reading index data.
-
 DataReader is the companion class to DataWriter.  Every index
 component will implement one of each.
 
@@ -92,7 +90,7 @@ Accessor for "seg_tick" member var.
 =head2 aggregator( I<[labeled params]> )
 
 Create a reader which aggregates the output of several lower level
-readers.
+readers.  Return undef if such a reader is not valid.
 
 =over
 

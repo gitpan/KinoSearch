@@ -23,11 +23,8 @@ Clownfish::Binding::Perl::Class->register(
     xs_code      => $xs_code,
     bind_methods => [
         qw(
-            Feed
-            Fetch
             Flush
             Flip
-            Peek
             Add_Run
             Refill
             Sort_Cache

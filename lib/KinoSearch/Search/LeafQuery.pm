@@ -9,7 +9,7 @@ __BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     package MyQueryParser;
-    use base qw( KinoSearch::QueryParser );
+    use base qw( KinoSearch::Search::QueryParser );
 
     sub expand_leaf {
         my ( $self, $leaf_query ) = @_;

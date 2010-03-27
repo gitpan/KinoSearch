@@ -24,7 +24,7 @@ use KinoSearch::Util::IndexFileNames qw( latest_snapshot );
 
 my $folder  = create_index(qw( a b c ));
 my $schema  = KinoSearch::Test::TestSchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index   => $folder,
     schema  => $schema,
     manager => FastIndexManager->new,
@@ -34,7 +34,8 @@ $indexer->delete_by_term( field => 'content', term => $_ ) for qw( a b c );
 $indexer->add_doc( { content => 'x' } );
 
 # Artificially create deletion lock.
-my $outstream = $folder->open_out('locks/deletion.lock') or die KinoSearch->error;
+my $outstream = $folder->open_out('locks/deletion.lock')
+    or die KinoSearch->error;
 $outstream->print("{}");
 $outstream->close;
 {
@@ -107,7 +108,7 @@ $folder = create_index(qw( a b c x ));
 
 {
     # Add a second segment and delete one doc from existing segment.
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         schema  => $schema,
         index   => $folder,
         manager => NonMergingIndexManager->new,
@@ -118,7 +119,7 @@ $folder = create_index(qw( a b c x ));
     $indexer->commit;
 
     # Delete a doc from the second seg and increase del gen on first seg.
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         schema  => $schema,
         index   => $folder,
         manager => NonMergingIndexManager->new,
@@ -134,7 +135,7 @@ $reader = KinoSearch::Index::IndexReader->open(
     manager => FastIndexManager->new( host => 'me' ),
 );
 
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -155,7 +156,7 @@ $num_ds_files = scalar grep {m/documents\.dat$/} @$files;
 cmp_ok( $num_ds_files, '>', 1, "segment data files preserved" );
 
 undef $reader;
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );

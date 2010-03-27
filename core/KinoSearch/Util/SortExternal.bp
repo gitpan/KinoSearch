@@ -33,27 +33,27 @@ __END_C__
 abstract class KinoSearch::Util::SortExternal cnick SortEx
     extends KinoSearch::Object::Obj {
 
-    Obj          **cache;
+    uint8_t       *cache;
     u32_t          cache_cap;
     u32_t          cache_max;
     u32_t          cache_tick;
-    Obj          **scratch;
+    uint8_t       *scratch;
     u32_t          scratch_cap;
     VArray        *runs;
     u32_t          num_slices;
-    Obj         ***slice_starts;
+    uint8_t      **slice_starts;
     u32_t         *slice_sizes;
     u32_t          mem_thresh;
-    u32_t          mem_consumed;
+    size_t         width;
     bool_t         flipped;
 
     inert SortExternal*
-    init(SortExternal *self, u32_t mem_thresh = 0x1000000);
+    init(SortExternal *self, size_t width);
 
     /** Compare two sortable elements.
      */
     abstract int
-    Compare(SortExternal *self, Obj **a, Obj **b);
+    Compare(SortExternal *self, void *va, void *vb);
 
     /** Flush all elements currently in the cache.
      *
@@ -64,18 +64,13 @@ abstract class KinoSearch::Util::SortExternal cnick SortEx
     abstract void
     Flush(SortExternal *self);
 
-    /** Recover individual elements from external storage in sorted order.
-     * Returns NULL when the object decides that the cache is full enough.
-     */
-    abstract incremented Obj*
-    Recover_Item(SortExternal *self);
-
-    /** Add an item to the sort pool.  
+    /** Add data to the sort pool.  
      * 
-     * @param item The element to add.
+     * @param data Pointer to the data being added, which must be exactly
+     * <code>width</code> bytes in size.
      */
     void
-    Feed(SortExternal *self, decremented Obj *item);
+    Feed(SortExternal *self, void *data);
 
     /** Flip the sortex from write mode to read mode.
      */
@@ -85,13 +80,13 @@ abstract class KinoSearch::Util::SortExternal cnick SortEx
     /** Fetch the next sorted item from the sort pool.  Invalid prior to
      * calling Flip(). Returns NULL when all elements have been exhausted.
      */
-    incremented Obj*
+    nullable void*
     Fetch(SortExternal *self);
 
     /** Preview the next item that Fetch will return, but don't pop it.
      * Invalid prior to calling Flip().
      */
-    Obj*
+    nullable void*
     Peek(SortExternal *self);
 
     /** Add a run to the sortex's collection.
@@ -99,11 +94,10 @@ abstract class KinoSearch::Util::SortExternal cnick SortEx
     void
     Add_Run(SortExternal *self, decremented SortExternal *run);
 
-    /** Refill the cache, adding elements via Recover_Item() until it
-     * returns NULL.  Return the number of elements recovered.  May only be
-     * called when the cache is empty.
+    /** Refill the cache of a run.  Will only be called on child objects, not
+     * the main object.
      */
-    u32_t
+    abstract uint32_t
     Refill(SortExternal *self);
 
     /** Sort all items currently in the main cache.
@@ -111,8 +105,9 @@ abstract class KinoSearch::Util::SortExternal cnick SortEx
     void
     Sort_Cache(SortExternal *self);
 
-    /** Release items currently held in the cache, if any.  Reset all cache
-     * variables (mem_consumed, cache_max, etc).
+    /** Reset cache variables so that cache gives the appearance of 
+     * 
+     * Subclasses may take steps to release items held in cache, if any.
      */
     void
     Clear_Cache(SortExternal *self);

@@ -19,7 +19,7 @@ class KinoSearch::Search::ANDQuery extends KinoSearch::Search::PolyQuery
     init(ANDQuery *self, VArray *children = NULL);
 
     public incremented Compiler*
-    Make_Compiler(ANDQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(ANDQuery *self, Searcher *searcher, float boost);
 
     public incremented CharBuf*
     To_String(ANDQuery *self);
@@ -32,13 +32,13 @@ class KinoSearch::Search::ANDCompiler
     extends KinoSearch::Search::PolyCompiler {
 
     inert incremented ANDCompiler*
-    new(ANDQuery *parent, Searchable *searchable, float boost);
+    new(ANDQuery *parent, Searcher *searcher, float boost);
 
     inert ANDCompiler*
-    init(ANDCompiler *self, ANDQuery *parent, Searchable *searchable, 
+    init(ANDCompiler *self, ANDQuery *parent, Searcher *searcher, 
          float boost);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Make_Matcher(ANDCompiler *self, SegReader *reader, bool_t need_score);
 }
 

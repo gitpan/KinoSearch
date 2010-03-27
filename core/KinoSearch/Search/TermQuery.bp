@@ -34,7 +34,7 @@ class KinoSearch::Search::TermQuery extends KinoSearch::Search::Query
     Get_Term(TermQuery *self);
 
     public incremented Compiler*
-    Make_Compiler(TermQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(TermQuery *self, Searcher *searcher, float boost);
 
     public incremented CharBuf*
     To_String(TermQuery *self);
@@ -59,13 +59,13 @@ class KinoSearch::Search::TermCompiler extends KinoSearch::Search::Compiler {
     float normalized_weight;
 
     inert incremented TermCompiler*
-    new(Query *parent, Searchable *searchable, float boost);
+    new(Query *parent, Searcher *searcher, float boost);
 
     inert TermCompiler*
-    init(TermCompiler *self, Query *parent, Searchable *searchable, 
+    init(TermCompiler *self, Query *parent, Searcher *searcher, 
          float boost);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Make_Matcher(TermCompiler *self, SegReader *reader, bool_t need_score);
 
     public float
@@ -78,7 +78,7 @@ class KinoSearch::Search::TermCompiler extends KinoSearch::Search::Compiler {
     Apply_Norm_Factor(TermCompiler *self, float factor);
 
     public incremented VArray*
-    Highlight_Spans(TermCompiler *self, Searchable *searchable, 
+    Highlight_Spans(TermCompiler *self, Searcher *searcher, 
                     DocVector *doc_vec, const CharBuf *field);
 
     public bool_t

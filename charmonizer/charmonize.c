@@ -12,6 +12,7 @@
 #include "Charmonizer/Probe/Headers.h"
 #include "Charmonizer/Probe/Integers.h"
 #include "Charmonizer/Probe/LargeFiles.h"
+#include "Charmonizer/Probe/Memory.h"
 #include "Charmonizer/Probe/UnusedVars.h"
 #include "Charmonizer/Probe/VariadicMacros.h"
 #include "Charmonizer/Core/HeaderChecker.h"
@@ -43,6 +44,7 @@ int main(int argc, char **argv)
     chaz_Integers_run();
     chaz_Floats_run();
     chaz_LargeFiles_run();
+    chaz_Memory_run();
     chaz_UnusedVars_run();
     chaz_VariadicMacros_run();
 
@@ -50,6 +52,13 @@ int main(int argc, char **argv)
     if (chaz_HeadCheck_check_header("sys/mman.h")) {
         chaz_ConfWriter_append_conf("#define CHY_HAS_SYS_MMAN_H\n\n");
     }
+    chaz_ConfWriter_append_conf(
+        "#ifdef CHY_HAS_ALLOCA_H\n"
+        "  #include <alloca.h>\n"
+        "#elif defined(CHY_HAS_MALLOC_H)\n"
+        "  #include <malloc.h>\n"
+        "#endif\n\n"
+    );
 
     /* Clean up. */
     chaz_Probe_clean_up();

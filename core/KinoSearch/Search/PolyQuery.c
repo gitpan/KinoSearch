@@ -3,11 +3,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/PolyQuery.h"
-#include "KinoSearch/Schema.h"
-#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Index/DocVector.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Plan/Schema.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
@@ -96,12 +96,12 @@ PolyQuery_equals(PolyQuery *self, Obj *other)
 
 PolyCompiler*
 PolyCompiler_init(PolyCompiler *self, PolyQuery *parent, 
-                  Searchable *searchable, float boost)
+                  Searcher *searcher, float boost)
 {
     u32_t i;
     const u32_t num_kids = VA_Get_Size(parent->children);
 
-    Compiler_init((Compiler*)self, (Query*)parent, searchable, NULL, boost);
+    Compiler_init((Compiler*)self, (Query*)parent, searcher, NULL, boost);
     self->children = VA_new(num_kids);
 
     /* Iterate over the children, creating a Compiler for each one. */
@@ -109,7 +109,7 @@ PolyCompiler_init(PolyCompiler *self, PolyQuery *parent,
         Query *child_query = (Query*)VA_Fetch(parent->children, i);
         float sub_boost = boost * Query_Get_Boost(child_query);
         VA_Push(self->children, 
-            (Obj*)Query_Make_Compiler(child_query, searchable, sub_boost));
+            (Obj*)Query_Make_Compiler(child_query, searcher, sub_boost));
     }
 
     return self;
@@ -151,14 +151,14 @@ PolyCompiler_apply_norm_factor(PolyCompiler *self, float factor)
 }
 
 VArray*
-PolyCompiler_highlight_spans(PolyCompiler *self, Searchable *searchable, 
+PolyCompiler_highlight_spans(PolyCompiler *self, Searcher *searcher, 
                             DocVector *doc_vec, const CharBuf *field)
 {
     VArray *spans = VA_new(0);
     u32_t i, max;
     for (i = 0, max = VA_Get_Size(self->children); i < max; i++) {
         Compiler *child = (Compiler*)VA_Fetch(self->children, i);
-        VArray *child_spans = Compiler_Highlight_Spans(child, searchable,
+        VArray *child_spans = Compiler_Highlight_Spans(child, searcher,
             doc_vec, field);
         if (child_spans) {
             VA_Push_VArray(spans, child_spans);

@@ -5,10 +5,10 @@ package KSx::Simple;
 use Carp;
 use Scalar::Util qw( weaken reftype refaddr );
 
-use KinoSearch::Schema;
+use KinoSearch::Plan::Schema;
 use KinoSearch::Analysis::PolyAnalyzer;
-use KinoSearch::Indexer;
-use KinoSearch::Searcher;
+use KinoSearch::Index::Indexer;
+use KinoSearch::Search::IndexSearcher;
 
 my %obj_cache;
 
@@ -36,8 +36,8 @@ sub new {
     my $analyzer
         = KinoSearch::Analysis::PolyAnalyzer->new( language => $language );
     $self->{type}
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $analyzer, );
-    my $schema = $self->{schema} = KinoSearch::Schema->new;
+        = KinoSearch::Plan::FullTextType->new( analyzer => $analyzer, );
+    my $schema = $self->{schema} = KinoSearch::Plan::Schema->new;
 
     # Cache the object for later clean-up.
     weaken( $obj_cache{ refaddr $self } = $self );
@@ -48,7 +48,7 @@ sub new {
 sub _lazily_create_indexer {
     my $self = shift;
     if ( !defined $self->{indexer} ) {
-        $self->{indexer} = KinoSearch::Indexer->new(
+        $self->{indexer} = KinoSearch::Index::Indexer->new(
             schema => $self->{schema},
             index  => $self->{path},
         );
@@ -85,8 +85,8 @@ sub search {
     # Flush recent adds; lazily create searcher.
     $self->_finish_indexing;
     if ( !defined $self->{searcher} ) {
-        $self->{searcher}
-            = KinoSearch::Searcher->new( index => $self->{path} );
+        $self->{searcher} = KinoSearch::Search::IndexSearcher->new(
+            index => $self->{path} );
     }
 
     $self->{hits} = $self->{searcher}->hits(%args);

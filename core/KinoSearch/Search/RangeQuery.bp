@@ -45,7 +45,7 @@ class KinoSearch::Search::RangeQuery extends KinoSearch::Search::Query
     To_String(RangeQuery *self);
 
     public incremented RangeCompiler*
-    Make_Compiler(RangeQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(RangeQuery *self, Searcher *searcher, float boost);
 
     public void
     Serialize(RangeQuery *self, OutStream *outstream);
@@ -60,13 +60,13 @@ class KinoSearch::Search::RangeQuery extends KinoSearch::Search::Query
 class KinoSearch::Search::RangeCompiler extends KinoSearch::Search::Compiler {
 
     inert incremented RangeCompiler*
-    new(RangeQuery *parent, Searchable *searchable, float boost);
+    new(RangeQuery *parent, Searcher *searcher, float boost);
 
     inert RangeCompiler*
-    init(RangeCompiler *self, RangeQuery *parent,
-         Searchable *searchable, float boost);
+    init(RangeCompiler *self, RangeQuery *parent, Searcher *searcher, 
+         float boost);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Make_Matcher(RangeCompiler *self, SegReader *reader, bool_t need_score);
 
     public incremented RangeCompiler*

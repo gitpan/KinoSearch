@@ -6,14 +6,14 @@
 #include "KinoSearch/Analysis/Analyzer.h"
 #include "KinoSearch/Analysis/Token.h"
 #include "KinoSearch/Analysis/Inversion.h"
-#include "KinoSearch/Doc.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/FieldType/BlobType.h"
-#include "KinoSearch/FieldType/NumericType.h"
-#include "KinoSearch/FieldType/FullTextType.h"
-#include "KinoSearch/FieldType/TextType.h"
+#include "KinoSearch/Document/Doc.h"
 #include "KinoSearch/Index/Segment.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/BlobType.h"
+#include "KinoSearch/Plan/NumericType.h"
+#include "KinoSearch/Plan/FullTextType.h"
+#include "KinoSearch/Plan/TextType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
 
 Inverter*
@@ -159,33 +159,31 @@ Inverter_clear(Inverter *self)
 }
 
 InverterEntry*
-InvEntry_new(Schema *schema, const CharBuf *field_name, i32_t field_num)
+InvEntry_new(Schema *schema, const CharBuf *field, i32_t field_num)
 {
     InverterEntry *self = (InverterEntry*)VTable_Make_Obj(INVERTERENTRY);
-    return InvEntry_init(self, schema, field_name, field_num);
+    return InvEntry_init(self, schema, field, field_num);
 }
 
 InverterEntry*
-InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field_name,
+InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field,
               i32_t field_num)
 {
     self->field_num  = field_num;
-    self->field      = field_name ? CB_Clone(field_name) : NULL;
+    self->field      = field ? CB_Clone(field) : NULL;
     self->inversion  = NULL;
 
     if (schema) {
-        self->analyzer   = Schema_Fetch_Analyzer(schema, field_name);
-        self->sim        = Schema_Fetch_Sim(schema, field_name);
-        self->type       = Schema_Fetch_Type(schema, field_name);
-        if (self->sim)      { INCREF(self->sim); }
-        if (self->analyzer) { INCREF(self->analyzer); }
-        if (self->type)     { INCREF(self->type); }
-        else                { THROW(ERR, "Unknown field: '%o'", field_name); }
-        self->value      = FType_Make_Blank(self->type);
-        self->indexed    = FType_Indexed(self->type);
+        self->analyzer =
+             (Analyzer*)INCREF(Schema_Fetch_Analyzer(schema, field));
+        self->sim  = (Similarity*)INCREF(Schema_Fetch_Sim(schema, field));
+        self->type = (FieldType*)INCREF(Schema_Fetch_Type(schema, field));
+        if (!self->type) { THROW(ERR, "Unknown field: '%o'", field); }
+        self->value   = FType_Make_View_Blank(self->type);
+        self->indexed = FType_Indexed(self->type);
         if (self->indexed && FType_Is_A(self->type, NUMERICTYPE)) {
             THROW(ERR, "Field '%o' spec'd as indexed, but numerical types cannot "
-                "be indexed yet", field_name);
+                "be indexed yet", field);
         }
         if (FType_Is_A(self->type, FULLTEXTTYPE)) {
             self->highlightable 

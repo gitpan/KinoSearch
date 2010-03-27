@@ -7,7 +7,7 @@ use Storable qw( freeze thaw );
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder = create_index( 'a', 'b', 'c c c d', 'c d', 'd' .. 'z', );
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $reader = $searcher->get_reader->get_seg_readers->[0];
 
 my $a_query = KinoSearch::Search::TermQuery->new(
@@ -37,7 +37,7 @@ for my $conjunction (qw( AND OR )) {
     my $one_child = $class->new( children => [$a_query] );
     ok( !$polyquery->equals($one_child), '!equals (too few children)' );
 
-    my $compiler = $polyquery->make_compiler( searchable => $searcher );
+    my $compiler = $polyquery->make_compiler( searcher => $searcher );
     isa_ok( $compiler, "KinoSearch::Search::${conjunction}Compiler",
         "make_compiler" );
     $frozen = freeze($compiler);
@@ -52,7 +52,7 @@ for my $conjunction (qw( AND OR )) {
         "make_matcher with need_score"
     );
 
-    my $term_matcher = $one_child->make_compiler( searchable => $searcher )
+    my $term_matcher = $one_child->make_compiler( searcher => $searcher )
         ->make_matcher( reader => $reader, need_score => 0 );
     isa_ok(
         $term_matcher,
@@ -70,7 +70,7 @@ for my $conjunction (qw( AND OR )) {
     );
     $polyquery
         = $class->new( children => [ $hopeless_query, $doomed_query ] );
-    my $nope = $polyquery->make_compiler( searchable => $searcher )
+    my $nope = $polyquery->make_compiler( searcher => $searcher )
         ->make_matcher( reader => $reader, need_score => 0 );
     ok( !defined $nope,
         "If scorer wouldn't return any docs, make_matcher returns undef" );

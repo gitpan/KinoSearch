@@ -2,10 +2,10 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/NoMatchQuery.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/NoMatchScorer.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -41,29 +41,29 @@ NoMatchQuery_to_string(NoMatchQuery *self)
 }
 
 Compiler*
-NoMatchQuery_make_compiler(NoMatchQuery *self, Searchable *searchable, 
+NoMatchQuery_make_compiler(NoMatchQuery *self, Searcher *searcher, 
                             float boost)
 {
-    return (Compiler*)NoMatchCompiler_new(self, searchable, boost);
+    return (Compiler*)NoMatchCompiler_new(self, searcher, boost);
 }
 
 /**********************************************************************/
 
 NoMatchCompiler*
-NoMatchCompiler_new(NoMatchQuery *parent, Searchable *searchable, 
+NoMatchCompiler_new(NoMatchQuery *parent, Searcher *searcher, 
                      float boost)
 {
     NoMatchCompiler *self 
         = (NoMatchCompiler*)VTable_Make_Obj(NOMATCHCOMPILER);
-    return NoMatchCompiler_init(self, parent, searchable, boost);
+    return NoMatchCompiler_init(self, parent, searcher, boost);
 }
 
 NoMatchCompiler*
 NoMatchCompiler_init(NoMatchCompiler *self, NoMatchQuery *parent, 
-                      Searchable *searchable, float boost)
+                      Searcher *searcher, float boost)
 {
     return (NoMatchCompiler*)Compiler_init((Compiler*)self, 
-        (Query*)parent, searchable, NULL, boost);
+        (Query*)parent, searcher, NULL, boost);
 }
 
 NoMatchCompiler*

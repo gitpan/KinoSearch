@@ -35,7 +35,7 @@ class KinoSearch::Search::MatchDoc extends KinoSearch::Object::Obj {
     void
     Set_Score(MatchDoc *self, float score);
 
-    VArray* 
+    nullable VArray* 
     Get_Values(MatchDoc *self);
 
     void

@@ -26,7 +26,7 @@ my $not_c_query
 
 is( $not_b_query->to_string, "-content:b", "to_string" );
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $reader   = $searcher->get_reader;
 my $hits     = $searcher->hits(
     query      => $not_b_query,
@@ -47,7 +47,7 @@ ok( !$not_b_query->equals($thawed), '!equals (boost)' );
 ok( !$not_b_query->equals($not_c_query),
     "!equals (different negated query)" );
 
-my $compiler = $not_b_query->make_compiler( searchable => $searcher );
+my $compiler = $not_b_query->make_compiler( searcher => $searcher );
 $frozen = freeze($compiler);
 $thawed = thaw($frozen);
 ok( $thawed->equals($compiler), 'freeze/thaw compiler' );
@@ -70,7 +70,7 @@ for my $num_negated ( 1 .. 26 ) {
         negated_matcher => $mock_scorer,
     );
     my $bit_vec = KinoSearch::Object::BitVector->new( capacity => 30 );
-    my $collector = KinoSearch::Search::HitCollector::BitCollector->new(
+    my $collector = KinoSearch::Search::Collector::BitCollector->new(
         bit_vector => $bit_vec, );
     $not_scorer->collect( collector => $collector );
     my $got = $bit_vec->to_arrayref;
@@ -78,7 +78,7 @@ for my $num_negated ( 1 .. 26 ) {
     is_deeply( $got, \@source_ids, "correct retrieval ($num_negated)" );
 }
 
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => KinoSearch::Test::TestSchema->new,
 );
@@ -86,7 +86,7 @@ $indexer->delete_by_term( field => 'content', term => 'b' );
 $indexer->commit;
 
 @got      = ();
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 $hits     = $searcher->hits( query => $not_b_query, num_wanted => 100 );
 is( $hits->total_hits, 25, "still correct after deletion" );
 while ( my $hit = $hits->next ) {

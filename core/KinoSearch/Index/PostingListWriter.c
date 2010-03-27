@@ -2,18 +2,18 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PostingListWriter.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Posting.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Index/Inverter.h"
 #include "KinoSearch/Index/PolyReader.h"
+#include "KinoSearch/Index/Posting.h"
 #include "KinoSearch/Index/PostingPool.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/LexiconWriter.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Plan/Architecture.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
@@ -57,11 +57,9 @@ PListWriter_init(PostingListWriter *self, Schema *schema, Snapshot *snapshot,
     /* Init. */
     self->pools          = VA_new(Schema_Num_Fields(schema));
     self->mem_thresh     = default_mem_thresh;
-    self->mem_pool       = MemPool_new(default_mem_thresh);
+    self->mem_pool       = MemPool_new(0);
     self->lex_temp_out   = NULL;
     self->post_temp_out  = NULL;
-    self->lex_temp_in    = NULL;
-    self->post_temp_in   = NULL;
 
     return self;
 }
@@ -117,8 +115,6 @@ PListWriter_destroy(PostingListWriter *self)
     DECREF(self->lex_temp_out);
     DECREF(self->post_temp_out);
     DECREF(self->skip_out);
-    DECREF(self->lex_temp_in);
-    DECREF(self->post_temp_in);
     SUPER_DESTROY(self, POSTINGLISTWRITER);
 }
 
@@ -242,17 +238,9 @@ PListWriter_finish(PostingListWriter *self)
     CharBuf *lex_temp_path  = CB_newf("%o/lextemp", seg_name);
     CharBuf *post_temp_path = CB_newf("%o/ptemp", seg_name);
 
-    /* Switch temp streams from write to read mode. */
+    /* Close temp streams. */
     OutStream_Close(self->lex_temp_out);
     OutStream_Close(self->post_temp_out);
-    self->lex_temp_in = Folder_Open_In(folder, lex_temp_path);
-    if (!self->lex_temp_in) { 
-        RETHROW(INCREF(Err_get_error()));
-    }
-    self->post_temp_in = Folder_Open_In(folder, post_temp_path);
-    if (!self->post_temp_in) { 
-        RETHROW(INCREF(Err_get_error()));
-    }
 
     /* Try to free up some memory. */
     for (uint32_t i = 0, max = VA_Get_Size(self->pools); i < max; i++) {
@@ -268,10 +256,6 @@ PListWriter_finish(PostingListWriter *self)
              * use more RAM while finishing.  (This is a little dicy, because if
              * Shrink() was ineffective, we may double the RAM footprint.) */
             PostPool_Set_Mem_Thresh(pool, self->mem_thresh);
-            PostPool_Set_Lex_Temp_In(pool, 
-                (InStream*)INCREF(self->lex_temp_in));
-            PostPool_Set_Post_Temp_In(pool, 
-                (InStream*)INCREF(self->post_temp_in));
             PostPool_Flip(pool);
             PostPool_Finish(pool);
             DECREF(pool);
@@ -283,8 +267,6 @@ PListWriter_finish(PostingListWriter *self)
         (Obj*)PListWriter_Metadata(self));
 
     /* Close down and clean up. */
-    InStream_Close(self->lex_temp_in);
-    InStream_Close(self->post_temp_in);
     OutStream_Close(self->skip_out);
     if (!Folder_Delete(folder, lex_temp_path)) {
         THROW(ERR, "Couldn't delete %o", lex_temp_path);
@@ -292,11 +274,7 @@ PListWriter_finish(PostingListWriter *self)
     if (!Folder_Delete(folder, post_temp_path)) {
         THROW(ERR, "Couldn't delete %o", post_temp_path);
     }
-    DECREF(self->lex_temp_in);
-    DECREF(self->post_temp_in);
     DECREF(self->skip_out);
-    self->lex_temp_in  = NULL;
-    self->post_temp_in = NULL;
     self->skip_out     = NULL;
     DECREF(post_temp_path);
     DECREF(lex_temp_path);

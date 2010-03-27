@@ -6,7 +6,6 @@ use KinoSearch::Test;
 
 my ( @items, $packed, $template, $buf, $file, $out, $in, $correct );
 
-
 $file = KinoSearch::Store::RAMFile->new;
 $out = KinoSearch::Store::OutStream->open( file => $file )
     or die KinoSearch->error;
@@ -39,4 +38,3 @@ $in = KinoSearch::Store::InStream->open( file => $file )
 $buf = "buzz";
 $in->read( $buf, 3, 4 );
 is( $buf, "buzzcut", 'read with offset' );
-

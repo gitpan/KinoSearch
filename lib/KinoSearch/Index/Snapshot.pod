@@ -16,8 +16,6 @@ KinoSearch::Index::Snapshot - Point-in-time index file list.
 
 =head1 DESCRIPTION
 
-Point-in-time index file list.
-
 A Snapshot is list of index files.  Because index files, once written, are
 never modified, the list of files in a Snapshot defines a point-in-time
 view of the data in an index.

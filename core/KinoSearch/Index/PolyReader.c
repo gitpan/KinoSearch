@@ -2,14 +2,14 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PolyReader.h"
-#include "KinoSearch/Doc/HitDoc.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Document/HitDoc.h"
 #include "KinoSearch/Index/DeletionsReader.h"
 #include "KinoSearch/Index/IndexManager.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"
 #include "KinoSearch/Store/Lock.h"
@@ -307,9 +307,9 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
 
         /* Testing only. */
         if (PolyReader_race_condition_debug1) {
-            ZombieCharBuf temp = ZCB_LITERAL("temp");
-            if (Folder_Exists(folder, (CharBuf*)&temp)) {
-                bool_t success = Folder_Rename(folder, (CharBuf*)&temp,
+            ZombieCharBuf *temp = ZCB_WRAP_STR("temp", 4);
+            if (Folder_Exists(folder, (CharBuf*)temp)) {
+                bool_t success = Folder_Rename(folder, (CharBuf*)temp,
                     PolyReader_race_condition_debug1);
                 if (!success) { RETHROW(INCREF(Err_get_error())); }
             }

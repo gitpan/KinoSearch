@@ -14,7 +14,7 @@ KinoSearch::Index::IndexManager - Policies governing index updating, locking, an
     );
 
     # Index time:
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index => '/path/to/index',
         manager => $manager,
     );
@@ -24,13 +24,11 @@ KinoSearch::Index::IndexManager - Policies governing index updating, locking, an
         index   => '/path/to/index',
         manager => $manager,
     );
-    my $searcher = KinoSearch::Searcher->new( index => $reader );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( index => $reader );
 
 
 
 =head1 DESCRIPTION
-
-Policies governing index updating, locking, and file deletion. 
 
 IndexManager is an advanced-usage class for controlling index locking,
 updating, merging, and deletion behaviors.

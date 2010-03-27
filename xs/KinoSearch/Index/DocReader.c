@@ -4,13 +4,13 @@
 #include "xs/XSBind.h"
 
 #include "KinoSearch/Index/DocReader.h"
-#include "KinoSearch/Doc/HitDoc.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/FieldType/BlobType.h"
-#include "KinoSearch/FieldType/TextType.h"
-#include "KinoSearch/FieldType/NumericType.h"
+#include "KinoSearch/Document/HitDoc.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/BlobType.h"
+#include "KinoSearch/Plan/Schema.h"
+#include "KinoSearch/Plan/TextType.h"
+#include "KinoSearch/Plan/NumericType.h"
 #include "KinoSearch/Object/Host.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Store/InStream.h"
 
 kino_Obj*
@@ -37,7 +37,6 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
         char   *field_name_ptr;
         SV     *value_sv;
         kino_FieldType *type;
-        kino_ZombieCharBuf field_name_zcb = KINO_ZCB_BLANK;
 
         /* Read field name. */
         field_name_len = Kino_InStream_Read_C32(dat_in);
@@ -49,8 +48,10 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
         *SvEND(field_name_sv) = '\0';
 
         /* Find the Field's FieldType. */
-        Kino_ZCB_Assign_Str(&field_name_zcb, field_name_ptr, field_name_len);
-        type = Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)&field_name_zcb);
+        kino_ZombieCharBuf *field_name_zcb 
+            = KINO_ZCB_WRAP_STR(field_name_ptr, field_name_len);
+        Kino_ZCB_Assign_Str(field_name_zcb, field_name_ptr, field_name_len);
+        type = Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field_name_zcb);
 
         /* Read the field value. */
         switch(Kino_FType_Primitive_ID(type) & kino_FType_PRIMITIVE_ID_MASK) {

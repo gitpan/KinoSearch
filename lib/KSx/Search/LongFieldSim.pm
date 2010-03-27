@@ -23,7 +23,7 @@ KSx::Search::LongFieldSim - Similarity optimized for long fields.
 =head1 SYNOPSIS
 
     package MySchema::body;
-    use base qw( KinoSearch::FieldType::FullTextType );
+    use base qw( KinoSearch::Plan::FullTextType );
     use KSx::Search::LongFieldSim;
     sub similarity { KSx::Search::LongFieldSim->new }
 

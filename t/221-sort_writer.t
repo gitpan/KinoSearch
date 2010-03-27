@@ -10,16 +10,16 @@ sub recycle {
 }
 
 package SortSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub new {
     my $self          = shift->SUPER::new(@_);
-    my $fulltext_type = KinoSearch::FieldType::FullTextType->new(
+    my $fulltext_type = KinoSearch::Plan::FullTextType->new(
         analyzer => KinoSearch::Analysis::Tokenizer->new,
         sortable => 1,
     );
-    my $string_type = KinoSearch::FieldType::StringType->new( sortable => 1 );
-    my $unsortable = KinoSearch::FieldType::StringType->new;
+    my $string_type = KinoSearch::Plan::StringType->new( sortable => 1 );
+    my $unsortable = KinoSearch::Plan::StringType->new;
     $self->spec_field( name => 'name',   type => $fulltext_type );
     $self->spec_field( name => 'speed',  type => $string_type );
     $self->spec_field( name => 'weight', type => $string_type );
@@ -34,6 +34,9 @@ sub new {
 package main;
 use KinoSearch::Test;
 use Test::More tests => 57;
+
+# Force frequent flushes.
+KinoSearch::Index::SortWriter::set_default_mem_thresh(100);
 
 my $airplane = {
     name   => 'airplane',
@@ -79,7 +82,7 @@ my $elephant = {
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = SortSchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -115,7 +118,7 @@ for my $field (qw( unused nope )) {
 }
 
 # Add a second segment.
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index   => $folder,
     schema  => $schema,
     manager => NonMergingIndexManager->new,
@@ -124,7 +127,7 @@ $indexer->add_doc($dirigible);
 $indexer->commit;
 
 # Consolidate everything, to test merging.
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );

@@ -5,20 +5,19 @@ use lib 'buildlib';
 use KinoSearch::Test;
 
 package PlainSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $self = shift->SUPER::new(@_);
     my $tokenizer = KinoSearch::Analysis::Tokenizer->new( pattern => '\S+' );
-    my $type
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer, );
+    my $type = KinoSearch::Plan::FullTextType->new( analyzer => $tokenizer, );
     $self->spec_field( name => 'content', type => $type );
     return $self;
 }
 
 package StopSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -29,8 +28,7 @@ sub new {
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
         analyzers => [ $whitespace_tokenizer, $stopalizer, ], );
     my $type
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $polyanalyzer,
-        );
+        = KinoSearch::Plan::FullTextType->new( analyzer => $polyanalyzer, );
     $self->spec_field( name => 'content', type => $type );
     return $self;
 }
@@ -54,7 +52,7 @@ package MyReqOptQuery;
 use base qw( KinoSearch::Search::RequiredOptionalQuery );
 
 package MyQueryParser;
-use base qw( KinoSearch::QueryParser );
+use base qw( KinoSearch::Search::QueryParser );
 
 sub make_term_query    { shift; MyTermQuery->new(@_) }
 sub make_phrase_query  { shift; MyPhraseQuery->new(@_) }
@@ -74,11 +72,11 @@ my $plain_schema = PlainSchema->new;
 my $stop_schema  = StopSchema->new;
 
 my @docs = ( 'x', 'y', 'z', 'x a', 'x a b', 'x a b c', 'x foo a b c d', );
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $plain_schema,
 );
-my $stop_indexer = KinoSearch::Indexer->new(
+my $stop_indexer = KinoSearch::Index::Indexer->new(
     index  => $stop_folder,
     schema => $stop_schema,
 );
@@ -90,24 +88,27 @@ for (@docs) {
 $indexer->commit;
 $stop_indexer->commit;
 
-my $OR_parser = KinoSearch::QueryParser->new( schema => $plain_schema, );
-my $AND_parser = KinoSearch::QueryParser->new(
+my $OR_parser
+    = KinoSearch::Search::QueryParser->new( schema => $plain_schema, );
+my $AND_parser = KinoSearch::Search::QueryParser->new(
     schema         => $plain_schema,
     default_boolop => 'AND',
 );
 $OR_parser->set_heed_colons(1);
 $AND_parser->set_heed_colons(1);
 
-my $OR_stop_parser = KinoSearch::QueryParser->new( schema => $stop_schema, );
-my $AND_stop_parser = KinoSearch::QueryParser->new(
+my $OR_stop_parser
+    = KinoSearch::Search::QueryParser->new( schema => $stop_schema, );
+my $AND_stop_parser = KinoSearch::Search::QueryParser->new(
     schema         => $stop_schema,
     default_boolop => 'AND',
 );
 $OR_stop_parser->set_heed_colons(1);
 $AND_stop_parser->set_heed_colons(1);
 
-my $searcher      = KinoSearch::Searcher->new( index => $folder );
-my $stop_searcher = KinoSearch::Searcher->new( index => $stop_folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
+my $stop_searcher
+    = KinoSearch::Search::IndexSearcher->new( index => $stop_folder );
 
 my @logical_tests = (
 
@@ -210,7 +211,8 @@ while ( $i < @logical_tests ) {
 my $motorhead = "Mot\xF6rhead";
 utf8ify($motorhead);
 my $unicode_folder = create_index($motorhead);
-$searcher = KinoSearch::Searcher->new( index => $unicode_folder );
+$searcher
+    = KinoSearch::Search::IndexSearcher->new( index => $unicode_folder );
 
 my $hits = $searcher->hits( query => 'Mot' );
 is( $hits->total_hits, 0, "Pre-test - indexing worked properly" );

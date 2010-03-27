@@ -43,16 +43,6 @@ PPCODE:
     else if (strEQ(package, "TestTokenizer")) {
         kino_TestTokenizer_run_tests();
     }
-    /* KinoSearch::FieldType */
-    else if (strEQ(package, "TestBlobType")) {
-        kino_TestBlobType_run_tests();
-    }
-    else if (strEQ(package, "TestFullTextType")) {
-        kino_TestFullTextType_run_tests();
-    }
-    else if (strEQ(package, "TestNumericType")) {
-        kino_TestNumericType_run_tests();
-    }
     /* KinoSearch::Object */
     else if (strEQ(package, "TestObj")) {
         kino_TestObj_run_tests();
@@ -66,11 +56,18 @@ PPCODE:
     else if (strEQ(package, "TestLockFreeRegistry")) {
         kino_TestLFReg_run_tests();
     }
-    /* KinoSearch::QueryParser */
-    else if (strEQ(package, "TestQueryParserSyntax")) {
+    /* KinoSearch::Plan */
+    else if (strEQ(package, "TestBlobType")) {
+        kino_TestBlobType_run_tests();
     }
-    else if (strEQ(package, "TestQueryParserLogic")) {
-        kino_TestQPLogic_run_tests();
+    else if (strEQ(package, "TestFullTextType")) {
+        kino_TestFullTextType_run_tests();
+    }
+    else if (strEQ(package, "TestNumericType")) {
+        kino_TestNumericType_run_tests();
+    }
+    else if (strEQ(package, "TestSchema")) {
+        kino_TestSchema_run_tests();
     }
     /* KinoSearch::Index */
     else if (strEQ(package, "TestHighlightWriter")) {
@@ -87,10 +84,6 @@ PPCODE:
     }
     else if (strEQ(package, "TestSegWriter")) {
         kino_TestSegWriter_run_tests();
-    }
-    /* KinoSearch::Schema */
-    else if (strEQ(package, "TestSchema")) {
-        kino_TestSchema_run_tests();
     }
     /* KinoSearch::Search */
     else if (strEQ(package, "TestANDQuery")) {
@@ -113,6 +106,9 @@ PPCODE:
     }
     else if (strEQ(package, "TestPhraseQuery")) {
         kino_TestPhraseQuery_run_tests();
+    }
+    else if (strEQ(package, "TestQueryParserLogic")) {
+        kino_TestQPLogic_run_tests();
     }
     else if (strEQ(package, "TestSeriesMatcher")) {
         kino_TestSeriesMatcher_run_tests();

@@ -3,15 +3,15 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/RangeQuery.h"
-#include "KinoSearch/Schema.h"
-#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/SortReader.h"
 #include "KinoSearch/Index/SortCache.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/RangeScorer.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
@@ -148,28 +148,28 @@ RangeQuery_deserialize(RangeQuery *self, InStream *instream)
 }
 
 RangeCompiler*
-RangeQuery_make_compiler(RangeQuery *self, Searchable *searchable, 
+RangeQuery_make_compiler(RangeQuery *self, Searcher *searcher, 
                          float boost)
 {
-    return RangeCompiler_new(self, searchable, boost);
+    return RangeCompiler_new(self, searcher, boost);
 }
 
 /**********************************************************************/
 
 RangeCompiler*
-RangeCompiler_new(RangeQuery *parent, Searchable *searchable, float boost)
+RangeCompiler_new(RangeQuery *parent, Searcher *searcher, float boost)
 {
     RangeCompiler *self 
         = (RangeCompiler*)VTable_Make_Obj(RANGECOMPILER);
-    return RangeCompiler_init(self, parent, searchable, boost);
+    return RangeCompiler_init(self, parent, searcher, boost);
 }
 
 RangeCompiler*
 RangeCompiler_init(RangeCompiler *self, RangeQuery *parent, 
-                   Searchable *searchable, float boost)
+                   Searcher *searcher, float boost)
 {
     return (RangeCompiler*)Compiler_init((Compiler*)self, (Query*)parent, 
-        searchable, NULL, boost);
+        searcher, NULL, boost);
 }
 
 RangeCompiler*
@@ -197,7 +197,7 @@ RangeCompiler_make_matcher(RangeCompiler *self, SegReader *reader,
     else {
         i32_t lower = S_find_lower_bound(self, sort_cache);
         i32_t upper = S_find_upper_bound(self, sort_cache);
-        i32_t max_ord = SortCache_Get_Num_Unique(sort_cache) + 1;
+        i32_t max_ord = SortCache_Get_Cardinality(sort_cache) + 1;
         if (lower > max_ord || upper < 0) {
             return NULL;
         }

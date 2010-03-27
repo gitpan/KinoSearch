@@ -2,22 +2,23 @@ use strict;
 use warnings;
 use lib 'buildlib';
 
-package MatchSchema::MatchOnly;
-use base qw( KinoSearch::FieldType::FullTextType );
-use KinoSearch::Posting::MatchPosting;
+package MatchOnlySim;
+use base qw( KinoSearch::Search::Similarity );
 
 sub make_posting {
-    if ( @_ == 2 ) {
-        return KinoSearch::Posting::MatchPosting->new( similarity => $_[1] );
-    }
-    else {
-        shift;
-        return KinoSearch::Posting::MatchPosting->new(@_);
-    }
+    my $self = shift;
+    return KinoSearch::Index::Posting::MatchPosting->new(
+        similarity => $self );
 }
 
+package MatchSchema::MatchOnly;
+use base qw( KinoSearch::Plan::FullTextType );
+use KinoSearch::Index::Posting::MatchPosting;
+
+sub make_similarity { MatchOnlySim->new }
+
 package MatchSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
@@ -38,8 +39,10 @@ my $match_folder = make_index( MatchSchema->new, $uscon_docs );
 my $score_folder
     = make_index( KinoSearch::Test::TestSchema->new, $uscon_docs );
 
-my $match_searcher = KinoSearch::Searcher->new( index => $match_folder );
-my $score_searcher = KinoSearch::Searcher->new( index => $score_folder );
+my $match_searcher
+    = KinoSearch::Search::IndexSearcher->new( index => $match_folder );
+my $score_searcher
+    = KinoSearch::Search::IndexSearcher->new( index => $score_folder );
 
 for (qw( land of the free )) {
     my $match_got = hit_ids_array( $match_searcher, $_ );
@@ -56,7 +59,7 @@ ok( !scalar @$should_be_empty, "no hits matched for phrase $qstring" );
 sub make_index {
     my ( $schema, $docs ) = @_;
     my $folder  = KinoSearch::Store::RAMFolder->new;
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -71,9 +74,8 @@ sub hit_ids_array {
 
     my $bit_vec = KinoSearch::Object::BitVector->new(
         capacity => $searcher->doc_max + 1 );
-    my $bit_collector = KinoSearch::Search::HitCollector::BitCollector->new(
+    my $bit_collector = KinoSearch::Search::Collector::BitCollector->new(
         bit_vector => $bit_vec, );
     $searcher->collect( query => $query, collector => $bit_collector );
     return $bit_vec->to_array->to_arrayref;
 }
-

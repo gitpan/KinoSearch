@@ -27,8 +27,6 @@ KinoSearch::Object::Err - Exception.
 
 =head1 DESCRIPTION
 
-Exception.
-
 Most of the time when KinoSearch encounters an error, it tries to raise a
 KinoSearch::Object::Err exception with an error message and context
 information.

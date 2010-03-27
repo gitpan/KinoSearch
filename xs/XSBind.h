@@ -43,21 +43,22 @@ kino_XSBind_sv_defined(SV *sv)
 }
 
 /** If the SV contains a KS object which passes an "isa" test against the
- * passed-in VTable, return a pointer to it.  If not, but <code>zcb</code> is
- * supplied and a ZombieCharBuf would satisfy the "isa" test, stringify the
- * SV, assign its string to <code>zcb</code> and return <code>zcb</code>
+ * passed-in VTable, return a pointer to it.  If not, but
+ * <code>allocation</code> is non-NULL and a ZombieCharBuf would satisfy the
+ * "isa" test, stringify the SV, create a ZombieCharBuf using
+ * <code>allocation</code>, assign the SV's string to it, and return that
  * instead.  If all else fails, throw an exception.
  */
 kino_Obj*
-kino_XSBind_sv_to_kino_obj(SV *sv, kino_VTable *vtable, 
-                           kino_ZombieCharBuf *zcb);
+kino_XSBind_sv_to_kino_obj(SV *sv, kino_VTable *vtable, void *allocation);
 
 /** As XSBind_sv_to_kino_obj above, but returns NULL instead of throwing an
  * exception.
  */
 kino_Obj*
 kino_XSBind_maybe_sv_to_kino_obj(SV *sv, kino_VTable *vtable,
-                                 kino_ZombieCharBuf *zcb);
+                                 void *allocation);
+
 
 /** Derive an SV from a KinoSearch object.  If the KS object is NULL, the SV
  * will be undef.

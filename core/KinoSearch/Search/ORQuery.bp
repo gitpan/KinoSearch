@@ -20,7 +20,7 @@ class KinoSearch::Search::ORQuery extends KinoSearch::Search::PolyQuery
     init(ORQuery *self, VArray *children = NULL);
 
     public incremented Compiler*
-    Make_Compiler(ORQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(ORQuery *self, Searcher *searcher, float boost);
 
     public incremented CharBuf*
     To_String(ORQuery *self);
@@ -33,13 +33,13 @@ class KinoSearch::Search::ORCompiler
     extends KinoSearch::Search::PolyCompiler {
 
     inert incremented ORCompiler*
-    new(ORQuery *parent, Searchable *searchable, float boost);
+    new(ORQuery *parent, Searcher *searcher, float boost);
 
     inert ORCompiler*
-    init(ORCompiler *self, ORQuery *parent, Searchable *searchable, 
+    init(ORCompiler *self, ORQuery *parent, Searcher *searcher, 
          float boost);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Make_Matcher(ORCompiler *self, SegReader *reader, bool_t need_score);
 }
 

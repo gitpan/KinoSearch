@@ -23,7 +23,7 @@ parcel KinoSearch cnick Kino;
  * more or less importance to a particular token, as you might for emboldened
  * text within an HTML document, for example.  (Note: The field this token
  * belongs to must be spec'd to use a posting of type
- * L<KinoSearch::Posting::RichPosting>.)
+ * L<KinoSearch::Index::Posting::RichPosting>.)
  * 
  * <code>pos_inc</code is the POSition INCrement, measured in Tokens.  This
  * attribute, which defaults to 1, is a an advanced tool for manipulating
@@ -35,38 +35,38 @@ parcel KinoSearch cnick Kino;
  */
 class KinoSearch::Analysis::Token extends KinoSearch::Object::Obj {
 
-    char   *text;
-    size_t  len;
-    u32_t   start_offset;
-    u32_t   end_offset;
-    float   boost;
-    i32_t   pos_inc;
-    i32_t   pos;
+    char     *text;
+    size_t    len;
+    uint32_t  start_offset;
+    uint32_t  end_offset;
+    float     boost;
+    int32_t   pos_inc;
+    int32_t   pos;
 
     inert incremented Token* 
-    new(const char *text, size_t len, u32_t start_offset, u32_t end_offset, 
-        float boost = 1.0, i32_t pos_inc = 1);
+    new(const char *text, size_t len, uint32_t start_offset, 
+        uint32_t end_offset, float boost = 1.0, int32_t pos_inc = 1);
 
     inert Token* 
     init(Token *self, const char *text, size_t len, 
-         u32_t start_offset, u32_t end_offset, 
-         float boost = 1.0, i32_t pos_inc = 1);
+         uint32_t start_offset, uint32_t end_offset, 
+         float boost = 1.0, int32_t pos_inc = 1);
 
     /** Sort_quicksort-compatible comparison routine.
      */
     inert int 
     compare(void *context, const void *va, const void *vb);
 
-    u32_t
+    uint32_t
     Get_Start_Offset(Token *self);
 
-    u32_t
+    uint32_t
     Get_End_Offset(Token *self);
 
     float
     Get_Boost(Token *self);
 
-    i32_t
+    int32_t
     Get_Pos_Inc(Token *self);
 
     char*

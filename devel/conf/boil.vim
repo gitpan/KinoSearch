@@ -21,7 +21,7 @@ syn keyword boilType		bool_t i8_t i16_t i32_t i64_t u8_t u16_t u32_t u64_t
 syn keyword boilType		bool_t int8_t int16_t int32_t int64_t 
 syn keyword boilType		uint8_t uint16_t uint32_t uint64_t
 syn keyword boilType		void
-syn keyword boilStorageClass inert const volatile inline final incremented decremented
+syn keyword boilStorageClass inert const volatile inline final incremented decremented nullable
 syn keyword boilBoolean		true false
 syn keyword boilTodo        TODO XXX FIXME
 syn keyword boilClassDecl	class inert extends cnick

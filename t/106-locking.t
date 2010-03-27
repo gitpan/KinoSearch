@@ -29,9 +29,9 @@ Dead_locks_are_removed: {
 
     sub make_lock {
         my $lock = KinoSearch::Store::LockFileLock->new(
-            timeout  => 0,
-            name     => 'foo',
-            host     => '',
+            timeout => 0,
+            name    => 'foo',
+            host    => '',
             @_
         );
         $lock->clear_stale;

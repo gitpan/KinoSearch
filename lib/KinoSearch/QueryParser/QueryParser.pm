@@ -1,7 +1,7 @@
 use Carp;
 
 confess(  "KinoSearch::QueryParser::QueryParser has been renamed to "
-        . "KinoSearch::QueryParser" );
+        . "KinoSearch::Search::QueryParser" );
 
 1;
 
@@ -11,12 +11,12 @@ __POD__
 
 =head1 NAME
 
-KinoSearch::QueryParser::QueryParser - Renamed to KinoSearch::QueryParser.
+KinoSearch::QueryParser::QueryParser - Renamed to KinoSearch::Search::QueryParser.
 
 =head1 DESCRIPTION 
 
 KinoSearch::QueryParser::QueryParser has been renamed to
-L<KinoSearch::QueryParser>.
+L<KinoSearch::Search::QueryParser>.
 
 =head1 COPYRIGHT
 

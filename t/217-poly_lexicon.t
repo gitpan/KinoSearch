@@ -13,11 +13,11 @@ use base qw( KinoSearch::Plan::Architecture );
 sub index_interval { confess("should be displaced via local() below") }
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    my $type = KinoSearch::FieldType::StringType->new( sortable => 1 );
+    my $type = KinoSearch::Plan::StringType->new( sortable => 1 );
     $self->spec_field( name => 'content', type => $type );
     return $self;
 }
@@ -62,7 +62,7 @@ for my $index_interval ( 1, 2, 3, 4, 7, 128, 1024 ) {
 
     my @docs_copy = @docs;
     while (@docs_copy) {
-        my $indexer = KinoSearch::Indexer->new(
+        my $indexer = KinoSearch::Index::Indexer->new(
             index  => $folder,
             schema => $schema,
         );

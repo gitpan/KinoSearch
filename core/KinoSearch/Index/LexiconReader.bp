@@ -19,7 +19,7 @@ abstract class KinoSearch::Index::LexiconReader cnick LexReader
      * @param field Field name.
      * @param term Pre-locate the Lexicon to this term.
      */
-    public abstract incremented Lexicon*
+    public abstract incremented nullable Lexicon*
     Lexicon(LexiconReader *self, const CharBuf *field, Obj *term = NULL);
 
     /** Return the number of documents where the specified term is present.
@@ -29,7 +29,7 @@ abstract class KinoSearch::Index::LexiconReader cnick LexReader
 
     /** If the term can be found, return a term info, otherwise return NULL.
      */
-    abstract incremented TermInfo*
+    abstract incremented nullable TermInfo*
     Fetch_Term_Info(LexiconReader *self, const CharBuf *field, Obj *term);
 
     /** Return a LexiconReader which merges the output of other
@@ -38,7 +38,7 @@ abstract class KinoSearch::Index::LexiconReader cnick LexReader
      * @param readers An array of LexiconReaders.
      * @param offsets Doc id start offsets for each reader.
      */
-    public incremented LexiconReader*
+    public incremented nullable LexiconReader*
     Aggregator(LexiconReader *self, VArray *readers, I32Array *offsets);
 }
 
@@ -54,7 +54,7 @@ class KinoSearch::Index::PolyLexiconReader cnick PolyLexReader
     inert PolyLexiconReader*
     init(PolyLexiconReader *self, VArray *readers, I32Array *offsets);
 
-    public incremented Lexicon*
+    public incremented nullable Lexicon*
     Lexicon(PolyLexiconReader *self, const CharBuf *field, Obj *term = NULL);
 
     public u32_t
@@ -80,7 +80,7 @@ class KinoSearch::Index::DefaultLexiconReader cnick DefLexReader
     init(DefaultLexiconReader *self, Schema *schema, Folder *folder, 
          Snapshot *snapshot, VArray *segments, i32_t seg_tick);
 
-    public incremented Lexicon*
+    public incremented nullable Lexicon*
     Lexicon(DefaultLexiconReader *self, const CharBuf *field, 
             Obj *term = NULL);
 
@@ -89,7 +89,7 @@ class KinoSearch::Index::DefaultLexiconReader cnick DefLexReader
     public u32_t
     Doc_Freq(DefaultLexiconReader *self, const CharBuf *field, Obj *term);
 
-    incremented TermInfo*
+    incremented nullable TermInfo*
     Fetch_Term_Info(DefaultLexiconReader *self, const CharBuf *field, 
                     Obj *term);
 

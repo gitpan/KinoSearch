@@ -8,6 +8,9 @@ build_requires:
 configure_requires:
   Module::Build: 0.36
 generated_by: 'Module::Build version 0.3603'
+keywords:
+  - search
+  - lucene
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -57,6 +60,8 @@ no_index:
     - charmonizer/src/Charmonizer/Probe/Integers.h
     - charmonizer/src/Charmonizer/Probe/LargeFiles.c
     - charmonizer/src/Charmonizer/Probe/LargeFiles.h
+    - charmonizer/src/Charmonizer/Probe/Memory.c
+    - charmonizer/src/Charmonizer/Probe/Memory.h
     - charmonizer/src/Charmonizer/Probe/UnusedVars.c
     - charmonizer/src/Charmonizer/Probe/UnusedVars.h
     - charmonizer/src/Charmonizer/Probe/VariadicMacros.c
@@ -132,11 +137,15 @@ no_index:
     - clownfish/t/403-file.t
     - clownfish/t/500-hierarchy.t
     - clownfish/t/600-parser.t
-    - clownfish/t/bpsource/Animal.bp
-    - clownfish/t/bpsource/Animal/Dog.bp
-    - clownfish/t/bpsource/Animal/Util.bp
+    - clownfish/t/cfsource/Animal.bp
+    - clownfish/t/cfsource/Animal/Dog.bp
+    - clownfish/t/cfsource/Animal/Util.bp
     - core/KSx/Search/FilterScorer.bp
     - core/KSx/Search/FilterScorer.c
+    - core/KSx/Search/ProximityQuery.bp
+    - core/KSx/Search/ProximityQuery.c
+    - core/KSx/Search/ProximityScorer.bp
+    - core/KSx/Search/ProximityScorer.c
     - core/KinoSearch/Analysis/Analyzer.bp
     - core/KinoSearch/Analysis/Analyzer.c
     - core/KinoSearch/Analysis/CaseFolder.bp
@@ -153,23 +162,12 @@ no_index:
     - core/KinoSearch/Analysis/Token.c
     - core/KinoSearch/Analysis/Tokenizer.bp
     - core/KinoSearch/Analysis/Tokenizer.c
-    - core/KinoSearch/Doc.bp
-    - core/KinoSearch/Doc.c
-    - core/KinoSearch/Doc/HitDoc.bp
-    - core/KinoSearch/Doc/HitDoc.c
+    - core/KinoSearch/Docs/DevGuide.bp
     - core/KinoSearch/Docs/FileLocking.bp
-    - core/KinoSearch/FieldType.bp
-    - core/KinoSearch/FieldType.c
-    - core/KinoSearch/FieldType/BlobType.bp
-    - core/KinoSearch/FieldType/BlobType.c
-    - core/KinoSearch/FieldType/FullTextType.bp
-    - core/KinoSearch/FieldType/FullTextType.c
-    - core/KinoSearch/FieldType/NumericType.bp
-    - core/KinoSearch/FieldType/NumericType.c
-    - core/KinoSearch/FieldType/StringType.bp
-    - core/KinoSearch/FieldType/StringType.c
-    - core/KinoSearch/FieldType/TextType.bp
-    - core/KinoSearch/FieldType/TextType.c
+    - core/KinoSearch/Document/Doc.bp
+    - core/KinoSearch/Document/Doc.c
+    - core/KinoSearch/Document/HitDoc.bp
+    - core/KinoSearch/Document/HitDoc.c
     - core/KinoSearch/Highlight/HeatMap.bp
     - core/KinoSearch/Highlight/HeatMap.c
     - core/KinoSearch/Highlight/Highlighter.bp
@@ -202,6 +200,8 @@ no_index:
     - core/KinoSearch/Index/IndexManager.c
     - core/KinoSearch/Index/IndexReader.bp
     - core/KinoSearch/Index/IndexReader.c
+    - core/KinoSearch/Index/Indexer.bp
+    - core/KinoSearch/Index/Indexer.c
     - core/KinoSearch/Index/Inverter.bp
     - core/KinoSearch/Index/Inverter.c
     - core/KinoSearch/Index/LexIndex.bp
@@ -216,6 +216,16 @@ no_index:
     - core/KinoSearch/Index/PolyLexicon.c
     - core/KinoSearch/Index/PolyReader.bp
     - core/KinoSearch/Index/PolyReader.c
+    - core/KinoSearch/Index/Posting.bp
+    - core/KinoSearch/Index/Posting.c
+    - core/KinoSearch/Index/Posting/MatchPosting.bp
+    - core/KinoSearch/Index/Posting/MatchPosting.c
+    - core/KinoSearch/Index/Posting/RawPosting.bp
+    - core/KinoSearch/Index/Posting/RawPosting.c
+    - core/KinoSearch/Index/Posting/RichPosting.bp
+    - core/KinoSearch/Index/Posting/RichPosting.c
+    - core/KinoSearch/Index/Posting/ScorePosting.bp
+    - core/KinoSearch/Index/Posting/ScorePosting.c
     - core/KinoSearch/Index/PostingList.bp
     - core/KinoSearch/Index/PostingList.c
     - core/KinoSearch/Index/PostingListReader.bp
@@ -248,6 +258,8 @@ no_index:
     - core/KinoSearch/Index/SortCache/NumericSortCache.c
     - core/KinoSearch/Index/SortCache/TextSortCache.bp
     - core/KinoSearch/Index/SortCache/TextSortCache.c
+    - core/KinoSearch/Index/SortFieldWriter.bp
+    - core/KinoSearch/Index/SortFieldWriter.c
     - core/KinoSearch/Index/SortReader.bp
     - core/KinoSearch/Index/SortReader.c
     - core/KinoSearch/Index/SortWriter.bp
@@ -258,8 +270,8 @@ no_index:
     - core/KinoSearch/Index/TermStepper.c
     - core/KinoSearch/Index/TermVector.bp
     - core/KinoSearch/Index/TermVector.c
-    - core/KinoSearch/Indexer.bp
-    - core/KinoSearch/Indexer.c
+    - core/KinoSearch/Index/ZombieKeyedHash.bp
+    - core/KinoSearch/Index/ZombieKeyedHash.c
     - core/KinoSearch/Object/BitVector.bp
     - core/KinoSearch/Object/BitVector.c
     - core/KinoSearch/Object/ByteBuf.bp
@@ -287,36 +299,38 @@ no_index:
     - core/KinoSearch/Object/VTable.c
     - core/KinoSearch/Plan/Architecture.bp
     - core/KinoSearch/Plan/Architecture.c
-    - core/KinoSearch/Posting.bp
-    - core/KinoSearch/Posting.c
-    - core/KinoSearch/Posting/MatchPosting.bp
-    - core/KinoSearch/Posting/MatchPosting.c
-    - core/KinoSearch/Posting/RawPosting.bp
-    - core/KinoSearch/Posting/RawPosting.c
-    - core/KinoSearch/Posting/RichPosting.bp
-    - core/KinoSearch/Posting/RichPosting.c
-    - core/KinoSearch/Posting/ScorePosting.bp
-    - core/KinoSearch/Posting/ScorePosting.c
-    - core/KinoSearch/QueryParser.bp
-    - core/KinoSearch/QueryParser.c
-    - core/KinoSearch/Schema.bp
-    - core/KinoSearch/Schema.c
+    - core/KinoSearch/Plan/BlobType.bp
+    - core/KinoSearch/Plan/BlobType.c
+    - core/KinoSearch/Plan/FieldType.bp
+    - core/KinoSearch/Plan/FieldType.c
+    - core/KinoSearch/Plan/FullTextType.bp
+    - core/KinoSearch/Plan/FullTextType.c
+    - core/KinoSearch/Plan/NumericType.bp
+    - core/KinoSearch/Plan/NumericType.c
+    - core/KinoSearch/Plan/Schema.bp
+    - core/KinoSearch/Plan/Schema.c
+    - core/KinoSearch/Plan/StringType.bp
+    - core/KinoSearch/Plan/StringType.c
+    - core/KinoSearch/Plan/TextType.bp
+    - core/KinoSearch/Plan/TextType.c
     - core/KinoSearch/Search/ANDQuery.bp
     - core/KinoSearch/Search/ANDQuery.c
     - core/KinoSearch/Search/ANDScorer.bp
     - core/KinoSearch/Search/ANDScorer.c
     - core/KinoSearch/Search/BitVecMatcher.bp
     - core/KinoSearch/Search/BitVecMatcher.c
+    - core/KinoSearch/Search/Collector.bp
+    - core/KinoSearch/Search/Collector.c
+    - core/KinoSearch/Search/Collector/SortCollector.bp
+    - core/KinoSearch/Search/Collector/SortCollector.c
     - core/KinoSearch/Search/Compiler.bp
     - core/KinoSearch/Search/Compiler.c
-    - core/KinoSearch/Search/HitCollector.bp
-    - core/KinoSearch/Search/HitCollector.c
-    - core/KinoSearch/Search/HitCollector/SortCollector.bp
-    - core/KinoSearch/Search/HitCollector/SortCollector.c
     - core/KinoSearch/Search/HitQueue.bp
     - core/KinoSearch/Search/HitQueue.c
     - core/KinoSearch/Search/Hits.bp
     - core/KinoSearch/Search/Hits.c
+    - core/KinoSearch/Search/IndexSearcher.bp
+    - core/KinoSearch/Search/IndexSearcher.c
     - core/KinoSearch/Search/LeafQuery.bp
     - core/KinoSearch/Search/LeafQuery.c
     - core/KinoSearch/Search/MatchAllQuery.bp
@@ -351,6 +365,8 @@ no_index:
     - core/KinoSearch/Search/PolySearcher.c
     - core/KinoSearch/Search/Query.bp
     - core/KinoSearch/Search/Query.c
+    - core/KinoSearch/Search/QueryParser.bp
+    - core/KinoSearch/Search/QueryParser.c
     - core/KinoSearch/Search/RangeQuery.bp
     - core/KinoSearch/Search/RangeQuery.c
     - core/KinoSearch/Search/RangeScorer.bp
@@ -359,8 +375,8 @@ no_index:
     - core/KinoSearch/Search/RequiredOptionalQuery.c
     - core/KinoSearch/Search/RequiredOptionalScorer.bp
     - core/KinoSearch/Search/RequiredOptionalScorer.c
-    - core/KinoSearch/Search/Searchable.bp
-    - core/KinoSearch/Search/Searchable.c
+    - core/KinoSearch/Search/Searcher.bp
+    - core/KinoSearch/Search/Searcher.c
     - core/KinoSearch/Search/SeriesMatcher.bp
     - core/KinoSearch/Search/SeriesMatcher.c
     - core/KinoSearch/Search/Similarity.bp
@@ -377,8 +393,6 @@ no_index:
     - core/KinoSearch/Search/TermScorer.c
     - core/KinoSearch/Search/TopDocs.bp
     - core/KinoSearch/Search/TopDocs.c
-    - core/KinoSearch/Searcher.bp
-    - core/KinoSearch/Searcher.c
     - core/KinoSearch/Store/CompoundFileReader.bp
     - core/KinoSearch/Store/CompoundFileReader.c
     - core/KinoSearch/Store/CompoundFileWriter.bp
@@ -589,6 +603,7 @@ no_index:
     - devel/conf/boil.vim
     - devel/conf/kinoperl.supp
     - devel/conf/kinotidyrc
+    - lib/KSx/Search/ProximityQuery.pm
     - lib/KinoSearch.pm
     - lib/KinoSearch/Analysis/Analyzer.pm
     - lib/KinoSearch/Analysis/CaseFolder.pm
@@ -601,9 +616,10 @@ no_index:
     - lib/KinoSearch/Analysis/TokenBatch.pm
     - lib/KinoSearch/Analysis/Tokenizer.pm
     - lib/KinoSearch/Architecture.pm
-    - lib/KinoSearch/Doc.pm
-    - lib/KinoSearch/Doc/HitDoc.pm
+    - lib/KinoSearch/Docs/DevGuide.pm
     - lib/KinoSearch/Docs/FileLocking.pm
+    - lib/KinoSearch/Document/Doc.pm
+    - lib/KinoSearch/Document/HitDoc.pm
     - lib/KinoSearch/FieldType.pm
     - lib/KinoSearch/FieldType/BlobType.pm
     - lib/KinoSearch/FieldType/Float32Type.pm
@@ -627,12 +643,17 @@ no_index:
     - lib/KinoSearch/Index/HighlightWriter.pm
     - lib/KinoSearch/Index/IndexManager.pm
     - lib/KinoSearch/Index/IndexReader.pm
+    - lib/KinoSearch/Index/Indexer.pm
     - lib/KinoSearch/Index/Inverter.pm
     - lib/KinoSearch/Index/Lexicon.pm
     - lib/KinoSearch/Index/LexiconReader.pm
     - lib/KinoSearch/Index/LexiconWriter.pm
     - lib/KinoSearch/Index/PolyLexicon.pm
     - lib/KinoSearch/Index/PolyReader.pm
+    - lib/KinoSearch/Index/Posting.pm
+    - lib/KinoSearch/Index/Posting/MatchPosting.pm
+    - lib/KinoSearch/Index/Posting/RichPosting.pm
+    - lib/KinoSearch/Index/Posting/ScorePosting.pm
     - lib/KinoSearch/Index/PostingList.pm
     - lib/KinoSearch/Index/PostingListReader.pm
     - lib/KinoSearch/Index/PostingListWriter.pm
@@ -665,10 +686,15 @@ no_index:
     - lib/KinoSearch/Object/VArray.pm
     - lib/KinoSearch/Object/VTable.pm
     - lib/KinoSearch/Plan/Architecture.pm
-    - lib/KinoSearch/Posting.pm
-    - lib/KinoSearch/Posting/MatchPosting.pm
-    - lib/KinoSearch/Posting/RichPosting.pm
-    - lib/KinoSearch/Posting/ScorePosting.pm
+    - lib/KinoSearch/Plan/BlobType.pm
+    - lib/KinoSearch/Plan/FieldType.pm
+    - lib/KinoSearch/Plan/Float32Type.pm
+    - lib/KinoSearch/Plan/Float64Type.pm
+    - lib/KinoSearch/Plan/FullTextType.pm
+    - lib/KinoSearch/Plan/Int32Type.pm
+    - lib/KinoSearch/Plan/Int64Type.pm
+    - lib/KinoSearch/Plan/Schema.pm
+    - lib/KinoSearch/Plan/StringType.pm
     - lib/KinoSearch/QueryParser.pm
     - lib/KinoSearch/QueryParser/QueryParser.pm
     - lib/KinoSearch/Redacted.pm
@@ -677,12 +703,15 @@ no_index:
     - lib/KinoSearch/Search/ANDScorer.pm
     - lib/KinoSearch/Search/BitVecMatcher.pm
     - lib/KinoSearch/Search/BooleanQuery.pm
+    - lib/KinoSearch/Search/Collector.pm
+    - lib/KinoSearch/Search/Collector/BitCollector.pm
+    - lib/KinoSearch/Search/Collector/SortCollector.pm
     - lib/KinoSearch/Search/Compiler.pm
     - lib/KinoSearch/Search/HitCollector.pm
     - lib/KinoSearch/Search/HitCollector/BitCollector.pm
-    - lib/KinoSearch/Search/HitCollector/SortCollector.pm
     - lib/KinoSearch/Search/HitQueue.pm
     - lib/KinoSearch/Search/Hits.pm
+    - lib/KinoSearch/Search/IndexSearcher.pm
     - lib/KinoSearch/Search/LeafQuery.pm
     - lib/KinoSearch/Search/MatchAllQuery.pm
     - lib/KinoSearch/Search/MatchDoc.pm
@@ -698,6 +727,7 @@ no_index:
     - lib/KinoSearch/Search/PolySearcher.pm
     - lib/KinoSearch/Search/Query.pm
     - lib/KinoSearch/Search/QueryFilter.pm
+    - lib/KinoSearch/Search/QueryParser.pm
     - lib/KinoSearch/Search/RangeQuery.pm
     - lib/KinoSearch/Search/RequiredOptionalQuery.pm
     - lib/KinoSearch/Search/RequiredOptionalScorer.pm
@@ -705,6 +735,7 @@ no_index:
     - lib/KinoSearch/Search/SearchClient.pm
     - lib/KinoSearch/Search/SearchServer.pm
     - lib/KinoSearch/Search/Searchable.pm
+    - lib/KinoSearch/Search/Searcher.pm
     - lib/KinoSearch/Search/Similarity.pm
     - lib/KinoSearch/Search/SortRule.pm
     - lib/KinoSearch/Search/SortSpec.pm
@@ -856,7 +887,7 @@ no_index:
     - t/502-phrasequery.t
     - t/504-similarity.t
     - t/505-hit_queue.t
-    - t/506-hit_collector.t
+    - t/506-collector.t
     - t/507-filter.t
     - t/508-hits.t
     - t/509-poly_searcher.t
@@ -885,6 +916,8 @@ no_index:
     - t/607-queryparser_multi_field.t
     - t/610-queryparser_logic.t
     - t/611-queryparser_syntax.t
+    - t/612-leak-trace.t
+    - t/613-proximityquery.t
     - t/701-uscon.t
     - t/999-remove_indexes.t
     - t/binding/000-load.t
@@ -1001,11 +1034,13 @@ provides:
     file: lib/KSx/Search/LongFieldSim.pm
   KSx::Search::MockScorer:
     file: lib/KSx/Search/MockScorer.pm
+  KSx::Search::ProximityQuery:
+    file: lib/KSx/Search/ProximityQuery.pm
   KSx::Simple:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_083
+    version: 0.30_09
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1026,10 +1061,10 @@ provides:
     file: lib/KinoSearch/Analysis/Tokenizer.pm
   KinoSearch::Architecture:
     file: lib/KinoSearch/Architecture.pm
-  KinoSearch::Doc:
-    file: lib/KinoSearch/Doc.pm
-  KinoSearch::Doc::HitDoc:
-    file: lib/KinoSearch/Doc/HitDoc.pm
+  KinoSearch::Document::Doc:
+    file: lib/KinoSearch/Document/Doc.pm
+  KinoSearch::Document::HitDoc:
+    file: lib/KinoSearch/Document/HitDoc.pm
   KinoSearch::FieldType:
     file: lib/KinoSearch/FieldType.pm
   KinoSearch::FieldType::BlobType:
@@ -1076,6 +1111,8 @@ provides:
     file: lib/KinoSearch/Index/IndexManager.pm
   KinoSearch::Index::IndexReader:
     file: lib/KinoSearch/Index/IndexReader.pm
+  KinoSearch::Index::Indexer:
+    file: lib/KinoSearch/Index/Indexer.pm
   KinoSearch::Index::Inverter:
     file: lib/KinoSearch/Index/Inverter.pm
   KinoSearch::Index::Lexicon:
@@ -1088,6 +1125,14 @@ provides:
     file: lib/KinoSearch/Index/PolyLexicon.pm
   KinoSearch::Index::PolyReader:
     file: lib/KinoSearch/Index/PolyReader.pm
+  KinoSearch::Index::Posting:
+    file: lib/KinoSearch/Index/Posting.pm
+  KinoSearch::Index::Posting::MatchPosting:
+    file: lib/KinoSearch/Index/Posting/MatchPosting.pm
+  KinoSearch::Index::Posting::RichPosting:
+    file: lib/KinoSearch/Index/Posting/RichPosting.pm
+  KinoSearch::Index::Posting::ScorePosting:
+    file: lib/KinoSearch/Index/Posting/ScorePosting.pm
   KinoSearch::Index::PostingList:
     file: lib/KinoSearch/Index/PostingList.pm
   KinoSearch::Index::PostingListReader:
@@ -1152,14 +1197,24 @@ provides:
     file: lib/KinoSearch.pm
   KinoSearch::Plan::Architecture:
     file: lib/KinoSearch/Plan/Architecture.pm
-  KinoSearch::Posting:
-    file: lib/KinoSearch/Posting.pm
-  KinoSearch::Posting::MatchPosting:
-    file: lib/KinoSearch/Posting/MatchPosting.pm
-  KinoSearch::Posting::RichPosting:
-    file: lib/KinoSearch/Posting/RichPosting.pm
-  KinoSearch::Posting::ScorePosting:
-    file: lib/KinoSearch/Posting/ScorePosting.pm
+  KinoSearch::Plan::BlobType:
+    file: lib/KinoSearch/Plan/BlobType.pm
+  KinoSearch::Plan::FieldType:
+    file: lib/KinoSearch/Plan/FieldType.pm
+  KinoSearch::Plan::Float32Type:
+    file: lib/KinoSearch/Plan/Float32Type.pm
+  KinoSearch::Plan::Float64Type:
+    file: lib/KinoSearch/Plan/Float64Type.pm
+  KinoSearch::Plan::FullTextType:
+    file: lib/KinoSearch/Plan/FullTextType.pm
+  KinoSearch::Plan::Int32Type:
+    file: lib/KinoSearch/Plan/Int32Type.pm
+  KinoSearch::Plan::Int64Type:
+    file: lib/KinoSearch/Plan/Int64Type.pm
+  KinoSearch::Plan::Schema:
+    file: lib/KinoSearch/Plan/Schema.pm
+  KinoSearch::Plan::StringType:
+    file: lib/KinoSearch/Plan/StringType.pm
   KinoSearch::QueryParser:
     file: lib/KinoSearch/QueryParser.pm
   KinoSearch::Schema:
@@ -1170,18 +1225,24 @@ provides:
     file: lib/KinoSearch/Search/ANDScorer.pm
   KinoSearch::Search::BitVecMatcher:
     file: lib/KinoSearch/Search/BitVecMatcher.pm
+  KinoSearch::Search::Collector:
+    file: lib/KinoSearch/Search/Collector.pm
+  KinoSearch::Search::Collector::BitCollector:
+    file: lib/KinoSearch/Search/Collector/BitCollector.pm
+  KinoSearch::Search::Collector::SortCollector:
+    file: lib/KinoSearch/Search/Collector/SortCollector.pm
   KinoSearch::Search::Compiler:
     file: lib/KinoSearch/Search/Compiler.pm
   KinoSearch::Search::HitCollector:
     file: lib/KinoSearch/Search/HitCollector.pm
   KinoSearch::Search::HitCollector::BitCollector:
     file: lib/KinoSearch/Search/HitCollector/BitCollector.pm
-  KinoSearch::Search::HitCollector::SortCollector:
-    file: lib/KinoSearch/Search/HitCollector/SortCollector.pm
   KinoSearch::Search::HitQueue:
     file: lib/KinoSearch/Search/HitQueue.pm
   KinoSearch::Search::Hits:
     file: lib/KinoSearch/Search/Hits.pm
+  KinoSearch::Search::IndexSearcher:
+    file: lib/KinoSearch/Search/IndexSearcher.pm
   KinoSearch::Search::LeafQuery:
     file: lib/KinoSearch/Search/LeafQuery.pm
   KinoSearch::Search::MatchAllQuery:
@@ -1210,6 +1271,8 @@ provides:
     file: lib/KinoSearch/Search/PolySearcher.pm
   KinoSearch::Search::Query:
     file: lib/KinoSearch/Search/Query.pm
+  KinoSearch::Search::QueryParser:
+    file: lib/KinoSearch/Search/QueryParser.pm
   KinoSearch::Search::RangeQuery:
     file: lib/KinoSearch/Search/RangeQuery.pm
   KinoSearch::Search::RequiredOptionalQuery:
@@ -1218,6 +1281,8 @@ provides:
     file: lib/KinoSearch/Search/RequiredOptionalScorer.pm
   KinoSearch::Search::Searchable:
     file: lib/KinoSearch/Search/Searchable.pm
+  KinoSearch::Search::Searcher:
+    file: lib/KinoSearch/Search/Searcher.pm
   KinoSearch::Search::Similarity:
     file: lib/KinoSearch/Search/Similarity.pm
   KinoSearch::Search::SortRule:
@@ -1285,4 +1350,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.30_083
+version: 0.30_09

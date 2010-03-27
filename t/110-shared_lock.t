@@ -15,8 +15,8 @@ my $lock = KinoSearch::Store::SharedLock->new(
 
 ok( !$lock->is_locked, "not locked yet" );
 
-ok( $lock->obtain,                  "obtain" );
-ok( $lock->is_locked,               "is_locked" );
+ok( $lock->obtain,                        "obtain" );
+ok( $lock->is_locked,                     "is_locked" );
 ok( $folder->exists('locks/ness-1.lock'), "lockfile exists" );
 
 my $another_lock = KinoSearch::Store::SharedLock->new(

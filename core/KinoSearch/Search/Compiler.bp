@@ -19,8 +19,8 @@ parcel KinoSearch cnick Kino;
  * Compiling a Matcher is a two stage process. 
  *
  * The first stage takes place during the Compiler's constructor, which is
- * where the Query object meets a Searchable object for the first time.
- * Searchables operate on a specific document collection and they can tell you
+ * where the Query object meets a Searcher object for the first time.
+ * Searchers operate on a specific document collection and they can tell you
  * certain statistical information about the collection -- such as how many
  * total documents are in the collection, or how many documents in the
  * collection a particular term is present in.  KinoSearch's core Compiler
@@ -31,12 +31,12 @@ parcel KinoSearch cnick Kino;
  * The second stage of compilation is Make_Matcher(), method, which is where
  * the Compiler meets a SegReader object.  SegReaders are associated with a
  * single segment within a single index on a single machine, and are thus
- * lower-level than Searchables, which may represent a document collection
+ * lower-level than Searchers, which may represent a document collection
  * spread out over a search cluster (comprising several indexes and many
  * segments).  The Compiler object can use new information supplied by the
  * SegReader -- such as whether a term is missing from the local index even
  * though it is present within the larger collection represented by the
- * Searchable -- when figuring out what to feed to the Matchers's constructor,
+ * Searcher -- when figuring out what to feed to the Matchers's constructor,
  * or whether Make_Matcher() should return a Matcher at all.
  */
 class KinoSearch::Search::Compiler extends KinoSearch::Search::Query {
@@ -47,13 +47,14 @@ class KinoSearch::Search::Compiler extends KinoSearch::Search::Query {
     /** Abstract constructor.
      *
      * @param parent The parent Query.
-     * @param searchable A KinoSearch::Search::Searchable, such as a Searcher.
+     * @param searcher A KinoSearch::Search::Searcher, such as an
+     * IndexSearcher.
      * @param similarity A Similarity.
      * @param boost An arbitrary scoring multiplier.  Defaults to the boost of
      * the parent Query.
      */
     public inert Compiler*
-    init(Compiler *self, Query *parent, Searchable *searchable, 
+    init(Compiler *self, Query *parent, Searcher *searcher, 
          Similarity *similarity = NULL, float boost);
 
     /** Factory method returning a Matcher.
@@ -63,7 +64,7 @@ class KinoSearch::Search::Compiler extends KinoSearch::Search::Query {
      * @return a Matcher, or NULL if the Matcher would have matched no
      * documents.
      */
-    public abstract incremented Matcher*
+    public abstract incremented nullable Matcher*
     Make_Matcher(Compiler *self, SegReader *reader, bool_t need_score);
 
     /** Return the Compiler's numerical weight, a scoring multiplier.  By
@@ -74,7 +75,7 @@ class KinoSearch::Search::Compiler extends KinoSearch::Search::Query {
 
     /** Accessor for the Compiler's Similarity object.
      */
-    public Similarity*
+    public nullable Similarity*
     Get_Similarity(Compiler *self);
 
     /** Accessor for the Compiler's parent Query object.
@@ -122,12 +123,12 @@ class KinoSearch::Search::Compiler extends KinoSearch::Search::Query {
      * the span's offset and length are measured in Unicode code points.
      * The default implementation returns an empty array.       
      * 
-     * @param searchable A Searchable.
+     * @param searcher A Searcher.
      * @param doc_vec A DocVector.
      * @param field The name of the field.
      */
     public incremented VArray*
-    Highlight_Spans(Compiler *self, Searchable *searchable, 
+    Highlight_Spans(Compiler *self, Searcher *searcher, 
                     DocVector *doc_vec, const CharBuf *field);
 
     public void

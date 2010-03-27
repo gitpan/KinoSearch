@@ -13,8 +13,6 @@
 #include "KinoSearch/Util/ProcessID.h"
 #include "KinoSearch/Util/Sleep.h"
 
-static ZombieCharBuf lock_dir_name = ZCB_LITERAL("locks");
-
 Lock*
 Lock_init(Lock *self, Folder *folder, const CharBuf *name, 
           const CharBuf *host, i32_t timeout, i32_t interval)
@@ -25,9 +23,9 @@ Lock_init(Lock *self, Folder *folder, const CharBuf *name,
         THROW(ERR, "Invalid value for 'interval': %i32", interval);
     }
     {
-        ZombieCharBuf scratch = ZCB_make(name);
+        ZombieCharBuf *scratch = ZCB_WRAP(name);
         u32_t code_point;
-        while (0 != (code_point = ZCB_Nip_One(&scratch))) {
+        while (0 != (code_point = ZCB_Nip_One(scratch))) {
             if (   isalnum(code_point) 
                 || code_point == '.' 
                 || code_point == '-'
@@ -123,10 +121,11 @@ LFLock_request(LockFileLock *self)
     if (Folder_Exists(self->folder, self->lock_path)) { return false; }
 
     /* Create the "locks" subdirectory if necessary. */
-    if (!Folder_Exists(self->folder, (CharBuf*)&lock_dir_name)) {
-        if (!Folder_MkDir(self->folder, (CharBuf*)&lock_dir_name)) {
+    CharBuf *lock_dir_name = (CharBuf*)ZCB_WRAP_STR("locks", 5);
+    if (!Folder_Exists(self->folder, lock_dir_name)) {
+        if (!Folder_MkDir(self->folder, lock_dir_name)) {
             /* Maybe our attempt failed because another process succeeded. */
-            if (!Folder_Find_Folder(self->folder, (CharBuf*)&lock_dir_name)) {
+            if (!Folder_Find_Folder(self->folder, lock_dir_name)) {
                 /* Nope, everything failed, so bail out. */
                 return false;
             }
@@ -184,16 +183,17 @@ bool_t
 LFLock_maybe_delete_file(LockFileLock *self, const CharBuf *path,
                          bool_t delete_mine, bool_t delete_other) 
 {
-    Folder *folder      = self->folder;
-    bool_t  success     = false;
-    ZombieCharBuf scratch = ZCB_make(path);
+    Folder *folder  = self->folder;
+    bool_t  success = false;
+    ZombieCharBuf *scratch = ZCB_WRAP(path);
 
     /* Only delete locks that start with our lock name. */
-    if ( !ZCB_Starts_With(&scratch, (CharBuf*)&lock_dir_name)) {
+    CharBuf *lock_dir_name = (CharBuf*)ZCB_WRAP_STR("locks", 5);
+    if ( !ZCB_Starts_With(scratch, lock_dir_name)) {
         return false;
     } 
-    ZCB_Nip(&scratch, ZCB_Get_Size(&lock_dir_name) + 1);
-    if ( !ZCB_Starts_With(&scratch, self->name) ) {
+    ZCB_Nip(scratch, CB_Get_Size(lock_dir_name) + 1);
+    if ( !ZCB_Starts_With(scratch, self->name) ) {
         return false;
     }
 

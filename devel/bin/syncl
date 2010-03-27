@@ -112,26 +112,34 @@ FILE: while ( my $component = $iterator->() ) {
 sub modify {
     my ( $source_content, $dest_content ) = @_;
 
-    my ( $mod_source, $source_copyright )
-        = extract_copyright($source_content);
-    my ( $mod_dest, $dest_copyright ) = extract_copyright($dest_content);
-
-    $mod_source =~ s/COPYRIGHT_PLACEHOLDER/$dest_copyright/;
+    # Swap out copyright notices.
+    my @notices;
+    my $mod_source = $source_content;
+    my $mod_dest   = $dest_content;
+    while (1) {
+        my $source_copyright;
+        ( $mod_source, $source_copyright ) = extract_copyright($mod_source);
+        last unless $source_copyright;
+    }
+    while (1) {
+        my $dest_copyright;
+        ( $mod_dest, $dest_copyright ) = extract_copyright($mod_dest);
+        last unless $dest_copyright;
+        push @notices, $dest_copyright;
+    }
+    for my $notice (@notices) {
+        $mod_source =~ s/COPYRIGHT_PLACEHOLDER/$notice/;
+    }
 
     return $mod_source;
 }
 
 sub extract_copyright {
     my $content = shift;
-    if ( $content =~ s#(^=head1 COPYRIGHT.*?)(?=^=)#COPYRIGHT_PLACEHOLDER#sm )
-    {
-        return ( $content, $1 );
-    }
-    if ($content =~ s#(^__COPYRIGHT__.*?)(?=^__|\Z)#COPYRIGHT_PLACEHOLDER#sm )
-    {
-        return ( $content, $1 );
-    }
-    if ( $content =~ s#(/\*[\s*]*Copyright.*?\*/)#COPYRIGHT_PLACEHOLDER#s ) {
+    my $copy1   = qr/^==?head1 COPYRIGHT.*?(?=^=)/sm;
+    my $copy2   = qr/^__COPYRIGHT__.*?(?=^__|\Z)/sm;
+    my $copy3   = qr#/\*[\s*]*Copyright.*?\*/#sm;
+    if ( $content =~ s/($copy1|$copy2|$copy3)/COPYRIGHT_PLACEHOLDER/sm ) {
         return ( $content, $1 );
     }
     return ( $content, "" );

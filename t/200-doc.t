@@ -5,7 +5,7 @@ use Test::More tests => 10;
 use Storable qw( nfreeze thaw );
 use KinoSearch::Test;
 
-my $doc = KinoSearch::Doc->new;
+my $doc = KinoSearch::Document::Doc->new;
 is_deeply( $doc->get_fields, {}, "get_fields" );
 is( $doc->get_doc_id, 0, "default doc_id of 0" );
 
@@ -13,7 +13,7 @@ $doc->{foo} = "blah";
 is_deeply( $doc->get_fields, { foo => 'blah' }, "overloading" );
 
 my %hash = ( foo => 'foo' );
-$doc = KinoSearch::Doc->new(
+$doc = KinoSearch::Document::Doc->new(
     fields => \%hash,
     doc_id => 30,
 );

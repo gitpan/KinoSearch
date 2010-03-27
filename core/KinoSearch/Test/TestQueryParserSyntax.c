@@ -8,9 +8,9 @@
 #include "KinoSearch/Test/TestQueryParserSyntax.h"
 #include "KinoSearch/Test/TestQueryParser.h"
 #include "KinoSearch/Test/TestUtils.h"
-#include "KinoSearch/QueryParser.h"
-#include "KinoSearch/Searcher.h"
 #include "KinoSearch/Search/Hits.h"
+#include "KinoSearch/Search/IndexSearcher.h"
+#include "KinoSearch/Search/QueryParser.h"
 #include "KinoSearch/Search/TermQuery.h"
 #include "KinoSearch/Search/PhraseQuery.h"
 #include "KinoSearch/Search/LeafQuery.h"
@@ -226,9 +226,9 @@ void
 TestQPSyntax_run_tests(Folder *index)
 {
     u32_t i;
-    TestBatch   *batch        = TestBatch_new(48);
-    Searcher    *searcher     = Searcher_new((Obj*)index);
-    QueryParser *qparser      = QParser_new(Searcher_Get_Schema(searcher), 
+    TestBatch     *batch      = TestBatch_new(48);
+    IndexSearcher *searcher   = IxSearcher_new((Obj*)index);
+    QueryParser   *qparser    = QParser_new(IxSearcher_Get_Schema(searcher), 
         NULL, NULL, NULL);
     QParser_Set_Heed_Colons(qparser, true);
 
@@ -240,7 +240,7 @@ TestQPSyntax_run_tests(Folder *index)
         Query *tree     = QParser_Tree(qparser, test_case->query_string);
         Query *expanded = QParser_Expand_Leaf(qparser, test_case->tree);
         Query *parsed   = QParser_Parse(qparser, test_case->query_string);
-        Hits  *hits     = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
+        Hits  *hits     = IxSearcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
             "tree()    %s", (char*)CB_Get_Ptr8(test_case->query_string));
@@ -260,7 +260,7 @@ TestQPSyntax_run_tests(Folder *index)
         TestQueryParser *test_case = test_func();
         Query *tree   = QParser_Tree(qparser, test_case->query_string);
         Query *parsed = QParser_Parse(qparser, test_case->query_string);
-        Hits  *hits   = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
+        Hits  *hits   = IxSearcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
             "tree()    %s", (char*)CB_Get_Ptr8(test_case->query_string));

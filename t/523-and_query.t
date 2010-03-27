@@ -7,7 +7,7 @@ use Storable qw( freeze thaw );
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder = create_index( 'a', 'b', 'c c c d', 'c d', 'd' .. 'z', );
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $reader = $searcher->get_reader->get_seg_readers->[0];
 
 my $a_query = KinoSearch::Search::TermQuery->new(
@@ -41,7 +41,7 @@ ok( !$and_query->equals($different_children),
 my $one_child = KinoSearch::Search::ANDQuery->new( children => [$a_query] );
 ok( !$and_query->equals($one_child), '!equals (too few children)' );
 
-my $and_compiler = $and_query->make_compiler( searchable => $searcher );
+my $and_compiler = $and_query->make_compiler( searcher => $searcher );
 isa_ok( $and_compiler, "KinoSearch::Search::ANDCompiler", "make_compiler" );
 $frozen = freeze($and_compiler);
 $thawed = thaw($frozen);
@@ -53,7 +53,7 @@ my $and_scorer = $and_compiler->make_matcher(
 );
 isa_ok( $and_scorer, "KinoSearch::Search::ANDScorer", "make_matcher" );
 
-my $term_scorer = $one_child->make_compiler( searchable => $searcher )
+my $term_scorer = $one_child->make_compiler( searcher => $searcher )
     ->make_matcher( reader => $reader, need_score => 0 );
 isa_ok(
     $term_scorer,
@@ -66,7 +66,7 @@ my $hopeless_query = KinoSearch::Search::TermQuery->new(
     term  => 'nein',
 );
 $and_query->add_child($hopeless_query);
-my $nope = $and_query->make_compiler( searchable => $searcher )
+my $nope = $and_query->make_compiler( searcher => $searcher )
     ->make_matcher( reader => $reader, need_score => 0 );
 ok( !defined $nope,
     "If scorer wouldn't return any docs, make_matcher returns undef" );

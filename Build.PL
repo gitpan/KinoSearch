@@ -48,14 +48,21 @@ my $builder = KinoSearch::Build->new(
         'ExtUtils::ParseXS'  => 2.16,
     },
     create_makefile_pl => 'passthrough',
-    add_to_cleanup     => [
+    meta_merge         => { keywords => [qw( search lucene )], },
+    meta_add           => {
+        resources => {
+            homepage   => 'http://www.rectangular.com/kinosearch',
+            repository => 'http://www.rectangular.com/svn/kinosearch/trunk',
+        },
+    },
+    add_to_cleanup => [
         qw(
             KinoSearch-*
             MANIFEST.bak
             perltidy.ERR
             *.pdb
             *.manifest
-        ),
+            ),
     ],
 );
 

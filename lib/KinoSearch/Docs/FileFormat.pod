@@ -107,7 +107,7 @@ facilitate fast lookups.
 
 =head2 Postings
 
-L<Posting|KinoSearch::Posting> is a technical term from the field of
+L<Posting|KinoSearch::Index::Posting> is a technical term from the field of
 L<information retrieval|KinoSearch::Docs::IRTheory>, defined as a single
 instance of a one term indexing one document.  If you are looking at the index
 in the back of a book, and you see that "freedom" is referenced on pages 8,

@@ -10,7 +10,7 @@ my $doc_1
 my $doc_2 = 'a b c d x y x y ' . ( 'z ' x 100 );
 
 my $folder = create_index( $doc_1, $doc_2 );
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $a_query = KinoSearch::Search::TermQuery->new(
     field => 'content',

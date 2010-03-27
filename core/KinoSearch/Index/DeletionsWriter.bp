@@ -68,7 +68,7 @@ abstract class KinoSearch::Index::DeletionsWriter cnick DelWriter
      * a component within the PolyReader that was supplied at
      * construction-time. 
      */
-    public abstract incremented Matcher*
+    public abstract incremented nullable Matcher*
     Seg_Deletions(DeletionsWriter *self, SegReader *seg_reader);
     
     /** Return the number of deletions for a given segment.
@@ -84,12 +84,12 @@ abstract class KinoSearch::Index::DeletionsWriter cnick DelWriter
 class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
     extends KinoSearch::Index::DeletionsWriter {
 
-    VArray      *seg_readers;
-    Hash        *name_to_tick;
-    I32Array    *seg_starts;
-    VArray      *bit_vecs;
-    bool_t      *updated;
-    Searcher    *searcher;
+    VArray        *seg_readers;
+    Hash          *name_to_tick;
+    I32Array      *seg_starts;
+    VArray        *bit_vecs;
+    bool_t        *updated;
+    IndexSearcher *searcher;
 
     inert i32_t current_file_format;
 
@@ -120,7 +120,7 @@ class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
     public bool_t
     Updated(DefaultDeletionsWriter *self);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Seg_Deletions(DefaultDeletionsWriter *self, SegReader *seg_reader);
 
     public i32_t

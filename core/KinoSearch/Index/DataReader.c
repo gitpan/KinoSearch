@@ -4,7 +4,7 @@
 #include "KinoSearch/Index/DataReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 
 DataReader*

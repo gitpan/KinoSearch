@@ -33,7 +33,7 @@ class KinoSearch::Search::PhraseQuery extends KinoSearch::Search::Query
     Get_Terms(PhraseQuery *self);
 
     public incremented Compiler*
-    Make_Compiler(PhraseQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(PhraseQuery *self, Searcher *searcher, float boost);
 
     public bool_t
     Equals(PhraseQuery *self, Obj *other);
@@ -60,13 +60,13 @@ class KinoSearch::Search::PhraseCompiler
     float normalized_weight;
 
     inert incremented PhraseCompiler*
-    new(PhraseQuery *parent, Searchable *searchable, float boost);
+    new(PhraseQuery *parent, Searcher *searcher, float boost);
 
     inert PhraseCompiler*
-    init(PhraseCompiler *self, PhraseQuery *parent, Searchable *searchable, 
+    init(PhraseCompiler *self, PhraseQuery *parent, Searcher *searcher, 
          float boost);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Make_Matcher(PhraseCompiler *self, SegReader *reader, bool_t need_score);
 
     public float
@@ -79,7 +79,7 @@ class KinoSearch::Search::PhraseCompiler
     Apply_Norm_Factor(PhraseCompiler *self, float factor);
 
     public incremented VArray*
-    Highlight_Spans(PhraseCompiler *self, Searchable *searchable, 
+    Highlight_Spans(PhraseCompiler *self, Searcher *searcher, 
                     DocVector *doc_vec, const CharBuf *field);
 
     public bool_t

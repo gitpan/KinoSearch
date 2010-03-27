@@ -29,8 +29,10 @@ sub new {
         my $dat_filename = $segment->get_name . "/zdocs.dat";
         my $ix_filename  = $segment->get_name . "/zdocs.ix";
         my $folder       = $self->get_folder;
-        $ix_in{$$self}  = $folder->open_in($ix_filename)  or confess KinoSearch->error;
-        $dat_in{$$self} = $folder->open_in($dat_filename) or confess KinoSearch->error;
+        $ix_in{$$self} = $folder->open_in($ix_filename)
+            or confess KinoSearch->error;
+        $dat_in{$$self} = $folder->open_in($dat_filename)
+            or confess KinoSearch->error;
 
         # Remember which fields are binary.
         my $schema = $self->get_schema;
@@ -78,7 +80,7 @@ sub fetch {
             unless utf8_valid( $fields{$field} );
     }
 
-    return KinoSearch::Doc::HitDoc->new(
+    return KinoSearch::Document::HitDoc->new(
         fields => \%fields,
         doc_id => $doc_id + $offset,
         score  => $score,

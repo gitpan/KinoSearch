@@ -91,14 +91,14 @@ sub test_search {
         scores  => [ (0) x scalar @$docs ],
     );
     if (@$dels) {
-        my $bit_vec
-            = KinoSearch::Object::BitVector->new( capacity => $dels->[-1] + 1 );
+        my $bit_vec = KinoSearch::Object::BitVector->new(
+            capacity => $dels->[-1] + 1 );
         $bit_vec->set($_) for @$dels;
         $del_enum = KinoSearch::Search::BitVecMatcher->new(
             bit_vector => $bit_vec );
     }
 
-    my $collector = KinoSearch::Search::HitCollector::SortCollector->new(
+    my $collector = KinoSearch::Search::Collector::SortCollector->new(
         wanted => 100 );
     $matcher->collect(
         %KinoSearch::Search::Matcher::collect_PARAMS,

@@ -9,9 +9,9 @@ abstract class KinoSearch::Index::TermStepper
     init(TermStepper *self);
 
     public void
-    Set_Value(TermStepper *self, Obj *value);
+    Set_Value(TermStepper *self, Obj *value = NULL);
 
-    public Obj*
+    public nullable Obj*
     Get_Value(TermStepper *self);
 
     public void

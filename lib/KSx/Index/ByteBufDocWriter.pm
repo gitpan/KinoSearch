@@ -160,7 +160,7 @@ register_doc_reader():
     }
 
     package MySchema;
-    use base qw( KinoSearch::Schema );
+    use base qw( KinoSearch::Plan::Schema );
 
     sub architecture { MyArchitecture->new }
 
@@ -175,7 +175,9 @@ document supplies a valid value for the field in question:
 
 Then, in your search app:
 
-    my $searcher = KinoSearch::Searcher->new( index => '/path/to/index' );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( 
+        index => '/path/to/index',
+    );
     my $hits = $searcher->hits( query => $query );
     while ( my $id = $hits->next ) {
         # $id is a plain old 16-byte Perl scalar instead of a Hit object

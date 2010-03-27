@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package KSx::Remote::SearchClient;
-BEGIN { our @ISA = qw( KinoSearch::Search::Searchable ) }
+BEGIN { our @ISA = qw( KinoSearch::Search::Searcher ) }
 use Carp;
 use Storable qw( nfreeze thaw );
 use bytes;
@@ -141,7 +141,7 @@ KSx::Remote::SearchClient - Connect to a remote SearchServer.
 
 =head1 DESCRIPTION
 
-SearchClient is a subclass of L<KinoSearch::Search::Searchable> which can be
+SearchClient is a subclass of L<KinoSearch::Search::Searcher> which can be
 used to search an index on a remote machine made accessible via
 L<SearchServer|KSx::Remote::SearchServer>.
 

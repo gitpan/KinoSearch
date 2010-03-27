@@ -2,7 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Plan/Architecture.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DeletionsReader.h"
 #include "KinoSearch/Index/DeletionsWriter.h"
 #include "KinoSearch/Index/DocReader.h"
@@ -20,6 +19,7 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/SortReader.h"
 #include "KinoSearch/Index/SortWriter.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 
@@ -170,7 +170,7 @@ Arch_register_doc_reader(Architecture *self, SegReader *reader)
     Folder     *folder   = SegReader_Get_Folder(reader);
     VArray     *segments = SegReader_Get_Segments(reader);
     Snapshot   *snapshot = SegReader_Get_Snapshot(reader);
-    i32_t       seg_tick = SegReader_Get_Seg_Tick(reader);
+    int32_t     seg_tick = SegReader_Get_Seg_Tick(reader);
     DefaultDocReader *doc_reader 
         = DefDocReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
@@ -185,7 +185,7 @@ Arch_register_posting_list_reader(Architecture *self, SegReader *reader)
     Folder    *folder   = SegReader_Get_Folder(reader);
     VArray    *segments = SegReader_Get_Segments(reader);
     Snapshot  *snapshot = SegReader_Get_Snapshot(reader);
-    i32_t      seg_tick = SegReader_Get_Seg_Tick(reader);
+    int32_t    seg_tick = SegReader_Get_Seg_Tick(reader);
     LexiconReader *lex_reader = (LexiconReader*)SegReader_Obtain(reader, 
         VTable_Get_Name(LEXICONREADER));
     DefaultPostingListReader *plist_reader = DefPListReader_new(schema, folder, 
@@ -202,7 +202,7 @@ Arch_register_lexicon_reader(Architecture *self, SegReader *reader)
     Folder    *folder   = SegReader_Get_Folder(reader);
     VArray    *segments = SegReader_Get_Segments(reader);
     Snapshot  *snapshot = SegReader_Get_Snapshot(reader);
-    i32_t      seg_tick = SegReader_Get_Seg_Tick(reader);
+    int32_t    seg_tick = SegReader_Get_Seg_Tick(reader);
     DefaultLexiconReader *lex_reader 
         = DefLexReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
@@ -217,7 +217,7 @@ Arch_register_sort_reader(Architecture *self, SegReader *reader)
     Folder     *folder   = SegReader_Get_Folder(reader);
     VArray     *segments = SegReader_Get_Segments(reader);
     Snapshot   *snapshot = SegReader_Get_Snapshot(reader);
-    i32_t       seg_tick = SegReader_Get_Seg_Tick(reader);
+    int32_t     seg_tick = SegReader_Get_Seg_Tick(reader);
     DefaultSortReader *sort_reader 
         = DefSortReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
@@ -232,7 +232,7 @@ Arch_register_highlight_reader(Architecture *self, SegReader *reader)
     Folder     *folder   = SegReader_Get_Folder(reader);
     VArray     *segments = SegReader_Get_Segments(reader);
     Snapshot   *snapshot = SegReader_Get_Snapshot(reader);
-    i32_t       seg_tick = SegReader_Get_Seg_Tick(reader);
+    int32_t     seg_tick = SegReader_Get_Seg_Tick(reader);
     DefaultHighlightReader* hl_reader
         = DefHLReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
@@ -247,7 +247,7 @@ Arch_register_deletions_reader(Architecture *self, SegReader *reader)
     Folder     *folder   = SegReader_Get_Folder(reader);
     VArray     *segments = SegReader_Get_Segments(reader);
     Snapshot   *snapshot = SegReader_Get_Snapshot(reader);
-    i32_t       seg_tick = SegReader_Get_Seg_Tick(reader);
+    int32_t     seg_tick = SegReader_Get_Seg_Tick(reader);
     DefaultDeletionsReader* del_reader
         = DefDelReader_new(schema, folder, snapshot, segments, seg_tick);
     UNUSED_VAR(self);
@@ -262,14 +262,14 @@ Arch_make_similarity(Architecture *self)
     return Sim_new();
 }
 
-i32_t
+int32_t
 Arch_index_interval(Architecture *self) 
 {
     UNUSED_VAR(self);
     return 128;
 }
 
-i32_t
+int32_t
 Arch_skip_interval(Architecture *self) 
 {
     UNUSED_VAR(self);

@@ -11,11 +11,11 @@
 #include "KinoSearch/Test/TestUtils.h"
 #include "KinoSearch/Analysis/Analyzer.h"
 #include "KinoSearch/Analysis/Tokenizer.h"
-#include "KinoSearch/Doc.h"
-#include "KinoSearch/Indexer.h"
-#include "KinoSearch/QueryParser.h"
-#include "KinoSearch/Searcher.h"
+#include "KinoSearch/Document/Doc.h"
+#include "KinoSearch/Index/Indexer.h"
 #include "KinoSearch/Search/Hits.h"
+#include "KinoSearch/Search/IndexSearcher.h"
+#include "KinoSearch/Search/QueryParser.h"
 #include "KinoSearch/Search/TermQuery.h"
 #include "KinoSearch/Search/PhraseQuery.h"
 #include "KinoSearch/Search/LeafQuery.h"
@@ -614,10 +614,10 @@ S_create_index()
     Indexer    *indexer = Indexer_new(schema, (Obj*)folder, NULL, 0);
     u32_t i, max;
 
+    CharBuf *field = (CharBuf*)ZCB_WRAP_STR("content", 7);
     for (i = 0, max = VA_Get_Size(doc_set); i < max; i++) {
-        static ZombieCharBuf field = ZCB_LITERAL("content");
         Doc *doc = Doc_new(NULL, 0);
-        Doc_Store(doc, (CharBuf*)&field, VA_Fetch(doc_set, i));
+        Doc_Store(doc, field, VA_Fetch(doc_set, i));
         Indexer_Add_Doc(indexer, doc, 1.0f);
         DECREF(doc);
     }
@@ -635,14 +635,14 @@ void
 TestQPLogic_run_tests()
 {
     u32_t i;
-    TestBatch   *batch        = TestBatch_new(178);
-    Folder      *folder       = S_create_index();
-    Searcher    *searcher     = Searcher_new((Obj*)folder);
-    QueryParser *or_parser    = QParser_new(Searcher_Get_Schema(searcher), 
+    TestBatch     *batch      = TestBatch_new(178);
+    Folder        *folder     = S_create_index();
+    IndexSearcher *searcher   = IxSearcher_new((Obj*)folder);
+    QueryParser   *or_parser  = QParser_new(IxSearcher_Get_Schema(searcher), 
         NULL, NULL, NULL);
-    static  ZombieCharBuf AND = ZCB_LITERAL("AND");
-    QueryParser *and_parser   = QParser_new(Searcher_Get_Schema(searcher), 
-        NULL, (CharBuf*)&AND, NULL);
+    ZombieCharBuf *AND        = ZCB_WRAP_STR("AND", 3);
+    QueryParser   *and_parser = QParser_new(IxSearcher_Get_Schema(searcher), 
+        NULL, (CharBuf*)AND, NULL);
     QParser_Set_Heed_Colons(or_parser, true);
     QParser_Set_Heed_Colons(and_parser, true);
 
@@ -654,7 +654,7 @@ TestQPLogic_run_tests()
         TestQueryParser *test_case = test_func(BOOLOP_OR);
         Query *tree     = QParser_Tree(or_parser, test_case->query_string);
         Query *parsed   = QParser_Parse(or_parser, test_case->query_string);
-        Hits  *hits     = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
+        Hits  *hits     = IxSearcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
             "tree() OR   %s", (char*)CB_Get_Ptr8(test_case->query_string));
@@ -672,7 +672,7 @@ TestQPLogic_run_tests()
         TestQueryParser *test_case = test_func(BOOLOP_AND);
         Query *tree     = QParser_Tree(and_parser, test_case->query_string);
         Query *parsed   = QParser_Parse(and_parser, test_case->query_string);
-        Hits  *hits     = Searcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
+        Hits  *hits     = IxSearcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
         ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
             "tree() AND   %s", (char*)CB_Get_Ptr8(test_case->query_string));
@@ -700,7 +700,7 @@ TestQPLogic_run_tests()
         ASSERT_TRUE(batch, Query_Equals(pruned, (Obj*)wanted),
             "prune()   %s", (char*)CB_Get_Ptr8(qstring));
         expanded = QParser_Expand(or_parser, pruned);
-        hits = Searcher_Hits(searcher, (Obj*)expanded, 0, 10, NULL);
+        hits = IxSearcher_Hits(searcher, (Obj*)expanded, 0, 10, NULL);
         ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
             "hits:    %s", (char*)CB_Get_Ptr8(qstring));
 

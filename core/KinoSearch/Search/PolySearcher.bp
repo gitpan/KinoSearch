@@ -9,21 +9,21 @@ parcel KinoSearch cnick Kino;
  */
 
 class KinoSearch::Search::PolySearcher 
-    extends KinoSearch::Search::Searchable {
+    extends KinoSearch::Search::Searcher {
     
-    VArray    *searchables;
+    VArray    *searchers;
     I32Array  *starts;
     i32_t      doc_max;
 
     inert incremented PolySearcher*
-    new(Schema *schema, VArray *searchables);
+    new(Schema *schema, VArray *searchers);
 
     /**
      * @param schema A Schema.
-     * @param searchables An array of Searchables.
+     * @param searchers An array of Searchers.
      */
     public inert PolySearcher*
-    init(PolySearcher *self, Schema *schema, VArray *searchables);
+    init(PolySearcher *self, Schema *schema, VArray *searchers);
 
     public void
     Destroy(PolySearcher *self);
@@ -35,7 +35,7 @@ class KinoSearch::Search::PolySearcher
     Doc_Freq(PolySearcher *self, const CharBuf *field, Obj *term);
 
     public void
-    Collect(PolySearcher *self, Query *query, HitCollector *collector);
+    Collect(PolySearcher *self, Query *query, Collector *collector);
 
     incremented TopDocs*
     Top_Docs(PolySearcher *self, Query *query, u32_t num_wanted,

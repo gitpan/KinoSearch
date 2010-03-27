@@ -125,10 +125,10 @@ class KinoSearch::Plan::Architecture cnick Arch extends KinoSearch::Object::Obj 
     public Similarity*
     Make_Similarity(Architecture *self);
 
-    public i32_t
+    public int32_t
     Index_Interval(Architecture *self);
 
-    public i32_t 
+    public int32_t 
     Skip_Interval(Architecture *self);
 
     /** Returns true for any Architecture object. Subclasses should override

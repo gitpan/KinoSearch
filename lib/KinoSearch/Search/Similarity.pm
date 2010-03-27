@@ -28,7 +28,7 @@ my $synopsis = <<'END_SYNOPSIS';
     }
     
     package MyFullTextType;
-    use base qw( KinoSearch::FieldType::FullTextType );
+    use base qw( KinoSearch::Plan::FullTextType );
     
     sub similarity { MySimilarity->new }
 END_SYNOPSIS

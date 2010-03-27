@@ -3,13 +3,13 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/ANDQuery.h"
-#include "KinoSearch/Schema.h"
-#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/ANDScorer.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
@@ -60,25 +60,25 @@ ANDQuery_equals(ANDQuery *self, Obj *other)
 }
 
 Compiler*
-ANDQuery_make_compiler(ANDQuery *self, Searchable *searchable, float boost)
+ANDQuery_make_compiler(ANDQuery *self, Searcher *searcher, float boost)
 {
-    return (Compiler*)ANDCompiler_new(self, searchable, boost);
+    return (Compiler*)ANDCompiler_new(self, searcher, boost);
 }
 
 /**********************************************************************/
 
 ANDCompiler*
-ANDCompiler_new(ANDQuery *parent, Searchable *searchable, float boost)
+ANDCompiler_new(ANDQuery *parent, Searcher *searcher, float boost)
 {
     ANDCompiler *self = (ANDCompiler*)VTable_Make_Obj(ANDCOMPILER);
-    return ANDCompiler_init(self, parent, searchable, boost);
+    return ANDCompiler_init(self, parent, searcher, boost);
 }
 
 ANDCompiler*
-ANDCompiler_init(ANDCompiler *self, ANDQuery *parent, Searchable *searchable, 
+ANDCompiler_init(ANDCompiler *self, ANDQuery *parent, Searcher *searcher, 
                  float boost)
 {
-    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
+    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searcher, 
         boost);
     ANDCompiler_Normalize(self);
     return self;

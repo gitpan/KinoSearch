@@ -2,10 +2,10 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/TermScorer.h"
-#include "KinoSearch/Posting.h"
+#include "KinoSearch/Index/Posting.h"
 #include "KinoSearch/Index/PostingList.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Compiler.h"
+#include "KinoSearch/Search/Similarity.h"
 
 TermScorer*
 TermScorer_init(TermScorer *self, Similarity *similarity, PostingList *plist, 

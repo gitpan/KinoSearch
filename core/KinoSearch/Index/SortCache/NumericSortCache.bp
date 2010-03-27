@@ -5,13 +5,11 @@ class KinoSearch::Index::SortCache::NumericSortCache cnick NumSortCache
 
     InStream  *ord_in;
     InStream  *dat_in;
-    char      *values;
-    char      *values_limit;
 
-    public inert NumericSortCache*
-    init(NumericSortCache *self, Schema *schema, Folder *folder, 
-         Segment *segment, i32_t field_num, i32_t num_unique,
-         i32_t null_ord = -1, size_t unit_width);
+    inert NumericSortCache*
+    init(NumericSortCache *self, const CharBuf *field, FieldType *type, 
+         i32_t cardinality, i32_t doc_max, i32_t null_ord = -1, 
+         InStream *ord_in, InStream *dat_in);
 
     public void
     Destroy(NumericSortCache *self);
@@ -21,15 +19,16 @@ class KinoSearch::Index::SortCache::Float64SortCache cnick F64SortCache
     extends KinoSearch::Index::SortCache::NumericSortCache {
 
     public inert incremented Float64SortCache*
-    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
-        i32_t num_unique, i32_t null_ord = -1);
+    new(const CharBuf *field, FieldType *type, i32_t cardinality,
+        i32_t doc_max, i32_t null_ord = -1, InStream *ord_in,
+        InStream *dat_in);
 
     public inert Float64SortCache*
-    init(Float64SortCache *self, Schema *schema, Folder *folder, 
-         Segment *segment, i32_t field_num, i32_t num_unique,
-         i32_t null_ord = -1);
+    init(Float64SortCache *self, const CharBuf *field, FieldType *type,
+         i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
+         InStream *ord_in, InStream *dat_in);
 
-    public Obj*
+    public nullable Obj*
     Value(Float64SortCache *self, i32_t ord, Obj *blank);
 }
 
@@ -37,15 +36,16 @@ class KinoSearch::Index::SortCache::Float32SortCache cnick F32SortCache
     extends KinoSearch::Index::SortCache::NumericSortCache {
 
     public inert incremented Float32SortCache*
-    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
-        i32_t num_unique, i32_t null_ord = -1);
+    new(const CharBuf *field, FieldType *type, i32_t cardinality,
+        i32_t doc_max, i32_t null_ord = -1, InStream *ord_in,
+        InStream *dat_in);
 
     public inert Float32SortCache*
-    init(Float32SortCache *self, Schema *schema, Folder *folder, 
-         Segment *segment, i32_t field_num, i32_t num_unique,
-         i32_t null_ord = -1);
+    init(Float32SortCache *self, const CharBuf *field, FieldType *type,
+         i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
+         InStream *ord_in, InStream *dat_in);
 
-    public Obj*
+    public nullable Obj*
     Value(Float32SortCache *self, i32_t ord, Obj *blank);
 }
 
@@ -53,15 +53,16 @@ class KinoSearch::Index::SortCache::Int32SortCache cnick I32SortCache
     extends KinoSearch::Index::SortCache::NumericSortCache {
 
     public inert incremented Int32SortCache*
-    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
-        i32_t num_unique, i32_t null_ord = -1);
+    new(const CharBuf *field, FieldType *type, i32_t cardinality,
+        i32_t doc_max, i32_t null_ord = -1, InStream *ord_in,
+        InStream *dat_in);
 
     public inert Int32SortCache*
-    init(Int32SortCache *self, Schema *schema, Folder *folder, 
-         Segment *segment, i32_t field_num, i32_t num_unique,
-         i32_t null_ord = -1);
+    init(Int32SortCache *self, const CharBuf *field, FieldType *type,
+         i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
+         InStream *ord_in, InStream *dat_in);
 
-    public Obj*
+    public nullable Obj*
     Value(Int32SortCache *self, i32_t ord, Obj *blank);
 }
 
@@ -69,15 +70,16 @@ class KinoSearch::Index::SortCache::Int64SortCache cnick I64SortCache
     extends KinoSearch::Index::SortCache::NumericSortCache {
 
     public inert incremented Int64SortCache*
-    new(Schema *schema, Folder *folder, Segment *segment, i32_t field_num, 
-        i32_t num_unique, i32_t null_ord = -1);
+    new(const CharBuf *field, FieldType *type, i32_t cardinality,
+        i32_t doc_max, i32_t null_ord = -1, InStream *ord_in,
+        InStream *dat_in);
 
     public inert Int64SortCache*
-    init(Int64SortCache *self, Schema *schema, Folder *folder, 
-         Segment *segment, i32_t field_num, i32_t num_unique,
-         i32_t null_ord = -1);
+    init(Int64SortCache *self, const CharBuf *field, FieldType *type,
+         i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
+         InStream *ord_in, InStream *dat_in);
 
-    public Obj*
+    public nullable Obj*
     Value(Int64SortCache *self, i32_t ord, Obj *blank);
 }
 

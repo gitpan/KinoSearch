@@ -8,12 +8,12 @@ use Storable qw( nfreeze thaw );
 use KinoSearch::Test;
 
 package RangeSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    my $type = KinoSearch::FieldType::StringType->new( sortable => 1 );
+    my $type = KinoSearch::Plan::StringType->new( sortable => 1 );
     $self->spec_field( name => 'name',   type => $type );
     $self->spec_field( name => 'cat',    type => $type );
     $self->spec_field( name => 'unused', type => $type );
@@ -24,7 +24,7 @@ package main;
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = RangeSchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -42,7 +42,7 @@ for my $letter ( shuffle @letters ) {
 }
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $results = test_range_search(
     field         => 'name',
@@ -239,7 +239,7 @@ like( $@, qr/lower_term/,
     "Failing to supply either lower_term or upper_term throws an exception" );
 
 # Add more docs, test multi-segment searches.
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -250,7 +250,7 @@ $indexer->add_doc(
 );
 $indexer->commit;
 $letters{'mh'} = ++$count;
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 $results = test_range_search(
     field         => 'name',
@@ -274,7 +274,7 @@ sub test_range_search {
     my $thawed = thaw($frozen);
     ok( $query->equals($thawed), 'equals' );
 
-    my $compiler = $query->make_compiler( searchable => $searcher );
+    my $compiler = $query->make_compiler( searcher => $searcher );
     $frozen = nfreeze($compiler);
     $thawed = thaw($frozen);
     ok( $compiler->equals($thawed), "freeze/thaw compiler" );

@@ -4,22 +4,22 @@
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/DocVector.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Search/Query.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
 
 Compiler*
-Compiler_init(Compiler *self, Query *parent, Searchable *searchable,
+Compiler_init(Compiler *self, Query *parent, Searcher *searcher,
             Similarity *sim, float boost)
 {
     Query_init((Query*)self, boost);
     if (!sim) {
-        Schema *schema = Searchable_Get_Schema(searchable);
+        Schema *schema = Searcher_Get_Schema(searcher);
         sim = Schema_Get_Similarity(schema);
     }
     self->parent  = (Query*)INCREF(parent);
@@ -75,11 +75,11 @@ Compiler_normalize(Compiler *self)
 }
 
 VArray*
-Compiler_highlight_spans(Compiler *self, Searchable *searchable, 
+Compiler_highlight_spans(Compiler *self, Searcher *searcher, 
                        DocVector *doc_vec, const CharBuf *field)
 {
     UNUSED_VAR(self);
-    UNUSED_VAR(searchable);
+    UNUSED_VAR(searcher);
     UNUSED_VAR(doc_vec);
     UNUSED_VAR(field);
     return VA_new(0);

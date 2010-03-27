@@ -9,8 +9,6 @@ KinoSearch::Search::PolyQuery - Base class for composite Query objects.
 
 =head1 DESCRIPTION
 
-Base class for composite Query objects.
-
 PolyQuery serves as a shared base class for ANDQuery, ORQuery, NOTQuery,
 and RequiredOptionalQuery.  All of these classes may serve as nodes in
 composite Query with a tree structure which may be walked.

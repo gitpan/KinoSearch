@@ -20,7 +20,7 @@ class KinoSearch::Index::DeletionsReader cnick DelReader
     abstract incremented Matcher*
     Iterator(DeletionsReader *self);
 
-    public incremented DeletionsReader*
+    public incremented nullable DeletionsReader*
     Aggregator(DeletionsReader *self, VArray *readers, I32Array *offsets);
 }
 
@@ -70,7 +70,7 @@ class KinoSearch::Index::DefaultDeletionsReader cnick DefDelReader
     incremented Matcher*
     Iterator(DefaultDeletionsReader *self);
 
-    BitVector*
+    nullable BitVector*
     Read_Deletions(DefaultDeletionsReader *self);
 
     public void

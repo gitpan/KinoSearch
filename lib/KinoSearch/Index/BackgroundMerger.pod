@@ -16,8 +16,6 @@ KinoSearch::Index::BackgroundMerger - Consolidate index segments in the backgrou
 
 =head1 DESCRIPTION
 
-Consolidate index segments in the background.
-
 Adding documents to an index is usually fast, but every once in a while the
 index must be compacted and an update takes substantially longer to
 complete.  See L<KinoSearch::Docs::Cookbook::FastUpdates> for how to use

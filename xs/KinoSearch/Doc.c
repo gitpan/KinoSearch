@@ -1,13 +1,13 @@
 #define C_KINO_DOC
 #include "xs/XSBind.h"
-#include "KinoSearch/Doc.h"
+#include "KinoSearch/Document/Doc.h"
 #include "KinoSearch/Object/Host.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Memory.h"
 
 kino_Doc*
-kino_Doc_init(kino_Doc *self, void *fields, chy_i32_t doc_id)
+kino_Doc_init(kino_Doc *self, void *fields, int32_t doc_id)
 {
     /* Assign. */
     if (fields) {
@@ -29,7 +29,7 @@ kino_Doc_set_fields(kino_Doc *self, void *fields)
     self->fields = SvREFCNT_inc((SV*)fields);
 }
 
-chy_u32_t
+uint32_t
 kino_Doc_get_size(kino_Doc *self)
 {
     return self->fields ? HvKEYS((HV*)self->fields) : 0;
@@ -63,7 +63,7 @@ kino_Doc_serialize(kino_Doc *self, kino_OutStream *outstream)
 kino_Doc*
 kino_Doc_deserialize(kino_Doc *self, kino_InStream *instream)
 {
-    chy_i32_t doc_id     = (chy_i32_t)Kino_InStream_Read_C32(instream);
+    int32_t doc_id = (int32_t)Kino_InStream_Read_C32(instream);
 
     self = self ? self : (kino_Doc*)Kino_VTable_Make_Obj(KINO_DOC);
     kino_Doc_init(self, NULL, doc_id);
@@ -136,7 +136,7 @@ kino_Doc_load(kino_Doc *self, kino_Obj *dump)
     SV *fields_sv = XSBind_kino_to_perl((kino_Obj*)fields);
     CHY_UNUSED_VAR(self);
 
-    loaded->doc_id = (chy_i32_t)Kino_Obj_To_I64(doc_id);
+    loaded->doc_id = (int32_t)Kino_Obj_To_I64(doc_id);
     loaded->fields  = SvREFCNT_inc(SvRV(fields_sv));
     SvREFCNT_dec(fields_sv);
 

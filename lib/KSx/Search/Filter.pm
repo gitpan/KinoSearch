@@ -80,7 +80,7 @@ sub _bits {
             capacity => $seg_reader->doc_max + 1 );
         $self->_store_cached_bits( $seg_reader, $cached_bits );
 
-        my $collector = KinoSearch::Search::HitCollector::BitCollector->new(
+        my $collector = KinoSearch::Search::Collector::BitCollector->new(
             bit_vector => $cached_bits );
 
         my $polyreader = KinoSearch::Index::PolyReader->new(
@@ -89,7 +89,8 @@ sub _bits {
             snapshot    => $seg_reader->get_snapshot,
             sub_readers => [$seg_reader],
         );
-        my $searcher = KinoSearch::Searcher->new( index => $polyreader );
+        my $searcher
+            = KinoSearch::Search::IndexSearcher->new( index => $polyreader );
 
         # Perform the search.
         $searcher->collect(
@@ -149,7 +150,7 @@ BEGIN { our @ISA = qw( KinoSearch::Search::Compiler ) }
 
 sub new {
     my ( $class, %args ) = @_;
-    $args{similarity} ||= $args{searchable}->get_schema->get_similarity;
+    $args{similarity} ||= $args{searcher}->get_schema->get_similarity;
     return $class->SUPER::new(%args);
 }
 

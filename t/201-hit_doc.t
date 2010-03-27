@@ -5,7 +5,7 @@ use Test::More tests => 8;
 use Storable qw( nfreeze thaw );
 use KinoSearch::Test;
 
-my $doc = KinoSearch::Doc::HitDoc->new;
+my $doc = KinoSearch::Document::HitDoc->new;
 is( $doc->get_doc_id, 0,   "default doc_id of 0" );
 is( $doc->get_score,  0.0, "default score of 0.0" );
 $doc->set_score(2);

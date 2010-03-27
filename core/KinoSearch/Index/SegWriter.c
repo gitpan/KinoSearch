@@ -2,8 +2,8 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegWriter.h"
-#include "KinoSearch/Doc.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Document/Doc.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/DirHandle.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Index/DeletionsWriter.h"

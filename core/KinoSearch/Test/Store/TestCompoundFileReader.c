@@ -1,3 +1,4 @@
+#define C_KINO_ZOMBIECHARBUF
 #define C_KINO_RAMFOLDER
 #include "KinoSearch/Util/ToolSet.h"
 

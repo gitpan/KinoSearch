@@ -26,7 +26,7 @@ class KinoSearch::Index::RawLexicon cnick RawLex
     public bool_t 
     Next(RawLexicon *self);
 
-    public Obj*
+    public nullable Obj*
     Get_Term(RawLexicon *self);
 
     public i32_t

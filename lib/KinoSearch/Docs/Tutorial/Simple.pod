@@ -124,8 +124,8 @@ and also use it in conjunction with the parameters C<offset> and C<num_wanted>
 to break up results into "pages" of manageable size.
 
 Calling search() on our Simple object turns it into an iterator. Invoking
-next() now returns hits one at a time as L<KinoSearch::Doc::HitDoc> objects,
-starting with the most relevant.
+next() now returns hits one at a time as L<KinoSearch::Document::HitDoc>
+objects, starting with the most relevant.
 
     # Create result list.
     my $report = '';

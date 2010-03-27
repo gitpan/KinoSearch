@@ -18,8 +18,6 @@ KinoSearch::Search::SortRule - Element of a SortSpec.
 
 =head1 DESCRIPTION
 
-Element of a SortSpec.
-
 SortRules are the building blocks used to assemble SortSpecs; each SortRule
 defines a single level of sorting.  For example, sorting first by
 "category" then by score requires a SortSpec with two SortRule elements.

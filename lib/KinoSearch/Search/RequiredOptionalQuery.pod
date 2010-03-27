@@ -18,8 +18,6 @@ KinoSearch::Search::RequiredOptionalQuery - Join results for two Queries, one re
 
 =head1 DESCRIPTION
 
-Join results for two Queries, one required, one optional.
-
 RequiredOptionalQuery joins the result sets of one Query which MUST match,
 and one Query which SHOULD match.  When only the required Query matches,
 its score is passed along; when both match, the scores are summed.

@@ -34,7 +34,7 @@ sub check_scorer {
         similarity => $sim,
     );
     my @expected  = intersect(@doc_id_arrays);
-    my $collector = KinoSearch::Search::HitCollector::SortCollector->new(
+    my $collector = KinoSearch::Search::Collector::SortCollector->new(
         wanted => 1000 );
     $and_scorer->collect( collector => $collector );
     is( $collector->get_total_hits,

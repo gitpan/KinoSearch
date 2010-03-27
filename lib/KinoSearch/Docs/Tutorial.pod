@@ -7,7 +7,7 @@ KinoSearch::Docs::Tutorial - Step-by-step introduction to KinoSearch toolset.
 Explore KinoSearch's basic functionality by starting with a minimalist CGI
 search app based on L<KSx::Simple> and transforming it, step by step, into an
 "advanced search" interface utilizing more flexible core modules like
-L<KinoSearch::Indexer> and L<KinoSearch::Searcher>.
+L<KinoSearch::Index::Indexer> and L<KinoSearch::Search::IndexSearcher>.
 
 =head1 DESCRIPTION
 
@@ -22,14 +22,14 @@ L<KSx::Simple>.
 
 =item *
 
-L<KinoSearch::Docs::Tutorial::BeyondSimple> - Rebuild the app using
-core classes like L<Indexer|KinoSearch::Indexer> and
-L<Searcher|KinoSearch::Searcher> in place of KSx::Simple.
+L<KinoSearch::Docs::Tutorial::BeyondSimple> - Rebuild the app using core
+classes like L<Indexer|KinoSearch::Index::Indexer> and
+L<IndexSearcher|KinoSearch::Search::IndexSearcher> in place of KSx::Simple.
 
 =item *
 
 L<KinoSearch::Docs::Tutorial::FieldType> - Experiment with different field
-characteristics using subclasses of L<KinoSearch::FieldType>.
+characteristics using subclasses of L<KinoSearch::Plan::FieldType>.
 
 =item *
 

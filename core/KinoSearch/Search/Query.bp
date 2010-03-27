@@ -33,11 +33,11 @@ class KinoSearch::Search::Query extends KinoSearch::Object::Obj : dumpable {
 
     /** Abstract factory method returning a Compiler derived from this Query.
      *
-     * @param searchable A Searchable.
+     * @param searcher A Searcher.
      * @param boost A scoring multiplier. Defaults to the Query's own boost.
      */
     public abstract incremented Compiler*
-    Make_Compiler(Query *self, Searchable *searchable, float boost);
+    Make_Compiler(Query *self, Searcher *searcher, float boost);
 
     /** Set the Query's boost.
      */

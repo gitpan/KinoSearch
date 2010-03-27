@@ -86,6 +86,12 @@ BB_get_size(ByteBuf *self)     { return self->size; }
 size_t
 BB_get_capacity(ByteBuf *self) { return self->cap; }
 
+size_t
+BB_ram_usage(ByteBuf *self)
+{
+    return sizeof(ByteBuf) + self->cap + BB_Host_RAM_Usage(self);
+}
+
 static INLINE bool_t
 SI_equals_bytes(ByteBuf *self, const void *bytes, size_t size)
 {

@@ -211,6 +211,9 @@ class KinoSearch::Object::CharBuf cnick CB
     public incremented CharBuf*
     To_String(CharBuf *self);
 
+    size_t
+    RAM_Usage(CharBuf *self);
+
     public incremented CharBuf*
     Load(CharBuf *self, Obj *dump);
 
@@ -320,7 +323,7 @@ class KinoSearch::Object::ViewCharBuf cnick ViewCB
     Nip_One(ViewCharBuf *self);
 
     /** Throws an error. */
-    void
+    char* 
     Grow(ViewCharBuf *self, size_t size);
 
     public void
@@ -330,6 +333,31 @@ class KinoSearch::Object::ViewCharBuf cnick ViewCB
 class KinoSearch::Object::ZombieCharBuf cnick ZCB
     extends KinoSearch::Object::ViewCharBuf {
 
+    /** Return a ZombieCharBuf with a blank string.
+     */
+    inert incremented ZombieCharBuf*
+    new(void *allocation);
+
+    /** 
+     * @param allocation A single block of memory which will be used for both
+     * the ZombieCharBuf object and its buffer.
+     * @param alloc_size The size of the allocation.
+     * @param pattern A format pattern.
+     */
+    inert incremented ZombieCharBuf*
+    newf(void *allocation, size_t alloc_size, const char *pattern, ...);
+
+    inert incremented ZombieCharBuf*
+    wrap(void *allocation, const CharBuf *source);
+
+    inert incremented ZombieCharBuf*
+    wrap_str(void *allocation, const char *ptr, size_t size);
+
+    /** Return the size for a ZombieCharBuf struct. 
+     */
+    inert size_t
+    size();
+
     /** Throws an error.
      */
     public void
@@ -338,29 +366,25 @@ class KinoSearch::Object::ZombieCharBuf cnick ZCB
 
 __C__
 
-#define KINO_ZCB_BLANK \
-    { KINO_ZOMBIECHARBUF, {1}, "", 0, 0 }
+#define KINO_ZCB_BLANK() kino_ZCB_new(alloca(kino_ZCB_size()))
+
 #define KINO_ZCB_LITERAL(string) \
     { KINO_ZOMBIECHARBUF, {1}, string "", sizeof(string) -1, sizeof(string) }
 
+#define KINO_ZCB_WRAP(source) \
+    kino_ZCB_wrap(alloca(kino_ZCB_size()), source)
+    
+#define KINO_ZCB_WRAP_STR(ptr, size) \
+    kino_ZCB_wrap_str(alloca(kino_ZCB_size()), ptr, size)
+
 extern kino_ZombieCharBuf KINO_ZCB_EMPTY;
-
-#ifdef C_KINO_ZOMBIECHARBUF
-/* Simple functions which allows assignment idiom for ZombieCharBuf values. 
- */
-kino_ZombieCharBuf
-kino_ZCB_make_str(const char *ptr, size_t size);
-
-kino_ZombieCharBuf
-kino_ZCB_make(const kino_CharBuf *source);
-#endif /* C_KINO_ZOMBIECHARBUF */
 
 #ifdef KINO_USE_SHORT_NAMES
   #define ZCB_BLANK             KINO_ZCB_BLANK
   #define ZCB_LITERAL(_string)  KINO_ZCB_LITERAL(_string)
   #define EMPTY                 KINO_ZCB_EMPTY
-  #define ZCB_make              kino_ZCB_make
-  #define ZCB_make_str          kino_ZCB_make_str
+  #define ZCB_WRAP              KINO_ZCB_WRAP
+  #define ZCB_WRAP_STR          KINO_ZCB_WRAP_STR
 #endif
 __END_C__
 

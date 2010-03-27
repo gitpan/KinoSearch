@@ -38,7 +38,7 @@ sub register_doc_reader {
 }
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub architecture { MyArchitecture->new }
 
@@ -46,12 +46,12 @@ sub new {
     my $self      = shift->SUPER::new(@_);
     my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
     my $main_type
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer );
-    my $unstored_type = KinoSearch::FieldType::FullTextType->new(
+        = KinoSearch::Plan::FullTextType->new( analyzer => $tokenizer );
+    my $unstored_type = KinoSearch::Plan::FullTextType->new(
         analyzer => $tokenizer,
         stored   => 0,
     );
-    my $blob_type = KinoSearch::FieldType::BlobType->new;
+    my $blob_type = KinoSearch::Plan::BlobType->new;
     $self->spec_field( name => 'content',  type => $main_type );
     $self->spec_field( name => 'smiley',   type => $main_type );
     $self->spec_field( name => 'unstored', type => $unstored_type );
@@ -70,7 +70,7 @@ my $smiley = "\x{263a}";
 my $binary = pack( 'b4', 1, 2, 3, 4 );
 
 sub add_to_index {
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index  => $folder,
         schema => $schema,
     );
@@ -88,7 +88,7 @@ sub add_to_index {
 
 add_to_index(qw( a b c ));
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $hits = $searcher->hits( query => 'b' );
 my $hit = $hits->next;
 is( $hit->{content}, 'b',     "single segment, single hit" );
@@ -99,11 +99,11 @@ ok( !defined( $hit->{unstored} ), "unstored" );
 add_to_index(qw( d e f g h ));
 add_to_index(qw( i j k l m ));
 
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 $hits = $searcher->hits( query => 'f' );
 is( $hits->next->{content}, 'f', "multiple segments, single hit" );
 
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -111,7 +111,7 @@ $indexer->delete_by_term( field => 'content', term => $_ ) for qw( b f l );
 $indexer->optimize;
 $indexer->commit;
 
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 $hits = $searcher->hits( query => 'b' );
 is( $hits->next, undef, "doc deleted" );
 

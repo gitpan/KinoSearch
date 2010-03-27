@@ -3,14 +3,15 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SortReader.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/SortCache/NumericSortCache.h"
 #include "KinoSearch/Index/SortCache/TextSortCache.h"
 #include "KinoSearch/Index/SortWriter.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
+#include "KinoSearch/Store/InStream.h"
 
 SortReader*
 SortReader_init(SortReader *self, Schema *schema, Folder *folder,
@@ -114,6 +115,93 @@ DefSortReader_destroy(DefaultSortReader *self)
     SUPER_DESTROY(self, DEFAULTSORTREADER);
 }
 
+
+static SortCache*
+S_lazy_init_sort_cache(DefaultSortReader *self, const CharBuf *field)
+{
+    /* See if we have any values. */
+    Obj *count_obj = Hash_Fetch(self->counts, (Obj*)field);
+    int32_t count = count_obj ? (int32_t)Obj_To_I64(count_obj) : 0;
+    if (!count) { return NULL; }
+
+    /* Get a FieldType and sanity check that the field is sortable. */
+    Schema    *schema = DefSortReader_Get_Schema(self);
+    FieldType *type   = Schema_Fetch_Type(schema, field);
+    if (!type || !FType_Sortable(type)) {
+        THROW(ERR, "'%o' isn't a sortable field", field);
+    }
+
+    /* Open streams. */
+    Folder    *folder    = DefSortReader_Get_Folder(self);
+    Segment   *segment   = DefSortReader_Get_Segment(self);
+    CharBuf   *seg_name  = Seg_Get_Name(segment);
+    size_t     size      = ZCB_size() + CB_Get_Size(seg_name) + 40;
+    CharBuf   *path      = (CharBuf*)ZCB_newf(alloca(size), size, "");
+    i32_t      field_num = Seg_Field_Num(segment, field);
+    i8_t       prim_id   = FType_Primitive_ID(type);
+    bool_t     var_width = (prim_id == FType_TEXT || prim_id == FType_BLOB)
+                         ? true 
+                         : false;
+    CB_setf(path, "%o/sort-%i32.ord", seg_name, field_num);
+    InStream *ord_in = Folder_Open_In(folder, path);
+    if (!ord_in) {
+        THROW(ERR, "Error building sort cache for '%o': %o", 
+            field, Err_get_error());
+    }
+    InStream *ix_in = NULL;
+    if (var_width) {
+        CB_setf(path, "%o/sort-%i32.ix", seg_name, field_num);
+        ix_in = Folder_Open_In(folder, path);
+        if (!ix_in) {
+            THROW(ERR, "Error building sort cache for '%o': %o", 
+                field, Err_get_error());
+        }
+    }
+    CB_setf(path, "%o/sort-%i32.dat", seg_name, field_num);
+    InStream *dat_in = Folder_Open_In(folder, path);
+    if (!dat_in) {
+        THROW(ERR, "Error building sort cache for '%o': %o", 
+            field, Err_get_error());
+    }
+
+    Obj   *null_ord_obj = Hash_Fetch(self->null_ords, (Obj*)field);
+    i32_t  null_ord = null_ord_obj ?  (i32_t)Obj_To_I64(null_ord_obj) : -1;
+    i32_t  doc_max   = (int32_t)Seg_Get_Count(segment);
+
+    SortCache *cache = NULL;
+    switch (prim_id & FType_PRIMITIVE_ID_MASK) {
+        case FType_TEXT:
+            cache = (SortCache*)TextSortCache_new(field, type, count, 
+                doc_max, null_ord, ord_in, ix_in, dat_in);
+            break;
+        case FType_INT32:
+            cache = (SortCache*)I32SortCache_new(field, type, count, 
+                doc_max, null_ord, ord_in, dat_in);
+            break;
+        case FType_INT64:
+            cache = (SortCache*)I64SortCache_new(field, type, count, 
+                doc_max, null_ord, ord_in, dat_in);
+            break;
+        case FType_FLOAT32:
+            cache = (SortCache*)F32SortCache_new(field, type, count, 
+                doc_max, null_ord, ord_in, dat_in);
+            break;
+        case FType_FLOAT64:
+            cache = (SortCache*)F64SortCache_new(field, type, count, 
+                doc_max, null_ord, ord_in, dat_in);
+            break;
+        default:
+            THROW(ERR, "No SortCache class for %o", type);
+    }
+    Hash_Store(self->caches, (Obj*)field, (Obj*)cache);
+
+    DECREF(ord_in);
+    DECREF(ix_in);
+    DECREF(dat_in);
+
+    return cache;
+}
+
 SortCache*
 DefSortReader_fetch_sort_cache(DefaultSortReader *self, const CharBuf *field)
 {
@@ -122,49 +210,7 @@ DefSortReader_fetch_sort_cache(DefaultSortReader *self, const CharBuf *field)
     if (field) {
         cache = (SortCache*)Hash_Fetch(self->caches, (Obj*)field);
         if (!cache) {
-            Obj *count = Hash_Fetch(self->counts, (Obj*)field);
-            if (count) {
-                Schema    *schema    = DefSortReader_Get_Schema(self);
-                Folder    *folder    = DefSortReader_Get_Folder(self);
-                Segment   *segment   = DefSortReader_Get_Segment(self);
-                i32_t      field_num = Seg_Field_Num(segment, field);
-                FieldType *type      = Schema_Fetch_Type(schema, field);
-                i8_t       prim_id   = FType_Primitive_ID(type);
-                Obj *null_ord_obj 
-                    = Hash_Fetch(self->null_ords, (Obj*)field);
-                i32_t null_ord = null_ord_obj 
-                               ?  (i32_t)Obj_To_I64(null_ord_obj) : -1;
-                switch (prim_id & FType_PRIMITIVE_ID_MASK) {
-                    case FType_TEXT:
-                        cache = (SortCache*)TextSortCache_new(schema, folder,
-                            segment, field_num, (i32_t)Obj_To_I64(count), 
-                            null_ord);
-                        break;
-                    case FType_INT32:
-                        cache = (SortCache*)I32SortCache_new(schema, folder,
-                            segment, field_num, (i32_t)Obj_To_I64(count), 
-                            null_ord);
-                        break;
-                    case FType_INT64:
-                        cache = (SortCache*)I64SortCache_new(schema, folder,
-                            segment, field_num, (i32_t)Obj_To_I64(count), 
-                            null_ord);
-                        break;
-                    case FType_FLOAT32:
-                        cache = (SortCache*)F32SortCache_new(schema, folder,
-                            segment, field_num, (i32_t)Obj_To_I64(count), 
-                            null_ord);
-                        break;
-                    case FType_FLOAT64:
-                        cache = (SortCache*)F64SortCache_new(schema, folder,
-                            segment, field_num, (i32_t)Obj_To_I64(count), 
-                            null_ord);
-                        break;
-                    default:
-                        THROW(ERR, "No SortCache class for %o", type);
-                }
-                Hash_Store(self->caches, (Obj*)field, (Obj*)cache);
-            }
+            cache = S_lazy_init_sort_cache(self, field);
         }
     }
 

@@ -3,14 +3,14 @@
 #define C_KINO_INVERTERENTRY
 #include "xs/XSBind.h"
 #include "KinoSearch/Index/Inverter.h"
-#include "KinoSearch/Doc.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/FieldType/BlobType.h"
-#include "KinoSearch/FieldType/NumericType.h"
-#include "KinoSearch/FieldType/TextType.h"
+#include "KinoSearch/Document/Doc.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Object/ByteBuf.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/BlobType.h"
+#include "KinoSearch/Plan/NumericType.h"
+#include "KinoSearch/Plan/Schema.h"
+#include "KinoSearch/Plan/TextType.h"
 
 static kino_InverterEntry*
 S_fetch_entry(kino_Inverter *self, HE *hash_entry)
@@ -22,22 +22,22 @@ S_fetch_entry(kino_Inverter *self, HE *hash_entry)
     char *key = HeKLEN(hash_entry) == HEf_SVKEY
               ? SvPV(HeKEY_sv(hash_entry), key_len) 
               : ((key_len = HeKLEN(hash_entry)), HeKEY(hash_entry));
-    kino_ZombieCharBuf field = kino_ZCB_make_str(key, key_len);
+    kino_ZombieCharBuf *field = KINO_ZCB_WRAP_STR(key, key_len);
     chy_i32_t field_num 
-        = Kino_Seg_Field_Num(self->segment, (kino_CharBuf*)&field);
+        = Kino_Seg_Field_Num(self->segment, (kino_CharBuf*)field);
 
     if (!field_num) {
         /* This field seems not to be in the segment yet.  Try to find it in
          * the Schema. */
-        if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)&field)) {
+        if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field)) {
             /* OK, it could be that the field name contains non-ASCII
              * characters, but the hash key is encoded as Latin 1.  So, we
              * force hash key into an SV and ask for a UTF-8 PV.  This is
              * less efficient, so field names really ought to be ASCII. */
             SV *key_sv = HeSVKEY_force(hash_entry);
             key = SvPVutf8(key_sv, key_len);
-            Kino_ZCB_Assign_Str(&field, key, key_len);
-            if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)&field)) {
+            Kino_ZCB_Assign_Str(field, key, key_len);
+            if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field)) {
                 /* We've truly failed to find the field.  The user must
                  * not have spec'd it. */
                 THROW(KINO_ERR, "Unknown field name: '%s'", key);
@@ -45,7 +45,7 @@ S_fetch_entry(kino_Inverter *self, HE *hash_entry)
         }
 
         /* The field is in the Schema.  Get a field num from the Segment. */
-        field_num = Kino_Seg_Add_Field(self->segment, (kino_CharBuf*)&field);
+        field_num = Kino_Seg_Add_Field(self->segment, (kino_CharBuf*)field);
     }
 
     {
@@ -53,7 +53,7 @@ S_fetch_entry(kino_Inverter *self, HE *hash_entry)
             = (kino_InverterEntry*)Kino_VA_Fetch(self->entry_pool, field_num);
         if (!entry) {
             entry 
-                = kino_InvEntry_new(schema, (kino_CharBuf*)&field, field_num);
+                = kino_InvEntry_new(schema, (kino_CharBuf*)field, field_num);
             Kino_VA_Store(self->entry_pool, field_num, (kino_Obj*)entry);
         }
         return entry;

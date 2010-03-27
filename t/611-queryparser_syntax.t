@@ -5,7 +5,7 @@ use lib 'buildlib';
 use KinoSearch::Test;
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -17,10 +17,9 @@ sub new {
     my $fancy_analyzer = KinoSearch::Analysis::PolyAnalyzer->new(
         analyzers => [ $wordchar_tokenizer, $stopalizer, ], );
 
-    my $plain
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer );
-    my $fancy = KinoSearch::FieldType::FullTextType->new(
-        analyzer => $fancy_analyzer );
+    my $plain = KinoSearch::Plan::FullTextType->new( analyzer => $tokenizer );
+    my $fancy
+        = KinoSearch::Plan::FullTextType->new( analyzer => $fancy_analyzer );
     $self->spec_field( name => 'plain', type => $plain );
     $self->spec_field( name => 'fancy', type => $fancy );
     return $self;
@@ -32,7 +31,7 @@ package main;
 my $doc_set = KinoSearch::Test::TestUtils::doc_set()->to_perl;
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = MySchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     schema => $schema,
     index  => $folder,
 );

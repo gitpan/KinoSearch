@@ -1,0 +1,118 @@
+parcel KinoSearch cnick Kino;
+
+/** Process hits.
+ *
+ * A Collector decides what to do with the hits that a Matcher iterates
+ * through, based on how the abstract Collect() method is implemented.
+ */
+
+abstract class KinoSearch::Search::Collector cnick Coll
+    extends KinoSearch::Object::Obj {
+
+    SegReader *reader;
+    Matcher   *matcher;
+    i32_t      base;
+
+    /** Abstract constructor.  Takes no arguments.
+     */
+    public inert Collector*
+    init(Collector *self);
+
+    public void
+    Destroy(Collector *self);
+
+    /** Do something with a doc id.  (For instance, keep track of the docs
+     * with the ten highest scores.)
+     *
+     * @param doc_id A document id.
+     */
+    public abstract void
+    Collect(Collector *self, i32_t doc_id);
+
+    public void
+    Set_Reader(Collector *self, SegReader *reader);
+
+    public void
+    Set_Base(Collector *self, i32_t base);
+
+    /** Indicate whether the Collector will call Score() on its Matcher.
+     */
+    public abstract bool_t
+    Need_Score(Collector *self);
+
+    public void
+    Set_Matcher(Collector *self, Matcher *matcher);
+}
+
+/** Collector which records doc nums in a BitVector.
+ *
+ * BitCollector is a Collector which saves matching document ids in a
+ * BitVector while ignoring scores.  It is useful for recording the entire set
+ * of documents which matches a query.
+ */
+class KinoSearch::Search::Collector::BitCollector cnick BitColl
+    extends KinoSearch::Search::Collector {
+
+    BitVector    *bit_vec;
+
+    /** 
+     * @param bit_vector A KinoSearch::Object::BitVector.
+     */
+    public inert BitCollector*
+    init(BitCollector *self, BitVector *bit_vector);
+
+    public void
+    Destroy(BitCollector *self);
+
+    /** Set bit in the object's BitVector for the supplied doc id.
+     */
+    public void
+    Collect(BitCollector *self, i32_t doc_id);
+
+    /** Returns false, since BitCollector requires only doc ids.
+     */
+    public bool_t
+    Need_Score(BitCollector *self);
+}
+
+class KinoSearch::Search::Collector::OffsetCollector cnick OffsetColl
+    extends KinoSearch::Search::Collector {
+
+    i32_t      offset;
+    Collector *inner_coll;
+
+    inert incremented OffsetCollector*
+    new(Collector *collector, i32_t offset);
+
+    /** Wrap another Collector, adding a constant offset to each document
+     * number.  Useful when combining results from multiple independent
+     * indexes.
+     */
+    inert OffsetCollector*
+    init(OffsetCollector *self, Collector *collector, i32_t offset);
+
+    public void
+    Destroy(OffsetCollector *self);
+
+    public void
+    Collect(OffsetCollector *self, i32_t doc_id);
+
+    public bool_t
+    Need_Score(OffsetCollector *self);
+
+    public void
+    Set_Reader(OffsetCollector *self, SegReader *reader);
+
+    public void
+    Set_Base(OffsetCollector *self, i32_t base);
+
+    public void
+    Set_Matcher(OffsetCollector *self, Matcher *matcher);
+}
+
+/* Copyright 2006-2010 Marvin Humphrey
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * under the same terms as Perl itself.
+ */
+

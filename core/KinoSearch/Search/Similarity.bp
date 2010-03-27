@@ -1,7 +1,7 @@
 parcel KinoSearch cnick Kino;
 
-/** Calculate how closely two things match.
- *
+/** Judge how well a document matches a query.
+ * 
  * After determining whether a document matches a given query, a score must be
  * calculated which indicates how I<well> the document matches the query.  The
  * Similarity class is used to judge how "similar" the query and the document
@@ -31,6 +31,18 @@ class KinoSearch::Search::Similarity cnick Sim
     public inert Similarity* 
     init(Similarity *self);
 
+    /** Factory method for creating a Posting.
+     */
+    public incremented Posting*
+    Make_Posting(Similarity *self);
+
+    /** Factory method for creating a PostingWriter.
+     */
+    incremented PostingWriter*
+    Make_Posting_Writer(Similarity *self, Schema *schema, Snapshot *snapshot, 
+                        Segment *segment, PolyReader *polyreader, 
+                        int32_t field_num);
+
     /** Return a score factor based on the frequency of a term in a given
      * document.  The default implementation is sqrt(freq).  Other
      * implementations typically produce ascending scores with ascending
@@ -41,16 +53,16 @@ class KinoSearch::Search::Similarity cnick Sim
     TF(Similarity *self, float freq);
 
     /** Calculate the Inverse Document Frequecy for a Term in a given
-     * collection (the Searchable represents the collection).
+     * collection (the Searcher represents the collection).
      */
     public float
-    IDF(Similarity *self, Searchable *searchable, const CharBuf *field, 
+    IDF(Similarity *self, Searcher *searcher, const CharBuf *field, 
         Obj *term);
 
     /** Calculate a score factor based on the number of terms which match. 
      */
     public float
-    Coord(Similarity *self, u32_t overlap, u32_t max_overlap);
+    Coord(Similarity *self, uint32_t overlap, uint32_t max_overlap);
 
     /** Dampen the scores of long documents.
      *
@@ -69,7 +81,7 @@ class KinoSearch::Search::Similarity cnick Sim
      * have a lot of tokens on average.
      */
     public float
-    Length_Norm(Similarity *self, u32_t num_tokens);
+    Length_Norm(Similarity *self, uint32_t num_tokens);
 
     /** Normalize a Query's weight so that it is comparable to other Queries. 
      */
@@ -81,13 +93,13 @@ class KinoSearch::Search::Similarity cnick Sim
      * range covered by the single-byte encoding is 7x10^9 to 2x10^-9.  The
      * accuracy is about one significant decimal digit.
      */
-    u32_t 
+    uint32_t 
     Encode_Norm(Similarity *self, float f);
 
     /** See encode_norm.
      */
     float
-    Decode_Norm(Similarity *self, u32_t input);
+    Decode_Norm(Similarity *self, uint32_t input);
 
     float*
     Get_Norm_Decoder(Similarity *self);
@@ -96,7 +108,7 @@ class KinoSearch::Search::Similarity cnick Sim
      * a search match.
      */
     float
-    Prox_Boost(Similarity *self, u32_t distance);
+    Prox_Boost(Similarity *self, uint32_t distance);
 
     /** Assess an array of positions and return a scoring multiplier based on
      * how clustered they are.  The assumption is that documents whose matches
@@ -104,7 +116,7 @@ class KinoSearch::Search::Similarity cnick Sim
      * matches are spread out and presumably unrelated.
      */
     float
-    Prox_Coord(Similarity *self, u32_t *prox, u32_t num_prox);
+    Prox_Coord(Similarity *self, uint32_t *prox, uint32_t num_prox);
 
     public void
     Destroy(Similarity *self);

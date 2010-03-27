@@ -2,11 +2,11 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/RawLexicon.h"
+#include "KinoSearch/Index/Posting/MatchPosting.h"
 #include "KinoSearch/Index/TermStepper.h"
 #include "KinoSearch/Index/TermInfo.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Posting/MatchPosting.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/InStream.h"
 
 RawLexicon*
@@ -22,7 +22,7 @@ RawLex_init(RawLexicon *self, Schema *schema, const CharBuf *field,
             InStream *instream, i64_t start, i64_t end)
 {
     FieldType *type = Schema_Fetch_Type(schema, field);
-    Lex_init((Lexicon*)self);
+    Lex_init((Lexicon*)self, field);
     
     /* Assign */
     self->start = start;

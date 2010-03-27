@@ -8,20 +8,20 @@ class KinoSearch::Index::SortCache extends KinoSearch::Object::Obj {
     FieldType *type;
     void      *ords;
     i32_t      doc_max;
-    i32_t      num_uniq;
+    i32_t      cardinality;
     i32_t      ord_width;
     i32_t      null_ord;
 
     public inert SortCache*
     init(SortCache *self, const CharBuf *field, FieldType *type,
-         void *ords, i32_t num_uniq, i32_t doc_max, i32_t null_ord = -1);
+         void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord = -1);
 
     /** Assign the value for ordinal <code>ord</code> to <code>blank</code>.
      *
      * @return either <code>blank</code> (no longer blank), or NULL if the
-     * value for <code>doc_id</code> is NULL.
+     * value for <code>ord</code> is NULL.
      */
-    public abstract Obj*
+    public abstract nullable Obj*
     Value(SortCache *self, i32_t ord, Obj *blank);
 
     /** Return an object appropriate for use as an argument to Value(). 
@@ -33,10 +33,13 @@ class KinoSearch::Index::SortCache extends KinoSearch::Object::Obj {
     Get_Ords(SortCache *self);
 
     public i32_t
-    Get_Num_Unique(SortCache *self);
+    Get_Cardinality(SortCache *self);
 
     public i32_t
     Get_Ord_Width(SortCache *self);
+
+    public int32_t
+    Get_Null_Ord(SortCache *self);
 
     public i32_t
     Ordinal(SortCache *self, i32_t doc_id);

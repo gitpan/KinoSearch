@@ -41,8 +41,6 @@ KinoSearch::Index::Segment - Warehouse for information about one segment of an i
 
 =head1 DESCRIPTION
 
-Warehouse for information about one segment of an inverted index.
-
 KinoSearch's indexes are made up of individual "segments", each of which is
 is an independent inverted index.  On the file system, each segment is a
 directory within the main index directory whose name starts with "seg_":

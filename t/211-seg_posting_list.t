@@ -29,7 +29,7 @@ is( $plist->get_posting->get_doc_id, 3, "seek" );
 
 $folder = KinoSearch::Store::RAMFolder->new;
 
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => KinoSearch::Test::TestSchema->new,
 );

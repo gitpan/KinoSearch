@@ -26,8 +26,6 @@ KinoSearch::Store::LockFactory - Create Locks.
 
 =head1 DESCRIPTION
 
-Create Locks.
-
 LockFactory is used to spin off interprocess mutex locks used by various
 index reading and writing components.  The default implementation uses
 lockfiles, but LockFactory subclasses which are implemented using

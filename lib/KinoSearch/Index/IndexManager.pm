@@ -15,7 +15,7 @@ my $synopsis = <<'END_SYNOPSIS';
     );
 
     # Index time:
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index => '/path/to/index',
         manager => $manager,
     );
@@ -25,7 +25,7 @@ my $synopsis = <<'END_SYNOPSIS';
         index   => '/path/to/index',
         manager => $manager,
     );
-    my $searcher = KinoSearch::Searcher->new( index => $reader );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( index => $reader );
 END_SYNOPSIS
 
 my $constructor = <<'END_CONSTRUCTOR';

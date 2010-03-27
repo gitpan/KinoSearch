@@ -20,36 +20,18 @@ class KinoSearch::Index::PostingListReader cnick PListReader
      * @param term If supplied, the PostingList will be pre-located to this
      * term using Seek(). 
      */  
-    public abstract incremented PostingList*
+    public abstract incremented nullable PostingList*
     Posting_List(PostingListReader *self, const CharBuf *field = NULL,
                  Obj *term = NULL);
 
     abstract LexiconReader*
     Get_Lex_Reader(PostingListReader *self);
 
-    public incremented PostingListReader*
-    Aggregator(PostingListReader *self, VArray *readers, I32Array *offsets);
-}
-
-/** Dummy implementation.
- */
-class KinoSearch::Index::PolyPostingListReader cnick PolyPListReader
-    extends KinoSearch::Index::PostingListReader {
-
-    inert incremented PolyPostingListReader*
-    new();
-
-    inert PolyPostingListReader*
-    init(PolyPostingListReader *self);
-
-    /** Throws an error. 
+    /** Returns NULL since PostingLists may only be iterated at the segment
+     * level.
      */
-    public incremented PostingList*
-    Posting_List(PolyPostingListReader *self, const CharBuf *field = NULL,
-                 Obj *term = NULL);
-
-    public void
-    Close(PolyPostingListReader *self);
+    public incremented nullable PostingListReader*
+    Aggregator(PostingListReader *self, VArray *readers, I32Array *offsets);
 }
 
 class KinoSearch::Index::DefaultPostingListReader cnick DefPListReader
@@ -68,7 +50,7 @@ class KinoSearch::Index::DefaultPostingListReader cnick DefPListReader
          Snapshot *snapshot, VArray *segments, i32_t seg_tick, 
          LexiconReader *lex_reader);
 
-    public incremented SegPostingList*
+    public incremented nullable SegPostingList*
     Posting_List(DefaultPostingListReader *self, const CharBuf *field = NULL,
                  Obj *term = NULL);
 

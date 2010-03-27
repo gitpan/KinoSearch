@@ -10,8 +10,6 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
 
-static ZombieCharBuf lock_dir_name = ZCB_LITERAL("locks");
-
 SharedLock*
 ShLock_new(Folder *folder, const CharBuf *name, const CharBuf *host, 
            i32_t timeout, i32_t interval)
@@ -81,9 +79,10 @@ ShLock_clear_stale(SharedLock *self)
     DirHandle *dh;
     CharBuf   *entry;
     CharBuf   *candidate = NULL;
+    CharBuf   *lock_dir_name = (CharBuf*)ZCB_WRAP_STR("locks", 5);
 
-    if (Folder_Find_Folder(self->folder, (CharBuf*)&lock_dir_name)) {
-        dh = Folder_Open_Dir(self->folder, (CharBuf*)&lock_dir_name);
+    if (Folder_Find_Folder(self->folder, lock_dir_name)) {
+        dh = Folder_Open_Dir(self->folder, lock_dir_name);
         if (!dh) { RETHROW(INCREF(Err_get_error())); }
         entry = DH_Get_Entry(dh);
     }
@@ -97,7 +96,7 @@ ShLock_clear_stale(SharedLock *self)
             && CB_Ends_With_Str(entry, ".lock", 5)
         ) {
             candidate = candidate ? candidate : CB_new(0);
-            CB_setf(candidate, "%o/%o", &lock_dir_name, entry);
+            CB_setf(candidate, "%o/%o", lock_dir_name, entry);
             ShLock_Maybe_Delete_File(self, candidate, false, true);
         }
     }
@@ -112,8 +111,9 @@ ShLock_is_locked(SharedLock *self)
     DirHandle *dh;
     CharBuf   *entry;
 
-    if (Folder_Find_Folder(self->folder, (CharBuf*)&lock_dir_name)) {
-        dh = Folder_Open_Dir(self->folder, (CharBuf*)&lock_dir_name);
+    CharBuf *lock_dir_name = (CharBuf*)ZCB_WRAP_STR("locks", 5);
+    if (Folder_Find_Folder(self->folder, lock_dir_name)) {
+        dh = Folder_Open_Dir(self->folder, lock_dir_name);
         if (!dh) { RETHROW(INCREF(Err_get_error())); }
         entry = DH_Get_Entry(dh);
     }
@@ -128,14 +128,14 @@ ShLock_is_locked(SharedLock *self)
         if (   CB_Starts_With(entry, self->name)
             && CB_Ends_With_Str(entry, ".lock", 5)
         ) {
-            ZombieCharBuf scratch = ZCB_make(entry);
-            ZCB_Chop(&scratch, sizeof(".lock") - 1);
-            while(isdigit(ZCB_Code_Point_From(&scratch, 1))) {
-                ZCB_Chop(&scratch, 1);
+            ZombieCharBuf *scratch = ZCB_WRAP(entry);
+            ZCB_Chop(scratch, sizeof(".lock") - 1);
+            while(isdigit(ZCB_Code_Point_From(scratch, 1))) {
+                ZCB_Chop(scratch, 1);
             }
-            if (ZCB_Code_Point_From(&scratch, 1) == '-') {
-                ZCB_Chop(&scratch, 1);
-                if (ZCB_Equals(&scratch, (Obj*)self->name)) {
+            if (ZCB_Code_Point_From(scratch, 1) == '-') {
+                ZCB_Chop(scratch, 1);
+                if (ZCB_Equals(scratch, (Obj*)self->name)) {
                     DECREF(dh);
                     return true;
                 }

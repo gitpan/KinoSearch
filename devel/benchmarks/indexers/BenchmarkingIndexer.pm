@@ -112,12 +112,12 @@ use base qw( KinoSearch::Analysis::Tokenizer );
 sub new { return shift->SUPER::new( pattern => '\S+' ) }
 
 package BenchSchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
-    my $self         = shift->SUPER::new;
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $self = shift->SUPER::new;
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => BenchSchema::WhiteSpaceTokenizer->new, );
     $self->spec_field( name => 'title', type => $type );
     return $self;
@@ -133,11 +133,11 @@ sub new {
     my $self  = $class->SUPER::new(@_);
 
     require KinoSearch;
-    require KinoSearch::Indexer;
+    require KinoSearch::Index::Indexer;
 
     # Provide runtime flexibility.
     my $schema = $self->{schema} = BenchSchema->new;
-    my $body_type = KinoSearch::FieldType::FullTextType->new(
+    my $body_type = KinoSearch::Plan::FullTextType->new(
         analyzer      => BenchSchema::WhiteSpaceTokenizer->new,
         highlightable => $self->{store} ? 1 : 0,
         stored        => $self->{store} ? 1 : 0,
@@ -154,7 +154,7 @@ sub new {
 sub init_indexer {
     my ( $self, $count ) = @_;
     my $truncate = $count == 0 ? 1 : 0;
-    return KinoSearch::Indexer->new(
+    return KinoSearch::Index::Indexer->new(
         schema   => $self->{schema},
         index    => $self->{index_dir},
         truncate => $truncate,

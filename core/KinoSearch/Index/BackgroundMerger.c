@@ -2,7 +2,6 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/BackgroundMerger.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DeletionsReader.h"
 #include "KinoSearch/Index/DeletionsWriter.h"
 #include "KinoSearch/Index/FilePurger.h"
@@ -13,6 +12,7 @@
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/SegWriter.h"
 #include "KinoSearch/Plan/Architecture.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/FSFolder.h"

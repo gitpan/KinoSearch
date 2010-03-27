@@ -196,38 +196,38 @@ S_obtain_lock_factory(IndexManager *self)
 Lock*
 IxManager_make_write_lock(IndexManager *self)
 {
-    static ZombieCharBuf write_lock_name = ZCB_LITERAL("write");
+    ZombieCharBuf *write_lock_name = ZCB_WRAP_STR("write", 5);
     LockFactory *lock_factory = S_obtain_lock_factory(self);
-    return LockFact_Make_Lock(lock_factory, (CharBuf*)&write_lock_name,
+    return LockFact_Make_Lock(lock_factory, (CharBuf*)write_lock_name,
         self->write_lock_timeout, self->write_lock_interval);
 }
 
 Lock*
 IxManager_make_deletion_lock(IndexManager *self)
 {
-    static ZombieCharBuf lock_name = ZCB_LITERAL("deletion");
+    ZombieCharBuf *lock_name = ZCB_WRAP_STR("deletion", 8);
     LockFactory *lock_factory = S_obtain_lock_factory(self);
-    return LockFact_Make_Lock(lock_factory, (CharBuf*)&lock_name, 
+    return LockFact_Make_Lock(lock_factory, (CharBuf*)lock_name, 
         self->deletion_lock_timeout, self->deletion_lock_interval);
 }
 
 Lock*
 IxManager_make_merge_lock(IndexManager *self)
 {
-    static ZombieCharBuf merge_lock_name = ZCB_LITERAL("merge");
+    ZombieCharBuf *merge_lock_name = ZCB_WRAP_STR("merge", 5);
     LockFactory *lock_factory = S_obtain_lock_factory(self);
-    return LockFact_Make_Lock(lock_factory, (CharBuf*)&merge_lock_name,
+    return LockFact_Make_Lock(lock_factory, (CharBuf*)merge_lock_name,
         self->merge_lock_timeout, self->merge_lock_interval);
 }
 
 void
 IxManager_write_merge_data(IndexManager *self, i64_t cutoff)
 {
-    static ZombieCharBuf merge_json = ZCB_LITERAL("merge.json");
+    ZombieCharBuf *merge_json = ZCB_WRAP_STR("merge.json", 10);
     Hash *data = Hash_new(1);
     bool_t success;
     Hash_Store_Str(data, "cutoff", 6, (Obj*)CB_newf("%i64", cutoff));
-    success = Json_spew_json((Obj*)data, self->folder, (CharBuf*)&merge_json);
+    success = Json_spew_json((Obj*)data, self->folder, (CharBuf*)merge_json);
     DECREF(data);
     if (!success) {
         THROW(ERR, "Failed to write to %o", &merge_json);
@@ -237,10 +237,10 @@ IxManager_write_merge_data(IndexManager *self, i64_t cutoff)
 Hash*
 IxManager_read_merge_data(IndexManager *self)
 {
-    static ZombieCharBuf merge_json = ZCB_LITERAL("merge.json");
-    if (Folder_Exists(self->folder, (CharBuf*)&merge_json)) {
+    ZombieCharBuf *merge_json = ZCB_WRAP_STR("merge.json", 10);
+    if (Folder_Exists(self->folder, (CharBuf*)merge_json)) {
         Hash *stuff 
-            = (Hash*)Json_slurp_json(self->folder, (CharBuf*)&merge_json);
+            = (Hash*)Json_slurp_json(self->folder, (CharBuf*)merge_json);
         if (stuff) {
             CERTIFY(stuff, HASH);
             return stuff;
@@ -257,14 +257,14 @@ IxManager_read_merge_data(IndexManager *self)
 bool_t
 IxManager_remove_merge_data(IndexManager *self)
 {
-    static ZombieCharBuf merge_json = ZCB_LITERAL("merge.json");
-    return Folder_Delete(self->folder, (CharBuf*)&merge_json) != 0;
+    ZombieCharBuf *merge_json = ZCB_WRAP_STR("merge.json", 10);
+    return Folder_Delete(self->folder, (CharBuf*)merge_json) != 0;
 }
 
 Lock*
 IxManager_make_snapshot_read_lock(IndexManager *self, const CharBuf *filename)
 {
-    ZombieCharBuf lock_name = ZCB_make(filename);
+    ZombieCharBuf *lock_name = ZCB_WRAP(filename);
     LockFactory *lock_factory = S_obtain_lock_factory(self);
     
     if (   !CB_Starts_With_Str(filename, "snapshot_", 9)
@@ -274,9 +274,9 @@ IxManager_make_snapshot_read_lock(IndexManager *self, const CharBuf *filename)
     }
         
     /* Truncate ".json" from end of snapshot file name. */
-    ZCB_Chop(&lock_name, sizeof(".json") - 1);
+    ZCB_Chop(lock_name, sizeof(".json") - 1);
 
-    return LockFact_Make_Shared_Lock(lock_factory, (CharBuf*)&lock_name, 1000, 100);
+    return LockFact_Make_Shared_Lock(lock_factory, (CharBuf*)lock_name, 1000, 100);
 }
 
 void

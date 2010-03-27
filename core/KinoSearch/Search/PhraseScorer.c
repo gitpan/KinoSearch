@@ -4,15 +4,10 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/PhraseScorer.h"
+#include "KinoSearch/Index/Posting/ScorePosting.h"
 #include "KinoSearch/Index/PostingList.h"
-#include "KinoSearch/Posting/ScorePosting.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Compiler.h"
-
-/* Mark this scorer as invalid/finished.
- */
-static i32_t
-S_invalidate(PhraseScorer *self);
+#include "KinoSearch/Search/Similarity.h"
 
 PhraseScorer*
 PhraseScorer_new(Similarity *sim, VArray *plists, Compiler *compiler)
@@ -26,28 +21,28 @@ PhraseScorer*
 PhraseScorer_init(PhraseScorer *self, Similarity *similarity, VArray *plists,
                   Compiler *compiler)
 {
-    u32_t i;
-
     Matcher_init((Matcher*)self);
 
-    /* Init. */
+    // Init.
     self->anchor_set       = BB_new(0);
     self->phrase_freq      = 0.0;
     self->phrase_boost     = 0.0;
     self->first_time       = true;
     self->more             = true;
 
-    /* Extract posting lists for quick access. */
-    self->num_elements   = VA_Get_Size(plists);
-    self->plists         = (PostingList**)MALLOCATE(self->num_elements * sizeof(PostingList*));
-    for (i = 0; i < self->num_elements; i++) {
-        PostingList *const plist = (PostingList*)VA_Fetch(plists, i);
+    // Extract PostingLists out of VArray into local C array for quick access.
+    self->num_elements = VA_Get_Size(plists);
+    self->plists = (PostingList**)MALLOCATE(
+        self->num_elements * sizeof(PostingList*));
+    for (size_t i = 0; i < self->num_elements; i++) {
+        PostingList *const plist = (PostingList*)CERTIFY(
+            VA_Fetch(plists, i), POSTINGLIST);
         if (plist == NULL)
             THROW(ERR, "Missing element %u32", i);
         self->plists[i] = (PostingList*)INCREF(plist);
     }
 
-    /* Assign. */
+    // Assign.
     self->sim       = (Similarity*)INCREF(similarity);
     self->compiler  = (Compiler*)INCREF(compiler);
     self->weight    = Compiler_Get_Weight(compiler);
@@ -59,26 +54,15 @@ void
 PhraseScorer_destroy(PhraseScorer *self) 
 {
     if (self->plists) {
-        PostingList **plists = self->plists;
-        size_t i;
-        for (i = 0; i < self->num_elements; i++) {
-            DECREF(plists[i]);
+        for (size_t i = 0; i < self->num_elements; i++) {
+            DECREF(self->plists[i]);
         }
         FREEMEM(self->plists);
     }
-
     DECREF(self->sim);
     DECREF(self->anchor_set);
     DECREF(self->compiler);
-
     SUPER_DESTROY(self, PHRASESCORER);
-}
-
-static i32_t
-S_invalidate(PhraseScorer *self)
-{
-    self->more = false;
-    return 0;
 }
 
 i32_t
@@ -103,71 +87,89 @@ PhraseScorer_advance(PhraseScorer *self, i32_t target)
     const u32_t         num_elements = self->num_elements;
     i32_t               highest      = 0;
 
+    // Reset match variables to indicate no match.  New values will be
+    // assigned if a match succeeds.
     self->phrase_freq = 0.0;
     self->doc_id      = 0;
 
+    // Find the lowest possible matching doc ID greater than the current doc
+    // ID.  If any one of the PostingLists is exhausted, we're done.
     if (self->first_time) {
-        i32_t candidate;
-        u32_t i;
-
         self->first_time = false;
-        /* Advance all posting lists. */
-        for (i = 0; i < num_elements; i++) {
-            candidate = PList_Next(plists[i]);
-            if (!candidate)
-                return S_invalidate(self);
-            else if (candidate > highest)
+
+        // On the first call to Advance(), advance all PostingLists.
+        for (size_t i = 0, max = self->num_elements; i < max; i++) {
+            int32_t candidate = PList_Advance(plists[i], target);
+            if (!candidate) {
+                self->more = false;
+                return 0;
+            }
+            else if (candidate > highest) {
+                // Remember the highest doc ID so far.
                 highest = candidate;
+            }
         }
     }
     else {
-        /* Seed the search, advancing only one posting list. */
-        highest = PList_Next(plists[0]);
-        if (highest == 0)
-            return S_invalidate(self);
+        // On subsequent iters, advance only one PostingList.  Its new doc ID
+        // becomes the minimum target which all the others must move up to.
+        highest = PList_Advance(plists[0], target);
+        if (highest == 0) {
+            self->more = false;
+            return 0;
+        }
     }
 
-    /* Find a doc which contains all the terms. */
+    // Find a doc which contains all the terms.
     while (1) {
-        u32_t i;
         bool_t agreement = true;
 
-        /* Scoot all posting lists up. */
-        for (i = 0; i < num_elements; i++) {
+        // Scoot all posting lists up to at least the current minimum.
+        for (uint32_t i = 0; i < num_elements; i++) {
             PostingList *const plist = plists[i];
             i32_t candidate = PList_Get_Doc_ID(plist);
 
-            /* Maybe raise the bar. */
-            if (highest < candidate)
-                highest = candidate;
-            if (target < highest)
-                target = highest;
+            // Is this PostingList already beyond the minimum?  Then raise the
+            // bar for everyone else.
+            if (highest < candidate) { highest = candidate; }
+            if (target < highest)    { target = highest; }
 
-            /* Scoot this posting list up. */
+            // Scoot this posting list up.
             if (candidate < target) {
-                /* If somebody's raised the bar, don't wait till next loop. */
-                highest = PList_Advance(plist, target);
-                if (highest == 0)
-                    return S_invalidate(self);
+                candidate = PList_Advance(plist, target);
+
+                // If this PostingList is exhausted, we're done.
+                if (candidate == 0) {
+                    self->more = false;
+                    return 0;
+                }
+
+                // After calling PList_Advance(), we are guaranteed to be
+                // either at or beyond the minimum, so we can assign without
+                // checking and the minumum will either go up or stay the
+                // same.
+                highest = candidate;
             }
         }
 
-        /* If posting lists don't agree, send back through the loop. */
-        for (i = 0; i < num_elements; i++) {
-            PostingList *const plist = plists[i];
-            const i32_t candidate    = PList_Get_Doc_ID(plist);
-            if (candidate != highest)
-                agreement = false;
+        // See whether all the PostingLists have managed to converge on a
+        // single doc ID.
+        for (uint32_t i = 0; i < num_elements; i++) {
+            const i32_t candidate = PList_Get_Doc_ID(plists[i]);
+            if (candidate != highest) { agreement = false; }
         }
 
+        // If we've found a doc with all terms in it, see if they form a
+        // phrase.
         if (agreement && highest >= target) {
             self->phrase_freq = PhraseScorer_Calc_Phrase_Freq(self);
             if (self->phrase_freq == 0.0) {
+                // No phrase.  Move on to another doc.
                 target += 1;
             }
             else {
-                /* Success! */
-                self->doc_id   = highest;
+                // Success!
+                self->doc_id = highest;
                 return highest;
             }
         }
@@ -184,17 +186,18 @@ SI_winnow_anchors(u32_t *anchors_start, const u32_t *const anchors_end,
     u32_t target_anchor;
     u32_t target_candidate;
 
-    /* Safety check, so there's no chance of a bad dereference. */
-    if (anchors_start == anchors_end || candidates == candidates_end)
+    // Safety check, so there's no chance of a bad dereference.
+    if (anchors_start == anchors_end || candidates == candidates_end) {
         return 0;
+    }
 
     /* This function is a loop that finds terms that can continue a phrase.
      * It overwrites the anchors in place, and returns the number remaining.
      * The basic algorithm is to alternately increment the candidates' pointer
      * until it is at or beyond its target position, and then increment the 
      * anchors' pointer until it is at or beyond its target.  The non-standard
-     * form is to avoid unnecessary comparisons.  I have not tested this
-     * loop for speed, but glancing at the object code produced (objdump -S) 
+     * form is to avoid unnecessary comparisons.  This loop has not been
+     * tested for speed, but glancing at the object code produced (objdump -S)
      * it appears to be significantly faster than the nested loop alternative.
      * But given the vagaries of modern processors, it merits actual
      * testing.*/
@@ -221,7 +224,7 @@ SI_winnow_anchors(u32_t *anchors_start, const u32_t *const anchors_end,
     goto SPIN_CANDIDATES; 
 
  DONE:
-    /* Return number of anchors remaining. */
+    // Return number of anchors remaining.
     return anchors_found - anchors_start; 
 }
 
@@ -229,32 +232,50 @@ float
 PhraseScorer_calc_phrase_freq(PhraseScorer *self) 
 {
     PostingList **const plists   = self->plists;
-    u32_t i;
 
-    /* Create a overwriteable anchor set from the first posting. */
+    /* Create a overwriteable "anchor set" from the first posting.  
+     *
+     * Each "anchor" is a position, measured in tokens, corresponding to a a
+     * term which might start a phrase.  We start off with an "anchor set"
+     * comprised of all positions at which the first term in the phrase occurs
+     * in the field.  
+     * 
+     * There can never be more phrase matches than instances of this first
+     * term.  There may be fewer however, which we will determine by seeing
+     * whether all the other terms line up at subsequent position slots.
+     * 
+     * Every time we eliminate an anchor from the anchor set, we splice it out
+     * of the array.  So if we begin with an anchor set of (15, 51, 72) and we
+     * discover that phrases occur at the first and last instances of the
+     * first term but not the middle one, the final array will be (15, 72).
+     *
+     * The number of elements in the anchor set when we are finished winnowing
+     * is our phrase freq.
+     */
     ScorePosting *posting = (ScorePosting*)PList_Get_Posting(plists[0]);
-    u32_t anchors_remaining = posting->freq;
-    size_t amount = anchors_remaining * sizeof(u32_t);
-    ByteBuf *const anchor_set  = self->anchor_set;
-    u32_t *anchors_start, *anchors_end, *anchors;
+    uint32_t anchors_remaining = posting->freq;
+    if (!anchors_remaining) { return 0.0f; }
 
-    anchors_start = (u32_t*)BB_Grow(anchor_set, amount);
-    anchors_end   = anchors_start + anchors_remaining;
-    anchors       = anchors_start;
+    size_t    amount        = anchors_remaining * sizeof(u32_t);
+    uint32_t *anchors_start = (uint32_t*)BB_Grow(self->anchor_set, amount);
+    uint32_t *anchors_end   = anchors_start + anchors_remaining;
     memcpy(anchors_start, posting->prox, amount);
 
-    /* Match the positions of other terms against the anchor set. */
-    anchors_remaining = anchors_end - anchors_start;
-    for (i = 1; i < self->num_elements && anchors_remaining; i++) {
-        /* Prepare the non-overwritten list of potential next terms. */
-        ScorePosting *posting = (ScorePosting *)PList_Get_Posting(plists[i]);
+    // Match the positions of other terms against the anchor set.
+    for (uint32_t i = 1, max = self->num_elements; i < max; i++) {
+        // Get the array of positions for the next term.  Unlike the anchor
+        // set (which is a copy), these won't be overwritten.
+        ScorePosting *posting = (ScorePosting*)PList_Get_Posting(plists[i]);
         u32_t *candidates_start = posting->prox;
         u32_t *candidates_end   = candidates_start + posting->freq;
 
-        /* Reduce anchor_set in place to those that match the next term. */
+        // Splice out anchors that don't match the next term.  Bail out if
+        // we've eliminated all possible anchors.
         anchors_remaining = SI_winnow_anchors(anchors_start, anchors_end,
             candidates_start, candidates_end, i);
-        /* Adjust end for number of anchors that remain. */
+        if (!anchors_remaining) { return 0.0f; }
+
+        // Adjust end for number of anchors that remain. 
         anchors_end = anchors_start + anchors_remaining;
     }
 

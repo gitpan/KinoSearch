@@ -8,12 +8,12 @@ use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder_a = create_index( 'x a', 'x b', 'x c' );
 my $folder_b = create_index( 'y b', 'y c', 'y d' );
-my $searcher_a = KinoSearch::Searcher->new( index => $folder_a );
-my $searcher_b = KinoSearch::Searcher->new( index => $folder_b );
+my $searcher_a = KinoSearch::Search::IndexSearcher->new( index => $folder_a );
+my $searcher_b = KinoSearch::Search::IndexSearcher->new( index => $folder_b );
 
 my $poly_searcher = KinoSearch::Search::PolySearcher->new(
-    schema      => KinoSearch::Test::TestSchema->new,
-    searchables => [ $searcher_a, $searcher_b ],
+    schema    => KinoSearch::Test::TestSchema->new,
+    searchers => [ $searcher_a, $searcher_b ],
 );
 
 is( $poly_searcher->doc_freq( field => 'content', term => 'b' ),
@@ -31,9 +31,9 @@ is( $hits->total_hits, 1, "Find hit in second searcher" );
 $hits = $poly_searcher->hits( query => 'c' );
 is( $hits->total_hits, 2, "Find hits in both searchers" );
 
-my $bit_vec
-    = KinoSearch::Object::BitVector->new( capacity => $poly_searcher->doc_max );
-my $bitcoll = KinoSearch::Search::HitCollector::BitCollector->new(
+my $bit_vec = KinoSearch::Object::BitVector->new(
+    capacity => $poly_searcher->doc_max );
+my $bitcoll = KinoSearch::Search::Collector::BitCollector->new(
     bit_vector => $bit_vec );
 my $query = $poly_searcher->glean_query('b');
 $poly_searcher->collect( query => $query, collector => $bitcoll );

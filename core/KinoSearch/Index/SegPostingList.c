@@ -4,17 +4,17 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SegPostingList.h"
-#include "KinoSearch/Plan/Architecture.h"
-#include "KinoSearch/Posting.h"
-#include "KinoSearch/Schema.h"
-#include "KinoSearch/FieldType.h"
+#include "KinoSearch/Index/Posting.h"
+#include "KinoSearch/Index/Posting/RawPosting.h"
 #include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SkipStepper.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Index/SegLexicon.h"
 #include "KinoSearch/Index/LexiconReader.h"
-#include "KinoSearch/Posting/RawPosting.h"
+#include "KinoSearch/Plan/Architecture.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Search/Similarity.h"
@@ -63,8 +63,8 @@ SegPList_init(SegPostingList *self, PostingListReader *plist_reader,
     self->skip_interval   = Arch_Skip_Interval(arch);
     
     /* Derive. */
-    self->posting   = Schema_Fetch_Posting(schema, field);
-    self->posting   = (Posting*)Post_Clone(self->posting);
+    Similarity *sim = Schema_Fetch_Sim(schema, field);
+    self->posting   = Sim_Make_Posting(sim);
     self->field_num = field_num;
 
     /* Open both a main stream and a skip stream if the field exists. */

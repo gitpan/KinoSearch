@@ -4,8 +4,8 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PostingList.h"
-#include "KinoSearch/Posting.h"
 #include "KinoSearch/Index/Lexicon.h"
+#include "KinoSearch/Index/Posting.h"
 #include "KinoSearch/Util/Memory.h"
 
 PostingList*

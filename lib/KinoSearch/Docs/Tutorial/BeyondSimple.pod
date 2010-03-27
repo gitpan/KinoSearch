@@ -18,11 +18,11 @@ classes that it uses internally:
 
 =item *
 
-L<KinoSearch::Schema> - Plan out your index.
+L<KinoSearch::Plan::Schema> - Plan out your index.
 
 =item *
 
-L<KinoSearch::FieldType::FullTextType> - Field type for full text search.
+L<KinoSearch::Plan::FullTextType> - Field type for full text search.
 
 =item *
 
@@ -30,11 +30,11 @@ L<KinoSearch::Analysis::PolyAnalyzer> - A one-size-fits-all parser/tokenizer.
 
 =item *
 
-L<KinoSearch::Indexer> - Manipulate index content.
+L<KinoSearch::Index::Indexer> - Manipulate index content.
 
 =item *
 
-L<KinoSearch::Searcher> - Search an index.
+L<KinoSearch::Search::IndexSearcher> - Search an index.
 
 =item *
 
@@ -46,12 +46,12 @@ L<KinoSearch::Search::Hits> - Iterate over hits returned by a Searcher.
 
 After we load our modules...
 
-    use KinoSearch::Schema;
-    use KinoSearch::FieldType::FullTextType;
+    use KinoSearch::Plan::Schema;
+    use KinoSearch::Plan::FullTextType;
     use KinoSearch::Analysis::PolyAnalyzer;
-    use KinoSearch::Indexer;
+    use KinoSearch::Index::Indexer;
 
-... the first item we're going need is a L<Schema|KinoSearch::Schema>. 
+... the first item we're going need is a L<Schema|KinoSearch::Plan::Schema>. 
 
 A Schema is analogous to an SQL table definition.  It instructs other entities
 on how they should interpret the raw data in an inverted index and interact
@@ -61,11 +61,11 @@ The primary job of a Schema is to specify what fields are available and how
 they're defined.  We'll start off with three fields: title, content and url.
 
     # Create Schema.
-    my $schema = KinoSearch::Schema->new;
+    my $schema = KinoSearch::Plan::Schema->new;
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
         language => 'en',
     );
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => $polyanalyzer,
     );
     $schema->spec_field( name => 'title',   type => $type );
@@ -77,15 +77,15 @@ indicating that they will be searchable as "full text" -- which means that
 they can be searched for individual words.  The "analyzer", which is unique to
 FullTextType fields, is what breaks up the text into searchable tokens.
 
-Next, we'll swap our KSx::Simple object out for a KinoSearch::Indexer.  The
-substitution will be straightforward because Simple has merely been serving as
-a thin wrapper around an inner Indexer, and we'll just be peeling away the
-wrapper.
+Next, we'll swap our KSx::Simple object out for a KinoSearch::Index::Indexer.
+The substitution will be straightforward because Simple has merely been
+serving as a thin wrapper around an inner Indexer, and we'll just be peeling
+away the wrapper.
 
 First, replace the constructor:
 
     # Create Indexer.
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index    => $path_to_index,
         schema   => $schema,
         create   => 1,
@@ -109,13 +109,15 @@ commit() explicitly to close the indexing session and commit your changes.
 =head2 Adaptations to search.cgi
 
 In our search app as in our indexing app, KSx::Simple has served as a
-thin wrapper -- this time around L<KinoSearch::Searcher> and
+thin wrapper -- this time around L<KinoSearch::Search::IndexSearcher> and
 L<KinoSearch::Search::Hits>.  Swapping out Simple for these two classes is
 also straightforward:
 
-    use KinoSearch::Searcher;
+    use KinoSearch::Search::IndexSearcher;
     
-    my $searcher = KinoSearch::Searcher->new( index => $path_to_index );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( 
+        index => $path_to_index,
+    );
     my $hits = $searcher->hits(    # returns a Hits object, not a hit count
         query      => $q,
         offset     => $offset,

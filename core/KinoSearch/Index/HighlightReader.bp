@@ -17,7 +17,7 @@ class KinoSearch::Index::HighlightReader cnick HLReader
     public abstract incremented DocVector*
     Fetch(HighlightReader *self, i32_t doc_id);
 
-    public incremented HighlightReader*
+    public incremented nullable HighlightReader*
     Aggregator(HighlightReader *self, VArray *readers, I32Array *offsets);
 }
 

@@ -2,8 +2,8 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/Query.h"
-#include "KinoSearch/Search/Searchable.h"
 #include "KinoSearch/Search/Compiler.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 

@@ -13,12 +13,12 @@
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/Snapshot.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/BitVecMatcher.h"
 #include "KinoSearch/Search/Compiler.h"
+#include "KinoSearch/Search/IndexSearcher.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Search/Query.h"
-#include "KinoSearch/Searcher.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/OutStream.h"
 
@@ -79,7 +79,7 @@ DefDelWriter_init(DefaultDeletionsWriter *self, Schema *schema,
     self->seg_starts        = PolyReader_Offsets(polyreader);
     self->bit_vecs          = VA_new(num_seg_readers);
     self->updated           = (bool_t*)CALLOCATE(num_seg_readers, sizeof(bool_t));
-    self->searcher          = Searcher_new((Obj*)polyreader);
+    self->searcher          = IxSearcher_new((Obj*)polyreader);
     self->name_to_tick      = Hash_new(num_seg_readers);
 
     /* Materialize a BitVector of deletions for each segment. */
@@ -267,7 +267,7 @@ void
 DefDelWriter_delete_by_query(DefaultDeletionsWriter *self, Query *query)
 {
     Compiler *compiler = Query_Make_Compiler(query, 
-        (Searchable*)self->searcher, Query_Get_Boost(query));
+        (Searcher*)self->searcher, Query_Get_Boost(query));
     u32_t i, max;
 
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {

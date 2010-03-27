@@ -5,11 +5,11 @@ use lib 'buildlib';
 use KinoSearch::Test;
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer      => KinoSearch::Analysis::Tokenizer->new,
         highlightable => 1,
     );
@@ -24,7 +24,7 @@ use Storable qw( freeze thaw );
 
 my $schema  = MySchema->new;
 my $folder  = KinoSearch::Store::RAMFolder->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -35,7 +35,7 @@ for ( 'a b c foo foo bar', $hasta ) {
 }
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $doc_vec = $searcher->fetch_doc_vec(1);
 
 my $term_vector = $doc_vec->term_vector( field => "content", term => "foo" );
@@ -58,7 +58,7 @@ my $alt_schema = MySchema->new;
 my $type       = $alt_schema->fetch_type('content');
 $alt_schema->spec_field( name => 'aux', type => $type );
 
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     schema => $alt_schema,
     index  => $alt_folder,
 );
@@ -71,14 +71,14 @@ for ( 'blah blah blah ', 'yada yada yada ' ) {
 }
 $indexer->commit;
 
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     schema => $alt_schema,
     index  => $alt_folder,
 );
 $indexer->add_index($folder);
 $indexer->commit;
 
-$searcher = KinoSearch::Searcher->new( index => $alt_folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $alt_folder );
 my $hits = $searcher->hits( query => $hasta );
 my $hit_id = $hits->next->get_doc_id;
 $doc_vec = $searcher->fetch_doc_vec($hit_id);

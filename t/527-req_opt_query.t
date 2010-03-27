@@ -7,7 +7,7 @@ use Storable qw( freeze thaw );
 use KinoSearch::Test::TestUtils qw( create_index );
 
 my $folder = create_index( 'a', 'b', 'b c', 'c', 'c d', 'd', 'e' );
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $reader = $searcher->get_reader->get_seg_readers->[0];
 
 my $b_query = KinoSearch::Search::TermQuery->new(
@@ -29,7 +29,7 @@ my $req_opt_query = KinoSearch::Search::RequiredOptionalQuery->new(
 );
 is( $req_opt_query->to_string, "(+content:b content:c)", "to_string" );
 
-my $compiler = $req_opt_query->make_compiler( searchable => $searcher );
+my $compiler = $req_opt_query->make_compiler( searcher => $searcher );
 my $frozen   = freeze($compiler);
 my $thawed   = thaw($frozen);
 ok( $thawed->equals($compiler), "freeze/thaw compiler" );
@@ -40,7 +40,7 @@ $req_opt_query = KinoSearch::Search::RequiredOptionalQuery->new(
     required_query => $b_query,
     optional_query => $x_query,
 );
-$matcher = $req_opt_query->make_compiler( searchable => $searcher )
+$matcher = $req_opt_query->make_compiler( searcher => $searcher )
     ->make_matcher( reader => $reader, need_score => 0 );
 isa_ok(
     $matcher,
@@ -52,7 +52,7 @@ $req_opt_query = KinoSearch::Search::RequiredOptionalQuery->new(
     required_query => $x_query,
     optional_query => $b_query,
 );
-$matcher = $req_opt_query->make_compiler( searchable => $searcher )
+$matcher = $req_opt_query->make_compiler( searcher => $searcher )
     ->make_matcher( reader => $reader, need_score => 0 );
 ok( !defined($matcher), "if required matcher has no match, return undef" );
 

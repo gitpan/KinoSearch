@@ -5,7 +5,13 @@
 
 #include "KinoSearch/Search/Similarity.h"
 
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Index/Posting/ScorePosting.h"
+#include "KinoSearch/Index/Segment.h"
+#include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Index/PolyReader.h"
+#include "KinoSearch/Index/Posting/MatchPosting.h"
+#include "KinoSearch/Plan/Schema.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 
@@ -19,7 +25,7 @@ Sim_new()
 Similarity*
 Sim_init(Similarity *self) 
 {
-    u32_t i;
+    uint32_t i;
 
     /* Cache decoded norms and proximity boost factors. */
     self->norm_decoder = (float*)MALLOCATE(256 * sizeof(float));
@@ -38,6 +44,22 @@ Sim_destroy(Similarity *self)
     FREEMEM(self->norm_decoder);
     FREEMEM(self->prox_decoder);
     SUPER_DESTROY(self, SIMILARITY);
+}
+
+Posting*
+Sim_make_posting(Similarity *self)
+{
+    return (Posting*)ScorePost_new(self);
+}
+
+PostingWriter*
+Sim_make_posting_writer(Similarity *self, Schema *schema, Snapshot *snapshot,
+                        Segment *segment, PolyReader *polyreader,
+                        int32_t field_num)
+{
+    UNUSED_VAR(self);
+    return (PostingWriter*)MatchPostWriter_new(schema, snapshot, segment, 
+        polyreader, field_num);
 }
 
 float*
@@ -97,10 +119,10 @@ Sim_equals(Similarity *self, Obj *other)
 }
 
 float
-Sim_idf(Similarity *self, Searchable *searchable, const CharBuf *field, 
+Sim_idf(Similarity *self, Searcher *searcher, const CharBuf *field, 
         Obj *term)
 {
-    double doc_max = Searchable_Doc_Max(searchable);
+    double doc_max = Searcher_Doc_Max(searcher);
     UNUSED_VAR(self);
     
     if (doc_max == 0) {
@@ -108,7 +130,7 @@ Sim_idf(Similarity *self, Searchable *searchable, const CharBuf *field,
         return 1;
     }
     else {
-        double doc_freq = Searchable_Doc_Freq(searchable, field, term);
+        double doc_freq = Searcher_Doc_Freq(searcher, field, term);
         return (float)(1 + log( doc_max / (1 + doc_freq) ));
     }
 }
@@ -120,10 +142,10 @@ Sim_tf(Similarity *self, float freq)
     return (float)sqrt(freq);
 }
 
-u32_t
+uint32_t
 Sim_encode_norm(Similarity *self, float f) 
 {
-    u32_t norm;
+    uint32_t norm;
     UNUSED_VAR(self);
 
     if (f < 0.0)
@@ -133,9 +155,9 @@ Sim_encode_norm(Similarity *self, float f)
         norm = 0;
     }
     else {
-        const u32_t bits = *(u32_t*)&f;
-        u32_t mantissa   = (bits & 0xffffff) >> 21;
-        u32_t exponent   = (((bits >> 24) & 0x7f)-63) + 15;
+        const uint32_t bits = *(uint32_t*)&f;
+        uint32_t mantissa   = (bits & 0xffffff) >> 21;
+        uint32_t exponent   = (((bits >> 24) & 0x7f)-63) + 15;
 
         if (exponent > 31) {
             exponent = 31;
@@ -149,18 +171,18 @@ Sim_encode_norm(Similarity *self, float f)
 }
 
 float
-Sim_decode_norm(Similarity *self, u32_t input) 
+Sim_decode_norm(Similarity *self, uint32_t input) 
 {
-    u8_t byte = input & 0xFF;
-    u32_t result;
+    uint8_t  byte = input & 0xFF;
+    uint32_t result;
     UNUSED_VAR(self);
 
     if (byte == 0) {
         result = 0;
     }
     else {
-        const u32_t mantissa = byte & 7;
-        const u32_t exponent = (byte >> 3) & 31;
+        const uint32_t mantissa = byte & 7;
+        const uint32_t exponent = (byte >> 3) & 31;
         result = ((exponent+(63-15)) << 24) | (mantissa << 21);
     }
     
@@ -168,7 +190,7 @@ Sim_decode_norm(Similarity *self, u32_t input)
 }
 
 float 
-Sim_length_norm(Similarity *self, u32_t num_tokens)
+Sim_length_norm(Similarity *self, uint32_t num_tokens)
 {
     UNUSED_VAR(self);
     if (num_tokens == 0) /* guard against div by zero */
@@ -188,7 +210,7 @@ Sim_query_norm(Similarity *self, float sum_of_squared_weights)
 }
 
 float
-Sim_prox_boost(Similarity *self, u32_t distance)
+Sim_prox_boost(Similarity *self, uint32_t distance)
 {
     UNUSED_VAR(self);
     if (distance == 0)
@@ -199,17 +221,17 @@ Sim_prox_boost(Similarity *self, u32_t distance)
 }
 
 float
-Sim_prox_coord(Similarity *self, u32_t *prox, u32_t num_prox)
+Sim_prox_coord(Similarity *self, uint32_t *prox, uint32_t num_prox)
 {
-    float *prox_decoder = self->prox_decoder;
-    u32_t *a = prox;
-    u32_t *const limit = prox + num_prox;
-    float bonus = 0;
+    float    *prox_decoder = self->prox_decoder;
+    uint32_t *a = prox;
+    uint32_t *const limit = prox + num_prox;
+    float     bonus = 0;
 
     /* Add to bonus for each pair of positions within 256 tokens. */
     for ( ; a < limit - 1; a++) {
-        u32_t *b = a + 1;
-        u32_t distance = *b - *a;
+        uint32_t *b = a + 1;
+        uint32_t distance = *b - *a;
         for ( ; distance < 256 && b < limit; b++) {
             bonus += prox_decoder[distance];
             distance = *b - *a;
@@ -226,7 +248,7 @@ Sim_prox_coord(Similarity *self, u32_t *prox, u32_t num_prox)
 }
 
 float
-Sim_coord(Similarity *self, u32_t overlap, u32_t max_overlap) 
+Sim_coord(Similarity *self, uint32_t overlap, uint32_t max_overlap) 
 {
     UNUSED_VAR(self);
     if (max_overlap == 0)

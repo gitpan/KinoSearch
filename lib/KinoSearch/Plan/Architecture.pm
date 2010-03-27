@@ -44,7 +44,7 @@ my $synopsis = <<'END_SYNOPSIS';
     }
  
     package MySchema;
-    use base qw( KinoSearch::Schema );
+    use base qw( KinoSearch::Plan::Schema );
     
     sub architecture { 
         shift;

@@ -13,10 +13,10 @@ MODULE = KinoSearch     PACKAGE = KinoSearch::Object::Obj
 chy_bool_t
 is_a(self, class_name)
     kino_Obj *self;
-    kino_ZombieCharBuf class_name;
+    const kino_CharBuf *class_name;
 CODE:
 {
-    kino_VTable *target = kino_VTable_fetch_vtable((kino_CharBuf*)&class_name);
+    kino_VTable *target = kino_VTable_fetch_vtable(class_name);
     RETVAL = Kino_Obj_Is_A(self, target);
 }
 OUTPUT: RETVAL
@@ -67,10 +67,10 @@ STORABLE_thaw(blank_obj, cloning, serialized_sv)
 PPCODE:
 {
     char *class_name = HvNAME(SvSTASH(SvRV(blank_obj)));
-    kino_ZombieCharBuf klass 
-        = kino_ZCB_make_str(class_name, strlen(class_name));
+    kino_ZombieCharBuf *klass 
+        = KINO_ZCB_WRAP_STR(class_name, strlen(class_name));
     kino_VTable *vtable = (kino_VTable*)kino_VTable_singleton(
-        (kino_CharBuf*)&klass, NULL);
+        (kino_CharBuf*)klass, NULL);
     STRLEN len;
     char *ptr = SvPV(serialized_sv, len);
     kino_ViewByteBuf *contents = kino_ViewBB_new(ptr, len);
@@ -89,7 +89,7 @@ PPCODE:
 
     /* Catch bad deserialize() override. */
     if (deserialized != self) {
-        THROW(KINO_ERR, "Error when deserializing obj of class %o", &klass);
+        THROW(KINO_ERR, "Error when deserializing obj of class %o", klass);
     }
 }
 

@@ -3,16 +3,16 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/TermQuery.h"
-#include "KinoSearch/Schema.h"
-#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/TermVector.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Compiler.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Search/TermScorer.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -87,25 +87,25 @@ TermQuery_to_string(TermQuery *self)
 }
 
 Compiler*
-TermQuery_make_compiler(TermQuery *self, Searchable *searchable, float boost) 
+TermQuery_make_compiler(TermQuery *self, Searcher *searcher, float boost) 
 {
-    return (Compiler*)TermCompiler_new((Query*)self, searchable, boost);
+    return (Compiler*)TermCompiler_new((Query*)self, searcher, boost);
 }
 
 /******************************************************************/
 
 TermCompiler*
-TermCompiler_new(Query *parent, Searchable *searchable, float boost)
+TermCompiler_new(Query *parent, Searcher *searcher, float boost)
 {
     TermCompiler *self = (TermCompiler*)VTable_Make_Obj(TERMCOMPILER);
-    return TermCompiler_init(self, parent, searchable, boost);
+    return TermCompiler_init(self, parent, searcher, boost);
 }
 
 TermCompiler*
-TermCompiler_init(TermCompiler *self, Query *parent, Searchable *searchable, 
+TermCompiler_init(TermCompiler *self, Query *parent, Searcher *searcher, 
                   float boost)
 {
-    Schema     *schema  = Searchable_Get_Schema(searchable);
+    Schema     *schema  = Searcher_Get_Schema(searcher);
     TermQuery  *tparent = (TermQuery*)parent;
     Similarity *sim     = Schema_Fetch_Sim(schema, tparent->field);
 
@@ -113,12 +113,12 @@ TermCompiler_init(TermCompiler *self, Query *parent, Searchable *searchable,
     if (!sim) { sim = Schema_Get_Similarity(schema); }
 
     /* Init. */
-    Compiler_init((Compiler*)self, parent, searchable, sim, boost);
+    Compiler_init((Compiler*)self, parent, searcher, sim, boost);
     self->normalized_weight = 0.0f;
     self->query_norm_factor = 0.0f;
 
     /* Derive. */
-    self->idf = Sim_IDF(sim, searchable, tparent->field, tparent->term);
+    self->idf = Sim_IDF(sim, searcher, tparent->field, tparent->term);
     
     /* The score of any document is approximately equal to:
      *
@@ -225,7 +225,7 @@ TermCompiler_make_matcher(TermCompiler *self, SegReader *reader,
 }
 
 VArray*
-TermCompiler_highlight_spans(TermCompiler *self, Searchable *searchable, 
+TermCompiler_highlight_spans(TermCompiler *self, Searcher *searcher, 
                              DocVector *doc_vec, const CharBuf *field)
 {
     TermQuery *const parent = (TermQuery*)self->parent;
@@ -233,7 +233,7 @@ TermCompiler_highlight_spans(TermCompiler *self, Searchable *searchable,
     TermVector *term_vector;
     I32Array *starts, *ends;
     u32_t i, max;
-    UNUSED_VAR(searchable);
+    UNUSED_VAR(searcher);
 
     if (!CB_Equals(parent->field, (Obj*)field)) return spans;
 

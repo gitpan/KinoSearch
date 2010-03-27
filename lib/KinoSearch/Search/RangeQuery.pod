@@ -27,8 +27,6 @@ KinoSearch::Search::RangeQuery - Match a range of values.
 
 =head1 DESCRIPTION
 
-Match a range of values.
-
 RangeQuery matches documents where the value for a particular field falls
 within a given range.
 

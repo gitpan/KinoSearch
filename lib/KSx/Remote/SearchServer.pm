@@ -9,7 +9,7 @@ use bytes;
 no bytes;
 
 # Inside-out member vars.
-our %searchable;
+our %searcher;
 our %port;
 our %password;
 our %sock;
@@ -19,11 +19,11 @@ use IO::Select;
 
 sub new {
     my ( $either, %args ) = @_;
-    my $searchable = delete $args{searchable};
-    my $password   = delete $args{password};
-    my $port       = delete $args{port};
-    my $self       = $either->SUPER::new(%args);
-    $searchable{$$self} = $searchable;
+    my $searcher = delete $args{searcher};
+    my $password = delete $args{password};
+    my $port     = delete $args{port};
+    my $self     = $either->SUPER::new(%args);
+    $searcher{$$self} = $searcher;
     confess("Missing required param 'password'") unless defined $password;
     $password{$$self} = $password;
 
@@ -45,7 +45,7 @@ sub new {
 
 sub DESTROY {
     my $self = shift;
-    delete $searchable{$$self};
+    delete $searcher{$$self};
     delete $port{$$self};
     delete $password{$$self};
     delete $sock{$$self};
@@ -123,30 +123,30 @@ sub serve {
 
 sub do_doc_freq {
     my ( $self, $args ) = @_;
-    return { retval => $searchable{$$self}->doc_freq(%$args) };
+    return { retval => $searcher{$$self}->doc_freq(%$args) };
 }
 
 sub do_top_docs {
     my ( $self, $args ) = @_;
-    my $top_docs = $searchable{$$self}->top_docs(%$args);
+    my $top_docs = $searcher{$$self}->top_docs(%$args);
     return { retval => $top_docs };
 }
 
 sub do_doc_max {
     my ( $self, $args ) = @_;
-    my $doc_max = $searchable{$$self}->doc_max;
+    my $doc_max = $searcher{$$self}->doc_max;
     return { retval => $doc_max };
 }
 
 sub do_fetch_doc {
     my ( $self, $args ) = @_;
-    my $doc = $searchable{$$self}->fetch_doc(%$args);
+    my $doc = $searcher{$$self}->fetch_doc(%$args);
     return { retval => $doc };
 }
 
 sub do_fetch_doc_vec {
     my ( $self, $args ) = @_;
-    my $doc_vec = $searchable{$$self}->fetch_doc_vec( $args->{doc_id} );
+    my $doc_vec = $searcher{$$self}->fetch_doc_vec( $args->{doc_id} );
     return { retval => $doc_vec };
 }
 
@@ -160,9 +160,11 @@ KSx::Remote::SearchServer - Make a Searcher remotely accessible.
 
 =head1 SYNOPSIS
 
-    my $searcher = KinoSearch::Searcher->new( index => '/path/to/index' );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( 
+        index => '/path/to/index' 
+    );
     my $search_server = KSx::Remote::SearchServer->new(
-        searchable => $searcher,
+        searcher => $searcher,
         port       => 7890,
         password   => $pass,
     );
@@ -184,7 +186,7 @@ across multiple nodes, each with its own, smaller index.
 =head2 new
 
     my $search_server = KSx::Remote::SearchServer->new(
-        searchable => $searcher, # required
+        searcher => $searcher, # required
         port       => 7890,      # required
         password   => $pass,     # required
     );
@@ -195,7 +197,7 @@ Constructor.  Takes hash-style parameters.
 
 =item *
 
-B<searchable> - the L<Searcher|KinoSearch::Searcher> that the SearchServer
+B<searcher> - the L<Searcher|KinoSearch::Search::IndexSearcher> that the SearchServer
 will wrap.
 
 =item *

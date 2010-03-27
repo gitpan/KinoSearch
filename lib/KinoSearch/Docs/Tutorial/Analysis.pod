@@ -7,7 +7,7 @@ KinoSearch::Docs::Tutorial::Analysis - How to choose and use Analyzers.
 Try swapping out the PolyAnalyzer in our Schema for a Tokenizer:
 
     my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => $tokenizer,
     );
 
@@ -67,7 +67,7 @@ you may not want to conflate results for "Humphrey" and "Humphries").
 
 To specify that there should be no analysis performed at all, use StringType:
 
-    my $type = KinoSearch::FieldType::StringType->new;
+    my $type = KinoSearch::Plan::StringType->new;
     $schema->spec_field( name => 'category', type => $type );
 
 =head2 Highlighting up next

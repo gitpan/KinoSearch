@@ -2,7 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/DataWriter.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Segment.h"

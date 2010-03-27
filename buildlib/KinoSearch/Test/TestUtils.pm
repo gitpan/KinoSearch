@@ -77,7 +77,7 @@ sub init_test_index_loc {
 # The index will have a single field: "content".
 sub create_index {
     my $folder  = KinoSearch::Store::RAMFolder->new;
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index  => $folder,
         schema => KinoSearch::Test::TestSchema->new,
     );
@@ -132,7 +132,7 @@ sub create_uscon_index {
     my $folder = KinoSearch::Store::FSFolder->new(
         path => persistent_test_index_loc() );
     my $schema  = KinoSearch::Test::USConSchema->new;
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         schema   => $schema,
         index    => $folder,
         truncate => 1,
@@ -143,7 +143,7 @@ sub create_uscon_index {
     $indexer->commit;
     undef $indexer;
 
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -153,7 +153,7 @@ sub create_uscon_index {
     $indexer->commit;
     undef $indexer;
 
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -208,9 +208,9 @@ sub test_analyzer {
 # Extract all doc nums from a SortCollector.  Return two sorted array refs:
 # by_score and by_id.
 sub doc_ids_from_td_coll {
-    my $hc = shift;
+    my $collector = shift;
     my @by_score;
-    my $match_docs = $hc->pop_match_docs;
+    my $match_docs = $collector->pop_match_docs;
     my @by_score_then_id = map { $_->get_doc_id }
         sort {
                $b->get_score <=> $a->get_score

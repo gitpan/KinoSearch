@@ -18,7 +18,7 @@ my @docs = (
 );
 
 my $folder = create_index(@docs);
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $phrase_query = KinoSearch::Search::PhraseQuery->new(
     field => 'content',
@@ -63,7 +63,7 @@ my $thawed = thaw($frozen);
 $hits = $searcher->hits( query => $thawed );
 is( $hits->total_hits, 3, 'freeze/thaw' );
 
-my $phrase_compiler = $phrase_query->make_compiler( searchable => $searcher );
+my $phrase_compiler = $phrase_query->make_compiler( searcher => $searcher );
 $frozen = freeze($phrase_compiler);
 $thawed = thaw($frozen);
 ok( $phrase_compiler->equals($thawed), "freeze/thaw compiler" );

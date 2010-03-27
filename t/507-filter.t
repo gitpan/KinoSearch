@@ -8,7 +8,7 @@ use KinoSearch::Test;
 use KinoSearch::Test::TestUtils qw( create_index );
 use KSx::Search::Filter;
 
-my $query_parser = KinoSearch::QueryParser->new(
+my $query_parser = KinoSearch::Search::QueryParser->new(
     schema => KinoSearch::Test::TestSchema->new );
 
 ## Set up main objects.
@@ -17,8 +17,10 @@ my ( $filter_1, $filter_2 );
     my $folder_1 = create_index( 'a x', 'b x', 'c x', 'a y', 'b y', 'c y' );
     my $folder_2 = create_index( 'a w', 'b w', 'c w', 'a z', 'b z', 'c z' );
 
-    my $searcher_1 = KinoSearch::Searcher->new( index => $folder_1 );
-    my $searcher_2 = KinoSearch::Searcher->new( index => $folder_2 );
+    my $searcher_1
+        = KinoSearch::Search::IndexSearcher->new( index => $folder_1 );
+    my $searcher_2
+        = KinoSearch::Search::IndexSearcher->new( index => $folder_2 );
 
     my $reader_1 = $searcher_1->get_reader->get_seg_readers->[0];
     my $reader_2 = $searcher_2->get_reader->get_seg_readers->[0];

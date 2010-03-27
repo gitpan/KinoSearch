@@ -23,8 +23,10 @@ sub _lazy_init {
     my $folder   = $self->get_folder;
     my $ix_file  = $self->get_segment->get_name . "/zdocs.ix";
     my $dat_file = $self->get_segment->get_name . "/zdocs.dat";
-    $ix_out{$$self}  = $folder->open_out($ix_file)  or confess KinoSearch->error;
-    $dat_out{$$self} = $folder->open_out($dat_file) or confess KinoSearch->error;
+    $ix_out{$$self} = $folder->open_out($ix_file)
+        or confess KinoSearch->error;
+    $dat_out{$$self} = $folder->open_out($dat_file)
+        or confess KinoSearch->error;
     $ix_out{$$self}->write_i64(0);
 }
 

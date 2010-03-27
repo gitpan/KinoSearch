@@ -8,11 +8,11 @@ __END__
 __BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
-    my $schema = KinoSearch::Schema->new;
+    my $schema = KinoSearch::Plan::Schema->new;
     my $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new( 
         language => 'en',
     );
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => $polyanalyzer,
     );
     $schema->spec_field( name => 'title',   type => $type );

@@ -4,8 +4,8 @@
 #include "KinoSearch/Test.h"
 #include "KinoSearch/Test/FieldType/TestNumericType.h"
 #include "KinoSearch/Test/TestUtils.h"
-#include "KinoSearch/FieldType/BlobType.h"
-#include "KinoSearch/FieldType/NumericType.h"
+#include "KinoSearch/Plan/BlobType.h"
+#include "KinoSearch/Plan/NumericType.h"
 
 static void
 test_Dump_Load_and_Equals(TestBatch *batch)

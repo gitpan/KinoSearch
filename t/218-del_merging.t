@@ -12,11 +12,11 @@ sub recycle {
 }
 
 package DelSchema;
-use base 'KinoSearch::Schema';
+use base 'KinoSearch::Plan::Schema';
 
 sub new {
     my $self = shift->SUPER::new(@_);
-    my $type = KinoSearch::FieldType::FullTextType->new(
+    my $type = KinoSearch::Plan::FullTextType->new(
         analyzer => KinoSearch::Analysis::Tokenizer->new, );
     $self->spec_field( name => 'foo', type => $type );
     $self->spec_field( name => 'bar', type => $type );
@@ -29,7 +29,7 @@ use Test::More tests => 70;
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = DelSchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -38,9 +38,9 @@ $indexer->commit;
 
 for my $iter ( 1 .. 10 ) {
     is( search_doc('foo'), 3, "match all docs prior to deletion $iter" );
-    is( search_doc('x'), 1, "match doc to be deleted $iter" );
+    is( search_doc('x'),   1, "match doc to be deleted $iter" );
 
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -48,10 +48,10 @@ for my $iter ( 1 .. 10 ) {
     $indexer->optimize;
     $indexer->commit;
 
-    is( search_doc('x'), 0, "deletion successful $iter" );
+    is( search_doc('x'),   0, "deletion successful $iter" );
     is( search_doc('foo'), 2, "match all docs after deletion $iter" );
 
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -62,7 +62,7 @@ for my $iter ( 1 .. 10 ) {
 
 $folder  = KinoSearch::Store::RAMFolder->new;
 $schema  = DelSchema->new;
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -71,7 +71,7 @@ $indexer->add_doc( { foo => 'foo', bar => $_ } ) for @dox;
 $indexer->commit;
 
 for ( 1 .. 10 ) {
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         manager => NoMergeSeg1Manager->new,
         schema  => $schema,
         index   => $folder,
@@ -82,7 +82,7 @@ for ( 1 .. 10 ) {
     is( scalar @num_seg_1_bv_files,
         1, "seg_1 deletions file carried forward" );
 
-    $indexer = KinoSearch::Indexer->new(
+    $indexer = KinoSearch::Index::Indexer->new(
         manager => NoMergeSeg1Manager->new,
         schema  => $schema,
         index   => $folder,
@@ -99,8 +99,7 @@ for ( 1 .. 10 ) {
 
 sub search_doc {
     my $query_string = shift;
-    my $searcher     = KinoSearch::Searcher->new( index => $folder );
-    my $hits         = $searcher->hits( query => $query_string );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
+    my $hits = $searcher->hits( query => $query_string );
     return $hits->total_hits;
 }
-

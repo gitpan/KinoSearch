@@ -3,10 +3,10 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/HitQueue.h"
-#include "KinoSearch/FieldType.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/SortCache.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/MatchDoc.h"
 #include "KinoSearch/Search/SortRule.h"
 #include "KinoSearch/Search/SortSpec.h"

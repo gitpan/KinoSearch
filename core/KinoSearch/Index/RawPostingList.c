@@ -2,9 +2,10 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/RawPostingList.h"
-#include "KinoSearch/Posting.h"
-#include "KinoSearch/Posting/RawPosting.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Index/Posting.h"
+#include "KinoSearch/Index/Posting/RawPosting.h"
+#include "KinoSearch/Plan/Schema.h"
+#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Util/MemoryPool.h"
 
@@ -20,13 +21,13 @@ RawPostingList*
 RawPList_init(RawPostingList *self, Schema *schema, const CharBuf *field,
               InStream *instream, i64_t start, i64_t end)
 {
-    Posting *posting = Schema_Fetch_Posting(schema, field);
     PList_init((PostingList*)self);
-    self->start    = start;
-    self->end      = end;
-    self->len      = end - start;
-    self->instream = (InStream*)INCREF(instream);
-    self->posting  = (Posting*)Post_Clone(posting);
+    self->start     = start;
+    self->end       = end;
+    self->len       = end - start;
+    self->instream  = (InStream*)INCREF(instream);
+    Similarity *sim = Schema_Fetch_Sim(schema, field);
+    self->posting   = Sim_Make_Posting(sim);
     InStream_Seek(self->instream, self->start);
     return self;
 }

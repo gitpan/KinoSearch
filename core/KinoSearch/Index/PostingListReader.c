@@ -4,14 +4,14 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/PostingListReader.h"
-#include "KinoSearch/FieldType.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/LexiconReader.h"
 #include "KinoSearch/Index/PostingListWriter.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegPostingList.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Plan/Architecture.h"
+#include "KinoSearch/Plan/FieldType.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/Folder.h"
 
 PostingListReader*
@@ -31,37 +31,7 @@ PListReader_aggregator(PostingListReader *self, VArray *readers,
     UNUSED_VAR(self);
     UNUSED_VAR(readers);
     UNUSED_VAR(offsets);
-    return (PostingListReader*)PolyPListReader_new();
-}
-
-PolyPostingListReader*
-PolyPListReader_new()
-{
-    PolyPostingListReader *self 
-        = (PolyPostingListReader*)VTable_Make_Obj(POLYPOSTINGLISTREADER);
-    return PolyPListReader_init(self);
-}
-
-PolyPostingListReader*
-PolyPListReader_init(PolyPostingListReader *self)
-{
-    PListReader_init((PostingListReader*)self, NULL, NULL, NULL, NULL, -1);
-    return self;
-}
-
-void
-PolyPListReader_close(PolyPostingListReader *self)
-{
-    UNUSED_VAR(self);
-}
-
-PostingList*
-PolyPListReader_posting_list(PolyPostingListReader *self, 
-                             const CharBuf *field, Obj *term)
-{
-    UNUSED_VAR(self);
-    THROW(ERR, "Can't create an aggregate PostingList (%o: %o)", field, term);
-    UNREACHABLE_RETURN(PostingList*);
+    return NULL;
 }
 
 DefaultPostingListReader*

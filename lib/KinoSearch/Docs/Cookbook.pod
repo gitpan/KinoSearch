@@ -21,7 +21,8 @@ wildcards.
 =item *
 
 L<KinoSearch::Docs::Cookbook::CustomQueryParser> - Define your own custom
-search query syntax using KinoSearch::QueryParser and Parse::RecDescent.
+search query syntax using KinoSearch::Search::QueryParser and
+L<Parse::RecDescent>.
 
 =back
 

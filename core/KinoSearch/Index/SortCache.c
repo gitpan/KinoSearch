@@ -2,36 +2,36 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/SortCache.h"
-#include "KinoSearch/FieldType.h"
+#include "KinoSearch/Plan/FieldType.h"
 
 static i32_t
-S_calc_ord_width(i32_t num_uniq) 
+S_calc_ord_width(i32_t cardinality) 
 {
-    if      (num_uniq <= 0x00000002) { return 1; }
-    else if (num_uniq <= 0x00000004) { return 2; }
-    else if (num_uniq <= 0x0000000F) { return 4; }
-    else if (num_uniq <= 0x000000FF) { return 8; }
-    else if (num_uniq <= 0x0000FFFF) { return 16; }
+    if      (cardinality <= 0x00000002) { return 1; }
+    else if (cardinality <= 0x00000004) { return 2; }
+    else if (cardinality <= 0x0000000F) { return 4; }
+    else if (cardinality <= 0x000000FF) { return 8; }
+    else if (cardinality <= 0x0000FFFF) { return 16; }
     else                             { return 32; }
 }
 
 SortCache*
 SortCache_init(SortCache *self, const CharBuf *field, FieldType *type,
-               void *ords, i32_t num_unique, i32_t doc_max, i32_t null_ord)
+               void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord)
 {
     /* Assign. */
     if (!FType_Sortable(type)) { 
         THROW(ERR, "Non-sortable FieldType for %o", field); 
     }
-    self->field    = CB_Clone(field);
-    self->type     = (FieldType*)INCREF(type);
-    self->ords     = ords;
-    self->num_uniq = num_unique;
-    self->doc_max  = doc_max;
-    self->null_ord = null_ord;
+    self->field       = CB_Clone(field);
+    self->type        = (FieldType*)INCREF(type);
+    self->ords        = ords;
+    self->cardinality = cardinality;
+    self->doc_max     = doc_max;
+    self->null_ord    = null_ord;
 
     /* Calculate the ord bit width. */
-    self->ord_width = S_calc_ord_width(self->num_uniq);
+    self->ord_width = S_calc_ord_width(self->cardinality);
 
     ABSTRACT_CLASS_CHECK(self, SORTCACHE);
     return self;
@@ -79,7 +79,7 @@ SortCache_find(SortCache *self, Obj *term)
 {
     FieldType *const type = self->type;
     i32_t          lo     = 0;
-    i32_t          hi     = self->num_uniq - 1;
+    i32_t          hi     = self->cardinality - 1;
     i32_t          result = -100;
     Obj           *blank  = SortCache_Make_Blank(self);
 
@@ -131,11 +131,13 @@ SortCache_make_blank(SortCache *self)
 }
 
 void*
-SortCache_get_ords(SortCache *self)       { return self->ords; }
+SortCache_get_ords(SortCache *self)        { return self->ords; }
 i32_t
-SortCache_get_num_unique(SortCache *self) { return self->num_uniq; }
+SortCache_get_cardinality(SortCache *self) { return self->cardinality; }
+int32_t
+SortCache_get_null_ord(SortCache *self)    { return self->null_ord; }
 i32_t
-SortCache_get_ord_width(SortCache *self)  { return self->ord_width; }
+SortCache_get_ord_width(SortCache *self)   { return self->ord_width; }
 
 /* Copyright 2006-2010 Marvin Humphrey
  *

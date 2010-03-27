@@ -2,8 +2,8 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/NoMatchScorer.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/IndexReader.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Similarity.h"
 
 NoMatchScorer*

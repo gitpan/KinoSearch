@@ -3,7 +3,7 @@
 
 #include "KinoSearch/Search/LeafQuery.h"
 #include "KinoSearch/Search/Compiler.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 
@@ -89,10 +89,10 @@ LeafQuery_deserialize(LeafQuery *self, InStream *instream)
 }
 
 Compiler*
-LeafQuery_make_compiler(LeafQuery *self, Searchable *searchable, float boost) 
+LeafQuery_make_compiler(LeafQuery *self, Searcher *searcher, float boost) 
 {
     UNUSED_VAR(self);
-    UNUSED_VAR(searchable);
+    UNUSED_VAR(searcher);
     UNUSED_VAR(boost);
     THROW(ERR, "Can't Make_Compiler() from LeafQuery");
     UNREACHABLE_RETURN(Compiler*);

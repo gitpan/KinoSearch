@@ -44,12 +44,12 @@ I<inverted index> - A data structure which maps from terms to documents.
 Since KinoSearch is a practical implementation of IR theory, it loads these
 abstract, distilled definitions down with useful traits.  For instance, a
 "posting" in its most rarefied form is simply a term-document pairing; in
-KinoSearch, the class L<KinoSearch::Posting::MatchPosting> fills this role.
-However, by associating additional information with a posting like the number
-of times the term occurs in the document, we can turn it into a
-L<ScorePosting|KinoSearch::Posting::ScorePosting>, making it possible to rank
-documents by relevance rather than just list documents which happen to match
-in no particular order.
+KinoSearch, the class L<KinoSearch::Index::Posting::MatchPosting> fills this
+role.  However, by associating additional information with a posting like the
+number of times the term occurs in the document, we can turn it into a
+L<ScorePosting|KinoSearch::Index::Posting::ScorePosting>, making it possible
+to rank documents by relevance rather than just list documents which happen to
+match in no particular order.
 
 =head1 TF/IDF ranking algorithm
 

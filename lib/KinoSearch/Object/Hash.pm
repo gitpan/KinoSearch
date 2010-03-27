@@ -22,20 +22,20 @@ OUTPUT: RETVAL
 SV*
 _fetch(self, key)
     kino_Hash *self;
-    kino_ZombieCharBuf key;
+    const kino_CharBuf *key;
 CODE:
-    RETVAL = KINO_OBJ_TO_SV(kino_Hash_fetch(self, (kino_Obj*)&key));
+    RETVAL = KINO_OBJ_TO_SV(kino_Hash_fetch(self, (kino_Obj*)key));
 OUTPUT: RETVAL
 
 void
 store(self, key, value);
     kino_Hash          *self; 
-    kino_ZombieCharBuf  key;
+    const kino_CharBuf *key;
     kino_Obj           *value;
 PPCODE:
 {
     if (value) { KINO_INCREF(value); }
-    kino_Hash_store(self, (kino_Obj*)&key, value);
+    kino_Hash_store(self, (kino_Obj*)key, value);
 }
 
 void

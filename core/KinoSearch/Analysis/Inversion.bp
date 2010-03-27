@@ -8,13 +8,13 @@ parcel KinoSearch cnick Kino;
  */
 class KinoSearch::Analysis::Inversion extends KinoSearch::Object::Obj {
 
-    Token  **tokens;
-    u32_t    size;
-    u32_t    cap;
-    u32_t    cur;                   /* pointer to current token */
-    bool_t   inverted;              /* inversion has been inverted */
-    u32_t   *cluster_counts;        /* counts per unique text */
-    u32_t    cluster_counts_size;   /* num unique texts */
+    Token    **tokens;
+    uint32_t   size;
+    uint32_t   cap;
+    uint32_t   cur;                   /* pointer to current token */
+    bool_t     inverted;              /* inversion has been inverted */
+    uint32_t  *cluster_counts;        /* counts per unique text */
+    uint32_t   cluster_counts_size;   /* num unique texts */
 
     /** 
      * @param seed An initial Token to start things off, which may be NULL.
@@ -31,7 +31,7 @@ class KinoSearch::Analysis::Inversion extends KinoSearch::Object::Obj {
 
     /** Return the next token in the Inversion until out of tokens.
      */
-    Token* 
+    nullable Token* 
     Next(Inversion *self);
 
     /** Reset the Inversion's iterator, so that the next call to next()
@@ -52,10 +52,10 @@ class KinoSearch::Analysis::Inversion extends KinoSearch::Object::Obj {
      *
      * @param count The number of tokens in the cluster.
      */
-    Token** 
-    Next_Cluster(Inversion *self, u32_t *count);
+    nullable Token** 
+    Next_Cluster(Inversion *self, uint32_t *count);
 
-    u32_t
+    uint32_t
     Get_Size(Inversion *self);
 
     public void 

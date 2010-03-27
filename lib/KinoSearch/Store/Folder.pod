@@ -13,8 +13,6 @@ KinoSearch::Store::Folder - Abstract class representing a directory.
 
 =head1 DESCRIPTION
 
-Abstract class representing a directory.
-
 A "file" within a Folder might be a real file on disk -- or it might be a
 RAM buffer.  Similarly, delete() might delete a file from the file system, or
 a key-value pair from a hash, or something else.  

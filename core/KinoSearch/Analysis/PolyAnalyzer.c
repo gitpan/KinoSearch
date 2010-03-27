@@ -21,8 +21,7 @@ PolyAnalyzer_init(PolyAnalyzer *self, const CharBuf *language,
 {
     Analyzer_init((Analyzer*)self);
     if (analyzers) {
-        u32_t i, max;
-        for (i = 0, max = VA_Get_Size(analyzers); i < max; i++) {
+        for (uint32_t i = 0, max = VA_Get_Size(analyzers); i < max; i++) {
             CERTIFY(VA_Fetch(analyzers, i), ANALYZER);
         }
         self->analyzers = (VArray*)INCREF(analyzers);
@@ -54,11 +53,10 @@ Inversion*
 PolyAnalyzer_transform(PolyAnalyzer *self, Inversion *inversion)
 {
     VArray *const analyzers = self->analyzers;
-    u32_t i, max;
     (void)INCREF(inversion);
 
     /* Iterate through each of the analyzers in order. */
-    for (i = 0, max = VA_Get_Size(analyzers); i < max; i++) {
+    for (uint32_t i = 0, max = VA_Get_Size(analyzers); i < max; i++) {
         Analyzer *analyzer = (Analyzer*)VA_Fetch(analyzers, i);
         Inversion *new_inversion = Analyzer_Transform(analyzer, inversion);
         DECREF(inversion);
@@ -71,9 +69,9 @@ PolyAnalyzer_transform(PolyAnalyzer *self, Inversion *inversion)
 Inversion*
 PolyAnalyzer_transform_text(PolyAnalyzer *self, CharBuf *text)
 {
-    VArray *const analyzers     = self->analyzers;
-    const   u32_t num_analyzers = VA_Get_Size(analyzers);
-    Inversion    *retval;
+    VArray *const   analyzers     = self->analyzers;
+    const uint32_t  num_analyzers = VA_Get_Size(analyzers);
+    Inversion      *retval;
 
     if (num_analyzers == 0) {
         size_t  token_len = CB_Get_Size(text);
@@ -83,10 +81,9 @@ PolyAnalyzer_transform_text(PolyAnalyzer *self, CharBuf *text)
         DECREF(seed);
     }
     else {
-        u32_t i;
         Analyzer *first_analyzer = (Analyzer*)VA_Fetch(analyzers, 0);
         retval = Analyzer_Transform_Text(first_analyzer, text);
-        for (i = 1; i < num_analyzers; i++) {
+        for (uint32_t i = 1; i < num_analyzers; i++) {
             Analyzer *analyzer = (Analyzer*)VA_Fetch(analyzers, i);
             Inversion *new_inversion = Analyzer_Transform(analyzer, retval);
             DECREF(retval);
@@ -140,8 +137,7 @@ PolyAnalyzer_dump_equals(PolyAnalyzer *self, Obj *dump)
             return false;
         }
         else {
-            u32_t i, max;
-            for (i = 0, max = VA_Get_Size(sub_dumps); i < max; i++) {
+            for (uint32_t i = 0, max = VA_Get_Size(sub_dumps); i < max; i++) {
                 Obj *sub_dump = VA_Fetch(sub_dumps, i);
                 Analyzer *sub_analyzer 
                     = (Analyzer*)VA_Fetch(self->analyzers, i);

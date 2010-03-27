@@ -19,18 +19,31 @@ class KinoSearch::Store::OutStream extends KinoSearch::Object::Obj {
     FileHandle    *file_handle;
     CharBuf       *path;
 
-    inert incremented OutStream* 
+    inert incremented nullable OutStream* 
     open(Obj *file);
 
     /** Return a new OutStream or set Err_error and return NULL on failure.
      */
-    inert OutStream* 
+    inert nullable OutStream* 
     do_open(OutStream *self, Obj *file);
+    
+    /** Accessor for <code>path</code> member. 
+     */
+    CharBuf*
+    Get_Path(OutStream *self);
 
     /** Return the current file position. 
      */
     final i64_t 
     Tell(OutStream *self);
+
+    /** Write 0 or more null bytes to the OutStream until its file position is
+     * a multiple of <code>modulus</code>.
+     *
+     * @return the new file position.
+     */
+    final int64_t
+    Align(OutStream *self, int64_t modulus);
 
     /** Flush output buffer to target FileHandle.
      */

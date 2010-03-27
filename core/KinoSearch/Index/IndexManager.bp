@@ -47,7 +47,7 @@ class KinoSearch::Index::IndexManager cnick IxManager
 
     /** Getter for <code>folder</code> member.
      */
-    public Folder* 
+    public nullable Folder* 
     Get_Folder(IndexManager *self);
 
     /** Getter for <code>host</code> member.

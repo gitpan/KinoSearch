@@ -5,14 +5,13 @@
 #include "KinoSearch/Test/Analysis/TestStemmer.h"
 #include "KinoSearch/Analysis/Stemmer.h"
 
-static ZombieCharBuf EN = ZCB_LITERAL("en");
-static ZombieCharBuf ES = ZCB_LITERAL("es");
-
 static void
 test_Dump_Load_and_Equals(TestBatch *batch)
 {
-    Stemmer *stemmer     = Stemmer_new((CharBuf*)&EN);
-    Stemmer *other       = Stemmer_new((CharBuf*)&ES);
+    CharBuf *EN          = (CharBuf*)ZCB_WRAP_STR("en", 2); 
+    CharBuf *ES          = (CharBuf*)ZCB_WRAP_STR("es", 2); 
+    Stemmer *stemmer     = Stemmer_new(EN);
+    Stemmer *other       = Stemmer_new(ES);
     Obj     *dump        = (Obj*)Stemmer_Dump(stemmer);
     Obj     *other_dump  = (Obj*)Stemmer_Dump(other);
     Stemmer *clone       = (Stemmer*)Stemmer_Load(other, dump);

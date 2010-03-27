@@ -32,16 +32,16 @@ for my $folder ( $fs_folder, $ram_folder ) {
     is( $slurped, $king, "slurp_file works" );
 
     my $lock = KinoSearch::Store::LockFileLock->new(
-        host     => '',
-        folder   => $folder,
-        name     => 'lock_robster',
-        timeout  => 0,
+        host    => '',
+        folder  => $folder,
+        name    => 'lock_robster',
+        timeout => 0,
     );
     my $competing_lock = KinoSearch::Store::LockFileLock->new(
-        host     => '',
-        folder   => $folder,
-        name     => 'lock_robster',
-        timeout  => 0,
+        host    => '',
+        folder  => $folder,
+        name    => 'lock_robster',
+        timeout => 0,
     );
 
     $lock->obtain;

@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 our %fields = ();
@@ -13,14 +13,14 @@ use Test::More tests => 10;
 use KinoSearch::Test;
 
 my $schema = MySchema->new;
-my $type   = KinoSearch::FieldType::FullTextType->new(
+my $type   = KinoSearch::Plan::FullTextType->new(
     analyzer => KinoSearch::Analysis::Tokenizer->new, );
 
 for my $num_fields ( 1 .. 10 ) {
     # Build an index with $num_fields fields, and the same content in each.
     $schema->spec_field( name => "field$num_fields", type => $type );
     my $folder  = KinoSearch::Store::RAMFolder->new;
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         schema => $schema,
         index  => $folder,
     );
@@ -35,7 +35,7 @@ for my $num_fields ( 1 .. 10 ) {
     $indexer->commit;
 
     # See if our search results match as expected.
-    my $searcher = KinoSearch::Searcher->new( index => $folder );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
     my $hits = $searcher->hits(
         query      => 'x',
         num_wanted => 100,

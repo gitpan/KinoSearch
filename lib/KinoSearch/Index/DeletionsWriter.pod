@@ -18,8 +18,6 @@ KinoSearch::Index::DeletionsWriter - Abstract base class for marking documents a
 
 =head1 DESCRIPTION
 
-Abstract base class for marking documents as deleted.
-
 Subclasses of DeletionsWriter provide a low-level mechanism for declaring a
 document deleted from an index.
 

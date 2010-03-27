@@ -5,7 +5,7 @@
 #include "KinoSearch/Search/ORQuery.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Search/ORMatcher.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -24,9 +24,9 @@ ORQuery_init(ORQuery *self, VArray *children)
 }
 
 Compiler*
-ORQuery_make_compiler(ORQuery *self, Searchable *searchable, float boost)
+ORQuery_make_compiler(ORQuery *self, Searcher *searcher, float boost)
 {
-    return (Compiler*)ORCompiler_new(self, searchable, boost);
+    return (Compiler*)ORCompiler_new(self, searcher, boost);
 }
 
 bool_t
@@ -64,17 +64,17 @@ ORQuery_to_string(ORQuery *self)
 /**********************************************************************/
 
 ORCompiler*
-ORCompiler_new(ORQuery *parent, Searchable *searchable, float boost)
+ORCompiler_new(ORQuery *parent, Searcher *searcher, float boost)
 {
     ORCompiler *self = (ORCompiler*)VTable_Make_Obj(ORCOMPILER);
-    return ORCompiler_init(self, parent, searchable, boost);
+    return ORCompiler_init(self, parent, searcher, boost);
 }
 
 ORCompiler*
-ORCompiler_init(ORCompiler *self, ORQuery *parent, Searchable *searchable, 
+ORCompiler_init(ORCompiler *self, ORQuery *parent, Searcher *searcher, 
                  float boost)
 {
-    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
+    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searcher, 
         boost);
     ORCompiler_Normalize(self);
     return self;

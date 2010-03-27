@@ -6,7 +6,7 @@
 #include "KinoSearch/Test/TestSchema.h"
 #include "KinoSearch/Analysis/CaseFolder.h"
 #include "KinoSearch/Analysis/Tokenizer.h"
-#include "KinoSearch/FieldType/FullTextType.h"
+#include "KinoSearch/Plan/FullTextType.h"
 #include "KinoSearch/Plan/Architecture.h"
 
 TestSchema*
@@ -16,8 +16,6 @@ TestSchema_new()
     return TestSchema_init(self);
 }
 
-static ZombieCharBuf content = ZCB_LITERAL("content");
-
 TestSchema*
 TestSchema_init(TestSchema *self)
 {
@@ -26,7 +24,8 @@ TestSchema_init(TestSchema *self)
 
     Schema_init((Schema*)self);
     FullTextType_Set_Highlightable(type, true);
-    TestSchema_Spec_Field(self, (CharBuf*)&content, (FieldType*)type);
+    CharBuf *content = (CharBuf*)ZCB_WRAP_STR("content", 7);
+    TestSchema_Spec_Field(self, content, (FieldType*)type);
     DECREF(type);
     DECREF(tokenizer);
 
@@ -46,8 +45,9 @@ test_Equals(TestBatch *batch)
     TestSchema *schema = TestSchema_new();
     TestSchema *arch_differs = TestSchema_new();
     TestSchema *spec_differs = TestSchema_new();
+    CharBuf    *content      = (CharBuf*)ZCB_WRAP_STR("content", 7);
     FullTextType *type = (FullTextType*)TestSchema_Fetch_Type(spec_differs, 
-        (CharBuf*)&content);
+        content);
     CaseFolder *case_folder = CaseFolder_new();
 
     ASSERT_TRUE(batch, TestSchema_Equals(schema, (Obj*)schema), "Equals");

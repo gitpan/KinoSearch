@@ -8,7 +8,7 @@ use KinoSearch::Test;
 my $folder = KinoSearch::Store::RAMFolder->new;
 my $schema = KinoSearch::Test::TestSchema->new;
 
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -16,7 +16,7 @@ my $indexer = KinoSearch::Indexer->new(
 $indexer->add_doc( { content => 'foo' } );
 undef $indexer;
 
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -28,7 +28,7 @@ SKIP: {
     eval {
         my $manager
             = KinoSearch::Index::IndexManager->new( host => 'somebody_else' );
-        my $inv = KinoSearch::Indexer->new(
+        my $inv = KinoSearch::Index::Indexer->new(
             manager => $manager,
             index   => $folder,
             schema  => $schema,
@@ -42,7 +42,7 @@ my $pid = 12345678;
 do {
     # Fake a write lock.
     $folder->delete("locks/write.lock") or die "Couldn't delete 'write.lock'";
-    my $outstream = $folder->open_out('locks/write.lock') 
+    my $outstream = $folder->open_out('locks/write.lock')
         or die KinoSearch->error;
     while ( kill( 0, $pid ) ) {
         $pid++;
@@ -60,7 +60,7 @@ do {
     eval {
         my $manager
             = KinoSearch::Index::IndexManager->new( host => 'somebody_else' );
-        my $inv = KinoSearch::Indexer->new(
+        my $inv = KinoSearch::Index::Indexer->new(
             manager => $manager,
             schema  => $schema,
             index   => $folder,

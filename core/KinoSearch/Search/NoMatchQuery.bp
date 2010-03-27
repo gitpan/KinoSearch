@@ -24,20 +24,20 @@ class KinoSearch::Search::NoMatchQuery extends KinoSearch::Search::Query
     To_String(NoMatchQuery *self);
 
     public incremented Compiler*
-    Make_Compiler(NoMatchQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(NoMatchQuery *self, Searcher *searcher, float boost);
 }
 
 class KinoSearch::Search::NoMatchCompiler 
     extends KinoSearch::Search::Compiler {
 
     inert incremented NoMatchCompiler*
-    new(NoMatchQuery *parent, Searchable *searchable, float boost);
+    new(NoMatchQuery *parent, Searcher *searcher, float boost);
 
     inert NoMatchCompiler*
     init(NoMatchCompiler *self, NoMatchQuery *parent,
-         Searchable *searchable, float boost);
+         Searcher *searcher, float boost);
 
-    public incremented Matcher*
+    public incremented nullable Matcher*
     Make_Matcher(NoMatchCompiler *self, SegReader *reader, bool_t need_score);
     
     public incremented NoMatchCompiler*

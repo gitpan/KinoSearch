@@ -9,9 +9,9 @@ __BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        searchable => $searcher,
-        query      => $query,
-        field      => 'body'
+        searcher => $searcher,
+        query    => $query,
+        field    => 'body'
     );
     my $hits = $searcher->hits( query => $query );
     while ( my $hit = $hits->next ) {
@@ -22,7 +22,7 @@ END_SYNOPSIS
 
 my $constructor = <<'END_CONSTRUCTOR';
     my $highlighter = KinoSearch::Highlight::Highlighter->new(
-        searchable     => $searcher,    # required
+        searcher       => $searcher,    # required
         query          => $query,       # required
         field          => 'content',    # required
         excerpt_length => 150,          # default: 200
@@ -45,7 +45,7 @@ Clownfish::Binding::Perl::Class->register(
             Get_Pre_Tag
             Set_Post_Tag
             Get_Post_Tag
-            Get_Searchable
+            Get_Searcher
             Get_Query
             Get_Compiler
             Get_Excerpt_Length
@@ -65,7 +65,7 @@ Clownfish::Binding::Perl::Class->register(
                 get_pre_tag
                 set_post_tag
                 get_post_tag
-                get_searchable
+                get_searcher
                 get_query
                 get_compiler
                 get_excerpt_length

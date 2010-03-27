@@ -15,8 +15,6 @@ KinoSearch::Store::FSFolder - File System implementation of Folder.
 
 =head1 DESCRIPTION
 
-File System implementation of Folder.
-
 Implementation of KinoSearch::Store::Folder using a single file system 
 directory and multiple files.
 

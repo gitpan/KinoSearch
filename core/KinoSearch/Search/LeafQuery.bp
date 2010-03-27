@@ -25,7 +25,7 @@ class KinoSearch::Search::LeafQuery extends KinoSearch::Search::Query
 
     /** Accessor for object's <code>field</code> attribute.
      */
-    public CharBuf*
+    public nullable CharBuf*
     Get_Field(LeafQuery *self);
 
     /** Accessor for object's <code>text</code> attribute.
@@ -48,7 +48,7 @@ class KinoSearch::Search::LeafQuery extends KinoSearch::Search::Query
     /** Throws an error.
      */
     public incremented Compiler*
-    Make_Compiler(LeafQuery *self, Searchable *searchable, float boost);
+    Make_Compiler(LeafQuery *self, Searcher *searcher, float boost);
 
     public void
     Destroy(LeafQuery *self);

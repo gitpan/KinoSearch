@@ -1,8 +1,8 @@
 use strict;
 use warnings;
 
-package MockSearchable;
-use base qw( KinoSearch::Search::Searchable );
+package MockSearcher;
+use base qw( KinoSearch::Search::Searcher );
 
 our %doc_freqs;
 
@@ -28,20 +28,20 @@ sub doc_freq {
 sub doc_max {100}
 
 package MySchema::LongTextField;
-use base qw( KinoSearch::FieldType::FullTextType );
+use base qw( KinoSearch::Plan::FullTextType );
 use KSx::Search::LongFieldSim;
 
 sub make_similarity { KSx::Search::LongFieldSim->new }
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 use KinoSearch::Analysis::Tokenizer;
 
 sub new {
     my $self     = shift->SUPER::new(@_);
     my $analyzer = KinoSearch::Analysis::Tokenizer->new;
     my $plain_type
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $analyzer, );
+        = KinoSearch::Plan::FullTextType->new( analyzer => $analyzer, );
     my $long_field_type
         = MySchema::LongTextField->new( analyzer => $analyzer, );
     $self->spec_field( name => 'title', type => $plain_type );
@@ -61,7 +61,7 @@ ok( $sim->equals($evil_twin), "Dump/Load" );
 
 cmp_ok( $sim->tf(10) - $sim->tf(9), '<', 1, "TF is damped" );
 
-my $mock_searchable = MockSearchable->new(
+my $mock_searcher = MockSearcher->new(
     schema    => MySchema->new,
     doc_freqs => {
         foo => 3,
@@ -69,14 +69,14 @@ my $mock_searchable = MockSearchable->new(
     },
 );
 my $foo_idf = $sim->idf(
-    searchable => $mock_searchable,
-    field      => 'title',
-    term       => 'foo'
+    searcher => $mock_searcher,
+    field    => 'title',
+    term     => 'foo'
 );
 my $bar_idf = $sim->idf(
-    searchable => $mock_searchable,
-    field      => 'title',
-    term       => 'bar'
+    searcher => $mock_searcher,
+    field    => 'title',
+    term     => 'bar'
 );
 cmp_ok( $foo_idf, '>', $bar_idf, 'Rarer terms have higher IDF' );
 
@@ -107,7 +107,7 @@ is_deeply( \@transformed, \@floats,
     "using the norm_decoder produces desired results" );
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => MySchema->new,
 );
@@ -126,7 +126,7 @@ while ( my ( $title, $body ) = each %source_docs ) {
 $indexer->commit;
 undef $indexer;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 
 my $hits = $searcher->hits(
     query => KinoSearch::Search::TermQuery->new(

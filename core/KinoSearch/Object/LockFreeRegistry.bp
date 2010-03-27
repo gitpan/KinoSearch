@@ -19,7 +19,7 @@ class KinoSearch::Object::LockFreeRegistry cnick LFReg extends KinoSearch::Objec
     bool_t
     Register(LockFreeRegistry *self, Obj *key, Obj *value);
 
-    Obj*
+    nullable Obj*
     Fetch(LockFreeRegistry *self, Obj *key);
     
     void*

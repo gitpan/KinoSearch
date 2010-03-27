@@ -41,7 +41,7 @@ empty array, we get consistently quick performance:
     sub recycle { [] }
     
     package main;
-    my $indexer = KinoSearch::Indexer->new(
+    my $indexer = KinoSearch::Index::Indexer->new(
         index => '/path/to/index',
         manager => NoMergeManager->new,
     );
@@ -52,7 +52,7 @@ However, we can't procrastinate forever.  Eventually, we'll have to run an
 ordinary, uncontrolled indexing session, potentially triggering a large
 rewrite of lots of small and/or degraded segments:
 
-    my $indexer = KinoSearch::Indexer->new( 
+    my $indexer = KinoSearch::Index::Indexer->new( 
         index => '/path/to/index', 
         # manager => NoMergeManager->new,
     );
@@ -97,7 +97,7 @@ operate simultaneously:
     my $retries = 0;
     while (1) {
         eval {
-            my $indexer = KinoSearch::Indexer->new(
+            my $indexer = KinoSearch::Index::Indexer->new(
                     index => '/path/to/index',
                     manager => LightMergeManager->new,
                 );

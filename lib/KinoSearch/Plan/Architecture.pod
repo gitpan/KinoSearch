@@ -43,7 +43,7 @@ KinoSearch::Plan::Architecture - Configure major components of an index.
     }
  
     package MySchema;
-    use base qw( KinoSearch::Schema );
+    use base qw( KinoSearch::Plan::Schema );
     
     sub architecture { 
         shift;
@@ -53,8 +53,6 @@ KinoSearch::Plan::Architecture - Configure major components of an index.
 
 
 =head1 DESCRIPTION
-
-Configure major components of an index.
 
 By default, a KinoSearch index consists of several main parts: lexicon,
 postings, stored documents, deletions, and highlight data.  The readers and

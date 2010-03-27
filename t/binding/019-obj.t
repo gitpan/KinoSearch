@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 19;
+use Test::More tests => 20;
 
 package TestObj;
 use base qw( KinoSearch::Object::Obj );
@@ -36,9 +36,14 @@ use base qw( KinoSearch::Object::Obj );
     sub serialize { }
 }
 
+package BadDump;
+use base qw( KinoSearch::Object::Obj );
+{
+    sub dump { }
+}
+
 package main;
 use Storable qw( freeze thaw );
-use KinoSearch::Test;
 
 ok( defined $TestObj::version,
     "Using base class should grant access to "
@@ -78,8 +83,7 @@ is( "$object", $stringified_perl_obj, "same perl object as before" );
 
 is( $object->get_refcount, 2, "correct refcount after retrieval" );
 undef $hash;
-is( $object->get_refcount, 1,
-    "correct refcount after destruction of ref" );
+is( $object->get_refcount, 1, "correct refcount after destruction of ref" );
 
 my $copy = thaw( freeze($object) );
 is( ref($copy), ref($object), "freeze/thaw" );
@@ -98,5 +102,14 @@ SKIP: {
     eval { my $froze = freeze($bad); };
     like( $@, qr/empty/i,
         "Don't allow subclasses to perform invalid serialization" );
+}
+
+SKIP: {
+    skip( "Exception thrown within callback leaks", 1 ) if $ENV{KINO_VALGRIND};
+    $hash = KinoSearch::Object::Hash->new;
+    $hash->store( foo => BadDump->new );
+    eval { $hash->dump };
+    like( $@, qr/NULL/,
+        "Don't allow methods without nullable return values to return NULL" );
 }
 

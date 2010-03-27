@@ -17,16 +17,16 @@ my $synopsis = <<'END_SYNOPSIS';
         );
     }
     my $poly_searcher = KinoSearch::Search::PolySearcher->new(
-        schema      => $schema,
-        searchables => \@searchers,
+        schema    => $schema,
+        searchers => \@searchers,
     );
     my $hits = $poly_searcher->hits( query => $query );
 END_SYNOPSIS
 
 my $constructor = <<'END_CONSTRUCTOR';
     my $poly_searcher = KinoSearch::Search::PolySearcher->new(
-        schema      => $schema,
-        searchables => \@searchers,
+        schema    => $schema,
+        searchers => \@searchers,
     );
 END_CONSTRUCTOR
 

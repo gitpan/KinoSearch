@@ -4,12 +4,12 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/HighlightReader.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/HighlightWriter.h"
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Store/Folder.h"

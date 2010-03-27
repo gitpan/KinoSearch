@@ -75,26 +75,26 @@ is( $deldocs->get_capacity, 8, "finish() wrote correct number of bytes" );
 
 $folder = KinoSearch::Store::RAMFolder->new;
 my $schema  = KinoSearch::Test::TestSchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
 $indexer->add_doc( { content => $_ } ) for 'a' .. 'c';
 $indexer->commit;
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
 $indexer->delete_by_query( KinoSearch::Search::MatchAllQuery->new );
 $indexer->commit;
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
 $indexer->add_doc( { content => $_ } ) for 'a' .. 'c';
 $indexer->commit;
 
-my $searcher = KinoSearch::Searcher->new( index => $folder );
+my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 my $hits = $searcher->hits( query => 'a' );
 is( $hits->total_hits, 1, "deleting then re-adding works" );
 
@@ -107,13 +107,13 @@ for ( 'a' .. 'e' ) {
     }
     push @expected, \@contents;
 }
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
 $indexer->optimize;
 $indexer->commit;
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 @got = ();
 for ( 'a' .. 'e' ) {
     $hits = $searcher->hits( query => $_ );
@@ -125,17 +125,17 @@ for ( 'a' .. 'e' ) {
 }
 is_deeply( \@got, \@expected, "segment merging handles deletions correctly" );
 
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
 $indexer->delete_by_term( field => 'content', term => $_ ) for 'a' .. 'c';
 $indexer->commit;
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 $hits = $searcher->hits( query => 'a' );
 is( $hits->total_hits, 0, "adding and searching empty segments is ok" );
 
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index    => $folder,
     schema   => $schema,
     truncate => 1,
@@ -144,19 +144,19 @@ $indexer->add_doc( { content => 'foo' } );
 $indexer->add_doc( { content => 'bar' } );
 $indexer->commit;
 
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 is( $searcher->doc_max, 2, "correct number of docs in index" );
 $hits = $searcher->hits( query => 'foo' );
 is( $hits->total_hits, 1, "found term" );
 
-$indexer = KinoSearch::Indexer->new(
+$indexer = KinoSearch::Index::Indexer->new(
     index    => $folder,
     schema   => $schema,
     truncate => 1,
 );
 $indexer->add_doc( { content => 'baz' } );
 $indexer->commit;
-$searcher = KinoSearch::Searcher->new( index => $folder );
+$searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
 is( $searcher->doc_max, 1, "correct doc_max after truncation" );
 $hits = $searcher->hits( query => 'foo' );
 is( $hits->total_hits, 0, "truncate succeeded" );

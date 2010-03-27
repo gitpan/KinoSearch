@@ -27,6 +27,7 @@ PolyLex_init(PolyLexicon *self, const CharBuf *field, VArray *sub_readers)
     VArray *seg_lexicons  = VA_new(num_sub_readers);
 
     /* Init. */
+    Lex_init((Lexicon*)self, field);
     self->term            = NULL;
     self->lex_q           = SegLexQ_new(num_sub_readers);
 
@@ -42,9 +43,6 @@ PolyLex_init(PolyLexicon *self, const CharBuf *field, VArray *sub_readers)
     }
     self->seg_lexicons  = seg_lexicons;
 
-    /* Assign. */
-    self->field         = CB_Clone(field);
-
     PolyLex_Reset(self);
 
     return self;
@@ -55,7 +53,6 @@ PolyLex_destroy(PolyLexicon *self)
 {
     DECREF(self->seg_lexicons);
     DECREF(self->lex_q);
-    DECREF(self->field);
     DECREF(self->term);
     SUPER_DESTROY(self, POLYLEXICON);
 }

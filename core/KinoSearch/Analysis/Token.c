@@ -4,8 +4,8 @@
 #include "KinoSearch/Analysis/Token.h"
 
 Token*
-Token_new(const char* text, size_t len, u32_t start_offset, u32_t end_offset, 
-          float boost, i32_t pos_inc) 
+Token_new(const char* text, size_t len, uint32_t start_offset, 
+          uint32_t end_offset, float boost, int32_t pos_inc) 
 {
     Token *self = (Token*)VTable_Make_Obj(TOKEN);
     return Token_init(self, text, len, start_offset, end_offset, boost,
@@ -13,8 +13,8 @@ Token_new(const char* text, size_t len, u32_t start_offset, u32_t end_offset,
 }
 
 Token*
-Token_init(Token *self, const char* text, size_t len, u32_t start_offset, 
-           u32_t end_offset, float boost, i32_t pos_inc) 
+Token_init(Token *self, const char* text, size_t len, uint32_t start_offset,
+           uint32_t end_offset, float boost, int32_t pos_inc) 
 {
     /* Allocate and assign. */
     self->text = (char*)MALLOCATE(len + 1);
@@ -62,13 +62,13 @@ Token_compare(void *context, const void *va, const void *vb)
     return comparison;
 }
 
-u32_t
+uint32_t
 Token_get_start_offset(Token *self) { return self->start_offset; }
-u32_t
+uint32_t
 Token_get_end_offset(Token *self)   { return self->end_offset; }
 float
 Token_get_boost(Token *self)        { return self->boost; }
-i32_t
+int32_t
 Token_get_pos_inc(Token *self)      { return self->pos_inc; }
 char*
 Token_get_text(Token *self)         { return self->text; }

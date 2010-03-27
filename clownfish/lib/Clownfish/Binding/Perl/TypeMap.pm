@@ -89,52 +89,51 @@ my %primitives_to_perl = (
 );
 
 # Extract a Clownfish object from a Perl SV.
-sub _sv_to_bp_obj {
-    my ( $type, $bp_var, $xs_var, $stack_var ) = @_;
+sub _sv_to_cf_obj {
+    my ( $type, $cf_var, $xs_var ) = @_;
     my $struct_sym = $type->get_specifier;
     my $vtable     = uc($struct_sym);
-    my $third_arg;
     if ( $struct_sym =~ /^[a-z_]*(Obj|CharBuf)$/ ) {
-        # Share buffers rather than copy between Perl scalars and BP string
-        # types.  Assume that the appropriate ZombieCharBuf has been declared
-        # on the stack.
-        $third_arg = "&$stack_var";
+        # Share buffers rather than copy between Perl scalars and Clownfish
+        # string types.  Assume that the appropriate ZombieCharBuf has been
+        # declared on the stack.
+        return "$cf_var = ($struct_sym*)XSBind_sv_to_kino_obj($xs_var, "
+            . "$vtable, alloca(kino_ZCB_size()));"
     }
     else {
-        $third_arg = 'NULL';
+        return "$cf_var = ($struct_sym*)XSBind_sv_to_kino_obj($xs_var, "
+            . "$vtable, NULL);";
     }
-    return "$bp_var = ($struct_sym*)XSBind_sv_to_kino_obj($xs_var, "
-        . "$vtable, $third_arg);";
 }
 
 sub _void_star_to_kino {
-    my ( $type, $bp_var, $xs_var ) = @_;
+    my ( $type, $cf_var, $xs_var ) = @_;
     # Assume that void* is a reference SV -- either a hashref or an arrayref.
     return qq|if (SvROK($xs_var)) {
-            $bp_var = SvRV($xs_var);
+            $cf_var = SvRV($xs_var);
         }
         else {
-            $bp_var = NULL; /* avoid uninitialized compiler warning */
-            KINO_THROW(KINO_ERR, "$bp_var is not a reference");
+            $cf_var = NULL; /* avoid uninitialized compiler warning */
+            KINO_THROW(KINO_ERR, "$cf_var is not a reference");
         }\n|;
 }
 
 sub from_perl {
-    my ( $type, $bp_var, $xs_var, $stack_var ) = @_;
+    my ( $type, $cf_var, $xs_var ) = @_;
     confess("Not a Clownfish::Type")
         unless blessed($type) && $type->isa('Clownfish::Type');
 
     if ( $type->is_object ) {
-        return _sv_to_bp_obj( $type, $bp_var, $xs_var, $stack_var );
+        return _sv_to_cf_obj( $type, $cf_var, $xs_var );
     }
     elsif ( $type->is_primitive ) {
         if ( my $sub = $primitives_from_perl{ $type->to_c } ) {
-            return $sub->( $bp_var, $xs_var );
+            return $sub->( $cf_var, $xs_var );
         }
     }
     elsif ( $type->is_composite ) {
         if ( $type->to_c eq 'void*' ) {
-            return _void_star_to_kino( $type, $bp_var, $xs_var );
+            return _void_star_to_kino( $type, $cf_var, $xs_var );
         }
     }
 
@@ -142,25 +141,25 @@ sub from_perl {
 }
 
 sub to_perl {
-    my ( $type, $xs_var, $bp_var ) = @_;
+    my ( $type, $xs_var, $cf_var ) = @_;
     confess("Not a Clownfish::Type")
         unless ref($type) && $type->isa('Clownfish::Type');
     my $type_str = $type->to_c;
 
     if ( $type->is_object ) {
-        return "$xs_var = $bp_var == NULL ? newSV(0) : "
-            . "XSBind_kino_to_perl((kino_Obj*)$bp_var);";
+        return "$xs_var = $cf_var == NULL ? newSV(0) : "
+            . "XSBind_kino_to_perl((kino_Obj*)$cf_var);";
     }
     elsif ( $type->is_primitive ) {
         if ( my $sub = $primitives_to_perl{$type_str} ) {
-            return $sub->( $xs_var, $bp_var );
+            return $sub->( $xs_var, $cf_var );
         }
     }
     elsif ( $type->is_composite ) {
         if ( $type_str eq 'void*' ) {
             # Assume that void* is a reference SV -- either a hashref or an
             # arrayref.
-            return "$xs_var = newRV_inc( (SV*)($bp_var) );";
+            return "$xs_var = newRV_inc( (SV*)($cf_var) );";
         }
     }
 
@@ -216,7 +215,7 @@ chy_u16_t\tCHY_UNSIGNED_INT
 chy_u32_t\tCHY_UNSIGNED_INT
 chy_u64_t\tCHY_BIG_UNSIGNED_INT
 
-kino_ZombieCharBuf\tZOMBIECHARBUF_NOT_POINTER
+const kino_CharBuf*\tCONST_CHARBUF
 END_STUFF
 
     return $content;
@@ -251,8 +250,8 @@ CHY_BIG_SIGNED_INT
 CHY_BIG_UNSIGNED_INT 
     $big_unsigned_convert
 
-ZOMBIECHARBUF_NOT_POINTER
-    \$var = kino_ZCB_make_str(SvPVutf8_nolen(\$arg), SvCUR(\$arg));
+CONST_CHARBUF
+    \$var = (const kino_CharBuf*)KINO_ZCB_WRAP_STR(SvPVutf8_nolen(\$arg), SvCUR(\$arg));
 
 END_STUFF
 }
@@ -297,7 +296,7 @@ __POD__
 
 =head1 NAME
 
-Clownfish::Binding::Perl::TypeMap - Convert between BP and Perl via XS.
+Clownfish::Binding::Perl::TypeMap - Convert between Clownfish and Perl via XS.
 
 =head1 DESCRIPTION
 
@@ -310,7 +309,7 @@ types using the XS "typemap" format documented in C<perlxs>.
 
 =head2 from_perl
 
-    my $c_code = from_perl( $type, $bp_var, $xs_var, $stack_var );
+    my $c_code = from_perl( $type, $cf_var, $xs_var );
 
 Return C code which converts from a Perl scalar to a variable of type $type.
 
@@ -322,24 +321,16 @@ make any declarations itself.
 =item * B<type> - A Clownfish::Type, which will be used to select the
 mapping code.
 
-=item * B<bp_var> - The name of the variable being assigned to.
+=item * B<cf_var> - The name of the variable being assigned to.
 
 =item * B<xs_var> - The C name of the Perl scalar from which we are extracting
 a value.
-
-=item * B<stack_var> - Only required needed when C<type> is
-Clownfish::Object indicating that C<bp_var> is an either an Obj or a
-CharBuf.  When passing strings or other simple types to Clownfish functions
-from Perl, we allow the user to supply simple scalars rather than forcing them
-to create Clownfish objects.  We do this by creating a ZombieCharBuf on the
-stack and assigning the string from the Perl scalar to it.  C<stack_var> is
-the name of that ZombieCharBuf wrapper.  
 
 =back
 
 =head2 to_perl
 
-    my $c_code = to_perl( $type, $xs_var, $bp_var );
+    my $c_code = to_perl( $type, $xs_var, $cf_var );
 
 Return C code which converts from a variable of type $type to a Perl scalar.
 
@@ -353,7 +344,7 @@ mapping code.
 
 =item * B<xs_var> - The C name of the Perl scalar being assigned to.
 
-=item * B<bp_var> - The name of the variable from which we are extracting a
+=item * B<cf_var> - The name of the variable from which we are extracting a
 value.
 
 =back

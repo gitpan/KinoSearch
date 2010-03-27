@@ -9,8 +9,6 @@ KinoSearch::Search::NoMatchQuery - Query which matches no documents.
 
 =head1 DESCRIPTION
 
-Query which matches no documents.
-
 NoMatchQuery is a utility class representing a query which matches nothing.
 Typical usage might include e.g. returning a NoMatchQuery when a
 QueryParser is asked to parse an empty string.

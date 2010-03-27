@@ -3,10 +3,10 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/RequiredOptionalQuery.h"
-#include "KinoSearch/Schema.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/RequiredOptionalScorer.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
 
 RequiredOptionalQuery*
@@ -73,29 +73,29 @@ ReqOptQuery_equals(RequiredOptionalQuery *self, Obj *other)
 }
 
 Compiler*
-ReqOptQuery_make_compiler(RequiredOptionalQuery *self, Searchable *searchable,
+ReqOptQuery_make_compiler(RequiredOptionalQuery *self, Searcher *searcher,
                           float boost)
 {
-    return (Compiler*)ReqOptCompiler_new(self, searchable, boost);
+    return (Compiler*)ReqOptCompiler_new(self, searcher, boost);
 }
 
 /**********************************************************************/
 
 RequiredOptionalCompiler*
-ReqOptCompiler_new(RequiredOptionalQuery *parent, Searchable *searchable,
+ReqOptCompiler_new(RequiredOptionalQuery *parent, Searcher *searcher,
                    float boost)
 {
     RequiredOptionalCompiler *self = (RequiredOptionalCompiler*)
         VTable_Make_Obj(REQUIREDOPTIONALCOMPILER);
-    return ReqOptCompiler_init(self, parent, searchable, boost);
+    return ReqOptCompiler_init(self, parent, searcher, boost);
 }
 
 RequiredOptionalCompiler*
 ReqOptCompiler_init(RequiredOptionalCompiler *self,
                     RequiredOptionalQuery *parent, 
-                    Searchable *searchable, float boost)
+                    Searcher *searcher, float boost)
 {
-    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searchable, 
+    PolyCompiler_init((PolyCompiler*)self, (PolyQuery*)parent, searcher, 
         boost);
     ReqOptCompiler_Normalize(self);
     return self;

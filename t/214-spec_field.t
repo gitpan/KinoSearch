@@ -4,11 +4,11 @@ use warnings;
 use KinoSearch::Test;
 
 package PolyAnalyzerSpec;
-use base qw( KinoSearch::FieldType::FullTextType );
+use base qw( KinoSearch::Plan::FullTextType );
 sub analyzer { KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' ) }
 
 package MySchema;
-use base qw( KinoSearch::Schema );
+use base qw( KinoSearch::Plan::Schema );
 
 sub new {
     my $self      = shift->SUPER::new(@_);
@@ -16,16 +16,16 @@ sub new {
     my $polyanalyzer
         = KinoSearch::Analysis::PolyAnalyzer->new( language => 'en' );
     my $plain
-        = KinoSearch::FieldType::FullTextType->new( analyzer => $tokenizer, );
-    my $polyanalyzed = KinoSearch::FieldType::FullTextType->new(
-        analyzer => $polyanalyzer );
-    my $string_spec          = KinoSearch::FieldType::StringType->new;
-    my $unindexedbutanalyzed = KinoSearch::FieldType::FullTextType->new(
+        = KinoSearch::Plan::FullTextType->new( analyzer => $tokenizer, );
+    my $polyanalyzed
+        = KinoSearch::Plan::FullTextType->new( analyzer => $polyanalyzer );
+    my $string_spec          = KinoSearch::Plan::StringType->new;
+    my $unindexedbutanalyzed = KinoSearch::Plan::FullTextType->new(
         analyzer => $tokenizer,
         indexed  => 0,
     );
     my $unanalyzedunindexed
-        = KinoSearch::FieldType::StringType->new( indexed => 0, );
+        = KinoSearch::Plan::StringType->new( indexed => 0, );
     $self->spec_field( name => 'analyzed',     type => $plain );
     $self->spec_field( name => 'polyanalyzed', type => $polyanalyzed );
     $self->spec_field( name => 'string',       type => $string_spec );
@@ -45,7 +45,7 @@ use Test::More tests => 10;
 
 my $folder  = KinoSearch::Store::RAMFolder->new;
 my $schema  = MySchema->new;
-my $indexer = KinoSearch::Indexer->new(
+my $indexer = KinoSearch::Index::Indexer->new(
     index  => $folder,
     schema => $schema,
 );
@@ -66,7 +66,7 @@ sub check {
         field => $field,
         term  => $query_text,
     );
-    my $searcher = KinoSearch::Searcher->new( index => $folder );
+    my $searcher = KinoSearch::Search::IndexSearcher->new( index => $folder );
     my $hits = $searcher->hits( query => $query );
 
     is( $hits->total_hits, $expected_num_hits, "$field correct num hits " );

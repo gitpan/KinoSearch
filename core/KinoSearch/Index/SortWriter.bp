@@ -5,11 +5,15 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
 
-    VArray  *uniq_vals;
-    VArray  *doc_vals;
-    VArray  *blanks;
-    Hash    *counts;
-    Hash    *null_ords;
+    VArray     *field_writers;
+    Hash       *counts;
+    Hash       *null_ords;
+    OutStream  *temp_ord_out;
+    OutStream  *temp_ix_out;
+    OutStream  *temp_dat_out;
+    MemoryPool *mem_pool;
+    size_t      mem_thresh;  
+    bool_t      flush_at_finish;
 
     inert i32_t current_file_format;
 
@@ -20,6 +24,10 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     inert SortWriter* 
     init(SortWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader);
+
+    /* Test only. */
+    inert void
+    set_default_mem_thresh(size_t mem_thresh);
 
     public void
     Add_Inverted_Doc(SortWriter *self, Inverter *inverter, i32_t doc_id);

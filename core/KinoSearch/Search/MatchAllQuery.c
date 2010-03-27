@@ -2,12 +2,12 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/MatchAllQuery.h"
-#include "KinoSearch/Schema.h"
+#include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Search/MatchAllScorer.h"
-#include "KinoSearch/Search/Searchable.h"
+#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -43,29 +43,29 @@ MatchAllQuery_to_string(MatchAllQuery *self)
 }
 
 Compiler*
-MatchAllQuery_make_compiler(MatchAllQuery *self, Searchable *searchable, 
+MatchAllQuery_make_compiler(MatchAllQuery *self, Searcher *searcher, 
                             float boost)
 {
-    return (Compiler*)MatchAllCompiler_new(self, searchable, boost);
+    return (Compiler*)MatchAllCompiler_new(self, searcher, boost);
 }
 
 /**********************************************************************/
 
 MatchAllCompiler*
-MatchAllCompiler_new(MatchAllQuery *parent, Searchable *searchable, 
+MatchAllCompiler_new(MatchAllQuery *parent, Searcher *searcher, 
                      float boost)
 {
     MatchAllCompiler *self 
         = (MatchAllCompiler*)VTable_Make_Obj(MATCHALLCOMPILER);
-    return MatchAllCompiler_init(self, parent, searchable, boost);
+    return MatchAllCompiler_init(self, parent, searcher, boost);
 }
 
 MatchAllCompiler*
 MatchAllCompiler_init(MatchAllCompiler *self, MatchAllQuery *parent, 
-                      Searchable *searchable, float boost)
+                      Searcher *searcher, float boost)
 {
     return (MatchAllCompiler*)Compiler_init((Compiler*)self, 
-        (Query*)parent, searchable, NULL, boost);
+        (Query*)parent, searcher, NULL, boost);
 }
 
 MatchAllCompiler*

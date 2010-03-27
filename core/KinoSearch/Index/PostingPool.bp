@@ -68,19 +68,13 @@ class KinoSearch::Index::PostingPool cnick PostPool
     void
     Flip(PostingPool *self);
 
-    u32_t
+    uint32_t
     Refill(PostingPool *self);
 
     /** Compares two non-NULL RawPosting objects.
      */
     int
-    Compare(PostingPool *self, Obj **a, Obj **b);
-
-    void
-    Set_Lex_Temp_In(PostingPool *self, decremented InStream *instream);
-
-    void
-    Set_Post_Temp_In(PostingPool *self, decremented InStream *instream);
+    Compare(PostingPool *self, void *va, void *vb);
 
     void
     Finish(PostingPool *self);

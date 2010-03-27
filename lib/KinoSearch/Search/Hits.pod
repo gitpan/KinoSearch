@@ -20,8 +20,6 @@ KinoSearch::Search::Hits - Access search results.
 
 =head1 DESCRIPTION
 
-Access search results.
-
 Hits objects are iterators used to access the results of a search.
 
 

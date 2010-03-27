@@ -4,7 +4,7 @@
 #include "KinoSearch/Test.h"
 #include "KinoSearch/Test/FieldType/TestBlobType.h"
 #include "KinoSearch/Test/TestUtils.h"
-#include "KinoSearch/FieldType/BlobType.h"
+#include "KinoSearch/Plan/BlobType.h"
 #include "KinoSearch/Analysis/Tokenizer.h"
 
 static void

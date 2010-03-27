@@ -50,7 +50,7 @@ class KinoSearch::Object::ByteBuf cnick BB extends KinoSearch::Object::Obj {
 
     /** Accessor for raw internal buffer.
      */
-    char*
+    nullable char*
     Get_Buf(ByteBuf *self);
 
     /** Return the number of bytes in the Object's allocation.
@@ -81,13 +81,16 @@ class KinoSearch::Object::ByteBuf cnick BB extends KinoSearch::Object::Obj {
      *
      * @return a pointer to the raw buffer.
      */
-    char*
+    nullable char*
     Grow(ByteBuf *self, size_t size);
 
     /** Test whether the ByteBuf matches the passed-in bytes.
      */
     bool_t
     Equals_Bytes(ByteBuf *self, const void *bytes, size_t size);
+
+    size_t
+    RAM_Usage(ByteBuf *self);
 
     public incremented ByteBuf*
     Clone(ByteBuf *self);

@@ -44,12 +44,12 @@ limited to expressing an abstract specification for the search.  A Query is
 basically nothing but metadata; execution is left to the Query's companion
 Compiler and Matcher.
 
-Here's a simplified sketch illustrating how a Searcher's search() method ties
+Here's a simplified sketch illustrating how a Searcher's hits() method ties
 together the three classes.
 
-    sub search {
+    sub hits {
         my ( $self, $query ) = @_;
-        my $compiler = $query->make_compiler( searchable => $self );
+        my $compiler = $query->make_compiler( searcher => $self );
         my $matcher = $compiler->make_matcher(
             reader     => $self->get_reader,
             need_score => 1,
@@ -123,23 +123,23 @@ a subclass of L<Compiler|KinoSearch::Search::Compiler>.
 =head2 PrefixCompiler
 
 PrefixQuery's make_compiler() method will be called internally at search-time
-by objects which subclass L<KinoSearch::Search::Searchable> -- such as
-L<Searchers|KinoSearch::Searcher>.
+by objects which subclass L<KinoSearch::Search::Searcher> -- such as
+L<IndexSearchers|KinoSearch::Search::IndexSearcher>.
 
-A Searchable is associated with a particular collection of documents.   These
-documents may all reside in one index, as with Searcher, or they may be spread
-out across multiple indexes on multiple machines, as with
+A Searcher is associated with a particular collection of documents.   These
+documents may all reside in one index, as with IndexSearcher, or they may be
+spread out across multiple indexes on one or more machines, as with
 L<KinoSearch::Search::PolySearcher>.  
 
-Searchable objects have access to certain statistical information about the
-collections they represent; for instance, a Searchable can tell you how many
+Searcher objects have access to certain statistical information about the
+collections they represent; for instance, a Searcher can tell you how many
 documents are in the collection...
 
-    my $maximum_number_of_docs_in_collection = $searchable->doc_max;
+    my $maximum_number_of_docs_in_collection = $searcher->doc_max;
 
 ... or how many documents a specific term appears in:
 
-    my $term_appears_in_this_many_docs = $searchable->doc_freq(
+    my $term_appears_in_this_many_docs = $searcher->doc_freq(
         field => 'content',
         term  => 'foo',
     );

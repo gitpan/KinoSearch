@@ -15,6 +15,7 @@ our %new_PARAMS = (
     parcel      => undef,
     incremented => 0,
     decremented => 0,
+    nullable    => 0,
 );
 
 sub new {
@@ -22,12 +23,14 @@ sub new {
     verify_args( \%new_PARAMS, %args ) or confess $@;
     my $incremented = delete $args{incremented} || 0;
     my $decremented = delete $args{decremented} || 0;
+    my $nullable    = delete $args{nullable}    || 0;
     my $indirection = delete $args{indirection};
     $indirection = 1 unless defined $indirection;
     my $self = $either->SUPER::new(%args);
     $self->{incremented} = $incremented;
     $self->{decremented} = $decremented;
     $self->{indirection} = $indirection;
+    $self->{nullable}    = $nullable;
     $self->{parcel} ||= Clownfish::Parcel->default_parcel;
     my $prefix = $self->{parcel}->get_prefix;
 
@@ -61,12 +64,20 @@ sub incremented    { shift->{incremented} }
 sub decremented    { shift->{decremented} }
 sub is_string_type { shift->{is_string_type} }
 
-sub equals {
+sub set_nullable { $_[0]->{nullable} = $_[1] }
+
+sub similar {
     my ( $self, $other ) = @_;
-    return 0 unless $self->{specifier} eq $other->{specifier};
-    for (qw( const incremented decremented )) {
+    for (qw( const incremented decremented nullable )) {
         return 0 if ( $self->{$_} xor $other->{$_} );
     }
+    return 1;
+}
+
+sub equals {
+    my ( $self, $other ) = @_;
+    return 0 unless $self->similar($other);
+    return 0 unless $self->{specifier} eq $other->{specifier};
     return 1;
 }
 
@@ -95,6 +106,7 @@ class "Crustacean::Lobster" it must be "Lobster".
         indirection => 1,               # default 1
         incremented => 1,               # default 0
         decremented => 0,               # default 0
+        nullable    => 1,               # default 0
     );
 
 =over
@@ -115,6 +127,9 @@ for an added refcount.
 =item * B<decremented> - Indicate whether the caller must account for
 for a refcount decrement.
 
+=item * B<nullable> - Indicate whether the object specified by this type may
+be NULL.
+
 =back
 
 The Parcel's prefix will be prepended to the specifier by new().
@@ -126,6 +141,12 @@ Returns true if the Type is incremented.
 =head2 decremented
 
 Returns true if the Type is decremented.
+
+=head2 similar
+
+    do_stuff() if $type->similar($other_type);
+
+Weak checking of type which allows for covariant return types.
 
 =head1 COPYRIGHT AND LICENSE
 
