@@ -8,6 +8,7 @@ class KinoSearch::Index::FilePurger extends KinoSearch::Object::Obj {
     Folder       *folder;
     Snapshot     *snapshot;
     IndexManager *manager;
+    Hash         *disallowed;
 
     inert incremented FilePurger* 
     new(Folder *folder, Snapshot *snapshot = NULL, 

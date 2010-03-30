@@ -20,7 +20,7 @@
 #include "KinoSearch/Util/MemoryPool.h"
 #include "KinoSearch/Util/SortUtils.h"
 
-i32_t SortWriter_current_file_format = 2;
+i32_t SortWriter_current_file_format = 3;
 
 static size_t default_mem_thresh = 0x400000; // 4 MB
 
@@ -43,6 +43,7 @@ SortWriter_init(SortWriter *self, Schema *schema, Snapshot *snapshot,
     self->field_writers   = VA_new(field_max);
     self->counts          = Hash_new(0);
     self->null_ords       = Hash_new(0);
+    self->ord_widths      = Hash_new(0);
     self->temp_ord_out    = NULL;
     self->temp_ix_out     = NULL;
     self->temp_dat_out    = NULL;
@@ -59,6 +60,7 @@ SortWriter_destroy(SortWriter *self)
     DECREF(self->field_writers);
     DECREF(self->counts);
     DECREF(self->null_ords);
+    DECREF(self->ord_widths);
     DECREF(self->temp_ord_out);
     DECREF(self->temp_ix_out);
     DECREF(self->temp_dat_out);
@@ -162,40 +164,6 @@ SortWriter_add_segment(SortWriter *self, SegReader *reader, I32Array *doc_map)
 }
 
 void
-SortWriter_delete_segment(SortWriter *self, SegReader *reader)
-{
-    Snapshot *snapshot = SortWriter_Get_Snapshot(self);
-    Segment  *segment  = SegReader_Get_Segment(reader);
-    CharBuf  *seg_name = Seg_Get_Name(segment);
-    Hash     *metadata = (Hash*)Seg_Fetch_Metadata_Str(segment, "sort", 4);
-
-    if (metadata) {
-        Hash *counts = (Hash*)CERTIFY(
-            Hash_Fetch_Str(metadata, "counts", 6), HASH);
-        CharBuf *field;
-        Obj     *count;
-
-        /* Delete files for each sorted field. */
-        Hash_Iter_Init(counts);
-        while (Hash_Iter_Next(counts, (Obj**)&field, &count)) {
-            i32_t field_num = Seg_Field_Num(segment, field);
-            CharBuf *ord_file 
-                = CB_newf("%o/sort-%i32.ord", seg_name, field_num);
-            CharBuf *ix_file  
-                = CB_newf("%o/sort-%i32.ix",  seg_name, field_num);
-            CharBuf *dat_file 
-                = CB_newf("%o/sort-%i32.dat", seg_name, field_num);
-            Snapshot_Delete_Entry(snapshot, ord_file);
-            Snapshot_Delete_Entry(snapshot, ix_file);
-            Snapshot_Delete_Entry(snapshot, dat_file);
-            DECREF(ord_file);
-            DECREF(ix_file);
-            DECREF(dat_file);
-        }
-    }
-}
-
-void
 SortWriter_finish(SortWriter *self)
 {
     VArray *const field_writers = self->field_writers;
@@ -234,6 +202,9 @@ SortWriter_finish(SortWriter *self)
                 Hash_Store(self->null_ords, (Obj*)field, 
                     (Obj*)CB_newf("%i32", null_ord));
             }
+            int32_t ord_width = SortFieldWriter_Get_Ord_Width(field_writer);
+            Hash_Store(self->ord_widths, (Obj*)field, 
+                (Obj*)CB_newf("%i32", ord_width));
         }
 
         DECREF(field_writer);
@@ -263,6 +234,7 @@ SortWriter_metadata(SortWriter *self)
     Hash *const metadata  = DataWriter_metadata((DataWriter*)self);
     Hash_Store_Str(metadata, "counts", 6, INCREF(self->counts));
     Hash_Store_Str(metadata, "null_ords", 9, INCREF(self->null_ords));
+    Hash_Store_Str(metadata, "ord_widths", 10, INCREF(self->ord_widths));
     return metadata;
 }
 

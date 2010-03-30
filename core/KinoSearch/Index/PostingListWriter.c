@@ -82,10 +82,6 @@ S_lazy_init(PostingListWriter *self)
         self->skip_out = Folder_Open_Out(folder, skip_path);
         if (!self->skip_out) { RETHROW(INCREF(Err_get_error())); }
 
-        /* Add the skip file to the snapshot, since we know it's going to be
-         * used if this lazy init function gets called.  */
-        Snapshot_Add_Entry(self->snapshot, skip_path);
-
         DECREF(skip_path);
         DECREF(post_temp_path);
         DECREF(lex_temp_path);
@@ -202,29 +198,6 @@ S_my_file(VArray *array, u32_t tick, void *data)
     CharBuf *file_start = (CharBuf*)data;
     CharBuf *candidate = (CharBuf*)VA_Fetch(array, tick);
     return CB_Starts_With(candidate, file_start);
-}
-
-void
-PListWriter_delete_segment(PostingListWriter *self, SegReader *reader)
-{
-    Snapshot *snapshot = PListWriter_Get_Snapshot(self);
-    CharBuf  *merged_seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    CharBuf  *pattern  = CB_newf("%o/postings", merged_seg_name);
-    VArray   *files = Snapshot_List(snapshot);
-    VArray   *my_old_files = VA_Grep(files, S_my_file, pattern);
-    u32_t i, max;
-
-    /* Delete my files. */
-    for (i = 0, max = VA_Get_Size(my_old_files); i < max; i++) {
-        CharBuf *entry = (CharBuf*)VA_Fetch(my_old_files, i);
-        Snapshot_Delete_Entry(snapshot, entry);
-    }
-    DECREF(my_old_files);
-    DECREF(files);
-    DECREF(pattern);
-
-    /* Delete lexicon files. */
-    LexWriter_Delete_Segment(self->lex_writer, reader);
 }
 
 void

@@ -145,7 +145,6 @@ SegWriter_merge_segment(SegWriter *self, SegReader *reader, I32Array *doc_map)
 {
     Snapshot *snapshot = SegWriter_Get_Snapshot(self);
     CharBuf  *seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    CharBuf  *segmeta_file = CB_newf("%o/segmeta.json", seg_name);
     u32_t i, max;
 
     /* Have all the sub-writers merge the segment. */
@@ -155,10 +154,8 @@ SegWriter_merge_segment(SegWriter *self, SegReader *reader, I32Array *doc_map)
     }
     DelWriter_Merge_Segment(self->del_writer, reader, doc_map);
 
-    /* Remove seg directory and segmeta entries from snapshot. */
+    /* Remove seg directory from snapshot. */
     Snapshot_Delete_Entry(snapshot, seg_name);
-    Snapshot_Delete_Entry(snapshot, segmeta_file);
-    DECREF(segmeta_file);
 
     /* Adust the document id. */
     S_adjust_doc_id(self, reader, doc_map);
@@ -169,7 +166,6 @@ SegWriter_delete_segment(SegWriter *self, SegReader *reader)
 {
     Snapshot *snapshot = SegWriter_Get_Snapshot(self);
     CharBuf  *seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    CharBuf  *segmeta_file = CB_newf("%o/segmeta.json", seg_name);
     u32_t i, max;
 
     /* Have all the sub-writers delete the segment. */
@@ -179,10 +175,8 @@ SegWriter_delete_segment(SegWriter *self, SegReader *reader)
     }
     DelWriter_Delete_Segment(self->del_writer, reader);
 
-    /* Remove seg directory and segmeta entries from snapshot. */
+    /* Remove seg directory from snapshot. */
     Snapshot_Delete_Entry(snapshot, seg_name);
-    Snapshot_Delete_Entry(snapshot, segmeta_file);
-    DECREF(segmeta_file);
 }
 
 void
@@ -197,14 +191,12 @@ SegWriter_finish(SegWriter *self)
         DataWriter_Finish(writer);
     }
 
-    /* Write segment metadata. Add segment directory and segment file to
-     * snapshot. */
+    // Write segment metadata and add the segment directory to the snapshot.
     {
         Snapshot *snapshot = SegWriter_Get_Snapshot(self);
         CharBuf *segmeta_filename = CB_newf("%o/segmeta.json", seg_name);
         Seg_Write_File(self->segment, self->folder);
         Snapshot_Add_Entry(snapshot, seg_name);
-        Snapshot_Add_Entry(snapshot, segmeta_filename);
         DECREF(segmeta_filename);
     }
 

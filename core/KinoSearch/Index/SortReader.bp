@@ -27,6 +27,8 @@ class KinoSearch::Index::DefaultSortReader cnick DefSortReader
     Hash *caches;
     Hash *counts;
     Hash *null_ords;
+    Hash *ord_widths;
+    int32_t format;
 
     /* Constructors.
      */

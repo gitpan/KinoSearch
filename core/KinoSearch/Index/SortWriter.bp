@@ -1,6 +1,13 @@
 parcel KinoSearch cnick Kino;
 
 /** Writer for sortable fields.
+ *
+ * Changes for format version 3:
+ *    
+ *   * Big-endian byte order instead of native byte order for ".ord" files.
+ *   * "ord_widths" key added to metadata.
+ *   * In variable-width cache formats, NULL entries get a file pointer in the
+ *     ".ix" file instead of -1.
  */
 
 class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
@@ -8,6 +15,7 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     VArray     *field_writers;
     Hash       *counts;
     Hash       *null_ords;
+    Hash       *ord_widths;
     OutStream  *temp_ord_out;
     OutStream  *temp_ix_out;
     OutStream  *temp_dat_out;
@@ -35,8 +43,6 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     public void
     Add_Segment(SortWriter *self, SegReader *reader, 
                 I32Array *doc_map = NULL); 
-    public void
-    Delete_Segment(SortWriter *self, SegReader *reader);
 
     public incremented Hash*
     Metadata(SortWriter *self);

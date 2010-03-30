@@ -10,19 +10,19 @@
 
 TextSortCache*
 TextSortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality, 
-                  i32_t doc_max, i32_t null_ord, InStream *ord_in,
-                  InStream *ix_in, InStream *dat_in)
+                  i32_t doc_max, i32_t null_ord, int32_t ord_width, 
+                  InStream *ord_in, InStream *ix_in, InStream *dat_in)
 {
     TextSortCache *self = (TextSortCache*)VTable_Make_Obj(TEXTSORTCACHE);
     return TextSortCache_init(self, field, type, cardinality, doc_max,
-        null_ord, ord_in, ix_in, dat_in);
+        null_ord, ord_width, ord_in, ix_in, dat_in);
 }
 
 TextSortCache*
 TextSortCache_init(TextSortCache *self, const CharBuf *field,
                    FieldType *type, i32_t cardinality, 
-                   i32_t doc_max, i32_t null_ord, InStream *ord_in,
-                   InStream *ix_in, InStream *dat_in)
+                   i32_t doc_max, i32_t null_ord, int32_t ord_width, 
+                   InStream *ord_in, InStream *ix_in, InStream *dat_in)
 {
     /* Validate. */
     if (!type || !FType_Sortable(type)) {
@@ -30,11 +30,17 @@ TextSortCache_init(TextSortCache *self, const CharBuf *field,
         THROW(ERR, "'%o' isn't a sortable field", field);
     }
 
+    /* Memory map ords and super-init. */
+    int64_t ord_len = InStream_Length(ord_in);
+    void *ords = InStream_Buf(ord_in, (size_t)ord_len);
+    SortCache_init((SortCache*)self, field, type, ords, cardinality, doc_max,
+        null_ord, ord_width);
+
     /* Validate ords file length. */
-    int64_t ord_len       = InStream_Length(ord_in);
     double  bytes_per_doc = self->ord_width / 8.0;
     double  max_ords      = ord_len / bytes_per_doc;
     if (max_ords < self->doc_max + 1) {
+        WARN("ORD WIDTH: %i32 %i32", ord_width, self->ord_width);
         THROW(ERR, "Conflict between ord count max %f64 and doc_max %i32 for "
             "field %o", max_ords, doc_max, field);
     }
@@ -43,11 +49,6 @@ TextSortCache_init(TextSortCache *self, const CharBuf *field,
     self->ord_in = (InStream*)INCREF(ord_in);
     self->ix_in  = (InStream*)INCREF(ix_in);
     self->dat_in = (InStream*)INCREF(dat_in);
-
-    /* Memory map ords and super-init. */
-    void *ords = InStream_Buf(ord_in, (size_t)ord_len);
-    SortCache_init((SortCache*)self, field, type, ords, cardinality, doc_max,
-        null_ord);
 
     return self;
 }

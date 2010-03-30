@@ -11,13 +11,14 @@ class KinoSearch::Index::SortCache::TextSortCache
 
     inert incremented TextSortCache*
     new(const CharBuf *field, FieldType *type, i32_t cardinality, 
-        i32_t doc_max, i32_t null_ord = -1, InStream *ord_in, InStream *ix_in,
-        InStream *dat_in);
+        i32_t doc_max, i32_t null_ord = -1, int32_t ord_width, 
+        InStream *ord_in, InStream *ix_in, InStream *dat_in);
 
     inert TextSortCache*
     init(TextSortCache *self, const CharBuf *field, FieldType *type, 
          i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
-         InStream *ord_in, InStream *ix_in, InStream *dat_in);
+         int32_t ord_width, InStream *ord_in, InStream *ix_in, 
+         InStream *dat_in);
 
     public nullable Obj*
     Value(TextSortCache *self, i32_t ord, Obj *blank);

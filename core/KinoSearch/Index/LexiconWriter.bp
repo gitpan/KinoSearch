@@ -62,9 +62,6 @@ class KinoSearch::Index::LexiconWriter cnick LexWriter
     Add_Segment(LexiconWriter *self, SegReader *reader, 
                 I32Array *doc_map = NULL);
 
-    public void
-    Delete_Segment(LexiconWriter *self, SegReader *reader);
-
     public incremented Hash*
     Metadata(LexiconWriter *self);
 

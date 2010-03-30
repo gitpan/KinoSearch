@@ -84,10 +84,11 @@ abstract class KinoSearch::Store::Folder extends KinoSearch::Object::Obj {
 
     /** Recursively list all files and directories in the Folder.
      *
+     * @param path A relative filepath optionally specifying a subdirectory.
      * @return an unsorted array of relative filepaths.
      */
     incremented VArray*
-    List_R(Folder *self);
+    List_R(Folder *self, const CharBuf *path = NULL);
 
     /** Indicate whether an entity exists at <code>path</code>.
      *
@@ -96,6 +97,14 @@ abstract class KinoSearch::Store::Folder extends KinoSearch::Object::Obj {
      */
     public bool_t
     Exists(Folder *self, const CharBuf *path);
+
+    /** Indicate whether a directory exists at <code>path</code>.
+     *
+     * @param path A relative filepath.
+     * @return true if <code>path</code> is a directory.
+     */
+    bool_t
+    Is_Directory(Folder *self, const CharBuf *path);
 
     /** Delete an entry from the folder.
      *

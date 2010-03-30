@@ -11,15 +11,20 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/Lock.h"
 
-/* Place unused files into purgables array and obsolete snapshot files into
- * snapfiles array. */
+/* Place unused files into purgables array and obsolete Snapshots into
+ * snapshots array. */
 static void
-S_discover_unused(FilePurger *self, VArray **purgables, VArray **snapfiles);
+S_discover_unused(FilePurger *self, VArray **purgables, VArray **snapshots);
 
 /* Clean up after a failed background merge session, adding all dead files to
  * the list of candidates to be zapped. */
 static void
 S_zap_dead_merge(FilePurger *self, Hash *candidates);
+
+/* Return an array of recursively expanded filepath entries.
+ */
+static VArray*
+S_find_all_referenced(Folder *folder, VArray *entries);
 
 FilePurger*
 FilePurger_new(Folder *folder, Snapshot *snapshot, IndexManager *manager)
@@ -38,6 +43,11 @@ FilePurger_init(FilePurger *self, Folder *folder, Snapshot *snapshot,
                        ? (IndexManager*)INCREF(manager)
                        : IxManager_new(NULL, NULL);
     IxManager_Set_Folder(self->manager, folder);
+
+    // Don't allow the locks directory to be zapped.
+    self->disallowed = Hash_new(0);
+    Hash_Store_Str(self->disallowed, "locks", 5, INCREF(&EMPTY));
+
     return self;
 }
 
@@ -47,6 +57,7 @@ FilePurger_destroy(FilePurger *self)
     DECREF(self->folder);
     DECREF(self->snapshot);
     DECREF(self->manager);
+    DECREF(self->disallowed);
     SUPER_DESTROY(self, FILEPURGER);
 }
 
@@ -55,42 +66,55 @@ FilePurger_purge(FilePurger *self)
 {
     Lock *deletion_lock = IxManager_Make_Deletion_Lock(self->manager);
 
-    /* Obtain deletion lock, purge files, release deletion lock. */
+    // Obtain deletion lock, purge files, release deletion lock.
     Lock_Clear_Stale(deletion_lock);
     if (Lock_Obtain(deletion_lock)) {
         Folder  *folder    = self->folder;
-        bool_t   failures  = false;
+        Hash    *failures  = Hash_new(0);
         VArray  *purgables;
-        VArray  *snapfiles;
-        u32_t    i, max;
+        VArray  *snapshots;
 
-        S_discover_unused(self, &purgables, &snapfiles);
+        S_discover_unused(self, &purgables, &snapshots);
 
-        /*  Attempt to delete files -- if failure, no big deal, just try again
-         *  later.  Proceed in reverse lexical order so that segment
-         *  directories get deleted after they've been emptied. */
+        // Attempt to delete entries -- if failure, no big deal, just try
+        // again later.  Proceed in reverse lexical order so that directories
+        // get deleted after they've been emptied. 
         VA_Sort(purgables, NULL, NULL);
-        for (i = VA_Get_Size(purgables); i--; ) {
-            CharBuf *filename = (CharBuf*)VA_fetch(purgables, i);
-            if (!Folder_Delete(folder, filename)) { 
-                if (Folder_Exists(folder, filename)) {
-                    failures = true; 
+        for (uint32_t i = VA_Get_Size(purgables); i--; ) {
+            CharBuf *entry = (CharBuf*)VA_fetch(purgables, i);
+            if (Hash_Fetch(self->disallowed, (Obj*)entry)) { continue; }
+            if (!Folder_Delete(folder, entry)) { 
+                if (Folder_Exists(folder, entry)) {
+                    Hash_Store(failures, (Obj*)entry, INCREF(&EMPTY));
                 }
             }
         }
-        DECREF(purgables);
 
-        /* Only delete the snapshot files if all of the data files were
-         * successfully deleted.  If there were any failures, leave the
-         * snapshots around so that the next purge might catch them. */
-        if (!failures) {
-            for (i = 0, max = VA_Get_Size(snapfiles); i < max; i++) {
-                CharBuf *filename = (CharBuf*)VA_Fetch(snapfiles, i);
-                Folder_Delete(folder, filename);
+        for (uint32_t i = 0, max = VA_Get_Size(snapshots); i < max; i++) {
+            Snapshot *snapshot = (Snapshot*)VA_Fetch(snapshots, i);
+            bool_t snapshot_has_failures = false;
+            if (Hash_Get_Size(failures)) {
+                // Only delete snapshot files if all of their entries were
+                // successfully deleted.  
+                VArray *entries = Snapshot_List(snapshot);
+                for (uint32_t j = VA_Get_Size(entries); j--; ) {
+                    CharBuf *entry = (CharBuf*)VA_Fetch(entries, j);
+                    if (Hash_Fetch(failures, (Obj*)entry)) {
+                        snapshot_has_failures = true;
+                        break;
+                    }
+                }
+                DECREF(entries);
+            }
+            if (!snapshot_has_failures) {
+                CharBuf *file = Snapshot_Get_Filename(snapshot);
+                Folder_Delete(folder, file);
             }
         }
-        DECREF(snapfiles);
 
+        DECREF(failures);
+        DECREF(purgables);
+        DECREF(snapshots);
         Lock_Release(deletion_lock);
     }
     else {
@@ -129,7 +153,7 @@ S_zap_dead_merge(FilePurger *self, Hash *candidates)
                 Hash_Store(candidates, (Obj*)cutoff_seg, INCREF(&EMPTY));
                 Hash_Store(candidates, (Obj*)merge_json, INCREF(&EMPTY));
                 while (DH_Next(dh)) {
-                    /* TODO: recursively delete subdirs within seg dir. */
+                    // TODO: recursively delete subdirs within seg dir.
                     CB_setf(filepath, "%o/%o", cutoff_seg, entry);
                     Hash_Store(candidates, (Obj*)filepath, INCREF(&EMPTY));
                 }
@@ -148,32 +172,28 @@ S_zap_dead_merge(FilePurger *self, Hash *candidates)
 
 static void
 S_discover_unused(FilePurger *self, VArray **purgables_ptr, 
-                  VArray **snapfiles_ptr)
+                  VArray **snapshots_ptr)
 {
     Folder      *folder       = self->folder;
-    VArray      *current      = VA_new(1);
-    Hash        *candidates   = Hash_new(64);
-    VArray      *snapfiles    = VA_new(1);
-    CharBuf     *snapfile     = NULL;
     DirHandle   *dh           = Folder_Open_Dir(folder, NULL);
-    CharBuf     *entry        = dh ? DH_Get_Entry(dh) : NULL;
-    u32_t        i, max;
+    if (!dh) { RETHROW(INCREF(Err_get_error())); }
+    VArray      *protected    = VA_new(1);
+    VArray      *snapshots    = VA_new(1);
+    CharBuf     *snapfile     = NULL;
 
-    if (!dh) {
-        DECREF(current);
-        DECREF(snapfiles);
-        RETHROW(INCREF(Err_get_error()));
-    }
-
-    /* Start off with the list of files in the current snapshot. */
+    // Start off with the list of files in the current snapshot.
     if (self->snapshot) {
-        VArray *some_files = Snapshot_List(self->snapshot);
-        VA_Push_VArray(current, some_files);
-        DECREF(some_files);
+        VArray *entries    = Snapshot_List(self->snapshot);
+        VArray *referenced = S_find_all_referenced(folder, entries);
+        VA_Push_VArray(protected, referenced);
+        DECREF(entries);
+        DECREF(referenced);
         snapfile = Snapshot_Get_Filename(self->snapshot);
-        if (snapfile) { VA_Push(current, INCREF(snapfile)); }
+        if (snapfile) { VA_Push(protected, INCREF(snapfile)); }
     }
 
+    CharBuf *entry      = DH_Get_Entry(dh);
+    Hash    *candidates = Hash_new(64);
     while (DH_Next(dh)) {
         if      (!CB_Starts_With_Str(entry, "snapshot_", 9))   { continue; }
         else if (!CB_Ends_With_Str(entry, ".json", 5))         { continue; }
@@ -183,54 +203,74 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
                 = Snapshot_Read_File(Snapshot_new(), folder, entry);
             Lock *lock
                 = IxManager_Make_Snapshot_Read_Lock(self->manager, entry);
+            VArray *snap_list  = Snapshot_List(snapshot);
+            VArray *referenced = S_find_all_referenced(folder, snap_list);
 
-            /* DON'T obtain the lock -- only see whether another
-             * entity holds a lock on the snapshot file. */
+            // DON'T obtain the lock -- only see whether another
+            // entity holds a lock on the snapshot file.
             if (lock && Lock_Is_Locked(lock)) {
-                /* The snapshot file is locked, which means someone's using
-                 * that version of the index -- protect all of its files. */
-                VArray *some_files = Snapshot_List(snapshot);
-                u32_t new_size = VA_Get_Size(current) 
-                               + VA_Get_Size(some_files)  + 1;
-                VA_Grow(current, new_size);
-                VA_Push(current, (Obj*)CB_Clone(entry));
-                VA_Push_VArray(current, some_files);
-                DECREF(some_files);
+                // The snapshot file is locked, which means someone's using
+                // that version of the index -- protect all of its entries.
+                uint32_t new_size = VA_Get_Size(protected) 
+                                  + VA_Get_Size(referenced)  + 1;
+                VA_Grow(protected, new_size);
+                VA_Push(protected, (Obj*)CB_Clone(entry));
+                VA_Push_VArray(protected, referenced);
             }
             else {
-                /* No one's using this snapshot, so all of its files are
-                 * candidates for deletion */
-                VArray *some_files = Snapshot_List(snapshot);
-                u32_t i, max;
-                for (i = 0, max = VA_Get_Size(some_files); i < max; i++) {
-                    CharBuf *file = (CharBuf*)VA_Fetch(some_files, i);
+                // No one's using this snapshot, so all of its entries are
+                // candidates for deletion.
+                for (uint32_t i = 0, max = VA_Get_Size(referenced); i < max; i++) {
+                    CharBuf *file = (CharBuf*)VA_Fetch(referenced, i);
                     Hash_Store(candidates, (Obj*)file, INCREF(&EMPTY));
                 }
-                VA_Push(snapfiles, (Obj*)CB_Clone(entry));
-                DECREF(some_files);
+                VA_Push(snapshots, INCREF(snapshot));
             }
 
+            DECREF(referenced);
+            DECREF(snap_list);
             DECREF(snapshot);
             DECREF(lock);
         }
     }
     DECREF(dh);
 
-    /* Clean up after a dead segment consolidation. */
+    // Clean up after a dead segment consolidation.
     S_zap_dead_merge(self, candidates);
 
-    /* Eliminate any current files from the list of files to be purged. */
-    for (i = 0, max = VA_Get_Size(current); i < max; i++) {
-        CharBuf *filename = (CharBuf*)VA_Fetch(current, i);
+    // Eliminate any current files from the list of files to be purged.
+    for (uint32_t i = 0, max = VA_Get_Size(protected); i < max; i++) {
+        CharBuf *filename = (CharBuf*)VA_Fetch(protected, i);
         DECREF(Hash_Delete(candidates, (Obj*)filename));
     }
 
-    /* Pass back purgables and snapfiles. */
+    // Pass back purgables and Snapshots.
     *purgables_ptr = Hash_Keys(candidates);
-    *snapfiles_ptr = snapfiles;
+    *snapshots_ptr = snapshots;
 
     DECREF(candidates);
-    DECREF(current);
+    DECREF(protected);
+}
+
+static VArray*
+S_find_all_referenced(Folder *folder, VArray *entries)
+{
+    Hash *uniqued = Hash_new(VA_Get_Size(entries));
+    for (uint32_t i = 0, max = VA_Get_Size(entries); i < max; i++) {
+        CharBuf *entry = (CharBuf*)VA_Fetch(entries, i);
+        Hash_Store(uniqued, (Obj*)entry, INCREF(&EMPTY));
+        if (Folder_Is_Directory(folder, entry)) {
+            VArray *contents = Folder_List_R(folder, entry);
+            for (uint32_t j = VA_Get_Size(contents); j--; ) {
+                CharBuf *sub_entry = (CharBuf*)VA_Fetch(contents, j);
+                Hash_Store(uniqued, (Obj*)sub_entry, INCREF(&EMPTY));
+            }
+            DECREF(contents);
+        }
+    }
+    VArray *referenced = Hash_Keys(uniqued);
+    DECREF(uniqued);
+    return referenced;
 }
 
 /* Copyright 2007-2010 Marvin Humphrey

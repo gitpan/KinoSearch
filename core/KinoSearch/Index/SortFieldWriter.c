@@ -79,6 +79,7 @@ SortFieldWriter_init(SortFieldWriter *self, Schema *schema,
     self->sorted_ids      = NULL;
     self->run_ord         = 0;
     self->run_tick        = 0;
+    self->ord_width       = 0;
 
     /* Assign. */
     self->field        = CB_Clone(field);
@@ -149,6 +150,8 @@ SortFieldWriter_destroy(SortFieldWriter *self)
 
 int32_t
 SortFieldWriter_get_null_ord(SortFieldWriter *self) { return self->null_ord; }
+int32_t
+SortFieldWriter_get_ord_width(SortFieldWriter *self) { return self->ord_width; }
 
 static Obj*
 S_find_unique_value(Hash *uniq_vals, Obj *val)
@@ -219,14 +222,16 @@ S_write_ord(void *ords, i32_t width, i32_t doc_id, i32_t ord)
                 break;
         case 16: 
                 {
-                    u16_t *ints = (u16_t*)ords;
-                    ints[doc_id] = ord;
+                    uint8_t *bytes = (uint8_t*)ords;
+                    bytes += doc_id * sizeof(uint16_t);
+                    NumUtil_encode_bigend_u16(ord, &bytes);
                 }
                 break;
         case 32: 
                 {
-                    u32_t *ints = (u32_t*)ords;
-                    ints[doc_id] = ord;
+                    uint8_t *bytes = (uint8_t*)ords;
+                    bytes += doc_id * sizeof(uint32_t);
+                    NumUtil_encode_bigend_u32(ord, &bytes);
                 }
                 break;
         default: THROW(ERR, "Invalid width: %i32", width);
@@ -282,8 +287,10 @@ S_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out,
     else {
         switch (prim_id & FType_PRIMITIVE_ID_MASK) {
             case FType_TEXT:
-            case FType_BLOB: 
-                OutStream_Write_I64(ix_out, -1);
+            case FType_BLOB: {
+                    int64_t dat_pos = OutStream_Tell(dat_out) - dat_start;
+                    OutStream_Write_I64(ix_out, dat_pos);
+                }
                 break;
             case FType_INT32: 
                 OutStream_Write_I32(dat_out, 0);
@@ -568,7 +575,8 @@ S_write_files(SortFieldWriter *self, OutStream *ord_out, OutStream *ix_out,
     }
     int32_t null_ord    = self->null_ord;
     int32_t cardinality = ord + 1;
-    int32_t ord_width   = S_calc_width(cardinality);
+    self->ord_width     = S_calc_width(cardinality);
+    int32_t ord_width   = self->ord_width;
 
     // Write ords.
     const double BITS_PER_BYTE = 8.0;
@@ -600,18 +608,15 @@ SortFieldWriter_finish(SortFieldWriter *self)
 
     /* Open streams. */
     OutStream *ord_out = Folder_Open_Out(folder, path);
-    Snapshot_Add_Entry(self->snapshot, path);
     if (!ord_out) { RETHROW(INCREF(Err_get_error())); }
     OutStream *ix_out = NULL;
     if (self->var_width) {
         CB_setf(path, "%o/sort-%i32.ix", seg_name, field_num);
         ix_out = Folder_Open_Out(folder, path);
         if (!ix_out) { RETHROW(INCREF(Err_get_error())); }
-        Snapshot_Add_Entry(self->snapshot, path);
     }
     CB_setf(path, "%o/sort-%i32.dat", seg_name, field_num);
     OutStream *dat_out = Folder_Open_Out(folder, path);
-    Snapshot_Add_Entry(self->snapshot, path);
     if (!dat_out) { RETHROW(INCREF(Err_get_error())); }
     DECREF(path);
 
@@ -671,27 +676,27 @@ S_flip_run(SortFieldWriter *run, size_t sub_thresh, InStream *ord_in,
         case FType_TEXT:
             run->sort_cache = (SortCache*)TextSortCache_new(field,
                 run->type, run->run_cardinality, run->run_max, run->null_ord,
-                ord_in_dupe, ix_in_dupe, dat_in_dupe);
+                run->ord_width, ord_in_dupe, ix_in_dupe, dat_in_dupe);
             break;
         case FType_INT32:
             run->sort_cache = (SortCache*)I32SortCache_new(field,
                 run->type, run->run_cardinality, run->run_max, run->null_ord,
-                ord_in_dupe, dat_in_dupe);
+                run->ord_width, ord_in_dupe, dat_in_dupe);
             break;
         case FType_INT64:
             run->sort_cache = (SortCache*)I64SortCache_new(field,
                 run->type, run->run_cardinality, run->run_max, run->null_ord,
-                ord_in_dupe, dat_in_dupe);
+                run->ord_width, ord_in_dupe, dat_in_dupe);
             break;
         case FType_FLOAT32:
             run->sort_cache = (SortCache*)F32SortCache_new(field,
                 run->type, run->run_cardinality, run->run_max, run->null_ord,
-                ord_in_dupe, dat_in_dupe);
+                run->ord_width, ord_in_dupe, dat_in_dupe);
             break;
         case FType_FLOAT64:
             run->sort_cache = (SortCache*)F64SortCache_new(field,
                 run->type, run->run_cardinality, run->run_max, run->null_ord,
-                ord_in_dupe, dat_in_dupe);
+                run->ord_width, ord_in_dupe, dat_in_dupe);
             break;
         default:
             THROW(ERR, "No SortCache class for %o", run->type);

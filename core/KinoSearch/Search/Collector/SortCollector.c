@@ -16,26 +16,30 @@
 #include "KinoSearch/Search/SortRule.h"
 #include "KinoSearch/Search/SortSpec.h"
 
-#define COMPARE_BY_SCORE      1
-#define COMPARE_BY_SCORE_REV  2
-#define COMPARE_BY_DOC_ID     3
-#define COMPARE_BY_DOC_ID_REV 4
-#define COMPARE_BY_ORD1       5
-#define COMPARE_BY_ORD1_REV   6
-#define COMPARE_BY_ORD2       7
-#define COMPARE_BY_ORD2_REV   8
-#define COMPARE_BY_ORD4       9
-#define COMPARE_BY_ORD4_REV   10
-#define COMPARE_BY_ORD8       11
-#define COMPARE_BY_ORD8_REV   12
-#define COMPARE_BY_ORD16      13
-#define COMPARE_BY_ORD16_REV  14
-#define COMPARE_BY_ORD32      15
-#define COMPARE_BY_ORD32_REV  16
-#define AUTO_ACCEPT           17
-#define AUTO_REJECT           18 
-#define AUTO_TIE              19
-#define ACTIONS_MASK          0x1F
+#define COMPARE_BY_SCORE             0x1
+#define COMPARE_BY_SCORE_REV         0x2
+#define COMPARE_BY_DOC_ID            0x3
+#define COMPARE_BY_DOC_ID_REV        0x4
+#define COMPARE_BY_ORD1              0x5
+#define COMPARE_BY_ORD1_REV          0x6
+#define COMPARE_BY_ORD2              0x7
+#define COMPARE_BY_ORD2_REV          0x8
+#define COMPARE_BY_ORD4              0x9
+#define COMPARE_BY_ORD4_REV          0xA
+#define COMPARE_BY_ORD8              0xB
+#define COMPARE_BY_ORD8_REV          0xC
+#define COMPARE_BY_ORD16             0xD
+#define COMPARE_BY_ORD16_REV         0xE
+#define COMPARE_BY_ORD32             0xF
+#define COMPARE_BY_ORD32_REV         0x10
+#define COMPARE_BY_NATIVE_ORD16      0x11
+#define COMPARE_BY_NATIVE_ORD16_REV  0x12
+#define COMPARE_BY_NATIVE_ORD32      0x13
+#define COMPARE_BY_NATIVE_ORD32_REV  0x14
+#define AUTO_ACCEPT                  0x15
+#define AUTO_REJECT                  0x16
+#define AUTO_TIE                     0x17
+#define ACTIONS_MASK                 0x1F
 
 /* Pick an action based on a SortRule and if needed, a SortCache. */
 static i8_t
@@ -180,8 +184,20 @@ S_derive_action(SortRule *rule, SortCache *cache)
                 case 2:  return COMPARE_BY_ORD2  + reverse;
                 case 4:  return COMPARE_BY_ORD4  + reverse;
                 case 8:  return COMPARE_BY_ORD8  + reverse;
-                case 16: return COMPARE_BY_ORD16 + reverse;
-                case 32: return COMPARE_BY_ORD32 + reverse;
+                case 16:
+                    if (SortCache_Get_Native_Ords(cache)) {
+                        return COMPARE_BY_NATIVE_ORD16 + reverse;
+                    }
+                    else {
+                        return COMPARE_BY_ORD16 + reverse;
+                    }
+                case 32:
+                    if (SortCache_Get_Native_Ords(cache)) {
+                        return COMPARE_BY_NATIVE_ORD32 + reverse;
+                    }
+                    else {
+                        return COMPARE_BY_ORD32 + reverse;
+                    }
                 default: THROW(ERR, "Unknown width: %i8", width);
             }
         }
@@ -342,13 +358,33 @@ SI_compare_by_ord8(SortCollector *self, u32_t tick, i32_t a, i32_t b)
 static INLINE i32_t
 SI_compare_by_ord16(SortCollector *self, u32_t tick, i32_t a, i32_t b)
 {
+    uint8_t *ord_bytes = (uint8_t*)self->ord_arrays[tick];
+    uint8_t *address_a = ord_bytes + a * sizeof(uint16_t);
+    uint8_t *address_b = ord_bytes + b * sizeof(uint16_t);
+    i32_t    ord_a = NumUtil_decode_bigend_u16(address_a);
+    i32_t    ord_b = NumUtil_decode_bigend_u16(address_b);
+    return ord_a - ord_b;
+}
+static INLINE i32_t
+SI_compare_by_ord32(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+{
+    uint8_t *ord_bytes = (uint8_t*)self->ord_arrays[tick];
+    uint8_t *address_a = ord_bytes + a * sizeof(uint32_t);
+    uint8_t *address_b = ord_bytes + b * sizeof(uint32_t);
+    i32_t    ord_a = NumUtil_decode_bigend_u32(address_a);
+    i32_t    ord_b = NumUtil_decode_bigend_u32(address_b);
+    return ord_a - ord_b;
+}
+static INLINE i32_t
+SI_compare_by_native_ord16(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+{
     u16_t *ords = (u16_t*)self->ord_arrays[tick];
     i32_t a_ord = ords[a];
     i32_t b_ord = ords[b];
     return a_ord - b_ord;
 }
 static INLINE i32_t
-SI_compare_by_ord32(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+SI_compare_by_native_ord32(SortCollector *self, u32_t tick, i32_t a, i32_t b)
 {
     i32_t *ords = (i32_t*)self->ord_arrays[tick];
     return ords[a] - ords[b];
@@ -510,6 +546,34 @@ SI_competitive(SortCollector *self, i32_t doc_id)
                 break;
             case COMPARE_BY_ORD32_REV: {
                     i32_t comparison = SI_compare_by_ord32(self, i,
+                        self->bubble_doc, SI_validate_doc_id(self, doc_id));
+                    if      (comparison < 0) { return true; }
+                    else if (comparison > 0) { return false; }
+                }
+                break;
+            case COMPARE_BY_NATIVE_ORD16: {
+                    i32_t comparison = SI_compare_by_native_ord16(self, i,
+                        SI_validate_doc_id(self, doc_id), self->bubble_doc);
+                    if      (comparison < 0) { return true; }
+                    else if (comparison > 0) { return false; }
+                }
+                break;
+            case COMPARE_BY_NATIVE_ORD16_REV: {
+                    i32_t comparison = SI_compare_by_native_ord16(self, i,
+                        self->bubble_doc, SI_validate_doc_id(self, doc_id));
+                    if      (comparison < 0) { return true; }
+                    else if (comparison > 0) { return false; }
+                }
+                break;
+            case COMPARE_BY_NATIVE_ORD32: {
+                    i32_t comparison = SI_compare_by_native_ord32(self, i,
+                        SI_validate_doc_id(self, doc_id), self->bubble_doc);
+                    if      (comparison < 0) { return true; }
+                    else if (comparison > 0) { return false; }
+                }
+                break;
+            case COMPARE_BY_NATIVE_ORD32_REV: {
+                    i32_t comparison = SI_compare_by_native_ord32(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }

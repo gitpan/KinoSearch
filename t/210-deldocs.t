@@ -47,7 +47,7 @@ $del_writer->delete_by_doc_id(2);
 $folder->mkdir('seg_2');    # ordinarily done by Indexer
 $del_writer->finish;
 $new_seg->write_file($folder);
-$snapshot->add_entry( $new_seg->get_name . "/segmeta.json" );
+$snapshot->add_entry( $new_seg->get_name );
 
 for my $entry ( values %{ $new_seg->fetch_metadata('deletions')->{files} } ) {
     $snapshot->add_entry( $entry->{filename} );

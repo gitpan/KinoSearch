@@ -47,7 +47,6 @@ static OutStream*
 S_lazy_init(DocWriter *self) 
 {
     if (!self->dat_out) {
-        Snapshot *snapshot  = DocWriter_Get_Snapshot(self);
         Folder   *folder    = self->folder;
         CharBuf  *seg_name  = Seg_Get_Name(self->segment);
 
@@ -55,14 +54,12 @@ S_lazy_init(DocWriter *self)
         {
             CharBuf *ix_file = CB_newf("%o/documents.ix", seg_name);
             self->ix_out = Folder_Open_Out(folder, ix_file);
-            Snapshot_Add_Entry(snapshot, ix_file);
             DECREF(ix_file);
             if (!self->ix_out) { RETHROW(INCREF(Err_get_error())); }
         }
         {
             CharBuf *dat_file = CB_newf("%o/documents.dat", seg_name);
             self->dat_out = Folder_Open_Out(folder, dat_file);
-            Snapshot_Add_Entry(snapshot, dat_file);
             DECREF(dat_file);
             if (!self->dat_out) { RETHROW(INCREF(Err_get_error())); }
         }
@@ -150,18 +147,6 @@ DocWriter_add_segment(DocWriter *self, SegReader *reader,
 
         DECREF(buffer);
     }
-}
-
-void
-DocWriter_delete_segment(DocWriter *self, SegReader *reader)
-{
-    CharBuf  *merged_seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    Snapshot *snapshot = DocWriter_Get_Snapshot(self);
-    CharBuf  *file     = CB_newf("%o/documents.ix", merged_seg_name);
-    Snapshot_Delete_Entry(snapshot, file);
-    CB_setf(file, "%o/documents.dat", merged_seg_name);
-    Snapshot_Delete_Entry(snapshot, file);
-    DECREF(file);
 }
 
 void

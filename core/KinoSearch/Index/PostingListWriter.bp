@@ -40,9 +40,6 @@ class KinoSearch::Index::PostingListWriter cnick PListWriter
                 I32Array *doc_map = NULL);
 
     public void
-    Delete_Segment(PostingListWriter *self, SegReader *reader);
-
-    public void
     Finish(PostingListWriter *self);
 
     public i32_t 

@@ -91,17 +91,6 @@ sub add_segment {
     }
 }
 
-sub merge_segment {
-    my ( $self, %args ) = @_;
-    my $seg_reader = $args{reader};
-    my $snapshot   = $self->get_snapshot;
-    my $merged_ix  = $seg_reader->get_segment->get_name . "/zdocs.ix";
-    my $merged_dat = $seg_reader->get_segment->get_name . "/zdocs.dat";
-    $snapshot->delete_entry($merged_ix);
-    $snapshot->delete_entry($merged_dat);
-    $self->add_segment(%args);
-}
-
 sub finish {
     my $self    = shift;
     my $ix_out  = $ix_out{$$self};

@@ -57,21 +57,18 @@ S_lazy_init(HighlightWriter *self)
     if (!self->dat_out) {
         Segment  *segment  = self->segment;
         Folder   *folder   = self->folder;
-        Snapshot *snapshot = HLWriter_Get_Snapshot(self);
         CharBuf  *seg_name = Seg_Get_Name(segment);
 
         /* Open outstreams. */
         {
             CharBuf *ix_file = CB_newf("%o/highlight.ix", seg_name);
             self->ix_out = Folder_Open_Out(folder, ix_file);
-            Snapshot_Add_Entry(snapshot, ix_file);
             DECREF(ix_file);
             if (!self->ix_out) { RETHROW(INCREF(Err_get_error())); }
         }
         {
             CharBuf *dat_file = CB_newf("%o/highlight.dat", seg_name);
             self->dat_out = Folder_Open_Out(folder, dat_file);
-            Snapshot_Add_Entry(snapshot, dat_file);
             DECREF(dat_file);
             if (!self->dat_out) { RETHROW(INCREF(Err_get_error())); }
         }
@@ -233,19 +230,6 @@ HLWriter_add_segment(HighlightWriter *self, SegReader *reader,
         }
         DECREF(bb);
     }
-}
-
-void
-HLWriter_delete_segment(HighlightWriter *self, SegReader *reader)
-{
-    CharBuf  *merged_seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    Snapshot *snapshot = HLWriter_Get_Snapshot(self);
-    CharBuf  *ix_file  = CB_newf("%o/highlight.ix", merged_seg_name);
-    CharBuf  *dat_file = CB_newf("%o/highlight.dat", merged_seg_name);
-    Snapshot_Delete_Entry(snapshot, ix_file);
-    Snapshot_Delete_Entry(snapshot, dat_file);
-    DECREF(ix_file);
-    DECREF(dat_file);
 }
 
 void

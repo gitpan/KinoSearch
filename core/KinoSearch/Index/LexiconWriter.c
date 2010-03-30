@@ -111,7 +111,6 @@ LexWriter_start_field(LexiconWriter *self, i32_t field_num)
 {
     Segment   *const segment  = LexWriter_Get_Segment(self);
     Folder    *const folder   = LexWriter_Get_Folder(self);
-    Snapshot  *const snapshot = LexWriter_Get_Snapshot(self);
     Schema    *const schema   = LexWriter_Get_Schema(self);
     CharBuf   *const seg_name = Seg_Get_Name(segment);
     CharBuf   *const field    = Seg_Field_Name(segment, field_num);
@@ -127,9 +126,6 @@ LexWriter_start_field(LexiconWriter *self, i32_t field_num)
     if (!self->ix_out) { RETHROW(INCREF(Err_get_error())); }
     self->ixix_out = Folder_Open_Out(folder, self->ixix_file);
     if (!self->ixix_out) { RETHROW(INCREF(Err_get_error())); }
-    Snapshot_Add_Entry(snapshot, self->dat_file);
-    Snapshot_Add_Entry(snapshot, self->ix_file);
-    Snapshot_Add_Entry(snapshot, self->ixix_file);
 
     /* Initialize count and ix_count, term stepper and term info stepper. */
     self->count    = 0;
@@ -237,14 +233,6 @@ LexWriter_metadata(LexiconWriter *self)
     return metadata;
 }
 
-static bool_t 
-S_my_file(VArray *array, u32_t tick, void *data)
-{
-    CharBuf *file_start = (CharBuf*)data;
-    CharBuf *candidate = (CharBuf*)VA_Fetch(array, tick);
-    return CB_Starts_With(candidate, file_start);
-}
-
 void
 LexWriter_add_segment(LexiconWriter *self, SegReader *reader, 
                       I32Array *doc_map)
@@ -253,25 +241,6 @@ LexWriter_add_segment(LexiconWriter *self, SegReader *reader,
     UNUSED_VAR(self);
     UNUSED_VAR(reader);
     UNUSED_VAR(doc_map);
-}
-
-void
-LexWriter_delete_segment(LexiconWriter *self, SegReader *reader)
-{
-    Snapshot *snapshot = LexWriter_Get_Snapshot(self);
-    CharBuf  *merged_seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    CharBuf  *pattern  = CB_newf("%o/lexicon", merged_seg_name);
-    VArray   *files = Snapshot_List(snapshot);
-    VArray   *my_old_files = VA_Grep(files, S_my_file, pattern);
-    u32_t i, max;
-
-    for (i = 0, max = VA_Get_Size(my_old_files); i < max; i++) {
-        CharBuf *entry = (CharBuf*)VA_Fetch(my_old_files, i);
-        Snapshot_Delete_Entry(snapshot, entry);
-    }
-    DECREF(my_old_files);
-    DECREF(files);
-    DECREF(pattern);
 }
 
 i32_t

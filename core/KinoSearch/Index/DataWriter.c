@@ -46,6 +46,13 @@ Folder*
 DataWriter_get_folder(DataWriter *self) { return self->folder; }
 
 void
+DataWriter_delete_segment(DataWriter *self, SegReader *reader)
+{
+    UNUSED_VAR(self);
+    UNUSED_VAR(reader);
+}
+
+void
 DataWriter_merge_segment(DataWriter *self, SegReader *reader, 
                          I32Array *doc_map)
 {

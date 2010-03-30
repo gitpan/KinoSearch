@@ -1,5 +1,17 @@
 Revision history for KinoSearch
 
+0.30_10 2010-03-29
+
+  Bugfixes:
+  
+    * Endian portability issue solved for index sort caches.
+    * Security issue solved for untrusted indexes (potential file deletion,
+      see commit r5970).
+
+  Compatibility
+
+    * Index version bumped.`
+
 0.30_09 2010-03-26
 
   New public classes:

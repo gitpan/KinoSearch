@@ -181,19 +181,19 @@ S_try_open_elements(PolyReader *self)
 
     /* Find schema file, count segments. */
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *file = (CharBuf*)VA_Fetch(files, i);
+        CharBuf *entry = (CharBuf*)VA_Fetch(files, i);
 
-        if (CB_Ends_With_Str(file, "segmeta.json", 12)) {
+        if (Seg_valid_seg_name(entry)) {
             num_segs++;
         }
-        else if (   CB_Starts_With_Str(file, "schema_", 7)
-                 && CB_Ends_With_Str(file, ".json", 5)
+        else if (   CB_Starts_With_Str(entry, "schema_", 7)
+                 && CB_Ends_With_Str(entry, ".json", 5)
         ) {
-            u64_t gen = IxFileNames_extract_gen(file);
+            u64_t gen = IxFileNames_extract_gen(entry);
             if (gen > latest_schema_gen) {
                 latest_schema_gen = gen;
-                if (!schema_file) { schema_file = CB_Clone(file); }
-                else { CB_Mimic(schema_file, (Obj*)file); }
+                if (!schema_file) { schema_file = CB_Clone(entry); }
+                else { CB_Mimic(schema_file, (Obj*)entry); }
             }
         }
     }
@@ -224,11 +224,11 @@ S_try_open_elements(PolyReader *self)
 
     segments = VA_new(num_segs);
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
-        CharBuf *file = (CharBuf*)VA_Fetch(files, i);
+        CharBuf *entry = (CharBuf*)VA_Fetch(files, i);
 
         /* Create a Segment for each segmeta. */
-        if (CB_Ends_With_Str(file, "segmeta.json", 12)) {
-            i64_t seg_num = IxFileNames_extract_gen(file);
+        if (Seg_valid_seg_name(entry)) {
+            i64_t seg_num = IxFileNames_extract_gen(entry);
             Segment *segment = Seg_new(seg_num);
 
             /* Bail if reading the file fails (probably because it's been
@@ -238,7 +238,7 @@ S_try_open_elements(PolyReader *self)
                 VA_Push(segments, (Obj*)segment);
             }
             else {
-                CharBuf *mess = MAKE_MESS("Failed to read %o", file);
+                CharBuf *mess = MAKE_MESS("Failed to read %o", entry);
                 DECREF(segment);
                 DECREF(segments);
                 DECREF(files);

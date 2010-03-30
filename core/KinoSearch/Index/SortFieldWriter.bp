@@ -35,6 +35,7 @@ class KinoSearch::Index::SortFieldWriter
     int32_t    *sorted_ids;
     int32_t     run_ord;
     int32_t     run_tick;
+    int32_t     ord_width;
 
     inert incremented SortFieldWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment, 
@@ -75,6 +76,9 @@ class KinoSearch::Index::SortFieldWriter
 
     int32_t
     Get_Null_Ord(SortFieldWriter *self);
+
+    int32_t
+    Get_Ord_Width(SortFieldWriter *self);
 
     public void
     Destroy(SortFieldWriter *self);

@@ -194,7 +194,6 @@ MatchPostWriter_init(MatchPostingWriter *self, Schema *schema,
         = CB_newf("%o/postings-%i32.dat", Seg_Get_Name(segment), field_num);
     PostWriter_init((PostingWriter*)self, schema, snapshot, segment,
         polyreader, field_num);
-    Snapshot_Add_Entry(snapshot, filename);
     self->outstream = Folder_Open_Out(folder, filename);
     if (!self->outstream) { RETHROW(INCREF(Err_get_error())); }
     DECREF(filename);

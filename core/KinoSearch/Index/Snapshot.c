@@ -7,7 +7,7 @@
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
 
-i32_t Snapshot_current_file_format = 1;
+i32_t Snapshot_current_file_format = 2;
 
 Snapshot*
 Snapshot_new()

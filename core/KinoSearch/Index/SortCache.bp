@@ -11,10 +11,12 @@ class KinoSearch::Index::SortCache extends KinoSearch::Object::Obj {
     i32_t      cardinality;
     i32_t      ord_width;
     i32_t      null_ord;
+    bool_t     native_ords;
 
     public inert SortCache*
     init(SortCache *self, const CharBuf *field, FieldType *type,
-         void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord = -1);
+         void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
+         int32_t ord_width);
 
     /** Assign the value for ordinal <code>ord</code> to <code>blank</code>.
      *
@@ -52,6 +54,16 @@ class KinoSearch::Index::SortCache extends KinoSearch::Object::Obj {
      */
     public i32_t
     Find(SortCache *self, Obj *term = NULL);
+
+    /** Early versions of SortCache had a bug where ords were written using
+     * native byte order rather than big-endian byte order.  The "native_ords"
+     * setting indicates whether this SortCache has such a bug.
+     */
+    void
+    Set_Native_Ords(SortCache *self, bool_t native_ords);
+
+    bool_t
+    Get_Native_Ords(SortCache *self);
 
     public void
     Destroy(SortCache *self);

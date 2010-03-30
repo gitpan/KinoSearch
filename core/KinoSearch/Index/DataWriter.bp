@@ -51,12 +51,16 @@ public class KinoSearch::Index::DataWriter extends KinoSearch::Object::Obj {
     Add_Segment(DataWriter *self, SegReader *reader, 
                 I32Array *doc_map = NULL);
 
-    /** Remove a segment's data.
+    /** Remove a segment's data.  The default implementation is a no-op, as
+     * all files within the segment directory will be automatically deleted.
+     * Subclasses which manage their own files outside of the segment system
+     * should override this method and use it as a trigger for cleaning up
+     * obsolete data.
      *
      * @param reader The SegReader containing content to merge, which must
      * represent a segment which is part of the the current snapshot.
      */
-    public abstract void
+    public void
     Delete_Segment(DataWriter *self, SegReader *reader);
 
     /** Move content from an existing segment into the one currently being

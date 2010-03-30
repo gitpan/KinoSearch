@@ -168,12 +168,16 @@ Folder_delete_tree(Folder *self, const CharBuf *path)
                 for (uint32_t i = 0, max = VA_Get_Size(dirs); i < max; i++) {
                     CharBuf *name = (CharBuf*)VA_Fetch(files, i);
                     bool_t success = Folder_Delete_Tree(inner_folder, name);
-                    if (!success) { break; }
+                    if (!success && Folder_Local_Exists(inner_folder, name)) { 
+                        break; 
+                    }
                 }
                 for (uint32_t i = 0, max = VA_Get_Size(files); i < max; i++) {
                     CharBuf *name = (CharBuf*)VA_Fetch(files, i);
                     bool_t success = Folder_Local_Delete(inner_folder, name);
-                    if (!success) { break; }
+                    if (!success && Folder_Local_Exists(inner_folder, name)) { 
+                        break; 
+                    }
                 }
                 DECREF(dirs);
                 DECREF(files);
@@ -219,7 +223,7 @@ S_add_to_file_list(Folder *self, VArray *list, CharBuf *dir, CharBuf *prefix)
             }
             VA_Push(list, (Obj*)relpath);
 
-            if (DH_Entry_Is_Dir(dh)) {
+            if (DH_Entry_Is_Dir(dh) && !DH_Entry_Is_Symlink(dh)) {
                 CharBuf *subdir = CB_Get_Size(dir) 
                                 ? CB_newf("%o/%o", dir, entry)
                                 : CB_Clone(entry);
@@ -293,6 +297,20 @@ Folder_exists(Folder *self, const CharBuf *path)
     return retval;
 }
 
+bool_t
+Folder_is_directory(Folder *self, const CharBuf *path)
+{
+    Folder *enclosing_folder = Folder_Enclosing_Folder(self, path);
+    bool_t retval = false;
+    if (enclosing_folder) {
+        ZombieCharBuf *name = IxFileNames_local_part(path, ZCB_BLANK());
+        if (Folder_Local_Is_Directory(enclosing_folder, (CharBuf*)name)) {
+            retval = true;
+        }
+    }
+    return retval;
+}
+
 VArray*
 Folder_list(Folder *self, const CharBuf *path)
 {
@@ -312,14 +330,20 @@ Folder_list(Folder *self, const CharBuf *path)
 }
 
 VArray*
-Folder_list_r(Folder *self)
+Folder_list_r(Folder *self, const CharBuf *path)
 {
-    CharBuf *prefix = CB_new(20);
-    CharBuf *dir    = CB_new(20);
-    VArray *list    =  VA_new(32);
-    S_add_to_file_list(self, list, dir, prefix);
-    DECREF(prefix);
-    DECREF(dir);
+    Folder *local_folder = Folder_Find_Folder(self, path);
+    VArray *list =  VA_new(0);
+    if (local_folder) {
+        CharBuf *dir    = CB_new(20);
+        CharBuf *prefix = CB_new(20);
+        if (path && CB_Get_Size(path)) {
+            CB_setf(prefix, "%o/", path);
+        }
+        S_add_to_file_list(local_folder, list, dir, prefix);
+        DECREF(prefix);
+        DECREF(dir);
+    }
     return list;
 }
 

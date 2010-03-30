@@ -75,15 +75,6 @@ sub add_segment {
     }
 }
 
-sub merge_segment {
-    my ( $self, %args ) = @_;
-    my $seg_reader  = $args{reader};
-    my $snapshot    = $self->get_snapshot;
-    my $merged_file = $seg_reader->get_segment->get_name . "/bytebufdocs.dat";
-    $snapshot->delete_entry($merged_file);
-    $self->add_segment(%args);
-}
-
 sub finish {
     my $self      = shift;
     my $outstream = $outstream{$$self};

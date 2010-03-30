@@ -59,7 +59,7 @@ IxManager_highest_seg_num(IndexManager *self, Snapshot *snapshot)
     UNUSED_VAR(self);
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
         CharBuf *file = (CharBuf*)VA_Fetch(files, i);
-        if (CB_Ends_With_Str(file, "segmeta.json", 12)) {
+        if (Seg_valid_seg_name(file)) {
             u64_t seg_num = IxFileNames_extract_gen(file);
             if (seg_num > highest_seg_num) { highest_seg_num = seg_num; }
         }

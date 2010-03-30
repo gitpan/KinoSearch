@@ -54,13 +54,15 @@ DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
     metadata = (Hash*)Seg_Fetch_Metadata_Str(segment, "sort", 4);
     
     /* Check format. */
+    self->format = 0;
     if (metadata) {
         Obj *format = Hash_Fetch_Str(metadata, "format", 6);
         if (!format) { THROW(ERR, "Missing 'format' var"); }
         else {
-            if (Obj_To_I64(format) != SortWriter_current_file_format) {
-                THROW(ERR, "Unsupported term vectors format: %i64", 
-                    Obj_To_I64(format));
+            self->format = Obj_To_I64(format);
+            if (self->format < 2 || self->format > 3) {
+                THROW(ERR, "Unsupported sort cache format: %i32",
+                    self->format);
             }
         }
     }
@@ -68,7 +70,8 @@ DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
     /* Init. */
     self->caches = Hash_new(0);
 
-    /* Either extract or fake up the "counts" hash. */
+    /* Either extract or fake up the "counts", "null_ords", and "ord_widths"
+     * hashes. */
     if (metadata) {
         self->counts = (Hash*)INCREF(CERTIFY(
             Hash_Fetch_Str(metadata, "counts", 6), HASH));
@@ -80,10 +83,19 @@ DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
         else {
             self->null_ords = Hash_new(0);
         }
+        self->ord_widths = (Hash*)Hash_Fetch_Str(metadata, "ord_widths", 10);
+        if (self->ord_widths) {
+            CERTIFY(self->ord_widths, HASH);
+            INCREF(self->ord_widths);
+        }
+        else {
+            self->ord_widths = Hash_new(0);
+        }
     }
     else {
-        self->counts    = Hash_new(0);
-        self->null_ords = Hash_new(0);
+        self->counts     = Hash_new(0);
+        self->null_ords  = Hash_new(0);
+        self->ord_widths = Hash_new(0);
     }
 
     return self;
@@ -104,6 +116,10 @@ DefSortReader_close(DefaultSortReader *self)
         Hash_Dec_RefCount(self->null_ords);
         self->null_ords = NULL;
     }
+    if (self->ord_widths) {
+        Hash_Dec_RefCount(self->ord_widths);
+        self->ord_widths = NULL;
+    }
 }
 
 void
@@ -112,9 +128,20 @@ DefSortReader_destroy(DefaultSortReader *self)
     DECREF(self->caches);
     DECREF(self->counts);
     DECREF(self->null_ords);
+    DECREF(self->ord_widths);
     SUPER_DESTROY(self, DEFAULTSORTREADER);
 }
 
+static i32_t
+S_calc_ord_width(i32_t cardinality) 
+{
+    if      (cardinality <= 0x00000002) { return 1; }
+    else if (cardinality <= 0x00000004) { return 2; }
+    else if (cardinality <= 0x0000000F) { return 4; }
+    else if (cardinality <= 0x000000FF) { return 8; }
+    else if (cardinality <= 0x0000FFFF) { return 16; }
+    else                                { return 32; }
+}
 
 static SortCache*
 S_lazy_init_sort_cache(DefaultSortReader *self, const CharBuf *field)
@@ -166,34 +193,42 @@ S_lazy_init_sort_cache(DefaultSortReader *self, const CharBuf *field)
 
     Obj   *null_ord_obj = Hash_Fetch(self->null_ords, (Obj*)field);
     i32_t  null_ord = null_ord_obj ?  (i32_t)Obj_To_I64(null_ord_obj) : -1;
-    i32_t  doc_max   = (int32_t)Seg_Get_Count(segment);
+    Obj   *ord_width_obj = Hash_Fetch(self->ord_widths, (Obj*)field);
+    i32_t  ord_width = ord_width_obj 
+                     ? (i32_t)Obj_To_I64(ord_width_obj) 
+                     : S_calc_ord_width(count);
+    i32_t  doc_max = (int32_t)Seg_Get_Count(segment);
 
     SortCache *cache = NULL;
     switch (prim_id & FType_PRIMITIVE_ID_MASK) {
         case FType_TEXT:
             cache = (SortCache*)TextSortCache_new(field, type, count, 
-                doc_max, null_ord, ord_in, ix_in, dat_in);
+                doc_max, null_ord, ord_width, ord_in, ix_in, dat_in);
             break;
         case FType_INT32:
             cache = (SortCache*)I32SortCache_new(field, type, count, 
-                doc_max, null_ord, ord_in, dat_in);
+                doc_max, null_ord, ord_width, ord_in, dat_in);
             break;
         case FType_INT64:
             cache = (SortCache*)I64SortCache_new(field, type, count, 
-                doc_max, null_ord, ord_in, dat_in);
+                doc_max, null_ord, ord_width, ord_in, dat_in);
             break;
         case FType_FLOAT32:
             cache = (SortCache*)F32SortCache_new(field, type, count, 
-                doc_max, null_ord, ord_in, dat_in);
+                doc_max, null_ord, ord_width, ord_in, dat_in);
             break;
         case FType_FLOAT64:
             cache = (SortCache*)F64SortCache_new(field, type, count, 
-                doc_max, null_ord, ord_in, dat_in);
+                doc_max, null_ord, ord_width, ord_in, dat_in);
             break;
         default:
             THROW(ERR, "No SortCache class for %o", type);
     }
     Hash_Store(self->caches, (Obj*)field, (Obj*)cache);
+
+    if (self->format == 2) { // bug compatibility
+        SortCache_Set_Native_Ords(cache, true);
+    }
 
     DECREF(ord_in);
     DECREF(ix_in);

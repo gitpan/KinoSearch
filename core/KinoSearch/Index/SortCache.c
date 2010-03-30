@@ -4,21 +4,14 @@
 #include "KinoSearch/Index/SortCache.h"
 #include "KinoSearch/Plan/FieldType.h"
 
-static i32_t
-S_calc_ord_width(i32_t cardinality) 
-{
-    if      (cardinality <= 0x00000002) { return 1; }
-    else if (cardinality <= 0x00000004) { return 2; }
-    else if (cardinality <= 0x0000000F) { return 4; }
-    else if (cardinality <= 0x000000FF) { return 8; }
-    else if (cardinality <= 0x0000FFFF) { return 16; }
-    else                             { return 32; }
-}
-
 SortCache*
 SortCache_init(SortCache *self, const CharBuf *field, FieldType *type,
-               void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord)
+               void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord,
+               int32_t ord_width)
 {
+    /* Init. */
+    self->native_ords = false;
+
     /* Assign. */
     if (!FType_Sortable(type)) { 
         THROW(ERR, "Non-sortable FieldType for %o", field); 
@@ -29,9 +22,7 @@ SortCache_init(SortCache *self, const CharBuf *field, FieldType *type,
     self->cardinality = cardinality;
     self->doc_max     = doc_max;
     self->null_ord    = null_ord;
-
-    /* Calculate the ord bit width. */
-    self->ord_width = S_calc_ord_width(self->cardinality);
+    self->ord_width   = ord_width;
 
     ABSTRACT_CLASS_CHECK(self, SORTCACHE);
     return self;
@@ -45,10 +36,16 @@ SortCache_destroy(SortCache *self)
     SUPER_DESTROY(self, SORTCACHE);
 }
 
+bool_t
+SortCache_get_native_ords(SortCache *self) { return self->native_ords; }
+void
+SortCache_set_native_ords(SortCache *self, bool_t native_ords)
+    { self->native_ords = native_ords; }
+
 i32_t
 SortCache_ordinal(SortCache *self, i32_t doc_id)
 {
-    if (doc_id > self->doc_max) { 
+    if ((uint32_t)doc_id > (uint32_t)self->doc_max) { 
         THROW(ERR, "Out of range: %i32 > %i32", doc_id, self->doc_max);
     }
     switch (self->ord_width) {
@@ -59,14 +56,26 @@ SortCache_ordinal(SortCache *self, i32_t doc_id)
             u8_t *ints = (u8_t*)self->ords;
             return ints[doc_id];
         }
-        case 16: {
-            u16_t *ints = (u16_t*)self->ords;
-            return ints[doc_id];
-        }
-        case 32: {
-            u32_t *ints = (u32_t*)self->ords;
-            return ints[doc_id];
-        }
+        case 16: 
+            if (self->native_ords) {
+                uint16_t *ints = (uint16_t*)self->ords;
+                return ints[doc_id];
+            }
+            else {
+                uint8_t *bytes = (uint8_t*)self->ords;
+                bytes += doc_id * sizeof(uint16_t);
+                return NumUtil_decode_bigend_u16(bytes);
+            }
+        case 32:
+            if (self->native_ords) {
+                uint32_t *ints = (uint32_t*)self->ords;
+                return ints[doc_id];
+            }
+            else {
+                uint8_t *bytes = (uint8_t*)self->ords;
+                bytes += doc_id * sizeof(uint32_t);
+                return NumUtil_decode_bigend_u32(bytes);
+            }
         default: {
             THROW(ERR, "Invalid ord width: %i32", self->ord_width);
             UNREACHABLE_RETURN(i32_t);
