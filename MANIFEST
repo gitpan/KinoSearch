@@ -1000,6 +1000,7 @@ t/binding/029-charbuf.t
 t/binding/034-err.t
 t/binding/038-lock_free_registry.t
 t/binding/101-simple_io.t
+t/binding/800-stack.t
 t/charmonizer/001-integers.t
 t/charmonizer/002-func_macro.t
 t/charmonizer/003-headers.t

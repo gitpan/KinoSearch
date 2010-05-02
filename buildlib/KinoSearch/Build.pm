@@ -8,17 +8,28 @@ package KinoSearch::Build::CBuilder;
 BEGIN { our @ISA = "ExtUtils::CBuilder"; }
 use Config;
 
+my %cc;
+
 sub new {
-    my $class = shift;
+    my ($class, %args) = @_;
     require ExtUtils::CBuilder;
-    return $class->SUPER::new(@_);
+    my $self = $class->SUPER::new(%args);
+    $cc{"$self"} = $args{'config'}->{'cc'};
+    return $self;
+}
+
+sub get_cc { $cc{"$_[0]"} }
+
+sub DESTROY {
+    my $self = shift;
+    delete $cc{"$self"};
 }
 
 # This method isn't implemented by CBuilder for Windows, so we issue a basic
 # link command that works on at least one system and hope for the best.
 sub link_executable {
     my ( $self, %args ) = @_;
-    if ( $Config{cc} eq 'cl' ) {
+    if ( $self->get_cc eq 'cl' ) {
         my ( $objects, $exe_file ) = @args{qw( objects exe_file )};
         $self->do_system("link /out:$exe_file @$objects");
         return $exe_file;
@@ -51,7 +62,7 @@ sub extra_ccflags {
     my $extra_ccflags = defined $ENV{CFLAGS} ? "$ENV{CFLAGS} " : "";
     my $gcc_version 
         = $ENV{REAL_GCC_VERSION}
-        || $Config{gccversion}
+        || $self->config('gccversion')
         || undef;
     if ( defined $gcc_version ) {
         $gcc_version =~ /^(\d+(\.\d+))/
@@ -74,7 +85,7 @@ sub extra_ccflags {
     }
 
     # Compile as C++ under MSVC.
-    if ( $Config{cc} eq 'cl' ) {
+    if ( $self->config('cc') eq 'cl' ) {
         $extra_ccflags .= '/TP ';
     }
 
@@ -129,7 +140,9 @@ sub ACTION_charmonizer {
 
     print "Building $CHARMONIZE_EXE_PATH...\n\n";
 
-    my $cbuilder = KinoSearch::Build::CBuilder->new;
+    my $cbuilder = KinoSearch::Build::CBuilder->new( 
+        config => { cc => $self->config('cc') },
+    );
 
     my @o_files;
     for (@all_source) {
@@ -169,8 +182,8 @@ sub ACTION_charmony {
     $self->add_to_cleanup("_charm*");
 
     # Prepare arguments to charmonize.
-    my $cc        = "$Config{cc}";
-    my $flags     = "$Config{ccflags} " . $self->extra_ccflags;
+    my $cc        = $self->config('cc'); 
+    my $flags     = $self->config('ccflags') . ' ' . $self->extra_ccflags;
     my $verbosity = $ENV{DEBUG_CHARM} ? 2 : 1;
     $flags =~ s/"/\\"/g;
 
@@ -180,8 +193,8 @@ sub ACTION_charmony {
             and die "Failed to write charmony.h";
     }
     else {
-        system("./$CHARMONIZE_EXE_PATH $cc \"$flags\" $verbosity")
-            and die "Failed to write charmony.h";
+        system("./$CHARMONIZE_EXE_PATH \"$cc\" \"$flags\" $verbosity")
+            and die "Failed to write charmony.h: $!";
     }
 }
 
@@ -381,7 +394,7 @@ sub _valgrind_base_command {
 sub ACTION_test_valgrind {
     my $self = shift;
     die "Must be run under a perl that was compiled with -DDEBUGGING"
-        unless $Config{ccflags} =~ /-D?DEBUGGING\b/;
+        unless $self->config('ccflags') =~ /-D?DEBUGGING\b/;
     $self->dispatch('code');
     $self->dispatch('suppressions');
 
@@ -443,7 +456,9 @@ sub ACTION_compile_custom_xs {
 
     require ExtUtils::ParseXS;
 
-    my $cbuilder = KinoSearch::Build::CBuilder->new;
+    my $cbuilder = KinoSearch::Build::CBuilder->new(
+        config => { cc => $self->config('cc') },
+    );
     my $archdir = catdir( $self->blib, 'arch', 'auto', 'KinoSearch', );
     mkpath( $archdir, 0, 0777 ) unless -d $archdir;
     my @include_dirs = (

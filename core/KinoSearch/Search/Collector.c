@@ -71,7 +71,7 @@ void
 BitColl_collect(BitCollector *self, i32_t doc_id) 
 {
     /* Add the doc_id to the BitVector. */
-    BitVec_Set(self->bit_vec, doc_id);
+    BitVec_Set(self->bit_vec, (self->base + doc_id));
 }
 
 bool_t

@@ -4,7 +4,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.30_10
+0.30_101
 
 =head1 SYNOPSIS
 

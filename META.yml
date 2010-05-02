@@ -929,6 +929,7 @@ no_index:
     - t/binding/034-err.t
     - t/binding/038-lock_free_registry.t
     - t/binding/101-simple_io.t
+    - t/binding/800-stack.t
     - t/charmonizer/001-integers.t
     - t/charmonizer/002-func_macro.t
     - t/charmonizer/003-headers.t
@@ -1040,7 +1041,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_10
+    version: 0.30_101
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1350,4 +1351,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.30_10
+version: 0.30_101

@@ -1,5 +1,15 @@
 Revision history for KinoSearch
 
+0.30_101 2010-05-01
+
+  Bugfixes:
+
+    * r6044, r6046-6048: fixes to Build process for compiler values
+      other than 'cc'.
+    * r6078: fix BitCollector bug, where segment offset was ignored.
+    * r6079-6081: Fix problem with corruption of the Perl stack by 
+      Host_callback().
+
 0.30_10 2010-03-29
 
   Bugfixes:

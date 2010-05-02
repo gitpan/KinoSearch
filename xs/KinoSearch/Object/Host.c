@@ -20,6 +20,11 @@ SI_push_args(void *vobj, va_list args, chy_u32_t num_args)
     SV *invoker;
     chy_u32_t i;
     dSP;
+
+    uint32_t stack_slots_needed = num_args < 2
+                                ? num_args + 1
+                                : (num_args * 2) + 1;
+    EXTEND(SP, stack_slots_needed);
     
     if (Kino_Obj_Is_A(obj, KINO_VTABLE)) {
         kino_VTable *vtable = (kino_VTable*)obj;
@@ -33,28 +38,28 @@ SI_push_args(void *vobj, va_list args, chy_u32_t num_args)
     ENTER;
     SAVETMPS;
     PUSHMARK(SP);
-    XPUSHs( sv_2mortal(invoker) );
+    PUSHs( sv_2mortal(invoker) );
 
     for (i = 0; i < num_args; i++) {
         chy_u32_t arg_type = va_arg(args, chy_u32_t);
         char *label = va_arg(args, char*);
         if (num_args > 1) {
-            XPUSHs( sv_2mortal( newSVpvn(label, strlen(label)) ) );
+            PUSHs( sv_2mortal( newSVpvn(label, strlen(label)) ) );
         }
         switch (arg_type & KINO_HOST_ARGTYPE_MASK) {
         case KINO_HOST_ARGTYPE_I32: {
                 chy_i32_t value = va_arg(args, chy_i32_t);
-                XPUSHs( sv_2mortal( newSViv(value) ) );
+                PUSHs( sv_2mortal( newSViv(value) ) );
             }
             break;
         case KINO_HOST_ARGTYPE_I64: {
                 chy_i64_t value = va_arg(args, chy_i64_t);
                 if (sizeof(IV) == 8) {
-                    XPUSHs( sv_2mortal( newSViv((IV)value) ) );
+                    PUSHs( sv_2mortal( newSViv((IV)value) ) );
                 }
                 else {
                     /* lossy */
-                    XPUSHs( sv_2mortal( newSVnv((double)value) ) );
+                    PUSHs( sv_2mortal( newSVnv((double)value) ) );
                 }
             }
             break;
@@ -62,12 +67,12 @@ SI_push_args(void *vobj, va_list args, chy_u32_t num_args)
         case KINO_HOST_ARGTYPE_F64: {
                 /* Floats are promoted to doubles by variadic calling. */
                 double value = va_arg(args, double);
-                XPUSHs( sv_2mortal( newSVnv(value) ) );
+                PUSHs( sv_2mortal( newSVnv(value) ) );
             }
             break;
         case KINO_HOST_ARGTYPE_STR: {
                 kino_CharBuf *string = va_arg(args, kino_CharBuf*);
-                XPUSHs( sv_2mortal( XSBind_cb_to_sv(string) ) );
+                PUSHs( sv_2mortal( XSBind_cb_to_sv(string) ) );
             }
             break;
         case KINO_HOST_ARGTYPE_OBJ: {
@@ -75,7 +80,7 @@ SI_push_args(void *vobj, va_list args, chy_u32_t num_args)
                 SV *arg_sv = anObj == NULL
                     ? newSV(0)
                     : XSBind_kino_to_perl(anObj);
-                XPUSHs( sv_2mortal(arg_sv) );
+                PUSHs( sv_2mortal(arg_sv) );
             }
             break;
         default:
@@ -96,13 +101,11 @@ kino_Host_callback(void *vobj, char *method, chy_u32_t num_args, ...)
     va_end(args);
     
     {
-        dSP;
         int count = call_method(method, G_VOID|G_DISCARD);
         if (count != 0) {
             KINO_THROW(KINO_ERR, "callback '%s' returned too many values: %i32", 
                 method, (chy_i32_t)count);
         }
-        PUTBACK;
         FREETMPS;
         LEAVE;
     }
