@@ -55,7 +55,7 @@ PolyAnalyzer_transform(PolyAnalyzer *self, Inversion *inversion)
     VArray *const analyzers = self->analyzers;
     (void)INCREF(inversion);
 
-    /* Iterate through each of the analyzers in order. */
+    // Iterate through each of the analyzers in order. 
     for (uint32_t i = 0, max = VA_Get_Size(analyzers); i < max; i++) {
         Analyzer *analyzer = (Analyzer*)VA_Fetch(analyzers, i);
         Inversion *new_inversion = Analyzer_Transform(analyzer, inversion);
@@ -118,37 +118,6 @@ PolyAnalyzer_load(PolyAnalyzer *self, Obj *dump)
     PolyAnalyzer_init(loaded, NULL, analyzers);
     DECREF(analyzers);
     return loaded;
-}
-
-bool_t
-PolyAnalyzer_dump_equals(PolyAnalyzer *self, Obj *dump)
-{
-    PolyAnalyzer_dump_equals_t super_dump_equals 
-        = (PolyAnalyzer_dump_equals_t) SUPER_METHOD(POLYANALYZER, 
-            PolyAnalyzer, Dump_Equals);
-    if (!super_dump_equals(self, dump)) { return false; }
-    else {
-        Hash *source = (Hash*)CERTIFY(dump, HASH);
-        VArray *sub_dumps = (VArray*)Hash_Fetch_Str(source, "analyzers", 9);
-        if (   !sub_dumps 
-            || !Obj_Is_A((Obj*)sub_dumps, VARRAY)
-            || VA_Get_Size(sub_dumps) != VA_Get_Size(self->analyzers)
-        ) {
-            return false;
-        }
-        else {
-            for (uint32_t i = 0, max = VA_Get_Size(sub_dumps); i < max; i++) {
-                Obj *sub_dump = VA_Fetch(sub_dumps, i);
-                Analyzer *sub_analyzer 
-                    = (Analyzer*)VA_Fetch(self->analyzers, i);
-                if (!Analyzer_Dump_Equals(sub_analyzer, sub_dump)) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    return true;
 }
 
 /* Copyright 2005-2010 Marvin Humphrey

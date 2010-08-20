@@ -3,7 +3,7 @@
 
 #include "math.h"
 
-#include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Index/Similarity.h"
 
 #include "KinoSearch/Index/Posting/ScorePosting.h"
 #include "KinoSearch/Index/Segment.h"
@@ -11,7 +11,6 @@
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Posting/MatchPosting.h"
 #include "KinoSearch/Plan/Schema.h"
-#include "KinoSearch/Search/Searcher.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 
@@ -25,24 +24,16 @@ Sim_new()
 Similarity*
 Sim_init(Similarity *self) 
 {
-    uint32_t i;
-
-    /* Cache decoded norms and proximity boost factors. */
-    self->norm_decoder = (float*)MALLOCATE(256 * sizeof(float));
-    self->prox_decoder = (float*)MALLOCATE(256 * sizeof(float));
-    for (i = 0; i < 256; i++) {
-        self->norm_decoder[i] = Sim_Decode_Norm(self, i);
-        self->prox_decoder[i] = Sim_Prox_Boost(self, i);
-    }
-
+    self->norm_decoder = NULL;
     return self;
 }
 
 void
 Sim_destroy(Similarity *self) 
 {
-    FREEMEM(self->norm_decoder);
-    FREEMEM(self->prox_decoder);
+    if (self->norm_decoder) {
+        FREEMEM(self->norm_decoder);
+    }
     SUPER_DESTROY(self, SIMILARITY);
 }
 
@@ -63,7 +54,17 @@ Sim_make_posting_writer(Similarity *self, Schema *schema, Snapshot *snapshot,
 }
 
 float*
-Sim_get_norm_decoder(Similarity *self) { return self->norm_decoder; }
+Sim_get_norm_decoder(Similarity *self)
+{ 
+    if (!self->norm_decoder) {
+        // Cache decoded boost bytes. 
+        self->norm_decoder = (float*)MALLOCATE(256 * sizeof(float));
+        for (uint32_t i = 0; i < 256; i++) {
+            self->norm_decoder[i] = Sim_Decode_Norm(self, i);
+        }
+    }
+    return self->norm_decoder; 
+}
 
 Obj*
 Sim_dump(Similarity *self)
@@ -89,7 +90,7 @@ Sim_load(Similarity *self, Obj *dump)
 void
 Sim_serialize(Similarity *self, OutStream *target)
 {
-    /* Only the class name. */
+    // Only the class name. 
     CB_Serialize(Sim_Get_Class_Name(self), target);
 }
 
@@ -119,19 +120,17 @@ Sim_equals(Similarity *self, Obj *other)
 }
 
 float
-Sim_idf(Similarity *self, Searcher *searcher, const CharBuf *field, 
-        Obj *term)
+Sim_idf(Similarity *self, int64_t doc_freq, int64_t total_docs)
 {
-    double doc_max = Searcher_Doc_Max(searcher);
     UNUSED_VAR(self);
-    
-    if (doc_max == 0) {
-        /* Guard against log of zero error, return meaningless number. */
+    if (total_docs == 0) {
+        // Guard against log of zero error, return meaningless number. 
         return 1;
     }
     else {
-        double doc_freq = Searcher_Doc_Freq(searcher, field, term);
-        return (float)(1 + log( doc_max / (1 + doc_freq) ));
+        double total_documents = (double)total_docs;
+        double document_freq   = (double)doc_freq;
+        return (float)(1 + log( total_documents / (1 + document_freq) ));
     }
 }
 
@@ -193,7 +192,7 @@ float
 Sim_length_norm(Similarity *self, uint32_t num_tokens)
 {
     UNUSED_VAR(self);
-    if (num_tokens == 0) /* guard against div by zero */
+    if (num_tokens == 0) // guard against div by zero 
         return 0;
     else
         return (float)( 1.0 / sqrt((double)num_tokens) );
@@ -203,48 +202,10 @@ float
 Sim_query_norm(Similarity *self, float sum_of_squared_weights)
 {
     UNUSED_VAR(self);
-    if (sum_of_squared_weights == 0.0f) /* guard against div by zero */
+    if (sum_of_squared_weights == 0.0f) // guard against div by zero 
         return 0;
     else
         return (float)( 1.0 / sqrt(sum_of_squared_weights) );
-}
-
-float
-Sim_prox_boost(Similarity *self, uint32_t distance)
-{
-    UNUSED_VAR(self);
-    if (distance == 0)
-        return 0.0f;
-    else 
-        return 1.0f/(float)distance;
-
-}
-
-float
-Sim_prox_coord(Similarity *self, uint32_t *prox, uint32_t num_prox)
-{
-    float    *prox_decoder = self->prox_decoder;
-    uint32_t *a = prox;
-    uint32_t *const limit = prox + num_prox;
-    float     bonus = 0;
-
-    /* Add to bonus for each pair of positions within 256 tokens. */
-    for ( ; a < limit - 1; a++) {
-        uint32_t *b = a + 1;
-        uint32_t distance = *b - *a;
-        for ( ; distance < 256 && b < limit; b++) {
-            bonus += prox_decoder[distance];
-            distance = *b - *a;
-        }
-    }
-
-    /* Damp the scoring multiplier.  Ideally, we would want to know the number
-     * of tokens in the field, but we don't have the token count available so
-     * that's not a possibility.  Fortunately, using the number of positions
-     * matched works OK because it's likely to be roughly proportionate to
-     * field length.
-     */
-     return 1.0f + bonus/num_prox;
 }
 
 float

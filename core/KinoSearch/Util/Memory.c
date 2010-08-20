@@ -50,21 +50,21 @@ kino_Memory_wrapped_free(void *ptr)
 size_t
 kino_Memory_oversize(size_t minimum, size_t width)
 {
-    /* For larger arrays, grow by an excess of 1/8; grow faster when the array
-     * is small. */
+    // For larger arrays, grow by an excess of 1/8; grow faster when the array
+    // is small.
     size_t extra = minimum / 8;
     if (extra < 3) {
         extra = 3;
     }
     size_t amount = minimum + extra;
 
-    /* Detect wraparound and return SIZE_MAX instead. */
+    // Detect wraparound and return SIZE_MAX instead. 
     if (amount + 7 < minimum) { 
         return SIZE_MAX;
     }
 
-    /* Round up for small widths so that the number of bytes requested will be
-     * a multiple of the machine's word size. */
+    // Round up for small widths so that the number of bytes requested will be
+    // a multiple of the machine's word size.
     if (sizeof(size_t) == 8) { // 64-bit
         switch(width) {
         case 1:  amount = (amount + 7) & CHY_I64_C(0xFFFFFFFFFFFFFFF8); break;

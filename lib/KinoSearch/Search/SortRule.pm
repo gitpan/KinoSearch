@@ -10,19 +10,19 @@ __BINDING__
 my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Search::SortRule
 
-chy_i32_t
+int32_t
 FIELD()
 CODE:
     RETVAL = kino_SortRule_FIELD;
 OUTPUT: RETVAL
 
-chy_i32_t
+int32_t
 SCORE()
 CODE:
     RETVAL = kino_SortRule_SCORE;
 OUTPUT: RETVAL
 
-chy_i32_t
+int32_t
 DOC_ID()
 CODE:
     RETVAL = kino_SortRule_DOC_ID;

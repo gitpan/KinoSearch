@@ -18,7 +18,7 @@ TermVector*
 TV_init(TermVector *self, const CharBuf *field, const CharBuf *text, 
         I32Array *positions, I32Array *start_offsets, I32Array *end_offsets)
 {
-    /* Assign. */
+    // Assign. 
     self->field          = CB_Clone(field);
     self->text           = CB_Clone(text);
     self->num_pos        = I32Arr_Get_Size(positions);
@@ -57,10 +57,10 @@ TV_get_end_offsets(TermVector *self)   { return self->end_offsets; }
 void
 TV_serialize(TermVector *self, OutStream *target)
 {
-    u32_t i;
-    i32_t *posits = self->positions->ints;
-    i32_t *starts = self->start_offsets->ints;
-    i32_t *ends   = self->start_offsets->ints;
+    uint32_t i;
+    int32_t *posits = self->positions->ints;
+    int32_t *starts = self->start_offsets->ints;
+    int32_t *ends   = self->start_offsets->ints;
 
     CB_Serialize(self->field, target);
     CB_Serialize(self->text, target);
@@ -76,17 +76,17 @@ TV_serialize(TermVector *self, OutStream *target)
 TermVector*
 TV_deserialize(TermVector *self, InStream *instream)
 {
-    u32_t i;
+    uint32_t i;
     CharBuf *field = (CharBuf*)CB_deserialize(NULL, instream);
     CharBuf *text  = (CharBuf*)CB_deserialize(NULL, instream);
-    u32_t num_pos  = InStream_Read_C32(instream);
-    i32_t *posits, *starts, *ends;
+    uint32_t num_pos  = InStream_Read_C32(instream);
+    int32_t *posits, *starts, *ends;
     I32Array *positions, *start_offsets, *end_offsets;
 
-    /* Read positional data. */
-    posits    = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
-    starts    = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
-    ends      = (i32_t*)MALLOCATE(num_pos * sizeof(i32_t));
+    // Read positional data. 
+    posits    = (int32_t*)MALLOCATE(num_pos * sizeof(int32_t));
+    starts    = (int32_t*)MALLOCATE(num_pos * sizeof(int32_t));
+    ends      = (int32_t*)MALLOCATE(num_pos * sizeof(int32_t));
     for (i = 0; i < num_pos; i++) {
         posits[i] = InStream_Read_C32(instream);
         starts[i] = InStream_Read_C32(instream);
@@ -112,13 +112,13 @@ bool_t
 TV_equals(TermVector *self, Obj *other)
 {
     TermVector *const evil_twin = (TermVector*)other;
-    u32_t i;
-    i32_t *const posits       = self->positions->ints;
-    i32_t *const starts       = self->start_offsets->ints;
-    i32_t *const ends         = self->start_offsets->ints;
-    i32_t *const other_posits = evil_twin->positions->ints;
-    i32_t *const other_starts = evil_twin->start_offsets->ints;
-    i32_t *const other_ends   = evil_twin->start_offsets->ints;
+    uint32_t i;
+    int32_t *const posits       = self->positions->ints;
+    int32_t *const starts       = self->start_offsets->ints;
+    int32_t *const ends         = self->start_offsets->ints;
+    int32_t *const other_posits = evil_twin->positions->ints;
+    int32_t *const other_starts = evil_twin->start_offsets->ints;
+    int32_t *const other_ends   = evil_twin->start_offsets->ints;
 
     if (evil_twin == self) return true;
 

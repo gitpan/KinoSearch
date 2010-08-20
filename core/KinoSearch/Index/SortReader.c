@@ -15,7 +15,7 @@
 
 SortReader*
 SortReader_init(SortReader *self, Schema *schema, Folder *folder,
-                Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+                Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     DataReader_init((DataReader*)self, schema, folder, snapshot, segments,
         seg_tick);
@@ -34,7 +34,7 @@ SortReader_aggregator(SortReader *self, VArray *readers, I32Array *offsets)
 
 DefaultSortReader*
 DefSortReader_new(Schema *schema, Folder *folder, Snapshot *snapshot, 
-               VArray *segments, i32_t seg_tick)
+               VArray *segments, int32_t seg_tick)
 {
     DefaultSortReader *self 
         = (DefaultSortReader*)VTable_Make_Obj(DEFAULTSORTREADER);
@@ -44,7 +44,7 @@ DefSortReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
 
 DefaultSortReader*
 DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
-                   Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+                   Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     Segment *segment;
     Hash    *metadata;
@@ -53,13 +53,13 @@ DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
     segment = DefSortReader_Get_Segment(self);
     metadata = (Hash*)Seg_Fetch_Metadata_Str(segment, "sort", 4);
     
-    /* Check format. */
+    // Check format. 
     self->format = 0;
     if (metadata) {
         Obj *format = Hash_Fetch_Str(metadata, "format", 6);
         if (!format) { THROW(ERR, "Missing 'format' var"); }
         else {
-            self->format = Obj_To_I64(format);
+            self->format = (int32_t)Obj_To_I64(format);
             if (self->format < 2 || self->format > 3) {
                 THROW(ERR, "Unsupported sort cache format: %i32",
                     self->format);
@@ -67,11 +67,11 @@ DefSortReader_init(DefaultSortReader *self, Schema *schema, Folder *folder,
         }
     }
 
-    /* Init. */
+    // Init. 
     self->caches = Hash_new(0);
 
-    /* Either extract or fake up the "counts", "null_ords", and "ord_widths"
-     * hashes. */
+    // Either extract or fake up the "counts", "null_ords", and "ord_widths"
+    // hashes.
     if (metadata) {
         self->counts = (Hash*)INCREF(CERTIFY(
             Hash_Fetch_Str(metadata, "counts", 6), HASH));
@@ -132,8 +132,8 @@ DefSortReader_destroy(DefaultSortReader *self)
     SUPER_DESTROY(self, DEFAULTSORTREADER);
 }
 
-static i32_t
-S_calc_ord_width(i32_t cardinality) 
+static int32_t
+S_calc_ord_width(int32_t cardinality) 
 {
     if      (cardinality <= 0x00000002) { return 1; }
     else if (cardinality <= 0x00000004) { return 2; }
@@ -146,26 +146,26 @@ S_calc_ord_width(i32_t cardinality)
 static SortCache*
 S_lazy_init_sort_cache(DefaultSortReader *self, const CharBuf *field)
 {
-    /* See if we have any values. */
+    // See if we have any values. 
     Obj *count_obj = Hash_Fetch(self->counts, (Obj*)field);
     int32_t count = count_obj ? (int32_t)Obj_To_I64(count_obj) : 0;
     if (!count) { return NULL; }
 
-    /* Get a FieldType and sanity check that the field is sortable. */
+    // Get a FieldType and sanity check that the field is sortable. 
     Schema    *schema = DefSortReader_Get_Schema(self);
     FieldType *type   = Schema_Fetch_Type(schema, field);
     if (!type || !FType_Sortable(type)) {
         THROW(ERR, "'%o' isn't a sortable field", field);
     }
 
-    /* Open streams. */
+    // Open streams. 
     Folder    *folder    = DefSortReader_Get_Folder(self);
     Segment   *segment   = DefSortReader_Get_Segment(self);
     CharBuf   *seg_name  = Seg_Get_Name(segment);
     size_t     size      = ZCB_size() + CB_Get_Size(seg_name) + 40;
     CharBuf   *path      = (CharBuf*)ZCB_newf(alloca(size), size, "");
-    i32_t      field_num = Seg_Field_Num(segment, field);
-    i8_t       prim_id   = FType_Primitive_ID(type);
+    int32_t    field_num = Seg_Field_Num(segment, field);
+    int8_t     prim_id   = FType_Primitive_ID(type);
     bool_t     var_width = (prim_id == FType_TEXT || prim_id == FType_BLOB)
                          ? true 
                          : false;
@@ -191,13 +191,13 @@ S_lazy_init_sort_cache(DefaultSortReader *self, const CharBuf *field)
             field, Err_get_error());
     }
 
-    Obj   *null_ord_obj = Hash_Fetch(self->null_ords, (Obj*)field);
-    i32_t  null_ord = null_ord_obj ?  (i32_t)Obj_To_I64(null_ord_obj) : -1;
-    Obj   *ord_width_obj = Hash_Fetch(self->ord_widths, (Obj*)field);
-    i32_t  ord_width = ord_width_obj 
-                     ? (i32_t)Obj_To_I64(ord_width_obj) 
-                     : S_calc_ord_width(count);
-    i32_t  doc_max = (int32_t)Seg_Get_Count(segment);
+    Obj     *null_ord_obj = Hash_Fetch(self->null_ords, (Obj*)field);
+    int32_t  null_ord = null_ord_obj ? (int32_t)Obj_To_I64(null_ord_obj) : -1;
+    Obj     *ord_width_obj = Hash_Fetch(self->ord_widths, (Obj*)field);
+    int32_t  ord_width = ord_width_obj 
+                       ? (int32_t)Obj_To_I64(ord_width_obj) 
+                       : S_calc_ord_width(count);
+    int32_t  doc_max = (int32_t)Seg_Get_Count(segment);
 
     SortCache *cache = NULL;
     switch (prim_id & FType_PRIMITIVE_ID_MASK) {

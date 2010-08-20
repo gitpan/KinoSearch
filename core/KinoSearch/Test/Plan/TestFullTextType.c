@@ -2,7 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"
-#include "KinoSearch/Test/FieldType/TestFullTextType.h"
+#include "KinoSearch/Test/Plan/TestFullTextType.h"
 #include "KinoSearch/Test/TestUtils.h"
 #include "KinoSearch/Plan/FullTextType.h"
 #include "KinoSearch/Analysis/CaseFolder.h"
@@ -22,15 +22,15 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj          *dump          = (Obj*)FullTextType_Dump(type);
     Obj          *clone         = Obj_Load(dump, dump);
     Obj          *another_dump  = (Obj*)FullTextType_Dump_For_Schema(type);
-    FullTextType *another_clone = FullTextType_load(NULL, another_dump);
 
     FullTextType_Set_Boost(boost_differs, 1.5);
     FullTextType_Set_Indexed(not_indexed, false);
     FullTextType_Set_Stored(not_stored, false);
     FullTextType_Set_Highlightable(highlightable, true);
 
-    /* (This step is normally performed by Schema internally.) */
-    FullTextType_Set_Analyzer(another_clone, (Analyzer*)tokenizer);
+    // (This step is normally performed by Schema_Load() internally.) 
+    Hash_Store_Str((Hash*)another_dump, "analyzer", 8, INCREF(tokenizer));
+    FullTextType *another_clone = FullTextType_load(NULL, another_dump);
 
     ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)boost_differs),
         "Equals() false with different boost");
@@ -78,15 +78,6 @@ test_Compare_Values(TestBatch *batch)
     ASSERT_TRUE(batch, 
         FullTextType_Compare_Values(type, (Obj*)b, (Obj*)b) == 0,
         "b equals b");
-    ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, NULL, (Obj*)b) > 0,
-        "NULL greater than b");
-    ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, (Obj*)b, NULL) < 0,
-        "b less than NULL");
-    ASSERT_TRUE(batch, 
-        FullTextType_Compare_Values(type, NULL, NULL) == 0,
-        "NULL equals NULL");
 
     DECREF(type);
     DECREF(tokenizer);
@@ -95,7 +86,7 @@ test_Compare_Values(TestBatch *batch)
 void
 TestFullTextType_run_tests()
 {
-    TestBatch *batch = TestBatch_new(13);
+    TestBatch *batch = TestBatch_new(10);
     TestBatch_Plan(batch);
     test_Dump_Load_and_Equals(batch);
     test_Compare_Values(batch);

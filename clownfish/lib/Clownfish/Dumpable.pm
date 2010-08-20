@@ -132,7 +132,7 @@ sub _process_dump_member {
     my $len  = length($name);
     if ( $type->is_integer ) {
         return qq|    Kino_Hash_Store_Str(dump, "$name", $len, |
-            . qq|(kino_Obj*)kino_CB_newf("%i64", (chy_i64_t)self->$name));\n|;
+            . qq|(kino_Obj*)kino_CB_newf("%i64", (int64_t)self->$name));\n|;
     }
     elsif ( $type->is_floating ) {
         return qq|    Kino_Hash_Store_Str(dump, "$name", $len, |

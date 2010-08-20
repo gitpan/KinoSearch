@@ -13,7 +13,7 @@ SkipStepper_new()
 {
     SkipStepper *self = (SkipStepper*)VTable_Make_Obj(SKIPSTEPPER);
 
-    /* Init. */
+    // Init. 
     self->doc_id   = 0;
     self->filepos  = 0;
 
@@ -21,7 +21,7 @@ SkipStepper_new()
 }
 
 void
-SkipStepper_set_id_and_filepos(SkipStepper *self, i32_t doc_id, i64_t filepos)
+SkipStepper_set_id_and_filepos(SkipStepper *self, int32_t doc_id, int64_t filepos)
 {
     self->doc_id  = doc_id;
     self->filepos = filepos;
@@ -45,15 +45,15 @@ SkipStepper_to_string(SkipStepper *self)
 
 void
 SkipStepper_write_record(SkipStepper *self, OutStream *outstream, 
-    i32_t last_doc_id, i64_t last_filepos)
+    int32_t last_doc_id, int64_t last_filepos)
 {
-    const i32_t delta_doc_id = self->doc_id - last_doc_id;
-    const i64_t delta_filepos = self->filepos - last_filepos;
+    const int32_t delta_doc_id = self->doc_id - last_doc_id;
+    const int64_t delta_filepos = self->filepos - last_filepos;
 
-    /* Write delta doc id. */
+    // Write delta doc id. 
     OutStream_Write_C32(outstream, delta_doc_id);
 
-    /* Write delta file pointer. */
+    // Write delta file pointer. 
     OutStream_Write_C64(outstream, delta_filepos);
 }
 

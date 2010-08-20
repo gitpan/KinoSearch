@@ -7,7 +7,7 @@ use KinoSearch::Test;
 use KSx::Search::MockScorer;
 use KinoSearch::Test::TestUtils qw( modulo_set doc_ids_from_td_coll );
 
-my $sim = KinoSearch::Search::Similarity->new;
+my $sim = KinoSearch::Index::Similarity->new;
 
 for my $interval_a ( reverse 1 .. 17 ) {
     for my $interval_b ( reverse 10 .. 17 ) {
@@ -33,9 +33,9 @@ sub check_scorer {
         children   => \@children,
         similarity => $sim,
     );
-    my @expected  = intersect(@doc_id_arrays);
-    my $collector = KinoSearch::Search::Collector::SortCollector->new(
-        wanted => 1000 );
+    my @expected = intersect(@doc_id_arrays);
+    my $collector
+        = KinoSearch::Search::Collector::SortCollector->new( wanted => 1000 );
     $and_scorer->collect( collector => $collector );
     is( $collector->get_total_hits,
         scalar @expected,

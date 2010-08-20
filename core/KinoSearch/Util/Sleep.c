@@ -7,13 +7,13 @@
 #include <windows.h>
 
 void
-kino_Sleep_sleep(chy_u32_t seconds)
+kino_Sleep_sleep(uint32_t seconds)
 {
     Sleep(seconds * 1000);
 }
 
 void
-kino_Sleep_millisleep(chy_u32_t milliseconds)
+kino_Sleep_millisleep(uint32_t milliseconds)
 {
     Sleep(milliseconds);
 }
@@ -24,24 +24,24 @@ kino_Sleep_millisleep(chy_u32_t milliseconds)
 #include <unistd.h>
 
 void
-kino_Sleep_sleep(chy_u32_t seconds)
+kino_Sleep_sleep(uint32_t seconds)
 {
     sleep(seconds);
 }
 
 void
-kino_Sleep_millisleep(chy_u32_t milliseconds)
+kino_Sleep_millisleep(uint32_t milliseconds)
 {
-    chy_u32_t seconds = milliseconds / 1000;
+    uint32_t seconds = milliseconds / 1000;
     milliseconds  = milliseconds % 1000;
     sleep(seconds);
-    /* TODO: probe for usleep. */
+    // TODO: probe for usleep. 
     usleep(milliseconds * 1000);
 }
 
 #else
   #error "Can't find a known sleep API."
-#endif /* OS switch. */
+#endif // OS switch. 
 
 /* Copyright 2009-2010 Marvin Humphrey
  *

@@ -4,8 +4,8 @@
 #include "KinoSearch/Search/TermScorer.h"
 #include "KinoSearch/Index/Posting.h"
 #include "KinoSearch/Index/PostingList.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Search/Compiler.h"
-#include "KinoSearch/Search/Similarity.h"
 
 TermScorer*
 TermScorer_init(TermScorer *self, Similarity *similarity, PostingList *plist, 
@@ -13,13 +13,13 @@ TermScorer_init(TermScorer *self, Similarity *similarity, PostingList *plist,
 {
     Matcher_init((Matcher*)self);
 
-    /* Assign. */
+    // Assign. 
     self->sim           = (Similarity*)INCREF(similarity);
     self->plist         = (PostingList*)INCREF(plist);
     self->compiler      = (Compiler*)INCREF(compiler);
     self->weight        = Compiler_Get_Weight(compiler);
 
-    /* Init. */
+    // Init. 
     self->posting        = NULL;
 
     return self;
@@ -34,18 +34,18 @@ TermScorer_destroy(TermScorer *self)
     SUPER_DESTROY(self, TERMSCORER);
 }
 
-i32_t
+int32_t
 TermScorer_next(TermScorer* self) 
 {
     PostingList *const plist = self->plist;
     if (plist) {
-        i32_t doc_id = PList_Next(plist);
+        int32_t doc_id = PList_Next(plist);
         if (doc_id) {
             self->posting = PList_Get_Posting(plist);
             return doc_id;
         }
         else {
-            /* Reclaim resources a little early. */
+            // Reclaim resources a little early. 
             DECREF(plist);
             self->plist = NULL;
             return 0;
@@ -54,18 +54,18 @@ TermScorer_next(TermScorer* self)
     return 0;
 }
 
-i32_t
-TermScorer_advance(TermScorer *self, i32_t target)
+int32_t
+TermScorer_advance(TermScorer *self, int32_t target)
 {
     PostingList *const plist = self->plist;
     if (plist) {
-        i32_t doc_id = PList_Advance(plist, target);
+        int32_t doc_id = PList_Advance(plist, target);
         if (doc_id) {
             self->posting = PList_Get_Posting(plist);
             return doc_id;
         }
         else {
-            /* Reclaim resources a little early. */
+            // Reclaim resources a little early. 
             DECREF(plist);
             self->plist = NULL;
             return 0;
@@ -74,7 +74,7 @@ TermScorer_advance(TermScorer *self, i32_t target)
     return 0;
 }
 
-i32_t 
+int32_t 
 TermScorer_get_doc_id(TermScorer* self) 
 {
     return Post_Get_Doc_ID(self->posting);

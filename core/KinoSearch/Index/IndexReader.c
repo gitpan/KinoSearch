@@ -32,7 +32,7 @@ IxReader_do_open(IndexReader *temp_self, Obj *index, Snapshot *snapshot,
 
 IndexReader*
 IxReader_init(IndexReader *self, Schema *schema, Folder *folder, 
-              Snapshot *snapshot, VArray *segments, i32_t seg_tick, 
+              Snapshot *snapshot, VArray *segments, int32_t seg_tick, 
               IndexManager *manager)
 {
     snapshot = snapshot ? (Snapshot*)INCREF(snapshot) : Snapshot_new();

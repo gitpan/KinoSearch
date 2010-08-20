@@ -16,22 +16,22 @@
 
 RawPosting RAWPOSTING_BLANK = { 
     KINO_RAWPOSTING, 
-    {1},                   /* ref.count */
-    0,                     /* doc_id */
-    1,                     /* freq */
-    0,                     /* content_len */
-    0,                     /* aux_len */
-    { '\0' }               /* blob */
+    {1},                   // ref.count 
+    0,                     // doc_id 
+    1,                     // freq 
+    0,                     // content_len 
+    0,                     // aux_len 
+    { '\0' }               // blob 
 };
 
 
 RawPosting*
-RawPost_new(void *pre_allocated_memory, i32_t doc_id, u32_t freq, 
+RawPost_new(void *pre_allocated_memory, int32_t doc_id, uint32_t freq, 
             char *term_text, size_t term_text_len)
 {
     RawPosting *self    = (RawPosting*)pre_allocated_memory;
     self->vtable        = RAWPOSTING;
-    self->ref.count     = 1; /* never used */
+    self->ref.count     = 1; // never used 
     self->doc_id        = doc_id;
     self->freq          = freq;
     self->content_len   = term_text_len;
@@ -48,7 +48,7 @@ RawPost_destroy(RawPosting *self)
     THROW(ERR, "Illegal attempt to destroy RawPosting object");
 }
 
-u32_t
+uint32_t
 RawPost_get_refcount(RawPosting* self)
 {
     UNUSED_VAR(self);
@@ -61,7 +61,7 @@ RawPost_inc_refcount(RawPosting* self)
     return self;
 }
 
-u32_t
+uint32_t
 RawPost_dec_refcount(RawPosting* self)
 {
     UNUSED_VAR(self);
@@ -85,7 +85,7 @@ RawPostWriter_init(RawPostingWriter *self, Schema *schema,
                    Snapshot *snapshot, Segment *segment, 
                    PolyReader *polyreader, OutStream *outstream)
 {
-    const i32_t invalid_field_num = 0;
+    const int32_t invalid_field_num = 0;
     PostWriter_init((PostingWriter*)self, schema, snapshot, segment,
         polyreader, invalid_field_num);
     self->outstream = (OutStream*)INCREF(outstream);
@@ -117,15 +117,15 @@ void
 RawPostWriter_write_posting(RawPostingWriter *self, RawPosting *posting)
 {
     OutStream *const outstream   = self->outstream;
-    const i32_t      doc_id      = posting->doc_id;
-    const u32_t      delta_doc   = doc_id - self->last_doc_id;
+    const int32_t    doc_id      = posting->doc_id;
+    const uint32_t   delta_doc   = doc_id - self->last_doc_id;
     char  *const     aux_content = posting->blob + posting->content_len;
     if (posting->freq == 1) {
-        const u32_t doc_code = (delta_doc << 1) | 1;
+        const uint32_t doc_code = (delta_doc << 1) | 1;
         OutStream_Write_C32(outstream, doc_code);
     }
     else {
-        const u32_t doc_code = delta_doc << 1;
+        const uint32_t doc_code = delta_doc << 1;
         OutStream_Write_C32(outstream, doc_code);
         OutStream_Write_C32(outstream, posting->freq);
     }

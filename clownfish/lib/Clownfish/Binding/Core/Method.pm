@@ -123,8 +123,8 @@ sub callback_def {
 }
 
 # Return a string which maps arguments to various arg wrappers conforming
-# to Host's callback interface.  For instance, (i32_t foo, Obj *bar) produces
-# the following:
+# to Host's callback interface.  For instance, (int32_t foo, Obj *bar)
+# produces the following:
 # 
 #   KINO_ARG_I32("foo", foo),
 #   KINO_ARG_OBJ("bar", bar)

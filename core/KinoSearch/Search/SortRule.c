@@ -5,26 +5,26 @@
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 
-i32_t SortRule_FIELD  = 0;
-i32_t SortRule_SCORE  = 1;
-i32_t SortRule_DOC_ID = 2;
+int32_t SortRule_FIELD  = 0;
+int32_t SortRule_SCORE  = 1;
+int32_t SortRule_DOC_ID = 2;
 
 SortRule*
-SortRule_new(i32_t type, const CharBuf *field, bool_t reverse)
+SortRule_new(int32_t type, const CharBuf *field, bool_t reverse)
 {
     SortRule *self = (SortRule*)VTable_Make_Obj(SORTRULE);
     return SortRule_init(self, type, field, reverse);
 }
 
 SortRule*
-SortRule_init(SortRule *self, i32_t type, const CharBuf *field, 
+SortRule_init(SortRule *self, int32_t type, const CharBuf *field, 
               bool_t reverse)
 {
     self->field    = field ? CB_Clone(field) : NULL;
     self->type     = type;
     self->reverse  = reverse;
 
-    /* Validate. */
+    // Validate. 
     if (type == SortRule_FIELD) {
         if (!field) { 
             THROW(ERR, "When sorting by field, param 'field' is required"); 
@@ -68,7 +68,7 @@ SortRule_serialize(SortRule *self, OutStream *target)
 
 CharBuf*
 SortRule_get_field(SortRule *self)   { return self->field; }
-i32_t
+int32_t
 SortRule_get_type(SortRule *self)    { return self->type; }
 bool_t
 SortRule_get_reverse(SortRule *self) { return self->reverse; }

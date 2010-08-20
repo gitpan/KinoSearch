@@ -6,14 +6,14 @@
 #include "KinoSearch/Store/OutStream.h"
 
 MatchDoc*
-MatchDoc_new(i32_t doc_id, float score, VArray *values)
+MatchDoc_new(int32_t doc_id, float score, VArray *values)
 {
     MatchDoc *self = (MatchDoc*)VTable_Make_Obj(MATCHDOC);
     return MatchDoc_init(self, doc_id, score, values);
 }
 
 MatchDoc*
-MatchDoc_init(MatchDoc *self, i32_t doc_id, float score, VArray *values)
+MatchDoc_init(MatchDoc *self, int32_t doc_id, float score, VArray *values)
 {
     self->doc_id      = doc_id;
     self->score       = score;
@@ -49,14 +49,14 @@ MatchDoc_deserialize(MatchDoc *self, InStream *instream)
     return self;
 }
 
-i32_t
+int32_t
 MatchDoc_get_doc_id(MatchDoc *self) { return self->doc_id; }
 float
 MatchDoc_get_score(MatchDoc *self)  { return self->score; }
 VArray*
 MatchDoc_get_values(MatchDoc *self) { return self->values; }
 void
-MatchDoc_set_doc_id(MatchDoc *self, i32_t doc_id) 
+MatchDoc_set_doc_id(MatchDoc *self, int32_t doc_id) 
     { self->doc_id = doc_id; }
 void
 MatchDoc_set_score(MatchDoc *self, float score) 

@@ -12,7 +12,7 @@
 
 SharedLock*
 ShLock_new(Folder *folder, const CharBuf *name, const CharBuf *host, 
-           i32_t timeout, i32_t interval)
+           int32_t timeout, int32_t interval)
 {
     SharedLock *self = (SharedLock*)VTable_Make_Obj(SHAREDLOCK);
     return ShLock_init(self, folder, name, host, timeout, interval);
@@ -20,11 +20,11 @@ ShLock_new(Folder *folder, const CharBuf *name, const CharBuf *host,
 
 SharedLock*
 ShLock_init(SharedLock *self, Folder *folder, const CharBuf *name, 
-            const CharBuf *host, i32_t timeout, i32_t interval)
+            const CharBuf *host, int32_t timeout, int32_t interval)
 {
     LFLock_init((LockFileLock*)self, folder, name, host, timeout, interval);
 
-    /* Override. */
+    // Override. 
     DECREF(self->lock_path);
     self->lock_path = (CharBuf*)INCREF(&EMPTY);
 
@@ -37,15 +37,15 @@ ShLock_shared(SharedLock *self) { UNUSED_VAR(self); return true; }
 bool_t
 ShLock_request(SharedLock *self)
 {
-    u32_t i = 0;
+    uint32_t i = 0;
     ShLock_request_t super_request 
         = (ShLock_request_t)SUPER_METHOD(SHAREDLOCK, ShLock, Request);
 
-    /* EMPTY lock_path indicates whether this particular instance is locked. */
+    // EMPTY lock_path indicates whether this particular instance is locked. 
     if (   self->lock_path != (CharBuf*)&EMPTY 
         && Folder_Exists(self->folder, self->lock_path)
     ) {
-        /* Don't allow double obtain. */
+        // Don't allow double obtain. 
         return false;
     }
 
@@ -66,7 +66,7 @@ ShLock_release(SharedLock *self)
             = (ShLock_release_t)SUPER_METHOD(SHAREDLOCK, ShLock, Release);
         super_release(self);
 
-        /* Empty out lock_path. */
+        // Empty out lock_path. 
         DECREF(self->lock_path);
         self->lock_path = (CharBuf*)INCREF(&EMPTY);
     }
@@ -90,7 +90,7 @@ ShLock_clear_stale(SharedLock *self)
         return;
     }
 
-    /* Take a stab at any file that begins with our lock name. */
+    // Take a stab at any file that begins with our lock name. 
     while (DH_Next(dh)) {
         if (   CB_Starts_With(entry, self->name)
             && CB_Ends_With_Str(entry, ".lock", 5)
@@ -122,9 +122,7 @@ ShLock_is_locked(SharedLock *self)
     }
     
     while (DH_Next(dh)) {
-        /* Translation: 
-         *   $locked = 1 if $entry =~ /^\Q$name-\d+\.lock$/ 
-         */
+        // Translation:  $locked = 1 if $entry =~ /^\Q$name-\d+\.lock$/ 
         if (   CB_Starts_With(entry, self->name)
             && CB_Ends_With_Str(entry, ".lock", 5)
         ) {

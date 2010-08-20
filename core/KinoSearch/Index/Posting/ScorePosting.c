@@ -10,10 +10,10 @@
 #include "KinoSearch/Index/Posting/RawPosting.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/PostingPool.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/FieldType.h"
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Search/Matcher.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Util/MemoryPool.h"
 
@@ -53,48 +53,48 @@ ScorePost_destroy(ScorePosting *self)
     SUPER_DESTROY(self, SCOREPOSTING);
 }
 
-u32_t*
+uint32_t*
 ScorePost_get_prox(ScorePosting *self) { return self->prox; }
 
 void
 ScorePost_add_inversion_to_pool(ScorePosting *self, PostingPool *post_pool, 
                                 Inversion *inversion, FieldType *type, 
-                                i32_t doc_id, float doc_boost, 
+                                int32_t doc_id, float doc_boost, 
                                 float length_norm)
 {
-    MemoryPool *mem_pool = PostPool_Get_Mem_Pool(post_pool);
-    Similarity *sim = self->sim;
-    float       field_boost = doc_boost * FType_Get_Boost(type) * length_norm;
-    const u8_t  field_boost_byte  = Sim_Encode_Norm(sim, field_boost);
-    Token     **tokens;
-    u32_t       freq;
+    MemoryPool     *mem_pool = PostPool_Get_Mem_Pool(post_pool);
+    Similarity     *sim = self->sim;
+    float           field_boost = doc_boost * FType_Get_Boost(type) * length_norm;
+    const uint8_t   field_boost_byte  = Sim_Encode_Norm(sim, field_boost);
+    Token         **tokens;
+    uint32_t        freq;
 
     Inversion_Reset(inversion);
     while ( (tokens = Inversion_Next_Cluster(inversion, &freq)) != NULL ) {
         Token   *token          = *tokens;
-        u32_t    raw_post_bytes = MAX_RAW_POSTING_LEN(token->len, freq);
+        uint32_t raw_post_bytes = MAX_RAW_POSTING_LEN(token->len, freq);
         RawPosting *raw_posting = RawPost_new(
             MemPool_Grab(mem_pool, raw_post_bytes), doc_id, freq,
             token->text, token->len
         );
-        char *const start = raw_posting->blob + token->len;
-        char *dest        = start;
-        u32_t last_prox   = 0;
-        u32_t i;
+        char *const start  = raw_posting->blob + token->len;
+        char *dest         = start;
+        uint32_t last_prox = 0;
+        uint32_t i;
 
-        /* Field_boost. */
-        *((u8_t*)dest) = field_boost_byte;
+        // Field_boost. 
+        *((uint8_t*)dest) = field_boost_byte;
         dest++;
 
-        /* Positions. */
+        // Positions. 
         for (i = 0; i < freq; i++) {
             Token *const t = tokens[i];
-            const u32_t prox_delta = t->pos - last_prox;
+            const uint32_t prox_delta = t->pos - last_prox;
             NumUtil_encode_c32(prox_delta, &dest);
             last_prox = t->pos; 
         }
 
-        /* Resize raw posting memory allocation. */
+        // Resize raw posting memory allocation. 
         raw_posting->aux_len = dest - start;
         raw_post_bytes = dest - (char*)raw_posting;
         MemPool_Resize(mem_pool, raw_posting, raw_post_bytes);
@@ -113,29 +113,30 @@ ScorePost_reset(ScorePosting *self)
 void
 ScorePost_read_record(ScorePosting *self, InStream *instream)
 {
-    u32_t  num_prox;
-    u32_t  position = 0; 
-    u32_t *positions;
-    const  size_t max_start_bytes = (C32_MAX_BYTES * 2) + 1;
-    char  *buf = InStream_Buf(instream, max_start_bytes);
-    const u32_t doc_code = NumUtil_decode_c32(&buf);
-    const u32_t doc_delta = doc_code >> 1;
+    uint32_t  num_prox;
+    uint32_t  position = 0; 
+    uint32_t *positions;
+    const size_t max_start_bytes = (C32_MAX_BYTES * 2) + 1;
+    char *buf = InStream_Buf(instream, max_start_bytes);
+    const uint32_t doc_code = NumUtil_decode_c32(&buf);
+    const uint32_t doc_delta = doc_code >> 1;
 
-    /* Apply delta doc and retrieve freq. */
+    // Apply delta doc and retrieve freq. 
     self->doc_id   += doc_delta;
     if (doc_code & 1) 
         self->freq = 1;
     else
         self->freq = NumUtil_decode_c32(&buf);
 
-    /* Decode boost/norm byte. */
-    self->weight = self->norm_decoder[ *(u8_t*)buf ];
+    // Decode boost/norm byte. 
+    self->weight = self->norm_decoder[ *(uint8_t*)buf ];
     buf++;
 
-    /* Read positions. */
+    // Read positions. 
     num_prox = self->freq;
     if (num_prox > self->prox_cap) {
-        self->prox = (u32_t*)REALLOCATE(self->prox, num_prox * sizeof(u32_t));
+        self->prox = (uint32_t*)REALLOCATE(self->prox, 
+            num_prox * sizeof(uint32_t));
         self->prox_cap = num_prox;
     }
     positions = self->prox;
@@ -151,36 +152,37 @@ ScorePost_read_record(ScorePosting *self, InStream *instream)
 }
 
 RawPosting*
-ScorePost_read_raw(ScorePosting *self, InStream *instream, i32_t last_doc_id,
-                   CharBuf *term_text, MemoryPool *mem_pool)
+ScorePost_read_raw(ScorePosting *self, InStream *instream, 
+                   int32_t last_doc_id, CharBuf *term_text, 
+                   MemoryPool *mem_pool)
 {
-    char *const  text_buf         = (char*)CB_Get_Ptr8(term_text);
-    const size_t text_size        = CB_Get_Size(term_text);
-    const u32_t  doc_code         = InStream_Read_C32(instream);
-    const u32_t  delta_doc        = doc_code >> 1;
-    const i32_t  doc_id           = last_doc_id + delta_doc;
-    const u32_t  freq             = (doc_code & 1) 
-                                       ? 1 
-                                       : InStream_Read_C32(instream);
+    char *const    text_buf       = (char*)CB_Get_Ptr8(term_text);
+    const size_t   text_size      = CB_Get_Size(term_text);
+    const uint32_t doc_code       = InStream_Read_C32(instream);
+    const uint32_t delta_doc      = doc_code >> 1;
+    const int32_t  doc_id         = last_doc_id + delta_doc;
+    const uint32_t freq           = (doc_code & 1) 
+                                  ? 1 
+                                  : InStream_Read_C32(instream);
     size_t raw_post_bytes         = MAX_RAW_POSTING_LEN(text_size, freq);
     void *const allocation        = MemPool_Grab(mem_pool, raw_post_bytes);
     RawPosting *const raw_posting = RawPost_new(allocation, doc_id, freq,
         text_buf, text_size);
-    u32_t  num_prox   = freq;
+    uint32_t num_prox = freq;
     char *const start = raw_posting->blob + text_size;
-    char *      dest  = start;
+    char *dest        = start;
     UNUSED_VAR(self);
 
-    /* Field_boost. */
-    *((u8_t*)dest) = InStream_Read_U8(instream);
+    // Field_boost. 
+    *((uint8_t*)dest) = InStream_Read_U8(instream);
     dest++;
 
-    /* Read positions. */
+    // Read positions. 
     while (num_prox--) {
         dest += InStream_Read_Raw_C64(instream, dest);
     }
 
-    /* Resize raw posting memory allocation. */
+    // Resize raw posting memory allocation. 
     raw_posting->aux_len = dest - start;
     raw_post_bytes       = dest - (char*)raw_posting;
     MemPool_Resize(mem_pool, raw_posting, raw_post_bytes);
@@ -204,12 +206,12 @@ ScorePostingScorer*
 ScorePostScorer_init(ScorePostingScorer *self, Similarity *sim, 
                      PostingList *plist, Compiler *compiler)
 {
-    u32_t i;
+    uint32_t i;
 
-    /* Init. */
+    // Init. 
     TermScorer_init((TermScorer*)self, sim, plist, compiler);
 
-    /* Fill score cache. */
+    // Fill score cache. 
     self->score_cache = (float*)MALLOCATE(TERMSCORER_SCORE_CACHE_SIZE * sizeof(float));
     for (i = 0; i < TERMSCORER_SCORE_CACHE_SIZE; i++) {
         self->score_cache[i] = Sim_TF(sim, (float)i) * self->weight;
@@ -222,14 +224,14 @@ float
 ScorePostScorer_score(ScorePostingScorer* self) 
 {
     ScorePosting *const posting = (ScorePosting*)self->posting;
-    const u32_t  freq           = posting->freq;
+    const uint32_t freq = posting->freq;
     
-    /* Calculate initial score based on frequency of term. */
+    // Calculate initial score based on frequency of term. 
     float score = (freq < TERMSCORER_SCORE_CACHE_SIZE) 
-        ? self->score_cache[freq] /* cache hit */
+        ? self->score_cache[freq] // cache hit 
         : Sim_TF(self->sim, (float)freq) * self->weight;
 
-    /* Factor in field-length normalization and doc/field/prox boost. */
+    // Factor in field-length normalization and doc/field/prox boost. 
     score *= posting->weight;
 
     return score;

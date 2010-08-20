@@ -15,9 +15,9 @@ class KinoSearch::Index::PostingListWriter cnick PListWriter
     OutStream       *lex_temp_out;
     OutStream       *post_temp_out;
     OutStream       *skip_out;
-    u32_t            mem_thresh;
+    uint32_t         mem_thresh;
 
-    inert i32_t current_file_format;
+    inert int32_t current_file_format;
 
     inert incremented PostingListWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
@@ -27,13 +27,13 @@ class KinoSearch::Index::PostingListWriter cnick PListWriter
     init(PostingListWriter *self, Schema *schema, Snapshot *snapshot,
          Segment *segment, PolyReader *polyreader, LexiconWriter *lex_writer);
 
-    /* Test only. */
+    /** Test only. */
     inert void
     set_default_mem_thresh(size_t mem_thresh);
 
     public void
     Add_Inverted_Doc(PostingListWriter *self, Inverter *inverter, 
-                     i32_t doc_id);
+                     int32_t doc_id);
 
     public void
     Add_Segment(PostingListWriter *self, SegReader *reader,
@@ -42,7 +42,7 @@ class KinoSearch::Index::PostingListWriter cnick PListWriter
     public void
     Finish(PostingListWriter *self);
 
-    public i32_t 
+    public int32_t 
     Format(PostingListWriter *self);
 
     public void

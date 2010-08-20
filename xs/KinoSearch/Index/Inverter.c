@@ -17,18 +17,18 @@ S_fetch_entry(kino_Inverter *self, HE *hash_entry)
 {
     kino_Schema *const schema = self->schema;
     STRLEN key_len;
-    /* Copied from Perl 5.10.0 HePV macro, because the HePV macro in
-     * earlier versions of Perl triggers a compiler warning. */
+    // Copied from Perl 5.10.0 HePV macro, because the HePV macro in
+    // earlier versions of Perl triggers a compiler warning.
     char *key = HeKLEN(hash_entry) == HEf_SVKEY
               ? SvPV(HeKEY_sv(hash_entry), key_len) 
               : ((key_len = HeKLEN(hash_entry)), HeKEY(hash_entry));
     kino_ZombieCharBuf *field = KINO_ZCB_WRAP_STR(key, key_len);
-    chy_i32_t field_num 
+    int32_t field_num 
         = Kino_Seg_Field_Num(self->segment, (kino_CharBuf*)field);
 
     if (!field_num) {
-        /* This field seems not to be in the segment yet.  Try to find it in
-         * the Schema. */
+        // This field seems not to be in the segment yet.  Try to find it in
+        // the Schema.
         if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field)) {
             /* OK, it could be that the field name contains non-ASCII
              * characters, but the hash key is encoded as Latin 1.  So, we
@@ -38,13 +38,13 @@ S_fetch_entry(kino_Inverter *self, HE *hash_entry)
             key = SvPVutf8(key_sv, key_len);
             Kino_ZCB_Assign_Str(field, key, key_len);
             if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field)) {
-                /* We've truly failed to find the field.  The user must
-                 * not have spec'd it. */
+                // We've truly failed to find the field.  The user must
+                // not have spec'd it.
                 THROW(KINO_ERR, "Unknown field name: '%s'", key);
             }
         }
 
-        /* The field is in the Schema.  Get a field num from the Segment. */
+        // The field is in the Schema.  Get a field num from the Segment. 
         field_num = Kino_Seg_Add_Field(self->segment, (kino_CharBuf*)field);
     }
 
@@ -66,17 +66,17 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
     HV  *const fields = (HV*)Kino_Doc_Get_Fields(doc);
     I32  num_keys     = hv_iterinit(fields);
 
-    /* Prepare for the new doc. */
+    // Prepare for the new doc. 
     Kino_Inverter_Set_Doc(self, doc);
 
-    /* Extract and invert the doc's fields. */
+    // Extract and invert the doc's fields. 
     while (num_keys--) {
         HE *hash_entry = hv_iternext(fields);
         kino_InverterEntry *inv_entry = S_fetch_entry(self, hash_entry);
         SV *value_sv = HeVAL(hash_entry);
         kino_FieldType *type = inv_entry->type;
 
-        /* Get the field value, forcing text fields to UTF-8. */
+        // Get the field value, forcing text fields to UTF-8. 
         switch (
             Kino_FType_Primitive_ID(type) & kino_FType_PRIMITIVE_ID_MASK
         ) {
@@ -101,9 +101,9 @@ kino_Inverter_invert_doc(kino_Inverter *self, kino_Doc *doc)
             }
             case kino_FType_INT64: {
                 kino_Integer64* value = (kino_Integer64*)inv_entry->value;
-                chy_i64_t val = sizeof(IV) == 8 
+                int64_t val = sizeof(IV) == 8 
                               ? SvIV(value_sv) 
-                              : (chy_i64_t)SvNV(value_sv); /* lossy */
+                              : (int64_t)SvNV(value_sv); // lossy 
                 Kino_Int64_Set_Value(value, val);
                 break;
             }

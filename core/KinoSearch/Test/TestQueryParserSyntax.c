@@ -56,6 +56,26 @@ leaf_test_unclosed_quote()
 }
 
 static TestQueryParser*
+leaf_test_escaped_quotes_inside()
+{
+    Query   *tree     = make_leaf_query(NULL, "\"\\\"a b\\\"\"");
+    Query   *plain_q  = make_phrase_query("plain", "\"a", "b\"", NULL);
+    Query   *fancy_q  = make_phrase_query("fancy", "a", "b", NULL);
+    Query   *expanded = make_poly_query(BOOLOP_OR, fancy_q, plain_q, NULL);
+    return TestQP_new("\"\\\"a b\\\"\"", tree, expanded, 3);
+}
+
+static TestQueryParser*
+leaf_test_escaped_quotes_outside()
+{
+    Query   *tree = make_leaf_query(NULL, "\\\"a");
+    Query   *plain_q  = make_term_query("plain", "\"a");
+    Query   *fancy_q  = make_term_query("fancy", "a");
+    Query   *expanded = make_poly_query(BOOLOP_OR, fancy_q, plain_q, NULL);
+    return TestQP_new("\\\"a", tree, expanded, 4);
+}
+
+static TestQueryParser*
 leaf_test_single_term_phrase()
 {
     Query   *tree     = make_leaf_query(NULL, "\"a\"");
@@ -152,7 +172,7 @@ syntax_test_minus_plus()
 static TestQueryParser*
 syntax_test_plus_minus()
 {
-    /* Not a perfect result, but then it's not a good query string. */
+    // Not a perfect result, but then it's not a good query string. 
     Query *leaf = make_leaf_query(NULL, "a");
     Query *tree = make_not_query(leaf);
     return TestQP_new("+-a", tree, NULL, 0);
@@ -161,7 +181,7 @@ syntax_test_plus_minus()
 static TestQueryParser*
 syntax_test_minus_minus()
 {
-    /* Not a perfect result, but then it's not a good query string. */
+    // Not a perfect result, but then it's not a good query string. 
     Query *tree = make_leaf_query(NULL, "a");
     return TestQP_new("--a", tree, NULL, 4);
 }
@@ -176,7 +196,7 @@ syntax_test_not_minus()
 static TestQueryParser*
 syntax_test_not_plus()
 {
-    /* Not a perfect result, but then it's not a good query string. */
+    // Not a perfect result, but then it's not a good query string. 
     Query *leaf = make_leaf_query(NULL, "a");
     Query *tree = make_not_query(leaf);
     return TestQP_new("NOT +a", tree, NULL, 0);
@@ -185,10 +205,24 @@ syntax_test_not_plus()
 static TestQueryParser*
 syntax_test_unclosed_parens()
 {
-    /* Not a perfect result, but then it's not a good query string. */
+    // Not a perfect result, but then it's not a good query string. 
     Query *inner = make_poly_query(BOOLOP_OR, NULL);
     Query *tree = make_poly_query(BOOLOP_OR, inner, NULL);
     return TestQP_new("((", tree, NULL, 0);
+}
+
+static TestQueryParser*
+syntax_test_escaped_quotes_outside()
+{
+    Query *tree = make_leaf_query(NULL, "\\\"a\\\"");
+    return TestQP_new("\\\"a\\\"", tree, NULL, 4);
+}
+
+static TestQueryParser*
+syntax_test_escaped_quotes_inside()
+{
+    Query *tree = make_leaf_query(NULL, "\"\\\"a\\\"\"");
+    return TestQP_new("\"\\\"a\\\"\"", tree, NULL, 4);
 }
 
 /***************************************************************************/
@@ -200,6 +234,8 @@ static kino_TestQPSyntax_test_t leaf_test_funcs[] = {
     leaf_test_simple_term,
     leaf_test_simple_phrase,
     leaf_test_unclosed_quote,
+    leaf_test_escaped_quotes_inside,
+    leaf_test_escaped_quotes_outside,
     leaf_test_single_term_phrase,
     leaf_test_longer_phrase,
     leaf_test_empty_phrase,
@@ -219,14 +255,16 @@ static kino_TestQPSyntax_test_t syntax_test_funcs[] = {
     syntax_test_not_minus,
     syntax_test_not_plus,
     syntax_test_unclosed_parens,
+    syntax_test_escaped_quotes_outside,
+    syntax_test_escaped_quotes_inside,
     NULL
 };
 
 void
 TestQPSyntax_run_tests(Folder *index)
 {
-    u32_t i;
-    TestBatch     *batch      = TestBatch_new(48);
+    uint32_t i;
+    TestBatch     *batch      = TestBatch_new(58);
     IndexSearcher *searcher   = IxSearcher_new((Obj*)index);
     QueryParser   *qparser    = QParser_new(IxSearcher_Get_Schema(searcher), 
         NULL, NULL, NULL);

@@ -3,10 +3,10 @@
 
 #include "KinoSearch/Search/NoMatchQuery.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/NoMatchScorer.h"
 #include "KinoSearch/Search/Searcher.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"

@@ -5,14 +5,14 @@
 #include "KinoSearch/Util/StringHelper.h"
 
 TermInfo*
-TInfo_new(i32_t doc_freq)
+TInfo_new(int32_t doc_freq)
 {
     TermInfo *self = (TermInfo*)VTable_Make_Obj(TERMINFO);
     return TInfo_init(self, doc_freq);
 }
 
 TermInfo*
-TInfo_init(TermInfo *self, i32_t doc_freq)
+TInfo_init(TermInfo *self, int32_t doc_freq)
 {
     self->doc_freq      = doc_freq;
     self->post_filepos  = 0;
@@ -31,31 +31,30 @@ TInfo_clone(TermInfo *self)
     return evil_twin;
 }
 
-i32_t
+int32_t
 TInfo_get_doc_freq(TermInfo *self)     { return self->doc_freq; }
-i64_t
+int64_t
 TInfo_get_lex_filepos(TermInfo *self)  { return self->lex_filepos; }
-i64_t
+int64_t
 TInfo_get_post_filepos(TermInfo *self) { return self->post_filepos; }
-i64_t
+int64_t
 TInfo_get_skip_filepos(TermInfo *self) { return self->skip_filepos; }
 
 void
-TInfo_set_doc_freq(TermInfo *self, i32_t doc_freq)
+TInfo_set_doc_freq(TermInfo *self, int32_t doc_freq)
     { self->doc_freq = doc_freq; }
 void
-TInfo_set_lex_filepos(TermInfo *self, i64_t filepos)
+TInfo_set_lex_filepos(TermInfo *self, int64_t filepos)
     { self->lex_filepos = filepos; }
 void
-TInfo_set_post_filepos(TermInfo *self, i64_t filepos)
+TInfo_set_post_filepos(TermInfo *self, int64_t filepos)
     { self->post_filepos = filepos; }
 void
-TInfo_set_skip_filepos(TermInfo *self, i64_t filepos)
+TInfo_set_skip_filepos(TermInfo *self, int64_t filepos)
     { self->skip_filepos = filepos; }
 
-/* TODO: this should probably be some sort of Dump variant rather than
- * To_String.
- */
+// TODO: this should probably be some sort of Dump variant rather than
+// To_String.
 CharBuf*
 TInfo_to_string(TermInfo *self)
 {

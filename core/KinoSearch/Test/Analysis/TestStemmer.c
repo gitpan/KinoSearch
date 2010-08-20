@@ -19,14 +19,6 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 
     ASSERT_FALSE(batch, Stemmer_Equals(stemmer,
         (Obj*)other), "Equals() false with different language");
-    ASSERT_TRUE(batch, Stemmer_Dump_Equals(other,
-        (Obj*)other_dump), "Dump_Equals()");
-    ASSERT_TRUE(batch, Stemmer_Dump_Equals(stemmer,
-        (Obj*)dump), "Dump_Equals()");
-    ASSERT_FALSE(batch, Stemmer_Dump_Equals(stemmer,
-        (Obj*)other_dump), "Dump_Equals() false with different language");
-    ASSERT_FALSE(batch, Stemmer_Dump_Equals(other,
-        (Obj*)dump), "Dump_Equals() false with different language");
     ASSERT_TRUE(batch, Stemmer_Equals(stemmer,
         (Obj*)clone), "Dump => Load round trip");
     ASSERT_TRUE(batch, Stemmer_Equals(other,
@@ -43,7 +35,7 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 void
 TestStemmer_run_tests()
 {
-    TestBatch *batch = TestBatch_new(7);
+    TestBatch *batch = TestBatch_new(3);
 
     TestBatch_Plan(batch);
 

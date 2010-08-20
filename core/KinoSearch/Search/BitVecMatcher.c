@@ -26,21 +26,21 @@ BitVecMatcher_destroy(BitVecMatcher *self)
     SUPER_DESTROY(self, BITVECMATCHER);
 }
 
-i32_t
+int32_t
 BitVecMatcher_next(BitVecMatcher *self)
 {
     self->doc_id = BitVec_Next_Set_Bit(self->bit_vec, self->doc_id + 1);
     return self->doc_id == -1 ? 0 : self->doc_id;
 }
 
-i32_t
-BitVecMatcher_advance(BitVecMatcher *self, i32_t target) 
+int32_t
+BitVecMatcher_advance(BitVecMatcher *self, int32_t target) 
 {
     self->doc_id = BitVec_Next_Set_Bit(self->bit_vec, target);
     return self->doc_id == -1 ? 0 : self->doc_id;
 }
 
-i32_t
+int32_t
 BitVecMatcher_get_doc_id(BitVecMatcher *self) { return self->doc_id; }
 
 /* Copyright 2007-2010 Marvin Humphrey

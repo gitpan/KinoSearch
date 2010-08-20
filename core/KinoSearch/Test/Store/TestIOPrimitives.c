@@ -67,26 +67,26 @@ test_u8(TestBatch *batch)
 static void
 test_i32(TestBatch *batch)
 {
-    i64_t      *ints = TestUtils_random_i64s(NULL, 1000, I32_MIN, I32_MAX);
+    int64_t    *ints = TestUtils_random_i64s(NULL, 1000, I32_MIN, I32_MAX);
     RAMFile    *file      = RAMFile_new(NULL, false);
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Test boundaries. */
+    // Test boundaries. 
     ints[0] = I32_MIN;
     ints[1] = I32_MIN + 1;
     ints[2] = I32_MAX;
     ints[3] = I32_MAX - 1;
 
     for (i = 0; i < 1000; i++) {
-        OutStream_Write_I32(outstream, (i32_t)ints[i]);
+        OutStream_Write_I32(outstream, (int32_t)ints[i]);
     }
     OutStream_Close(outstream);
 
     instream = InStream_open((Obj*)file);
     for (i = 0; i < 1000; i++) {
-        i32_t got = InStream_Read_I32(instream);
+        int32_t got = InStream_Read_I32(instream);
         if (got != ints[i]) {
             FAIL(batch, "i32 round trip failed: %ld, %ld", (long)got,
                 (long)ints[i]);
@@ -106,26 +106,26 @@ test_i32(TestBatch *batch)
 static void
 test_u32(TestBatch *batch)
 {
-    u64_t      *ints = TestUtils_random_u64s(NULL, 1000, 0, U32_MAX);
+    uint64_t   *ints = TestUtils_random_u64s(NULL, 1000, 0, U32_MAX);
     RAMFile    *file      = RAMFile_new(NULL, false);
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Test boundaries. */
+    // Test boundaries. 
     ints[0] = 0;
     ints[1] = 1;
     ints[2] = U32_MAX;
     ints[3] = U32_MAX - 1;
 
     for (i = 0; i < 1000; i++) {
-        OutStream_Write_U32(outstream, (u32_t)ints[i]);
+        OutStream_Write_U32(outstream, (uint32_t)ints[i]);
     }
     OutStream_Close(outstream);
 
     instream = InStream_open((Obj*)file);
     for (i = 0; i < 1000; i++) {
-        u32_t got = InStream_Read_U32(instream);
+        uint32_t got = InStream_Read_U32(instream);
         if (got != ints[i]) {
             FAIL(batch, "u32 round trip failed: %lu, %lu", (unsigned long)got,
                 (unsigned long)ints[i]);
@@ -145,13 +145,13 @@ test_u32(TestBatch *batch)
 static void
 test_i64(TestBatch *batch)
 {
-    i64_t      *ints = TestUtils_random_i64s(NULL, 1000, I64_MIN, I64_MAX);
+    int64_t    *ints = TestUtils_random_i64s(NULL, 1000, I64_MIN, I64_MAX);
     RAMFile    *file      = RAMFile_new(NULL, false);
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Test boundaries. */
+    // Test boundaries. 
     ints[0] = I64_MIN;
     ints[1] = I64_MIN + 1;
     ints[2] = I64_MAX;
@@ -164,7 +164,7 @@ test_i64(TestBatch *batch)
 
     instream = InStream_open((Obj*)file);
     for (i = 0; i < 1000; i++) {
-        i64_t got = InStream_Read_I64(instream);
+        int64_t got = InStream_Read_I64(instream);
         if (got != ints[i]) {
             FAIL(batch, "i64 round trip failed: %" I64P ", %" I64P, 
                 got, ints[i]);
@@ -185,13 +185,13 @@ test_i64(TestBatch *batch)
 static void
 test_u64(TestBatch *batch)
 {
-    u64_t      *ints = TestUtils_random_u64s(NULL, 1000, 0, U64_MAX);
+    uint64_t   *ints = TestUtils_random_u64s(NULL, 1000, 0, U64_MAX);
     RAMFile    *file      = RAMFile_new(NULL, false);
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Test boundaries. */
+    // Test boundaries. 
     ints[0] = 0;
     ints[1] = 1;
     ints[2] = U64_MAX;
@@ -204,7 +204,7 @@ test_u64(TestBatch *batch)
 
     instream = InStream_open((Obj*)file);
     for (i = 0; i < 1000; i++) {
-        u64_t got = InStream_Read_U64(instream);
+        uint64_t got = InStream_Read_U64(instream);
         if (got != ints[i]) {
             FAIL(batch, "u64 round trip failed: %" U64P ", %" U64P, 
                 got, ints[i]);
@@ -224,26 +224,26 @@ test_u64(TestBatch *batch)
 static void
 test_c32(TestBatch *batch)
 {
-    u64_t      *ints = TestUtils_random_u64s(NULL, 1000, 0, U32_MAX);
+    uint64_t   *ints = TestUtils_random_u64s(NULL, 1000, 0, U32_MAX);
     RAMFile    *file      = RAMFile_new(NULL, false);
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Test boundaries. */
+    // Test boundaries. 
     ints[0] = 0;
     ints[1] = 1;
     ints[2] = U32_MAX;
     ints[3] = U32_MAX - 1;
 
     for (i = 0; i < 1000; i++) {
-        OutStream_Write_C32(outstream, (u32_t)ints[i]);
+        OutStream_Write_C32(outstream, (uint32_t)ints[i]);
     }
     OutStream_Close(outstream);
 
     instream = InStream_open((Obj*)file);
     for (i = 0; i < 1000; i++) {
-        u32_t got = InStream_Read_C32(instream);
+        uint32_t got = InStream_Read_C32(instream);
         if (got != ints[i]) {
             FAIL(batch, "c32 round trip failed: %lu, %lu", (unsigned long)got,
                 (unsigned long)ints[i]);
@@ -263,16 +263,16 @@ test_c32(TestBatch *batch)
 static void
 test_c64(TestBatch *batch)
 {
-    u64_t      *ints   = TestUtils_random_u64s(NULL, 1000, 0, U64_MAX);
+    uint64_t   *ints   = TestUtils_random_u64s(NULL, 1000, 0, U64_MAX);
     RAMFile    *file     = RAMFile_new(NULL, false);
     RAMFile    *raw_file = RAMFile_new(NULL, false);
     OutStream  *outstream     = OutStream_open((Obj*)file);
     OutStream  *raw_outstream = OutStream_open((Obj*)raw_file);
     InStream   *instream;
     InStream   *raw_instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Test boundaries. */
+    // Test boundaries. 
     ints[0] = 0;
     ints[1] = 1;
     ints[2] = U64_MAX;
@@ -287,7 +287,7 @@ test_c64(TestBatch *batch)
 
     instream = InStream_open((Obj*)file);
     for (i = 0; i < 1000; i++) {
-        u64_t got = InStream_Read_C64(instream);
+        uint64_t got = InStream_Read_C64(instream);
         if (got != ints[i]) {
             FAIL(batch, "c64 round trip failed: %" U64P ", %" U64P, 
                 got, ints[i]);
@@ -303,7 +303,7 @@ test_c64(TestBatch *batch)
         char  buffer[10];
         char *buf = buffer;
         size_t size = InStream_Read_Raw_C64(raw_instream, buffer);
-        u64_t got = NumUtil_decode_c64(&buf);
+        uint64_t got = NumUtil_decode_c64(&buf);
         UNUSED_VAR(size);
         if (got != ints[i]) {
             FAIL(batch, "Read_Raw_C64 failed: %" U64P ", %" U64P, 
@@ -332,14 +332,14 @@ test_f32(TestBatch *batch)
     RAMFile    *file      = RAMFile_new(NULL, false);
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Truncate. */
+    // Truncate. 
     for (i = 0; i < 1000; i++) {
         values[i] = (float)f64s[i];
     }
 
-    /* Test boundaries. */
+    // Test boundaries. 
     values[0] = 0.0f;
     values[1] = 1.0f;
 
@@ -374,9 +374,9 @@ test_f64(TestBatch *batch)
     RAMFile    *file      = RAMFile_new(NULL, false);
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
-    u32_t i;
+    uint32_t i;
     
-    /* Test boundaries. */
+    // Test boundaries. 
     values[0] = 0.0;
     values[1] = 1.0;
 

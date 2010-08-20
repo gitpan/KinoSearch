@@ -4,10 +4,7 @@ class KinoSearch::Plan::TextType extends KinoSearch::Plan::FieldType {
     incremented CharBuf*
     Make_Blank(TextType *self);
 
-    incremented ViewCharBuf*
-    Make_View_Blank(TextType *self);
-
-    public incremented TermStepper*
+    incremented TermStepper*
     Make_Term_Stepper(TextType *self);
 
     int8_t

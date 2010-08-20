@@ -13,7 +13,7 @@ parcel KinoSearch cnick Kino;
  */
 class KinoSearch::Index::Posting cnick Post extends KinoSearch::Util::Stepper {
 
-    i32_t doc_id;
+    int32_t doc_id;
 
     public inert Posting*
     init(Posting *self);
@@ -23,7 +23,7 @@ class KinoSearch::Index::Posting cnick Post extends KinoSearch::Util::Stepper {
      * Updates the state of the document id, but nothing else.
      */
     abstract incremented RawPosting*
-    Read_Raw(Posting *self, InStream *instream, i32_t last_doc_id, 
+    Read_Raw(Posting *self, InStream *instream, int32_t last_doc_id, 
              CharBuf *term_text, MemoryPool *mem_pool);
 
     /** Process an Inversion into RawPosting objects and add them all to the
@@ -32,13 +32,13 @@ class KinoSearch::Index::Posting cnick Post extends KinoSearch::Util::Stepper {
     abstract void
     Add_Inversion_To_Pool(Posting *self, PostingPool *post_pool, 
                           Inversion *inversion, FieldType *type, 
-                          i32_t doc_id, float doc_boost, 
+                          int32_t doc_id, float doc_boost, 
                           float length_norm);
 
     public void
-    Set_Doc_ID(Posting *self, i32_t doc_id);
+    Set_Doc_ID(Posting *self, int32_t doc_id);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(Posting *self);
 
     /** Factory method for creating a Matcher.
@@ -51,11 +51,11 @@ class KinoSearch::Index::Posting cnick Post extends KinoSearch::Util::Stepper {
 abstract class KinoSearch::Index::Posting::PostingWriter cnick PostWriter
     extends KinoSearch::Index::DataWriter {
 
-    i32_t field_num;
+    int32_t field_num;
 
     inert PostingWriter*
     init(PostingWriter *self, Schema *schema, Snapshot *snapshot, 
-         Segment *segment, PolyReader *polyreader, i32_t field_num);
+         Segment *segment, PolyReader *polyreader, int32_t field_num);
 
     /** Take a RawPosting that was flattened earlier and write it to the
      * index. */

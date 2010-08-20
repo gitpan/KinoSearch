@@ -4,7 +4,7 @@
 #include "KinoSearch/Search/MatchAllScorer.h"
 
 MatchAllScorer*
-MatchAllScorer_new(float score, i32_t doc_max)
+MatchAllScorer_new(float score, int32_t doc_max)
 {
     MatchAllScorer *self 
         = (MatchAllScorer*)VTable_Make_Obj(MATCHALLSCORER);
@@ -12,7 +12,7 @@ MatchAllScorer_new(float score, i32_t doc_max)
 }
 
 MatchAllScorer*
-MatchAllScorer_init(MatchAllScorer *self, float score, i32_t doc_max)
+MatchAllScorer_init(MatchAllScorer *self, float score, int32_t doc_max)
 {
     Matcher_init((Matcher*)self);
     self->doc_id        = 0;
@@ -21,7 +21,7 @@ MatchAllScorer_init(MatchAllScorer *self, float score, i32_t doc_max)
     return self;
 }
 
-i32_t
+int32_t
 MatchAllScorer_next(MatchAllScorer* self) 
 {
     if (++self->doc_id <= self->doc_max) {
@@ -33,8 +33,8 @@ MatchAllScorer_next(MatchAllScorer* self)
     }
 }
 
-i32_t
-MatchAllScorer_advance(MatchAllScorer* self, i32_t target) 
+int32_t
+MatchAllScorer_advance(MatchAllScorer* self, int32_t target) 
 {
     self->doc_id = target - 1;
     return MatchAllScorer_next(self);
@@ -46,7 +46,7 @@ MatchAllScorer_score(MatchAllScorer* self)
     return self->score;
 }
 
-i32_t 
+int32_t 
 MatchAllScorer_get_doc_id(MatchAllScorer* self) 
 {
     return self->doc_id;

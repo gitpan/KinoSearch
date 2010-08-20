@@ -3,28 +3,26 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/ORMatcher.h"
-#include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Index/Similarity.h"
 
-/* Add an element to the queue.  Unsafe -- bounds checking of queue size is
- * left to the caller. */
+// Add an element to the queue.  Unsafe -- bounds checking of queue size is
+// left to the caller.
 static void 
-S_add_element(ORMatcher *self, Matcher *matcher, i32_t doc_id);
+S_add_element(ORMatcher *self, Matcher *matcher, int32_t doc_id);
 
-/* Empty out the queue. */
+// Empty out the queue. 
 static void 
 S_clear(ORMatcher *self);
 
-/* Call Matcher_Next() on the top queue element and adjust the queue,
- * removing the element if Matcher_Next() returns false. 
- */
-static INLINE i32_t
+// Call Matcher_Next() on the top queue element and adjust the queue,
+// removing the element if Matcher_Next() returns false. 
+static INLINE int32_t
 SI_top_next(ORMatcher *self);
 
-/* Call Matcher_Advance() on the top queue element and adjust the queue,
- * removing the element if Matcher_Advance() returns false. 
- */
-static INLINE i32_t
-SI_top_advance(ORMatcher *self, i32_t target);
+// Call Matcher_Advance() on the top queue element and adjust the queue,
+// removing the element if Matcher_Advance() returns false. 
+static INLINE int32_t
+SI_top_advance(ORMatcher *self, int32_t target);
 
 /* React to a change in the top element, or "root" -- presumably the update of
  * its doc_id resulting from a call to Matcher_Next() or Matcher_Advance().
@@ -33,18 +31,18 @@ SI_top_advance(ORMatcher *self, i32_t target);
  * perform a "sift down" to restore the heap property.  Return the doc id of
  * the root node, or 0 if the queue has been emptied.
  */
-static i32_t
+static int32_t
 S_adjust_root(ORMatcher *self);
 
-/* Take the bottom node (which probably violates the heap property when this
- * is called) and bubble it up through the heap until the heap property is
- * restored. */
+// Take the bottom node (which probably violates the heap property when this
+// is called) and bubble it up through the heap until the heap property is
+// restored.
 static void
 S_bubble_up(ORMatcher *self);
 
-/* Take the top node (which probably violates the heap property when this
- * is called) and sift it down through the heap until the heap property is
- * restored.  */
+// Take the top node (which probably violates the heap property when this
+// is called) and sift it down through the heap until the heap property is
+// restored.
 static void
 S_sift_down(ORMatcher *self);
 
@@ -59,20 +57,20 @@ static ORMatcher*
 S_ormatcher_init2(ORMatcher *self, VArray *children, Similarity *sim)
 {
     size_t amount_to_malloc;
-    u32_t i;
+    uint32_t i;
 
-    /* Init. */
+    // Init. 
     PolyMatcher_init((PolyMatcher*)self, children, sim);
     self->size = 0;
 
-    /* Derive. */
+    // Derive. 
     self->max_size = VA_Get_Size(children);
 
-    /* Allocate. */
+    // Allocate. 
     self->heap = (HeapedMatcherDoc**)CALLOCATE(self->max_size + 1, sizeof(HeapedMatcherDoc*));
 
-    /* Create a pool of HMDs.  Encourage CPU cache hits by using a single
-     * allocation for all of them. */
+    // Create a pool of HMDs.  Encourage CPU cache hits by using a single
+    // allocation for all of them.
     amount_to_malloc = (self->max_size + 1) * sizeof(HeapedMatcherDoc);
     self->blob = (char*)MALLOCATE(amount_to_malloc);
     self->pool = (HeapedMatcherDoc**)CALLOCATE(self->max_size + 1, sizeof(HeapedMatcherDoc*));
@@ -82,7 +80,7 @@ S_ormatcher_init2(ORMatcher *self, VArray *children, Similarity *sim)
         self->pool[i] = hmd;
     }
 
-    /* Prime queue. */
+    // Prime queue. 
     for (i = 0; i < self->max_size; i++) {
         Matcher *matcher = (Matcher*)VA_Fetch(children, i);
         S_add_element(self, (Matcher*)INCREF(matcher), 0);
@@ -107,16 +105,16 @@ ORMatcher_destroy(ORMatcher *self)
     SUPER_DESTROY(self, ORMATCHER);
 }
 
-i32_t
+int32_t
 ORMatcher_next(ORMatcher *self)
 {
     if (self->size == 0) { 
         return 0; 
     }
     else {
-        i32_t last_doc_id = self->top_hmd->doc;
+        int32_t last_doc_id = self->top_hmd->doc;
         while (self->top_hmd->doc == last_doc_id) {
-            i32_t top_doc_id = SI_top_next(self);
+            int32_t top_doc_id = SI_top_next(self);
             if (!top_doc_id && self->size == 0) {
                 return 0;
             }
@@ -125,12 +123,12 @@ ORMatcher_next(ORMatcher *self)
     }
 }
 
-i32_t
-ORMatcher_advance(ORMatcher *self, i32_t target)
+int32_t
+ORMatcher_advance(ORMatcher *self, int32_t target)
 {
     if (!self->size) { return 0; }
     do {
-        i32_t least = SI_top_advance(self, target);
+        int32_t least = SI_top_advance(self, target);
         if (least >= target) { return least; }
         if (!least) { 
             if (!self->size) { return 0; } 
@@ -138,7 +136,7 @@ ORMatcher_advance(ORMatcher *self, i32_t target)
     } while (true);
 }
 
-i32_t
+int32_t
 ORMatcher_get_doc_id(ORMatcher *self)
 {
     return self->top_hmd->doc;
@@ -150,18 +148,18 @@ S_clear(ORMatcher *self)
     HeapedMatcherDoc **const heap = self->heap;
     HeapedMatcherDoc **const pool = self->pool;
 
-    /* Node 0 is held empty, to make the algo clearer. */
+    // Node 0 is held empty, to make the algo clearer. 
     for ( ; self->size > 0; self->size--) {
         HeapedMatcherDoc *hmd = heap[ self->size ];
         heap[ self->size ] = NULL;
         DECREF(hmd->matcher);
 
-        /* Put HMD back in pool. */
+        // Put HMD back in pool. 
         pool[ self->size ] = hmd;
     }   
 }
 
-static INLINE i32_t
+static INLINE int32_t
 SI_top_next(ORMatcher *self)
 {
     HeapedMatcherDoc *const top_hmd = self->top_hmd;
@@ -169,8 +167,8 @@ SI_top_next(ORMatcher *self)
     return S_adjust_root(self);
 }
 
-static INLINE i32_t
-SI_top_advance(ORMatcher *self, i32_t target)
+static INLINE int32_t
+SI_top_advance(ORMatcher *self, int32_t target)
 {
     HeapedMatcherDoc *const top_hmd = self->top_hmd;
     top_hmd->doc = Matcher_Advance(top_hmd->matcher, target);
@@ -178,41 +176,41 @@ SI_top_advance(ORMatcher *self, i32_t target)
 }
 
 static void 
-S_add_element(ORMatcher *self, Matcher *matcher, i32_t doc_id)
+S_add_element(ORMatcher *self, Matcher *matcher, int32_t doc_id)
 {
     HeapedMatcherDoc **const heap = self->heap;
     HeapedMatcherDoc **const pool = self->pool;
     HeapedMatcherDoc *hmd;
 
-    /* Increment size. */
+    // Increment size. 
     self->size++;
 
-    /* Put element at the bottom of the heap. */
+    // Put element at the bottom of the heap. 
     hmd          = pool[ self->size ];
     hmd->matcher = matcher;
     hmd->doc     = doc_id;
     heap[ self->size ] = hmd;
 
-    /* Adjust heap. */
+    // Adjust heap. 
     S_bubble_up(self);
 }
 
-static i32_t
+static int32_t
 S_adjust_root(ORMatcher *self)
 {
     HeapedMatcherDoc *const top_hmd = self->top_hmd;
 
-    /* Inlined pop. */
+    // Inlined pop. 
     if (!top_hmd->doc) {
         HeapedMatcherDoc *const last_hmd = self->heap[ self->size ];
 
-        /* Last to first. */
+        // Last to first. 
         DECREF(top_hmd->matcher);
         top_hmd->matcher = last_hmd->matcher;
         top_hmd->doc     = last_hmd->doc;
         self->heap[ self->size ] = NULL;
 
-        /* Put back in pool. */
+        // Put back in pool. 
         self->pool[ self->size ] = last_hmd;
 
         self->size--;
@@ -220,7 +218,7 @@ S_adjust_root(ORMatcher *self)
             return 0;
     }
 
-    /* Move queue no matter what. */
+    // Move queue no matter what. 
     S_sift_down(self);
 
     return self->top_hmd->doc;
@@ -230,9 +228,9 @@ static void
 S_bubble_up(ORMatcher *self) 
 {
     HeapedMatcherDoc **const heap = self->heap;
-    u32_t i = self->size;
-    u32_t j = i >> 1;
-    HeapedMatcherDoc *const node = heap[i]; /* save bottom node */
+    uint32_t i = self->size;
+    uint32_t j = i >> 1;
+    HeapedMatcherDoc *const node = heap[i]; // save bottom node 
 
     while (j > 0 && node->doc < heap[j]->doc) {
         heap[i] = heap[j];
@@ -247,12 +245,12 @@ static void
 S_sift_down(ORMatcher *self) 
 {
     HeapedMatcherDoc **const heap = self->heap;
-    u32_t i = 1;
-    u32_t j = i << 1;
-    u32_t k = j + 1;
-    HeapedMatcherDoc *const node = heap[i]; /* save top node */
+    uint32_t i = 1;
+    uint32_t j = i << 1;
+    uint32_t k = j + 1;
+    HeapedMatcherDoc *const node = heap[i]; // save top node 
 
-    /* Find smaller child. */
+    // Find smaller child. 
     if (k <= self->size && heap[k]->doc < heap[j]->doc) {
         j = k;
     }
@@ -279,7 +277,7 @@ S_sift_down(ORMatcher *self)
  * advancing, their scores are cached in an array, to be summed during
  * Score().
  */
-static i32_t
+static int32_t
 S_advance_after_current(ORScorer *self);
 
 ORScorer*
@@ -296,8 +294,8 @@ ORScorer_init(ORScorer *self, VArray *children, Similarity *sim)
     self->doc_id           = 0;
     self->scores           = (float*)MALLOCATE(self->num_kids * sizeof(float));
 
-    /* Establish the state of all child matchers being past the current doc
-     * id, by invoking ORMatcher's Next() method. */
+    // Establish the state of all child matchers being past the current doc
+    // id, by invoking ORMatcher's Next() method. 
     ORMatcher_next((ORMatcher*)self);
 
     return self;
@@ -310,42 +308,42 @@ ORScorer_destroy(ORScorer *self)
     SUPER_DESTROY(self, ORSCORER);
 }
 
-i32_t
+int32_t
 ORScorer_next(ORScorer *self)
 {
     return S_advance_after_current(self);
 }
 
-static i32_t
+static int32_t
 S_advance_after_current(ORScorer *self) 
 {
     float *const     scores = self->scores;
     Matcher *child;
 
-    /* Get the top Matcher, or bail because there are no Matchers left. */
+    // Get the top Matcher, or bail because there are no Matchers left. 
     if (!self->size) { return 0; }
     else             { child = self->top_hmd->matcher; }
 
-    /* The top matcher will already be at the correct doc, so start there. */
+    // The top matcher will already be at the correct doc, so start there. 
     self->doc_id        = self->top_hmd->doc;
     scores[0]           = Matcher_Score(child);
     self->matching_kids = 1;
 
     do {
-        /* Attempt to advance past current doc. */
-        i32_t top_doc_id = SI_top_next((ORMatcher*)self);
+        // Attempt to advance past current doc. 
+        int32_t top_doc_id = SI_top_next((ORMatcher*)self);
         if (!top_doc_id) {
             if (!self->size) {
-                break; /* bail, no more to advance */
+                break; // bail, no more to advance 
             }
         }
 
         if (top_doc_id != self->doc_id) {
-            /* Bail, least doc in queue is now past the one we're scoring. */
+            // Bail, least doc in queue is now past the one we're scoring. 
             break;
         }
         else {
-            /* Accumulate score. */
+            // Accumulate score. 
             child = self->top_hmd->matcher;
             scores[ self->matching_kids ] = Matcher_Score(child);
             self->matching_kids++;
@@ -355,31 +353,31 @@ S_advance_after_current(ORScorer *self)
     return self->doc_id;
 }
 
-i32_t
-ORScorer_advance(ORScorer *self, i32_t target)
+int32_t
+ORScorer_advance(ORScorer *self, int32_t target)
 {
-    /* Return sentinel once exhausted. */
+    // Return sentinel once exhausted. 
     if (!self->size) { return 0; }
 
-    /* Succeed if we're already past and still on a valid doc. */
+    // Succeed if we're already past and still on a valid doc. 
     if (target <= self->doc_id) {
         return self->doc_id;
     }
 
     do {
-        /* If all matchers are caught up, accumulate score and return. */
+        // If all matchers are caught up, accumulate score and return. 
         if (self->top_hmd->doc >= target) {
             return S_advance_after_current(self);
         }
 
-        /* Not caught up yet, so keep skipping matchers. */
+        // Not caught up yet, so keep skipping matchers. 
         if ( !SI_top_advance((ORMatcher*)self, target) ) {
             if (!self->size) { return 0; }
         }
     } while (true);
 }
 
-i32_t
+int32_t
 ORScorer_get_doc_id(ORScorer *self)
 {
     return self->doc_id;
@@ -390,9 +388,9 @@ ORScorer_score(ORScorer *self)
 {
     float *const scores = self->scores;
     float score = 0.0f; 
-    u32_t i;
+    uint32_t i;
 
-    /* Accumulate score, then factor in coord bonus. */
+    // Accumulate score, then factor in coord bonus. 
     for (i = 0; i < self->matching_kids; i++) {
         score += scores[i];
     }

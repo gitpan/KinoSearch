@@ -14,31 +14,31 @@
 #include "KinoSearch/Store/InStream.h"
 
 kino_Obj*
-kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id, 
-                        float score, chy_i32_t offset)
+kino_DefDocReader_fetch(kino_DefaultDocReader *self, int32_t doc_id, 
+                        float score, int32_t offset)
 {
     kino_Schema   *const schema = self->schema;
     kino_InStream *const dat_in = self->dat_in;
     kino_InStream *const ix_in  = self->ix_in;
     HV *fields = newHV();
-    chy_i64_t start;
-    chy_u32_t num_fields;
+    int64_t start;
+    uint32_t num_fields;
     SV *field_name_sv = newSV(1);
 
-    /* Get data file pointer from index, read number of fields. */
-    Kino_InStream_Seek(ix_in, (chy_i64_t)doc_id * 8);
+    // Get data file pointer from index, read number of fields. 
+    Kino_InStream_Seek(ix_in, (int64_t)doc_id * 8);
     start = Kino_InStream_Read_U64(ix_in);
     Kino_InStream_Seek(dat_in, start);
     num_fields = Kino_InStream_Read_C32(dat_in);
 
-    /* Decode stored data and build up the doc field by field. */
+    // Decode stored data and build up the doc field by field. 
     while (num_fields--) {
         STRLEN  field_name_len;
         char   *field_name_ptr;
         SV     *value_sv;
         kino_FieldType *type;
 
-        /* Read field name. */
+        // Read field name. 
         field_name_len = Kino_InStream_Read_C32(dat_in);
         field_name_ptr = SvGROW(field_name_sv, field_name_len + 1);
         Kino_InStream_Read_Bytes(dat_in, field_name_ptr, field_name_len);
@@ -47,13 +47,13 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
         SvUTF8_on(field_name_sv);
         *SvEND(field_name_sv) = '\0';
 
-        /* Find the Field's FieldType. */
+        // Find the Field's FieldType. 
         kino_ZombieCharBuf *field_name_zcb 
             = KINO_ZCB_WRAP_STR(field_name_ptr, field_name_len);
         Kino_ZCB_Assign_Str(field_name_zcb, field_name_ptr, field_name_len);
         type = Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field_name_zcb);
 
-        /* Read the field value. */
+        // Read the field value. 
         switch(Kino_FType_Primitive_ID(type) & kino_FType_PRIMITIVE_ID_MASK) {
             case kino_FType_TEXT: {
                 STRLEN  value_len = Kino_InStream_Read_C32(dat_in);
@@ -81,15 +81,15 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
                 value_sv = newSVnv(Kino_InStream_Read_F64(dat_in));
                 break;
             case kino_FType_INT32:
-                value_sv = newSViv((chy_i32_t)Kino_InStream_Read_C32(dat_in));
+                value_sv = newSViv((int32_t)Kino_InStream_Read_C32(dat_in));
                 break;
             case kino_FType_INT64:
                 if (sizeof(IV) == 8) {
-                    chy_i64_t val = (chy_i64_t)Kino_InStream_Read_C64(dat_in);
+                    int64_t val = (int64_t)Kino_InStream_Read_C64(dat_in);
                     value_sv = newSViv((IV)val);
                 }
-                else { /* (lossy) */
-                    chy_i64_t val = (chy_i64_t)Kino_InStream_Read_C64(dat_in);
+                else { // (lossy) 
+                    int64_t val = (int64_t)Kino_InStream_Read_C64(dat_in);
                     value_sv = newSVnv((double)val);
                 }
                 break;
@@ -98,7 +98,7 @@ kino_DefDocReader_fetch(kino_DefaultDocReader *self, chy_i32_t doc_id,
                 KINO_THROW(KINO_ERR, "Unrecognized type: %o", type);
         }
 
-        /* Store the value. */
+        // Store the value. 
         hv_store_ent(fields, field_name_sv, value_sv, 0);
     }
     SvREFCNT_dec(field_name_sv);

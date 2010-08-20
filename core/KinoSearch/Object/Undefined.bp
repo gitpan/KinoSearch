@@ -2,13 +2,13 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Object::Undefined extends KinoSearch::Object::Obj {
 
-    u32_t
+    uint32_t
     Get_RefCount(Undefined* self);
 
     incremented Undefined*
     Inc_RefCount(Undefined* self);
 
-    u32_t 
+    uint32_t 
     Dec_RefCount(Undefined* self);
 }
 

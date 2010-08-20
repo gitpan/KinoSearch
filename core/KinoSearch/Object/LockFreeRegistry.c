@@ -9,9 +9,9 @@
 #include "KinoSearch/Util/Memory.h"
 
 typedef struct kino_LFRegEntry {
-    Obj   *key;
-    Obj   *value;
-    i32_t  hash_code;
+    Obj *key;
+    Obj *value;
+    int32_t hash_code;
     struct kino_LFRegEntry *volatile next;
 } kino_LFRegEntry;
 #define LFRegEntry kino_LFRegEntry
@@ -36,13 +36,13 @@ bool_t
 LFReg_register(LockFreeRegistry *self, Obj *key, Obj *value)
 {
     LFRegEntry  *new_entry = NULL;
-    i32_t        hash_code = Obj_Hash_Code(key);
-    size_t       bucket    = (u32_t)hash_code % self->capacity;
+    int32_t      hash_code = Obj_Hash_Code(key);
+    size_t       bucket    = (uint32_t)hash_code % self->capacity;
     LFRegEntry  *volatile *entries = (LFRegEntry*volatile*)self->entries;
     LFRegEntry  *volatile *slot    = &(entries[bucket]);
 
-    /* Proceed through the linked list.  Bail out if the key has already been
-     * registered. */
+    // Proceed through the linked list.  Bail out if the key has already been
+    // registered.
     FIND_END_OF_LINKED_LIST:
     while (*slot) {
         LFRegEntry *entry = *slot;
@@ -54,7 +54,7 @@ LFReg_register(LockFreeRegistry *self, Obj *key, Obj *value)
         slot = &(entry->next);
     }
 
-    /* We've found an empty slot. Create the new entry. */ 
+    // We've found an empty slot. Create the new entry.  
     if (!new_entry) {
         new_entry = (LFRegEntry*)MALLOCATE(sizeof(LFRegEntry));
         new_entry->hash_code = hash_code;
@@ -78,8 +78,8 @@ LFReg_register(LockFreeRegistry *self, Obj *key, Obj *value)
 Obj*
 LFReg_fetch(LockFreeRegistry *self, Obj *key)
 {
-    i32_t        hash_code = Obj_Hash_Code(key);
-    size_t       bucket    = (u32_t)hash_code % self->capacity;
+    int32_t      hash_code = Obj_Hash_Code(key);
+    size_t       bucket    = (uint32_t)hash_code % self->capacity;
     LFRegEntry **entries   = (LFRegEntry**)self->entries;
     LFRegEntry  *entry     = entries[bucket];
 

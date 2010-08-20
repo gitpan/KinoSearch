@@ -116,4 +116,6 @@ is( $hits->total_hits, 3, "QueryParser uses supplied Analyzer" );
 
 $query = $analyzer_parser->parse('United States');
 $hits = $searcher->hits( query => $query );
-is( $hits->total_hits, 2, "QueryParser doesn't analyze non-analyzed fields" );
+is( $hits->total_hits, 3,
+    "QueryParser uses supplied analyzer even for non-analyzed fields" );
+

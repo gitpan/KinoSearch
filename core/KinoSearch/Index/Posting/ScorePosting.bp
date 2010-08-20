@@ -9,10 +9,10 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::Posting::ScorePosting cnick ScorePost
     extends KinoSearch::Index::Posting::MatchPosting {
 
-    float    weight;
-    float   *norm_decoder;
-    u32_t   *prox;
-    u32_t    prox_cap;
+    float     weight;
+    float    *norm_decoder;
+    uint32_t *prox;
+    uint32_t  prox_cap;
 
     inert incremented ScorePosting*
     new(Similarity *similarity);
@@ -27,13 +27,13 @@ class KinoSearch::Index::Posting::ScorePosting cnick ScorePost
     Read_Record(ScorePosting *self, InStream *instream);
 
     incremented RawPosting*
-    Read_Raw(ScorePosting *self, InStream *instream, i32_t last_doc_id, 
+    Read_Raw(ScorePosting *self, InStream *instream, int32_t last_doc_id, 
              CharBuf *term_text, MemoryPool *mem_pool);
 
     void
     Add_Inversion_To_Pool(ScorePosting *self, PostingPool *post_pool, 
                           Inversion *inversion, FieldType *type, 
-                          i32_t doc_id, float doc_boost, 
+                          int32_t doc_id, float doc_boost, 
                           float length_norm);
 
     public void
@@ -43,7 +43,7 @@ class KinoSearch::Index::Posting::ScorePosting cnick ScorePost
     Make_Matcher(ScorePosting *self, Similarity *sim, PostingList *plist, 
                  Compiler *compiler, bool_t need_score);
 
-    nullable u32_t*
+    nullable uint32_t*
     Get_Prox(ScorePosting *self);
 }
 

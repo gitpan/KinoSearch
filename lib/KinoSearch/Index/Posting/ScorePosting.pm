@@ -16,8 +16,8 @@ get_prox(self)
 CODE:
 {
     AV *out_av            = newAV();
-    chy_u32_t *positions  = Kino_ScorePost_Get_Prox(self);
-    chy_u32_t i, max;
+    uint32_t *positions  = Kino_ScorePost_Get_Prox(self);
+    uint32_t i, max;
 
     for (i = 0, max = Kino_ScorePost_Get_Freq(self); i < max; i++) {
         SV *pos_sv = newSVuv(positions[i]);

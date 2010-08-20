@@ -12,7 +12,7 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 
-/* Read the data we've arrived at after a seek operation. */
+// Read the data we've arrived at after a seek operation. 
 static void
 S_read_entry(LexIndex *self);
 
@@ -28,18 +28,18 @@ LexIndex*
 LexIndex_init(LexIndex *self, Schema *schema, Folder *folder, 
               Segment *segment, const CharBuf *field)
 {
-    i32_t    field_num = Seg_Field_Num(segment, field);
+    int32_t  field_num = Seg_Field_Num(segment, field);
     CharBuf *seg_name  = Seg_Get_Name(segment);
     CharBuf *ixix_file = CB_newf("%o/lexicon-%i32.ixix", seg_name, field_num);
     CharBuf *ix_file   = CB_newf("%o/lexicon-%i32.ix", seg_name, field_num);
     Architecture *arch = Schema_Get_Architecture(schema);
 
-    /* Init. */
+    // Init. 
     Lex_init((Lexicon*)self, field);
     self->tinfo        = TInfo_new(0);
     self->tick         = 0;
 
-    /* Derive */
+    // Derive 
     self->field_type = Schema_Fetch_Type(schema, field);
     if (!self->field_type) {
         CharBuf *mess = MAKE_MESS("Unknown field: '%o'", field);
@@ -68,8 +68,8 @@ LexIndex_init(LexIndex *self, Schema *schema, Folder *folder,
     }
     self->index_interval = Arch_Index_Interval(arch);
     self->skip_interval  = Arch_Skip_Interval(arch);
-    self->size    = (i32_t)(InStream_Length(self->ixix_in) / sizeof(i64_t));
-    self->offsets = (i64_t*)InStream_Buf(self->ixix_in,
+    self->size    = (int32_t)(InStream_Length(self->ixix_in) / sizeof(int64_t));
+    self->offsets = (int64_t*)InStream_Buf(self->ixix_in,
         (size_t)InStream_Length(self->ixix_in));
 
     DECREF(ixix_file);
@@ -89,7 +89,7 @@ LexIndex_destroy(LexIndex *self)
     SUPER_DESTROY(self, LEXINDEX);
 }
 
-i32_t
+int32_t
 LexIndex_get_term_num(LexIndex *self)
 {
     return (self->index_interval * self->tick) - 1;
@@ -109,7 +109,7 @@ S_read_entry(LexIndex *self)
 {
     InStream *ix_in  = self->ix_in;
     TermInfo *tinfo  = self->tinfo;
-    i64_t offset = (i64_t)NumUtil_decode_bigend_u64(self->offsets + self->tick);
+    int64_t offset = (int64_t)NumUtil_decode_bigend_u64(self->offsets + self->tick);
     InStream_Seek(ix_in, offset);
     TermStepper_Read_Key_Frame(self->term_stepper, ix_in);
     tinfo->doc_freq     = InStream_Read_C32(ix_in);
@@ -125,9 +125,9 @@ LexIndex_seek(LexIndex *self, Obj *target)
     TermStepper *term_stepper = self->term_stepper;
     InStream    *ix_in        = self->ix_in;
     FieldType   *type         = self->field_type;
-    i32_t        lo           = 0;
-    i32_t        hi           = self->size - 1;
-    i32_t        result       = -100;
+    int32_t      lo           = 0;
+    int32_t      hi           = self->size - 1;
+    int32_t      result       = -100;
 
     if (target == NULL || self->size == 0) { 
         self->tick = 0;
@@ -147,17 +147,19 @@ LexIndex_seek(LexIndex *self, Obj *target)
         */
     }
 
-    /* Divide and conquer. */
+    // Divide and conquer. 
     while (hi >= lo) {
-        const i32_t mid = lo + ((hi - lo) / 2);
-        const i64_t offset 
-            = (i64_t)NumUtil_decode_bigend_u64(self->offsets + mid);
-        i32_t comparison;
+        const int32_t mid = lo + ((hi - lo) / 2);
+        const int64_t offset 
+            = (int64_t)NumUtil_decode_bigend_u64(self->offsets + mid);
         InStream_Seek(ix_in, offset);
         TermStepper_Read_Key_Frame(term_stepper, ix_in);
 
-        comparison = FType_Compare_Values(type, target,
-            TermStepper_Get_Value(term_stepper));
+        // Compare values.  There is no need for a NULL-check because the term
+        // number is alway between 0 and self->size - 1.
+        Obj *value = TermStepper_Get_Value(term_stepper);
+        int32_t comparison = FType_Compare_Values(type, target, value);
+
         if (comparison < 0) {
             hi = mid - 1;
         }
@@ -170,9 +172,9 @@ LexIndex_seek(LexIndex *self, Obj *target)
         }
     }
 
-    /* Record the index of the entry we've seeked to, then read entry. */
-    self->tick = hi == -1   ? 0  /* indicating that target lt first entry */
-           : result == -100 ? hi /* if result is still -100, it wasn't set */
+    // Record the index of the entry we've seeked to, then read entry. 
+    self->tick = hi == -1   ? 0  // indicating that target lt first entry 
+           : result == -100 ? hi // if result is still -100, it wasn't set 
            : result;
     S_read_entry(self);
 }

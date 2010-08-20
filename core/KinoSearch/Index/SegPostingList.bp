@@ -12,15 +12,13 @@ class KinoSearch::Index::SegPostingList cnick SegPList
     InStream          *post_stream;
     InStream          *skip_stream;
     SkipStepper       *skip_stepper;
-    i32_t              skip_interval;
-    u32_t              count;
-    u32_t              doc_freq;
-    u32_t              skip_count;
-    u32_t              num_skips;
-    i32_t              field_num;
+    int32_t            skip_interval;
+    uint32_t           count;
+    uint32_t           doc_freq;
+    uint32_t           skip_count;
+    uint32_t           num_skips;
+    int32_t            field_num;
 
-    /* Constructor.
-     */
     inert incremented SegPostingList*
     new(PostingListReader *plist_reader, const CharBuf *field);
 
@@ -31,26 +29,26 @@ class KinoSearch::Index::SegPostingList cnick SegPList
     InStream*
     Get_Post_Stream(SegPostingList *self);
 
-    u32_t
+    uint32_t
     Get_Count(SegPostingList *self);
 
     public void
     Destroy(SegPostingList *self);
 
-    public u32_t
+    public uint32_t
     Get_Doc_Freq(SegPostingList *self);
 
-    public i32_t
+    public int32_t
     Get_Doc_ID(SegPostingList *self);
 
     Posting*
     Get_Posting(SegPostingList *self);
 
-    public i32_t
+    public int32_t
     Next(SegPostingList *self);
 
-    public i32_t
-    Advance(SegPostingList *self, i32_t target);
+    public int32_t
+    Advance(SegPostingList *self, int32_t target);
 
     public void
     Seek(SegPostingList *self, Obj *target = NULL);
@@ -65,7 +63,7 @@ class KinoSearch::Index::SegPostingList cnick SegPList
                  Compiler *compiler, bool_t need_score);
 
     RawPosting*
-    Read_Raw(SegPostingList *self, i32_t last_doc_id, CharBuf *term_text,
+    Read_Raw(SegPostingList *self, int32_t last_doc_id, CharBuf *term_text,
              MemoryPool *mem_pool);
 }
 

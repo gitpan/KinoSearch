@@ -2,7 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/ANDScorer.h"
-#include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Index/Similarity.h"
 
 ANDScorer*
 ANDScorer_new(VArray *children, Similarity *sim) 
@@ -14,13 +14,13 @@ ANDScorer_new(VArray *children, Similarity *sim)
 ANDScorer*
 ANDScorer_init(ANDScorer *self, VArray *children, Similarity *sim) 
 {
-    u32_t i;
+    uint32_t i;
 
-    /* Init. */
+    // Init. 
     PolyMatcher_init((PolyMatcher*)self, children, sim);
     self->first_time       = true;
 
-    /* Assign. */
+    // Assign. 
     self->more             = self->num_kids ? true : false;
     self->kids             = (Matcher**)MALLOCATE(self->num_kids * sizeof(Matcher*));
     for (i = 0; i < self->num_kids; i++) {
@@ -29,7 +29,7 @@ ANDScorer_init(ANDScorer *self, VArray *children, Similarity *sim)
         if (!Matcher_Next(child)) self->more = false;
     }
 
-    /* Derive. */
+    // Derive. 
     self->matching_kids = self->num_kids;
 
     return self;
@@ -42,14 +42,14 @@ ANDScorer_destroy(ANDScorer *self)
     SUPER_DESTROY(self, ANDSCORER);
 }
 
-i32_t
+int32_t
 ANDScorer_next(ANDScorer *self)
 {
     if (self->first_time) {
         return ANDScorer_Advance(self, 1);
     }
     if (self->more) {
-        const i32_t target = Matcher_Get_Doc_ID(self->kids[0]) + 1;
+        const int32_t target = Matcher_Get_Doc_ID(self->kids[0]) + 1;
         return ANDScorer_Advance(self, target);
     }
     else {
@@ -57,16 +57,16 @@ ANDScorer_next(ANDScorer *self)
     }
 }
 
-i32_t
-ANDScorer_advance(ANDScorer *self, i32_t target)
+int32_t
+ANDScorer_advance(ANDScorer *self, int32_t target)
 {
     Matcher **const kids = self->kids;
-    const u32_t     num_kids   = self->num_kids;
-    i32_t           highest    = 0;
+    const uint32_t  num_kids   = self->num_kids;
+    int32_t         highest    = 0;
 
     if (!self->more) return 0;
 
-    /* First step: Advance first child and use its doc as a starting point. */
+    // First step: Advance first child and use its doc as a starting point. 
     if (self->first_time) {
         self->first_time = false;
     }
@@ -78,27 +78,27 @@ ANDScorer_advance(ANDScorer *self, i32_t target)
         }
     }
 
-    /* Second step: reconcile. */
+    // Second step: reconcile. 
     while(1) {
-        u32_t i;
+        uint32_t i;
         bool_t agreement = true;
 
-        /* Scoot all scorers up. */
+        // Scoot all scorers up. 
         for (i = 0; i < num_kids; i++) {
             Matcher *const child = kids[i];
-            i32_t candidate = Matcher_Get_Doc_ID(child);
+            int32_t candidate = Matcher_Get_Doc_ID(child);
 
-            /* If this child is highest, others will need to catch up. */
+            // If this child is highest, others will need to catch up. 
             if (highest < candidate)
                 highest = candidate;
 
-            /* If least doc scorers can agree on exceeds target, raise bar. */
+            // If least doc scorers can agree on exceeds target, raise bar. 
             if (target < highest)
                 target = highest;
 
-            /* Scoot this scorer up if not already at highest. */
+            // Scoot this scorer up if not already at highest. 
             if (candidate < target) {
-                /* This scorer is definitely the highest right now. */
+                // This scorer is definitely the highest right now. 
                 highest = Matcher_Advance(child, target);
                 if (!highest) {
                     self->more = false;
@@ -107,10 +107,10 @@ ANDScorer_advance(ANDScorer *self, i32_t target)
             }
         }
 
-        /* If scorers don't agree, send back through the loop. */
+        // If scorers don't agree, send back through the loop. 
         for (i = 0; i < num_kids; i++) {
             Matcher *const child = kids[i];
-            const i32_t candidate = Matcher_Get_Doc_ID(child);
+            const int32_t candidate = Matcher_Get_Doc_ID(child);
             if (candidate != highest) {
                 agreement = false;
                 break;
@@ -126,7 +126,7 @@ ANDScorer_advance(ANDScorer *self, i32_t target)
     return highest;
 }
 
-i32_t
+int32_t
 ANDScorer_get_doc_id(ANDScorer *self)
 {
     return Matcher_Get_Doc_ID(self->kids[0]);
@@ -135,7 +135,7 @@ ANDScorer_get_doc_id(ANDScorer *self)
 float
 ANDScorer_score(ANDScorer *self)
 {
-    u32_t i;
+    uint32_t i;
     Matcher **const kids = self->kids;
     float score = 0.0f;
 

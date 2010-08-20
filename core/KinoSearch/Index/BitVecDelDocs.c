@@ -16,7 +16,7 @@ BitVecDelDocs*
 BitVecDelDocs_init(BitVecDelDocs *self, Folder *folder, 
                    const CharBuf *filename)
 {
-    i32_t len;
+    int32_t len;
 
     BitVec_init((BitVector*)self, 0);
     self->filename = CB_Clone(filename);
@@ -26,9 +26,9 @@ BitVecDelDocs_init(BitVecDelDocs *self, Folder *folder,
         DECREF(self);
         RETHROW(error);
     }
-    len            = (i32_t)InStream_Length(self->instream);
-    self->bits     = (u8_t*)InStream_Buf(self->instream, len);
-    self->cap      = (u32_t)(len * 8);
+    len            = (int32_t)InStream_Length(self->instream);
+    self->bits     = (uint8_t*)InStream_Buf(self->instream, len);
+    self->cap      = (uint32_t)(len * 8);
     return self;
 }
 

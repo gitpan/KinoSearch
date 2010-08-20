@@ -16,11 +16,11 @@
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/SegWriter.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/SortReader.h"
 #include "KinoSearch/Index/SortWriter.h"
 #include "KinoSearch/Plan/Schema.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 
 Architecture*

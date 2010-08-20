@@ -16,10 +16,10 @@ class KinoSearch::Index::PostingPool cnick PostPool
     PostingList       *plist;
     MemoryPool        *mem_pool;
     I32Array          *doc_map;
-    i32_t              field_num;
-    i32_t              doc_base;
-    i32_t              last_doc_id;
-    u32_t              post_count;
+    int32_t            field_num;
+    int32_t            doc_base;
+    int32_t            last_doc_id;
+    uint32_t           post_count;
     OutStream         *lex_temp_out;
     OutStream         *post_temp_out;
     OutStream         *skip_out;
@@ -28,10 +28,10 @@ class KinoSearch::Index::PostingPool cnick PostPool
     FieldType         *type;
     Posting           *posting;
     SkipStepper       *skip_stepper;
-    i64_t              lex_start;
-    i64_t              post_start;
-    i64_t              lex_end;
-    i64_t              post_end;
+    int64_t            lex_start;
+    int64_t            post_start;
+    int64_t            lex_end;
+    int64_t            post_end;
 
     inert incremented PostingPool*
     new(Schema *schema, Snapshot *snapshot, Segment *segment, 
@@ -50,7 +50,7 @@ class KinoSearch::Index::PostingPool cnick PostPool
     /** Add a field's inverted content.
      */
     void
-    Add_Inversion(PostingPool *self, Inversion *inversion, i32_t doc_id, 
+    Add_Inversion(PostingPool *self, Inversion *inversion, int32_t doc_id, 
                   float doc_boost, float length_norm);
 
     /** Reduce RAM footprint as much as possible. 
@@ -63,7 +63,7 @@ class KinoSearch::Index::PostingPool cnick PostPool
 
     void
     Add_Segment(PostingPool *self, SegReader *reader, I32Array *doc_map, 
-                i32_t doc_base);
+                int32_t doc_base);
 
     void
     Flip(PostingPool *self);

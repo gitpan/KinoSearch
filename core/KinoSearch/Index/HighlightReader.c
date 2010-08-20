@@ -16,7 +16,7 @@
 
 HighlightReader*
 HLReader_init(HighlightReader *self, Schema *schema, Folder *folder,
-              Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+              Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     DataReader_init((DataReader*)self, schema, folder, snapshot, segments,
         seg_tick);
@@ -44,7 +44,7 @@ PolyHighlightReader*
 PolyHLReader_init(PolyHighlightReader *self, VArray *readers, 
                    I32Array *offsets)
 {
-    u32_t i, max;
+    uint32_t i, max;
     HLReader_init((HighlightReader*)self, NULL, NULL, NULL, NULL, -1);
     for (i = 0, max = VA_Get_Size(readers); i < max; i++) {
         CERTIFY(VA_Fetch(readers, i), HIGHLIGHTREADER);
@@ -58,7 +58,7 @@ void
 PolyHLReader_close(PolyHighlightReader *self)
 {
     if (self->readers) {
-        u32_t i, max;
+        uint32_t i, max;
         for (i = 0, max = VA_Get_Size(self->readers); i < max; i++) {
             HighlightReader *sub_reader 
                 = (HighlightReader*)VA_Fetch(self->readers, i);
@@ -80,10 +80,10 @@ PolyHLReader_destroy(PolyHighlightReader *self)
 }
 
 DocVector*
-PolyHLReader_fetch(PolyHighlightReader *self, i32_t doc_id)
+PolyHLReader_fetch(PolyHighlightReader *self, int32_t doc_id)
 {
-    u32_t seg_tick = PolyReader_sub_tick(self->offsets, doc_id);
-    i32_t offset   = I32Arr_Get(self->offsets, seg_tick);
+    uint32_t seg_tick = PolyReader_sub_tick(self->offsets, doc_id);
+    int32_t offset   = I32Arr_Get(self->offsets, seg_tick);
     HighlightReader *sub_reader 
         = (HighlightReader*)VA_Fetch(self->readers, seg_tick);
     if (!sub_reader) { THROW(ERR, "Invalid doc_id: %i32", doc_id); }
@@ -92,7 +92,7 @@ PolyHLReader_fetch(PolyHighlightReader *self, i32_t doc_id)
 
 DefaultHighlightReader*
 DefHLReader_new(Schema *schema, Folder *folder, Snapshot *snapshot, 
-                VArray *segments, i32_t seg_tick)
+                VArray *segments, int32_t seg_tick)
 {
     DefaultHighlightReader *self = (DefaultHighlightReader*)
         VTable_Make_Obj(DEFAULTHIGHLIGHTREADER);
@@ -103,7 +103,7 @@ DefHLReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
 DefaultHighlightReader*
 DefHLReader_init(DefaultHighlightReader *self, Schema *schema,
                  Folder *folder, Snapshot *snapshot, VArray *segments,
-                 i32_t seg_tick)
+                 int32_t seg_tick)
 {
     Segment *segment;
     Hash    *metadata; 
@@ -115,7 +115,7 @@ DefHLReader_init(DefaultHighlightReader *self, Schema *schema,
         metadata = (Hash*)Seg_Fetch_Metadata_Str(segment, "term_vectors", 12);
     }
     
-    /* Check format. */
+    // Check format. 
     if (metadata) {
         Obj     *format    = Hash_Fetch_Str(metadata, "format", 6);
         if (!format) { THROW(ERR, "Missing 'format' var"); }
@@ -128,7 +128,7 @@ DefHLReader_init(DefaultHighlightReader *self, Schema *schema,
     }
 
 
-    /* Open instreams. */
+    // Open instreams. 
     {
         CharBuf *seg_name = Seg_Get_Name(segment);
         CharBuf *ix_file  = CB_newf("%o/highlight.ix", seg_name);
@@ -182,11 +182,11 @@ DefHLReader_destroy(DefaultHighlightReader *self)
 }
 
 DocVector*
-DefHLReader_fetch(DefaultHighlightReader *self, i32_t doc_id)
+DefHLReader_fetch(DefaultHighlightReader *self, int32_t doc_id)
 {
     DocVector *doc_vec = DocVec_new();
-    i64_t file_pos;
-    u32_t num_fields;
+    int64_t file_pos;
+    uint32_t num_fields;
 
     InStream_Seek(self->ix_in, doc_id * 8);
     file_pos = InStream_Read_I64(self->ix_in);
@@ -205,7 +205,7 @@ DefHLReader_fetch(DefaultHighlightReader *self, i32_t doc_id)
 }
 
 void
-DefHLReader_read_record(DefaultHighlightReader *self, i32_t doc_id,
+DefHLReader_read_record(DefaultHighlightReader *self, int32_t doc_id,
                         ByteBuf *target)
 {
     InStream *dat_in = self->dat_in;
@@ -214,11 +214,11 @@ DefHLReader_read_record(DefaultHighlightReader *self, i32_t doc_id,
     InStream_Seek(ix_in, doc_id * 8);
 
     {
-        /* Copy the whole record. */
-        i64_t   filepos = InStream_Read_I64(ix_in);
-        i64_t   end     = InStream_Read_I64(ix_in);
-        size_t  size    = (size_t)(end - filepos);
-        char   *buf     = BB_Grow(target, size);
+        // Copy the whole record. 
+        int64_t  filepos = InStream_Read_I64(ix_in);
+        int64_t  end     = InStream_Read_I64(ix_in);
+        size_t   size    = (size_t)(end - filepos);
+        char    *buf     = BB_Grow(target, size);
         InStream_Seek(dat_in, filepos);
         InStream_Read_Bytes(dat_in, buf, size);
         BB_Set_Size(target, size);

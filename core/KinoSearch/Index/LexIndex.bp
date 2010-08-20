@@ -5,11 +5,11 @@ class KinoSearch::Index::LexIndex extends KinoSearch::Index::Lexicon {
     FieldType   *field_type;
     InStream    *ixix_in;
     InStream    *ix_in;
-    i64_t       *offsets;
-    i32_t        tick;
-    i32_t        size;
-    i32_t        index_interval;
-    i32_t        skip_interval;
+    int64_t     *offsets;
+    int32_t      tick;
+    int32_t      size;
+    int32_t      index_interval;
+    int32_t      skip_interval;
     TermStepper *term_stepper;
     TermInfo    *tinfo;
 
@@ -24,7 +24,7 @@ class KinoSearch::Index::LexIndex extends KinoSearch::Index::Lexicon {
     public void
     Seek(LexIndex *self, Obj *target = NULL);
 
-    i32_t
+    int32_t
     Get_Term_Num(LexIndex *self);
 
     nullable TermInfo* 

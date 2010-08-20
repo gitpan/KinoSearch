@@ -26,7 +26,7 @@ class KinoSearch::Index::BackgroundMerger cnick BGMerger
     Lock              *merge_lock;
     CharBuf           *snapfile;
     Hash              *doc_maps;
-    i64_t              cutoff;
+    int64_t            cutoff;
     bool_t             optimize;
     bool_t             needs_commit;
     bool_t             prepared;

@@ -33,12 +33,6 @@ abstract class KinoSearch::Analysis::Analyzer
      */
     public incremented VArray*
     Split(Analyzer *self, CharBuf *text);
-
-    /** Verify that were an object to be created from the supplied dump,
-     * Equals() would return true.
-     */
-    public bool_t
-    Dump_Equals(Analyzer *self, Obj *dump);
 }
 
 /* Copyright 2005-2010 Marvin Humphrey

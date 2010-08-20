@@ -7,15 +7,15 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Search::MatchDoc extends KinoSearch::Object::Obj {
 
-    i32_t    doc_id;
+    int32_t  doc_id;
     float    score;
     VArray  *values;
 
     inert incremented MatchDoc*
-    new(i32_t doc_id, float score, VArray *values = NULL);
+    new(int32_t doc_id, float score, VArray *values = NULL);
 
     inert MatchDoc*
-    init(MatchDoc *self, i32_t doc_id, float score, VArray *values = NULL);
+    init(MatchDoc *self, int32_t doc_id, float score, VArray *values = NULL);
 
     public void
     Serialize(MatchDoc *self, OutStream *outstream);
@@ -23,11 +23,11 @@ class KinoSearch::Search::MatchDoc extends KinoSearch::Object::Obj {
     public incremented MatchDoc*
     Deserialize(MatchDoc *self, InStream *instream);
 
-    i32_t
+    int32_t
     Get_Doc_ID(MatchDoc *self);
 
     void
-    Set_Doc_ID(MatchDoc *self, i32_t doc_id);
+    Set_Doc_ID(MatchDoc *self, int32_t doc_id);
 
     float
     Get_Score(MatchDoc *self);

@@ -98,8 +98,8 @@ sub test_search {
             bit_vector => $bit_vec );
     }
 
-    my $collector = KinoSearch::Search::Collector::SortCollector->new(
-        wanted => 100 );
+    my $collector
+        = KinoSearch::Search::Collector::SortCollector->new( wanted => 100 );
     $matcher->collect(
         %KinoSearch::Search::Matcher::collect_PARAMS,
         collector => $collector,

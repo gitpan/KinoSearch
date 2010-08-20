@@ -34,16 +34,16 @@ abstract class KinoSearch::Util::SortExternal cnick SortEx
     extends KinoSearch::Object::Obj {
 
     uint8_t       *cache;
-    u32_t          cache_cap;
-    u32_t          cache_max;
-    u32_t          cache_tick;
+    uint32_t       cache_cap;
+    uint32_t       cache_max;
+    uint32_t       cache_tick;
     uint8_t       *scratch;
-    u32_t          scratch_cap;
+    uint32_t       scratch_cap;
     VArray        *runs;
-    u32_t          num_slices;
+    uint32_t       num_slices;
     uint8_t      **slice_starts;
-    u32_t         *slice_sizes;
-    u32_t          mem_thresh;
+    uint32_t      *slice_sizes;
+    uint32_t       mem_thresh;
     size_t         width;
     bool_t         flipped;
 
@@ -114,16 +114,16 @@ abstract class KinoSearch::Util::SortExternal cnick SortEx
 
     /** Return the number of items presently in the cache.
      */
-    u32_t
+    uint32_t
     Cache_Count(SortExternal *self);
 
     /** Allocate more memory to the cache.
      */
     void
-    Grow_Cache(SortExternal *self, u32_t new_cache_cap);
+    Grow_Cache(SortExternal *self, uint32_t new_cache_cap);
 
     void 
-    Set_Mem_Thresh(SortExternal *self, u32_t mem_thresh);
+    Set_Mem_Thresh(SortExternal *self, uint32_t mem_thresh);
 
     public void
     Destroy(SortExternal *self);

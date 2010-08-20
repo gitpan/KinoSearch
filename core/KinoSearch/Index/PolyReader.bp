@@ -12,8 +12,8 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::PolyReader extends KinoSearch::Index::IndexReader {
 
     VArray   *sub_readers;
-    i32_t     doc_max;
-    i32_t     del_count;
+    int32_t   doc_max;
+    int32_t   del_count;
     I32Array *offsets;
 
     public inert incremented nullable PolyReader*
@@ -51,23 +51,23 @@ class KinoSearch::Index::PolyReader extends KinoSearch::Index::IndexReader {
      */
     inert incremented nullable CharBuf*
     try_read_snapshot(Snapshot *snapshot, Folder *folder, 
-                      const CharBuf *filename);
+                      const CharBuf *path);
 
     inert CharBuf* race_condition_debug1;
-    inert i32_t    debug1_num_passes;
+    inert int32_t  debug1_num_passes;
     
     /** Determine which sub-reader a document id belongs to.
      */
-    inert u32_t
-    sub_tick(I32Array *offsets, i32_t doc_id);
+    inert uint32_t
+    sub_tick(I32Array *offsets, int32_t doc_id);
 
-    public i32_t
+    public int32_t
     Doc_Max(PolyReader *self);
 
-    public i32_t
+    public int32_t
     Doc_Count(PolyReader *self);
 
-    public i32_t
+    public int32_t
     Del_Count(PolyReader *self);
 
     public incremented I32Array*

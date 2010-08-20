@@ -9,7 +9,7 @@
 
 DataReader*
 DataReader_init(DataReader *self, Schema *schema, Folder *folder, 
-                Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+                Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     self->schema   = (Schema*)INCREF(schema);
     self->folder   = (Folder*)INCREF(folder);
@@ -60,7 +60,7 @@ DataReader_get_snapshot(DataReader *self)
 VArray*
 DataReader_get_segments(DataReader *self) 
     { return self->segments; }
-i32_t
+int32_t
 DataReader_get_seg_tick(DataReader *self)
     { return self->seg_tick; }
 Segment*

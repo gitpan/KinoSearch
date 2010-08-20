@@ -2,30 +2,30 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Search::RangeScorer extends KinoSearch::Search::Matcher {
 
-    i32_t      doc_id;
-    i32_t      doc_max;
-    i32_t      lower_bound;
-    i32_t      upper_bound;
+    int32_t    doc_id;
+    int32_t    doc_max;
+    int32_t    lower_bound;
+    int32_t    upper_bound;
     SortCache *sort_cache;
 
     inert incremented RangeScorer*
-    new(i32_t lower_bound, i32_t upper_bound, SortCache *sort_cache, 
-        i32_t doc_max);
+    new(int32_t lower_bound, int32_t upper_bound, SortCache *sort_cache, 
+        int32_t doc_max);
 
     inert RangeScorer*
-    init(RangeScorer *self, i32_t lower_bound, i32_t upper_bound, 
-         SortCache *sort_cache, i32_t doc_max);
+    init(RangeScorer *self, int32_t lower_bound, int32_t upper_bound, 
+         SortCache *sort_cache, int32_t doc_max);
 
-    public i32_t
+    public int32_t
     Next(RangeScorer *self);
 
-    public i32_t
-    Advance(RangeScorer *self, i32_t target);
+    public int32_t
+    Advance(RangeScorer *self, int32_t target);
 
     public float
     Score(RangeScorer* self);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(RangeScorer* self);
 
     public void

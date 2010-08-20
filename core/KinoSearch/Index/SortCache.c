@@ -6,13 +6,13 @@
 
 SortCache*
 SortCache_init(SortCache *self, const CharBuf *field, FieldType *type,
-               void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord,
+               void *ords, int32_t cardinality, int32_t doc_max, int32_t null_ord,
                int32_t ord_width)
 {
-    /* Init. */
+    // Init. 
     self->native_ords = false;
 
-    /* Assign. */
+    // Assign. 
     if (!FType_Sortable(type)) { 
         THROW(ERR, "Non-sortable FieldType for %o", field); 
     }
@@ -42,8 +42,8 @@ void
 SortCache_set_native_ords(SortCache *self, bool_t native_ords)
     { self->native_ords = native_ords; }
 
-i32_t
-SortCache_ordinal(SortCache *self, i32_t doc_id)
+int32_t
+SortCache_ordinal(SortCache *self, int32_t doc_id)
 {
     if ((uint32_t)doc_id > (uint32_t)self->doc_max) { 
         THROW(ERR, "Out of range: %i32 > %i32", doc_id, self->doc_max);
@@ -53,7 +53,7 @@ SortCache_ordinal(SortCache *self, i32_t doc_id)
         case 2: return NumUtil_u2get(self->ords, doc_id);
         case 4: return NumUtil_u4get(self->ords, doc_id);
         case 8: {
-            u8_t *ints = (u8_t*)self->ords;
+            uint8_t *ints = (uint8_t*)self->ords;
             return ints[doc_id];
         }
         case 16: 
@@ -78,18 +78,18 @@ SortCache_ordinal(SortCache *self, i32_t doc_id)
             }
         default: {
             THROW(ERR, "Invalid ord width: %i32", self->ord_width);
-            UNREACHABLE_RETURN(i32_t);
+            UNREACHABLE_RETURN(int32_t);
         }
     }
 }
 
-i32_t
+int32_t
 SortCache_find(SortCache *self, Obj *term)
 {
     FieldType *const type = self->type;
-    i32_t          lo     = 0;
-    i32_t          hi     = self->cardinality - 1;
-    i32_t          result = -100;
+    int32_t        lo     = 0;
+    int32_t        hi     = self->cardinality - 1;
+    int32_t        result = -100;
     Obj           *blank  = SortCache_Make_Blank(self);
 
     if (   term != NULL 
@@ -101,11 +101,11 @@ SortCache_find(SortCache *self, Obj *term)
             Obj_Get_Class_Name(blank));
     }
 
-    /* Binary search. */
+    // Binary search. 
     while (hi >= lo) {
-        const i32_t mid = lo + ((hi - lo) / 2);
+        const int32_t mid = lo + ((hi - lo) / 2);
         Obj *val = SortCache_Value(self, mid, blank);
-        i32_t comparison = FType_Compare_Values(type, term, val);
+        int32_t comparison = FType_null_back_compare_values(type, term, val);
         if (comparison < 0) {
             hi = mid - 1;
         }
@@ -121,11 +121,11 @@ SortCache_find(SortCache *self, Obj *term)
     DECREF(blank);
 
     if (hi < 0) { 
-        /* Target is "less than" the first cache entry. */
+        // Target is "less than" the first cache entry. 
         return -1;
     }
     else if (result == -100) {
-        /* If result is still -100, it wasn't set. */
+        // If result is still -100, it wasn't set. 
         return hi;
     }
     else {
@@ -133,19 +133,13 @@ SortCache_find(SortCache *self, Obj *term)
     }
 }
 
-Obj*
-SortCache_make_blank(SortCache *self)
-{
-    return FType_Make_Blank(self->type);
-}
-
 void*
 SortCache_get_ords(SortCache *self)        { return self->ords; }
-i32_t
+int32_t
 SortCache_get_cardinality(SortCache *self) { return self->cardinality; }
 int32_t
 SortCache_get_null_ord(SortCache *self)    { return self->null_ord; }
-i32_t
+int32_t
 SortCache_get_ord_width(SortCache *self)   { return self->ord_width; }
 
 /* Copyright 2006-2010 Marvin Humphrey

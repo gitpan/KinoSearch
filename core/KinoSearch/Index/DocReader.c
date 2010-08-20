@@ -14,7 +14,7 @@
 
 DocReader*
 DocReader_init(DocReader *self, Schema *schema, Folder *folder, 
-               Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+               Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     return (DocReader*)DataReader_init((DataReader*)self, schema, folder, 
         snapshot, segments, seg_tick);
@@ -37,7 +37,7 @@ PolyDocReader_new(VArray *readers, I32Array *offsets)
 PolyDocReader*
 PolyDocReader_init(PolyDocReader *self, VArray *readers, I32Array *offsets)
 {
-    u32_t i, max;
+    uint32_t i, max;
     DocReader_init((DocReader*)self, NULL, NULL, NULL, NULL, -1);
     for (i = 0, max = VA_Get_Size(readers); i < max; i++) {
         CERTIFY(VA_Fetch(readers, i), DOCREADER);
@@ -51,7 +51,7 @@ void
 PolyDocReader_close(PolyDocReader *self)
 {
     if (self->readers) {
-        u32_t i, max;
+        uint32_t i, max;
         for (i = 0, max = VA_Get_Size(self->readers); i < max; i++) {
             DocReader *reader = (DocReader*)VA_Fetch(self->readers, i);
             if (reader) { DocReader_Close(reader); }
@@ -69,11 +69,11 @@ PolyDocReader_destroy(PolyDocReader *self)
 }
 
 Obj*
-PolyDocReader_fetch(PolyDocReader *self, i32_t doc_id, float score, 
-                    i32_t offset)
+PolyDocReader_fetch(PolyDocReader *self, int32_t doc_id, float score, 
+                    int32_t offset)
 {
-    u32_t seg_tick  = PolyReader_sub_tick(self->offsets, doc_id);
-    i32_t my_offset = I32Arr_Get(self->offsets, seg_tick);
+    uint32_t seg_tick  = PolyReader_sub_tick(self->offsets, doc_id);
+    int32_t my_offset = I32Arr_Get(self->offsets, seg_tick);
     DocReader *doc_reader = (DocReader*)VA_Fetch(self->readers, seg_tick);
     Obj *hit = NULL;
     if (!doc_reader) { 
@@ -88,7 +88,7 @@ PolyDocReader_fetch(PolyDocReader *self, i32_t doc_id, float score,
 
 DefaultDocReader*
 DefDocReader_new(Schema *schema, Folder *folder, Snapshot *snapshot, 
-                 VArray *segments, i32_t seg_tick)
+                 VArray *segments, int32_t seg_tick)
 {
     DefaultDocReader *self 
         = (DefaultDocReader*)VTable_Make_Obj(DEFAULTDOCREADER);
@@ -121,7 +121,7 @@ DefDocReader_destroy(DefaultDocReader *self)
 
 DefaultDocReader*
 DefDocReader_init(DefaultDocReader *self, Schema *schema, Folder *folder, 
-                  Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+                  Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     Hash *metadata; 
     Segment *segment;
@@ -136,10 +136,10 @@ DefDocReader_init(DefaultDocReader *self, Schema *schema, Folder *folder,
         CharBuf *dat_file  = CB_newf("%o/documents.dat", seg_name);
         Obj     *format    = Hash_Fetch_Str(metadata, "format", 6);
 
-        /* Check format. */
+        // Check format. 
         if (!format) { THROW(ERR, "Missing 'format' var"); }
         else {
-            i64_t format_val = Obj_To_I64(format);
+            int64_t format_val = Obj_To_I64(format);
             if (format_val < DocWriter_current_file_format) {
                 THROW(ERR, "Obsolete doc storage format %i64; "
                     "Index regeneration is required", format_val);
@@ -149,7 +149,7 @@ DefDocReader_init(DefaultDocReader *self, Schema *schema, Folder *folder,
             }
         }
 
-        /* Get streams. */
+        // Get streams. 
         if (Folder_Exists(folder, ix_file)) {
             self->ix_in = Folder_Open_In(folder, ix_file);
             if (!self->ix_in) {
@@ -177,20 +177,20 @@ DefDocReader_init(DefaultDocReader *self, Schema *schema, Folder *folder,
 
 void
 DefDocReader_read_record(DefaultDocReader *self, ByteBuf *buffer,
-                         i32_t doc_id)
+                         int32_t doc_id)
 {
-    i64_t   start;
-    i64_t   end;
-    size_t  size;
-    char   *buf;
+    int64_t  start;
+    int64_t  end;
+    size_t   size;
+    char    *buf;
 
-    /* Find start and length of variable length record. */
-    InStream_Seek(self->ix_in, (i64_t)doc_id * 8);
+    // Find start and length of variable length record. 
+    InStream_Seek(self->ix_in, (int64_t)doc_id * 8);
     start = InStream_Read_I64(self->ix_in);
     end   = InStream_Read_I64(self->ix_in);
     size  = (size_t)(end - start);
 
-    /* Read in the record. */
+    // Read in the record. 
     buf = BB_Grow(buffer, size);
     InStream_Seek(self->dat_in, start);
     InStream_Read_Bytes(self->dat_in, buf, size);

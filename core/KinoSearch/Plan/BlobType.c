@@ -61,8 +61,8 @@ BlobType_dump_for_schema(BlobType *self)
     Hash *dump = Hash_new(0);
     Hash_Store_Str(dump, "type", 4, (Obj*)CB_newf("blob"));
 
-    /* Store attributes that override the defaults -- even if they're
-     * meaningless. */
+    // Store attributes that override the defaults -- even if they're
+    // meaningless. 
     if (self->boost != 1.0) {
         Hash_Store_Str(dump, "boost", 5, (Obj*)CB_newf("%f64", self->boost));
     }
@@ -82,6 +82,7 @@ BlobType_dump(BlobType *self)
     Hash *dump = BlobType_Dump_For_Schema(self);
     Hash_Store_Str(dump, "_class", 6, 
         (Obj*)CB_Clone(BlobType_Get_Class_Name(self)));
+    DECREF(Hash_Delete_Str(dump, "type", 4));
     return dump;
 }
 

@@ -21,7 +21,7 @@ kino_VTable_foster_obj(kino_VTable *self, void *host_obj)
 void
 kino_VTable_register_with_host(kino_VTable *singleton, kino_VTable *parent)
 {
-    /* Register class with host. */
+    // Register class with host. 
     kino_Host_callback(KINO_VTABLE, "_register", 2, 
         KINO_ARG_OBJ("singleton", singleton), KINO_ARG_OBJ("parent", parent));
 }

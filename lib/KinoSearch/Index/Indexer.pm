@@ -10,14 +10,14 @@ __BINDING__
 my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch  PACKAGE = KinoSearch::Index::Indexer
 
-chy_i32_t
+int32_t
 CREATE(...)
 CODE:
     CHY_UNUSED_VAR(items);
     RETVAL = kino_Indexer_CREATE;
 OUTPUT: RETVAL
 
-chy_i32_t
+int32_t
 TRUNCATE(...)
 CODE:
     CHY_UNUSED_VAR(items);
@@ -49,7 +49,7 @@ PPCODE:
         KINO_THROW(KINO_ERR, "Missing required argument 'doc'");
     }
 
-    /* Either get a Doc or use the stock doc. */
+    // Either get a Doc or use the stock doc. 
     if (   sv_isobject(doc_sv) 
         && sv_derived_from(doc_sv, "KinoSearch::Document::Doc")
     ) {

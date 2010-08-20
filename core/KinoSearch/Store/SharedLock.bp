@@ -27,7 +27,7 @@ class KinoSearch::Store::SharedLock cnick ShLock
 
     inert incremented SharedLock*
     new(Folder *folder, const CharBuf *name, const CharBuf *host, 
-        i32_t timeout = 0, i32_t interval = 100);
+        int32_t timeout = 0, int32_t interval = 100);
 
     /**
      * @param folder The KinoSearch::Store::Folder where the lock file will
@@ -40,7 +40,7 @@ class KinoSearch::Store::SharedLock cnick ShLock
      */
     public inert SharedLock*
     init(SharedLock *self, Folder *folder, const CharBuf *name, 
-         const CharBuf *host, i32_t timeout = 0, i32_t interval = 100);
+         const CharBuf *host, int32_t timeout = 0, int32_t interval = 100);
 
     public bool_t
     Shared(SharedLock *self);

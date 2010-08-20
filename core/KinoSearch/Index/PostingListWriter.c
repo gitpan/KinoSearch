@@ -9,12 +9,12 @@
 #include "KinoSearch/Index/PostingPool.h"
 #include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Index/LexiconWriter.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Plan/FieldType.h"
 #include "KinoSearch/Plan/Schema.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -22,15 +22,13 @@
 
 static size_t default_mem_thresh = 0x1000000;
 
-i32_t PListWriter_current_file_format = 1;
+int32_t PListWriter_current_file_format = 1;
 
-/* Open streams only if content gets added. 
- */
+// Open streams only if content gets added. 
 static void
 S_lazy_init(PostingListWriter *self);
 
-/* Return the PostingPool for this field, creating one if necessary.
- */
+// Return the PostingPool for this field, creating one if necessary.
 static PostingPool*
 S_lazy_init_posting_pool(PostingListWriter *self, int32_t field_num);
 
@@ -51,10 +49,10 @@ PListWriter_init(PostingListWriter *self, Schema *schema, Snapshot *snapshot,
 {
     DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
 
-    /* Assign. */
+    // Assign. 
     self->lex_writer = (LexiconWriter*)INCREF(lex_writer);
 
-    /* Init. */
+    // Init. 
     self->pools          = VA_new(Schema_Num_Fields(schema));
     self->mem_thresh     = default_mem_thresh;
     self->mem_pool       = MemPool_new(0);
@@ -74,7 +72,7 @@ S_lazy_init(PostingListWriter *self)
         CharBuf *post_temp_path = CB_newf("%o/ptemp", seg_name);
         CharBuf *skip_path      = CB_newf("%o/postings.skip", seg_name);
 
-        /* Open temp streams and final skip stream. */
+        // Open temp streams and final skip stream. 
         self->lex_temp_out  = Folder_Open_Out(folder, lex_temp_path);
         if (!self->lex_temp_out) { RETHROW(INCREF(Err_get_error())); }
         self->post_temp_out = Folder_Open_Out(folder, post_temp_path);
@@ -120,7 +118,7 @@ PListWriter_set_default_mem_thresh(size_t mem_thresh)
     default_mem_thresh = mem_thresh;
 }
 
-i32_t
+int32_t
 PListWriter_format(PostingListWriter *self)
 {
     UNUSED_VAR(self);
@@ -129,12 +127,12 @@ PListWriter_format(PostingListWriter *self)
 
 void
 PListWriter_add_inverted_doc(PostingListWriter *self, Inverter *inverter, 
-                            i32_t doc_id)
+                            int32_t doc_id)
 {
     S_lazy_init(self);
 
-    /* Iterate over fields in document, adding the content of indexed fields
-     * to their respective PostingPools. */
+    // Iterate over fields in document, adding the content of indexed fields
+    // to their respective PostingPools.
     float doc_boost = Inverter_Get_Boost(inverter);
     Inverter_Iter_Init(inverter);
     int32_t field_num;
@@ -151,9 +149,9 @@ PListWriter_add_inverted_doc(PostingListWriter *self, Inverter *inverter,
         }
     }
 
-    /* If our PostingPools have collectively passed the memory threshold,
-     * flush all of them, then release all the RawPostings with a single
-     * action. */
+    // If our PostingPools have collectively passed the memory threshold,
+    // flush all of them, then release all the RawPostings with a single
+    // action.
     if (MemPool_Get_Consumed(self->mem_pool) > self->mem_thresh) {
         for (uint32_t i = 0, max = VA_Get_Size(self->pools); i < max; i++) {
             PostingPool *const pool = (PostingPool*)VA_Fetch(self->pools, i);
@@ -176,11 +174,11 @@ PListWriter_add_segment(PostingListWriter *self, SegReader *reader,
     for (uint32_t i = 0, max = VA_Get_Size(all_fields); i < max; i++) {
         CharBuf   *field    = (CharBuf*)VA_Fetch(all_fields, i);
         FieldType *type     = Schema_Fetch_Type(schema, field);
-        i32_t old_field_num = Seg_Field_Num(other_segment, field);
-        i32_t new_field_num = Seg_Field_Num(segment, field);
+        int32_t old_field_num = Seg_Field_Num(other_segment, field);
+        int32_t new_field_num = Seg_Field_Num(segment, field);
 
         if (!FType_Indexed(type)) { continue; }
-        if (!old_field_num) { continue; } /* not in old segment */
+        if (!old_field_num) { continue; } // not in old segment 
         if (!new_field_num) { THROW(ERR, "Unrecognized field: %o", field); }
 
         PostingPool *pool = S_lazy_init_posting_pool(self, new_field_num);
@@ -188,22 +186,14 @@ PListWriter_add_segment(PostingListWriter *self, SegReader *reader,
             (int32_t)Seg_Get_Count(segment));
     }
 
-    /* Clean up. */
+    // Clean up. 
     DECREF(all_fields);
-}
-
-static bool_t 
-S_my_file(VArray *array, u32_t tick, void *data)
-{
-    CharBuf *file_start = (CharBuf*)data;
-    CharBuf *candidate = (CharBuf*)VA_Fetch(array, tick);
-    return CB_Starts_With(candidate, file_start);
 }
 
 void
 PListWriter_finish(PostingListWriter *self)
 {
-    /* If S_lazy_init was never called, we have no data, so bail out. */
+    // If S_lazy_init was never called, we have no data, so bail out. 
     if (!self->lex_temp_out) { return; }
 
     Folder  *folder = self->folder;
@@ -211,23 +201,23 @@ PListWriter_finish(PostingListWriter *self)
     CharBuf *lex_temp_path  = CB_newf("%o/lextemp", seg_name);
     CharBuf *post_temp_path = CB_newf("%o/ptemp", seg_name);
 
-    /* Close temp streams. */
+    // Close temp streams. 
     OutStream_Close(self->lex_temp_out);
     OutStream_Close(self->post_temp_out);
 
-    /* Try to free up some memory. */
+    // Try to free up some memory. 
     for (uint32_t i = 0, max = VA_Get_Size(self->pools); i < max; i++) {
         PostingPool *pool = (PostingPool*)VA_Fetch(self->pools, i);
         if (pool) { PostPool_Shrink(pool); }
     }
 
-    /* Write postings for each field. */
+    // Write postings for each field. 
     for (uint32_t i = 0, max = VA_Get_Size(self->pools); i < max; i++) {
         PostingPool *pool = (PostingPool*)VA_Delete(self->pools, i);
         if (pool) { 
-            /* Write out content for each PostingPool.  Let each PostingPool
-             * use more RAM while finishing.  (This is a little dicy, because if
-             * Shrink() was ineffective, we may double the RAM footprint.) */
+            // Write out content for each PostingPool.  Let each PostingPool
+            // use more RAM while finishing.  (This is a little dicy, because if
+            // Shrink() was ineffective, we may double the RAM footprint.) 
             PostPool_Set_Mem_Thresh(pool, self->mem_thresh);
             PostPool_Flip(pool);
             PostPool_Finish(pool);
@@ -235,11 +225,11 @@ PListWriter_finish(PostingListWriter *self)
         }
     }
 
-    /* Store metadata. */
+    // Store metadata. 
     Seg_Store_Metadata_Str(self->segment, "postings", 8, 
         (Obj*)PListWriter_Metadata(self));
 
-    /* Close down and clean up. */
+    // Close down and clean up. 
     OutStream_Close(self->skip_out);
     if (!Folder_Delete(folder, lex_temp_path)) {
         THROW(ERR, "Couldn't delete %o", lex_temp_path);
@@ -252,7 +242,7 @@ PListWriter_finish(PostingListWriter *self)
     DECREF(post_temp_path);
     DECREF(lex_temp_path);
 
-    /* Dispatch the LexiconWriter. */
+    // Dispatch the LexiconWriter. 
     LexWriter_Finish(self->lex_writer);
 }
 

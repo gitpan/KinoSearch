@@ -8,17 +8,17 @@ class KinoSearch::Index::RawLexicon cnick RawLex
     InStream      *instream;
     TermStepper   *term_stepper;
     TermStepper   *tinfo_stepper;
-    i64_t          start;
-    i64_t          end;
-    i64_t          len;
+    int64_t        start;
+    int64_t        end;
+    int64_t        len;
 
     inert incremented RawLexicon*
     new(Schema *schema, const CharBuf *field, InStream *instream, 
-        i64_t start, i64_t end);
+        int64_t start, int64_t end);
 
     inert RawLexicon*
     init(RawLexicon *self, Schema *schema, const CharBuf *field, 
-         InStream *instream, i64_t start, i64_t end);
+         InStream *instream, int64_t start, int64_t end);
 
     public void
     Destroy(RawLexicon *self);
@@ -29,7 +29,7 @@ class KinoSearch::Index::RawLexicon cnick RawLex
     public nullable Obj*
     Get_Term(RawLexicon *self);
 
-    public i32_t
+    public int32_t
     Doc_Freq(RawLexicon *self);
 }
 

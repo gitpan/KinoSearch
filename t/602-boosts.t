@@ -24,9 +24,10 @@ sub new {
     my $tokenizer = KinoSearch::Analysis::Tokenizer->new;
     my $plain_type
         = KinoSearch::Plan::FullTextType->new( analyzer => $tokenizer );
-    my $boosted_type
-        = KinoSearch::Plan::FullTextType->new( analyzer => $tokenizer );
-    $boosted_type->set_boost(100);
+    my $boosted_type = KinoSearch::Plan::FullTextType->new(
+        analyzer => $tokenizer,
+        boost    => 100,
+    );
     $self->spec_field( name => 'content',  type => $plain_type );
     $self->spec_field( name => 'category', type => $boosted_type );
     return $self;

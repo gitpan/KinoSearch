@@ -6,12 +6,12 @@ class KinoSearch::Index::DeletionsReader cnick DelReader
     inert DeletionsReader*
     init(DeletionsReader *self, Schema *schema = NULL, Folder *folder = NULL,
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
-         i32_t seg_tick = -1);
+         int32_t seg_tick = -1);
     
     /** Return the number of docs which have been marked as deleted in this
      * segment.
      */
-    abstract i32_t 
+    abstract int32_t 
     Del_Count(DeletionsReader *self);
 
     /** Return a Matcher which iterates over the set of all deleted doc nums
@@ -29,7 +29,7 @@ class KinoSearch::Index::PolyDeletionsReader cnick PolyDelReader
 
     VArray   *readers;
     I32Array *offsets;
-    i32_t     del_count;
+    int32_t   del_count;
 
     inert incremented PolyDeletionsReader*
     new(VArray *readers, I32Array *offsets);
@@ -37,7 +37,7 @@ class KinoSearch::Index::PolyDeletionsReader cnick PolyDelReader
     inert PolyDeletionsReader*
     init(PolyDeletionsReader *self, VArray *readers, I32Array *offsets);
 
-    i32_t 
+    int32_t 
     Del_Count(PolyDeletionsReader *self);
 
     incremented Matcher*
@@ -54,17 +54,17 @@ class KinoSearch::Index::DefaultDeletionsReader cnick DefDelReader
     extends KinoSearch::Index::DeletionsReader {
 
     BitVector *deldocs;
-    i32_t      del_count;
+    int32_t    del_count;
 
     inert incremented DefaultDeletionsReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
-        i32_t seg_tick);
+        int32_t seg_tick);
 
     inert DefaultDeletionsReader*
     init(DefaultDeletionsReader *self, Schema *schema, Folder *folder,
-         Snapshot *snapshot, VArray *segments, i32_t seg_tick);
+         Snapshot *snapshot, VArray *segments, int32_t seg_tick);
 
-    i32_t 
+    int32_t 
     Del_Count(DefaultDeletionsReader *self);
 
     incremented Matcher*

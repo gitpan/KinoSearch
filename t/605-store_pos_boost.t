@@ -39,7 +39,7 @@ sub equals {
 }
 
 package RichSim;
-use base qw( KinoSearch::Search::Similarity );
+use base qw( KinoSearch::Index::Similarity );
 use KinoSearch::Index::Posting::RichPosting;
 
 sub make_posting {

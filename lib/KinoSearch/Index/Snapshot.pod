@@ -16,9 +16,9 @@ KinoSearch::Index::Snapshot - Point-in-time index file list.
 
 =head1 DESCRIPTION
 
-A Snapshot is list of index files.  Because index files, once written, are
-never modified, the list of files in a Snapshot defines a point-in-time
-view of the data in an index.
+A Snapshot is list of index files and folders.  Because index files, once
+written, are never modified, a Snapshot defines a point-in-time view of the
+data in an index.
 
 IndexReader objects interpret the data associated with a single Snapshot.
 
@@ -66,8 +66,8 @@ B<folder> - A Folder.
 
 =item *
 
-B<filename> - The name of the snapshot file.  If not supplied, the
-most recent snapshot file will be chosen.
+B<path> - The location of the snapshot file.  If not supplied, the
+most recent snapshot file in the base directory will be chosen.
 
 =back
 
@@ -87,16 +87,21 @@ B<folder> - A Folder.
 
 =item *
 
-B<filename> - The name of the file to write to.  If undef, a name will
+B<path> - The path of the file to write.  If undef, a file name will
 be chosen which supersedes the latest snapshot file in the index
 folder.
 
 =back
 
-=head2 get_filename()
+=head2 set_path(path)
 
-The name of the file that the Snapshot serves as a proxy for.
-Initially undef; updated by read_file() and write_file().
+Set the path to the file that the Snapshot object serves as a proxy
+for.
+
+=head2 get_path()
+
+Get the path to the snapshot file.  Initially undef; updated by
+read_file(), write_file(), and set_path().
 
 
 

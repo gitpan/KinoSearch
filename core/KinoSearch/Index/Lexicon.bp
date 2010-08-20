@@ -48,7 +48,7 @@ class KinoSearch::Index::Lexicon cnick Lex extends KinoSearch::Object::Obj {
     /** Return the number of documents that the current term appears in at
      * least once.  Deleted documents may be included in the count. 
      */
-    public abstract i32_t
+    public abstract int32_t
     Doc_Freq(Lexicon *self);
 
     /** Return the current term, or NULL if the iterator is not in a valid

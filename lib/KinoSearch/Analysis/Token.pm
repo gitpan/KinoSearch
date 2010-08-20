@@ -40,18 +40,16 @@ CODE:
         THROW(KINO_ERR, "Missing required param 'end_offset'"); 
     }
 
-    {
-        STRLEN len;
-        char *text = SvPVutf8(text_sv, len);
-        chy_u32_t start_off = SvUV(start_offset_sv);
-        chy_u32_t end_off   = SvUV(end_offset_sv);
-        chy_i32_t pos_inc   = pos_inc_sv ? SvIV(pos_inc_sv) : 1;
-        float boost         = boost_sv ? (float)SvNV(boost_sv) : 1.0f;
-        kino_Token *self    = (kino_Token*)XSBind_new_blank_obj(either_sv);
-        kino_Token_init(self, text, len, start_off, end_off, boost, 
-            pos_inc);
-        RETVAL = KINO_OBJ_TO_SV_NOINC(self);
-    }
+    STRLEN      len;
+    char       *text      = SvPVutf8(text_sv, len);
+    uint32_t    start_off = SvUV(start_offset_sv);
+    uint32_t    end_off   = SvUV(end_offset_sv);
+    int32_t     pos_inc   = pos_inc_sv ? SvIV(pos_inc_sv) : 1;
+    float       boost     = boost_sv ? (float)SvNV(boost_sv) : 1.0f;
+    kino_Token *self   = (kino_Token*)XSBind_new_blank_obj(either_sv);
+    kino_Token_init(self, text, len, start_off, end_off, boost, 
+        pos_inc);
+    RETVAL = KINO_OBJ_TO_SV_NOINC(self);
 }
 OUTPUT: RETVAL
 

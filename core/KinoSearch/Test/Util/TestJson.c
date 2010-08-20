@@ -6,8 +6,8 @@
 #include "KinoSearch/Store/FileHandle.h"
 #include "KinoSearch/Store/RAMFolder.h"
 
-/* Create a test data structure including at least one each of Hash, VArray,
- * and CharBuf. */
+// Create a test data structure including at least one each of Hash, VArray,
+// and CharBuf.
 static Obj* 
 S_make_dump()
 {

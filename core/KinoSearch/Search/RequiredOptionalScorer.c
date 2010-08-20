@@ -2,7 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/RequiredOptionalScorer.h"
-#include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Index/Similarity.h"
 
 RequiredOptionalScorer*
 ReqOptScorer_new(Similarity *similarity, Matcher *required_matcher, 
@@ -23,11 +23,11 @@ ReqOptScorer_init(RequiredOptionalScorer *self, Similarity *similarity,
     VA_Push(children, INCREF(optional_matcher));
     PolyMatcher_init((PolyMatcher*)self, children, similarity);
 
-    /* Assign. */
+    // Assign. 
     self->req_matcher       = (Matcher*)INCREF(required_matcher);
     self->opt_matcher       = (Matcher*)INCREF(optional_matcher);
 
-    /* Init. */
+    // Init. 
     self->opt_matcher_first_time = true;
 
     DECREF(children);
@@ -42,19 +42,19 @@ ReqOptScorer_destroy(RequiredOptionalScorer *self)
     SUPER_DESTROY(self, REQUIREDOPTIONALSCORER);
 }
 
-i32_t
+int32_t
 ReqOptScorer_next(RequiredOptionalScorer *self)
 {
     return Matcher_Next(self->req_matcher);
 }
 
-i32_t
-ReqOptScorer_advance(RequiredOptionalScorer *self, i32_t target)
+int32_t
+ReqOptScorer_advance(RequiredOptionalScorer *self, int32_t target)
 {
     return Matcher_Advance(self->req_matcher, target);
 }
 
-i32_t
+int32_t
 ReqOptScorer_get_doc_id(RequiredOptionalScorer *self)
 {
     return Matcher_Get_Doc_ID(self->req_matcher);
@@ -63,7 +63,7 @@ ReqOptScorer_get_doc_id(RequiredOptionalScorer *self)
 float
 ReqOptScorer_score(RequiredOptionalScorer *self)
 {
-    i32_t const current_doc = Matcher_Get_Doc_ID(self->req_matcher);
+    int32_t const current_doc = Matcher_Get_Doc_ID(self->req_matcher);
 
     if (self->opt_matcher_first_time) {
         self->opt_matcher_first_time = false;
@@ -77,7 +77,7 @@ ReqOptScorer_score(RequiredOptionalScorer *self)
         return Matcher_Score(self->req_matcher);
     }
     else {
-        i32_t opt_matcher_doc = Matcher_Get_Doc_ID(self->opt_matcher);
+        int32_t opt_matcher_doc = Matcher_Get_Doc_ID(self->opt_matcher);
 
         if (opt_matcher_doc < current_doc) {
             opt_matcher_doc = Matcher_Advance(self->opt_matcher, current_doc);

@@ -89,8 +89,8 @@ class KinoSearch::Object::ByteBuf cnick BB extends KinoSearch::Object::Obj {
     bool_t
     Equals_Bytes(ByteBuf *self, const void *bytes, size_t size);
 
-    size_t
-    RAM_Usage(ByteBuf *self);
+    public int32_t
+    Compare_To(ByteBuf *self, Obj *other);
 
     public incremented ByteBuf*
     Clone(ByteBuf *self);
@@ -101,7 +101,7 @@ class KinoSearch::Object::ByteBuf cnick BB extends KinoSearch::Object::Obj {
     public bool_t
     Equals(ByteBuf *self, Obj *other);
 
-    public i32_t
+    public int32_t
     Hash_Code(ByteBuf *self);
 
     public void
@@ -122,6 +122,9 @@ class KinoSearch::Object::ViewByteBuf cnick ViewBB
      */
     inert incremented ViewByteBuf*
     new(char *buf, size_t size);
+
+    inert incremented ViewByteBuf*
+    init(ViewByteBuf *self, char *buf, size_t size);
 
     /** Assign buf and size members to the passed in values.
      */

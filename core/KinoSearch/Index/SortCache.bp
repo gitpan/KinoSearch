@@ -7,15 +7,15 @@ class KinoSearch::Index::SortCache extends KinoSearch::Object::Obj {
     CharBuf   *field;
     FieldType *type;
     void      *ords;
-    i32_t      doc_max;
-    i32_t      cardinality;
-    i32_t      ord_width;
-    i32_t      null_ord;
+    int32_t    doc_max;
+    int32_t    cardinality;
+    int32_t    ord_width;
+    int32_t    null_ord;
     bool_t     native_ords;
 
     public inert SortCache*
     init(SortCache *self, const CharBuf *field, FieldType *type,
-         void *ords, i32_t cardinality, i32_t doc_max, i32_t null_ord = -1,
+         void *ords, int32_t cardinality, int32_t doc_max, int32_t null_ord = -1,
          int32_t ord_width);
 
     /** Assign the value for ordinal <code>ord</code> to <code>blank</code>.
@@ -24,27 +24,27 @@ class KinoSearch::Index::SortCache extends KinoSearch::Object::Obj {
      * value for <code>ord</code> is NULL.
      */
     public abstract nullable Obj*
-    Value(SortCache *self, i32_t ord, Obj *blank);
+    Value(SortCache *self, int32_t ord, Obj *blank);
 
     /** Return an object appropriate for use as an argument to Value(). 
      */
-    public incremented Obj*
+    public abstract incremented Obj*
     Make_Blank(SortCache *self);
 
     public void*
     Get_Ords(SortCache *self);
 
-    public i32_t
+    public int32_t
     Get_Cardinality(SortCache *self);
 
-    public i32_t
+    public int32_t
     Get_Ord_Width(SortCache *self);
 
     public int32_t
     Get_Null_Ord(SortCache *self);
 
-    public i32_t
-    Ordinal(SortCache *self, i32_t doc_id);
+    public int32_t
+    Ordinal(SortCache *self, int32_t doc_id);
 
     /** Attempt to find the ordinal of the supplied <code>term</code>.  If the
      * term cannot be found, return the ordinal of the term that would appear
@@ -52,7 +52,7 @@ class KinoSearch::Index::SortCache extends KinoSearch::Object::Obj {
      *
      * @return an integer between -1 and the highest ordinal.
      */
-    public i32_t
+    public int32_t
     Find(SortCache *self, Obj *term = NULL);
 
     /** Early versions of SortCache had a bug where ords were written using

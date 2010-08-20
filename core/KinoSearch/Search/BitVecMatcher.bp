@@ -5,7 +5,7 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Search::BitVecMatcher extends KinoSearch::Search::Matcher {
 
     BitVector *bit_vec;
-    i32_t      doc_id;
+    int32_t    doc_id;
 
     public inert incremented BitVecMatcher*
     new(BitVector *bit_vector);
@@ -13,13 +13,13 @@ class KinoSearch::Search::BitVecMatcher extends KinoSearch::Search::Matcher {
     public inert BitVecMatcher*
     init(BitVecMatcher *self, BitVector *bit_vector);
 
-    public i32_t
+    public int32_t
     Next(BitVecMatcher *self);
 
-    public i32_t
-    Advance(BitVecMatcher *self, i32_t target);
+    public int32_t
+    Advance(BitVecMatcher *self, int32_t target);
 
-    public i32_t
+    public int32_t
     Get_Doc_ID(BitVecMatcher *self);
 
     public void

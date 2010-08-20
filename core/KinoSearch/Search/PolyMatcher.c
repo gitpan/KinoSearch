@@ -2,7 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/PolyMatcher.h"
-#include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Index/Similarity.h"
 
 PolyMatcher*
 PolyMatcher_new(VArray *children, Similarity *sim) 
@@ -14,7 +14,7 @@ PolyMatcher_new(VArray *children, Similarity *sim)
 PolyMatcher*
 PolyMatcher_init(PolyMatcher *self, VArray *children, Similarity *similarity) 
 {
-    u32_t i;
+    uint32_t i;
 
     Matcher_init((Matcher*)self);
     self->num_kids = VA_Get_Size(children);

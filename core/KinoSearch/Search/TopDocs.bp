@@ -8,13 +8,13 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Search::TopDocs extends KinoSearch::Object::Obj {
 
     VArray *match_docs;
-    u32_t   total_hits;
+    uint32_t   total_hits;
 
     inert incremented TopDocs*
-    new(VArray *match_docs, u32_t total_hits);
+    new(VArray *match_docs, uint32_t total_hits);
 
     inert TopDocs*
-    init(TopDocs *self, VArray *match_docs, u32_t total_hits);
+    init(TopDocs *self, VArray *match_docs, uint32_t total_hits);
 
     /** Accessor for <code>match_docs</code> member. 
      */
@@ -28,13 +28,13 @@ class KinoSearch::Search::TopDocs extends KinoSearch::Object::Obj {
 
     /** Accessor for <code>total_hits</code> member. 
      */
-    u32_t
+    uint32_t
     Get_Total_Hits(TopDocs *self);
 
     /** Setter for <code>total_hits</code> member. 
      */
     void
-    Set_Total_Hits(TopDocs *self, u32_t total_hits);
+    Set_Total_Hits(TopDocs *self, uint32_t total_hits);
 
     public void
     Serialize(TopDocs *self, OutStream *outstream);

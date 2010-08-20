@@ -10,14 +10,14 @@
 #include "KinoSearch/Search/TopDocs.h"
 
 Hits*
-Hits_new(Searcher *searcher, TopDocs *top_docs, u32_t offset)
+Hits_new(Searcher *searcher, TopDocs *top_docs, uint32_t offset)
 {
     Hits *self = (Hits*)VTable_Make_Obj(HITS);
     return Hits_init(self, searcher, top_docs, offset);
 }
 
 Hits*
-Hits_init(Hits *self, Searcher *searcher, TopDocs *top_docs, u32_t offset)
+Hits_init(Hits *self, Searcher *searcher, TopDocs *top_docs, uint32_t offset)
 {
     self->searcher = (Searcher*)INCREF(searcher);
     self->top_docs   = (TopDocs*)INCREF(top_docs);
@@ -47,7 +47,7 @@ Hits_next(Hits *self)
         return NULL;
     }
     else {
-        /* Lazily fetch HitDoc, set score. */
+        // Lazily fetch HitDoc, set score. 
         Obj *doc = Searcher_Fetch_Doc(self->searcher,
             match_doc->doc_id, match_doc->score, 0);
 
@@ -55,7 +55,7 @@ Hits_next(Hits *self)
     }
 }
 
-u32_t
+uint32_t
 Hits_total_hits(Hits *self)
 {
     return TopDocs_Get_Total_Hits(self->top_docs);

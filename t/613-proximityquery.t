@@ -9,7 +9,7 @@ use KinoSearch::Test::TestUtils qw( create_index );
 use KSx::Search::ProximityQuery;
 
 # this is better than 'x a b c d a b c d' because its
-# posting weight is higher, presumably because 
+# posting weight is higher, presumably because
 # it is a shorter doc (higher density?)
 my $best_match = 'a b c d x x a';
 
@@ -29,7 +29,8 @@ my $proximity_query = KSx::Search::ProximityQuery->new(
     terms  => [],
     within => 10,
 );
-is( $proximity_query->to_string, 'content:""~10', "empty ProximityQuery to_string" );
+is( $proximity_query->to_string, 'content:""~10',
+    "empty ProximityQuery to_string" );
 $proximity_query = KSx::Search::ProximityQuery->new(
     field  => 'content',
     terms  => [qw( d a )],
@@ -70,9 +71,8 @@ my $thawed = thaw($frozen);
 $hits = $searcher->hits( query => $thawed );
 is( $hits->total_hits, 4, 'freeze/thaw' );
 
-my $proximity_compiler = $proximity_query->make_compiler( 
-    searcher => $searcher,
-);
+my $proximity_compiler
+    = $proximity_query->make_compiler( searcher => $searcher, );
 $frozen = freeze($proximity_compiler);
 $thawed = thaw($frozen);
 ok( $proximity_compiler->equals($thawed), "freeze/thaw compiler" );

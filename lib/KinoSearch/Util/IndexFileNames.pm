@@ -10,7 +10,7 @@ __BINDING__
 my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch   PACKAGE = KinoSearch::Util::IndexFileNames
 
-chy_u64_t
+uint64_t
 extract_gen(name)
     const kino_CharBuf *name;
 CODE:

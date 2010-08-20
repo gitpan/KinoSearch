@@ -43,14 +43,14 @@ abstract class KinoSearch::Index::DeletionsWriter cnick DelWriter
     /** Delete the document identified in the PolyReader by the supplied id.
      */
     public abstract void
-    Delete_By_Doc_ID(DeletionsWriter *self, i32_t doc_id);
+    Delete_By_Doc_ID(DeletionsWriter *self, int32_t doc_id);
 
     /** Returns true if there are updates that need to be written.
      */
     public abstract bool_t
     Updated(DeletionsWriter *self);
 
-    /** Produce an array of i32_t which wraps around deleted documents.  The
+    /** Produce an array of int32_t which wraps around deleted documents.  The
      * position in the array represents the original doc id, and the value
      * represents the new doc id.  Deleted docs are assigned the value - 0, so
      * if you had 4 docs and doc 2 was deleted, the array would have the
@@ -62,7 +62,7 @@ abstract class KinoSearch::Index::DeletionsWriter cnick DelWriter
      */
     public incremented I32Array* 
     Generate_Doc_Map(DeletionsWriter *self, Matcher *deletions, 
-                     i32_t doc_max, i32_t offset);
+                     int32_t doc_max, int32_t offset);
 
     /** Return a deletions iterator for the supplied SegReader, which must be
      * a component within the PolyReader that was supplied at
@@ -75,7 +75,7 @@ abstract class KinoSearch::Index::DeletionsWriter cnick DelWriter
      *
      * @param seg_name The name of the segment. 
      */
-    public abstract i32_t
+    public abstract int32_t
     Seg_Del_Count(DeletionsWriter *self, const CharBuf *seg_name);
 }
 
@@ -91,7 +91,7 @@ class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
     bool_t        *updated;
     IndexSearcher *searcher;
 
-    inert i32_t current_file_format;
+    inert int32_t current_file_format;
 
     /**
      * @param schema A Schema.
@@ -115,7 +115,7 @@ class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
     Delete_By_Query(DefaultDeletionsWriter *self, Query *query);
 
     public void
-    Delete_By_Doc_ID(DefaultDeletionsWriter *self, i32_t doc_id);
+    Delete_By_Doc_ID(DefaultDeletionsWriter *self, int32_t doc_id);
 
     public bool_t
     Updated(DefaultDeletionsWriter *self);
@@ -123,7 +123,7 @@ class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
     public incremented nullable Matcher*
     Seg_Deletions(DefaultDeletionsWriter *self, SegReader *seg_reader);
 
-    public i32_t
+    public int32_t
     Seg_Del_Count(DefaultDeletionsWriter *self, const CharBuf *seg_name);
 
     public void
@@ -134,13 +134,10 @@ class KinoSearch::Index::DefaultDeletionsWriter cnick DefDelWriter
     Merge_Segment(DefaultDeletionsWriter *self, SegReader *reader, 
                   I32Array *doc_map = NULL);
 
-    public void
-    Delete_Segment(DefaultDeletionsWriter *self, SegReader *reader);
-
     public void 
     Finish(DefaultDeletionsWriter *self);
 
-    public i32_t
+    public int32_t
     Format(DefaultDeletionsWriter* self);
 
     public incremented Hash*

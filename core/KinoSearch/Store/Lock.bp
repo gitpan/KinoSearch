@@ -17,8 +17,8 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Object::Obj {
     CharBuf     *name;
     CharBuf     *lock_path;
     CharBuf     *host;
-    i32_t        timeout;
-    i32_t        interval;  
+    int32_t      timeout;
+    int32_t      interval;  
 
     /** Abstract constructor.
      *
@@ -32,7 +32,7 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Object::Obj {
      */
     public inert Lock*
     init(Lock *self, Folder *folder, const CharBuf *name, 
-         const CharBuf *host, i32_t timeout = 0, i32_t interval = 100);
+         const CharBuf *host, int32_t timeout = 0, int32_t interval = 100);
 
     /** Returns true if the Lock is shared, false if the Lock is exclusive.
      */
@@ -101,11 +101,11 @@ class KinoSearch::Store::LockFileLock cnick LFLock
 
     inert incremented LockFileLock*
     new(Folder *folder, const CharBuf *name, const CharBuf *host, 
-        i32_t timeout = 0, i32_t interval = 100);
+        int32_t timeout = 0, int32_t interval = 100);
 
     public inert LockFileLock*
     init(LockFileLock *self, Folder *folder, const CharBuf *name, 
-         const CharBuf *host, i32_t timeout = 0, i32_t interval = 100);
+         const CharBuf *host, int32_t timeout = 0, int32_t interval = 100);
 
     public bool_t
     Shared(LockFileLock *self);

@@ -4,9 +4,9 @@
 
 #include "KinoSearch/Util/Debug.h"
 
-i32_t Debug_num_allocated = 0;
-i32_t Debug_num_freed     = 0;
-i32_t Debug_num_globals   = 0;
+int32_t Debug_num_allocated = 0;
+int32_t Debug_num_freed     = 0;
+int32_t Debug_num_globals   = 0;
 
 #if DEBUG_ENABLED
 
@@ -20,8 +20,7 @@ static char   *env_cache            = NULL;
 static char   *env_cache_limit      = NULL;
 static int     env_cache_is_current = 0;
 
-/* Cache the system call to getenv. 
- */
+// Cache the system call to getenv. 
 static void
 S_cache_debug_env_var(char *override)
 {
@@ -56,7 +55,7 @@ Debug_debug_should_print(const char *path, const char *func)
         S_cache_debug_env_var(NULL);
 
     if (!env_cache) {
-        /* Do not print if DEBUG environment var is not set. */
+        // Do not print if DEBUG environment var is not set. 
         return 0;
     }
     else {
@@ -65,19 +64,19 @@ Debug_debug_should_print(const char *path, const char *func)
         const int filename_len = file ? strlen(file) : 0;
         const int funcname_len = func ? strlen(func) : 0;
 
-        /* Use just file name if given path. */
+        // Use just file name if given path. 
         if (file) file++;
         else file = path;
    
-        /* Split criteria on commas. Bail when we run out of critieria. */
+        // Split criteria on commas. Bail when we run out of critieria. 
         for (test = env_cache; test != NULL; test = next) {
             const char *last_char;
 
-            /* Skip whitespace. */
+            // Skip whitespace. 
             while (isspace(*test)) test++;
             if (test >= env_cache_limit) return 0;
 
-            /* Find end of criteria or end of string. */
+            // Find end of criteria or end of string. 
             next = strchr(test, ',');
             last_char = next ? next - 1 : env_cache_limit - 1; 
             while (last_char > test && isspace(*last_char)) last_char--;
@@ -93,7 +92,7 @@ Debug_debug_should_print(const char *path, const char *func)
             }
         }
 
-        /* No matches against the DEBUG environment var, so don't print. */
+        // No matches against the DEBUG environment var, so don't print. 
         return 0;
     }
 }
@@ -104,7 +103,7 @@ Debug_set_env_cache(char *override)
     S_cache_debug_env_var(override);
 }
 
-#else /* DEBUG */
+#else // DEBUG 
 
 void
 Debug_set_env_cache(char *override)
@@ -112,5 +111,5 @@ Debug_set_env_cache(char *override)
     (void)override;
 }
 
-#endif /* DEBUG */
+#endif // DEBUG 
 

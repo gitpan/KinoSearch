@@ -20,7 +20,7 @@ PPCODE:
     if (kino_PolyReader_race_condition_debug1)
         (void)KINO_INCREF(kino_PolyReader_race_condition_debug1);
 
-chy_i32_t
+int32_t
 debug1_num_passes()
 CODE: 
     RETVAL = kino_PolyReader_debug1_num_passes;

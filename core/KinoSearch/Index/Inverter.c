@@ -8,13 +8,13 @@
 #include "KinoSearch/Analysis/Inversion.h"
 #include "KinoSearch/Document/Doc.h"
 #include "KinoSearch/Index/Segment.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/FieldType.h"
 #include "KinoSearch/Plan/BlobType.h"
 #include "KinoSearch/Plan/NumericType.h"
 #include "KinoSearch/Plan/FullTextType.h"
 #include "KinoSearch/Plan/TextType.h"
 #include "KinoSearch/Plan/Schema.h"
-#include "KinoSearch/Search/Similarity.h"
 
 Inverter*
 Inverter_new(Schema *schema, Segment *segment)
@@ -26,18 +26,18 @@ Inverter_new(Schema *schema, Segment *segment)
 Inverter*
 Inverter_init(Inverter *self, Schema *schema, Segment *segment)
 {
-    /* Init. */
+    // Init. 
     self->tick       = -1;
     self->doc        = NULL;
     self->sorted     = false;
     self->blank      = InvEntry_new(NULL, NULL, 0);
     self->current    = self->blank;
     
-    /* Derive. */
+    // Derive. 
     self->entry_pool = VA_new(Schema_Num_Fields(schema));
     self->entries    = VA_new(Schema_Num_Fields(schema));
 
-    /* Assign. */
+    // Assign. 
     self->schema  = (Schema*)INCREF(schema);
     self->segment = (Segment*)INCREF(segment);
 
@@ -56,7 +56,7 @@ Inverter_destroy(Inverter *self)
     SUPER_DESTROY(self, INVERTER);
 }
 
-u32_t
+uint32_t
 Inverter_iter_init(Inverter *self)
 {
     self->tick = -1;
@@ -67,18 +67,18 @@ Inverter_iter_init(Inverter *self)
     return VA_Get_Size(self->entries);
 }
 
-i32_t
+int32_t
 Inverter_next(Inverter *self)
 {
     self->current = (InverterEntry*)VA_Fetch(self->entries, ++self->tick);
-    if (!self->current) { self->current = self->blank; } /* Exhausted. */
+    if (!self->current) { self->current = self->blank; } // Exhausted. 
     return self->current->field_num; 
 }
 
 void
 Inverter_set_doc(Inverter *self, Doc *doc)
 {
-    Inverter_Clear(self); /* Zap all cached field values and Inversions. */
+    Inverter_Clear(self); // Zap all cached field values and Inversions. 
     self->doc = (Doc*)INCREF(doc);
 }
 
@@ -122,7 +122,7 @@ Inverter_get_inversion(Inverter *self)
 void
 Inverter_add_field(Inverter *self, InverterEntry *entry)
 {
-    /* Get an Inversion, going through analyzer if appropriate. */
+    // Get an Inversion, going through analyzer if appropriate. 
     if (entry->analyzer) {
         DECREF(entry->inversion);
         entry->inversion = Analyzer_Transform_Text(entry->analyzer, 
@@ -137,10 +137,10 @@ Inverter_add_field(Inverter *self, InverterEntry *entry)
         DECREF(entry->inversion);
         entry->inversion = Inversion_new(seed);
         DECREF(seed);
-        Inversion_Invert(entry->inversion); /* Nearly a no-op. */
+        Inversion_Invert(entry->inversion); // Nearly a no-op. 
     }
 
-    /* Prime the iterator. */
+    // Prime the iterator. 
     VA_Push(self->entries, INCREF(entry));
     self->sorted = false;
 }
@@ -148,7 +148,7 @@ Inverter_add_field(Inverter *self, InverterEntry *entry)
 void
 Inverter_clear(Inverter *self)
 {
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(self->entries); i < max; i++) {
         InvEntry_Clear(VA_Fetch(self->entries, i));
     }
@@ -159,7 +159,7 @@ Inverter_clear(Inverter *self)
 }
 
 InverterEntry*
-InvEntry_new(Schema *schema, const CharBuf *field, i32_t field_num)
+InvEntry_new(Schema *schema, const CharBuf *field, int32_t field_num)
 {
     InverterEntry *self = (InverterEntry*)VTable_Make_Obj(INVERTERENTRY);
     return InvEntry_init(self, schema, field, field_num);
@@ -167,7 +167,7 @@ InvEntry_new(Schema *schema, const CharBuf *field, i32_t field_num)
 
 InverterEntry*
 InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field,
-              i32_t field_num)
+              int32_t field_num)
 {
     self->field_num  = field_num;
     self->field      = field ? CB_Clone(field) : NULL;
@@ -179,7 +179,31 @@ InvEntry_init(InverterEntry *self, Schema *schema, const CharBuf *field,
         self->sim  = (Similarity*)INCREF(Schema_Fetch_Sim(schema, field));
         self->type = (FieldType*)INCREF(Schema_Fetch_Type(schema, field));
         if (!self->type) { THROW(ERR, "Unknown field: '%o'", field); }
-        self->value   = FType_Make_View_Blank(self->type);
+
+        uint8_t prim_id = FType_Primitive_ID(self->type);
+        switch(prim_id & FType_PRIMITIVE_ID_MASK) {
+            case FType_TEXT:
+                self->value = (Obj*)ViewCB_new_from_trusted_utf8(NULL, 0);
+                break;
+            case FType_BLOB:
+                self->value = (Obj*)ViewBB_new(NULL, 0);
+                break;
+            case FType_INT32:
+                self->value = (Obj*)Int32_new(0);
+                break;
+            case FType_INT64:
+                self->value = (Obj*)Int64_new(0);
+                break;
+            case FType_FLOAT32:
+                self->value = (Obj*)Float32_new(0);
+                break;
+            case FType_FLOAT64:
+                self->value = (Obj*)Float64_new(0);
+                break;
+            default:
+                THROW(ERR, "Unrecognized primitive id: %i8", prim_id);
+        }
+
         self->indexed = FType_Indexed(self->type);
         if (self->indexed && FType_Is_A(self->type, NUMERICTYPE)) {
             THROW(ERR, "Field '%o' spec'd as indexed, but numerical types cannot "
@@ -212,10 +236,11 @@ InvEntry_clear(InverterEntry *self)
     self->inversion = NULL;
 }
 
-i32_t
+int32_t
 InvEntry_compare_to(InverterEntry *self, Obj *other)
 {
-    InverterEntry *competitor = (InverterEntry*)other;
+    InverterEntry *competitor 
+        = (InverterEntry*)CERTIFY(other, INVERTERENTRY);
     return self->field_num - competitor->field_num;
 }
 

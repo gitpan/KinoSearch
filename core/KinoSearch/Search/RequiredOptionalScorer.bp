@@ -21,16 +21,16 @@ class KinoSearch::Search::RequiredOptionalScorer cnick ReqOptScorer
     public void
     Destroy(RequiredOptionalScorer *self);
 
-    public i32_t
+    public int32_t
     Next(RequiredOptionalScorer *self);
 
-    public i32_t
-    Advance(RequiredOptionalScorer *self, i32_t target);
+    public int32_t
+    Advance(RequiredOptionalScorer *self, int32_t target);
 
     public float
     Score(RequiredOptionalScorer *self);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(RequiredOptionalScorer *self);
 }
 

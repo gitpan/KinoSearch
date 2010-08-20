@@ -9,14 +9,14 @@
 #include "KinoSearch/Store/OutStream.h"
 
 BBSortEx*
-BBSortEx_new(u32_t mem_threshold, VArray *external)
+BBSortEx_new(uint32_t mem_threshold, VArray *external)
 {
     BBSortEx *self = (BBSortEx*)VTable_Make_Obj(BBSORTEX);
     return BBSortEx_init(self, mem_threshold, external);
 }
 
 BBSortEx*
-BBSortEx_init(BBSortEx *self, u32_t mem_threshold, VArray *external)
+BBSortEx_init(BBSortEx *self, uint32_t mem_threshold, VArray *external)
 {
     SortEx_init((SortExternal*)self, sizeof(Obj*));
     self->external_tick = 0;
@@ -51,7 +51,7 @@ BBSortEx_feed(BBSortEx *self, void *data)
 {
     SortEx_feed((SortExternal*)self, data);
 
-    /* Flush() if necessary. */
+    // Flush() if necessary. 
     ByteBuf *bytebuf = (ByteBuf*)CERTIFY(*(ByteBuf**)data, BYTEBUF);
     self->mem_consumed += BB_Get_Size(bytebuf);
     if (self->mem_consumed >= self->mem_thresh) {
@@ -62,16 +62,16 @@ BBSortEx_feed(BBSortEx *self, void *data)
 void
 BBSortEx_flush(BBSortEx *self)
 {
-    u32_t        cache_count = self->cache_max - self->cache_tick;
+    uint32_t     cache_count = self->cache_max - self->cache_tick;
     Obj        **cache = (Obj**)self->cache;
     VArray      *elems;
     BBSortEx    *run;
-    u32_t        i;
+    uint32_t     i;
 
     if (!cache_count) return;
     else elems = VA_new(cache_count);
 
-    /* Sort, then create a new run. */
+    // Sort, then create a new run. 
     BBSortEx_Sort_Cache(self);
     for (i = self->cache_tick; i < self->cache_max; i++) {
         VA_Push(elems, cache[i]);
@@ -80,7 +80,7 @@ BBSortEx_flush(BBSortEx *self)
     DECREF(elems);
     BBSortEx_Add_Run(self, (SortExternal*)run);
 
-    /* Blank the cache vars. */
+    // Blank the cache vars. 
     self->cache_tick += cache_count;
     BBSortEx_Clear_Cache(self);
 }
@@ -88,7 +88,7 @@ BBSortEx_flush(BBSortEx *self)
 uint32_t
 BBSortEx_refill(BBSortEx *self)
 {
-    /* Make sure cache is empty, then set cache tick vars. */
+    // Make sure cache is empty, then set cache tick vars. 
     if (self->cache_max - self->cache_tick > 0) {
         THROW(ERR, "Refill called but cache contains %u32 items",
             self->cache_max - self->cache_tick);
@@ -96,7 +96,7 @@ BBSortEx_refill(BBSortEx *self)
     self->cache_tick = 0;
     self->cache_max  = 0;
 
-    /* Read in elements. */
+    // Read in elements. 
     while (1) {
         ByteBuf *elem = NULL;
 
@@ -110,7 +110,7 @@ BBSortEx_refill(BBSortEx *self)
         else {
             elem = (ByteBuf*)VA_Fetch(self->external, self->external_tick);
             self->external_tick++;
-            /* Should be + sizeof(ByteBuf), but that's ok. */
+            // Should be + sizeof(ByteBuf), but that's ok. 
             self->mem_consumed += BB_Get_Size(elem); 
         }
 
@@ -128,13 +128,13 @@ BBSortEx_refill(BBSortEx *self)
 void
 BBSortEx_flip(BBSortEx *self)
 {
-    u32_t i;
-    u32_t run_mem_thresh = 65536;
+    uint32_t i;
+    uint32_t run_mem_thresh = 65536;
 
     BBSortEx_Flush(self);
 
-    /* Recalculate the approximate mem allowed for each run. */
-    u32_t num_runs = VA_Get_Size(self->runs);
+    // Recalculate the approximate mem allowed for each run. 
+    uint32_t num_runs = VA_Get_Size(self->runs);
     if (num_runs) {
         run_mem_thresh = (self->mem_thresh / 2) / num_runs;
         if (run_mem_thresh < 65536)
@@ -146,7 +146,7 @@ BBSortEx_flip(BBSortEx *self)
         BBSortEx_Set_Mem_Thresh(run, run_mem_thresh);
     }
 
-    /* OK to fetch now. */
+    // OK to fetch now. 
     self->flipped = true;
 }
 

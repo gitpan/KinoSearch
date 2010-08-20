@@ -32,7 +32,7 @@ Searcher_destroy(Searcher *self)
 }
 
 Hits*
-Searcher_hits(Searcher *self, Obj *query, u32_t offset, u32_t num_wanted, 
+Searcher_hits(Searcher *self, Obj *query, uint32_t offset, uint32_t num_wanted, 
               SortSpec *sort_spec)
 {
     Query   *real_query = Searcher_Glean_Query(self, query);

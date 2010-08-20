@@ -22,14 +22,13 @@
 #include "KinoSearch/Util/MemoryPool.h"
 #include "KinoSearch/Util/SortUtils.h"
 
-/** Prepare to read back a run.
- */
+// Prepare to read back a run.
 static void
 S_flip_run(SortFieldWriter *run, size_t sub_thresh, InStream *ord_in, 
            InStream *ix_in, InStream *dat_in);
 
-/* Write out a sort cache.  Returns the number of unique values in the sort
- * cache. */
+// Write out a sort cache.  Returns the number of unique values in the sort
+// cache.
 static int32_t
 S_write_files(SortFieldWriter *self, OutStream *ord_out, OutStream *ix_out,
               OutStream *dat_out);
@@ -62,7 +61,7 @@ SortFieldWriter_init(SortFieldWriter *self, Schema *schema,
                      OutStream *temp_ord_out, OutStream *temp_ix_out, 
                      OutStream *temp_dat_out)
 {
-    /* Init. */
+    // Init. 
     SortEx_init((SortExternal*)self, sizeof(SFWriterElem));
     self->null_ord        = -1;
     self->count           = 0;
@@ -81,7 +80,7 @@ SortFieldWriter_init(SortFieldWriter *self, Schema *schema,
     self->run_tick        = 0;
     self->ord_width       = 0;
 
-    /* Assign. */
+    // Assign. 
     self->field        = CB_Clone(field);
     self->schema       = (Schema*)INCREF(schema);
     self->snapshot     = (Snapshot*)INCREF(snapshot);
@@ -93,12 +92,11 @@ SortFieldWriter_init(SortFieldWriter *self, Schema *schema,
     self->temp_dat_out = (OutStream*)INCREF(temp_dat_out);
     self->mem_thresh   = mem_thresh;
 
-    /* Derive. */
+    // Derive. 
     self->field_num = Seg_Field_Num(segment, field);
     FieldType *type = (FieldType*)CERTIFY(
         Schema_Fetch_Type(self->schema, field), FIELDTYPE);
     self->type    = (FieldType*)INCREF(type);
-    self->blank   = FType_Make_Blank(type);
     self->prim_id = FType_Primitive_ID(type);
     if (self->prim_id == FType_TEXT || self->prim_id == FType_BLOB) {
         self->var_width = true;
@@ -129,7 +127,6 @@ SortFieldWriter_destroy(SortFieldWriter *self)
     DECREF(self->uniq_vals);
     self->uniq_vals = NULL;
     DECREF(self->field);
-    DECREF(self->blank);
     DECREF(self->schema);
     DECREF(self->snapshot);
     DECREF(self->segment);
@@ -156,7 +153,7 @@ SortFieldWriter_get_ord_width(SortFieldWriter *self) { return self->ord_width; }
 static Obj*
 S_find_unique_value(Hash *uniq_vals, Obj *val)
 {
-    i32_t    hash_code = Obj_Hash_Code(val);
+    int32_t  hash_code = Obj_Hash_Code(val);
     Obj     *uniq_val  = Hash_Find_Key(uniq_vals, val, hash_code);
     if (!uniq_val) { 
         Hash_Store(uniq_vals, val, INCREF(&EMPTY)); 
@@ -168,7 +165,7 @@ S_find_unique_value(Hash *uniq_vals, Obj *val)
 void
 SortFieldWriter_add(SortFieldWriter *self, int32_t doc_id, Obj *value)
 {
-    /* Uniq-ify the value, and record it for this document. */
+    // Uniq-ify the value, and record it for this document. 
     SFWriterElem elem;
     elem.value = S_find_unique_value(self->uniq_vals, value);
     elem.doc_id = doc_id;
@@ -193,7 +190,7 @@ SortFieldWriter_add_segment(SortFieldWriter *self, SegReader *reader,
     SortFieldWriter_Add_Run(self, (SortExternal*)run);
 }
 
-static i32_t
+static int32_t
 S_calc_width(int32_t cardinality)
 {
     if      (cardinality <= 0x00000002) { return 1; }
@@ -205,7 +202,7 @@ S_calc_width(int32_t cardinality)
 }
 
 static void
-S_write_ord(void *ords, i32_t width, i32_t doc_id, i32_t ord)
+S_write_ord(void *ords, int32_t width, int32_t doc_id, int32_t ord)
 {
     switch (width) {
         case 1: if (ord) { NumUtil_u1set(ords, doc_id); }
@@ -216,7 +213,7 @@ S_write_ord(void *ords, i32_t width, i32_t doc_id, i32_t ord)
         case 4: NumUtil_u4set(ords, doc_id, ord);
                 break;
         case 8: {
-                    u8_t *ints = (u8_t*)ords;
+                    uint8_t *ints = (uint8_t*)ords;
                     ints[doc_id] = ord;
                 }
                 break;
@@ -239,7 +236,7 @@ S_write_ord(void *ords, i32_t width, i32_t doc_id, i32_t ord)
 }
 
 static void
-S_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out,
+S_write_val(Obj *val, int8_t prim_id, OutStream *ix_out, OutStream *dat_out,
             int64_t dat_start)
 {
     if (val) {
@@ -281,7 +278,7 @@ S_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out,
                 break;
             }
             default: 
-                THROW(ERR, "Unrecognized primitive id: %i32", (i32_t)prim_id);
+                THROW(ERR, "Unrecognized primitive id: %i32", (int32_t)prim_id);
         }
     }
     else {
@@ -305,7 +302,7 @@ S_write_val(Obj *val, i8_t prim_id, OutStream *ix_out, OutStream *dat_out,
                 OutStream_Write_F32(dat_out, 0.0f);
                 break;
             default: 
-                THROW(ERR, "Unrecognized primitive id: %i32", (i32_t)prim_id);
+                THROW(ERR, "Unrecognized primitive id: %i32", (int32_t)prim_id);
         }
     }
 }
@@ -315,7 +312,8 @@ SortFieldWriter_compare(SortFieldWriter *self, void *va, void *vb)
 {
     SFWriterElem *a = (SFWriterElem*)va;
     SFWriterElem *b = (SFWriterElem*)vb;
-    i32_t comparison = FType_Compare_Values(self->type, a->value, b->value);
+    int32_t comparison 
+        = FType_null_back_compare_values(self->type, a->value, b->value);
     if (comparison == 0) { comparison = b->doc_id - a->doc_id; }
     return comparison;
 }
@@ -413,10 +411,10 @@ SortFieldWriter_refill(SortFieldWriter *self)
     S_lazy_init_sorted_ids(self);
 
     const int32_t    null_ord   = self->null_ord;
-    Obj *const       blank      = self->blank;
     Hash *const      uniq_vals  = self->uniq_vals;
-    SortCache *const sort_cache = self->sort_cache;
     I32Array *const  doc_map    = self->doc_map;
+    SortCache *const sort_cache = self->sort_cache;
+    Obj *const       blank      = SortCache_Make_Blank(sort_cache);
 
     while (   self->run_ord < self->run_cardinality 
            && MemPool_Get_Consumed(self->mem_pool) < self->mem_thresh
@@ -454,6 +452,7 @@ SortFieldWriter_refill(SortFieldWriter *self)
         self->sort_cache = NULL;
     }
 
+    DECREF(blank);
     return count;
 }
 
@@ -491,7 +490,7 @@ SortFieldWriter_flip(SortFieldWriter *self)
         if (!self->dat_in) { RETHROW(INCREF(Err_get_error())); }
         DECREF(filepath);
 
-        /* Assign streams and a slice of mem_thresh. */
+        // Assign streams and a slice of mem_thresh. 
         size_t sub_thresh = self->mem_thresh / num_runs;
         if (sub_thresh < 65536) { sub_thresh = 65536; }
         for (uint32_t i = 0; i < num_runs; i++) {
@@ -515,27 +514,15 @@ S_write_files(SortFieldWriter *self, OutStream *ord_out, OutStream *ix_out,
     int32_t  *ords      = (int32_t*)MALLOCATE(size);
     int32_t   ord       = 0;
     int64_t   dat_start = OutStream_Tell(dat_out);
-    bool_t    null_sorts_last = true;
 
     // Assign -1 as a stand-in for the NULL ord.
     for (int32_t i = 0; i <= doc_max; i++) {
         ords[i] = -1;
     }
 
-    // Grab the first item.
+    // Grab the first item and record its ord.  Add a dummy ord for invalid
+    // doc id 0.
     SFWriterElem *elem = (SFWriterElem*)SortFieldWriter_Fetch(self);
-
-    // Determine whether NULL sorts first or last.
-    if (has_nulls) {
-        if (FType_Compare_Values(self->type, NULL, elem->value) < 0) {
-            // NULL sorts first.  Write a NULL value now.
-            S_write_val(NULL, prim_id, ix_out, dat_out, dat_start);
-            null_sorts_last = false;
-            ord++;
-        }
-    }
-
-    // Record the ord for the first item. Add dummy ord for invalid doc id 0.
     ords[elem->doc_id] = ord;
     ords[0] = 0;
 
@@ -558,22 +545,20 @@ S_write_files(SortFieldWriter *self, OutStream *ord_out, OutStream *ix_out,
     }
     DECREF(val);
 
-    // If NULL sorts last, write a NULL value now.
-    if (has_nulls && null_sorts_last) {
+    // If there are NULL values, write one now and record the NULL ord.
+    if (has_nulls) {
         S_write_val(NULL, prim_id, ix_out, dat_out, dat_start);
         ord++;
+        self->null_ord = ord;
     }
+    int32_t null_ord = self->null_ord;
 
     // Write one extra file pointer so that we can always derive length.
     if (self->var_width) {
         OutStream_Write_I64(ix_out, OutStream_Tell(dat_out) - dat_start);
     }
 
-    // Record the NULL ord and calculate cardinality and ord width.
-    if (has_nulls) {
-        self->null_ord = null_sorts_last ? ord : 0;
-    }
-    int32_t null_ord    = self->null_ord;
+    // Calculate cardinality and ord width.
     int32_t cardinality = ord + 1;
     self->ord_width     = S_calc_width(cardinality);
     int32_t ord_width   = self->ord_width;
@@ -601,12 +586,12 @@ SortFieldWriter_finish(SortFieldWriter *self)
     // Bail if there's no data.
     if (!SortFieldWriter_Peek(self)) { return 0; }
 
-    i32_t    field_num = self->field_num;
+    int32_t  field_num = self->field_num;
     Folder  *folder    = PolyReader_Get_Folder(self->polyreader);
     CharBuf *seg_name  = Seg_Get_Name(self->segment);
     CharBuf *path      = CB_newf("%o/sort-%i32.ord", seg_name, field_num);
 
-    /* Open streams. */
+    // Open streams. 
     OutStream *ord_out = Folder_Open_Out(folder, path);
     if (!ord_out) { RETHROW(INCREF(Err_get_error())); }
     OutStream *ix_out = NULL;
@@ -622,7 +607,7 @@ SortFieldWriter_finish(SortFieldWriter *self)
 
     int32_t cardinality = S_write_files(self, ord_out, ix_out, dat_out);
 
-    /* Close streams. */
+    // Close streams. 
     OutStream_Close(ord_out);
     if (ix_out) { OutStream_Close(ix_out); }
     OutStream_Close(dat_out);

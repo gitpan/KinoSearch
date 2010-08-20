@@ -37,7 +37,7 @@ public class KinoSearch::Index::DataWriter extends KinoSearch::Object::Obj {
      * segment.
      */
     public abstract void
-    Add_Inverted_Doc(DataWriter *self, Inverter *inverter, i32_t doc_id);
+    Add_Inverted_Doc(DataWriter *self, Inverter *inverter, int32_t doc_id);
 
     /** Add content from an existing segment into the one currently being
      * written.  
@@ -94,7 +94,7 @@ public class KinoSearch::Index::DataWriter extends KinoSearch::Object::Obj {
      * increment each time the format changes. Responsibility for revision
      * checking is left to the companion DataReader.
      */
-    public abstract i32_t
+    public abstract int32_t
     Format(DataWriter *self);
 
     /** Accessor for "snapshot" member var. 

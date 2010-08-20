@@ -11,7 +11,7 @@ class KinoSearch::Index::Posting::MatchPosting cnick MatchPost
     extends KinoSearch::Index::Posting {
 
     Similarity *sim;
-    u32_t       freq;
+    uint32_t    freq;
 
     inert incremented MatchPosting*
     new(Similarity *similarity);
@@ -22,20 +22,20 @@ class KinoSearch::Index::Posting::MatchPosting cnick MatchPost
     public void
     Destroy(MatchPosting *self);
 
-    i32_t
+    int32_t
     Get_Freq(MatchPosting *self);
 
     void
     Read_Record(MatchPosting *self, InStream *instream);
 
     incremented RawPosting*
-    Read_Raw(MatchPosting *self, InStream *instream, i32_t last_doc_id, 
+    Read_Raw(MatchPosting *self, InStream *instream, int32_t last_doc_id, 
              CharBuf *term_text, MemoryPool *mem_pool);
 
     void
     Add_Inversion_To_Pool(MatchPosting *self, PostingPool *post_pool, 
                           Inversion *inversion, FieldType *type, 
-                          i32_t doc_id, float doc_boost, 
+                          int32_t doc_id, float doc_boost, 
                           float length_norm);
 
     public void
@@ -49,32 +49,27 @@ class KinoSearch::Index::Posting::MatchPosting cnick MatchPost
 class KinoSearch::Index::Posting::MatchPostingScorer cnick MatchPostScorer
     extends KinoSearch::Search::TermScorer {
 
-    float *score_cache;
-
     inert MatchPostingScorer*
     init(MatchPostingScorer *self, Similarity *similarity, 
          PostingList *posting_list, Compiler *compiler);
 
     public float
     Score(MatchPostingScorer *self);
-
-    public void
-    Destroy(MatchPostingScorer *self);
 }
 
 class KinoSearch::Index::Posting::MatchPostingWriter cnick MatchPostWriter
     extends KinoSearch::Index::Posting::PostingWriter {
 
     OutStream *outstream;
-    i32_t      last_doc_id;
+    int32_t    last_doc_id;
 
     inert incremented MatchPostingWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment, 
-        PolyReader *polyreader, i32_t field_num);
+        PolyReader *polyreader, int32_t field_num);
 
     inert MatchPostingWriter*
     init(MatchPostingWriter *self, Schema *schema, Snapshot *snapshot,
-         Segment *segment, PolyReader *polyreader, i32_t field_num);
+         Segment *segment, PolyReader *polyreader, int32_t field_num);
 
     public void
     Destroy(MatchPostingWriter *self);
@@ -92,7 +87,7 @@ class KinoSearch::Index::Posting::MatchPostingWriter cnick MatchPostWriter
 class KinoSearch::Index::Posting::MatchPosting::MatchTermInfoStepper 
     cnick MatchTInfoStepper extends KinoSearch::Index::TermStepper {
 
-    i32_t skip_interval;
+    int32_t skip_interval;
     
     inert incremented MatchTermInfoStepper*
     new(Schema *schema);

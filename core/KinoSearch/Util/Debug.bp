@@ -38,26 +38,26 @@ inert class KinoSearch::Util::Debug {
      * objects should have been cleaned up, these numbers don't balance out,
      * there's a memory leak somewhere.
      */
-    inert i32_t num_allocated;
-    inert i32_t num_freed;
-    inert i32_t num_globals;
+    inert int32_t num_allocated;
+    inert int32_t num_freed;
+    inert int32_t num_globals;
 }
 
 __C__
 #ifdef KINO_DEBUG
 
-#undef KINO_DEBUG   /* undef prior to redefining the command line argument */
+#undef KINO_DEBUG   // undef prior to redefining the command line argument 
 #define KINO_DEBUG_ENABLED 1
 
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Unconditionally print debug statement prepending file and line info. 
+/** Unconditionally print debug statement prepending file and line info. 
  */
 #define KINO_DEBUG_PRINT(args...)                                         \
     kino_Debug_print_mess(__FILE__, __LINE__, __func__, ##args)
 
-/* Conditionally execute code if debugging enabled via KINO_DEBUG environment
+/** Conditionally execute code if debugging enabled via KINO_DEBUG environment
  * variable.
  */
 #define KINO_DEBUG_DO(actions)                                            \
@@ -71,16 +71,16 @@ __C__
         if (do_it) { actions; }                                           \
     } while (0)
 
-/* Execute code so long as KINO_DEBUG was defined during compilation.
+/** Execute code so long as KINO_DEBUG was defined during compilation.
  */
 #define KINO_IFDEF_DEBUG(actions) do { actions; } while (0)
 
-/* Conditionally print debug statement depending on KINO_DEBUG env variable.
+/** Conditionally print debug statement depending on KINO_DEBUG env variable.
  */
 #define KINO_DEBUG(args...)                                            \
         KINO_DEBUG_DO(KINO_DEBUG_PRINT(args));                  
 
-/* Abort on error if test fails.
+/** Abort on error if test fails.
  *
  * Note: unlike the system assert(), this ASSERT() is #ifdef KINO_DEBUG.
  */
@@ -92,7 +92,7 @@ __C__
         }                                                              \
     } while (0) 
 
-#elif defined(CHY_HAS_GNUC_VARIADIC_MACROS) /* not KINO_DEBUG */
+#elif defined(CHY_HAS_GNUC_VARIADIC_MACROS) // not KINO_DEBUG 
 
 #undef KINO_DEBUG
 #define KINO_DEBUG_ENABLED 0
@@ -102,7 +102,7 @@ __C__
 #define KINO_DEBUG(args...)
 #define KINO_ASSERT(test, args...)
 
-#else  /* also not KINO_DEBUG */
+#else  // also not KINO_DEBUG 
 
 #undef KINO_DEBUG
 #define KINO_DEBUG_ENABLED 0
@@ -112,7 +112,7 @@ static void KINO_DEBUG_PRINT(char *_ignore_me, ...) { }
 static void KINO_DEBUG(char *_ignore_me, ...) { }
 static void KINO_ASSERT(int _ignore_me, ...) { }
 
-#endif /* KINO_DEBUG */
+#endif // KINO_DEBUG 
 
 #ifdef KINO_USE_SHORT_NAMES
   #define DEBUG_ENABLED             KINO_DEBUG_ENABLED

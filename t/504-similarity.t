@@ -1,37 +1,11 @@
 use strict;
 use warnings;
 
-package MockSearcher;
-use base qw( KinoSearch::Search::Searcher );
-
-our %doc_freqs;
-
-sub new {
-    my ( $class, %args ) = @_;
-    my $doc_freqs = delete $args{doc_freqs};
-    my $self      = $class->SUPER::new(%args);
-    $doc_freqs{$$self} = $doc_freqs;
-    return $self;
-}
-
-sub DESTROY {
-    my $self = shift;
-    delete $doc_freqs{$$self};
-    $self->SUPER::DESTROY;
-}
-
-sub doc_freq {
-    my ( $self, %args ) = @_;
-    return $doc_freqs{$$self}{ $args{term} };
-}
-
-sub doc_max {100}
-
 package MySchema::LongTextField;
 use base qw( KinoSearch::Plan::FullTextType );
-use KSx::Search::LongFieldSim;
+use KSx::Index::LongFieldSim;
 
-sub make_similarity { KSx::Search::LongFieldSim->new }
+sub make_similarity { KSx::Index::LongFieldSim->new }
 
 package MySchema;
 use base qw( KinoSearch::Plan::Schema );
@@ -55,30 +29,15 @@ use KinoSearch::Test;
 use bytes;
 no bytes;
 
-my $sim       = KinoSearch::Search::Similarity->new;
+my $sim       = KinoSearch::Index::Similarity->new;
 my $evil_twin = $sim->load( $sim->dump );
 ok( $sim->equals($evil_twin), "Dump/Load" );
 
 cmp_ok( $sim->tf(10) - $sim->tf(9), '<', 1, "TF is damped" );
 
-my $mock_searcher = MockSearcher->new(
-    schema    => MySchema->new,
-    doc_freqs => {
-        foo => 3,
-        bar => 200,
-    },
-);
-my $foo_idf = $sim->idf(
-    searcher => $mock_searcher,
-    field    => 'title',
-    term     => 'foo'
-);
-my $bar_idf = $sim->idf(
-    searcher => $mock_searcher,
-    field    => 'title',
-    term     => 'bar'
-);
-cmp_ok( $foo_idf, '>', $bar_idf, 'Rarer terms have higher IDF' );
+my $rare_idf   = $sim->idf( doc_freq => 3,  total_docs => 100 );
+my $common_idf = $sim->idf( doc_freq => 50, total_docs => 100 );
+cmp_ok( $rare_idf, '>', $common_idf, 'Rarer terms have higher IDF' );
 
 my $less_coordinated = $sim->coord( overlap => 2, max_overlap => 5 );
 my $more_coordinated = $sim->coord( overlap => 3, max_overlap => 5 );

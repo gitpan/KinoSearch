@@ -5,8 +5,8 @@ parcel KinoSearch cnick Kino;
 
 class KSx::Search::ProximityScorer extends KinoSearch::Search::Matcher {
 
-    i32_t           doc_id;
-    u32_t           num_elements;
+    int32_t         doc_id;
+    uint32_t        num_elements;
     Similarity     *sim;
     PostingList   **plists;
     ByteBuf        *anchor_set;
@@ -16,26 +16,26 @@ class KSx::Search::ProximityScorer extends KinoSearch::Search::Matcher {
     float           weight;
     bool_t          first_time;
     bool_t          more;
-    u32_t           within;
+    uint32_t        within;
 
     inert incremented ProximityScorer*
     new(Similarity *similarity, VArray *posting_lists, Compiler *compiler,
-        u32_t within);
+        uint32_t within);
 
     inert ProximityScorer*
     init(ProximityScorer *self, Similarity *similarity, VArray *posting_lists, 
-         Compiler *compiler, u32_t within);
+         Compiler *compiler, uint32_t within);
 
     public void
     Destroy(ProximityScorer *self);
 
-    public i32_t
+    public int32_t
     Next(ProximityScorer *self);
 
-    public i32_t
-    Advance(ProximityScorer *self, i32_t target);
+    public int32_t
+    Advance(ProximityScorer *self, int32_t target);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(ProximityScorer *self);
 
     public float

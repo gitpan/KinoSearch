@@ -21,20 +21,20 @@
 #define ACTIONS_MASK          0xF
 
 HitQueue*
-HitQ_new(Schema *schema, SortSpec *sort_spec, u32_t wanted) 
+HitQ_new(Schema *schema, SortSpec *sort_spec, uint32_t wanted) 
 {
     HitQueue *self = (HitQueue*)VTable_Make_Obj(HITQUEUE);
     return HitQ_init(self, schema, sort_spec, wanted);
 }
 
 HitQueue*
-HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
+HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, uint32_t wanted)
 {
     if (sort_spec) {
-        u32_t i;
+        uint32_t i;
         VArray *rules      = SortSpec_Get_Rules(sort_spec);
-        u32_t   num_rules  = VA_Get_Size(rules);
-        u32_t   action_num = 0;
+        uint32_t   num_rules  = VA_Get_Size(rules);
+        uint32_t   action_num = 0;
 
         if (!schema) {
             THROW(ERR, "Can't supply sort_spec without schema");
@@ -42,12 +42,12 @@ HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
 
         self->need_values = false;
         self->num_actions = num_rules;
-        self->actions     = (u8_t*)MALLOCATE(num_rules * sizeof(u8_t));
+        self->actions     = (uint8_t*)MALLOCATE(num_rules * sizeof(uint8_t));
         self->field_types = (FieldType**)CALLOCATE(num_rules, sizeof(FieldType*));
 
         for (i = 0; i < num_rules; i++) {
             SortRule *rule      = (SortRule*)VA_Fetch(rules, i);
-            i32_t     rule_type = SortRule_Get_Type(rule);
+            int32_t   rule_type = SortRule_Get_Type(rule);
             bool_t    reverse   = SortRule_Get_Reverse(rule);
 
             if (rule_type == SortRule_SCORE) {
@@ -71,7 +71,7 @@ HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
                     self->need_values = true;
                 }
                 else { 
-                    /* Skip over fields we don't know how to sort on. */
+                    // Skip over fields we don't know how to sort on. 
                     continue; 
                 } 
             }
@@ -82,7 +82,7 @@ HitQ_init(HitQueue *self, Schema *schema, SortSpec *sort_spec, u32_t wanted)
     }
     else {
         self->num_actions = 2;
-        self->actions     = (u8_t*)MALLOCATE(self->num_actions * sizeof(u8_t));
+        self->actions     = (uint8_t*)MALLOCATE(self->num_actions * sizeof(uint8_t));
         self->actions[0]  = COMPARE_BY_SCORE;
         self->actions[1]  = COMPARE_BY_DOC_ID;
     }
@@ -115,13 +115,13 @@ HitQ_jostle(HitQueue *self, Obj *element)
     return super_jostle(self, element);
 }
 
-static INLINE i32_t
-SI_compare_by_value(HitQueue *self, u32_t tick, MatchDoc *a, MatchDoc *b)
+static INLINE int32_t
+SI_compare_by_value(HitQueue *self, uint32_t tick, MatchDoc *a, MatchDoc *b)
 {
     Obj *a_val = VA_Fetch(a->values, tick);
     Obj *b_val = VA_Fetch(b->values, tick);
     FieldType *field_type = self->field_types[tick];
-    return FType_Compare_Values(field_type, a_val, b_val);
+    return FType_null_back_compare_values(field_type, a_val, b_val);
 }
 
 bool_t
@@ -129,13 +129,13 @@ HitQ_less_than(HitQueue *self, Obj *obj_a, Obj *obj_b)
 {
     MatchDoc *const a = (MatchDoc*)obj_a;
     MatchDoc *const b = (MatchDoc*)obj_b;
-    u32_t i = 0;
-    u8_t *const actions = self->actions;
+    uint32_t i = 0;
+    uint8_t *const actions = self->actions;
 
     do {
         switch (actions[i] & ACTIONS_MASK) {
             case COMPARE_BY_SCORE:
-                /* Prefer high scores. */
+                // Prefer high scores. 
                 if      (a->score > b->score) { return false;   }
                 else if (a->score < b->score) { return true;    }
                 break;
@@ -144,7 +144,7 @@ HitQ_less_than(HitQueue *self, Obj *obj_a, Obj *obj_b)
                 else if (a->score < b->score) { return false;   }
                 break;
             case COMPARE_BY_DOC_ID:
-                /* Prefer low doc ids. */
+                // Prefer low doc ids. 
                 if      (a->doc_id > b->doc_id) { return true;    }
                 else if (a->doc_id < b->doc_id) { return false;   }
                 break;
@@ -153,13 +153,13 @@ HitQ_less_than(HitQueue *self, Obj *obj_a, Obj *obj_b)
                 else if (a->doc_id < b->doc_id) { return true;   }
                 break;
             case COMPARE_BY_VALUE: {
-                    i32_t comparison = SI_compare_by_value(self, i, a, b);
+                    int32_t comparison = SI_compare_by_value(self, i, a, b);
                     if      (comparison > 0) { return true; }
                     else if (comparison < 0) { return false; }
                 }
                 break;
             case COMPARE_BY_VALUE_REV: {
-                    i32_t comparison = SI_compare_by_value(self, i, b, a);
+                    int32_t comparison = SI_compare_by_value(self, i, b, a);
                     if      (comparison > 0) { return true; }
                     else if (comparison < 0) { return false; }
                 }

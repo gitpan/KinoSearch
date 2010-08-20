@@ -19,6 +19,9 @@ class KinoSearch::Plan::Schema extends KinoSearch::Object::Obj {
     Hash              *analyzers;
     VArray            *uniq_analyzers;
 
+    public inert incremented Schema*
+    new();
+
     /** Constructor.  Takes no arguments.
      */
     public inert Schema*

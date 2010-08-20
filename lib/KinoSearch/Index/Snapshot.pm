@@ -29,7 +29,8 @@ Clownfish::Binding::Perl::Class->register(
             Delete_Entry
             Read_File
             Write_File
-            Get_Filename
+            Set_Path
+            Get_Path
             )
     ],
     bind_constructors => ["new"],
@@ -44,7 +45,8 @@ Clownfish::Binding::Perl::Class->register(
                 delete_entry
                 read_file
                 write_file
-                get_filename
+                set_path
+                get_path
                 )
         ],
     },

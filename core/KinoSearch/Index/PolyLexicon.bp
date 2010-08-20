@@ -11,7 +11,7 @@ class KinoSearch::Index::PolyLexicon cnick PolyLex
     Obj            *term;
     SegLexQueue    *lex_q;
     VArray         *seg_lexicons;
-    i32_t           size;
+    int32_t         size;
 
     inert incremented PolyLexicon*
     new(const CharBuf *field, VArray *sub_readers);
@@ -31,7 +31,7 @@ class KinoSearch::Index::PolyLexicon cnick PolyLex
     public nullable Obj* 
     Get_Term(PolyLexicon *self);
 
-    u32_t
+    uint32_t
     Get_Num_Seg_Lexicons(PolyLexicon *self);
 
     public void
@@ -42,7 +42,7 @@ class KinoSearch::Index::SegLexQueue cnick SegLexQ
     extends KinoSearch::Util::PriorityQueue {
 
     inert incremented SegLexQueue*
-    new(u32_t max_size);
+    new(uint32_t max_size);
 
     bool_t
     Less_Than(SegLexQueue *self, Obj *a, Obj *b);

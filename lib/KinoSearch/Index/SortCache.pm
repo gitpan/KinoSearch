@@ -16,7 +16,7 @@ value(self, ...)
 CODE:
 {
     SV *ord_sv = NULL;
-    chy_i32_t ord = 0;
+    int32_t ord = 0;
 
     XSBind_allot_params( &(ST(0)), 1, items, 
         "KinoSearch::Index::SortCache::value_PARAMS",

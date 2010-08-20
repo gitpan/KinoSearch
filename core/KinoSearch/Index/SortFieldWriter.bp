@@ -4,7 +4,6 @@ class KinoSearch::Index::SortFieldWriter
     extends KinoSearch::Util::SortExternal {
     CharBuf    *field;
     Hash       *uniq_vals;
-    Obj        *blank;
     Schema     *schema;
     Snapshot   *snapshot;
     Segment    *segment;

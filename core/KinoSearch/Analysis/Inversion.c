@@ -10,8 +10,7 @@
   #define SIZE_MAX ((size_t)-1)
 #endif
 
-/* After inversion, record how many like tokens occur in each group.
- */
+// After inversion, record how many like tokens occur in each group.
 static void
 S_count_clusters(Inversion *self);
 
@@ -20,7 +19,7 @@ Inversion_new(Token *seed_token)
 {
     Inversion *self = (Inversion*)VTable_Make_Obj(INVERSION);
 
-    /* Init. */
+    // Init. 
     self->cap                 = 16;
     self->size                = 0;
     self->tokens              = (Token**)CALLOCATE(self->cap, sizeof(Token*));
@@ -29,7 +28,7 @@ Inversion_new(Token *seed_token)
     self->cluster_counts      = NULL;
     self->cluster_counts_size = 0;
 
-    /* Process the seed token. */
+    // Process the seed token. 
     if (seed_token != NULL) {
         Inversion_append(self, (Token*)INCREF(seed_token));
     }
@@ -58,7 +57,7 @@ Inversion_get_size(Inversion *self) { return self->size; }
 Token*
 Inversion_next(Inversion *self) 
 {
-    /* Kill the iteration if we're out of tokens. */
+    // Kill the iteration if we're out of tokens. 
     if (self->cur == self->size)
         return NULL;
     return self->tokens[ self->cur++ ];
@@ -75,7 +74,7 @@ S_grow(Inversion *self, size_t size)
 {
     if (size > self->cap) {
         int64_t amount = size * sizeof(Token*);
-        /* Clip rather than wrap. */
+        // Clip rather than wrap. 
         if (amount > SIZE_MAX) { amount = SIZE_MAX; }
         self->tokens = (Token**)REALLOCATE(self->tokens, (size_t)amount);
         self->cap    = size;
@@ -108,13 +107,13 @@ Inversion_next_cluster(Inversion *self, uint32_t *count)
         return NULL;
     }
 
-    /* Don't read past the end of the cluster counts array. */
+    // Don't read past the end of the cluster counts array. 
     if (!self->inverted)
         THROW(ERR, "Inversion not yet inverted");
     if (self->cur > self->cluster_counts_size)
         THROW(ERR, "Tokens were added after inversion");
 
-    /* Place cluster count in passed-in var, advance bookmark. */
+    // Place cluster count in passed-in var, advance bookmark. 
     *count = self->cluster_counts[ self->cur ];
     self->cur += *count;
 
@@ -128,12 +127,12 @@ Inversion_invert(Inversion *self)
     Token   **limit  = tokens + self->size;
     int32_t   token_pos = 0;
 
-    /* Thwart future attempts to append. */
+    // Thwart future attempts to append. 
     if (self->inverted)
         THROW(ERR, "Inversion has already been inverted");
     self->inverted = true;
 
-    /* Assign token positions. */
+    // Assign token positions. 
     for ( ;tokens < limit; tokens++) {
         Token *const cur_token = *tokens;
         cur_token->pos = token_pos;
@@ -144,7 +143,7 @@ Inversion_invert(Inversion *self)
         }
     }
 
-    /* Sort the tokens lexically, and hand off to cluster counting routine. */
+    // Sort the tokens lexically, and hand off to cluster counting routine. 
     Sort_quicksort(self->tokens, self->size, sizeof(Token*), Token_compare,
         NULL);
     S_count_clusters(self);
@@ -157,7 +156,7 @@ S_count_clusters(Inversion *self)
     uint32_t *counts 
         = (uint32_t*)CALLOCATE(self->size + 1, sizeof(uint32_t)); 
 
-    /* Save the cluster counts. */
+    // Save the cluster counts. 
     self->cluster_counts_size = self->size;
     self->cluster_counts = counts;
 
@@ -167,7 +166,7 @@ S_count_clusters(Inversion *self)
         const size_t base_len   = base_token->len;
         uint32_t     j          = i + 1;
 
-        /* Iterate through tokens until text doesn't match. */
+        // Iterate through tokens until text doesn't match. 
         while (j < self->size) {
             Token *const candidate = tokens[j];
 
@@ -181,10 +180,10 @@ S_count_clusters(Inversion *self)
             }
         }
 
-        /* Record count at the position of the first token in the cluster. */
+        // Record count at the position of the first token in the cluster. 
         counts[i] = j - i;
 
-        /* Start the next loop at the next token we haven't seen. */
+        // Start the next loop at the next token we haven't seen. 
         i = j;
     }
 }

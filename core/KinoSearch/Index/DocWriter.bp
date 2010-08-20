@@ -7,9 +7,9 @@ class KinoSearch::Index::DocWriter extends KinoSearch::Index::DataWriter {
     OutStream    *ix_out;
     OutStream    *dat_out;
 
-    inert i32_t current_file_format;
+    inert int32_t current_file_format;
 
-    /* Constructors.
+    /** Constructors.
      */
     inert incremented DocWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
@@ -20,7 +20,7 @@ class KinoSearch::Index::DocWriter extends KinoSearch::Index::DataWriter {
          Segment *segment, PolyReader *polyreader);
 
     public void
-    Add_Inverted_Doc(DocWriter *self, Inverter *inverter, i32_t doc_id);
+    Add_Inverted_Doc(DocWriter *self, Inverter *inverter, int32_t doc_id);
 
     public void
     Add_Segment(DocWriter *self, SegReader *reader, I32Array *doc_map = NULL);
@@ -28,7 +28,7 @@ class KinoSearch::Index::DocWriter extends KinoSearch::Index::DataWriter {
     public void
     Finish(DocWriter *self);
 
-    public i32_t
+    public int32_t
     Format(DocWriter *self);
 
     public void 

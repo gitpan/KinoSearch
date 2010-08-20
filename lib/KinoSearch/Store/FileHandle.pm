@@ -16,32 +16,32 @@ For testing purposes only.  Track number of FileHandle objects in existence.
 
 =cut
 
-chy_u32_t
+uint32_t
 FH_READ_ONLY()
 CODE:
     RETVAL = KINO_FH_READ_ONLY;
 OUTPUT: RETVAL
 
-chy_u32_t
+uint32_t
 FH_WRITE_ONLY()
 CODE:
     RETVAL = KINO_FH_WRITE_ONLY;
 OUTPUT: RETVAL
 
-chy_u32_t
+uint32_t
 FH_CREATE()
 CODE:
     RETVAL = KINO_FH_CREATE;
 OUTPUT: RETVAL
 
-chy_u32_t
+uint32_t
 FH_EXCLUSIVE()
 CODE:
     RETVAL = KINO_FH_EXCLUSIVE;
 OUTPUT: RETVAL
 
 
-chy_i32_t
+int32_t
 object_count()
 CODE:
     RETVAL = kino_FH_object_count;

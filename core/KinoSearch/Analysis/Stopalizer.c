@@ -58,23 +58,6 @@ Stopalizer_transform(Stopalizer *self, Inversion *inversion)
 }
 
 bool_t
-Stopalizer_dump_equals(Stopalizer *self, Obj *dump)
-{
-    Stopalizer_dump_equals_t super_dump_equals = (Stopalizer_dump_equals_t)
-        SUPER_METHOD(STOPALIZER, Stopalizer, Dump_Equals);
-    if (!super_dump_equals(self, dump)) {
-        return false;
-    }
-    else {
-        Hash *source   = (Hash*)CERTIFY(dump, HASH);
-        Hash *stoplist = (Hash*)Hash_Fetch_Str(source, "stoplist", 8);
-        if (!stoplist) return false;
-        if (!Hash_Equals(self->stoplist, (Obj*)stoplist)) return false;
-    }
-    return true;
-}
-
-bool_t
 Stopalizer_equals(Stopalizer *self, Obj *other)
 {
     Stopalizer *const evil_twin = (Stopalizer*)other;

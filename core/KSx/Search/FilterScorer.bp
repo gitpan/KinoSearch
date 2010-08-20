@@ -3,8 +3,8 @@ parcel KinoSearch cnick Kino;
 class KSx::Search::FilterScorer extends KinoSearch::Search::Matcher {
 
     BitVector   *bits;
-    i32_t        doc_max;
-    i32_t        doc_id;
+    int32_t      doc_max;
+    int32_t      doc_id;
 
     /**
      * @param bits A BitVector with each doc id that should match set to
@@ -12,24 +12,24 @@ class KSx::Search::FilterScorer extends KinoSearch::Search::Matcher {
      * @param doc_max The largest doc id that could possibly match.
      */
     inert incremented FilterScorer*
-    new(BitVector *bits, i32_t doc_max);
+    new(BitVector *bits, int32_t doc_max);
 
     inert FilterScorer*
-    init(FilterScorer *self, BitVector *bits, i32_t doc_max);
+    init(FilterScorer *self, BitVector *bits, int32_t doc_max);
 
     public void
     Destroy(FilterScorer *self);
 
-    public i32_t
+    public int32_t
     Next(FilterScorer* self);
 
-    public i32_t
-    Skip_To(FilterScorer* self, i32_t target);
+    public int32_t
+    Skip_To(FilterScorer* self, int32_t target);
 
     public float
     Score(FilterScorer* self);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(FilterScorer* self);
 }
 

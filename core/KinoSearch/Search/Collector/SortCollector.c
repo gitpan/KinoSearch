@@ -41,22 +41,22 @@
 #define AUTO_TIE                     0x17
 #define ACTIONS_MASK                 0x1F
 
-/* Pick an action based on a SortRule and if needed, a SortCache. */
-static i8_t
+// Pick an action based on a SortRule and if needed, a SortCache. 
+static int8_t
 S_derive_action(SortRule *rule, SortCache *sort_cache);
 
-/* Decide whether a doc should be inserted into the HitQueue. */
+// Decide whether a doc should be inserted into the HitQueue. 
 static INLINE bool_t
-SI_competitive(SortCollector *self, i32_t doc_id);
+SI_competitive(SortCollector *self, int32_t doc_id);
 
 SortCollector*
-SortColl_new(Schema *schema, SortSpec *sort_spec, u32_t wanted) 
+SortColl_new(Schema *schema, SortSpec *sort_spec, uint32_t wanted) 
 {
     SortCollector *self = (SortCollector*)VTable_Make_Obj(SORTCOLLECTOR);
     return SortColl_init(self, schema, sort_spec, wanted);
 }
 
-/* Default to sort-by-score-then-doc-id. */
+// Default to sort-by-score-then-doc-id. 
 static VArray*
 S_default_sort_rules()
 {
@@ -68,15 +68,15 @@ S_default_sort_rules()
 
 SortCollector*
 SortColl_init(SortCollector *self, Schema *schema, SortSpec *sort_spec,
-              u32_t wanted)
+              uint32_t wanted)
 {
     VArray *rules   = sort_spec 
                     ? (VArray*)INCREF(SortSpec_Get_Rules(sort_spec))
                     : S_default_sort_rules();
-    u32_t num_rules = VA_Get_Size(rules);
-    u32_t i;
+    uint32_t num_rules = VA_Get_Size(rules);
+    uint32_t i;
 
-    /* Validate. */
+    // Validate. 
     if (sort_spec && !schema) {
         THROW(ERR, "Can't supply a SortSpec without a Schema.");
     }
@@ -84,32 +84,32 @@ SortColl_init(SortCollector *self, Schema *schema, SortSpec *sort_spec,
         THROW(ERR, "Can't supply a SortSpec with no SortRules.");
     }
 
-    /* Init. */
+    // Init. 
     Coll_init((Collector*)self);
     self->total_hits    = 0;
     self->bubble_doc    = I32_MAX;
     self->bubble_score  = F32_NEGINF;
     self->seg_doc_max   = 0;
 
-    /* Assign. */
+    // Assign. 
     self->wanted        = wanted;
 
-    /* Derive. */
+    // Derive. 
     self->hit_q         = HitQ_new(schema, sort_spec, wanted);
-    self->rules         = rules; /* absorb refcount. */
+    self->rules         = rules; // absorb refcount. 
     self->num_rules     = num_rules;
     self->sort_caches   = (SortCache**)CALLOCATE(num_rules, sizeof(SortCache*));
     self->ord_arrays    = (void**)CALLOCATE(num_rules, sizeof(void*));
-    self->actions       = (u8_t*)CALLOCATE(num_rules, sizeof(u8_t));
+    self->actions       = (uint8_t*)CALLOCATE(num_rules, sizeof(uint8_t));
 
-    /* Build up an array of "actions" which we will execute during each call
-     * to Collect(). Determine whether we need to track scores and field
-     * values. */
+    // Build up an array of "actions" which we will execute during each call
+    // to Collect(). Determine whether we need to track scores and field
+    // values.
     self->need_score  = false;
     self->need_values = false;
     for (i = 0; i < num_rules; i++) {
         SortRule *rule   = (SortRule*)VA_Fetch(rules, i);
-        i32_t rule_type  = SortRule_Get_Type(rule);
+        int32_t rule_type  = SortRule_Get_Type(rule);
         self->actions[i] = S_derive_action(rule, NULL);
         if  (rule_type == SortRule_SCORE) { 
             self->need_score = true; 
@@ -124,23 +124,23 @@ SortColl_init(SortCollector *self, Schema *schema, SortSpec *sort_spec,
         }
     }
 
-    /* Perform an optimization.  So long as we always collect docs in
-     * ascending order, Collect() will favor lower doc numbers -- so we may
-     * not need to execute a final COMPARE_BY_DOC_ID action. */
+    // Perform an optimization.  So long as we always collect docs in
+    // ascending order, Collect() will favor lower doc numbers -- so we may
+    // not need to execute a final COMPARE_BY_DOC_ID action.
     self->num_actions = num_rules;
     if (self->actions[ num_rules - 1 ] == COMPARE_BY_DOC_ID) {
         self->num_actions--;
     }
 
-    /* Override our derived actions with an action which will be excecuted
-     * autmatically until the queue fills up. */
-    self->auto_actions    = (u8_t*)MALLOCATE(1);
+    // Override our derived actions with an action which will be excecuted
+    // autmatically until the queue fills up.
+    self->auto_actions    = (uint8_t*)MALLOCATE(1);
     self->auto_actions[0] = wanted ? AUTO_ACCEPT : AUTO_REJECT;
     self->derived_actions = self->actions;
     self->actions         = self->auto_actions;
 
 
-    /* Prepare a MatchDoc-in-waiting. */
+    // Prepare a MatchDoc-in-waiting. 
     {
         VArray *values = self->need_values ? VA_new(num_rules) : NULL;
         float   score  = self->need_score  ? F32_NEGINF : F32_NAN;
@@ -164,10 +164,10 @@ SortColl_destroy(SortCollector *self)
     SUPER_DESTROY(self, SORTCOLLECTOR);
 }
 
-static i8_t
+static int8_t
 S_derive_action(SortRule *rule, SortCache *cache)
 {
-    i32_t  rule_type = SortRule_Get_Type(rule);
+    int32_t  rule_type = SortRule_Get_Type(rule);
     bool_t reverse   = !!SortRule_Get_Reverse(rule);
 
     if (rule_type == SortRule_SCORE) {
@@ -178,7 +178,7 @@ S_derive_action(SortRule *rule, SortCache *cache)
     }
     else if (rule_type == SortRule_FIELD) {
         if (cache) {
-            i8_t width = SortCache_Get_Ord_Width(cache);
+            int8_t width = SortCache_Get_Ord_Width(cache);
             switch (width) {
                 case 1:  return COMPARE_BY_ORD1  + reverse;
                 case 2:  return COMPARE_BY_ORD2  + reverse;
@@ -208,7 +208,7 @@ S_derive_action(SortRule *rule, SortCache *cache)
     else {
         THROW(ERR, "Unrecognized SortRule type %i32", rule_type);
     }
-    UNREACHABLE_RETURN(i8_t);
+    UNREACHABLE_RETURN(int8_t);
 }
 
 void
@@ -217,16 +217,16 @@ SortColl_set_reader(SortCollector *self, SegReader *reader)
     SortReader *sort_reader 
         = (SortReader*)SegReader_Fetch(reader, VTable_Get_Name(SORTREADER));
 
-    /* Reset threshold variables and trigger auto-action behavior. */
+    // Reset threshold variables and trigger auto-action behavior. 
     self->bumped->doc_id = I32_MAX;
     self->bubble_doc     = I32_MAX;
     self->bumped->score  = self->need_score ? F32_NEGINF : F32_NAN;
     self->bubble_score   = self->need_score ? F32_NEGINF : F32_NAN;
     self->actions        = self->auto_actions;
 
-    /* Obtain sort caches. Derive actions array for this segment. */
+    // Obtain sort caches. Derive actions array for this segment. 
     if (self->need_values && sort_reader) {
-        u32_t i, max;
+        uint32_t i, max;
         for (i = 0, max = self->num_rules; i < max; i++) {
             SortRule  *rule  = (SortRule*)VA_Fetch(self->rules, i);
             CharBuf   *field = SortRule_Get_Field(rule);
@@ -249,7 +249,7 @@ SortColl_pop_match_docs(SortCollector *self)
     return HitQ_Pop_All(self->hit_q);
 }
 
-u32_t
+uint32_t
 SortColl_get_total_hits(SortCollector *self) { return self->total_hits; }
 
 bool_t
@@ -259,12 +259,12 @@ SortColl_need_score(SortCollector *self)
 }
 
 void
-SortColl_collect(SortCollector *self, i32_t doc_id) 
+SortColl_collect(SortCollector *self, int32_t doc_id) 
 {
-    /* Add to the total number of hits. */
+    // Add to the total number of hits. 
     self->total_hits++;
     
-    /* Collect this hit if it's competitive. */
+    // Collect this hit if it's competitive. 
     if (SI_competitive(self, doc_id)) {
         MatchDoc *const match_doc = self->bumped;
         match_doc->doc_id = doc_id + self->base;
@@ -273,16 +273,16 @@ SortColl_collect(SortCollector *self, i32_t doc_id)
             match_doc->score = Matcher_Score(self->matcher);
         }
 
-        /* Fetch values so that cross-segment sorting can work. */
+        // Fetch values so that cross-segment sorting can work. 
         if (self->need_values) {
             VArray *values = match_doc->values;
-            u32_t i, max;
+            uint32_t i, max;
 
             for (i = 0, max = self->num_rules; i < max; i++) {
                 SortCache *cache   = self->sort_caches[i];
                 Obj       *old_val = (Obj*)VA_Delete(values, i);
                 if (cache) {
-                    i32_t ord = SortCache_Ordinal(cache, doc_id);
+                    int32_t ord = SortCache_Ordinal(cache, doc_id);
                     Obj *blank = old_val 
                                ? old_val 
                                : SortCache_Make_Blank(cache);
@@ -293,7 +293,7 @@ SortColl_collect(SortCollector *self, i32_t doc_id)
             }
         }
 
-        /* Insert the new MatchDoc. */
+        // Insert the new MatchDoc. 
         self->bumped = (MatchDoc*)HitQ_Jostle(self->hit_q, (Obj*)match_doc);
 
         if (self->bumped) {
@@ -307,11 +307,11 @@ SortColl_collect(SortCollector *self, i32_t doc_id)
                 self->actions       = self->derived_actions;
             }
 
-            /* Recycle. */
+            // Recycle. 
             self->bumped->score = self->need_score ? F32_NEGINF : F32_NAN;
         }
         else {
-            /* The queue isn't full yet, so create a fresh MatchDoc. */
+            // The queue isn't full yet, so create a fresh MatchDoc. 
             VArray *values = self->need_values 
                            ? VA_new(self->num_rules)
                            : NULL;
@@ -323,80 +323,82 @@ SortColl_collect(SortCollector *self, i32_t doc_id)
     }
 }
 
-static INLINE i32_t
-SI_compare_by_ord1(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_ord1(SortCollector *self, uint32_t tick, int32_t a, int32_t b)
 {
     void *const ords = self->ord_arrays[tick];
-    i32_t a_ord = NumUtil_u1get(ords, a);
-    i32_t b_ord = NumUtil_u1get(ords, b);
+    int32_t a_ord = NumUtil_u1get(ords, a);
+    int32_t b_ord = NumUtil_u1get(ords, b);
     return a_ord - b_ord;
 }
-static INLINE i32_t
-SI_compare_by_ord2(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_ord2(SortCollector *self, uint32_t tick, int32_t a, int32_t b)
 {
     void *const ords = self->ord_arrays[tick];
-    i32_t a_ord = NumUtil_u2get(ords, a);
-    i32_t b_ord = NumUtil_u2get(ords, b);
+    int32_t a_ord = NumUtil_u2get(ords, a);
+    int32_t b_ord = NumUtil_u2get(ords, b);
     return a_ord - b_ord;
 }
-static INLINE i32_t
-SI_compare_by_ord4(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_ord4(SortCollector *self, uint32_t tick, int32_t a, int32_t b)
 {
     void *const ords = self->ord_arrays[tick];
-    i32_t a_ord = NumUtil_u4get(ords, a);
-    i32_t b_ord = NumUtil_u4get(ords, b);
+    int32_t a_ord = NumUtil_u4get(ords, a);
+    int32_t b_ord = NumUtil_u4get(ords, b);
     return a_ord - b_ord;
 }
-static INLINE i32_t
-SI_compare_by_ord8(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_ord8(SortCollector *self, uint32_t tick, int32_t a, int32_t b)
 {
-    u8_t *ords = (u8_t*)self->ord_arrays[tick];
-    i32_t a_ord = ords[a];
-    i32_t b_ord = ords[b];
+    uint8_t *ords = (uint8_t*)self->ord_arrays[tick];
+    int32_t a_ord = ords[a];
+    int32_t b_ord = ords[b];
     return a_ord - b_ord;
 }
-static INLINE i32_t
-SI_compare_by_ord16(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_ord16(SortCollector *self, uint32_t tick, int32_t a, int32_t b)
 {
     uint8_t *ord_bytes = (uint8_t*)self->ord_arrays[tick];
     uint8_t *address_a = ord_bytes + a * sizeof(uint16_t);
     uint8_t *address_b = ord_bytes + b * sizeof(uint16_t);
-    i32_t    ord_a = NumUtil_decode_bigend_u16(address_a);
-    i32_t    ord_b = NumUtil_decode_bigend_u16(address_b);
+    int32_t  ord_a = NumUtil_decode_bigend_u16(address_a);
+    int32_t  ord_b = NumUtil_decode_bigend_u16(address_b);
     return ord_a - ord_b;
 }
-static INLINE i32_t
-SI_compare_by_ord32(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_ord32(SortCollector *self, uint32_t tick, int32_t a, int32_t b)
 {
     uint8_t *ord_bytes = (uint8_t*)self->ord_arrays[tick];
     uint8_t *address_a = ord_bytes + a * sizeof(uint32_t);
     uint8_t *address_b = ord_bytes + b * sizeof(uint32_t);
-    i32_t    ord_a = NumUtil_decode_bigend_u32(address_a);
-    i32_t    ord_b = NumUtil_decode_bigend_u32(address_b);
+    int32_t  ord_a = NumUtil_decode_bigend_u32(address_a);
+    int32_t  ord_b = NumUtil_decode_bigend_u32(address_b);
     return ord_a - ord_b;
 }
-static INLINE i32_t
-SI_compare_by_native_ord16(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_native_ord16(SortCollector *self, uint32_t tick, 
+                           int32_t a, int32_t b)
 {
-    u16_t *ords = (u16_t*)self->ord_arrays[tick];
-    i32_t a_ord = ords[a];
-    i32_t b_ord = ords[b];
+    uint16_t *ords = (uint16_t*)self->ord_arrays[tick];
+    int32_t a_ord = ords[a];
+    int32_t b_ord = ords[b];
     return a_ord - b_ord;
 }
-static INLINE i32_t
-SI_compare_by_native_ord32(SortCollector *self, u32_t tick, i32_t a, i32_t b)
+static INLINE int32_t
+SI_compare_by_native_ord32(SortCollector *self, uint32_t tick, 
+                           int32_t a, int32_t b)
 {
-    i32_t *ords = (i32_t*)self->ord_arrays[tick];
+    int32_t *ords = (int32_t*)self->ord_arrays[tick];
     return ords[a] - ords[b];
 }
 
-/* Bounds checking for doc id against the segment doc_max.  We assume that any
- * sort cache ord arrays can accomodate lookups up to this number. */
-static INLINE i32_t
-SI_validate_doc_id(SortCollector *self, i32_t doc_id)
+// Bounds checking for doc id against the segment doc_max.  We assume that any
+// sort cache ord arrays can accomodate lookups up to this number.
+static INLINE int32_t
+SI_validate_doc_id(SortCollector *self, int32_t doc_id)
 {
-    /* Check as u32_t since we're using these doc ids as array indexes. */
-    if ((u32_t)doc_id > (u32_t)self->seg_doc_max) {
+    // Check as uint32_t since we're using these doc ids as array indexes. 
+    if ((uint32_t)doc_id > (uint32_t)self->seg_doc_max) {
         THROW(ERR, "Doc ID %i32 greater than doc max %i32", doc_id, 
             self->seg_doc_max);
     }
@@ -404,16 +406,16 @@ SI_validate_doc_id(SortCollector *self, i32_t doc_id)
 }
 
 static INLINE bool_t
-SI_competitive(SortCollector *self, i32_t doc_id)
+SI_competitive(SortCollector *self, int32_t doc_id)
 {
     /* Ordinarily, we would cache local copies of more member variables in
      * const automatic variables in order to improve code clarity and provide
      * more hints to the compiler about what variables are actually invariant
      * for the duration of this routine:
      * 
-     *     u8_t *const actions    = self->actions;
-     *     const u32_t num_rules  = self->num_rules;
-     *     const i32_t bubble_doc = self->bubble_doc;
+     *     uint8_t *const actions    = self->actions;
+     *     const uint32_t num_rules  = self->num_rules;
+     *     const int32_t bubble_doc = self->bubble_doc;
      *
      * However, our major goal is to return as quickly as possible, and the
      * common case is that we'll have our answer before the first loop iter
@@ -424,11 +426,10 @@ SI_competitive(SortCollector *self, i32_t doc_id)
      * loop instead of a "for" loop, and the switch statement optimized for
      * compilation to a jump table.
      */
-    u8_t *const actions = self->actions;
-    u32_t i = 0;
+    uint8_t *const actions = self->actions;
+    uint32_t i = 0;
 
-    /* Iterate through our array of actions, returning as quickly as
-     * possible. */
+    // Iterate through our array of actions, returning as quickly as possible.
     do {
         switch (actions[i] & ACTIONS_MASK) {
             case AUTO_ACCEPT:
@@ -439,6 +440,9 @@ SI_competitive(SortCollector *self, i32_t doc_id)
                 break;
             case COMPARE_BY_SCORE: {
                     float score = Matcher_Score(self->matcher);
+                    if (*(int32_t*)&score == *(int32_t*)&self->bubble_score) {
+                        break; 
+                    }
                     if  (score > self->bubble_score) {
                         self->bumped->score = score;
                         return true;
@@ -450,6 +454,9 @@ SI_competitive(SortCollector *self, i32_t doc_id)
                 break;
             case COMPARE_BY_SCORE_REV: {
                     float score = Matcher_Score(self->matcher);
+                    if (*(int32_t*)&score == *(int32_t*)&self->bubble_score) {
+                        break; 
+                    }
                     if  (score < self->bubble_score) {
                         self->bumped->score = score;
                         return true;
@@ -468,112 +475,112 @@ SI_competitive(SortCollector *self, i32_t doc_id)
                 else if (doc_id < self->bubble_doc) { return false; }
                 break;
             case COMPARE_BY_ORD1: {
-                    i32_t comparison = SI_compare_by_ord1(self, i,
+                    int32_t comparison = SI_compare_by_ord1(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD1_REV: {
-                    i32_t comparison = SI_compare_by_ord1(self, i,
+                    int32_t comparison = SI_compare_by_ord1(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD2: {
-                    i32_t comparison = SI_compare_by_ord2(self, i,
+                    int32_t comparison = SI_compare_by_ord2(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD2_REV: {
-                    i32_t comparison = SI_compare_by_ord2(self, i,
+                    int32_t comparison = SI_compare_by_ord2(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD4: {
-                    i32_t comparison = SI_compare_by_ord4(self, i,
+                    int32_t comparison = SI_compare_by_ord4(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD4_REV: {
-                    i32_t comparison = SI_compare_by_ord4(self, i,
+                    int32_t comparison = SI_compare_by_ord4(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD8: {
-                    i32_t comparison = SI_compare_by_ord8(self, i,
+                    int32_t comparison = SI_compare_by_ord8(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD8_REV: {
-                    i32_t comparison = SI_compare_by_ord8(self, i,
+                    int32_t comparison = SI_compare_by_ord8(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD16: {
-                    i32_t comparison = SI_compare_by_ord16(self, i,
+                    int32_t comparison = SI_compare_by_ord16(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD16_REV: {
-                    i32_t comparison = SI_compare_by_ord16(self, i,
+                    int32_t comparison = SI_compare_by_ord16(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD32: {
-                    i32_t comparison = SI_compare_by_ord32(self, i,
+                    int32_t comparison = SI_compare_by_ord32(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_ORD32_REV: {
-                    i32_t comparison = SI_compare_by_ord32(self, i,
+                    int32_t comparison = SI_compare_by_ord32(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_NATIVE_ORD16: {
-                    i32_t comparison = SI_compare_by_native_ord16(self, i,
+                    int32_t comparison = SI_compare_by_native_ord16(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_NATIVE_ORD16_REV: {
-                    i32_t comparison = SI_compare_by_native_ord16(self, i,
+                    int32_t comparison = SI_compare_by_native_ord16(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_NATIVE_ORD32: {
-                    i32_t comparison = SI_compare_by_native_ord32(self, i,
+                    int32_t comparison = SI_compare_by_native_ord32(self, i,
                         SI_validate_doc_id(self, doc_id), self->bubble_doc);
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
                 }
                 break;
             case COMPARE_BY_NATIVE_ORD32_REV: {
-                    i32_t comparison = SI_compare_by_native_ord32(self, i,
+                    int32_t comparison = SI_compare_by_native_ord32(self, i,
                         self->bubble_doc, SI_validate_doc_id(self, doc_id));
                     if      (comparison < 0) { return true; }
                     else if (comparison > 0) { return false; }
@@ -584,10 +591,9 @@ SI_competitive(SortCollector *self, i32_t doc_id)
         }
     } while (++i < self->num_actions);
 
-    /* If we've made it this far and we're still tied, reject the doc so that
-     * we prefer items already in the queue.  This has the effect of
-     * implicitly breaking ties by doc num, since docs are collected in order.
-     */
+    // If we've made it this far and we're still tied, reject the doc so that
+    // we prefer items already in the queue.  This has the effect of
+    // implicitly breaking ties by doc num, since docs are collected in order.
     return false;
 }
 

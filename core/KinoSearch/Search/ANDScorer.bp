@@ -18,16 +18,16 @@ class KinoSearch::Search::ANDScorer extends KinoSearch::Search::PolyMatcher {
     public void
     Destroy(ANDScorer *self);
 
-    public i32_t
+    public int32_t
     Next(ANDScorer *self);
 
-    public i32_t
-    Advance(ANDScorer *self, i32_t target);
+    public int32_t
+    Advance(ANDScorer *self, int32_t target);
 
     public float
     Score(ANDScorer *self);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(ANDScorer *self);
 }
 

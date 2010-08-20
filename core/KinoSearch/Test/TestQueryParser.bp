@@ -9,18 +9,18 @@ class KinoSearch::Test::TestQueryParser cnick TestQP
     CharBuf *query_string;
     Query   *tree;
     Query   *expanded;
-    u32_t    num_hits;
+    uint32_t num_hits;
 
     /** Note that unlike most KS constructors, this routine will consume one
      * reference count each for <code>tree</code>, and <code>expanded</code>.
      */
     inert incremented TestQueryParser*
     new(const char *query_string = NULL, Query *tree = NULL, 
-        Query *expanded = NULL, u32_t num_hits);
+        Query *expanded = NULL, uint32_t num_hits);
 
     inert TestQueryParser*
     init(TestQueryParser *self, const char *query_string = NULL, 
-         Query *tree = NULL, Query *expanded = NULL, u32_t num_hits);
+         Query *tree = NULL, Query *expanded = NULL, uint32_t num_hits);
 
     nullable CharBuf*
     Get_Query_String(TestQueryParser *self);
@@ -31,7 +31,7 @@ class KinoSearch::Test::TestQueryParser cnick TestQP
     nullable Query*
     Get_Expanded(TestQueryParser *self);
 
-    u32_t
+    uint32_t
     Get_Num_Hits(TestQueryParser *self);
 
     public void

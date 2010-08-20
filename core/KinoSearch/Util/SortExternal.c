@@ -3,35 +3,32 @@
 
 #include "KinoSearch/Util/SortExternal.h"
 
-/* Refill the main cache, drawing from the caches of all runs.
- */
+// Refill the main cache, drawing from the caches of all runs.
 static void
 S_refill_cache(SortExternal *self);
 
-/* Absorb all the items which are "in-range" from all the Runs into the main
- * cache.
- */
+// Absorb all the items which are "in-range" from all the Runs into the main
+// cache.
 static void
 S_absorb_slices(SortExternal *self, uint8_t *endpost);
 
-/* Return the address for the item in one of the runs' caches which is the
- * highest in sort order, but which we can guarantee is lower in sort order
- * than any item which has yet to enter a run cache. 
- */
+// Return the address for the item in one of the runs' caches which is the
+// highest in sort order, but which we can guarantee is lower in sort order
+// than any item which has yet to enter a run cache. 
 static uint8_t* 
 S_find_endpost(SortExternal *self);
 
-/* Determine how many cache items are less than or equal to [endpost]. */
-static u32_t
+// Determine how many cache items are less than or equal to [endpost]. 
+static uint32_t
 S_find_slice_size(SortExternal *self, uint8_t *endpost);
 
 SortExternal*
 SortEx_init(SortExternal *self, size_t width)
 {
-    /* Assign. */
+    // Assign. 
     self->width        = width;
 
-    /* Init. */
+    // Init. 
     self->mem_thresh   = U32_MAX;
     self->cache        = NULL;
     self->cache_cap    = 0;
@@ -144,8 +141,8 @@ SortEx_add_run(SortExternal *self, SortExternal *run)
 {
     VA_Push(self->runs, (Obj*)run);
     uint32_t num_runs = VA_Get_Size(self->runs);
-    self->slice_sizes = (u32_t*)REALLOCATE(self->slice_sizes, 
-        num_runs * sizeof(u32_t));
+    self->slice_sizes = (uint32_t*)REALLOCATE(self->slice_sizes, 
+        num_runs * sizeof(uint32_t));
     self->slice_starts = (uint8_t**)REALLOCATE(self->slice_starts,
         num_runs * sizeof(uint8_t*));
 }
@@ -153,22 +150,22 @@ SortEx_add_run(SortExternal *self, SortExternal *run)
 static void
 S_refill_cache(SortExternal *self) 
 {
-    /* Reset cache vars. */
+    // Reset cache vars. 
     SortEx_Clear_Cache(self);
     
-    /* Make sure all runs have at least one item in the cache. */
+    // Make sure all runs have at least one item in the cache. 
     uint32_t i = 0;
     while (i < VA_Get_Size(self->runs)) {
         SortExternal *const run = (SortExternal*)VA_Fetch(self->runs, i);
         if (SortEx_Cache_Count(run) > 0 || SortEx_Refill(run) > 0) {
-            i++; /* Run has some elements, so keep. */
+            i++; // Run has some elements, so keep. 
         }
         else {
             VA_Splice(self->runs, i, 1);
         }
     }
 
-    /* Absorb as many elems as possible from all runs into main cache. */
+    // Absorb as many elems as possible from all runs into main cache. 
     if (VA_Get_Size(self->runs)) {
         uint8_t *endpost = S_find_endpost(self);
         S_absorb_slices(self, endpost);
@@ -182,24 +179,23 @@ S_find_endpost(SortExternal *self)
     const size_t width = self->width;
 
     for ( uint32_t i = 0, max = VA_Get_Size(self->runs); i < max; i++) {
-        /* Get a run and retrieve the last item in its cache. */
+        // Get a run and retrieve the last item in its cache. 
         SortExternal *const run = (SortExternal*)VA_Fetch(self->runs, i);
-        const u32_t tick = run->cache_max - 1;
+        const uint32_t tick = run->cache_max - 1;
         if (tick >= run->cache_cap || run->cache_max < 1) {
             THROW(ERR, "Invalid SortExternal cache access: %u32 %u32 %u32", tick, 
                 run->cache_max, run->cache_cap);
         }
         else {
-            /* Cache item with the highest sort value currently held in memory
-             * by the run.
-             */
+            // Cache item with the highest sort value currently held in memory
+            // by the run.
             uint8_t *candidate = run->cache + tick * width;
 
-            /* If it's the first run, item is automatically the new endpost. */
+            // If it's the first run, item is automatically the new endpost. 
             if (i == 0) {
                 endpost = candidate;
             }
-            /* If it's less than the current endpost, it's the new endpost. */
+            // If it's less than the current endpost, it's the new endpost. 
             else if (SortEx_Compare(self, candidate, endpost) < 0) {
                 endpost = candidate;
             }
@@ -221,13 +217,13 @@ S_absorb_slices(SortExternal *self, uint8_t *endpost)
 
     if (self->cache_max != 0) { THROW(ERR, "Can't refill unless empty"); }
 
-    /* Move all the elements in range into the main cache as slices. */
+    // Move all the elements in range into the main cache as slices. 
     for (uint32_t i = 0; i < num_runs; i++) {
         SortExternal *const run = (SortExternal*)VA_Fetch(self->runs, i);
         uint32_t slice_size = S_find_slice_size(run, endpost);
 
         if (slice_size) {
-            /* Move slice content from run cache to main cache. */
+            // Move slice content from run cache to main cache. 
             if (self->cache_max + slice_size > self->cache_cap) {
                 size_t cap = Memory_oversize(self->cache_max + slice_size, 
                     width);
@@ -239,35 +235,35 @@ S_absorb_slices(SortExternal *self, uint8_t *endpost)
             run->cache_tick += slice_size;
             self->cache_max += slice_size;
 
-            /* Track number of slices and slice sizes. */
+            // Track number of slices and slice sizes. 
             slice_sizes[self->num_slices++] = slice_size;
         }
     }
     
-    /* Transform slice starts from ticks to pointers. */
+    // Transform slice starts from ticks to pointers. 
     uint32_t total = 0;
     for (uint32_t i = 0; i < self->num_slices; i++) {
         slice_starts[i] = self->cache + total * width;
         total += slice_sizes[i];
     }
 
-    /* The main cache now consists of several slices.  Sort the main cache,
-     * but exploit the fact that each slice is already sorted. */
+    // The main cache now consists of several slices.  Sort the main cache,
+    // but exploit the fact that each slice is already sorted.
     if (self->scratch_cap < self->cache_cap) {
         self->scratch_cap = self->cache_cap;
         self->scratch = (uint8_t*)REALLOCATE(self->scratch, 
             self->scratch_cap * width);
     }
 
-    /* Exploit previous sorting, rather than sort cache naively.
-     * Leave the first slice intact if the number of slices is odd. */
+    // Exploit previous sorting, rather than sort cache naively.
+    // Leave the first slice intact if the number of slices is odd. */
     while (self->num_slices > 1) {
         uint32_t i = 0;
         uint32_t j = 0;
 
         while (i < self->num_slices) {
             if (self->num_slices - i >= 2) {
-                /* Merge two consecutive slices. */
+                // Merge two consecutive slices. 
                 const uint32_t merged_size = slice_sizes[i] + slice_sizes[i+1];
                 Sort_merge(slice_starts[i], slice_sizes[i],
                     slice_starts[i+1], slice_sizes[i+1], self->scratch,
@@ -279,7 +275,7 @@ S_absorb_slices(SortExternal *self, uint8_t *endpost)
                 j += 1;
             }
             else if (self->num_slices - i >= 1) {
-                /* Move single slice pointer. */
+                // Move single slice pointer. 
                 slice_sizes[j]  = slice_sizes[i];
                 slice_starts[j] = slice_starts[i];
                 i += 1;
@@ -293,7 +289,7 @@ S_absorb_slices(SortExternal *self, uint8_t *endpost)
 }
 
 void
-SortEx_grow_cache(SortExternal *self, u32_t size) 
+SortEx_grow_cache(SortExternal *self, uint32_t size) 
 {
     if (size > self->cache_cap) {
         self->cache = (uint8_t*)REALLOCATE(self->cache, size * self->width);
@@ -301,37 +297,37 @@ SortEx_grow_cache(SortExternal *self, u32_t size)
     }
 }
 
-static u32_t
+static uint32_t
 S_find_slice_size(SortExternal *self, uint8_t *endpost) 
 {
-    i32_t            lo      = self->cache_tick - 1;
-    i32_t            hi      = self->cache_max;
+    int32_t          lo      = self->cache_tick - 1;
+    int32_t          hi      = self->cache_max;
     uint8_t *const   cache   = self->cache;
     const size_t     width   = self->width;
     SortEx_compare_t compare = (SortEx_compare_t)METHOD(
         SortEx_Get_VTable(self), SortEx, Compare);
 
-    /* Binary search. */
+    // Binary search. 
     while (hi - lo > 1) {
-        const i32_t mid   = lo + ((hi - lo) / 2);
-        const i32_t delta = compare(self, cache + mid * width, endpost);
+        const int32_t mid   = lo + ((hi - lo) / 2);
+        const int32_t delta = compare(self, cache + mid * width, endpost);
         if (delta > 0) { hi = mid; }
         else           { lo = mid; }
     }
 
-    /* If lo is still -1, we didn't find anything. */
+    // If lo is still -1, we didn't find anything. 
     return lo == -1 
         ? 0 
         : (lo - self->cache_tick) + 1;
 }
 
 void
-SortEx_set_mem_thresh(SortExternal *self, u32_t mem_thresh)
+SortEx_set_mem_thresh(SortExternal *self, uint32_t mem_thresh)
 {
     self->mem_thresh = mem_thresh;
 }
 
-u32_t
+uint32_t
 SortEx_cache_count(SortExternal *self)
 {
     return self->cache_max - self->cache_tick;

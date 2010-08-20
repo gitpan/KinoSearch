@@ -24,7 +24,7 @@ ZKHash_destroy(ZombieKeyedHash *self)
 }
 
 Obj*
-ZKHash_make_key(ZombieKeyedHash *self, Obj *key, i32_t hash_code)
+ZKHash_make_key(ZombieKeyedHash *self, Obj *key, int32_t hash_code)
 {
     UNUSED_VAR(hash_code);
     Obj *retval = NULL;

@@ -14,12 +14,7 @@ sub new {
 
 sub compare_values {
     my ( $self, %args ) = @_;
-    if ( defined $args{a} ) {
-        if   ( defined $args{b} ) { return $args{b} <=> $args{a}; }
-        else                      { return 1; }
-    }
-    elsif ( defined $args{b} ) { return -1; }
-    else                       { return 0; }
+    return $args{b} <=> $args{a};
 }
 
 package SortSchema;

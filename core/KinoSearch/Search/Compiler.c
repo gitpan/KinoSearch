@@ -4,11 +4,11 @@
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/DocVector.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Matcher.h"
 #include "KinoSearch/Search/Query.h"
 #include "KinoSearch/Search/Searcher.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
@@ -64,13 +64,13 @@ Compiler_apply_norm_factor(Compiler *self, float factor)
 void
 Compiler_normalize(Compiler *self)
 {
-    /* factor = ( tf_q * idf_t ) */
+    // factor = ( tf_q * idf_t ) 
     float factor = Compiler_Sum_Of_Squared_Weights(self); 
 
-    /* factor /= norm_q */
+    // factor /= norm_q 
     factor = Sim_Query_Norm(self->sim, factor);
 
-    /* weight *= factor */
+    // weight *= factor 
     Compiler_Apply_Norm_Factor(self, factor); 
 }
 

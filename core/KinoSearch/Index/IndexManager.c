@@ -50,22 +50,22 @@ IxManager_destroy(IndexManager *self)
     SUPER_DESTROY(self, INDEXMANAGER);
 }
 
-i64_t
+int64_t
 IxManager_highest_seg_num(IndexManager *self, Snapshot *snapshot)
 {
     VArray *files = Snapshot_List(snapshot);
-    u32_t i, max;
-    u64_t highest_seg_num = 0;
+    uint32_t i, max;
+    uint64_t highest_seg_num = 0;
     UNUSED_VAR(self);
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
         CharBuf *file = (CharBuf*)VA_Fetch(files, i);
         if (Seg_valid_seg_name(file)) {
-            u64_t seg_num = IxFileNames_extract_gen(file);
+            uint64_t seg_num = IxFileNames_extract_gen(file);
             if (seg_num > highest_seg_num) { highest_seg_num = seg_num; }
         }
     }
     DECREF(files);
-    return (i64_t)highest_seg_num;
+    return (int64_t)highest_seg_num;
 }
 
 CharBuf*
@@ -74,7 +74,7 @@ IxManager_make_snapshot_filename(IndexManager *self)
     Folder *folder = (Folder*)CERTIFY(self->folder, FOLDER);
     DirHandle *dh = Folder_Open_Dir(folder, NULL);
     CharBuf *entry;
-    u64_t max_gen = 0;
+    uint64_t max_gen = 0;
 
     if (!dh) { RETHROW(INCREF(Err_get_error())); }
     entry = DH_Get_Entry(dh);
@@ -82,14 +82,14 @@ IxManager_make_snapshot_filename(IndexManager *self)
         if (    CB_Starts_With_Str(entry, "snapshot_", 9)
             && CB_Ends_With_Str(entry, ".json", 5)
         ) {
-            u64_t gen = IxFileNames_extract_gen(entry);
+            uint64_t gen = IxFileNames_extract_gen(entry);
             if (gen > max_gen) { max_gen = gen; }
         }
     }
     DECREF(dh);
 
     {
-        u64_t new_gen = max_gen + 1;
+        uint64_t new_gen = max_gen + 1;
         char  base36[StrHelp_MAX_BASE36_BYTES];
         StrHelp_to_base36(new_gen, &base36);
         return CB_newf("snapshot_%s.json", &base36);
@@ -106,16 +106,16 @@ S_compare_doc_count(void *context, const void *va, const void *vb)
 }
 
 static bool_t
-S_check_cutoff(VArray *array, u32_t tick, void *data)
+S_check_cutoff(VArray *array, uint32_t tick, void *data)
 {
     SegReader *seg_reader = (SegReader*)VA_Fetch(array, tick);
-    i64_t cutoff = *(i64_t*)data;
+    int64_t cutoff = *(int64_t*)data;
     return SegReader_Get_Seg_Num(seg_reader) > cutoff;
 }
 
-static u32_t
-S_fibonacci(u32_t n) {
-    u32_t result = 0;
+static uint32_t
+S_fibonacci(uint32_t n) {
+    uint32_t result = 0;
     if (n > 46) {
         THROW(ERR, "input %u32 too high", n); 
     }   
@@ -130,15 +130,15 @@ S_fibonacci(u32_t n) {
 
 VArray*
 IxManager_recycle(IndexManager *self, PolyReader *reader, 
-                  DeletionsWriter *del_writer, i64_t cutoff, bool_t optimize)
+                  DeletionsWriter *del_writer, int64_t cutoff, bool_t optimize)
 {
     VArray *seg_readers = PolyReader_Get_Seg_Readers(reader);
     VArray *candidates  = VA_Grep(seg_readers, S_check_cutoff, &cutoff);
     VArray *recyclables = VA_new(VA_Get_Size(candidates));
-    u32_t i;
-    u32_t total_docs = 0;
-    u32_t threshold = 0;
-    const u32_t num_candidates = VA_Get_Size(candidates);
+    uint32_t i;
+    uint32_t total_docs = 0;
+    uint32_t threshold = 0;
+    const uint32_t num_candidates = VA_Get_Size(candidates);
     UNUSED_VAR(self);
 
     if (optimize) { 
@@ -146,23 +146,31 @@ IxManager_recycle(IndexManager *self, PolyReader *reader,
         return candidates; 
     }
 
-    /* Sort by ascending size in docs. */
+    // Sort by ascending size in docs. 
     VA_Sort(candidates, S_compare_doc_count, NULL);
 
-    /* Find sparsely populated segments. */
+    // Find sparsely populated segments. 
     for (i = 0; i < num_candidates; i++) {
-        u32_t num_segs_when_done = num_candidates - threshold + 1;
+        uint32_t num_segs_when_done = num_candidates - threshold + 1;
         SegReader *seg_reader = (SegReader*)VA_Fetch(candidates, i);
         total_docs += SegReader_Doc_Count(seg_reader);
         if (total_docs < S_fibonacci(num_segs_when_done + 5)) {
             threshold = i + 1;
         }
     }
+
+    // If recycling, always merge at least two segments so that we don't get
+    // stuck merging the same big segment over and over on small commits.
+    if (threshold == 1 && num_candidates > 2) {
+        threshold = 2;
+    }
+
+    // Move SegReaders to be recycled.
     for (i = 0; i < threshold; i++) {
         VA_Store(recyclables, i, VA_Delete(candidates, i));
     }
 
-    /* Find segments where at least 10% of all docs have been deleted. */
+    // Find segments where at least 10% of all docs have been deleted. 
     for (i = threshold; i < num_candidates; i++) {
         SegReader *seg_reader = (SegReader*)VA_Delete(candidates, i);
         CharBuf   *seg_name   = SegReader_Get_Seg_Name(seg_reader);
@@ -221,7 +229,7 @@ IxManager_make_merge_lock(IndexManager *self)
 }
 
 void
-IxManager_write_merge_data(IndexManager *self, i64_t cutoff)
+IxManager_write_merge_data(IndexManager *self, int64_t cutoff)
 {
     ZombieCharBuf *merge_json = ZCB_WRAP_STR("merge.json", 10);
     Hash *data = Hash_new(1);
@@ -273,7 +281,7 @@ IxManager_make_snapshot_read_lock(IndexManager *self, const CharBuf *filename)
         THROW(ERR, "Not a snapshot filename: %o", filename);
     }
         
-    /* Truncate ".json" from end of snapshot file name. */
+    // Truncate ".json" from end of snapshot file name. 
     ZCB_Chop(lock_name, sizeof(".json") - 1);
 
     return LockFact_Make_Shared_Lock(lock_factory, (CharBuf*)lock_name, 1000, 100);
@@ -293,42 +301,42 @@ IxManager_get_folder(IndexManager *self)
 CharBuf*
 IxManager_get_host(IndexManager *self) 
     { return self->host; }
-u32_t
+uint32_t
 IxManager_get_write_lock_timeout(IndexManager *self) 
     { return self->write_lock_timeout; }
-u32_t
+uint32_t
 IxManager_get_write_lock_interval(IndexManager *self) 
     { return self->write_lock_interval; }
-u32_t
+uint32_t
 IxManager_get_merge_lock_timeout(IndexManager *self) 
     { return self->merge_lock_timeout; }
-u32_t
+uint32_t
 IxManager_get_merge_lock_interval(IndexManager *self) 
     { return self->merge_lock_interval; }
-u32_t
+uint32_t
 IxManager_get_deletion_lock_timeout(IndexManager *self) 
     { return self->deletion_lock_timeout; }
-u32_t
+uint32_t
 IxManager_get_deletion_lock_interval(IndexManager *self) 
     { return self->deletion_lock_interval; }
 
 void
-IxManager_set_write_lock_timeout(IndexManager *self, u32_t timeout)
+IxManager_set_write_lock_timeout(IndexManager *self, uint32_t timeout)
     { self->write_lock_timeout = timeout; }
 void
-IxManager_set_write_lock_interval(IndexManager *self, u32_t interval)
+IxManager_set_write_lock_interval(IndexManager *self, uint32_t interval)
     { self->write_lock_interval = interval; }
 void
-IxManager_set_merge_lock_timeout(IndexManager *self, u32_t timeout)
+IxManager_set_merge_lock_timeout(IndexManager *self, uint32_t timeout)
     { self->merge_lock_timeout = timeout; }
 void
-IxManager_set_merge_lock_interval(IndexManager *self, u32_t interval)
+IxManager_set_merge_lock_interval(IndexManager *self, uint32_t interval)
     { self->merge_lock_interval = interval; }
 void
-IxManager_set_deletion_lock_timeout(IndexManager *self, u32_t timeout)
+IxManager_set_deletion_lock_timeout(IndexManager *self, uint32_t timeout)
     { self->deletion_lock_timeout = timeout; }
 void
-IxManager_set_deletion_lock_interval(IndexManager *self, u32_t interval)
+IxManager_set_deletion_lock_interval(IndexManager *self, uint32_t interval)
     { self->deletion_lock_interval = interval; }
 
 /* Copyright 2007-2010 Marvin Humphrey

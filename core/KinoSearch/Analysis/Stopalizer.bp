@@ -47,9 +47,6 @@ class KinoSearch::Analysis::Stopalizer
     public bool_t
     Equals(Stopalizer *self, Obj *other);
 
-    public bool_t
-    Dump_Equals(Stopalizer *self, Obj *dump);
-
     public void
     Destroy(Stopalizer *self);
 }

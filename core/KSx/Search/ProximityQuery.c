@@ -12,25 +12,25 @@
 #include "KinoSearch/Index/PostingListReader.h"
 #include "KinoSearch/Index/SegPostingList.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Index/TermVector.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KSx/Search/ProximityScorer.h"
 #include "KinoSearch/Search/Searcher.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Search/TermQuery.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
 
-/* Shared initialization routine which assumes that it's ok to assume control
- * over [field] and [terms], eating their refcounts. */
+// Shared initialization routine which assumes that it's ok to assume control
+// over [field] and [terms], eating their refcounts.
 static ProximityQuery*
 S_do_init(ProximityQuery *self, CharBuf *field, VArray *terms, float boost, 
-        u32_t within);
+        uint32_t within);
 
 ProximityQuery*
-ProximityQuery_new(const CharBuf *field, VArray *terms, u32_t within)
+ProximityQuery_new(const CharBuf *field, VArray *terms, uint32_t within)
 {
     ProximityQuery *self = (ProximityQuery*)VTable_Make_Obj(PROXIMITYQUERY);
     return ProximityQuery_init(self, field, terms, within);
@@ -38,7 +38,7 @@ ProximityQuery_new(const CharBuf *field, VArray *terms, u32_t within)
 
 ProximityQuery*
 ProximityQuery_init(ProximityQuery *self, const CharBuf *field, VArray *terms, 
-                u32_t within)
+                uint32_t within)
 {
     return S_do_init(self, CB_Clone(field), VA_Clone(terms), 1.0f, within);
 }
@@ -53,9 +53,9 @@ ProximityQuery_destroy(ProximityQuery *self)
 
 static ProximityQuery*
 S_do_init(ProximityQuery *self, CharBuf *field, VArray *terms, float boost, 
-        u32_t within)
+        uint32_t within)
 {
-    u32_t i, max;
+    uint32_t i, max;
     Query_init((Query*)self, boost);
     for (i = 0, max = VA_Get_Size(terms); i < max; i++) {
         CERTIFY(VA_Fetch(terms, i), OBJ);
@@ -78,10 +78,10 @@ ProximityQuery_serialize(ProximityQuery *self, OutStream *outstream)
 ProximityQuery*
 ProximityQuery_deserialize(ProximityQuery *self, InStream *instream)
 {
-    float    boost  = InStream_Read_F32(instream);
-    CharBuf *field  = CB_deserialize(NULL, instream);
-    VArray  *terms  = VA_deserialize(NULL, instream);
-    u32_t    within = InStream_Read_C32(instream);
+    float     boost  = InStream_Read_F32(instream);
+    CharBuf  *field  = CB_deserialize(NULL, instream);
+    VArray   *terms  = VA_deserialize(NULL, instream);
+    uint32_t  within = InStream_Read_C32(instream);
     self = self ? self : (ProximityQuery*)VTable_Make_Obj(PROXIMITYQUERY);
     return S_do_init(self, field, terms, boost, within);
 }
@@ -105,8 +105,8 @@ ProximityQuery_equals(ProximityQuery *self, Obj *other)
 CharBuf*
 ProximityQuery_to_string(ProximityQuery *self)
 {
-    u32_t i;
-    u32_t num_terms = VA_Get_Size(self->terms);
+    uint32_t i;
+    uint32_t num_terms = VA_Get_Size(self->terms);
     CharBuf *retval = CB_Clone(self->field);
     CB_Cat_Trusted_Str(retval, ":\"", 2);
     for (i = 0; i < num_terms; i++) {
@@ -128,7 +128,7 @@ ProximityQuery_make_compiler(ProximityQuery *self, Searcher *searcher,
                           float boost)
 {
     if (VA_Get_Size(self->terms) == 1) {
-        /* Optimize for one-term "phrases". */
+        // Optimize for one-term "phrases". 
         Obj *term = VA_Fetch(self->terms, 0);
         TermQuery *term_query = TermQuery_new(self->field, term);
         TermCompiler *term_compiler;
@@ -147,13 +147,14 @@ CharBuf*
 ProximityQuery_get_field(ProximityQuery *self) { return self->field; }
 VArray*
 ProximityQuery_get_terms(ProximityQuery *self) { return self->terms; }
-u32_t
+uint32_t
 ProximityQuery_get_within(ProximityQuery  *self) { return self->within; }
 
 /*********************************************************************/
 
 ProximityCompiler*
-ProximityCompiler_new(ProximityQuery *parent, Searcher *searcher, float boost, u32_t within)
+ProximityCompiler_new(ProximityQuery *parent, Searcher *searcher, float boost,
+                      uint32_t within)
 {
     ProximityCompiler *self = (ProximityCompiler*)VTable_Make_Obj(PROXIMITYCOMPILER);
     return ProximityCompiler_init(self, parent, searcher, boost, within);
@@ -161,32 +162,34 @@ ProximityCompiler_new(ProximityQuery *parent, Searcher *searcher, float boost, u
 
 ProximityCompiler*
 ProximityCompiler_init(ProximityCompiler *self, ProximityQuery *parent, 
-                    Searcher *searcher, float boost, u32_t within)
+                    Searcher *searcher, float boost, uint32_t within)
 {
     Schema     *schema = Searcher_Get_Schema(searcher);
     Similarity *sim    = Schema_Fetch_Sim(schema, parent->field);
     VArray     *terms  = parent->terms;
-    u32_t i, max;
+    uint32_t i, max;
     
     self->within = within;
 
-    /* Try harder to find a Similarity if necessary. */
+    // Try harder to find a Similarity if necessary. 
     if (!sim) { sim = Schema_Get_Similarity(schema); }
 
-    /* Init. */
+    // Init. 
     Compiler_init((Compiler*)self, (Query*)parent, searcher, sim, boost);
 
-    /* Store IDF for the phrase. */
+    // Store IDF for the phrase. 
     self->idf = 0;
     for (i = 0, max = VA_Get_Size(terms); i < max; i++) {
         Obj *term = VA_Fetch(terms, i);
-        self->idf += Sim_IDF(sim, searcher, parent->field, term);
+        int32_t doc_max  = Searcher_Doc_Max(searcher);
+        int32_t doc_freq = Searcher_Doc_Freq(searcher, parent->field, term);
+        self->idf += Sim_IDF(sim, doc_freq, doc_max);
     }
 
-    /* Calculate raw weight. */
+    // Calculate raw weight. 
     self->raw_weight = self->idf * self->boost;
 
-    /* Make final preparations. */
+    // Make final preparations. 
     ProximityCompiler_Normalize(self);
 
     return self;
@@ -258,10 +261,10 @@ ProximityCompiler_make_matcher(ProximityCompiler *self, SegReader *reader,
     VArray *const      terms     = parent->terms;
     uint32_t           num_terms = VA_Get_Size(terms);
 
-    /* Bail if there are no terms. */
+    // Bail if there are no terms. 
     if (!num_terms) return NULL;
 
-    /* Bail unless field is valid and posting type supports positions. */
+    // Bail unless field is valid and posting type supports positions. 
     Similarity *sim     = ProximityCompiler_Get_Similarity(self);
     Posting    *posting = Sim_Make_Posting(sim);
     if (posting == NULL || !Obj_Is_A((Obj*)posting, SCOREPOSTING)) {
@@ -270,19 +273,19 @@ ProximityCompiler_make_matcher(ProximityCompiler *self, SegReader *reader,
     }
     DECREF(posting);
 
-    /* Bail if there's no PostingListReader for this segment. */
+    // Bail if there's no PostingListReader for this segment. 
     PostingListReader *const plist_reader = (PostingListReader*)SegReader_Fetch(
         reader, VTable_Get_Name(POSTINGLISTREADER));
     if (!plist_reader) { return NULL; }
 
-    /* Look up each term. */
+    // Look up each term. 
     VArray  *plists = VA_new(num_terms);
     for (uint32_t i = 0; i < num_terms; i++) {
         Obj *term = VA_Fetch(terms, i);
         PostingList *plist 
             = PListReader_Posting_List(plist_reader, parent->field, term);
 
-        /* Bail if any one of the terms isn't in the index. */
+        // Bail if any one of the terms isn't in the index. 
         if (!plist || !PList_Get_Doc_Freq(plist)) {
             DECREF(plist);
             DECREF(plists);
@@ -302,17 +305,17 @@ ProximityCompiler_highlight_spans(ProximityCompiler *self, Searcher *searcher,
                                DocVector *doc_vec, const CharBuf *field)
 {
     ProximityQuery *const parent = (ProximityQuery*)self->parent;
-    VArray      *const terms  = parent->terms;
-    VArray      *const spans  = VA_new(0);
-    VArray      *term_vectors;
-    BitVector   *posit_vec;
-    BitVector   *other_posit_vec;
-    u32_t        i;
-    const u32_t  num_terms = VA_Get_Size(terms);
-    u32_t        num_tvs;
+    VArray         *const terms  = parent->terms;
+    VArray         *const spans  = VA_new(0);
+    VArray         *term_vectors;
+    BitVector      *posit_vec;
+    BitVector      *other_posit_vec;
+    uint32_t        i;
+    const uint32_t  num_terms = VA_Get_Size(terms);
+    uint32_t        num_tvs;
     UNUSED_VAR(searcher);
 
-    /* Bail if no terms or field doesn't match. */
+    // Bail if no terms or field doesn't match. 
     if (!num_terms) { return spans; }
     if (!CB_Equals(field, (Obj*)parent->field)) { return spans; }
 
@@ -324,28 +327,28 @@ ProximityCompiler_highlight_spans(ProximityCompiler *self, Searcher *searcher,
         TermVector *term_vector 
             = DocVec_Term_Vector(doc_vec, field, (CharBuf*)term);
 
-        /* Bail if any term is missing. */
+        // Bail if any term is missing. 
         if (!term_vector)
             break;
 
         VA_Push(term_vectors, (Obj*)term_vector);
 
         if (i == 0) {
-            /* Set initial positions from first term. */
-            u32_t j;
+            // Set initial positions from first term. 
+            uint32_t j;
             I32Array *positions = TV_Get_Positions(term_vector);
             for (j = I32Arr_Get_Size(positions); j > 0; j--) {
                 BitVec_Set(posit_vec, I32Arr_Get(positions, j - 1));
             }
         }
         else {
-            /* Filter positions using logical "and". */
-            u32_t j;
+            // Filter positions using logical "and". 
+            uint32_t j;
             I32Array *positions = TV_Get_Positions(term_vector);
 
             BitVec_Clear_All(other_posit_vec);
             for (j = I32Arr_Get_Size(positions); j > 0; j--) {
-                i32_t pos = I32Arr_Get(positions, j - 1) - i;
+                int32_t pos = I32Arr_Get(positions, j - 1) - i;
                 if (pos >= 0) {
                     BitVec_Set(other_posit_vec, pos);
                 }
@@ -354,7 +357,7 @@ ProximityCompiler_highlight_spans(ProximityCompiler *self, Searcher *searcher,
         }
     }
 
-    /* Proceed only if all terms are present. */
+    // Proceed only if all terms are present. 
     num_tvs = VA_Get_Size(term_vectors);
     if (num_tvs == num_terms) {
         TermVector *first_tv = (TermVector*)VA_Fetch(term_vectors, 0);
@@ -364,20 +367,20 @@ ProximityCompiler_highlight_spans(ProximityCompiler *self, Searcher *searcher,
         I32Array *tv_end_positions   = TV_Get_Positions(last_tv);
         I32Array *tv_start_offsets   = TV_Get_Start_Offsets(first_tv);
         I32Array *tv_end_offsets     = TV_Get_End_Offsets(last_tv);
-        u32_t     terms_max          = num_terms - 1;
+        uint32_t  terms_max          = num_terms - 1;
         I32Array *valid_posits       = BitVec_To_Array(posit_vec);
-        u32_t     num_valid_posits   = I32Arr_Get_Size(valid_posits);
-        u32_t j = 0;
-        u32_t posit_tick;
-        float weight = ProximityCompiler_Get_Weight(self);
+        uint32_t  num_valid_posits   = I32Arr_Get_Size(valid_posits);
+        uint32_t  j = 0;
+        uint32_t  posit_tick;
+        float     weight = ProximityCompiler_Get_Weight(self);
         i = 0;
 
-        /* Add only those starts/ends that belong to a valid position. */
+        // Add only those starts/ends that belong to a valid position. 
         for (posit_tick = 0; posit_tick < num_valid_posits; posit_tick++) {
-            i32_t valid_start_posit = I32Arr_Get(valid_posits, posit_tick);
-            i32_t valid_end_posit   = valid_start_posit + terms_max;
-            i32_t start_offset = 0, end_offset = 0;
-            u32_t max;
+            int32_t valid_start_posit = I32Arr_Get(valid_posits, posit_tick);
+            int32_t valid_end_posit   = valid_start_posit + terms_max;
+            int32_t start_offset = 0, end_offset = 0;
+            uint32_t max;
 
             for (max = I32Arr_Get_Size(tv_start_positions); i < max; i++) {
                 if (I32Arr_Get(tv_start_positions, i) == valid_start_posit) {

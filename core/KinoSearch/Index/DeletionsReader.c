@@ -17,7 +17,7 @@
 
 DeletionsReader*
 DelReader_init(DeletionsReader *self, Schema *schema, Folder *folder, 
-               Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+               Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     DataReader_init((DataReader*)self, schema, folder, snapshot, segments, 
         seg_tick);
@@ -45,7 +45,7 @@ PolyDeletionsReader*
 PolyDelReader_init(PolyDeletionsReader *self, VArray *readers, 
                    I32Array *offsets)
 {
-    u32_t i, max;
+    uint32_t i, max;
     DelReader_init((DeletionsReader*)self, NULL, NULL, NULL, NULL, -1);
     self->del_count = 0;
     for (i = 0, max = VA_Get_Size(readers); i < max; i++) {
@@ -62,7 +62,7 @@ void
 PolyDelReader_close(PolyDeletionsReader *self)
 {
     if (self->readers) {
-        u32_t i, max;
+        uint32_t i, max;
         for (i = 0, max = VA_Get_Size(self->readers); i < max; i++) {
             DeletionsReader *reader 
                 = (DeletionsReader*)VA_Fetch(self->readers, i);
@@ -80,7 +80,7 @@ PolyDelReader_destroy(PolyDeletionsReader *self)
     SUPER_DESTROY(self, POLYDELETIONSREADER);
 }
 
-i32_t
+int32_t
 PolyDelReader_del_count(PolyDeletionsReader *self)
 {
     return self->del_count;
@@ -91,9 +91,9 @@ PolyDelReader_iterator(PolyDeletionsReader *self)
 {
     SeriesMatcher *deletions = NULL;
     if (self->del_count) {
-        u32_t num_readers = VA_Get_Size(self->readers);
+        uint32_t num_readers = VA_Get_Size(self->readers);
         VArray *matchers = VA_new(num_readers);
-        u32_t i;
+        uint32_t i;
         for (i = 0; i < num_readers; i++) {
             DeletionsReader *reader 
                 = (DeletionsReader*)VA_Fetch(self->readers, i);
@@ -108,7 +108,7 @@ PolyDelReader_iterator(PolyDeletionsReader *self)
 
 DefaultDeletionsReader*
 DefDelReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
-                    VArray *segments, i32_t seg_tick)
+                    VArray *segments, int32_t seg_tick)
 {
     DefaultDeletionsReader *self 
         = (DefaultDeletionsReader*)VTable_Make_Obj(DEFAULTDELETIONSREADER);
@@ -119,7 +119,7 @@ DefDelReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
 DefaultDeletionsReader*
 DefDelReader_init(DefaultDeletionsReader *self, Schema *schema, 
                   Folder *folder, Snapshot *snapshot, VArray *segments,
-                  i32_t seg_tick)
+                  int32_t seg_tick)
 {
     DelReader_init((DeletionsReader*)self, schema, folder, snapshot, segments,
         seg_tick);
@@ -152,12 +152,12 @@ DefDelReader_read_deletions(DefaultDeletionsReader *self)
     Segment *segment     = DefDelReader_Get_Segment(self);
     CharBuf *my_seg_name = Seg_Get_Name(segment);
     CharBuf *del_file    = NULL;
-    i32_t    del_count   = 0;
-    i32_t i;
+    int32_t  del_count   = 0;
+    int32_t i;
     
-    /* Start with deletions files in the most recently added segments and work
-     * backwards.  The first one we find which addresses our segment is the
-     * one we need. */
+    // Start with deletions files in the most recently added segments and work
+    // backwards.  The first one we find which addresses our segment is the
+    // one we need.
     for (i = VA_Get_Size(segments) - 1; i >= 0; i--) {
         Segment *other_seg = (Segment*)VA_Fetch(segments, i);
         Hash *metadata 
@@ -170,7 +170,7 @@ DefDelReader_read_deletions(DefaultDeletionsReader *self)
             if (seg_files_data) {
                 Obj *count = (Obj*)CERTIFY(
                     Hash_Fetch_Str(seg_files_data, "count", 5), OBJ);
-                del_count = (i32_t)Obj_To_I64(count);
+                del_count = (int32_t)Obj_To_I64(count);
                 del_file  = (CharBuf*)CERTIFY(
                     Hash_Fetch_Str(seg_files_data, "filename", 8), CHARBUF);
                 break;
@@ -197,7 +197,7 @@ DefDelReader_iterator(DefaultDeletionsReader *self)
     return (Matcher*)BitVecMatcher_new(self->deldocs);
 }
 
-i32_t
+int32_t
 DefDelReader_del_count(DefaultDeletionsReader *self) 
 { 
     return self->del_count; 

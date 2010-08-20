@@ -7,11 +7,11 @@
 #include "KinoSearch/Index/SegReader.h"
 #include "KinoSearch/Index/PostingList.h"
 #include "KinoSearch/Index/PostingListReader.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Index/TermVector.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Compiler.h"
 #include "KinoSearch/Search/Searcher.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Search/TermScorer.h"
 #include "KinoSearch/Store/InStream.h"
@@ -109,16 +109,19 @@ TermCompiler_init(TermCompiler *self, Query *parent, Searcher *searcher,
     TermQuery  *tparent = (TermQuery*)parent;
     Similarity *sim     = Schema_Fetch_Sim(schema, tparent->field);
 
-    /* Try harder to get a Similarity if necessary. */
+    // Try harder to get a Similarity if necessary. 
     if (!sim) { sim = Schema_Get_Similarity(schema); }
 
-    /* Init. */
+    // Init. 
     Compiler_init((Compiler*)self, parent, searcher, sim, boost);
     self->normalized_weight = 0.0f;
     self->query_norm_factor = 0.0f;
 
-    /* Derive. */
-    self->idf = Sim_IDF(sim, searcher, tparent->field, tparent->term);
+    // Derive. 
+    int32_t doc_max  = Searcher_Doc_Max(searcher);
+    int32_t doc_freq = Searcher_Doc_Freq(searcher, tparent->field, 
+        tparent->term);
+    self->idf = Sim_IDF(sim, doc_freq, doc_max);
     
     /* The score of any document is approximately equal to:
      *
@@ -133,7 +136,7 @@ TermCompiler_init(TermCompiler *self, Query *parent, Searcher *searcher,
      */
     self->raw_weight = self->idf * self->boost;
 
-    /* Make final preparations. */
+    // Make final preparations. 
     TermCompiler_Normalize(self);
 
     return self;
@@ -232,20 +235,20 @@ TermCompiler_highlight_spans(TermCompiler *self, Searcher *searcher,
     VArray *spans = VA_new(0);
     TermVector *term_vector;
     I32Array *starts, *ends;
-    u32_t i, max;
+    uint32_t i, max;
     UNUSED_VAR(searcher);
 
     if (!CB_Equals(parent->field, (Obj*)field)) return spans;
 
-    /* Add all starts and ends. */
+    // Add all starts and ends. 
     term_vector = DocVec_Term_Vector(doc_vec, field, (CharBuf*)parent->term);
     if (!term_vector) return spans;
 
     starts = TV_Get_Start_Offsets(term_vector);
     ends   = TV_Get_End_Offsets(term_vector);
     for (i = 0, max = I32Arr_Get_Size(starts); i < max; i++) {
-        i32_t start  = I32Arr_Get(starts, i);
-        i32_t length = I32Arr_Get(ends, i) - start;
+        int32_t start  = I32Arr_Get(starts, i);
+        int32_t length = I32Arr_Get(ends, i) - start;
         VA_Push(spans, 
             (Obj*)Span_new(start, length, TermCompiler_Get_Weight(self)) );
     }

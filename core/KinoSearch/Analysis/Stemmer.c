@@ -26,7 +26,7 @@ Stemmer_init(Stemmer *self, const CharBuf *language)
     Analyzer_init((Analyzer*)self);
     self->language = CB_Clone(language);
 
-    /* Get a Snowball stemmer.  Be case-insensitive. */
+    // Get a Snowball stemmer.  Be case-insensitive. 
     Stemmer_load_snowball();
     lang_buf[0] = tolower(CB_Code_Point_At(language, 0));
     lang_buf[1] = tolower(CB_Code_Point_At(language, 1));
@@ -99,25 +99,6 @@ Stemmer_equals(Stemmer *self, Obj *other)
     if (evil_twin == self) return true;
     if (!Obj_Is_A(other, STEMMER)) return false;
     if (!CB_Equals(evil_twin->language, (Obj*)self->language)) return false;
-    return true;
-} 
-
-bool_t
-Stemmer_dump_equals(Stemmer *self, Obj *dump)
-{
-    Stemmer_dump_equals_t super_dump_equals 
-        = (Stemmer_dump_equals_t)SUPER_METHOD(STEMMER, Stemmer, Dump_Equals);
-    if (!super_dump_equals(self, dump)) {
-        return false;
-    }
-    else {
-        Hash *const source = (Hash*)CERTIFY(dump, HASH);
-        CharBuf *language  = (CharBuf*)Hash_Fetch_Str(source, "language", 8);
-        if (!language) return false;
-        if (!CB_Equals(self->language, (Obj*)language)) {
-            return false;
-        }
-    }
     return true;
 } 
 

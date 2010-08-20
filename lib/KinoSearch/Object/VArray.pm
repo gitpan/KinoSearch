@@ -50,7 +50,7 @@ OUTPUT: RETVAL
 SV*
 delete(self, tick)
     kino_VArray *self;
-    chy_u32_t    tick;
+    uint32_t    tick;
 CODE:
     RETVAL = KINO_OBJ_TO_SV_NOINC(Kino_VA_Delete(self, tick));
 OUTPUT: RETVAL
@@ -58,7 +58,7 @@ OUTPUT: RETVAL
 void
 store(self, tick, value);
     kino_VArray *self; 
-    chy_u32_t    tick;
+    uint32_t     tick;
     kino_Obj    *value;
 PPCODE:
 {
@@ -69,7 +69,7 @@ PPCODE:
 SV*
 fetch(self, tick)
     kino_VArray *self;
-    chy_u32_t    tick;
+    uint32_t     tick;
 CODE:
     RETVAL = KINO_OBJ_TO_SV(Kino_VA_Fetch(self, tick));
 OUTPUT: RETVAL

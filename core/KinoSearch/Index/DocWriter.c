@@ -17,7 +17,7 @@
 static OutStream*
 S_lazy_init(DocWriter *self);
 
-i32_t DocWriter_current_file_format = 2;
+int32_t DocWriter_current_file_format = 2;
 
 DocWriter*
 DocWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment, 
@@ -50,7 +50,7 @@ S_lazy_init(DocWriter *self)
         Folder   *folder    = self->folder;
         CharBuf  *seg_name  = Seg_Get_Name(self->segment);
 
-        /* Get streams. */
+        // Get streams. 
         {
             CharBuf *ix_file = CB_newf("%o/documents.ix", seg_name);
             self->ix_out = Folder_Open_Out(folder, ix_file);
@@ -64,7 +64,7 @@ S_lazy_init(DocWriter *self)
             if (!self->dat_out) { RETHROW(INCREF(Err_get_error())); }
         }
 
-        /* Go past non-doc #0. */
+        // Go past non-doc #0. 
         OutStream_Write_I64(self->ix_out, 0);
     }
 
@@ -73,19 +73,19 @@ S_lazy_init(DocWriter *self)
 
 void
 DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter, 
-                           i32_t doc_id)
+                           int32_t doc_id)
 {
     OutStream *dat_out         = S_lazy_init(self);
     OutStream *ix_out          = self->ix_out;
-    u32_t      num_stored      = 0;
-    i64_t      start           = OutStream_Tell(dat_out);
-    i64_t      expected        = OutStream_Tell(ix_out) / 8;
+    uint32_t   num_stored      = 0;
+    int64_t    start           = OutStream_Tell(dat_out);
+    int64_t    expected        = OutStream_Tell(ix_out) / 8;
 
-    /* Verify doc id. */
+    // Verify doc id. 
     if (doc_id != expected)
         THROW(ERR, "Expected doc id %i64 but got %i32", expected, doc_id);
 
-    /* Write the number of stored fields. */
+    // Write the number of stored fields. 
     Inverter_Iter_Init(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
@@ -95,7 +95,7 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
 
     Inverter_Iter_Init(inverter);
     while (Inverter_Next(inverter)) {
-        /* Only store fields marked as "stored". */
+        // Only store fields marked as "stored". 
         FieldType *type = Inverter_Get_Type(inverter);
         if (FType_Stored(type)) {
             CharBuf *field = Inverter_Get_Field_Name(inverter);
@@ -105,7 +105,7 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
         }
     }
 
-    /* Write file pointer. */
+    // Write file pointer. 
     OutStream_Write_I64(ix_out, start);
 }
 
@@ -113,10 +113,10 @@ void
 DocWriter_add_segment(DocWriter *self, SegReader *reader, 
                       I32Array *doc_map)
 {
-    i32_t doc_max = SegReader_Doc_Max(reader);
+    int32_t doc_max = SegReader_Doc_Max(reader);
 
     if (doc_max == 0) {
-        /* Bail if the supplied segment is empty. */
+        // Bail if the supplied segment is empty. 
         return;
     }
     else {
@@ -126,21 +126,21 @@ DocWriter_add_segment(DocWriter *self, SegReader *reader,
         DefaultDocReader *const doc_reader = (DefaultDocReader*)CERTIFY(
             SegReader_Obtain(reader, VTable_Get_Name(DOCREADER)), 
                 DEFAULTDOCREADER);
-        i32_t i, max;
+        int32_t i, max;
 
         for (i = 1, max = SegReader_Doc_Max(reader); i <= max; i++) {
             if (I32Arr_Get(doc_map, i)) {
-                i64_t   start = OutStream_Tell(dat_out);
-                char   *buf;
-                size_t  size;
+                int64_t  start = OutStream_Tell(dat_out);
+                char    *buf;
+                size_t   size;
 
-                /* Copy record over. */ 
+                // Copy record over.  
                 DefDocReader_Read_Record(doc_reader, buffer, i);
                 buf  = BB_Get_Buf(buffer);
                 size = BB_Get_Size(buffer);
                 OutStream_Write_Bytes(dat_out, buf, size);
 
-                /* Write file pointer. */
+                // Write file pointer. 
                 OutStream_Write_I64(ix_out, start);
             }
         }
@@ -153,12 +153,12 @@ void
 DocWriter_finish(DocWriter *self)
 {
     if (self->dat_out) {
-        /* Write one final file pointer, so that we can derive the length of
-         * the last record. */
-        i64_t end = OutStream_Tell(self->dat_out);
+        // Write one final file pointer, so that we can derive the length of
+        // the last record.
+        int64_t end = OutStream_Tell(self->dat_out);
         OutStream_Write_I64(self->ix_out, end);
         
-        /* Close down output streams. */
+        // Close down output streams. 
         OutStream_Close(self->dat_out);
         OutStream_Close(self->ix_out);
         Seg_Store_Metadata_Str(self->segment, "documents", 9, 
@@ -166,7 +166,7 @@ DocWriter_finish(DocWriter *self)
     }
 }
 
-i32_t
+int32_t
 DocWriter_format(DocWriter *self)
 {
     UNUSED_VAR(self);

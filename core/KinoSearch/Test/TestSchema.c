@@ -52,7 +52,7 @@ test_Equals(TestBatch *batch)
 
     ASSERT_TRUE(batch, TestSchema_Equals(schema, (Obj*)schema), "Equals");
 
-    FullTextType_Set_Analyzer(type, (Analyzer*)case_folder);
+    FullTextType_Set_Boost(type, 2.0f);
     ASSERT_FALSE(batch, TestSchema_Equals(schema, (Obj*)spec_differs), 
         "Equals spoiled by differing FieldType");
 

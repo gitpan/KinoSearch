@@ -17,8 +17,8 @@
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/StringHelper.h"
 
-/* Obtain/release read locks and commit locks.  If self->manager is
- * NULL, do nothing  */
+// Obtain/release read locks and commit locks.  If self->manager is
+// NULL, do nothing.
 static void 
 S_obtain_read_lock(PolyReader *self, const CharBuf *snapshot_filename);
 static void 
@@ -50,7 +50,7 @@ PolyReader_open(Obj *index, Snapshot *snapshot, IndexManager *manager)
 static Obj*
 S_first_non_null(VArray *array)
 {
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(array); i < max; i++) {
         Obj *thing = VA_Fetch(array, i);
         if (thing) { return thing; }
@@ -61,16 +61,16 @@ S_first_non_null(VArray *array)
 static void
 S_init_sub_readers(PolyReader *self, VArray *sub_readers) 
 {
-    u32_t  i;
-    u32_t  num_sub_readers = VA_Get_Size(sub_readers);
-    i32_t *starts = (i32_t*)MALLOCATE(num_sub_readers * sizeof(i32_t));
+    uint32_t  i;
+    uint32_t  num_sub_readers = VA_Get_Size(sub_readers);
+    int32_t *starts = (int32_t*)MALLOCATE(num_sub_readers * sizeof(int32_t));
     Hash  *data_readers = Hash_new(0);
 
     DECREF(self->sub_readers);
     DECREF(self->offsets);
     self->sub_readers       = (VArray*)INCREF(sub_readers);
 
-    /* Accumulate doc_max, subreader start offsets, and DataReaders. */
+    // Accumulate doc_max, subreader start offsets, and DataReaders. 
     self->doc_max = 0;
     for (i = 0; i < num_sub_readers; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(sub_readers, i);
@@ -124,9 +124,9 @@ PolyReader_init(PolyReader *self, Schema *schema, Folder *folder,
     self->del_count  = 0;
 
     if (sub_readers) { 
-        u32_t num_segs = VA_Get_Size(sub_readers);
+        uint32_t num_segs = VA_Get_Size(sub_readers);
         VArray *segments = VA_new(num_segs);
-        u32_t i;
+        uint32_t i;
         for (i = 0; i < num_segs; i++) {
             SegReader *seg_reader = (SegReader*)CERTIFY(
                 VA_Fetch(sub_readers, i), SEGREADER);
@@ -152,7 +152,7 @@ PolyReader_close(PolyReader *self)
 {
     PolyReader_close_t super_close 
         = (PolyReader_close_t)SUPER_METHOD(POLYREADER, PolyReader, Close);
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(self->sub_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->sub_readers, i);
         SegReader_Close(seg_reader); 
@@ -171,15 +171,15 @@ PolyReader_destroy(PolyReader *self)
 Obj*
 S_try_open_elements(PolyReader *self)
 {
-    VArray  *files             = Snapshot_List(self->snapshot);
-    Folder  *folder            = PolyReader_Get_Folder(self);
-    u32_t    num_segs          = 0;
-    u64_t    latest_schema_gen = 0;
-    CharBuf *schema_file       = NULL;
-    VArray  *segments;
-    u32_t    i, max;
+    VArray   *files             = Snapshot_List(self->snapshot);
+    Folder   *folder            = PolyReader_Get_Folder(self);
+    uint32_t  num_segs          = 0;
+    uint64_t  latest_schema_gen = 0;
+    CharBuf  *schema_file       = NULL;
+    VArray   *segments;
+    uint32_t  i, max;
 
-    /* Find schema file, count segments. */
+    // Find schema file, count segments. 
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
         CharBuf *entry = (CharBuf*)VA_Fetch(files, i);
 
@@ -189,7 +189,7 @@ S_try_open_elements(PolyReader *self)
         else if (   CB_Starts_With_Str(entry, "schema_", 7)
                  && CB_Ends_With_Str(entry, ".json", 5)
         ) {
-            u64_t gen = IxFileNames_extract_gen(entry);
+            uint64_t gen = IxFileNames_extract_gen(entry);
             if (gen > latest_schema_gen) {
                 latest_schema_gen = gen;
                 if (!schema_file) { schema_file = CB_Clone(entry); }
@@ -198,7 +198,7 @@ S_try_open_elements(PolyReader *self)
         }
     }
 
-    /* Read Schema. */
+    // Read Schema. 
     if (!schema_file) {
         CharBuf *mess = MAKE_MESS("Can't find a schema file.");
         DECREF(files);
@@ -206,7 +206,7 @@ S_try_open_elements(PolyReader *self)
     }
     else {
         Hash *dump = (Hash*)Json_slurp_json(folder, schema_file);
-        if (dump) { /* read file successfully */
+        if (dump) { // read file successfully 
             DECREF(self->schema);
             self->schema = (Schema*)CERTIFY(
                 VTable_Load_Obj(SCHEMA, (Obj*)dump), SCHEMA);
@@ -226,14 +226,14 @@ S_try_open_elements(PolyReader *self)
     for (i = 0, max = VA_Get_Size(files); i < max; i++) {
         CharBuf *entry = (CharBuf*)VA_Fetch(files, i);
 
-        /* Create a Segment for each segmeta. */
+        // Create a Segment for each segmeta. 
         if (Seg_valid_seg_name(entry)) {
-            i64_t seg_num = IxFileNames_extract_gen(entry);
+            int64_t seg_num = IxFileNames_extract_gen(entry);
             Segment *segment = Seg_new(seg_num);
 
-            /* Bail if reading the file fails (probably because it's been
-             * deleted and a new snapshot file has been written so we need to
-             * retry). */
+            // Bail if reading the file fails (probably because it's been
+            // deleted and a new snapshot file has been written so we need to
+            // retry).
             if (Seg_Read_File(segment, folder)) {
                 VA_Push(segments, (Obj*)segment);
             }
@@ -247,7 +247,7 @@ S_try_open_elements(PolyReader *self)
         }
     }
 
-    /* Sort the segments by age. */
+    // Sort the segments by age. 
     VA_Sort(segments, NULL, NULL);
 
     {
@@ -258,16 +258,16 @@ S_try_open_elements(PolyReader *self)
     }
 }
 
-/* For test suite. */
+// For test suite. 
 CharBuf* PolyReader_race_condition_debug1 = NULL;
-i32_t    PolyReader_debug1_num_passes     = 0;
+int32_t  PolyReader_debug1_num_passes     = 0;
 
 PolyReader*
 PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot, 
                    IndexManager *manager)
 {
     Folder *folder = S_derive_folder(index);
-    u64_t last_gen = 0;
+    uint64_t last_gen = 0;
 
     PolyReader_init(self, NULL, folder, snapshot, manager, NULL);
     DECREF(folder);
@@ -276,11 +276,11 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
 
     while (1) {
         CharBuf *target_snap_file;
-        u64_t gen;
+        uint64_t gen;
 
-        /* If a Snapshot was supplied, use its file. */
+        // If a Snapshot was supplied, use its file. 
         if (snapshot) {
-            target_snap_file = Snapshot_Get_Filename(snapshot);
+            target_snap_file = Snapshot_Get_Path(snapshot);
             if (!target_snap_file) {
                 THROW(ERR, "Supplied snapshot objects must not be empty");
             }
@@ -289,23 +289,23 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
             }
         }
         else {
-            /* Otherwise, pick the most recent snap file. */
+            // Otherwise, pick the most recent snap file. 
             target_snap_file = IxFileNames_latest_snapshot(folder);
 
-            /* No snap file?  Looks like the index is empty.  We can stop now
-             * and return NULL. */
+            // No snap file?  Looks like the index is empty.  We can stop now
+            // and return NULL.
             if (!target_snap_file) { break; }
         }
         
-        /* Derive "generation" of this snapshot file from its name. */
+        // Derive "generation" of this snapshot file from its name. 
         gen = IxFileNames_extract_gen(target_snap_file);
 
-        /* Get a read lock on the most recent snapshot file if indicated. */
+        // Get a read lock on the most recent snapshot file if indicated. 
         if (manager) {
             S_obtain_read_lock(self, target_snap_file);
         }
 
-        /* Testing only. */
+        // Testing only. 
         if (PolyReader_race_condition_debug1) {
             ZombieCharBuf *temp = ZCB_WRAP_STR("temp", 4);
             if (Folder_Exists(folder, (CharBuf*)temp)) {
@@ -316,8 +316,8 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
             PolyReader_debug1_num_passes++;
         }
 
-        /* If a Snapshot object was passed in, the file has already been read.
-         * If that's not the case, we must read the file we just picked. */
+        // If a Snapshot object was passed in, the file has already been read.
+        // If that's not the case, we must read the file we just picked.
         if (!snapshot) { 
             CharBuf *error = PolyReader_try_read_snapshot(self->snapshot, 
                 folder, target_snap_file);
@@ -325,12 +325,12 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
             if (error) {
                 S_release_read_lock(self);
                 DECREF(target_snap_file);
-                if (last_gen < gen) { /* Index updated, so try again. */
+                if (last_gen < gen) { // Index updated, so try again. 
                     DECREF(error);
                     last_gen = gen;
                     continue;
                 }
-                else { /* Real error. */
+                else { // Real error. 
                     if (manager) S_release_deletion_lock(self);
                     Err_throw_mess(ERR, error);
                 }
@@ -345,19 +345,19 @@ PolyReader_do_open(PolyReader *self, Obj *index, Snapshot *snapshot,
          * not, we have a real exception, so throw an error. */
         {
             Obj *result = S_try_open_elements(self);
-            if (Obj_Is_A(result, CHARBUF)) { /* Error occurred. */
+            if (Obj_Is_A(result, CHARBUF)) { // Error occurred. 
                 S_release_read_lock(self);
                 DECREF(target_snap_file);
-                if (last_gen < gen) { /* Index updated, so try again. */
+                if (last_gen < gen) { // Index updated, so try again. 
                     DECREF(result);
                     last_gen = gen;
                 }
-                else { /* Real error. */
+                else { // Real error. 
                     if (manager) S_release_deletion_lock(self);
                     Err_throw_mess(ERR, (CharBuf*)result);
                 }
             }
-            else { /* Succeeded. */
+            else { // Succeeded. 
                 S_init_sub_readers(self, (VArray*)result);
                 DECREF(result);
                 DECREF(target_snap_file);
@@ -433,19 +433,19 @@ S_release_deletion_lock(PolyReader *self)
     }
 }
 
-i32_t 
+int32_t 
 PolyReader_doc_max(PolyReader *self)
 {
     return self->doc_max;
 }
 
-i32_t
+int32_t
 PolyReader_doc_count(PolyReader *self)
 {
     return self->doc_max - self->del_count;
 }
 
-i32_t
+int32_t
 PolyReader_del_count(PolyReader *self)
 {
     return self->del_count;
@@ -466,16 +466,16 @@ PolyReader_seg_readers(PolyReader *self)
 VArray*
 PolyReader_get_seg_readers(PolyReader *self) { return self->sub_readers; }
 
-u32_t
-PolyReader_sub_tick(I32Array *offsets, i32_t doc_id)
+uint32_t
+PolyReader_sub_tick(I32Array *offsets, int32_t doc_id)
 {
-    u32_t lo = 0;
-    u32_t hi_tick = I32Arr_Get_Size(offsets) - 1;
-    u32_t hi = hi_tick;
+    uint32_t lo = 0;
+    uint32_t hi_tick = I32Arr_Get_Size(offsets) - 1;
+    uint32_t hi = hi_tick;
     
     while (hi >= lo) {
-        u32_t mid = lo + ((hi - lo) / 2);
-        i32_t mid_start = I32Arr_Get(offsets, mid) + 1;
+        uint32_t mid = lo + ((hi - lo) / 2);
+        int32_t mid_start = I32Arr_Get(offsets, mid) + 1;
         if (doc_id < mid_start) {
             hi = mid - 1;
         }

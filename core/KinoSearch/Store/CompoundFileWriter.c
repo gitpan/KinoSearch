@@ -8,13 +8,13 @@
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
 
-i32_t CFWriter_current_file_format = 2;
+int32_t CFWriter_current_file_format = 2;
 
-/* Helper which does the heavy lifting for CFWriter_consolidate. */
+// Helper which does the heavy lifting for CFWriter_consolidate. 
 static void
 S_do_consolidate(CompoundFileWriter *self);
 
-/* Clean up files which may be left over from previous merge attempts. */
+// Clean up files which may be left over from previous merge attempts. 
 static void
 S_clean_up_old_temp_files(CompoundFileWriter *self);
 
@@ -83,12 +83,12 @@ S_do_consolidate(CompoundFileWriter *self)
     VArray    *merged       = VA_new(VA_Get_Size(files));
     CharBuf   *cf_file     = (CharBuf*)ZCB_WRAP_STR("cf.dat", 6);
     OutStream *outstream    = Folder_Open_Out(folder, (CharBuf*)cf_file);
-    u32_t      i, max;
+    uint32_t   i, max;
     bool_t     rename_success;
 
     if (!outstream) { RETHROW(INCREF(Err_get_error())); }
 
-    /* Start metadata. */
+    // Start metadata. 
     Hash_Store_Str(metadata, "files", 5, INCREF(sub_files));
     Hash_Store_Str(metadata, "format", 6, 
         (Obj*)CB_newf("%i32", CFWriter_current_file_format) );
@@ -102,16 +102,16 @@ S_do_consolidate(CompoundFileWriter *self)
         if (!CB_Ends_With_Str(infilename, ".json", 5)) {
             InStream *instream   = Folder_Open_In(folder, infilename);
             Hash     *file_data  = Hash_new(2);
-            i64_t     offset, len;
+            int64_t   offset, len;
 
             if (!instream) { RETHROW(INCREF(Err_get_error())); }
 
-            /* Absorb the file. */
+            // Absorb the file. 
             offset = OutStream_Tell(outstream);
             OutStream_Absorb(outstream, instream);
             len = OutStream_Tell(outstream) - offset;
 
-            /* Record offset and length. */
+            // Record offset and length. 
             Hash_Store_Str(file_data, "offset", 6, 
                 (Obj*)CB_newf("%i64", offset) );
             Hash_Store_Str(file_data, "length", 6, 
@@ -121,8 +121,8 @@ S_do_consolidate(CompoundFileWriter *self)
             Hash_Store(sub_files, (Obj*)infilepath, (Obj*)file_data);
             VA_Push(merged, INCREF(infilename));
 
-            /* Add filler NULL bytes so that every sub-file begins on a file
-             * position multiple of 8. */
+            // Add filler NULL bytes so that every sub-file begins on a file
+            // position multiple of 8.
             OutStream_Align(outstream, 8);
 
             InStream_Close(instream);
@@ -131,14 +131,14 @@ S_do_consolidate(CompoundFileWriter *self)
     }
     DECREF(infilepath);
 
-    /* Write metadata to cfmeta file. */
+    // Write metadata to cfmeta file. 
     CharBuf *cfmeta_temp = (CharBuf*)ZCB_WRAP_STR("cfmeta.json.temp", 16);
     CharBuf *cfmeta_file = (CharBuf*)ZCB_WRAP_STR("cfmeta.json", 11);
     Json_spew_json((Obj*)metadata, (Folder*)self->folder, cfmeta_temp);
     rename_success = Folder_Rename(self->folder, cfmeta_temp, cfmeta_file);
     if (!rename_success) { RETHROW(INCREF(Err_get_error())); }
 
-    /* Clean up. */
+    // Clean up. 
     OutStream_Close(outstream);
     DECREF(outstream);
     DECREF(files);

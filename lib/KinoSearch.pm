@@ -5,13 +5,13 @@ package KinoSearch;
 
 use 5.008003;
 
-our $VERSION = '0.30_101';
+our $VERSION = '0.30_11';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
 # See the docs for KinoSearch::Util::ToolSet.
-BEGIN { XSLoader::load( 'KinoSearch', '0.30_101' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.30_11' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -81,6 +81,8 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     # Temporary back compat.
+    package KinoSearch::Doc;
+    BEGIN { our @ISA = qw( KinoSearch::Document::Doc ) }
     package KinoSearch::Architecture;
     BEGIN { our @ISA = qw( KinoSearch::Plan::Architecture ) }
     package KinoSearch::FieldType;
@@ -111,6 +113,8 @@ sub error {$KinoSearch::Object::Err::error}
     BEGIN { our @ISA = qw( KinoSearch::Search::Collector::BitCollector ) }
     package KinoSearch::Search::Searchable;
     BEGIN { our @ISA = qw( KinoSearch::Search::Searcher ) }
+    package KinoSearch::Search::Similarity;
+    BEGIN { our @ISA = qw( KinoSearch::Index::Similarity ) }
     package KinoSearch::Schema;
     BEGIN { our @ISA = qw( KinoSearch::Plan::Schema ) }
     package KinoSearch::Searcher;
@@ -300,10 +304,10 @@ sub error {$KinoSearch::Object::Err::error}
 
     sub try_read_snapshot {
         my ( undef, %args ) = @_;
-        my ( $snapshot, $folder, $filename )
-            = @args{qw( snapshot folder filename )};
+        my ( $snapshot, $folder, $path )
+            = @args{qw( snapshot folder path )};
         eval {
-            $snapshot->read_file( folder => $folder, filename => $filename );
+            $snapshot->read_file( folder => $folder, path => $path );
         };
         if   ($@) { return KinoSearch::Object::CharBuf->new($@) }
         else      { return undef }

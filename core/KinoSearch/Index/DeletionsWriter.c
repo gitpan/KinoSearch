@@ -33,15 +33,15 @@ DelWriter_init(DeletionsWriter *self, Schema *schema, Snapshot *snapshot,
 
 I32Array*
 DelWriter_generate_doc_map(DeletionsWriter *self, Matcher *deletions,
-                           i32_t doc_max, i32_t offset) 
+                           int32_t doc_max, int32_t offset) 
 {
-    i32_t *doc_map = (i32_t*)CALLOCATE(doc_max + 1, sizeof(i32_t));
-    i32_t  new_doc_id;
-    i32_t  i;
-    i32_t  next_deletion = deletions ? Matcher_Next(deletions) : I32_MAX;
+    int32_t *doc_map = (int32_t*)CALLOCATE(doc_max + 1, sizeof(int32_t));
+    int32_t  new_doc_id;
+    int32_t  i;
+    int32_t  next_deletion = deletions ? Matcher_Next(deletions) : I32_MAX;
     UNUSED_VAR(self);
 
-    /* 0 for a deleted doc, a new number otherwise */
+    // 0 for a deleted doc, a new number otherwise 
     for (i = 1, new_doc_id = 1; i <= doc_max; i++) {
         if (i == next_deletion) {
             next_deletion = Matcher_Next(deletions);
@@ -54,7 +54,7 @@ DelWriter_generate_doc_map(DeletionsWriter *self, Matcher *deletions,
     return I32Arr_new_steal(doc_map, doc_max + 1);
 }
 
-i32_t DefDelWriter_current_file_format = 1;
+int32_t DefDelWriter_current_file_format = 1;
 
 DefaultDeletionsWriter*
 DefDelWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
@@ -70,8 +70,8 @@ DefDelWriter_init(DefaultDeletionsWriter *self, Schema *schema,
                   Snapshot *snapshot, Segment *segment,
                   PolyReader *polyreader)
 {
-    u32_t i;
-    u32_t num_seg_readers;
+    uint32_t i;
+    uint32_t num_seg_readers;
 
     DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
     self->seg_readers       = PolyReader_Seg_Readers(polyreader);
@@ -82,7 +82,7 @@ DefDelWriter_init(DefaultDeletionsWriter *self, Schema *schema,
     self->searcher          = IxSearcher_new((Obj*)polyreader);
     self->name_to_tick      = Hash_new(num_seg_readers);
 
-    /* Materialize a BitVector of deletions for each segment. */
+    // Materialize a BitVector of deletions for each segment. 
     for (i = 0; i < num_seg_readers; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
         BitVector *bit_vec    = BitVec_new(SegReader_Doc_Max(seg_reader));
@@ -92,7 +92,7 @@ DefDelWriter_init(DefaultDeletionsWriter *self, Schema *schema,
                           ? DelReader_Iterator(del_reader) : NULL;
 
         if (seg_dels) {
-            i32_t del;
+            int32_t del;
             while (0 != (del = Matcher_Next(seg_dels))) {
                 BitVec_Set(bit_vec, del);
             }
@@ -130,27 +130,24 @@ void
 DefDelWriter_finish(DefaultDeletionsWriter *self)
 {
     Folder *const folder = self->folder;
-    u32_t i, max;
+    uint32_t i, max;
 
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
         if (self->updated[i]) {
             BitVector *deldocs   = (BitVector*)VA_Fetch(self->bit_vecs, i);
-            i32_t      doc_max   = SegReader_Doc_Max(seg_reader);
+            int32_t    doc_max   = SegReader_Doc_Max(seg_reader);
             double     used      = (doc_max + 1) / 8.0;
-            u32_t      byte_size = (u32_t)ceil(used);
-            u32_t      new_max   = byte_size * 8 - 1;
+            uint32_t   byte_size = (uint32_t)ceil(used);
+            uint32_t   new_max   = byte_size * 8 - 1;
             CharBuf   *filename  = S_del_filename(self, seg_reader);
-            Snapshot  *snapshot  = DefDelWriter_Get_Snapshot(self);
             OutStream *outstream = Folder_Open_Out(folder, filename);
-
             if (!outstream) { RETHROW(INCREF(Err_get_error())); }
-            Snapshot_Add_Entry(snapshot, filename);
 
-            /* Ensure that we have 1 bit for each doc in segment. */
+            // Ensure that we have 1 bit for each doc in segment. 
             BitVec_Grow(deldocs, new_max);
 
-            /* Write deletions data and clean up. */
+            // Write deletions data and clean up. 
             OutStream_Write_Bytes(outstream,
                 (char*)BitVec_Get_Raw_Bits(deldocs), byte_size);
             OutStream_Close(outstream);
@@ -168,7 +165,7 @@ DefDelWriter_metadata(DefaultDeletionsWriter *self)
 {
     Hash    *const metadata = DataWriter_metadata((DataWriter*)self);
     Hash    *const files    = Hash_new(0);
-    u32_t i, max;
+    uint32_t i, max;
 
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
@@ -177,7 +174,7 @@ DefDelWriter_metadata(DefaultDeletionsWriter *self)
             Segment   *segment   = SegReader_Get_Segment(seg_reader);
             Hash      *mini_meta = Hash_new(2);
             Hash_Store_Str(mini_meta, "count", 5, 
-                (Obj*)CB_newf("%u32", (u32_t)BitVec_Count(deldocs)) );
+                (Obj*)CB_newf("%u32", (uint32_t)BitVec_Count(deldocs)) );
             Hash_Store_Str(mini_meta, "filename", 8, 
                 (Obj*)S_del_filename(self, seg_reader));
             Hash_Store(files, (Obj*)Seg_Get_Name(segment), (Obj*)mini_meta);
@@ -188,7 +185,7 @@ DefDelWriter_metadata(DefaultDeletionsWriter *self)
     return metadata;
 }
 
-i32_t
+int32_t
 DefDelWriter_format(DefaultDeletionsWriter *self)
 {
     UNUSED_VAR(self);
@@ -204,7 +201,7 @@ DefDelWriter_seg_deletions(DefaultDeletionsWriter *self,
     CharBuf *seg_name     = Seg_Get_Name(segment);
     Integer32 *tick_obj   = (Integer32*)Hash_Fetch(self->name_to_tick, 
                                 (Obj*)seg_name);
-    i32_t tick            = tick_obj ? Int32_Get_Value(tick_obj) : 0;
+    int32_t tick          = tick_obj ? Int32_Get_Value(tick_obj) : 0;
     SegReader *candidate  = tick_obj 
         ? (SegReader*)VA_Fetch(self->seg_readers, tick)
         : NULL;
@@ -217,14 +214,14 @@ DefDelWriter_seg_deletions(DefaultDeletionsWriter *self,
             deletions = (Matcher*)BitVecMatcher_new(deldocs);
         }
     }
-    else { /* Sanity check. */
+    else { // Sanity check. 
         THROW(ERR, "Couldn't find SegReader %o", seg_reader);
     }
 
     return deletions;
 }
 
-i32_t
+int32_t
 DefDelWriter_seg_del_count(DefaultDeletionsWriter *self, 
                            const CharBuf *seg_name)
 {
@@ -240,7 +237,7 @@ void
 DefDelWriter_delete_by_term(DefaultDeletionsWriter *self,
                             const CharBuf *field, Obj *term)
 {
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
         PostingListReader *plist_reader = (PostingListReader*)SegReader_Fetch(
@@ -248,10 +245,10 @@ DefDelWriter_delete_by_term(DefaultDeletionsWriter *self,
         BitVector *bit_vec = (BitVector*)VA_Fetch(self->bit_vecs, i);
         PostingList *plist = plist_reader 
             ? PListReader_Posting_List(plist_reader, field, term) : NULL;
-        i32_t doc_id;
-        i32_t num_zapped = 0;
+        int32_t doc_id;
+        int32_t num_zapped = 0;
 
-        /* Iterate through postings, marking each doc as deleted. */
+        // Iterate through postings, marking each doc as deleted. 
         if (plist) {
             while (0 != (doc_id = PList_Next(plist))) {
                 num_zapped += !BitVec_Get(bit_vec, doc_id);
@@ -268,7 +265,7 @@ DefDelWriter_delete_by_query(DefaultDeletionsWriter *self, Query *query)
 {
     Compiler *compiler = Query_Make_Compiler(query, 
         (Searcher*)self->searcher, Query_Get_Boost(query));
-    u32_t i, max;
+    uint32_t i, max;
 
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {
         SegReader *seg_reader = (SegReader*)VA_Fetch(self->seg_readers, i);
@@ -276,10 +273,10 @@ DefDelWriter_delete_by_query(DefaultDeletionsWriter *self, Query *query)
         Matcher *matcher = Compiler_Make_Matcher(compiler, seg_reader, false);
 
         if (matcher) { 
-            i32_t doc_id;
-            i32_t num_zapped = 0;
+            int32_t doc_id;
+            int32_t num_zapped = 0;
 
-            /* Iterate through matches, marking each doc as deleted. */
+            // Iterate through matches, marking each doc as deleted. 
             while (0 != (doc_id = Matcher_Next(matcher))) {
                 num_zapped += !BitVec_Get(bit_vec, doc_id);
                 BitVec_Set(bit_vec, doc_id);
@@ -294,12 +291,12 @@ DefDelWriter_delete_by_query(DefaultDeletionsWriter *self, Query *query)
 }
 
 void
-DefDelWriter_delete_by_doc_id(DefaultDeletionsWriter *self, i32_t doc_id)
+DefDelWriter_delete_by_doc_id(DefaultDeletionsWriter *self, int32_t doc_id)
 {
-    u32_t      sub_tick   = PolyReader_sub_tick(self->seg_starts, doc_id);
+    uint32_t   sub_tick   = PolyReader_sub_tick(self->seg_starts, doc_id);
     BitVector *bit_vec    = (BitVector*)VA_Fetch(self->bit_vecs, sub_tick);
-    u32_t      offset     = I32Arr_Get(self->seg_starts, sub_tick);
-    i32_t      seg_doc_id = doc_id - offset;
+    uint32_t   offset     = I32Arr_Get(self->seg_starts, sub_tick);
+    int32_t    seg_doc_id = doc_id - offset;
 
     if (!BitVec_Get(bit_vec, seg_doc_id)) {
         self->updated[sub_tick] = true;
@@ -310,7 +307,7 @@ DefDelWriter_delete_by_doc_id(DefaultDeletionsWriter *self, i32_t doc_id)
 bool_t
 DefDelWriter_updated(DefaultDeletionsWriter *self)
 {
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(self->seg_readers); i < max; i++) {
         if (self->updated[i]) { return true; }
     }
@@ -321,20 +318,19 @@ void
 DefDelWriter_add_segment(DefaultDeletionsWriter *self, SegReader *reader, 
                          I32Array *doc_map)
 {
-    /* This method is a no-op, because the only reason it would be called is
-     * if we are adding an entire index.  If that's the case, all deletes are
-     * already being applied.
-     */
+    // This method is a no-op, because the only reason it would be called is
+    // if we are adding an entire index.  If that's the case, all deletes are
+    // already being applied.
     UNUSED_VAR(self);
     UNUSED_VAR(reader);
     UNUSED_VAR(doc_map);
 }
 
-static void
-S_zap_segment(DefaultDeletionsWriter *self, SegReader *reader,
-              bool_t merge_deletions)
+void
+DefDelWriter_merge_segment(DefaultDeletionsWriter *self, SegReader *reader, 
+                           I32Array *doc_map)
 {
-    Snapshot *snapshot = DefDelWriter_Get_Snapshot(self);
+    UNUSED_VAR(doc_map);
     Segment *segment = SegReader_Get_Segment(reader);
     Hash *del_meta = (Hash*)Seg_Fetch_Metadata_Str(segment, "deletions", 9);
 
@@ -346,15 +342,7 @@ S_zap_segment(DefaultDeletionsWriter *self, SegReader *reader,
             Hash *mini_meta;
             Hash_Iter_Init(files);
             while(Hash_Iter_Next(files, (Obj**)&seg, (Obj**)&mini_meta)) {
-                u32_t i, max;
-                CharBuf *filename = (CharBuf*)CERTIFY(
-                    Hash_Fetch_Str(mini_meta, "filename", 8), CHARBUF);
-
-                /* Remove file from snapshot. */
-                Snapshot_Delete_Entry(snapshot, filename);
-
-                /* This is where Merge_Segment and Delete_Segment diverge. */
-                if (!merge_deletions) { continue; }
+                uint32_t i, max;
 
                 /* Find the segment the deletions from the SegReader
                  * we're adding correspond to.  If it's gone, we don't
@@ -371,7 +359,7 @@ S_zap_segment(DefaultDeletionsWriter *self, SegReader *reader,
                          * merge away the most recent deletions file
                          * pointing at this target segment -- so force a
                          * new file to be written out. */
-                        i32_t count = (i32_t)Obj_To_I64(
+                        int32_t count = (int32_t)Obj_To_I64(
                             Hash_Fetch_Str(mini_meta, "count", 5));
                         DeletionsReader *del_reader 
                             = (DeletionsReader*) SegReader_Obtain(candidate,
@@ -385,20 +373,6 @@ S_zap_segment(DefaultDeletionsWriter *self, SegReader *reader,
             }
         }
     }
-}
-
-void
-DefDelWriter_merge_segment(DefaultDeletionsWriter *self, SegReader *reader, 
-                           I32Array *doc_map)
-{
-    UNUSED_VAR(doc_map);
-    S_zap_segment(self, reader, true);
-}
-
-void
-DefDelWriter_delete_segment(DefaultDeletionsWriter *self, SegReader *reader)
-{
-    S_zap_segment(self, reader, false);
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

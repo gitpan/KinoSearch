@@ -42,21 +42,6 @@ Analyzer_split(Analyzer *self, CharBuf *text)
     return out;
 }
 
-bool_t
-Analyzer_dump_equals(Analyzer *self, Obj *dump)
-{
-    Hash *source = (Hash*)dump;
-    if (!Obj_Is_A(dump, HASH)) return false;
-    else {
-        CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
-        if (!class_name) return false;
-        if (!CB_Equals(Analyzer_Get_Class_Name(self), (Obj*)class_name)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 /* Copyright 2006-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify

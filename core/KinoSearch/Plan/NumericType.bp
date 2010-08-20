@@ -47,9 +47,6 @@ class KinoSearch::Plan::Float64Type
     init2(Float64Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = true);
 
-    incremented Float64*
-    Make_Blank(Float64Type *self);
-
     int8_t
     Primitive_ID(Float64Type *self);
 
@@ -72,9 +69,6 @@ class KinoSearch::Plan::Float32Type
     inert Float32Type* 
     init2(Float32Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
-
-    incremented Float32*
-    Make_Blank(Float32Type *self);
 
     int8_t
     Primitive_ID(Float32Type *self);
@@ -102,9 +96,6 @@ class KinoSearch::Plan::Int32Type
     init2(Int32Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
 
-    incremented Integer32*
-    Make_Blank(Int32Type *self);
-
     int8_t
     Primitive_ID(Int32Type *self);
 
@@ -127,9 +118,6 @@ class KinoSearch::Plan::Int64Type
     inert Int64Type* 
     init2(Int64Type *self, float boost = 1.0, bool_t indexed = true, 
           bool_t stored = true, bool_t sortable = false);
-
-    incremented Integer64*
-    Make_Blank(Int64Type *self);
 
     int8_t
     Primitive_ID(Int64Type *self);

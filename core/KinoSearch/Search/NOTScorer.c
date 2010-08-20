@@ -2,28 +2,28 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Search/NOTScorer.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/Schema.h"
-#include "KinoSearch/Search/Similarity.h"
 
 NOTScorer*
-NOTScorer_new(Matcher *negated_matcher, i32_t doc_max) 
+NOTScorer_new(Matcher *negated_matcher, int32_t doc_max) 
 {
     NOTScorer *self = (NOTScorer*)VTable_Make_Obj(NOTSCORER);
     return NOTScorer_init(self, negated_matcher, doc_max);
 }
 
 NOTScorer*
-NOTScorer_init(NOTScorer *self, Matcher *negated_matcher, i32_t doc_max)
+NOTScorer_init(NOTScorer *self, Matcher *negated_matcher, int32_t doc_max)
 {
     VArray *children = VA_new(1);
     VA_Push(children, INCREF(negated_matcher));
     PolyMatcher_init((PolyMatcher*)self, children, NULL);
 
-    /* Init. */
+    // Init. 
     self->doc_id           = 0;
     self->next_negation    = 0;
 
-    /* Assign. */
+    // Assign. 
     self->negated_matcher   = (Matcher*)INCREF(negated_matcher);
     self->doc_max          = doc_max;
 
@@ -39,13 +39,13 @@ NOTScorer_destroy(NOTScorer *self)
     SUPER_DESTROY(self, NOTSCORER);
 }
 
-i32_t
+int32_t
 NOTScorer_next(NOTScorer *self)
 {
     while (1) {
         self->doc_id++;
 
-        /* Get next negated doc id. */
+        // Get next negated doc id. 
         if (self->next_negation < self->doc_id) {
             self->next_negation 
                 = Matcher_Advance(self->negated_matcher, self->doc_id);
@@ -57,24 +57,24 @@ NOTScorer_next(NOTScorer *self)
         }
 
         if (self->doc_id > self->doc_max) {
-            self->doc_id = self->doc_max; /* halt advance */
+            self->doc_id = self->doc_max; // halt advance 
             return 0;
         }
         else if (self->doc_id != self->next_negation) {
-            /* Success! */
+            // Success! 
             return self->doc_id;
         }
     }
 }
 
-i32_t
-NOTScorer_advance(NOTScorer *self, i32_t target)
+int32_t
+NOTScorer_advance(NOTScorer *self, int32_t target)
 {
     self->doc_id = target - 1;
     return NOTScorer_next(self);
 }
 
-i32_t
+int32_t
 NOTScorer_get_doc_id(NOTScorer *self)
 {
     return self->doc_id;

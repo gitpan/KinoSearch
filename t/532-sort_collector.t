@@ -79,8 +79,9 @@ for my $size ( 0 .. @doc_ids ) {
         doc_ids => \@doc_ids,
         scores  => \@scores,
     );
-    my $collector = KinoSearch::Search::Collector::SortCollector->new(
-        wanted => $size, );
+    my $collector
+        = KinoSearch::Search::Collector::SortCollector->new( wanted => $size,
+        );
     $collector->set_matcher($matcher);
     $matcher->collect( collector => $collector );
 
@@ -94,4 +95,3 @@ for my $size ( 0 .. @doc_ids ) {
     my @got = map { $_->get_doc_id } @{ $collector->pop_match_docs };
     is_deeply( \@got, \@wanted, "random docs and scores, wanted = $size" );
 }
-

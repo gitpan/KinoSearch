@@ -46,4 +46,4 @@ $polyanalyzer = KinoSearch::Analysis::PolyAnalyzer->new(
 test_analyzer( $polyanalyzer, $source_text, [ 'eat', 'shoot', 'leav' ],
     'with Stemmer' );
 
-ok( $polyanalyzer->get_analyzers(), "get_analyzers method");
+ok( $polyanalyzer->get_analyzers(), "get_analyzers method" );

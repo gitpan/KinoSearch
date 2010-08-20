@@ -4,6 +4,11 @@ parcel KinoSearch cnick Kino;
  *
  * A Collector decides what to do with the hits that a Matcher iterates
  * through, based on how the abstract Collect() method is implemented.
+ * 
+ * Collectors operate on individual segments, but must operate within the
+ * context of a larger collection.  Each time the collector moves to a new
+ * segment, Set_Reader(), Set_Base() and Set_Matcher() must be called, and the
+ * collector must take the updated information into account.
  */
 
 abstract class KinoSearch::Search::Collector cnick Coll
@@ -11,7 +16,7 @@ abstract class KinoSearch::Search::Collector cnick Coll
 
     SegReader *reader;
     Matcher   *matcher;
-    i32_t      base;
+    int32_t    base;
 
     /** Abstract constructor.  Takes no arguments.
      */
@@ -24,22 +29,30 @@ abstract class KinoSearch::Search::Collector cnick Coll
     /** Do something with a doc id.  (For instance, keep track of the docs
      * with the ten highest scores.)
      *
-     * @param doc_id A document id.
+     * @param doc_id A segment document id.
      */
     public abstract void
-    Collect(Collector *self, i32_t doc_id);
+    Collect(Collector *self, int32_t doc_id);
 
+    /** Setter for "reader".
+     */
     public void
     Set_Reader(Collector *self, SegReader *reader);
 
+    /** Set the "base" document id, an offset which must be added to the
+     * <code>doc_id</code> supplied via Collect() to get the doc id for the
+     * larger index.
+     */
     public void
-    Set_Base(Collector *self, i32_t base);
+    Set_Base(Collector *self, int32_t base);
 
     /** Indicate whether the Collector will call Score() on its Matcher.
      */
     public abstract bool_t
     Need_Score(Collector *self);
 
+    /** Setter for "matcher".
+     */
     public void
     Set_Matcher(Collector *self, Matcher *matcher);
 }
@@ -67,7 +80,7 @@ class KinoSearch::Search::Collector::BitCollector cnick BitColl
     /** Set bit in the object's BitVector for the supplied doc id.
      */
     public void
-    Collect(BitCollector *self, i32_t doc_id);
+    Collect(BitCollector *self, int32_t doc_id);
 
     /** Returns false, since BitCollector requires only doc ids.
      */
@@ -78,24 +91,24 @@ class KinoSearch::Search::Collector::BitCollector cnick BitColl
 class KinoSearch::Search::Collector::OffsetCollector cnick OffsetColl
     extends KinoSearch::Search::Collector {
 
-    i32_t      offset;
+    int32_t    offset;
     Collector *inner_coll;
 
     inert incremented OffsetCollector*
-    new(Collector *collector, i32_t offset);
+    new(Collector *collector, int32_t offset);
 
     /** Wrap another Collector, adding a constant offset to each document
      * number.  Useful when combining results from multiple independent
      * indexes.
      */
     inert OffsetCollector*
-    init(OffsetCollector *self, Collector *collector, i32_t offset);
+    init(OffsetCollector *self, Collector *collector, int32_t offset);
 
     public void
     Destroy(OffsetCollector *self);
 
     public void
-    Collect(OffsetCollector *self, i32_t doc_id);
+    Collect(OffsetCollector *self, int32_t doc_id);
 
     public bool_t
     Need_Score(OffsetCollector *self);
@@ -104,7 +117,7 @@ class KinoSearch::Search::Collector::OffsetCollector cnick OffsetColl
     Set_Reader(OffsetCollector *self, SegReader *reader);
 
     public void
-    Set_Base(OffsetCollector *self, i32_t base);
+    Set_Base(OffsetCollector *self, int32_t base);
 
     public void
     Set_Matcher(OffsetCollector *self, Matcher *matcher);

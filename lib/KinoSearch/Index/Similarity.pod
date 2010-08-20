@@ -3,21 +3,18 @@
 
 =head1 NAME
 
-KinoSearch::Search::Similarity - Judge how well a document matches a query.
+KinoSearch::Index::Similarity - Judge how well a document matches a query.
 
 =head1 SYNOPSIS
 
     package MySimilarity;
-    
-    sub length_norm { 
-        my ( $self, $num_tokens ) = @_;
-        return $num_tokens == 0 ? 1 : log($num_tokens) + 1;
-    }
-    
+
+    sub length_norm { return 1.0 }    # disable length normalization
+
     package MyFullTextType;
     use base qw( KinoSearch::Plan::FullTextType );
-    
-    sub similarity { MySimilarity->new }
+
+    sub make_similarity { MySimilarity->new }
 
 
 
@@ -41,7 +38,7 @@ scores from multiple fields.
 
 =head2 new()
 
-    my $sim = KinoSearch::Search::Similarity->new;
+    my $sim = KinoSearch::Index::Similarity->new;
 
 Constructor. Takes no arguments.
 
@@ -73,7 +70,7 @@ have a lot of tokens on average.
 
 =head1 INHERITANCE
 
-KinoSearch::Search::Similarity isa L<KinoSearch::Object::Obj>.
+KinoSearch::Index::Similarity isa L<KinoSearch::Object::Obj>.
 
 
 =head1 COPYRIGHT AND LICENSE

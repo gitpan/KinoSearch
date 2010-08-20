@@ -11,7 +11,7 @@
 #include "KinoSearch/Search/LeafQuery.h"
 
 static void
-test_Dump_Load_and_Equals(TestBatch *batch, u32_t boolop)
+test_Dump_Load_and_Equals(TestBatch *batch, uint32_t boolop)
 {
     LeafQuery *a_leaf  = TestUtils_make_leaf_query(NULL, "a");
     LeafQuery *b_leaf  = TestUtils_make_leaf_query(NULL, "b");

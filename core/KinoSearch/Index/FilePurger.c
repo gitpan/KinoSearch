@@ -11,18 +11,17 @@
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/Lock.h"
 
-/* Place unused files into purgables array and obsolete Snapshots into
- * snapshots array. */
+// Place unused files into purgables array and obsolete Snapshots into
+// snapshots array.
 static void
 S_discover_unused(FilePurger *self, VArray **purgables, VArray **snapshots);
 
-/* Clean up after a failed background merge session, adding all dead files to
- * the list of candidates to be zapped. */
+// Clean up after a failed background merge session, adding all dead files to
+// the list of candidates to be zapped.
 static void
 S_zap_dead_merge(FilePurger *self, Hash *candidates);
 
-/* Return an array of recursively expanded filepath entries.
- */
+// Return an array of recursively expanded filepath entries.
 static VArray*
 S_find_all_referenced(Folder *folder, VArray *entries);
 
@@ -107,8 +106,8 @@ FilePurger_purge(FilePurger *self)
                 DECREF(entries);
             }
             if (!snapshot_has_failures) {
-                CharBuf *file = Snapshot_Get_Filename(snapshot);
-                Folder_Delete(folder, file);
+                CharBuf *snapfile = Snapshot_Get_Path(snapshot);
+                Folder_Delete(folder, snapfile);
             }
         }
 
@@ -177,7 +176,7 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
     Folder      *folder       = self->folder;
     DirHandle   *dh           = Folder_Open_Dir(folder, NULL);
     if (!dh) { RETHROW(INCREF(Err_get_error())); }
-    VArray      *protected    = VA_new(1);
+    VArray      *spared       = VA_new(1);
     VArray      *snapshots    = VA_new(1);
     CharBuf     *snapfile     = NULL;
 
@@ -185,11 +184,11 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
     if (self->snapshot) {
         VArray *entries    = Snapshot_List(self->snapshot);
         VArray *referenced = S_find_all_referenced(folder, entries);
-        VA_Push_VArray(protected, referenced);
+        VA_Push_VArray(spared, referenced);
         DECREF(entries);
         DECREF(referenced);
-        snapfile = Snapshot_Get_Filename(self->snapshot);
-        if (snapfile) { VA_Push(protected, INCREF(snapfile)); }
+        snapfile = Snapshot_Get_Path(self->snapshot);
+        if (snapfile) { VA_Push(spared, INCREF(snapfile)); }
     }
 
     CharBuf *entry      = DH_Get_Entry(dh);
@@ -211,11 +210,11 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
             if (lock && Lock_Is_Locked(lock)) {
                 // The snapshot file is locked, which means someone's using
                 // that version of the index -- protect all of its entries.
-                uint32_t new_size = VA_Get_Size(protected) 
+                uint32_t new_size = VA_Get_Size(spared) 
                                   + VA_Get_Size(referenced)  + 1;
-                VA_Grow(protected, new_size);
-                VA_Push(protected, (Obj*)CB_Clone(entry));
-                VA_Push_VArray(protected, referenced);
+                VA_Grow(spared, new_size);
+                VA_Push(spared, (Obj*)CB_Clone(entry));
+                VA_Push_VArray(spared, referenced);
             }
             else {
                 // No one's using this snapshot, so all of its entries are
@@ -239,8 +238,8 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
     S_zap_dead_merge(self, candidates);
 
     // Eliminate any current files from the list of files to be purged.
-    for (uint32_t i = 0, max = VA_Get_Size(protected); i < max; i++) {
-        CharBuf *filename = (CharBuf*)VA_Fetch(protected, i);
+    for (uint32_t i = 0, max = VA_Get_Size(spared); i < max; i++) {
+        CharBuf *filename = (CharBuf*)VA_Fetch(spared, i);
         DECREF(Hash_Delete(candidates, (Obj*)filename));
     }
 
@@ -249,7 +248,7 @@ S_discover_unused(FilePurger *self, VArray **purgables_ptr,
     *snapshots_ptr = snapshots;
 
     DECREF(candidates);
-    DECREF(protected);
+    DECREF(spared);
 }
 
 static VArray*

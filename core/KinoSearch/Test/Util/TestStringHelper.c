@@ -5,55 +5,9 @@
 #include "KinoSearch/Util/StringHelper.h"
 
 static void
-test_SKIP_and_TRAILING(TestBatch *batch)
-{
-    u8_t i, max;
-    
-    /* Some of the upper max boundaries are skipped (e.g. 127)
-     * because they may not appear as initial bytes in legal UTF-8.
-     */
-    for (i = 0, max = 127; i < max; i++) {
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_SKIP[i], 1, 
-            "UTF8_SKIP ascii %d", (int)i);
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_TRAILING[i], 0, 
-            "UTF8_TRAILING ascii %d", (int)i);
-    }
-    for (i = 128, max = 193; i < max; i++) {
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_SKIP[i], 1, 
-            "UTF8_SKIP bogus %d", (int)i);
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_TRAILING[i], 7, 
-            "UTF8_TRAILING bogus %d", (int)i);
-    }
-    for (i = 194, max = 223; i < max; i++) {
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_SKIP[i], 2, 
-            "UTF8_SKIP two-byte %d", (int)i);
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_TRAILING[i], 1, 
-            "UTF8_TRAILING two-byte %d", (int)i);
-    }
-    for (i = 224, max = 239; i < max; i++) {
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_SKIP[i], 3, 
-            "UTF8_SKIP three-byte %d", (int)i);
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_TRAILING[i], 2, 
-            "UTF8_TRAILING three-byte %d", (int)i);
-    }
-    for (i = 240, max = 244; i < max; i++) {
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_SKIP[i], 4, 
-            "UTF8_SKIP four-byte %d", (int)i);
-        ASSERT_INT_EQ(batch, StrHelp_UTF8_TRAILING[i], 3, 
-            "UTF8_TRAILING four-byte %d", (int)i);
-    }
-    for (i = 245, max = 255; i < max; i++) {
-        ASSERT_TRUE(batch, StrHelp_UTF8_SKIP[i] > 0, 
-            "UTF8_SKIP bogus but no memory problems %d", (int)i);
-        ASSERT_TRUE(batch, StrHelp_UTF8_TRAILING[i] == 7, 
-            "UTF8_TRAILING bogus but no memory problems %d", (int)i);
-    }
-}
-
-static void
 test_overlap(TestBatch *batch)
 {
-    i32_t result;
+    int32_t result;
     result = StrHelp_overlap("", "", 0, 0);
     ASSERT_INT_EQ(batch, result, 0, "two empty strings");
     result = StrHelp_overlap("", "foo", 0, 3);
@@ -81,10 +35,10 @@ test_to_base36(TestBatch *batch)
 }
 
 static void
-S_round_trip_utf8_code_point(TestBatch *batch, u32_t code_point)
+S_round_trip_utf8_code_point(TestBatch *batch, uint32_t code_point)
 {
     char buffer[4];
-    u32_t len   = StrHelp_encode_utf8_char(code_point, buffer);
+    uint32_t len   = StrHelp_encode_utf8_char(code_point, buffer);
     char *start = buffer;
     char *end   = start + len;
     ASSERT_TRUE(batch, StrHelp_utf8_valid(buffer, len), "Valid UTF-8 for %lu", 
@@ -100,16 +54,16 @@ S_round_trip_utf8_code_point(TestBatch *batch, u32_t code_point)
 static void
 test_utf8_round_trip(TestBatch *batch)
 {
-    u32_t code_points[] = { 
+    uint32_t code_points[] = { 
         0, 
-        0xA, /* newline */
+        0xA,      // newline 
         'a', 
-        128, /* two-byte */
-        0x263A, /* smiley (three-byte) */ 
-        0x10FFFF, /* Max legal code point (four-byte). */
+        128,      // two-byte 
+        0x263A,   // smiley (three-byte)  
+        0x10FFFF, // Max legal code point (four-byte). 
     };
-    u32_t num_code_points = sizeof(code_points) / sizeof(u32_t);
-    u32_t i;
+    uint32_t num_code_points = sizeof(code_points) / sizeof(uint32_t);
+    uint32_t i;
     for (i = 0; i < num_code_points; i++) {
         S_round_trip_utf8_code_point(batch, code_points[i]);
     }
@@ -136,7 +90,7 @@ test_back_utf8_char(TestBatch *batch)
 {
     char buffer[4];
     char *buf = buffer + 1;
-    u32_t len = StrHelp_encode_utf8_char(0x263A, buffer);
+    uint32_t len = StrHelp_encode_utf8_char(0x263A, buffer);
     char *end = buffer + len;
     ASSERT_TRUE(batch, StrHelp_back_utf8_char(end, buffer) == buffer,
         "back_utf8_char");
@@ -145,90 +99,27 @@ test_back_utf8_char(TestBatch *batch)
 }
 
 static void
-S_set_buf(char *buffer, u8_t a, u8_t b, u8_t c, u8_t d)
+S_set_buf(char *buffer, uint8_t a, uint8_t b, uint8_t c, uint8_t d)
 {
-    u8_t *buf = (u8_t*)buffer;
+    uint8_t *buf = (uint8_t*)buffer;
     buf[0] = a;
     buf[1] = b;
     buf[2] = c;
     buf[3] = d;
 }
 
-#include <stdio.h>
-static void
-test_invalid_utf8(TestBatch *batch)
-{
-    char buffer[8];
-
-    S_set_buf(buffer, 0xC0, 0x80, 0, 0);
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 2), 
-        "Modified UTF-8 NULL fails");
-
-    S_set_buf(buffer, 0x81, 0, 0, 0);
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 1), 
-        "Isolated continuation byte fails");
-
-    StrHelp_encode_utf8_char(0x263A, buffer);
-    buffer[2] = 'a';
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 3), 
-        "Interrupted 3-byte sequence fails");
-
-    StrHelp_encode_utf8_char(0x10FFFF, buffer);
-    buffer[3] = 'a';
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 4), 
-        "Interrupted 4-byte sequence fails");
-
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 3), 
-        "Truncated 4-byte sequence fails");
-
-    StrHelp_encode_utf8_char(0x10FFFF, buffer);
-    buffer[3] = 'a';
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 4), 
-        "Interrupted 4-byte sequence fails");
-
-    S_set_buf(buffer, 0xF5, 0x80, 0x80, 0x80);
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 4), 
-        "Illegal 4-byte sequence for code point above 0x10FFFF fails");
-
-    buffer[0] = (char)0xF8;
-    buffer[1] = (char)0x80;
-    buffer[2] = (char)0x80;
-    buffer[3] = (char)0x80;
-    buffer[4] = (char)0x80;
-    ASSERT_FALSE(batch, StrHelp_utf8_valid(buffer, 5), 
-        "Illegal 5-byte sequence fails");
-
-    {
-        u32_t i;
-        for (i = 0; i <= 0x10FFFF; i++) {
-            u32_t len = StrHelp_encode_utf8_char(i, buffer);
-            if (!StrHelp_utf8_valid(buffer, len)) {
-                FAIL(batch, "Encoding or validity failure for %lu", 
-                    (unsigned long)i);
-                break;
-            }
-            else if (i == 0x10FFFF) {
-                PASS(batch, "All valid Unicode code points pass");
-                break;
-            }
-        }
-    }
-}
-
 void
 TestStrHelp_run_tests()
 {
-    TestBatch *batch = TestBatch_new(552);
+    TestBatch *batch = TestBatch_new(43);
 
     TestBatch_Plan(batch);
 
-    test_SKIP_and_TRAILING(batch);
     test_overlap(batch);
     test_to_base36(batch);
     test_utf8_round_trip(batch);
     test_is_whitespace(batch);
     test_back_utf8_char(batch);
-    test_invalid_utf8(batch);
 
     DECREF(batch);
 }

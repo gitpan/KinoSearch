@@ -6,8 +6,8 @@
 #include "KinoSearch/Search/PhraseScorer.h"
 #include "KinoSearch/Index/Posting/ScorePosting.h"
 #include "KinoSearch/Index/PostingList.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Search/Compiler.h"
-#include "KinoSearch/Search/Similarity.h"
 
 PhraseScorer*
 PhraseScorer_new(Similarity *sim, VArray *plists, Compiler *compiler)
@@ -65,14 +65,14 @@ PhraseScorer_destroy(PhraseScorer *self)
     SUPER_DESTROY(self, PHRASESCORER);
 }
 
-i32_t
+int32_t
 PhraseScorer_next(PhraseScorer *self)
 {
     if (self->first_time) {
         return PhraseScorer_Advance(self, 1);
     }
     else if (self->more) {
-        const i32_t target = PList_Get_Doc_ID(self->plists[0]) + 1;
+        const int32_t target = PList_Get_Doc_ID(self->plists[0]) + 1;
         return PhraseScorer_Advance(self, target);
     }
     else {
@@ -80,12 +80,12 @@ PhraseScorer_next(PhraseScorer *self)
     }
 }
 
-i32_t
-PhraseScorer_advance(PhraseScorer *self, i32_t target) 
+int32_t
+PhraseScorer_advance(PhraseScorer *self, int32_t target) 
 {
     PostingList **const plists       = self->plists;
-    const u32_t         num_elements = self->num_elements;
-    i32_t               highest      = 0;
+    const uint32_t      num_elements = self->num_elements;
+    int32_t             highest      = 0;
 
     // Reset match variables to indicate no match.  New values will be
     // assigned if a match succeeds.
@@ -127,7 +127,7 @@ PhraseScorer_advance(PhraseScorer *self, i32_t target)
         // Scoot all posting lists up to at least the current minimum.
         for (uint32_t i = 0; i < num_elements; i++) {
             PostingList *const plist = plists[i];
-            i32_t candidate = PList_Get_Doc_ID(plist);
+            int32_t candidate = PList_Get_Doc_ID(plist);
 
             // Is this PostingList already beyond the minimum?  Then raise the
             // bar for everyone else.
@@ -155,7 +155,7 @@ PhraseScorer_advance(PhraseScorer *self, i32_t target)
         // See whether all the PostingLists have managed to converge on a
         // single doc ID.
         for (uint32_t i = 0; i < num_elements; i++) {
-            const i32_t candidate = PList_Get_Doc_ID(plists[i]);
+            const int32_t candidate = PList_Get_Doc_ID(plists[i]);
             if (candidate != highest) { agreement = false; }
         }
 
@@ -176,15 +176,15 @@ PhraseScorer_advance(PhraseScorer *self, i32_t target)
     }
 }
 
-static INLINE u32_t 
-SI_winnow_anchors(u32_t *anchors_start, const u32_t *const anchors_end,
-                  const u32_t *candidates, const u32_t *const candidates_end,
-                  u32_t offset) 
+static INLINE uint32_t 
+SI_winnow_anchors(uint32_t *anchors_start, const uint32_t *const anchors_end,
+                  const uint32_t *candidates, const uint32_t *const candidates_end,
+                  uint32_t offset) 
 {                          
-    u32_t *anchors = anchors_start;
-    u32_t *anchors_found = anchors_start;
-    u32_t target_anchor;
-    u32_t target_candidate;
+    uint32_t *anchors = anchors_start;
+    uint32_t *anchors_found = anchors_start;
+    uint32_t target_anchor;
+    uint32_t target_candidate;
 
     // Safety check, so there's no chance of a bad dereference.
     if (anchors_start == anchors_end || candidates == candidates_end) {
@@ -256,7 +256,7 @@ PhraseScorer_calc_phrase_freq(PhraseScorer *self)
     uint32_t anchors_remaining = posting->freq;
     if (!anchors_remaining) { return 0.0f; }
 
-    size_t    amount        = anchors_remaining * sizeof(u32_t);
+    size_t    amount        = anchors_remaining * sizeof(uint32_t);
     uint32_t *anchors_start = (uint32_t*)BB_Grow(self->anchor_set, amount);
     uint32_t *anchors_end   = anchors_start + anchors_remaining;
     memcpy(anchors_start, posting->prox, amount);
@@ -266,8 +266,8 @@ PhraseScorer_calc_phrase_freq(PhraseScorer *self)
         // Get the array of positions for the next term.  Unlike the anchor
         // set (which is a copy), these won't be overwritten.
         ScorePosting *posting = (ScorePosting*)PList_Get_Posting(plists[i]);
-        u32_t *candidates_start = posting->prox;
-        u32_t *candidates_end   = candidates_start + posting->freq;
+        uint32_t *candidates_start = posting->prox;
+        uint32_t *candidates_end   = candidates_start + posting->freq;
 
         // Splice out anchors that don't match the next term.  Bail out if
         // we've eliminated all possible anchors.
@@ -279,11 +279,11 @@ PhraseScorer_calc_phrase_freq(PhraseScorer *self)
         anchors_end = anchors_start + anchors_remaining;
     }
 
-    /* The number of anchors left is the phrase freq. */
+    // The number of anchors left is the phrase freq. 
     return (float)anchors_remaining;
 }
 
-i32_t
+int32_t
 PhraseScorer_get_doc_id(PhraseScorer *self) 
 {
     return self->doc_id;

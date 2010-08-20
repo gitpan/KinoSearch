@@ -13,7 +13,7 @@ class KinoSearch::Search::PolySearcher
     
     VArray    *searchers;
     I32Array  *starts;
-    i32_t      doc_max;
+    int32_t    doc_max;
 
     inert incremented PolySearcher*
     new(Schema *schema, VArray *searchers);
@@ -28,25 +28,25 @@ class KinoSearch::Search::PolySearcher
     public void
     Destroy(PolySearcher *self);
 
-    public i32_t
+    public int32_t
     Doc_Max(PolySearcher *self);
 
-    public u32_t
+    public uint32_t
     Doc_Freq(PolySearcher *self, const CharBuf *field, Obj *term);
 
     public void
     Collect(PolySearcher *self, Query *query, Collector *collector);
 
     incremented TopDocs*
-    Top_Docs(PolySearcher *self, Query *query, u32_t num_wanted,
+    Top_Docs(PolySearcher *self, Query *query, uint32_t num_wanted,
              SortSpec *sort_spec = NULL);
 
     public incremented Obj*
-    Fetch_Doc(PolySearcher *self, i32_t doc_id, float score = 0.0, 
-              i32_t offset = 0);
+    Fetch_Doc(PolySearcher *self, int32_t doc_id, float score = 0.0, 
+              int32_t offset = 0);
 
     incremented DocVector*
-    Fetch_Doc_Vec(PolySearcher *self, i32_t doc_id);
+    Fetch_Doc_Vec(PolySearcher *self, int32_t doc_id);
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

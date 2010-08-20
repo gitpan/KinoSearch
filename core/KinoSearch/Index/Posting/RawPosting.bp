@@ -23,24 +23,24 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Index::RawPosting cnick RawPost
     extends KinoSearch::Index::Posting {
 
-    u32_t     freq;
-    u32_t     content_len;
-    u32_t     aux_len;
+    uint32_t  freq;
+    uint32_t  content_len;
+    uint32_t  aux_len;
     char[1]   blob; /* flexible array */
 
     /** Constructor.  Uses pre-allocated memory.
      */
     inert incremented RawPosting*
-    new(void *pre_allocated_memory, i32_t doc_id, u32_t freq,
+    new(void *pre_allocated_memory, int32_t doc_id, uint32_t freq,
         char *term_text, size_t term_text_len);
 
-    u32_t
+    uint32_t
     Get_RefCount(RawPosting* self);
 
     incremented RawPosting*
     Inc_RefCount(RawPosting* self);
 
-    u32_t 
+    uint32_t 
     Dec_RefCount(RawPosting* self);
 
     /** Throws an error.
@@ -53,7 +53,7 @@ class KinoSearch::Index::Posting::RawPostingWriter cnick RawPostWriter
     extends KinoSearch::Index::Posting::PostingWriter {
 
     OutStream *outstream;
-    i32_t      last_doc_id;
+    int32_t    last_doc_id;
 
     inert incremented RawPostingWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment, 

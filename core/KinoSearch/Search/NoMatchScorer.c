@@ -3,8 +3,8 @@
 
 #include "KinoSearch/Search/NoMatchScorer.h"
 #include "KinoSearch/Index/IndexReader.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/Schema.h"
-#include "KinoSearch/Search/Similarity.h"
 
 NoMatchScorer*
 NoMatchScorer_new()
@@ -19,15 +19,15 @@ NoMatchScorer_init(NoMatchScorer *self)
     return (NoMatchScorer*)Matcher_init((Matcher*)self);
 }   
 
-i32_t
+int32_t
 NoMatchScorer_next(NoMatchScorer* self) 
 {
     UNUSED_VAR(self);
     return 0;
 }
 
-i32_t
-NoMatchScorer_advance(NoMatchScorer* self, i32_t target) 
+int32_t
+NoMatchScorer_advance(NoMatchScorer* self, int32_t target) 
 {
     UNUSED_VAR(self);
     UNUSED_VAR(target);

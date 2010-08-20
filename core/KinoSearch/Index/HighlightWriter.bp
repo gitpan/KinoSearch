@@ -9,7 +9,7 @@ class KinoSearch::Index::HighlightWriter cnick HLWriter
     OutStream *ix_out;
     OutStream *dat_out;
 
-    inert i32_t current_file_format;
+    inert int32_t current_file_format;
 
     inert incremented HighlightWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
@@ -23,7 +23,7 @@ class KinoSearch::Index::HighlightWriter cnick HLWriter
     TV_Buf(HighlightWriter *self, Inversion *inversion);
 
     public void
-    Add_Inverted_Doc(HighlightWriter *self, Inverter *inverter, i32_t doc_id);
+    Add_Inverted_Doc(HighlightWriter *self, Inverter *inverter, int32_t doc_id);
 
     public void
     Add_Segment(HighlightWriter *self, SegReader *reader, 
@@ -32,7 +32,7 @@ class KinoSearch::Index::HighlightWriter cnick HLWriter
     public void
     Finish(HighlightWriter *self);
 
-    public i32_t
+    public int32_t
     Format(HighlightWriter *self);
 
     public void

@@ -11,7 +11,7 @@ class KinoSearch::Index::PostingListReader cnick PListReader
     inert PostingListReader*
     init(PostingListReader *self, Schema *schema = NULL, 
          Folder *folder = NULL, Snapshot *snapshot = NULL, 
-         VArray *segments = NULL, i32_t seg_tick = -1);
+         VArray *segments = NULL, int32_t seg_tick = -1);
 
     /** Returns a PostingList, or NULL if either <code>field</code> is NULL or
      * <code>field</code> is not present in any documents.
@@ -39,15 +39,13 @@ class KinoSearch::Index::DefaultPostingListReader cnick DefPListReader
 
     LexiconReader *lex_reader;
 
-    /* Constructors.
-     */
     inert incremented DefaultPostingListReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
-        i32_t seg_tick, LexiconReader *lex_reader);
+        int32_t seg_tick, LexiconReader *lex_reader);
 
     inert DefaultPostingListReader*
     init(DefaultPostingListReader *self, Schema *schema, Folder *folder,
-         Snapshot *snapshot, VArray *segments, i32_t seg_tick, 
+         Snapshot *snapshot, VArray *segments, int32_t seg_tick, 
          LexiconReader *lex_reader);
 
     public incremented nullable SegPostingList*

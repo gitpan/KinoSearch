@@ -64,14 +64,21 @@ test_Set_Path_and_Get_Path(TestBatch *batch)
 }
 
 static void
-test_MkDir(TestBatch *batch)
+test_MkDir_and_Is_Directory(TestBatch *batch)
 {
     Folder *folder = (Folder*)RAMFolder_new(NULL);
     FileHandle *fh;
 
+    ASSERT_FALSE(batch, Folder_Is_Directory(folder, &foo), 
+        "Is_Directory() false for non-existent entry");
+
     ASSERT_TRUE(batch, Folder_MkDir(folder, &foo), 
         "MkDir returns true on success");
+    ASSERT_TRUE(batch, Folder_Is_Directory(folder, &foo), 
+        "Is_Directory() true for local folder");
 
+    ASSERT_FALSE(batch, Folder_Is_Directory(folder, &foo_bar_baz), 
+        "Is_Directory() false for non-existent deeply nested dir");
     Err_set_error(NULL);
     ASSERT_FALSE(batch, Folder_MkDir(folder, &foo_bar_baz), 
         "MkDir for deeply nested dir fails");
@@ -80,6 +87,8 @@ test_MkDir(TestBatch *batch)
 
     ASSERT_TRUE(batch, Folder_MkDir(folder, &foo_bar), 
         "MkDir for nested dir");
+    ASSERT_TRUE(batch, Folder_Is_Directory(folder, &foo_bar), 
+        "Is_Directory() true for nested dir");
 
     Err_set_error(NULL);
     ASSERT_FALSE(batch, Folder_MkDir(folder, &foo_bar), 
@@ -91,10 +100,12 @@ test_MkDir(TestBatch *batch)
         FH_CREATE | FH_WRITE_ONLY);
     DECREF(fh);
     Err_set_error(NULL);
-    ASSERT_FALSE(batch, Folder_MkDir(folder, &foo_bar), 
+    ASSERT_FALSE(batch, Folder_MkDir(folder, &foo_boffo), 
         "Overwrite file with MkDir fails");
     ASSERT_TRUE(batch, Err_get_error() != NULL,
         "Overwrite file with MkDir sets Err_error");
+    ASSERT_FALSE(batch, Folder_Is_Directory(folder, &foo_boffo), 
+        "Is_Directory() false for nested file");
 
     DECREF(folder);
 }
@@ -402,7 +413,7 @@ test_Delete_Tree(TestBatch *batch)
     FileHandle *fh;
     bool_t result;
 
-    /* Create tree to be deleted. */
+    // Create tree to be deleted. 
     Folder_MkDir(folder, &foo);
     Folder_MkDir(folder, &foo_bar);
     Folder_MkDir(folder, &foo_bar_baz);
@@ -410,7 +421,7 @@ test_Delete_Tree(TestBatch *batch)
         FH_CREATE | FH_WRITE_ONLY);
     DECREF(fh);
 
-    /* Create bystanders. */
+    // Create bystanders. 
     Folder_MkDir(folder, &bar);
     fh = Folder_Open_FileHandle(folder, &baz, FH_CREATE | FH_WRITE_ONLY);
     DECREF(fh);
@@ -424,13 +435,13 @@ test_Delete_Tree(TestBatch *batch)
     ASSERT_TRUE(batch, Folder_Exists(folder, &baz), 
         "local file with same name as nested dir left intact");
 
-    /* Kill off the bystanders. */
+    // Kill off the bystanders. 
     result = Folder_Delete_Tree(folder, &bar);
     ASSERT_TRUE(batch, result, "Delete_Tree() on empty dir");
     result = Folder_Delete_Tree(folder, &baz);
     ASSERT_TRUE(batch, result, "Delete_Tree() on file");
 
-    /* Create new tree to be deleted. */
+    // Create new tree to be deleted. 
     Folder_MkDir(folder, &foo);
     Folder_MkDir(folder, &foo_bar);
     Folder_MkDir(folder, &foo_bar_baz);
@@ -438,7 +449,7 @@ test_Delete_Tree(TestBatch *batch)
         FH_CREATE | FH_WRITE_ONLY);
     DECREF(fh);
 
-    /* Remove tree in subdir. */
+    // Remove tree in subdir. 
     result = Folder_Delete_Tree(folder, &foo_bar);
     ASSERT_TRUE(batch, result, "Delete_Tree() of subdir succeeded");
     ASSERT_FALSE(batch, Folder_Exists(folder, &foo_bar), 
@@ -470,12 +481,12 @@ test_Slurp_File(TestBatch *batch)
 void
 TestFolder_run_tests()
 {
-    TestBatch *batch = TestBatch_new(74);
+    TestBatch *batch = TestBatch_new(79);
 
     TestBatch_Plan(batch);
     test_Exists(batch);
     test_Set_Path_and_Get_Path(batch);
-    test_MkDir(batch);
+    test_MkDir_and_Is_Directory(batch);
     test_Enclosing_Folder_and_Find_Folder(batch);
     test_List(batch);
     test_Open_Dir(batch);

@@ -12,12 +12,12 @@ parcel KinoSearch cnick Kino;
  */ 
 class KinoSearch::Search::Span extends KinoSearch::Object::Obj {
 
-    i32_t offset;
-    i32_t length;
-    float weight;
+    int32_t offset;
+    int32_t length;
+    float   weight;
 
     inert incremented Span*
-    new(i32_t offset, i32_t length, float weight = 0.0);
+    new(int32_t offset, int32_t length, float weight = 0.0);
 
     /**
      * @param offset Integer offset, unit is context-dependent.
@@ -25,28 +25,28 @@ class KinoSearch::Search::Span extends KinoSearch::Object::Obj {
      * @param weight A floating point weight.
      */
     public inert Span*
-    init(Span *self, i32_t offset, i32_t length, 
+    init(Span *self, int32_t offset, int32_t length, 
          float weight = 0.0);
 
     /** Accessor for <code>offset</code> attribute.
      */
-    public i32_t
+    public int32_t
     Get_Offset(Span *self);
 
     /** Setter for <code>offset</code> attribute.
      */
     public void
-    Set_Offset(Span *self, i32_t offset);
+    Set_Offset(Span *self, int32_t offset);
 
     /** Accessor for <code>length</code> attribute.
      */
-    public i32_t
+    public int32_t
     Get_Length(Span *self);
 
     /** Setter for <code>length</code> attribute.
      */
     public void
-    Set_Length(Span *self, i32_t length);
+    Set_Length(Span *self, int32_t length);
 
     /** Accessor for <code>weight</code> attribute.
      */
@@ -58,7 +58,7 @@ class KinoSearch::Search::Span extends KinoSearch::Object::Obj {
     public void
     Set_Weight(Span *self, float weight);
 
-    public i32_t
+    public int32_t
     Compare_To(Span *self, Obj *other);
 }
 

@@ -86,7 +86,7 @@ class KinoSearch::Index::SegWriter extends KinoSearch::Index::DataWriter {
     Get_Del_Writer(SegWriter *self);
 
     public void
-    Add_Inverted_Doc(SegWriter *self, Inverter *inverter, i32_t doc_id);
+    Add_Inverted_Doc(SegWriter *self, Inverter *inverter, int32_t doc_id);
 
     public void
     Add_Segment(SegWriter *self, SegReader *reader, 

@@ -34,8 +34,8 @@ LockFact_destroy(LockFactory *self)
 }
 
 Lock*
-LockFact_make_lock(LockFactory *self, const CharBuf *name, i32_t timeout, 
-                   i32_t interval)
+LockFact_make_lock(LockFactory *self, const CharBuf *name, int32_t timeout, 
+                   int32_t interval)
 {
     return (Lock*)LFLock_new(self->folder, name, self->host, timeout, 
         interval);
@@ -43,7 +43,7 @@ LockFact_make_lock(LockFactory *self, const CharBuf *name, i32_t timeout,
 
 Lock*
 LockFact_make_shared_lock(LockFactory *self, const CharBuf *name, 
-                          i32_t timeout, i32_t interval)
+                          int32_t timeout, int32_t interval)
 {
     return (Lock*)ShLock_new(self->folder, name, self->host, timeout, 
         interval);

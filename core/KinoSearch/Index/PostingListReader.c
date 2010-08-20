@@ -16,7 +16,7 @@
 
 PostingListReader*
 PListReader_init(PostingListReader *self, Schema *schema, Folder *folder, 
-                 Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+                 Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     DataReader_init((DataReader*)self, schema, folder, snapshot, segments,
         seg_tick);
@@ -36,7 +36,7 @@ PListReader_aggregator(PostingListReader *self, VArray *readers,
 
 DefaultPostingListReader*
 DefPListReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
-                   VArray *segments, i32_t seg_tick, 
+                   VArray *segments, int32_t seg_tick, 
                    LexiconReader *lex_reader)
 {
     DefaultPostingListReader *self = (DefaultPostingListReader*)
@@ -48,16 +48,16 @@ DefPListReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
 DefaultPostingListReader*
 DefPListReader_init(DefaultPostingListReader *self, Schema *schema, 
                     Folder *folder, Snapshot *snapshot, VArray *segments,
-                   i32_t seg_tick, LexiconReader *lex_reader)
+                   int32_t seg_tick, LexiconReader *lex_reader)
 {
     PListReader_init((PostingListReader*)self, schema, folder, snapshot, 
         segments, seg_tick);
     Segment *segment = DefPListReader_Get_Segment(self);
 
-    /* Derive. */
+    // Derive. 
     self->lex_reader = (LexiconReader*)INCREF(lex_reader);
 
-    /* Check format. */
+    // Check format. 
     {
         Hash *my_meta = (Hash*)Seg_Fetch_Metadata_Str(segment, "postings", 8);
         if (!my_meta) { 
@@ -103,7 +103,7 @@ DefPListReader_posting_list(DefaultPostingListReader *self,
 {
     FieldType *type  = Schema_Fetch_Type(self->schema, field);
 
-    /* Only return an object if we've got an indexed field. */
+    // Only return an object if we've got an indexed field. 
     if (type != NULL && FType_Indexed(type)) {
         SegPostingList *plist = SegPList_new((PostingListReader*)self, field);
         if (target) SegPList_Seek(plist, target);

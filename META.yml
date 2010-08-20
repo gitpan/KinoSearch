@@ -142,6 +142,8 @@ no_index:
     - clownfish/t/cfsource/Animal/Util.bp
     - core/KSx/Search/FilterScorer.bp
     - core/KSx/Search/FilterScorer.c
+    - core/KSx/Search/MockMatcher.bp
+    - core/KSx/Search/MockMatcher.c
     - core/KSx/Search/ProximityQuery.bp
     - core/KSx/Search/ProximityQuery.c
     - core/KSx/Search/ProximityScorer.bp
@@ -248,6 +250,8 @@ no_index:
     - core/KinoSearch/Index/SegWriter.c
     - core/KinoSearch/Index/Segment.bp
     - core/KinoSearch/Index/Segment.c
+    - core/KinoSearch/Index/Similarity.bp
+    - core/KinoSearch/Index/Similarity.c
     - core/KinoSearch/Index/SkipStepper.bp
     - core/KinoSearch/Index/SkipStepper.c
     - core/KinoSearch/Index/Snapshot.bp
@@ -379,8 +383,6 @@ no_index:
     - core/KinoSearch/Search/Searcher.c
     - core/KinoSearch/Search/SeriesMatcher.bp
     - core/KinoSearch/Search/SeriesMatcher.c
-    - core/KinoSearch/Search/Similarity.bp
-    - core/KinoSearch/Search/Similarity.c
     - core/KinoSearch/Search/SortRule.bp
     - core/KinoSearch/Search/SortRule.c
     - core/KinoSearch/Search/SortSpec.bp
@@ -441,12 +443,6 @@ no_index:
     - core/KinoSearch/Test/Analysis/TestStopalizer.c
     - core/KinoSearch/Test/Analysis/TestTokenizer.bp
     - core/KinoSearch/Test/Analysis/TestTokenizer.c
-    - core/KinoSearch/Test/FieldType/TestBlobType.bp
-    - core/KinoSearch/Test/FieldType/TestBlobType.c
-    - core/KinoSearch/Test/FieldType/TestFullTextType.bp
-    - core/KinoSearch/Test/FieldType/TestFullTextType.c
-    - core/KinoSearch/Test/FieldType/TestNumericType.bp
-    - core/KinoSearch/Test/FieldType/TestNumericType.c
     - core/KinoSearch/Test/Index/TestDocWriter.bp
     - core/KinoSearch/Test/Index/TestDocWriter.c
     - core/KinoSearch/Test/Index/TestHighlightWriter.bp
@@ -457,6 +453,8 @@ no_index:
     - core/KinoSearch/Test/Index/TestSegWriter.c
     - core/KinoSearch/Test/Index/TestSegment.bp
     - core/KinoSearch/Test/Index/TestSegment.c
+    - core/KinoSearch/Test/Index/TestSnapshot.bp
+    - core/KinoSearch/Test/Index/TestSnapshot.c
     - core/KinoSearch/Test/Object/TestBitVector.bp
     - core/KinoSearch/Test/Object/TestBitVector.c
     - core/KinoSearch/Test/Object/TestByteBuf.bp
@@ -477,6 +475,12 @@ no_index:
     - core/KinoSearch/Test/Object/TestVArray.c
     - core/KinoSearch/Test/Plan/TestArchitecture.bp
     - core/KinoSearch/Test/Plan/TestArchitecture.c
+    - core/KinoSearch/Test/Plan/TestBlobType.bp
+    - core/KinoSearch/Test/Plan/TestBlobType.c
+    - core/KinoSearch/Test/Plan/TestFullTextType.bp
+    - core/KinoSearch/Test/Plan/TestFullTextType.c
+    - core/KinoSearch/Test/Plan/TestNumericType.bp
+    - core/KinoSearch/Test/Plan/TestNumericType.c
     - core/KinoSearch/Test/Search/TestLeafQuery.bp
     - core/KinoSearch/Test/Search/TestLeafQuery.c
     - core/KinoSearch/Test/Search/TestMatchAllQuery.bp
@@ -603,6 +607,7 @@ no_index:
     - devel/conf/boil.vim
     - devel/conf/kinoperl.supp
     - devel/conf/kinotidyrc
+    - lib/KSx/Search/LongFieldSim.pm
     - lib/KSx/Search/ProximityQuery.pm
     - lib/KinoSearch.pm
     - lib/KinoSearch/Analysis/Analyzer.pm
@@ -616,6 +621,7 @@ no_index:
     - lib/KinoSearch/Analysis/TokenBatch.pm
     - lib/KinoSearch/Analysis/Tokenizer.pm
     - lib/KinoSearch/Architecture.pm
+    - lib/KinoSearch/Doc.pm
     - lib/KinoSearch/Docs/DevGuide.pm
     - lib/KinoSearch/Docs/FileLocking.pm
     - lib/KinoSearch/Document/Doc.pm
@@ -662,6 +668,7 @@ no_index:
     - lib/KinoSearch/Index/SegReader.pm
     - lib/KinoSearch/Index/SegWriter.pm
     - lib/KinoSearch/Index/Segment.pm
+    - lib/KinoSearch/Index/Similarity.pm
     - lib/KinoSearch/Index/Snapshot.pm
     - lib/KinoSearch/Index/SortCache.pm
     - lib/KinoSearch/Index/SortReader.pm
@@ -764,6 +771,7 @@ no_index:
     - lib/KinoSearch/Util/Debug.pm
     - lib/KinoSearch/Util/IndexFileNames.pm
     - lib/KinoSearch/Util/Json.pm
+    - lib/KinoSearch/Util/MemoryPool.pm
     - lib/KinoSearch/Util/PriorityQueue.pm
     - lib/KinoSearch/Util/SortExternal.pm
     - lib/KinoSearch/Util/Stepper.pm
@@ -857,7 +865,6 @@ no_index:
     - t/201-hit_doc.t
     - t/204-doc_reader.t
     - t/205-seg_reader.t
-    - t/206-snapshot.t
     - t/207-seg_lexicon.t
     - t/208-terminfo.t
     - t/209-seg_lexicon_heavy.t
@@ -929,6 +936,8 @@ no_index:
     - t/binding/034-err.t
     - t/binding/038-lock_free_registry.t
     - t/binding/101-simple_io.t
+    - t/binding/206-snapshot.t
+    - t/binding/506-collector.t
     - t/binding/800-stack.t
     - t/charmonizer/001-integers.t
     - t/charmonizer/002-func_macro.t
@@ -972,6 +981,7 @@ no_index:
     - t/core/154-tokenizer.t
     - t/core/155-stopalizer.t
     - t/core/156-stemmer.t
+    - t/core/206-snapshot.t
     - t/core/216-schema.t
     - t/core/220-doc_writer.t
     - t/core/221-highlight_writer.t
@@ -1010,6 +1020,7 @@ no_index:
     - xs/KinoSearch/Object/VTable.c
     - xs/KinoSearch/Store/FSFolder.c
     - xs/KinoSearch/Util/Json.c
+    - xs/KinoSearch/Util/StringHelper.c
     - xs/XSBind.c
     - xs/XSBind.h
 provides:
@@ -1017,6 +1028,8 @@ provides:
     file: lib/KSx/Index/ByteBufDocReader.pm
   KSx::Index::ByteBufDocWriter:
     file: lib/KSx/Index/ByteBufDocWriter.pm
+  KSx::Index::LongFieldSim:
+    file: lib/KSx/Index/LongFieldSim.pm
   KSx::Index::ZlibDocReader:
     file: lib/KSx/Index/ZlibDocReader.pm
   KSx::Index::ZlibDocWriter:
@@ -1041,7 +1054,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_101
+    version: 0.30_11
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1062,6 +1075,8 @@ provides:
     file: lib/KinoSearch/Analysis/Tokenizer.pm
   KinoSearch::Architecture:
     file: lib/KinoSearch/Architecture.pm
+  KinoSearch::Doc:
+    file: lib/KinoSearch/Doc.pm
   KinoSearch::Document::Doc:
     file: lib/KinoSearch/Document/Doc.pm
   KinoSearch::Document::HitDoc:
@@ -1150,6 +1165,8 @@ provides:
     file: lib/KinoSearch/Index/SegWriter.pm
   KinoSearch::Index::Segment:
     file: lib/KinoSearch/Index/Segment.pm
+  KinoSearch::Index::Similarity:
+    file: lib/KinoSearch/Index/Similarity.pm
   KinoSearch::Index::Snapshot:
     file: lib/KinoSearch/Index/Snapshot.pm
   KinoSearch::Index::SortCache:
@@ -1334,6 +1351,8 @@ provides:
     file: lib/KinoSearch/Util/IndexFileNames.pm
   KinoSearch::Util::Json:
     file: lib/KinoSearch/Util/Json.pm
+  KinoSearch::Util::MemoryPool:
+    file: lib/KinoSearch/Util/MemoryPool.pm
   KinoSearch::Util::PriorityQueue:
     file: lib/KinoSearch/Util/PriorityQueue.pm
   KinoSearch::Util::SortExternal:
@@ -1351,4 +1370,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.30_101
+version: 0.30_11

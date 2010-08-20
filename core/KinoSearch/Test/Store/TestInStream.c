@@ -21,7 +21,7 @@ test_refill(TestBatch *batch)
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
     char        scratch[5];
-    i32_t i;
+    int32_t i;
 
     for (i = 0; i < 1023; i++) {
         OutStream_Write_U8(outstream, 'x');
@@ -78,7 +78,7 @@ test_Clone_and_Reopen(TestBatch *batch)
     InStream      *instream;
     InStream      *clone;
     InStream      *reopened;
-    u32_t i;
+    uint32_t i;
 
     for (i = 0; i < 26; i++) {
         OutStream_Write_U8(outstream, 'a' + i);
@@ -135,10 +135,10 @@ test_Close(TestBatch *batch)
 static void
 test_Seek_and_Tell(TestBatch *batch)
 {
-    i64_t       gb1      = 0x40000000;
-    i64_t       gb3      = gb1 * 3;
-    i64_t       gb6      = gb1 * 6;
-    i64_t       gb12     = gb1 * 12;
+    int64_t     gb1      = 0x40000000;
+    int64_t     gb3      = gb1 * 3;
+    int64_t     gb6      = gb1 * 6;
+    int64_t     gb12     = gb1 * 12;
     FileHandle *fh       = (FileHandle*)MockFileHandle_new(NULL, gb12);
     InStream   *instream = InStream_open((Obj*)fh);
 

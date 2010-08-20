@@ -24,14 +24,6 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 
     ASSERT_FALSE(batch, Tokenizer_Equals(word_char_tokenizer,
         (Obj*)whitespace_tokenizer), "Equals() false with different pattern");
-    ASSERT_TRUE(batch, Tokenizer_Dump_Equals(whitespace_tokenizer,
-        (Obj*)whitespace_dump), "Dump_Equals()");
-    ASSERT_TRUE(batch, Tokenizer_Dump_Equals(word_char_tokenizer,
-        (Obj*)word_char_dump), "Dump_Equals()");
-    ASSERT_FALSE(batch, Tokenizer_Dump_Equals(word_char_tokenizer,
-        (Obj*)whitespace_dump), "Dump_Equals() false with different pattern");
-    ASSERT_FALSE(batch, Tokenizer_Dump_Equals(whitespace_tokenizer,
-        (Obj*)word_char_dump), "Dump_Equals() false with different pattern");
     ASSERT_TRUE(batch, Tokenizer_Equals(word_char_tokenizer,
         (Obj*)word_char_clone), "Dump => Load round trip");
     ASSERT_TRUE(batch, Tokenizer_Equals(whitespace_tokenizer,
@@ -48,7 +40,7 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 void
 TestTokenizer_run_tests()
 {
-    TestBatch *batch = TestBatch_new(7);
+    TestBatch *batch = TestBatch_new(3);
 
     TestBatch_Plan(batch);
 

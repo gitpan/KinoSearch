@@ -1,43 +1,15 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
-
-package EvensOnlyCollector;
-use base qw( KinoSearch::Search::Collector );
-
-our %doc_ids;
-
-sub new {
-    my $self = shift->SUPER::new;
-    $doc_ids{$$self} = [];
-    return $self;
-}
-
-sub collect {
-    my ( $self, $doc_id ) = @_;
-    if ( $doc_id % 2 == 0 ) {
-        push @{ $doc_ids{$$self} }, $doc_id;
-    }
-}
-
-sub get_doc_ids { $doc_ids{ ${ +shift } } }
-
-sub DESTROY {
-    my $self = shift;
-    delete $doc_ids{$$self};
-    $self->SUPER::DESTROY;
-}
-
-package main;
-
+use Test::More tests => 5;
 use KinoSearch::Test;
 use KSx::Search::MockScorer;
 
 my @docs   = ( 1, 5, 10, 1000 );
 my @scores = ( 2, 0, 0,  1 );
 
-my $collector = KinoSearch::Search::Collector::SortCollector->new( wanted => 3 );
+my $collector
+    = KinoSearch::Search::Collector::SortCollector->new( wanted => 3 );
 test_collect($collector);
 
 my @got = map { $_->get_score } @{ $collector->pop_match_docs };
@@ -70,13 +42,9 @@ my $offset_coll = KinoSearch::Search::Collector::OffsetCollector->new(
 test_collect($offset_coll);
 is_deeply( $bit_vec->to_arrayref, [ 11, 15, 20, 1010 ], "Offset collector" );
 
-$collector = EvensOnlyCollector->new;
-test_collect($collector);
-is_deeply( $collector->get_doc_ids, [ 10, 1000 ], "Collector can be subclassed" );
-
 sub test_collect {
-    my $collector      = shift;
-    my $matcher = KSx::Search::MockScorer->new(
+    my $collector = shift;
+    my $matcher   = KSx::Search::MockScorer->new(
         doc_ids => \@docs,
         scores  => \@scores,
     );

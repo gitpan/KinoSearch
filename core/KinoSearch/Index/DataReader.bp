@@ -13,7 +13,7 @@ class KinoSearch::Index::DataReader extends KinoSearch::Object::Obj {
     Snapshot    *snapshot;
     VArray      *segments;
     Segment     *segment;
-    i32_t        seg_tick;
+    int32_t      seg_tick;
 
     /**
      * @param schema A Schema.
@@ -28,7 +28,7 @@ class KinoSearch::Index::DataReader extends KinoSearch::Object::Obj {
     public inert DataReader*
     init(DataReader *self, Schema *schema = NULL, Folder *folder = NULL,
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
-         i32_t seg_tick = -1);
+         int32_t seg_tick = -1);
 
     /** Create a reader which aggregates the output of several lower level
      * readers.  Return NULL if such a reader is not valid.
@@ -66,7 +66,7 @@ class KinoSearch::Index::DataReader extends KinoSearch::Object::Obj {
 
     /** Accessor for "seg_tick" member var. 
      */
-    public i32_t
+    public int32_t
     Get_Seg_Tick(DataReader *self);
 
     /** Release external resources, e.g. streams.  Implementations must be

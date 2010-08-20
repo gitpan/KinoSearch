@@ -5,6 +5,10 @@ parcel KinoSearch cnick Kino;
  * Use the IndexSearcher class to perform search queries against an index.
  * (For searching multiple indexes at once, see
  * L<PolySearcher|KinoSearch::Search::PolySearcher>).
+ *
+ * IndexSearchers operate against a single point-in-time view or
+ * L<Snapshot|KinoSearch::Index::Snapshot> of the index.  If an index is
+ * modified, a new IndexSearcher must be opened to access the changes.
  */
 class KinoSearch::Search::IndexSearcher cnick IxSearcher 
     extends KinoSearch::Search::Searcher {
@@ -27,25 +31,25 @@ class KinoSearch::Search::IndexSearcher cnick IxSearcher
     public void
     Destroy(IndexSearcher *self);
 
-    public i32_t
+    public int32_t
     Doc_Max(IndexSearcher *self);
 
-    public u32_t
+    public uint32_t
     Doc_Freq(IndexSearcher *self, const CharBuf *field, Obj *term);
 
     public void
     Collect(IndexSearcher *self, Query *query, Collector *collector);
 
     incremented TopDocs*
-    Top_Docs(IndexSearcher *self, Query *query, u32_t num_wanted,
+    Top_Docs(IndexSearcher *self, Query *query, uint32_t num_wanted,
              SortSpec *sort_spec = NULL);
 
     public incremented Obj*
-    Fetch_Doc(IndexSearcher *self, i32_t doc_id, float score = 0.0, 
-              i32_t offset = 0);
+    Fetch_Doc(IndexSearcher *self, int32_t doc_id, float score = 0.0, 
+              int32_t offset = 0);
 
     incremented DocVector*
-    Fetch_Doc_Vec(IndexSearcher *self, i32_t doc_id);
+    Fetch_Doc_Vec(IndexSearcher *self, int32_t doc_id);
 
     /** Accessor for the object's <code>reader</code> member.
      */

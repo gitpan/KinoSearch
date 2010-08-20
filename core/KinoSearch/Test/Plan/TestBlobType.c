@@ -2,7 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"
-#include "KinoSearch/Test/FieldType/TestBlobType.h"
+#include "KinoSearch/Test/Plan/TestBlobType.h"
 #include "KinoSearch/Test/TestUtils.h"
 #include "KinoSearch/Plan/BlobType.h"
 #include "KinoSearch/Analysis/Tokenizer.h"

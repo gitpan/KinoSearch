@@ -24,7 +24,7 @@ class KinoSearch::Index::PostingList cnick PList
      * number will include any documents which have been marked as deleted but
      * not yet purged.)
      */
-    public abstract u32_t
+    public abstract uint32_t
     Get_Doc_Freq(PostingList *self);
 
     /** Prepare the PostingList object to iterate over matches for documents
@@ -47,7 +47,7 @@ class KinoSearch::Index::PostingList cnick PList
     /** Indexing helper function.
      */
     abstract RawPosting*
-    Read_Raw(PostingList *self, i32_t last_doc_id, CharBuf *term_text,
+    Read_Raw(PostingList *self, int32_t last_doc_id, CharBuf *term_text,
              MemoryPool *mem_pool);
 }
 

@@ -17,7 +17,7 @@ class KinoSearch::Index::Inverter extends KinoSearch::Object::Obj {
     InverterEntry *current;    /* Current entry while iterating. */
     InverterEntry *blank;      /* Used when iterator is exhausted. */
     float          boost;
-    i32_t          tick;
+    int32_t        tick;
     bool_t         sorted;
 
     inert incremented Inverter*
@@ -62,13 +62,13 @@ class KinoSearch::Index::Inverter extends KinoSearch::Object::Obj {
      * 
      * @return the number of fields which will be iterated over.
      */
-    public u32_t 
+    public uint32_t 
     Iter_Init(Inverter *self);
 
     /** Proceed to the next field.  Fields are iterated in order of Segment
      * field number.
      */
-    public i32_t
+    public int32_t
     Next(Inverter *self);
 
     /** Return the current doc, or NULL if there isn't one.
@@ -128,7 +128,7 @@ class KinoSearch::Index::Inverter extends KinoSearch::Object::Obj {
 private final class KinoSearch::Index::Inverter::InverterEntry cnick InvEntry
     extends KinoSearch::Object::Obj {
 
-    i32_t        field_num;
+    int32_t      field_num;
     CharBuf     *field;
     Obj         *value;
     Inversion   *inversion;
@@ -139,13 +139,13 @@ private final class KinoSearch::Index::Inverter::InverterEntry cnick InvEntry
     bool_t       highlightable;
 
     inert incremented InverterEntry*
-    new(Schema *schema = NULL, const CharBuf *field_name, i32_t field_num);
+    new(Schema *schema = NULL, const CharBuf *field_name, int32_t field_num);
 
     inert InverterEntry*
     init(InverterEntry *self = NULL, Schema *schema, 
-         const CharBuf *field_name, i32_t field_num);
+         const CharBuf *field_name, int32_t field_num);
 
-    public i32_t 
+    public int32_t 
     Compare_To(InverterEntry *self, Obj *other);
 
     /** Expunge all transient data.

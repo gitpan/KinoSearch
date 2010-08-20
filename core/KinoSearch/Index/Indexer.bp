@@ -40,12 +40,12 @@ class KinoSearch::Index::Indexer extends KinoSearch::Object::Obj {
     bool_t             needs_commit;
     bool_t             prepared;
 
-    public inert i32_t TRUNCATE;
-    public inert i32_t CREATE;
+    public inert int32_t TRUNCATE;
+    public inert int32_t CREATE;
 
     public inert incremented Indexer*
     new(Schema *schema = NULL, Obj *index, IndexManager *manager = NULL, 
-        i32_t flags = 0);
+        int32_t flags = 0);
 
     /** Open a new Indexer.  If the index already exists, update it.
      *
@@ -56,7 +56,7 @@ class KinoSearch::Index::Indexer extends KinoSearch::Object::Obj {
      */
     public inert Indexer*
     init(Indexer *self, Schema *schema = NULL, Obj *index, 
-         IndexManager *manager = NULL, i32_t flags = 0);
+         IndexManager *manager = NULL, int32_t flags = 0);
 
     /** Add a document to the index.  
      *

@@ -66,9 +66,6 @@ class KinoSearch::Analysis::Stemmer extends KinoSearch::Analysis::Analyzer
     public bool_t
     Equals(Stemmer *self, Obj *other);
 
-    public bool_t
-    Dump_Equals(Stemmer *self, Obj *dump);
-
     /** Load the Snowball stemming library.  Called by the constructor.
      */
     inert void

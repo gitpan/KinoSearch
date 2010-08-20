@@ -4,7 +4,7 @@
 #include "KinoSearch/Plan/FieldType.h"
 #include "KinoSearch/Analysis/Analyzer.h"
 #include "KinoSearch/Index/Posting.h"
-#include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Index/Similarity.h"
 
 FieldType*
 FType_init(FieldType *self)
@@ -63,16 +63,7 @@ int32_t
 FType_compare_values(FieldType *self, Obj *a, Obj *b)
 {
     UNUSED_VAR(self);
-    if (a == NULL) {
-        if (b == NULL) { return 0; }
-        else { return 1; }
-    }
-    else if (b == NULL) {
-        return -1;
-    }
-    else {
-        return Obj_Compare_To(a, b);
-    }
+    return Obj_Compare_To(a, b);
 }
 
 bool_t
@@ -86,12 +77,6 @@ FType_equals(FieldType *self, Obj *other)
     if (!!self->sortable   != !!evil_twin->sortable)   return false;
     if (!!FType_Binary(self) != !!FType_Binary(evil_twin)) return false;
     return true;
-}
-
-Obj*
-FType_make_view_blank(FieldType *self)
-{
-    return FType_Make_Blank(self);
 }
 
 /* Copyright 2007-2010 Marvin Humphrey

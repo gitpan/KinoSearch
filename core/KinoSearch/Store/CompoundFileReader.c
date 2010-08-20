@@ -27,14 +27,14 @@ CFReader_do_open(CompoundFileReader *self, Folder *folder)
 
     Folder_init((Folder*)self, Folder_Get_Path(folder));
 
-    /* Parse metadata file. */
+    // Parse metadata file. 
     if (!metadata || !Hash_Is_A(metadata, HASH)) {
         error = Err_new(CB_newf("Can't read '%o' in '%o'", cfmeta_file,
             Folder_Get_Path(folder)));
     }
     else {
         Obj *format = Hash_Fetch_Str(metadata, "format", 6);
-        self->format = format ? (i32_t)Obj_To_I64(format) : 0;
+        self->format = format ? (int32_t)Obj_To_I64(format) : 0;
         self->records = (Hash*)INCREF(Hash_Fetch_Str(metadata, "files", 5));
         if (self->format < 1) { 
             error = Err_new(CB_newf(
@@ -58,7 +58,7 @@ CFReader_do_open(CompoundFileReader *self, Folder *folder)
         return NULL;
     }
 
-    /* Open an instream which we'll clone over and over. */
+    // Open an instream which we'll clone over and over. 
     CharBuf *cf_file = (CharBuf*)ZCB_WRAP_STR("cf.dat", 6);
     self->instream = Folder_Open_In(folder, cf_file);
     if(!self->instream) {
@@ -67,10 +67,10 @@ CFReader_do_open(CompoundFileReader *self, Folder *folder)
         return NULL;
     }
 
-    /* Assign. */
+    // Assign. 
     self->real_folder = (Folder*)INCREF(folder);
 
-    /* Strip directory name from filepaths for old format. */
+    // Strip directory name from filepaths for old format. 
     if (self->format == 1) {
         VArray *files = Hash_Keys(self->records);
         ZombieCharBuf *filename = ZCB_BLANK();
@@ -115,7 +115,7 @@ CFReader_set_path(CompoundFileReader *self, const CharBuf *path)
 
 FileHandle*
 CFReader_local_open_filehandle(CompoundFileReader *self, 
-                               const CharBuf *name, u32_t flags)
+                               const CharBuf *name, uint32_t flags)
 {
     Hash *entry = (Hash*)Hash_Fetch(self->records, (Obj*)name);
     FileHandle *fh = NULL;
@@ -145,8 +145,8 @@ CFReader_local_delete(CompoundFileReader *self, const CharBuf *name)
         return Folder_Local_Delete(self->real_folder, name);
     }
     else { 
-        /* Once the number of virtual files falls to 0, remove the compound 
-         * files. */
+        // Once the number of virtual files falls to 0, remove the compound 
+        // files.
         if (Hash_Get_Size(self->records) == 0) {
             CharBuf *cf_file = (CharBuf*)ZCB_WRAP_STR("cf.dat", 6);
             if (!Folder_Delete(self->real_folder, cf_file)) {
@@ -265,7 +265,7 @@ CFReaderDH_init(CFReaderDirHandle *self, CompoundFileReader *cf_reader)
     self->elems  = Hash_Keys(self->cf_reader->records);
     self->tick   = -1;
     {
-        /* Accumulate entries from real Folder. */
+        // Accumulate entries from real Folder. 
         DirHandle *dh = Folder_Local_Open_Dir(self->cf_reader->real_folder);
         CharBuf *entry = DH_Get_Entry(dh);
         while (DH_Next(dh)) {
@@ -295,7 +295,7 @@ CFReaderDH_next(CFReaderDirHandle *self)
 {
     if (self->elems) {
         self->tick++;
-        if (self->tick < (i32_t)VA_Get_Size(self->elems)) {
+        if (self->tick < (int32_t)VA_Get_Size(self->elems)) {
             CharBuf *path = (CharBuf*)CERTIFY(
                 VA_Fetch(self->elems, self->tick), CHARBUF);
             CB_Mimic(self->entry, (Obj*)path);

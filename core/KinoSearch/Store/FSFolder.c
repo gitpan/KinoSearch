@@ -11,17 +11,17 @@
   #include <sys/types.h>
 #endif
 
-/* For rmdir, (hard) link. */
+// For rmdir, (hard) link. 
 #ifdef CHY_HAS_UNISTD_H
   #include <unistd.h>
 #endif
 
-/* For CreateHardLink. */
+// For CreateHardLink. 
 #ifdef CHY_HAS_WINDOWS_H
   #include <windows.h>
 #endif
 
-/* For mkdir, rmdir. */
+// For mkdir, rmdir. 
 #ifdef CHY_HAS_DIRECT_H
   #include <direct.h>
 #endif
@@ -35,8 +35,8 @@
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 
-/* Return a ZombieCharBuf (cast to CharBuf) containing a platform-specific
- * absolute filepath. */
+// Return a ZombieCharBuf (cast to CharBuf) containing a platform-specific
+// absolute filepath.
 static CharBuf*
 S_fullpath(FSFolder *self, const CharBuf *path, void *allocation, 
            size_t alloc_size);
@@ -45,15 +45,15 @@ S_fullpath(FSFolder *self, const CharBuf *path, void *allocation,
         ZCB_size() + CB_Get_Size(self->path) + CB_Get_Size(_path) + 10), \
         ZCB_size() + CB_Get_Size(self->path) + CB_Get_Size(_path) + 10)
 
-/* Return true if the supplied path is a directory. */
+// Return true if the supplied path is a directory. 
 static bool_t
 S_dir_ok(const CharBuf *path);
 
-/* Create a directory, or set Err_error and return false. */
+// Create a directory, or set Err_error and return false. 
 bool_t
 S_create_dir(const CharBuf *path);
 
-/* Return true unless the supplied path contains a slash. */
+// Return true unless the supplied path contains a slash. 
 bool_t
 S_is_local_entry(const CharBuf *path);
 
@@ -90,7 +90,7 @@ FSFolder_check(FSFolder *self)
 }
 
 FileHandle*
-FSFolder_local_open_filehandle(FSFolder *self, const CharBuf *name, u32_t flags)
+FSFolder_local_open_filehandle(FSFolder *self, const CharBuf *name, uint32_t flags)
 {
     CharBuf      *fullpath = FULLPATH(self, name);
     FSFileHandle *fh = FSFH_open(fullpath, flags);
@@ -141,7 +141,7 @@ FSFolder_local_exists(FSFolder *self, const CharBuf *name)
 bool_t
 FSFolder_local_is_directory(FSFolder *self, const CharBuf *name)
 {
-    /* Check for a cached object, then fall back to a system call. */
+    // Check for a cached object, then fall back to a system call. 
     Obj *elem = Hash_Fetch(self->entries, (Obj*)name);
     if (elem && Obj_Is_A(elem, FOLDER)) { 
         return true; 
@@ -224,7 +224,7 @@ FSFolder_local_find_folder(FSFolder *self, const CharBuf *name)
 {
     Folder *subfolder = NULL;
     if (!name || !CB_Get_Size(name)) {
-        /* No entity can be identified by NULL or empty string. */
+        // No entity can be identified by NULL or empty string. 
         return NULL;
     }
     else if (!S_is_local_entry(name)) {
@@ -232,7 +232,7 @@ FSFolder_local_find_folder(FSFolder *self, const CharBuf *name)
     }
     else if (CB_Starts_With_Str(name, ".", 1)) {
         // Don't allow access outside of the main dir.
-        THROW(ERR, "Disallowed directory name: '%o'", name);
+        return NULL;
     }
     else if (NULL != (subfolder = (Folder*)Hash_Fetch(self->entries, (Obj*)name))) {
         if (Folder_Is_A(subfolder, FOLDER)) {
@@ -250,8 +250,8 @@ FSFolder_local_find_folder(FSFolder *self, const CharBuf *name)
             if (!subfolder) {
                 THROW(ERR, "Failed to open FSFolder at '%o'", fullpath);
             }
-            /* Try to open a CompoundFileReader. On failure, just use the
-             * existing folder. */
+            // Try to open a CompoundFileReader. On failure, just use the
+            // existing folder.
             CharBuf *cfmeta_file = (CharBuf*)ZCB_WRAP_STR("cfmeta.json", 11);
             if (Folder_Local_Exists(subfolder, cfmeta_file)) {
                 CompoundFileReader *cf_reader = CFReader_open(subfolder);
@@ -305,7 +305,7 @@ bool_t
 S_is_local_entry(const CharBuf *path)
 {
     ZombieCharBuf *scratch = ZCB_WRAP(path);
-    u32_t code_point;
+    uint32_t code_point;
     while (0 != (code_point = ZCB_Nip_One(scratch))) {
         if (code_point == '/') { return false; }
     }

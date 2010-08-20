@@ -4,9 +4,9 @@
 
 #include "KinoSearch/Search/PolyQuery.h"
 #include "KinoSearch/Index/DocVector.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Searcher.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -15,8 +15,8 @@
 PolyQuery*
 PolyQuery_init(PolyQuery *self, VArray *children)
 {
-    u32_t i;
-    const u32_t num_kids = children ? VA_Get_Size(children) : 0;
+    uint32_t i;
+    const uint32_t num_kids = children ? VA_Get_Size(children) : 0;
     Query_init((Query*)self, 1.0f);
     self->children = VA_new(num_kids);
     for (i = 0; i < num_kids; i++) {
@@ -52,8 +52,8 @@ PolyQuery_get_children(PolyQuery *self) { return self->children; }
 void
 PolyQuery_serialize(PolyQuery *self, OutStream *outstream)
 {
-    const u32_t num_kids =  VA_Get_Size(self->children);
-    u32_t i;
+    const uint32_t num_kids =  VA_Get_Size(self->children);
+    uint32_t i;
     OutStream_Write_F32(outstream, self->boost);
     OutStream_Write_U32(outstream, num_kids);
     for (i = 0; i < num_kids; i++) {
@@ -66,7 +66,7 @@ PolyQuery*
 PolyQuery_deserialize(PolyQuery *self, InStream *instream)
 {
     float boost          = InStream_Read_F32(instream);
-    u32_t num_children   = InStream_Read_U32(instream);
+    uint32_t num_children   = InStream_Read_U32(instream);
 
     if (!self) THROW(ERR, "Abstract class");
     PolyQuery_init(self, NULL);
@@ -98,13 +98,13 @@ PolyCompiler*
 PolyCompiler_init(PolyCompiler *self, PolyQuery *parent, 
                   Searcher *searcher, float boost)
 {
-    u32_t i;
-    const u32_t num_kids = VA_Get_Size(parent->children);
+    uint32_t i;
+    const uint32_t num_kids = VA_Get_Size(parent->children);
 
     Compiler_init((Compiler*)self, (Query*)parent, searcher, NULL, boost);
     self->children = VA_new(num_kids);
 
-    /* Iterate over the children, creating a Compiler for each one. */
+    // Iterate over the children, creating a Compiler for each one. 
     for (i = 0; i < num_kids; i++) {
         Query *child_query = (Query*)VA_Fetch(parent->children, i);
         float sub_boost = boost * Query_Get_Boost(child_query);
@@ -126,7 +126,7 @@ float
 PolyCompiler_sum_of_squared_weights(PolyCompiler *self)
 {
     float sum = 0;
-    u32_t i, max;
+    uint32_t i, max;
     float my_boost = PolyCompiler_Get_Boost(self);
 
     for (i = 0, max = VA_Get_Size(self->children); i < max; i++) {
@@ -134,7 +134,7 @@ PolyCompiler_sum_of_squared_weights(PolyCompiler *self)
         sum += Compiler_Sum_Of_Squared_Weights(child);
     }
 
-    /* Compound the weight of each child. */
+    // Compound the weight of each child. 
     sum *= my_boost * my_boost;
 
     return sum;
@@ -143,7 +143,7 @@ PolyCompiler_sum_of_squared_weights(PolyCompiler *self)
 void
 PolyCompiler_apply_norm_factor(PolyCompiler *self, float factor)
 {
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(self->children); i < max; i++) {
         Compiler *child = (Compiler*)VA_Fetch(self->children, i);
         Compiler_Apply_Norm_Factor(child, factor);
@@ -155,7 +155,7 @@ PolyCompiler_highlight_spans(PolyCompiler *self, Searcher *searcher,
                             DocVector *doc_vec, const CharBuf *field)
 {
     VArray *spans = VA_new(0);
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(self->children); i < max; i++) {
         Compiler *child = (Compiler*)VA_Fetch(self->children, i);
         VArray *child_spans = Compiler_Highlight_Spans(child, searcher,

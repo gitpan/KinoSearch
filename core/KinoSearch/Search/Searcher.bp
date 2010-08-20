@@ -27,7 +27,7 @@ class KinoSearch::Search::Searcher extends KinoSearch::Object::Obj {
      * Documents which have been marked as deleted but not yet purged are
      * included in this count.
      */
-    public abstract i32_t
+    public abstract int32_t
     Doc_Max(Searcher *self);
 
     /** Return the number of documents which contain the term in the given
@@ -36,7 +36,7 @@ class KinoSearch::Search::Searcher extends KinoSearch::Object::Obj {
      * @param field Field name.
      * @param term The term to look up.
      */
-    public abstract u32_t
+    public abstract uint32_t
     Doc_Freq(Searcher *self, const CharBuf *field, Obj *term);
 
     /** If the supplied object is a Query, return it; if it's a query string,
@@ -59,8 +59,8 @@ class KinoSearch::Search::Searcher extends KinoSearch::Object::Obj {
      * how results are ranked and returned.
      */
     public incremented Hits*
-    Hits(Searcher *self, Obj *query, u32_t offset = 0, 
-         u32_t num_wanted = 10, SortSpec *sort_spec = NULL);
+    Hits(Searcher *self, Obj *query, uint32_t offset = 0, 
+         uint32_t num_wanted = 10, SortSpec *sort_spec = NULL);
 
     /** Iterate over hits, feeding them into a
      * L<Collector|KinoSearch::Search::Collector>.
@@ -74,7 +74,7 @@ class KinoSearch::Search::Searcher extends KinoSearch::Object::Obj {
     /** Return a TopDocs object with up to num_wanted hits.
      */
     abstract incremented TopDocs*
-    Top_Docs(Searcher *self, Query *query, u32_t num_wanted,
+    Top_Docs(Searcher *self, Query *query, uint32_t num_wanted,
              SortSpec *sort_spec = NULL);
 
     /** Retrieve a document.  Throws an error if the doc id is out of range.
@@ -85,14 +85,14 @@ class KinoSearch::Search::Searcher extends KinoSearch::Object::Obj {
      * subcomponent of another.
      */
     public abstract incremented Obj*
-    Fetch_Doc(Searcher *self, i32_t doc_id, float score = 0.0, 
-              i32_t offset = 0);
+    Fetch_Doc(Searcher *self, int32_t doc_id, float score = 0.0, 
+              int32_t offset = 0);
 
     /** Return the DocVector identified by the supplied doc id.  Throws an
      * error if the doc id is out of range.
      */
     abstract incremented DocVector*
-    Fetch_Doc_Vec(Searcher *self, i32_t doc_id);
+    Fetch_Doc_Vec(Searcher *self, int32_t doc_id);
 
     /** Accessor for the object's <code>schema</code> member.
      */

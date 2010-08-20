@@ -11,17 +11,17 @@ class KSx::Search::ProximityQuery extends KinoSearch::Search::Query
 
     CharBuf       *field;
     VArray        *terms;
-    u32_t          within;
+    uint32_t       within;
 
     inert incremented ProximityQuery*
-    new(const CharBuf *field, VArray *terms, u32_t within);
+    new(const CharBuf *field, VArray *terms, uint32_t within);
 
     /**
      * @param field The field that the phrase must occur in.
      * @param terms The ordered array of terms that must match.
      */
     public inert ProximityQuery*
-    init(ProximityQuery *self, const CharBuf *field, VArray *terms, u32_t within);
+    init(ProximityQuery *self, const CharBuf *field, VArray *terms, uint32_t within);
 
     /** Accessor for object's field attribute.
      */
@@ -35,7 +35,7 @@ class KSx::Search::ProximityQuery extends KinoSearch::Search::Query
     
     /** Accessor for object's within attribute.
      */
-    public u32_t
+    public uint32_t
     Get_Within(ProximityQuery *self);
 
     public incremented Compiler*
@@ -60,18 +60,18 @@ class KSx::Search::ProximityQuery extends KinoSearch::Search::Query
 class KSx::Search::ProximityCompiler 
     extends KinoSearch::Search::Compiler {
 
-    float idf;
-    float raw_weight;
-    float query_norm_factor;
-    float normalized_weight;
-    u32_t within;
+    float    idf;
+    float    raw_weight;
+    float    query_norm_factor;
+    float    normalized_weight;
+    uint32_t within;
 
     inert incremented ProximityCompiler*
-    new(ProximityQuery *parent, Searcher *searcher, float boost, u32_t within);
+    new(ProximityQuery *parent, Searcher *searcher, float boost, uint32_t within);
 
     inert ProximityCompiler*
     init(ProximityCompiler *self, ProximityQuery *parent, Searcher *searcher, 
-         float boost, u32_t within);
+         float boost, uint32_t within);
 
     public incremented nullable Matcher*
     Make_Matcher(ProximityCompiler *self, SegReader *reader, bool_t need_score);

@@ -18,7 +18,7 @@ abstract class KinoSearch::Search::Matcher extends KinoSearch::Object::Obj {
      * 
      * @return A positive doc id, or 0 once the iterator is exhausted.
      */
-    public abstract i32_t
+    public abstract int32_t
     Next(Matcher *self);
 
     /** Advance the iterator to the first doc id greater than or equal to
@@ -30,13 +30,13 @@ abstract class KinoSearch::Search::Matcher extends KinoSearch::Object::Obj {
      * doc id once the iterator has been initialized.
      * @return A positive doc id, or 0 once the iterator is exhausted.
      */
-    public i32_t
-    Advance(Matcher *self, i32_t target);
+    public int32_t
+    Advance(Matcher *self, int32_t target);
 
     /** Return the current doc id.  Valid only after a successful call to
      * Next() or Advance() and must not be called otherwise.
      */
-    public abstract i32_t
+    public abstract int32_t
     Get_Doc_ID(Matcher *self);
 
     /** Return the score of the current document.

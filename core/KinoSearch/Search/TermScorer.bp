@@ -21,13 +21,13 @@ class KinoSearch::Search::TermScorer extends KinoSearch::Search::Matcher {
     public void
     Destroy(TermScorer *self);
 
-    public i32_t
+    public int32_t
     Next(TermScorer* self);
 
-    public i32_t
-    Advance(TermScorer* self, i32_t target);
+    public int32_t
+    Advance(TermScorer* self, int32_t target);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(TermScorer* self);
 }
 

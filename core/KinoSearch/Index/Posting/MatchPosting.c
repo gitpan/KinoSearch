@@ -15,13 +15,13 @@
 #include "KinoSearch/Index/PostingPool.h"
 #include "KinoSearch/Index/PolyReader.h"
 #include "KinoSearch/Index/Segment.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Index/Snapshot.h"
 #include "KinoSearch/Index/TermInfo.h"
 #include "KinoSearch/Plan/Architecture.h"
 #include "KinoSearch/Plan/FieldType.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/Compiler.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
@@ -53,7 +53,7 @@ MatchPost_destroy(MatchPosting *self)
     SUPER_DESTROY(self, MATCHPOSTING);
 }
 
-i32_t
+int32_t
 MatchPost_get_freq(MatchPosting *self) { return self->freq; }
 
 void
@@ -65,10 +65,10 @@ MatchPost_reset(MatchPosting *self)
 void
 MatchPost_read_record(MatchPosting *self, InStream *instream)
 {
-    const u32_t doc_code = InStream_Read_C32(instream);
-    const u32_t doc_delta = doc_code >> 1;
+    const uint32_t doc_code = InStream_Read_C32(instream);
+    const uint32_t doc_delta = doc_code >> 1;
 
-    /* Apply delta doc and retrieve freq. */
+    // Apply delta doc and retrieve freq. 
     self->doc_id   += doc_delta;
     if (doc_code & 1) 
         self->freq = 1;
@@ -77,17 +77,17 @@ MatchPost_read_record(MatchPosting *self, InStream *instream)
 }
 
 RawPosting*
-MatchPost_read_raw(MatchPosting *self, InStream *instream, i32_t last_doc_id,
+MatchPost_read_raw(MatchPosting *self, InStream *instream, int32_t last_doc_id,
                    CharBuf *term_text, MemoryPool *mem_pool)
 {
-    char *const  text_buf         = (char*)CB_Get_Ptr8(term_text);
-    const size_t text_size        = CB_Get_Size(term_text);
-    const u32_t  doc_code         = InStream_Read_C32(instream);
-    const u32_t  delta_doc        = doc_code >> 1;
-    const i32_t  doc_id           = last_doc_id + delta_doc;
-    const u32_t  freq             = (doc_code & 1) 
-                                       ? 1 
-                                       : InStream_Read_C32(instream);
+    char *const     text_buf      = (char*)CB_Get_Ptr8(term_text);
+    const size_t    text_size     = CB_Get_Size(term_text);
+    const uint32_t  doc_code      = InStream_Read_C32(instream);
+    const uint32_t  delta_doc     = doc_code >> 1;
+    const int32_t   doc_id        = last_doc_id + delta_doc;
+    const uint32_t  freq          = (doc_code & 1) 
+                                  ? 1 
+                                  : InStream_Read_C32(instream);
     size_t raw_post_bytes         = MAX_RAW_POSTING_LEN(text_size);
     void *const allocation        = MemPool_Grab(mem_pool, raw_post_bytes);
     UNUSED_VAR(self);
@@ -98,12 +98,12 @@ MatchPost_read_raw(MatchPosting *self, InStream *instream, i32_t last_doc_id,
 void
 MatchPost_add_inversion_to_pool(MatchPosting *self, PostingPool *post_pool, 
                                 Inversion *inversion, FieldType *type, 
-                                i32_t doc_id, float doc_boost, 
+                                int32_t doc_id, float doc_boost, 
                                 float length_norm)
 {
     MemoryPool  *mem_pool = PostPool_Get_Mem_Pool(post_pool);
     Token      **tokens;
-    u32_t        freq;
+    uint32_t     freq;
 
     UNUSED_VAR(self);
     UNUSED_VAR(type);
@@ -113,7 +113,7 @@ MatchPost_add_inversion_to_pool(MatchPosting *self, PostingPool *post_pool,
     Inversion_Reset(inversion);
     while ( (tokens = Inversion_Next_Cluster(inversion, &freq)) != NULL ) {
         Token   *token          = *tokens;
-        u32_t    raw_post_bytes = MAX_RAW_POSTING_LEN(token->len);
+        uint32_t raw_post_bytes = MAX_RAW_POSTING_LEN(token->len);
         RawPosting *raw_posting = RawPost_new(
             MemPool_Grab(mem_pool, raw_post_bytes), doc_id, freq,
             token->text, token->len
@@ -140,43 +140,21 @@ MatchPostingScorer*
 MatchPostScorer_init(MatchPostingScorer *self, Similarity *sim,
                      PostingList *plist, Compiler *compiler)
 {
-    u32_t i;
-
-    /* Init. */
     TermScorer_init((TermScorer*)self, sim, plist, compiler);
-
-    /* Fill score cache. */
-    self->score_cache = (float*)MALLOCATE(TERMSCORER_SCORE_CACHE_SIZE * sizeof(float));
-    for (i = 0; i < TERMSCORER_SCORE_CACHE_SIZE; i++) {
-        self->score_cache[i] = Sim_TF(sim, (float)i) * self->weight;
-    }
-
     return self;
 }
 
 float
 MatchPostScorer_score(MatchPostingScorer* self) 
 {
-    MatchPosting *const posting = (MatchPosting*)self->posting;
-    const u32_t  freq           = posting->freq;
-    float score = (freq < TERMSCORER_SCORE_CACHE_SIZE) 
-        ? self->score_cache[freq] /* cache hit */
-        : Sim_TF(self->sim, (float)freq) * self->weight;
-    return score;
-}
-
-void
-MatchPostScorer_destroy(MatchPostingScorer *self)
-{
-    FREEMEM(self->score_cache);
-    SUPER_DESTROY(self, MATCHPOSTINGSCORER);
+    return self->weight;
 }
 
 /***************************************************************************/
 
 MatchPostingWriter*
 MatchPostWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment, 
-                    PolyReader *polyreader, i32_t field_num)
+                    PolyReader *polyreader, int32_t field_num)
 {
     MatchPostingWriter *self 
         = (MatchPostingWriter*)VTable_Make_Obj(MATCHPOSTINGWRITER);
@@ -187,7 +165,7 @@ MatchPostWriter_new(Schema *schema, Snapshot *snapshot, Segment *segment,
 MatchPostingWriter*
 MatchPostWriter_init(MatchPostingWriter *self, Schema *schema, 
                      Snapshot *snapshot, Segment *segment, 
-                     PolyReader *polyreader, i32_t field_num)
+                     PolyReader *polyreader, int32_t field_num)
 {
     Folder  *folder = PolyReader_Get_Folder(polyreader);
     CharBuf *filename 
@@ -211,15 +189,15 @@ void
 MatchPostWriter_write_posting(MatchPostingWriter *self, RawPosting *posting)
 {
     OutStream *const outstream   = self->outstream;
-    const i32_t      doc_id      = posting->doc_id;
-    const u32_t      delta_doc   = doc_id - self->last_doc_id;
+    const int32_t    doc_id      = posting->doc_id;
+    const uint32_t   delta_doc   = doc_id - self->last_doc_id;
     char  *const     aux_content = posting->blob + posting->content_len;
     if (posting->freq == 1) {
-        const u32_t doc_code = (delta_doc << 1) | 1;
+        const uint32_t doc_code = (delta_doc << 1) | 1;
         OutStream_Write_C32(outstream, doc_code);
     }
     else {
-        const u32_t doc_code = delta_doc << 1;
+        const uint32_t doc_code = delta_doc << 1;
         OutStream_Write_C32(outstream, doc_code);
         OutStream_Write_C32(outstream, posting->freq);
     }
@@ -270,16 +248,16 @@ void
 MatchTInfoStepper_write_key_frame(MatchTermInfoStepper *self, 
                                   OutStream *outstream, Obj *value)
 {
-    TermInfo *tinfo = (TermInfo*)CERTIFY(value, TERMINFO);
-    i32_t doc_freq  = TInfo_Get_Doc_Freq(tinfo);
+    TermInfo *tinfo    = (TermInfo*)CERTIFY(value, TERMINFO);
+    int32_t   doc_freq = TInfo_Get_Doc_Freq(tinfo);
 
-    /* Write doc_freq. */
+    // Write doc_freq. 
     OutStream_Write_C32(outstream, doc_freq);
 
-    /* Write postings file pointer. */
+    // Write postings file pointer. 
     OutStream_Write_C64(outstream, tinfo->post_filepos);
 
-    /* Write skip file pointer (maybe). */
+    // Write skip file pointer (maybe). 
     if (doc_freq >= self->skip_interval) {
         OutStream_Write_C64(outstream, tinfo->skip_filepos);
     }
@@ -293,16 +271,16 @@ MatchTInfoStepper_write_delta(MatchTermInfoStepper *self,
 {
     TermInfo *tinfo      = (TermInfo*)CERTIFY(value, TERMINFO);
     TermInfo *last_tinfo = (TermInfo*)self->value;
-    i32_t     doc_freq   = TInfo_Get_Doc_Freq(tinfo);
-    i64_t     post_delta = tinfo->post_filepos - last_tinfo->post_filepos;
+    int32_t   doc_freq   = TInfo_Get_Doc_Freq(tinfo);
+    int64_t   post_delta = tinfo->post_filepos - last_tinfo->post_filepos;
 
-    /* Write doc_freq. */
+    // Write doc_freq. 
     OutStream_Write_C32(outstream, doc_freq);
 
-    /* Write postings file pointer delta. */
+    // Write postings file pointer delta. 
     OutStream_Write_C64(outstream, post_delta);
 
-    /* Write skip file pointer (maybe). */
+    // Write skip file pointer (maybe). 
     if (doc_freq >= self->skip_interval) {
         OutStream_Write_C64(outstream, tinfo->skip_filepos);
     }
@@ -316,13 +294,13 @@ MatchTInfoStepper_read_key_frame(MatchTermInfoStepper *self,
 { 
     TermInfo *const tinfo = (TermInfo*)self->value;
 
-    /* Read doc freq. */
+    // Read doc freq. 
     tinfo->doc_freq = InStream_Read_C32(instream);
 
-    /* Read postings file pointer. */
+    // Read postings file pointer. 
     tinfo->post_filepos = InStream_Read_C64(instream);
 
-    /* Maybe read skip pointer. */
+    // Maybe read skip pointer. 
     if (tinfo->doc_freq >= self->skip_interval) {
         tinfo->skip_filepos = InStream_Read_C64(instream);
     }
@@ -336,13 +314,13 @@ MatchTInfoStepper_read_delta(MatchTermInfoStepper *self, InStream *instream)
 { 
     TermInfo *const tinfo = (TermInfo*)self->value;
 
-    /* Read doc freq. */
+    // Read doc freq. 
     tinfo->doc_freq = InStream_Read_C32(instream);
 
-    /* Adjust postings file pointer. */
+    // Adjust postings file pointer. 
     tinfo->post_filepos += InStream_Read_C64(instream);
 
-    /* Maybe read skip pointer. */
+    // Maybe read skip pointer. 
     if (tinfo->doc_freq >= self->skip_interval) {
         tinfo->skip_filepos = InStream_Read_C64(instream);
     }

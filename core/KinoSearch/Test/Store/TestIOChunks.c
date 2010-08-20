@@ -57,7 +57,7 @@ test_Buf(TestBatch *batch)
     OutStream  *outstream = OutStream_open((Obj*)file);
     InStream   *instream;
     size_t      size = IO_STREAM_BUF_SIZE * 2 + 5;
-    u32_t i;
+    uint32_t i;
     char       *buf;
 
     for (i = 0; i < size; i++) {
@@ -70,7 +70,7 @@ test_Buf(TestBatch *batch)
     ASSERT_INT_EQ(batch, instream->limit - buf, IO_STREAM_BUF_SIZE, 
         "Small request bumped up");
 
-    buf += IO_STREAM_BUF_SIZE - 10; /* 10 bytes left in buffer. */
+    buf += IO_STREAM_BUF_SIZE - 10; // 10 bytes left in buffer. 
     InStream_Advance_Buf(instream, buf);
 
     buf = InStream_Buf(instream, 10);
@@ -82,9 +82,9 @@ test_Buf(TestBatch *batch)
         "Requesting over limit triggers refill");
 
     {
-        i64_t  expected = InStream_Length(instream) - InStream_Tell(instream);
-        char  *buff     = InStream_Buf(instream, 100000); 
-        i64_t  got      = PTR2I64(instream->limit) - PTR2I64(buff);
+        int64_t  expected = InStream_Length(instream) - InStream_Tell(instream);
+        char    *buff     = InStream_Buf(instream, 100000); 
+        int64_t  got      = PTR2I64(instream->limit) - PTR2I64(buff);
         ASSERT_TRUE(batch, got == expected,
             "Requests greater than file size get pared down");
     }

@@ -28,7 +28,7 @@ BB_new(size_t capacity)
 ByteBuf*
 BB_init(ByteBuf *self, size_t capacity)
 {
-    size_t amount = capacity ? capacity : sizeof(i64_t);
+    size_t amount = capacity ? capacity : sizeof(int64_t);
     self->buf   = NULL;
     self->size  = 0;
     self->cap   = 0;
@@ -74,7 +74,7 @@ BB_set_size(ByteBuf *self, size_t size)
 { 
     if (size > self->cap) {
         THROW(ERR, "Can't set size to %u64 ( greater than capacity of %u64)",
-            (u64_t)size, (u64_t)self->cap);
+            (uint64_t)size, (uint64_t)self->cap);
     }
     self->size = size; 
 }
@@ -85,12 +85,6 @@ size_t
 BB_get_size(ByteBuf *self)     { return self->size; }
 size_t
 BB_get_capacity(ByteBuf *self) { return self->cap; }
-
-size_t
-BB_ram_usage(ByteBuf *self)
-{
-    return sizeof(ByteBuf) + self->cap + BB_Host_RAM_Usage(self);
-}
 
 static INLINE bool_t
 SI_equals_bytes(ByteBuf *self, const void *bytes, size_t size)
@@ -114,12 +108,12 @@ BB_equals_bytes(ByteBuf *self, const void *bytes, size_t size)
     return SI_equals_bytes(self, bytes, size);
 }
 
-i32_t
+int32_t
 BB_hash_code(ByteBuf *self)
 {
     size_t size = self->size; 
-    const u8_t *buf = (const u8_t*)self->buf; 
-    u32_t hashvalue = 0; 
+    const uint8_t *buf = (const uint8_t*)self->buf; 
+    uint32_t hashvalue = 0; 
 
     while (size--) { 
         hashvalue += *buf++; 
@@ -130,7 +124,7 @@ BB_hash_code(ByteBuf *self)
     hashvalue ^= (hashvalue >> 11); 
     hashvalue += (hashvalue << 15); 
 
-    return (i32_t) hashvalue;
+    return (int32_t) hashvalue;
 }
 
 static INLINE void
@@ -210,7 +204,7 @@ ByteBuf*
 BB_deserialize(ByteBuf *self, InStream *instream)
 {
     const size_t size = InStream_Read_C32(instream);
-    const size_t capacity = size ? size : sizeof(i64_t);
+    const size_t capacity = size ? size : sizeof(int64_t);
     self = self ? self : (ByteBuf*)VTable_Make_Obj(BYTEBUF);
     if (capacity > self->cap) { S_grow(self, capacity); }
     self->size = size;
@@ -225,12 +219,19 @@ BB_compare(const void *va, const void *vb)
     const ByteBuf *b = *(const ByteBuf**)vb;
     const size_t size = a->size < b->size ? a->size : b->size;
 
-    i32_t comparison = memcmp(a->buf, b->buf, size);
+    int32_t comparison = memcmp(a->buf, b->buf, size);
 
     if (comparison == 0 && a->size != b->size) 
         comparison = a->size < b->size ? -1 : 1;
 
     return comparison;
+}
+
+int32_t
+BB_compare_to(ByteBuf *self, Obj *other)
+{
+    CERTIFY(other, BYTEBUF);
+    return BB_compare(&self, &other);
 }
 
 /******************************************************************/
@@ -239,14 +240,15 @@ ViewByteBuf*
 ViewBB_new(char *buf, size_t size) 
 {
     ViewByteBuf *self = (ViewByteBuf*)VTable_Make_Obj(VIEWBYTEBUF);
+    return ViewBB_init(self, buf, size);
+}
 
-    /* Init. */
-    self->cap = 0;
-
-    /* Assign. */
+ViewByteBuf*
+ViewBB_init(ViewByteBuf *self, char *buf, size_t size) 
+{
+    self->cap  = 0;
     self->buf  = buf;
     self->size = size;
-    
     return self;
 }
 

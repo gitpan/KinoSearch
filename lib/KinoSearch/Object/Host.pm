@@ -46,7 +46,7 @@ PPCODE:
         KINO_ARG_I32("foo", 3));
 }
 
-chy_i64_t
+int64_t
 _callback_i64(obj)
     kino_Obj *obj;
 CODE:

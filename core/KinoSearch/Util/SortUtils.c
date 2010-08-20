@@ -6,17 +6,15 @@
 #include "KinoSearch/Util/SortUtils.h"
 #include "KinoSearch/Object/Err.h"
 
-/* Define four-byte and eight-byte types so that we can dereference void
- * pointers like integer pointers.  The only significance of using i32_t and
- * i64_t is that they are 4 and 8 bytes.
- */
-#define FOUR_BYTE_TYPE  i32_t
-#define EIGHT_BYTE_TYPE i64_t
+// Define four-byte and eight-byte types so that we can dereference void
+// pointers like integer pointers.  The only significance of using int32_t and
+// int64_t is that they are 4 and 8 bytes.
+#define FOUR_BYTE_TYPE  int32_t
+#define EIGHT_BYTE_TYPE int64_t
 
 /***************************** mergesort ************************************/
 
-/* Recursive merge sorting functions. 
- */
+// Recursive merge sorting functions. 
 static void
 S_msort4(void *velems, void *vscratch, uint32_t left, uint32_t right, 
          Sort_compare_t compare, void *context);
@@ -33,19 +31,19 @@ SI_merge(void *left_vptr,  uint32_t left_size,
          void *vdest, size_t width, Sort_compare_t compare, void *context);
 
 void
-Sort_mergesort(void *elems, void *scratch, u32_t num_elems, u32_t width,
+Sort_mergesort(void *elems, void *scratch, uint32_t num_elems, uint32_t width,
                Sort_compare_t compare, void *context) 
 {
-    /* Arrays of 0 or 1 items are already sorted. */
+    // Arrays of 0 or 1 items are already sorted. 
     if (num_elems < 2) { return; }
 
-    /* Validate. */
+    // Validate. 
     if (num_elems >= I32_MAX) {
         THROW(ERR, "Provided %u64 elems, but can't handle more than %i32",
-            (u64_t)num_elems, I32_MAX);
+            (uint64_t)num_elems, I32_MAX);
     }
 
-    /* Dispatch by element size. */
+    // Dispatch by element size. 
     switch (width) {
         case 0:  THROW(ERR, "Parameter 'width' cannot be 0");
                  break;
@@ -168,21 +166,19 @@ SI_merge(void *left_vptr,  uint32_t left_size,
 
 /***************************** quicksort ************************************/
 
-/* Quicksort implementations optimized for four-byte and eight-byte elements.
- */
+// Quicksort implementations optimized for four-byte and eight-byte elements.
 static void 
-S_qsort4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
+S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
          Sort_compare_t compare, void *context);
 static void 
-S_qsort8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
+S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
          Sort_compare_t compare, void *context);
 
-/* Swap two elements. 
- */
+// Swap two elements. 
 static INLINE void
-SI_exchange4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right);
+SI_exchange4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right);
 static INLINE void
-SI_exchange8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right);
+SI_exchange8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right);
 
 /* Select a pivot by choosing the median of three values, guarding against
  * the worst-case behavior of quicksort.  Place the pivot in the rightmost
@@ -205,23 +201,23 @@ SI_exchange8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right);
  *   aaa => aaa => aaa => aaa
  */
 static INLINE FOUR_BYTE_TYPE*
-SI_choose_pivot4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
+SI_choose_pivot4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
                  Sort_compare_t compare, void *context);
 static INLINE EIGHT_BYTE_TYPE*
-SI_choose_pivot8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
+SI_choose_pivot8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
                  Sort_compare_t compare, void *context);
 
 void
 Sort_quicksort(void *elems, size_t num_elems, size_t width, 
                Sort_compare_t compare, void *context)
 {
-    /* Arrays of 0 or 1 items are already sorted. */
+    // Arrays of 0 or 1 items are already sorted. 
     if (num_elems < 2) { return; }
 
-    /* Validate. */
+    // Validate. 
     if (num_elems >= I32_MAX) {
         THROW(ERR, "Provided %u64 elems, but can't handle more than %i32",
-            (u64_t)num_elems, I32_MAX);
+            (uint64_t)num_elems, I32_MAX);
     }
 
     if (width == 4) { 
@@ -231,14 +227,14 @@ Sort_quicksort(void *elems, size_t num_elems, size_t width,
         S_qsort8((EIGHT_BYTE_TYPE*)elems, 0, num_elems - 1, compare, context);
     }
     else {
-        THROW(ERR, "Unsupported width: %i64", (i64_t)width);
+        THROW(ERR, "Unsupported width: %i64", (int64_t)width);
     }
 }
 
 /************************* quicksort 4 byte *********************************/
 
 static INLINE void
-SI_exchange4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right)
+SI_exchange4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right)
 {
     FOUR_BYTE_TYPE saved = elems[left];
     elems[left]  = elems[right];
@@ -246,11 +242,11 @@ SI_exchange4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right)
 }
 
 static INLINE FOUR_BYTE_TYPE*
-SI_choose_pivot4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
+SI_choose_pivot4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
                  Sort_compare_t compare, void *context)
 {
     if (right - left > 1) { 
-        i32_t mid = left + (right - left) / 2;
+        int32_t mid = left + (right - left) / 2;
         if (compare(context, elems + left, elems + mid) > 0) {
             SI_exchange4(elems, left, mid);
         }
@@ -265,15 +261,15 @@ SI_choose_pivot4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
 }
 
 static void 
-S_qsort4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
+S_qsort4(FOUR_BYTE_TYPE *elems, int32_t left, int32_t right,
          Sort_compare_t compare, void *context)
 { 
     FOUR_BYTE_TYPE *const pivot 
         = SI_choose_pivot4(elems, left, right, compare, context);
-    i32_t i = left - 1;
-    i32_t j = right; 
-    i32_t p = left - 1;
-    i32_t q = right; 
+    int32_t i = left - 1;
+    int32_t j = right; 
+    int32_t p = left - 1;
+    int32_t q = right; 
 
     if (right <= left) { return; }
 
@@ -281,16 +277,16 @@ S_qsort4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
         int comparison1;
         int comparison2;
 
-        /* Find an element from the left that is greater than or equal to the
-         * pivot (i.e. that should move to the right). */
+        // Find an element from the left that is greater than or equal to the
+        // pivot (i.e. that should move to the right).
         while (1) {
             i++;
             comparison1 = compare(context, elems + i, pivot);
             if (comparison1 >= 0) { break; }
         }
 
-        /* Find an element from the right that is less than or equal to the
-         * pivot (i.e. that should move to the left). */
+        // Find an element from the right that is less than or equal to the
+        // pivot (i.e. that should move to the left).
         while (1) {
             j--;
             comparison2 = compare(context, elems + j, pivot);
@@ -298,15 +294,15 @@ S_qsort4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
             if (j == left)         { break; }
         }
 
-        /* Bail out of loop when we meet in the middle. */
+        // Bail out of loop when we meet in the middle. 
         if (i >= j) { break; }
 
-        /* Swap the elements we found, so the lesser element moves left and
-         * the greater element moves right. */
+        // Swap the elements we found, so the lesser element moves left and
+        // the greater element moves right.
         SI_exchange4(elems, i, j);
 
-        /* Move any elements which test as "equal" to the pivot to the outside
-         * edges of the array. */
+        // Move any elements which test as "equal" to the pivot to the outside
+        // edges of the array.
         if (comparison2 == 0) {
             p++;
             SI_exchange4(elems, p, i);
@@ -328,7 +324,7 @@ S_qsort4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
      *    less_than  |       equal       |  greater_than
      */
     {
-        i32_t k;
+        int32_t k;
         SI_exchange4(elems, i, right);
         j = i - 1;
         i++;
@@ -336,15 +332,15 @@ S_qsort4(FOUR_BYTE_TYPE *elems, i32_t left, i32_t right,
         for (k = right - 1; k > q; k--, i++) { SI_exchange4(elems, i, k); }
     }
 
-    /* Recurse. */
-    S_qsort4(elems, left, j, compare, context);   /* Sort less_than. */
-    S_qsort4(elems, i, right, compare, context);  /* Sort greater_than. */
+    // Recurse. 
+    S_qsort4(elems, left, j, compare, context);   // Sort less_than. 
+    S_qsort4(elems, i, right, compare, context);  // Sort greater_than. 
 } 
 
 /************************* quicksort 8 byte *********************************/
 
 static INLINE void
-SI_exchange8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right)
+SI_exchange8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right)
 {
     EIGHT_BYTE_TYPE saved = elems[left];
     elems[left]  = elems[right];
@@ -352,11 +348,11 @@ SI_exchange8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right)
 }
 
 static INLINE EIGHT_BYTE_TYPE*
-SI_choose_pivot8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
+SI_choose_pivot8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
                  Sort_compare_t compare, void *context)
 {
     if (right - left > 1) { 
-        i32_t mid = left + (right - left) / 2;
+        int32_t mid = left + (right - left) / 2;
         if (compare(context, elems + left, elems + mid) > 0) {
             SI_exchange8(elems, left, mid);
         }
@@ -371,15 +367,15 @@ SI_choose_pivot8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
 }
 
 static void 
-S_qsort8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
+S_qsort8(EIGHT_BYTE_TYPE *elems, int32_t left, int32_t right,
          Sort_compare_t compare, void *context)
 { 
     EIGHT_BYTE_TYPE *const pivot 
         = SI_choose_pivot8(elems, left, right, compare, context);
-    i32_t i = left - 1;
-    i32_t j = right; 
-    i32_t p = left - 1;
-    i32_t q = right; 
+    int32_t i = left - 1;
+    int32_t j = right; 
+    int32_t p = left - 1;
+    int32_t q = right; 
 
     if (right <= left) { return; }
 
@@ -387,16 +383,16 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
         int comparison1;
         int comparison2;
 
-        /* Find an element from the left that is greater than or equal to the
-         * pivot (i.e. that should move to the right). */
+        // Find an element from the left that is greater than or equal to the
+        // pivot (i.e. that should move to the right).
         while (1) {
             i++;
             comparison1 = compare(context, elems + i, pivot);
             if (comparison1 >= 0) { break; }
         }
 
-        /* Find an element from the right that is less than or equal to the
-         * pivot (i.e. that should move to the left). */
+        // Find an element from the right that is less than or equal to the
+        // pivot (i.e. that should move to the left).
         while (1) {
             j--;
             comparison2 = compare(context, elems + j, pivot);
@@ -404,15 +400,15 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
             if (j == left)         { break; }
         }
 
-        /* Bail out of loop when we meet in the middle. */
+        // Bail out of loop when we meet in the middle. 
         if (i >= j) { break; }
 
-        /* Swap the elements we found, so the lesser element moves left and
-         * the greater element moves right. */
+        // Swap the elements we found, so the lesser element moves left and
+        // the greater element moves right.
         SI_exchange8(elems, i, j);
 
-        /* Move any elements which test as "equal" to the pivot to the outside
-         * edges of the array. */
+        // Move any elements which test as "equal" to the pivot to the outside
+        // edges of the array.
         if (comparison2 == 0) {
             p++;
             SI_exchange8(elems, p, i);
@@ -434,7 +430,7 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
      *    less_than  |       equal       |  greater_than
      */
     {
-        i32_t k;
+        int32_t k;
         SI_exchange8(elems, i, right);
         j = i - 1;
         i++;
@@ -442,9 +438,9 @@ S_qsort8(EIGHT_BYTE_TYPE *elems, i32_t left, i32_t right,
         for (k = right - 1; k > q; k--, i++) { SI_exchange8(elems, i, k); }
     }
 
-    /* Recurse. */
-    S_qsort8(elems, left, j, compare, context);   /* Sort less_than. */
-    S_qsort8(elems, i, right, compare, context);  /* Sort greater_than. */
+    // Recurse. 
+    S_qsort8(elems, left, j, compare, context);   // Sort less_than. 
+    S_qsort8(elems, i, right, compare, context);  // Sort greater_than. 
 } 
 
 /* Copyright 2006-2010 Marvin Humphrey

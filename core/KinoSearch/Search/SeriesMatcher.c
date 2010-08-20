@@ -15,19 +15,19 @@ SeriesMatcher_init(SeriesMatcher *self, VArray *matchers, I32Array *offsets)
 {
     Matcher_init((Matcher*)self);
 
-    /* Init. */
+    // Init. 
     self->current_matcher = NULL;
     self->current_offset  = 0;
     self->next_offset     = 0;
     self->doc_id          = 0;
     self->tick            = 0;
 
-    /* Assign. */
+    // Assign. 
     self->matchers        = (VArray*)INCREF(matchers);
     self->offsets         = (I32Array*)INCREF(offsets);
 
-    /* Derive. */
-    self->num_matchers    = (i32_t)I32Arr_Get_Size(offsets);
+    // Derive. 
+    self->num_matchers    = (int32_t)I32Arr_Get_Size(offsets);
 
     return self;
 }
@@ -40,20 +40,20 @@ SeriesMatcher_destroy(SeriesMatcher *self)
     SUPER_DESTROY(self, SERIESMATCHER);
 }
 
-i32_t
+int32_t
 SeriesMatcher_next(SeriesMatcher *self)
 {
     return SeriesMatcher_advance(self, self->doc_id + 1);
 }
 
-i32_t
-SeriesMatcher_advance(SeriesMatcher *self, i32_t target) 
+int32_t
+SeriesMatcher_advance(SeriesMatcher *self, int32_t target) 
 {
     if (target >= self->next_offset) {
-        /* Proceed to next matcher or bail. */
+        // Proceed to next matcher or bail. 
         if (self->tick < self->num_matchers) {
             while (1) {
-                u32_t next_offset = self->tick + 1 == self->num_matchers
+                uint32_t next_offset = self->tick + 1 == self->num_matchers
                     ? I32_MAX 
                     : I32Arr_Get(self->offsets, self->tick + 1);
                 self->current_matcher = (Matcher*)VA_Fetch(self->matchers,
@@ -68,30 +68,30 @@ SeriesMatcher_advance(SeriesMatcher *self, i32_t target)
                     break;
                 }
             } 
-            return SeriesMatcher_advance(self, target); /* Recurse. */
+            return SeriesMatcher_advance(self, target); // Recurse. 
         }
         else {
-            /* We're done. */
+            // We're done. 
             self->doc_id = 0;
             return 0;
         }
     }
     else {
-        i32_t target_minus_offset = target - self->current_offset;
-        i32_t found 
+        int32_t target_minus_offset = target - self->current_offset;
+        int32_t found 
             = Matcher_Advance(self->current_matcher, target_minus_offset);
         if (found) {
             self->doc_id = found + self->current_offset;
             return self->doc_id;
         }
         else {
-            /* Recurse. */
+            // Recurse. 
             return SeriesMatcher_advance(self, self->next_offset);
         }
     }
 }
 
-i32_t 
+int32_t 
 SeriesMatcher_get_doc_id(SeriesMatcher *self) { return self->doc_id; }
 
 /* Copyright 2007-2010 Marvin Humphrey

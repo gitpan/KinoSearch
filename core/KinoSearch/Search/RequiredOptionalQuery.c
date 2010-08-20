@@ -4,10 +4,10 @@
 
 #include "KinoSearch/Search/RequiredOptionalQuery.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/RequiredOptionalScorer.h"
 #include "KinoSearch/Search/Searcher.h"
-#include "KinoSearch/Search/Similarity.h"
 
 RequiredOptionalQuery*
 ReqOptQuery_new(Query *required_query, Query *optional_query)
@@ -115,7 +115,7 @@ ReqOptCompiler_make_matcher(RequiredOptionalCompiler *self, SegReader *reader,
         = Compiler_Make_Matcher(opt_compiler, reader, need_score);
 
     if (req_matcher == NULL) {
-        /* No required matcher, ergo no matches possible. */
+        // No required matcher, ergo no matches possible. 
         DECREF(opt_matcher);
         return NULL;
     }

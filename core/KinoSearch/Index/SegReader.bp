@@ -13,14 +13,14 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
 
-    i32_t    doc_max;
-    i32_t    del_count;
-    i64_t    seg_num;
+    int32_t  doc_max;
+    int32_t  del_count;
+    int64_t  seg_num;
     CharBuf *seg_name;
 
     inert incremented SegReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot = NULL,
-        VArray *segments, i32_t seg_tick);
+        VArray *segments, int32_t seg_tick);
 
     /**
      * @param schema A Schema.
@@ -33,7 +33,7 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
      */
     inert SegReader*
     init(SegReader *self, Schema *schema, Folder *folder, 
-         Snapshot *snapshot = NULL, VArray *segments, i32_t seg_tick);
+         Snapshot *snapshot = NULL, VArray *segments, int32_t seg_tick);
 
     public void
     Destroy(SegReader *self);
@@ -64,16 +64,16 @@ class KinoSearch::Index::SegReader extends KinoSearch::Index::IndexReader {
 
     /** Return the number of the segment. 
      */
-    public i64_t
+    public int64_t
     Get_Seg_Num(SegReader *self);
 
-    public i32_t
+    public int32_t
     Del_Count(SegReader *self);
 
-    public i32_t
+    public int32_t
     Doc_Max(SegReader *self);
 
-    public i32_t
+    public int32_t
     Doc_Count(SegReader *self);
     
     public incremented I32Array*

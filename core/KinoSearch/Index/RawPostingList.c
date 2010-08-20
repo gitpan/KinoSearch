@@ -4,14 +4,14 @@
 #include "KinoSearch/Index/RawPostingList.h"
 #include "KinoSearch/Index/Posting.h"
 #include "KinoSearch/Index/Posting/RawPosting.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/Schema.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Util/MemoryPool.h"
 
 RawPostingList*
 RawPList_new(Schema *schema, const CharBuf *field, InStream *instream, 
-             i64_t start, i64_t end)
+             int64_t start, int64_t end)
 {
     RawPostingList *self = (RawPostingList*)VTable_Make_Obj(RAWPOSTINGLIST);
     return RawPList_init(self, schema, field, instream, start, end);
@@ -19,7 +19,7 @@ RawPList_new(Schema *schema, const CharBuf *field, InStream *instream,
 
 RawPostingList*
 RawPList_init(RawPostingList *self, Schema *schema, const CharBuf *field,
-              InStream *instream, i64_t start, i64_t end)
+              InStream *instream, int64_t start, int64_t end)
 {
     PList_init((PostingList*)self);
     self->start     = start;
@@ -47,7 +47,7 @@ RawPList_get_posting(RawPostingList *self)
 }
 
 RawPosting*
-RawPList_read_raw(RawPostingList *self, i32_t last_doc_id, CharBuf *term_text,
+RawPList_read_raw(RawPostingList *self, int32_t last_doc_id, CharBuf *term_text,
                   MemoryPool *mem_pool)
 {
     return Post_Read_Raw(self->posting, self->instream, 

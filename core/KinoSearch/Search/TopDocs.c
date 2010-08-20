@@ -10,14 +10,14 @@
 #include "KinoSearch/Store/OutStream.h"
 
 TopDocs*
-TopDocs_new(VArray *match_docs, u32_t total_hits)
+TopDocs_new(VArray *match_docs, uint32_t total_hits)
 {
     TopDocs *self = (TopDocs*)VTable_Make_Obj(TOPDOCS);
     return TopDocs_init(self, match_docs, total_hits);
 }
 
 TopDocs*
-TopDocs_init(TopDocs *self, VArray *match_docs, u32_t total_hits)
+TopDocs_init(TopDocs *self, VArray *match_docs, uint32_t total_hits)
 {
     self->match_docs = (VArray*)INCREF(match_docs);
     self->total_hits = total_hits;
@@ -49,7 +49,7 @@ TopDocs_deserialize(TopDocs *self, InStream *instream)
 
 VArray*
 TopDocs_get_match_docs(TopDocs *self) { return self->match_docs; }
-u32_t
+uint32_t
 TopDocs_get_total_hits(TopDocs *self) { return self->total_hits; }
 
 void
@@ -59,7 +59,7 @@ TopDocs_set_match_docs(TopDocs *self, VArray *match_docs)
     self->match_docs = (VArray*)INCREF(match_docs);
 }
 void
-TopDocs_set_total_hits(TopDocs *self, u32_t total_hits) 
+TopDocs_set_total_hits(TopDocs *self, uint32_t total_hits) 
     { self->total_hits = total_hits; }
 
 /* Copyright 2006-2010 Marvin Humphrey

@@ -1,65 +1,40 @@
 use strict;
 use warnings;
+use KinoSearch;
 
 package KSx::Search::MockScorer;
-BEGIN { our @ISA = qw( KinoSearch::Search::Matcher ) }
-use Carp;
-use Scalar::Util qw( reftype );
-
-# Inside-out member vars.
-our %doc_ids;
-our %scores;
-our %tick;
+BEGIN { our @ISA = qw( KSx::Search::MockMatcher ) }
 
 sub new {
     my ( $either, %args ) = @_;
-    for (qw( doc_ids scores )) {
-        confess("Required parameter $_ isn't an array")
-            unless reftype( $args{$_} ) eq 'ARRAY';
+    confess("Missing doc_ids") unless ref( $args{doc_ids} ) eq 'ARRAY';
+    my $doc_ids = KinoSearch::Object::I32Array->new( ints => $args{doc_ids} );
+    my $size = $doc_ids->get_size;
+    my $scores;
+    if ( ref( $args{scores} ) eq 'ARRAY' ) {
+        confess("Mismatch between scores and doc_ids array sizes")
+            unless scalar @{ $args{scores} } == $size;
+        $scores = KinoSearch::Object::ByteBuf->new(
+            pack( "f$size", @{ $args{scores} } ) );
     }
-    my $doc_ids = delete $args{doc_ids};
-    my $scores  = delete $args{scores};
-    my $self    = $either->SUPER::new(%args);
-    $doc_ids{$$self} = $doc_ids;
-    $scores{$$self}  = $scores;
-    $tick{$$self}    = -1;
-    return $self;
-}
 
-sub DESTROY {
-    my $self = shift;
-    delete $doc_ids{$$self};
-    delete $scores{$$self};
-    delete $tick{$$self};
-    $self->SUPER::DESTROY;
-}
-
-sub get_doc_id {
-    my $self = shift;
-    return $doc_ids{$$self}->[ $tick{$$self} ];
-}
-
-sub next {
-    my $self = shift;
-    my $tick = ++$tick{$$self};
-    my $docs = $doc_ids{$$self};
-    return 0 if $tick > $#$docs;
-    return $self->get_doc_id;
-}
-
-sub score {
-    my $self = shift;
-    return $scores{$$self}->[ $tick{$$self} ];
-}
-
-sub reset {
-    my $self = shift;
-    $tick{$$self} = -1;
+    return $either->_new(
+        doc_ids => $doc_ids,
+        scores  => $scores,
+    );
 }
 
 1;
 
 __END__
+
+__BINDING__
+
+Clownfish::Binding::Perl::Class->register(
+    parcel       => "KinoSearch",
+    class_name   => "KSx::Search::MockMatcher",
+    bind_constructors => ["_new|init"],
+);
 
 __POD__
 

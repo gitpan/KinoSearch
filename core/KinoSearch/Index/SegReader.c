@@ -15,7 +15,7 @@
 
 SegReader*
 SegReader_new(Schema *schema, Folder *folder, Snapshot *snapshot, 
-              VArray *segments, i32_t seg_tick)
+              VArray *segments, int32_t seg_tick)
 {
     SegReader *self = (SegReader*)VTable_Make_Obj(SEGREADER);
     return SegReader_init(self, schema, folder, snapshot, segments, seg_tick);
@@ -23,7 +23,7 @@ SegReader_new(Schema *schema, Folder *folder, Snapshot *snapshot,
 
 SegReader*
 SegReader_init(SegReader *self, Schema *schema, Folder *folder,
-               Snapshot *snapshot, VArray *segments, i32_t seg_tick)
+               Snapshot *snapshot, VArray *segments, int32_t seg_tick)
 {
     CharBuf *mess;
     Segment *segment;
@@ -37,7 +37,7 @@ SegReader_init(SegReader *self, Schema *schema, Folder *folder,
     self->seg_num    = Seg_Get_Number(segment);
     mess = SegReader_Try_Init_Components(self);
     if (mess) {
-        /* An error occurred, so clean up self and throw an exception. */
+        // An error occurred, so clean up self and throw an exception. 
         DECREF(self);
         Err_throw_mess(ERR, mess);
     }
@@ -68,22 +68,22 @@ SegReader_register(SegReader *self, const CharBuf *api, DataReader *component)
 
 CharBuf*
 SegReader_get_seg_name(SegReader *self) { return self->seg_name; }
-i64_t
+int64_t
 SegReader_get_seg_num(SegReader *self)  { return self->seg_num; }
 
-i32_t
+int32_t
 SegReader_del_count(SegReader *self) 
 {
     return self->del_count;
 }
 
-i32_t
+int32_t
 SegReader_doc_max(SegReader *self)
 {
     return self->doc_max;
 }
 
-i32_t
+int32_t
 SegReader_doc_count(SegReader *self)
 {
     return self->doc_max - self->del_count;
@@ -92,7 +92,7 @@ SegReader_doc_count(SegReader *self)
 I32Array*
 SegReader_offsets(SegReader *self)
 {
-    i32_t *ints = (i32_t*)CALLOCATE(1, sizeof(i32_t));
+    int32_t *ints = (int32_t*)CALLOCATE(1, sizeof(int32_t));
     UNUSED_VAR(self);
     return I32Arr_new_steal(ints, 1);
 }

@@ -9,8 +9,8 @@
 #include "KinoSearch/Store/Folder.h"
 
 TextSortCache*
-TextSortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality, 
-                  i32_t doc_max, i32_t null_ord, int32_t ord_width, 
+TextSortCache_new(const CharBuf *field, FieldType *type, int32_t cardinality, 
+                  int32_t doc_max, int32_t null_ord, int32_t ord_width, 
                   InStream *ord_in, InStream *ix_in, InStream *dat_in)
 {
     TextSortCache *self = (TextSortCache*)VTable_Make_Obj(TEXTSORTCACHE);
@@ -20,23 +20,23 @@ TextSortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality,
 
 TextSortCache*
 TextSortCache_init(TextSortCache *self, const CharBuf *field,
-                   FieldType *type, i32_t cardinality, 
-                   i32_t doc_max, i32_t null_ord, int32_t ord_width, 
+                   FieldType *type, int32_t cardinality, 
+                   int32_t doc_max, int32_t null_ord, int32_t ord_width, 
                    InStream *ord_in, InStream *ix_in, InStream *dat_in)
 {
-    /* Validate. */
+    // Validate. 
     if (!type || !FType_Sortable(type)) {
         DECREF(self);
         THROW(ERR, "'%o' isn't a sortable field", field);
     }
 
-    /* Memory map ords and super-init. */
+    // Memory map ords and super-init. 
     int64_t ord_len = InStream_Length(ord_in);
     void *ords = InStream_Buf(ord_in, (size_t)ord_len);
     SortCache_init((SortCache*)self, field, type, ords, cardinality, doc_max,
         null_ord, ord_width);
 
-    /* Validate ords file length. */
+    // Validate ords file length. 
     double  bytes_per_doc = self->ord_width / 8.0;
     double  max_ords      = ord_len / bytes_per_doc;
     if (max_ords < self->doc_max + 1) {
@@ -45,7 +45,7 @@ TextSortCache_init(TextSortCache *self, const CharBuf *field,
             "field %o", max_ords, doc_max, field);
     }
 
-    /* Assign. */
+    // Assign. 
     self->ord_in = (InStream*)INCREF(ord_in);
     self->ix_in  = (InStream*)INCREF(ix_in);
     self->dat_in = (InStream*)INCREF(dat_in);
@@ -74,19 +74,19 @@ TextSortCache_destroy(TextSortCache *self)
 #define NULL_SENTINEL -1 
 
 Obj*
-TextSortCache_value(TextSortCache *self, i32_t ord, Obj *blank)
+TextSortCache_value(TextSortCache *self, int32_t ord, Obj *blank)
 {
     if (ord == self->null_ord) {
         return NULL;
     }
-    InStream_Seek(self->ix_in, ord * sizeof(i64_t));
+    InStream_Seek(self->ix_in, ord * sizeof(int64_t));
     int64_t offset = InStream_Read_I64(self->ix_in);
     if (offset == NULL_SENTINEL) { 
         return NULL; 
     }
     else {
-        u32_t next_ord = ord + 1;
-        i64_t next_offset;
+        uint32_t next_ord = ord + 1;
+        int64_t next_offset;
         while (1) {
             InStream_Seek(self->ix_in, next_ord * sizeof(int64_t));
             next_offset = InStream_Read_I64(self->ix_in);
@@ -94,7 +94,7 @@ TextSortCache_value(TextSortCache *self, i32_t ord, Obj *blank)
             next_ord++;
         }
 
-        /* Read character data into CharBuf. */
+        // Read character data into CharBuf. 
         CERTIFY(blank, CHARBUF);
         int64_t len = next_offset - offset;
         char *ptr = CB_Grow((CharBuf*)blank, (size_t)len);
@@ -104,6 +104,13 @@ TextSortCache_value(TextSortCache *self, i32_t ord, Obj *blank)
         CB_Set_Size((CharBuf*)blank, (size_t)len);
     }
     return blank;
+}
+
+CharBuf*
+TextSortCache_make_blank(TextSortCache *self)
+{
+    UNUSED_VAR(self);
+    return CB_new_from_trusted_utf8("", 0);
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

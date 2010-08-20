@@ -3,7 +3,7 @@ use warnings;
 use lib 'buildlib';
 
 package MatchOnlySim;
-use base qw( KinoSearch::Search::Similarity );
+use base qw( KinoSearch::Index::Similarity );
 
 sub make_posting {
     my $self = shift;

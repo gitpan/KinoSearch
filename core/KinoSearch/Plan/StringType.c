@@ -3,7 +3,7 @@
 
 #include "KinoSearch/Plan/StringType.h"
 #include "KinoSearch/Index/Posting/ScorePosting.h"
-#include "KinoSearch/Search/Similarity.h"
+#include "KinoSearch/Index/Similarity.h"
 
 StringType*
 StringType_new()
@@ -45,7 +45,7 @@ StringType_dump_for_schema(StringType *self)
     Hash *dump = Hash_new(0);
     Hash_Store_Str(dump, "type", 4, (Obj*)CB_newf("string"));
 
-    /* Store attributes that override the defaults. */
+    // Store attributes that override the defaults. 
     if (self->boost != 1.0) {
         Hash_Store_Str(dump, "boost", 5, (Obj*)CB_newf("%f64", self->boost));
     }

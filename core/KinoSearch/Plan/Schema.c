@@ -5,19 +5,18 @@
 
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Analysis/Analyzer.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Plan/FieldType.h"
 #include "KinoSearch/Plan/BlobType.h"
 #include "KinoSearch/Plan/NumericType.h"
 #include "KinoSearch/Plan/StringType.h"
 #include "KinoSearch/Plan/FullTextType.h"
-#include "KinoSearch/Object/Obj.h"
 #include "KinoSearch/Plan/Architecture.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Util/Json.h"
 
-/* Scan the array to see if an object testing as Equal is present.  If not,
- * push the elem onto the end of the array. */
+// Scan the array to see if an object testing as Equal is present.  If not,
+// push the elem onto the end of the array.
 static void
 S_add_unique(VArray *array, Obj *elem);
 
@@ -31,16 +30,23 @@ static void
 S_add_numeric_field(Schema *self, const CharBuf *field, FieldType *type);
 
 Schema*
+Schema_new()
+{
+    Schema *self = (Schema*)VTable_Make_Obj(SCHEMA);
+    return Schema_init(self);
+}
+
+Schema*
 Schema_init(Schema *self)
 {
-    /* Init. */
+    // Init.
     self->analyzers      = Hash_new(0);
     self->types          = Hash_new(0);
     self->sims           = Hash_new(0);
     self->uniq_analyzers = VA_new(2);
     VA_Resize(self->uniq_analyzers, 1);
 
-    /* Assign. */
+    // Assign.
     self->arch = Schema_Architecture(self);
     self->sim  = Arch_Make_Similarity(self->arch);
 
@@ -68,7 +74,9 @@ S_add_unique(VArray *array, Obj *elem)
         Obj *candidate = VA_Fetch(array, i);
         if (!candidate) { continue; }
         if (elem == candidate) { return; }
-        if (Obj_Equals(elem, candidate)) { return; }
+        if (Obj_Get_VTable(elem) == Obj_Get_VTable(candidate)) {
+            if (Obj_Equals(elem, candidate)) { return; }
+        }
     }
     VA_Push(array, INCREF(elem));
 }
@@ -97,7 +105,7 @@ Schema_spec_field(Schema *self, const CharBuf *field, FieldType *type)
 {
     FieldType *existing  = Schema_Fetch_Type(self, field);
 
-    /* If the field already has an association, verify pairing and return. */
+    // If the field already has an association, verify pairing and return.
     if (existing) {
         if (FType_Equals(type, (Obj*)existing)) { return; }
         else { THROW(ERR, "'%o' assigned conflicting FieldType", field); }
@@ -127,12 +135,12 @@ S_add_text_field(Schema *self, const CharBuf *field, FieldType *type)
     Similarity   *sim       = FullTextType_Make_Similarity(fttype);
     Analyzer     *analyzer  = FullTextType_Get_Analyzer(fttype);
 
-    /* Cache helpers. */
+    // Cache helpers.
     Hash_Store(self->sims, (Obj*)field, (Obj*)sim);
     Hash_Store(self->analyzers, (Obj*)field, INCREF(analyzer));
     S_add_unique(self->uniq_analyzers, (Obj*)analyzer);
 
-    /* Store FieldType. */
+    // Store FieldType.
     Hash_Store(self->types, (Obj*)field, INCREF(type));
 }
 
@@ -142,10 +150,10 @@ S_add_string_field(Schema *self, const CharBuf *field, FieldType *type)
     StringType *string_type = (StringType*)CERTIFY(type, STRINGTYPE);
     Similarity *sim         = StringType_Make_Similarity(string_type);
 
-    /* Cache helpers. */
+    // Cache helpers.
     Hash_Store(self->sims, (Obj*)field, (Obj*)sim);
 
-    /* Store FieldType. */
+    // Store FieldType.
     Hash_Store(self->types, (Obj*)field, INCREF(type));
 }
 
@@ -214,8 +222,10 @@ S_find_in_array(VArray *array, Obj *obj)
             return i;
         }
         else if (obj != NULL && candidate != NULL) {
-            if (Obj_Equals(obj, candidate)) {
-                return i;
+            if (Obj_Get_VTable(obj) == Obj_Get_VTable(candidate)) {
+                if (Obj_Equals(obj, candidate)) {
+                    return i;
+                }
             }
         }
     }
@@ -231,18 +241,18 @@ Schema_dump(Schema *self)
     CharBuf *field;
     FieldType *type;
 
-    /* Record class name, store dumps of unique Analyzers. */
+    // Record class name, store dumps of unique Analyzers.
     Hash_Store_Str(dump, "_class", 6, 
         (Obj*)CB_Clone(Schema_Get_Class_Name(self)));
     Hash_Store_Str(dump, "analyzers", 9, (Obj*)VA_Dump(self->uniq_analyzers));
 
-    /* Dump FieldTypes. */
+    // Dump FieldTypes.
     Hash_Store_Str(dump, "fields", 6, (Obj*)type_dumps);
     Hash_Iter_Init(self->types);
     while (Hash_Iter_Next(self->types, (Obj**)&field, (Obj**)&type)) {
         VTable *type_vtable = FType_Get_VTable(type);
 
-        /* Dump known types to simplified format. */
+        // Dump known types to simplified format.
         if (type_vtable == FULLTEXTTYPE) {
             FullTextType *fttype = (FullTextType*)type;
             Hash *type_dump = FullTextType_Dump_For_Schema(fttype);
@@ -250,7 +260,7 @@ Schema_dump(Schema *self)
             uint32_t tick 
                 = S_find_in_array(self->uniq_analyzers, (Obj*)analyzer);
 
-            /* Store the tick which references a unique analyzer. */
+            // Store the tick which references a unique analyzer.
             Hash_Store_Str(type_dump, "analyzer", 8, 
                 (Obj*)CB_newf("%u32", tick));
 
@@ -262,7 +272,7 @@ Schema_dump(Schema *self)
             Hash *type_dump = FType_Dump_For_Schema(type);
             Hash_Store(type_dumps, (Obj*)field, (Obj*)type_dump);
         }
-        /* Unknown FieldType type, so punt. */
+        // Unknown FieldType type, so punt.
         else {
             Hash_Store(type_dumps, (Obj*)field, FType_Dump(type));
         }
@@ -289,7 +299,7 @@ Schema_load(Schema *self, Obj *dump)
     Hash    *type_dump;
     UNUSED_VAR(self);
 
-    /* Start with a blank Schema. */
+    // Start with a blank Schema.
     Schema_init(loaded);
     VA_Grow(loaded->uniq_analyzers, VA_Get_Size(analyzers));
 
@@ -300,8 +310,7 @@ Schema_load(Schema *self, Obj *dump)
         type_str = (CharBuf*)Hash_Fetch_Str(type_dump, "type", 4);
         if (type_str) {
             if (CB_Equals_Str(type_str, "fulltext", 8)) {
-                FullTextType *type = (FullTextType*)VTable_Load_Obj(
-                    FULLTEXTTYPE, (Obj*)type_dump);
+                // Replace the "analyzer" tick with the real thing.
                 Obj *tick = CERTIFY(
                     Hash_Fetch_Str(type_dump, "analyzer", 8), OBJ);
                 Analyzer *analyzer = (Analyzer*)VA_Fetch(analyzers, 
@@ -309,7 +318,9 @@ Schema_load(Schema *self, Obj *dump)
                 if (!analyzer) { 
                     THROW(ERR, "Can't find analyzer for '%o'", field);
                 }
-                FullTextType_Set_Analyzer(type, analyzer);
+                Hash_Store_Str(type_dump, "analyzer", 8, INCREF(analyzer));
+                FullTextType *type = (FullTextType*)VTable_Load_Obj(
+                    FULLTEXTTYPE, (Obj*)type_dump);
                 Schema_Spec_Field(loaded, field, (FieldType*)type);
                 DECREF(type);
             }
@@ -389,7 +400,7 @@ Schema_write(Schema *self, Folder *folder, const CharBuf *filename)
     Hash *dump = Schema_Dump(self);
     ZombieCharBuf *schema_temp = ZCB_WRAP_STR("schema.temp", 11);
     bool_t success;
-    Folder_Delete(folder, (CharBuf*)schema_temp); /* Just in case. */
+    Folder_Delete(folder, (CharBuf*)schema_temp); // Just in case.
     Json_spew_json((Obj*)dump, folder, (CharBuf*)schema_temp);
     success = Folder_Rename(folder, (CharBuf*)schema_temp, filename);
     DECREF(dump);

@@ -34,8 +34,8 @@ class KinoSearch::Store::LockFactory cnick LockFact
      * @param interval Time in milliseconds between retries.
      */
     public incremented Lock*
-    Make_Lock(LockFactory *self, const CharBuf *name, i32_t timeout = 0,
-              i32_t interval = 100);
+    Make_Lock(LockFactory *self, const CharBuf *name, int32_t timeout = 0,
+              int32_t interval = 100);
 
     /** Return a Lock object for which Shared() returns true, and which
      * maintains a non-exclusive lock on a resource once Obtain() returns
@@ -49,7 +49,7 @@ class KinoSearch::Store::LockFactory cnick LockFact
      */
     public incremented Lock*
     Make_Shared_Lock(LockFactory *self, const CharBuf *name, 
-                     i32_t timeout = 0, i32_t interval = 100);
+                     int32_t timeout = 0, int32_t interval = 100);
 
     public void
     Destroy(LockFactory *self);

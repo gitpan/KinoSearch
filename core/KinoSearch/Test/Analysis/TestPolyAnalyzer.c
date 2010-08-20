@@ -21,14 +21,6 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 
     ASSERT_FALSE(batch, PolyAnalyzer_Equals(analyzer,
         (Obj*)other), "Equals() false with different language");
-    ASSERT_TRUE(batch, PolyAnalyzer_Dump_Equals(other,
-        (Obj*)other_dump), "Dump_Equals()");
-    ASSERT_TRUE(batch, PolyAnalyzer_Dump_Equals(analyzer,
-        (Obj*)dump), "Dump_Equals()");
-    ASSERT_FALSE(batch, PolyAnalyzer_Dump_Equals(analyzer,
-        (Obj*)other_dump), "Dump_Equals() false with different language");
-    ASSERT_FALSE(batch, PolyAnalyzer_Dump_Equals(other,
-        (Obj*)dump), "Dump_Equals() false with different language");
     ASSERT_TRUE(batch, PolyAnalyzer_Equals(analyzer,
         (Obj*)clone), "Dump => Load round trip");
     ASSERT_TRUE(batch, PolyAnalyzer_Equals(other,
@@ -45,7 +37,7 @@ test_Dump_Load_and_Equals(TestBatch *batch)
 void
 TestPolyAnalyzer_run_tests()
 {
-    TestBatch *batch = TestBatch_new(7);
+    TestBatch *batch = TestBatch_new(3);
 
     TestBatch_Plan(batch);
 

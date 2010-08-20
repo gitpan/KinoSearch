@@ -27,7 +27,7 @@ kino_Tokenizer_init(kino_Tokenizer *self, const kino_CharBuf *pattern)
                   : kino_CB_new_from_trusted_utf8(DEFAULT_PATTERN,
                       sizeof(DEFAULT_PATTERN) - 1);
 
-    /* Acquire a compiled regex engine for matching one token. */
+    // Acquire a compiled regex engine for matching one token. 
     token_re_sv = (SV*)kino_Host_callback_host(KINO_TOKENIZER,
         "compile_token_re", 1, KINO_ARG_STR("pattern", self->pattern));
     S_set_token_re_but_not_pattern(self, SvRV(token_re_sv));
@@ -72,7 +72,7 @@ void
 kino_Tokenizer_set_token_re(kino_Tokenizer *self, void *token_re)
 {
     S_set_token_re_but_not_pattern(self, token_re);
-    /* Set pattern as a side effect. */
+    // Set pattern as a side effect. 
     S_set_pattern_from_token_re(self, token_re);
 }
 
@@ -88,7 +88,7 @@ void
 kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string, 
                             size_t string_len, kino_Inversion *inversion)
 {
-    chy_u32_t  num_code_points = 0;
+    uint32_t   num_code_points = 0;
     SV        *wrapper    = sv_newmortal();
 #if (PERL_VERSION > 10)
     REGEXP    *rx         = (REGEXP*)self->token_re;
@@ -102,13 +102,13 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
     char      *string_arg = string_beg;
 
 
-    /* Fake up an SV wrapper to feed to the regex engine. */
+    // Fake up an SV wrapper to feed to the regex engine. 
     sv_upgrade(wrapper, SVt_PV);
     SvREADONLY_on(wrapper);
     SvLEN(wrapper) = 0;
     SvUTF8_on(wrapper);
 
-    /* Wrap the string in an SV to please the regex engine. */
+    // Wrap the string in an SV to please the regex engine. 
     SvPVX(wrapper) = string_beg;
     SvCUR_set(wrapper, string_len);
     SvPOK_on(wrapper);
@@ -123,31 +123,31 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
         char *const start_ptr = string_arg + rx_struct->startp[0];
         char *const end_ptr   = string_arg + rx_struct->endp[0];
 #endif
-        chy_u32_t start, end;
+        uint32_t start, end;
 
-        /* Get start and end offsets in Unicode code points. */
+        // Get start and end offsets in Unicode code points. 
         for( ; string_arg < start_ptr; num_code_points++) {
-            string_arg += kino_StrHelp_UTF8_SKIP[(chy_u8_t)*string_arg];
+            string_arg += kino_StrHelp_UTF8_SKIP[(uint8_t)*string_arg];
             if (string_arg > string_end)
                 THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }
         start = num_code_points;
         for( ; string_arg < end_ptr; num_code_points++) {
-            string_arg += kino_StrHelp_UTF8_SKIP[(chy_u8_t)*string_arg];
+            string_arg += kino_StrHelp_UTF8_SKIP[(uint8_t)*string_arg];
             if (string_arg > string_end)
                 THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }
         end = num_code_points;
 
-        /* Add a token to the new inversion. */
+        // Add a token to the new inversion. 
         Kino_Inversion_Append(inversion,
             kino_Token_new(
                 start_ptr,
                 (end_ptr - start_ptr),
                 start,
                 end,
-                1.0f, /* boost always 1 for now */
-                1     /* position increment */
+                1.0f,   // boost always 1 for now 
+                1       // position increment 
             )
         );
     }

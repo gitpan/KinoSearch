@@ -6,7 +6,7 @@ kino_Err_get_error()
 {
     kino_Err *error 
         = (kino_Err*)kino_Host_callback_obj(KINO_ERR, "get_error", 0);
-    KINO_DECREF(error); /* Cancel out incref from callback. */
+    KINO_DECREF(error); // Cancel out incref from callback. 
     return error;
 }
 

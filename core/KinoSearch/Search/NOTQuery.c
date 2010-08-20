@@ -111,7 +111,7 @@ NOTCompiler_make_matcher(NOTCompiler *self, SegReader *reader,
 
     if (negated_matcher == NULL) {
         float weight = NOTCompiler_Get_Weight(self);
-        i32_t doc_max = SegReader_Doc_Max(reader);
+        int32_t doc_max = SegReader_Doc_Max(reader);
         return (Matcher*)MatchAllScorer_new(weight, doc_max);
     }
     else if (Obj_Is_A((Obj*)negated_matcher, MATCHALLSCORER)) {
@@ -119,7 +119,7 @@ NOTCompiler_make_matcher(NOTCompiler *self, SegReader *reader,
         return NULL;
     }
     else {
-        i32_t doc_max = SegReader_Doc_Max(reader);
+        int32_t doc_max = SegReader_Doc_Max(reader);
         Matcher *retval = (Matcher*)NOTScorer_new(negated_matcher, doc_max);
         DECREF(negated_matcher);
         return retval;

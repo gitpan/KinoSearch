@@ -17,11 +17,10 @@ parcel KinoSearch cnick Kino;
  * scores from multiple fields.
  */
 
-class KinoSearch::Search::Similarity cnick Sim
+class KinoSearch::Index::Similarity cnick Sim
     extends KinoSearch::Object::Obj : dumpable {
 
     float  *norm_decoder;
-    float  *prox_decoder;
 
     inert incremented Similarity*
     new();
@@ -52,12 +51,14 @@ class KinoSearch::Search::Similarity cnick Sim
     public float  
     TF(Similarity *self, float freq);
 
-    /** Calculate the Inverse Document Frequecy for a Term in a given
-     * collection (the Searcher represents the collection).
+    /** Calculate the Inverse Document Frequecy for a term in a given
+     * collection.
+     * 
+     * @param doc_freq The number of documents that the term appears in.
+     * @param total_docs The number of documents in the collection.
      */
     public float
-    IDF(Similarity *self, Searcher *searcher, const CharBuf *field, 
-        Obj *term);
+    IDF(Similarity *self, int64_t doc_freq, int64_t total_docs);
 
     /** Calculate a score factor based on the number of terms which match. 
      */
@@ -103,20 +104,6 @@ class KinoSearch::Search::Similarity cnick Sim
 
     float*
     Get_Norm_Decoder(Similarity *self);
-
-    /** Return a boost based which rewards smaller distances between tokens in
-     * a search match.
-     */
-    float
-    Prox_Boost(Similarity *self, uint32_t distance);
-
-    /** Assess an array of positions and return a scoring multiplier based on
-     * how clustered they are.  The assumption is that documents whose matches
-     * are right next to each other deserve higher rank than documents whose
-     * matches are spread out and presumably unrelated.
-     */
-    float
-    Prox_Coord(Similarity *self, uint32_t *prox, uint32_t num_prox);
 
     public void
     Destroy(Similarity *self);

@@ -5,23 +5,23 @@
 #include "KinoSearch/Search/RangeQuery.h"
 #include "KinoSearch/Index/DocVector.h"
 #include "KinoSearch/Index/SegReader.h"
+#include "KinoSearch/Index/Similarity.h"
 #include "KinoSearch/Index/SortReader.h"
 #include "KinoSearch/Index/SortCache.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Search/RangeScorer.h"
 #include "KinoSearch/Search/Searcher.h"
-#include "KinoSearch/Search/Similarity.h"
 #include "KinoSearch/Search/Span.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
 
-/* Determine the lowest ordinal that should match. */
-static i32_t
+// Determine the lowest ordinal that should match. 
+static int32_t
 S_find_lower_bound(RangeCompiler *self, SortCache *sort_cache);
 
-/* Determine the highest ordinal that should match. */
-static i32_t
+// Determine the highest ordinal that should match. 
+static int32_t
 S_find_upper_bound(RangeCompiler *self, SortCache *sort_cache);
 
 RangeQuery*
@@ -127,7 +127,7 @@ RangeQuery_serialize(RangeQuery *self, OutStream *outstream)
 RangeQuery*
 RangeQuery_deserialize(RangeQuery *self, InStream *instream)
 {
-    /* Deserialize components. */
+    // Deserialize components. 
     float boost     = InStream_Read_F32(instream);
     CharBuf *field  = CB_deserialize(NULL, instream);
     Obj *lower_term = InStream_Read_U8(instream) ? THAW(instream) : NULL;
@@ -135,7 +135,7 @@ RangeQuery_deserialize(RangeQuery *self, InStream *instream)
     bool_t include_lower = InStream_Read_U8(instream);
     bool_t include_upper = InStream_Read_U8(instream);
 
-    /* Init object. */
+    // Init object. 
     self = self ? self : (RangeQuery*)VTable_Make_Obj(RANGEQUERY);
     RangeQuery_init(self, field, lower_term, upper_term, include_lower,
         include_upper);
@@ -195,31 +195,31 @@ RangeCompiler_make_matcher(RangeCompiler *self, SegReader *reader,
         return NULL;
     }
     else {
-        i32_t lower = S_find_lower_bound(self, sort_cache);
-        i32_t upper = S_find_upper_bound(self, sort_cache);
-        i32_t max_ord = SortCache_Get_Cardinality(sort_cache) + 1;
+        int32_t lower = S_find_lower_bound(self, sort_cache);
+        int32_t upper = S_find_upper_bound(self, sort_cache);
+        int32_t max_ord = SortCache_Get_Cardinality(sort_cache) + 1;
         if (lower > max_ord || upper < 0) {
             return NULL;
         }
         else {
-            i32_t doc_max = SegReader_Doc_Max(reader);
+            int32_t doc_max = SegReader_Doc_Max(reader);
             return (Matcher*)RangeScorer_new(lower, upper, sort_cache, 
                 doc_max);
         }
     }
 }
 
-static i32_t
+static int32_t
 S_find_lower_bound(RangeCompiler *self, SortCache *sort_cache)
 {
     RangeQuery *parent      = (RangeQuery*)self->parent;
     Obj        *lower_term  = parent->lower_term;
-    i32_t       lower_bound = 0;
+    int32_t     lower_bound = 0;
 
     if (lower_term) {
-        i32_t low_ord = SortCache_Find(sort_cache, lower_term);
+        int32_t low_ord = SortCache_Find(sort_cache, lower_term);
         if (low_ord < 0) {
-            /* The supplied term is lower than all terms in the field. */
+            // The supplied term is lower than all terms in the field. 
             lower_bound = 0;
         }
         else {
@@ -240,17 +240,17 @@ S_find_lower_bound(RangeCompiler *self, SortCache *sort_cache)
     return lower_bound;
 }
 
-static i32_t
+static int32_t
 S_find_upper_bound(RangeCompiler *self, SortCache *sort_cache)
 {
     RangeQuery *parent     = (RangeQuery*)self->parent;
     Obj        *upper_term = parent->upper_term;
-    i32_t       retval     = I32_MAX;
+    int32_t     retval     = I32_MAX;
 
     if (upper_term) {
-        i32_t hi_ord = SortCache_Find(sort_cache, upper_term);
+        int32_t hi_ord = SortCache_Find(sort_cache, upper_term);
         if (hi_ord < 0) {
-            /* The supplied term is lower than all terms in the field. */
+            // The supplied term is lower than all terms in the field. 
             retval = -1;
         }
         else {

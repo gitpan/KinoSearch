@@ -11,7 +11,7 @@
 
 RawLexicon*
 RawLex_new(Schema *schema, const CharBuf *field, InStream *instream, 
-           i64_t start, i64_t end)
+           int64_t start, int64_t end)
 {
     RawLexicon *self = (RawLexicon*)VTable_Make_Obj(RAWLEXICON);
     return RawLex_init(self, schema, field, instream, start, end);
@@ -19,21 +19,21 @@ RawLex_new(Schema *schema, const CharBuf *field, InStream *instream,
 
 RawLexicon*
 RawLex_init(RawLexicon *self, Schema *schema, const CharBuf *field,
-            InStream *instream, i64_t start, i64_t end)
+            InStream *instream, int64_t start, int64_t end)
 {
     FieldType *type = Schema_Fetch_Type(schema, field);
     Lex_init((Lexicon*)self, field);
     
-    /* Assign */
+    // Assign 
     self->start = start;
     self->end   = end;
     self->len   = end - start;
     self->instream = (InStream*)INCREF(instream);
 
-    /* Get ready to begin. */
+    // Get ready to begin. 
     InStream_Seek(self->instream, self->start);
 
-    /* Get steppers. */
+    // Get steppers. 
     self->term_stepper  = FType_Make_Term_Stepper(type);
     self->tinfo_stepper = (TermStepper*)MatchTInfoStepper_new(schema);
 
@@ -64,7 +64,7 @@ RawLex_get_term(RawLexicon *self)
     return TermStepper_Get_Value(self->term_stepper);
 }
 
-i32_t
+int32_t
 RawLex_doc_freq(RawLexicon *self)
 {
     TermInfo *tinfo = (TermInfo*)TermStepper_Get_Value(self->tinfo_stepper);

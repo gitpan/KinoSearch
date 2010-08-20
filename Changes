@@ -1,5 +1,31 @@
 Revision history for KinoSearch
 
+0.30_11  2010-08-19
+
+  New features:
+
+    * KinoSearch::Search::QueryParser now supports escaping double quotes.
+
+  Changed:
+   
+    * KinoSearch::Plan::FieldType
+      o Removed set_boost(), set_indexed(), set_store(). 
+      o Added sortable().
+
+  Moved, but compatibility stubs retained:
+
+    * KinoSearch::Search::Similarity -> KinoSearch::Index::Similarity
+    * KSx::Search::LongFieldSim      -> KSx::Index::LongFieldSim 
+
+  Bugfixes:
+
+    * Sorting problem with complex sort specs on x86.
+    * Improved segment recycling to avoid pathological state on large indexes.
+    * Add missing compatibility stub for KinoSearch::Doc (now
+      KinoSearch::Document::Doc.)
+    * Various esoteric bugs in QueryParser.
+
+
 0.30_101 2010-05-01
 
   Bugfixes:

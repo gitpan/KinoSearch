@@ -37,7 +37,7 @@ PPCODE:
 
 SV*
 to_base36(num)
-    chy_u64_t num;
+    uint64_t num;
 CODE:
 {
     char base36[kino_StrHelp_MAX_BASE36_BYTES];

@@ -20,7 +20,7 @@ test_all(TestBatch *batch)
     bool_t     boffo_was_dir = false; 
     int        count         = 0;
 
-    /* Set up folder contents. */
+    // Set up folder contents. 
     RAMFolder_MkDir(folder, foo);
     FileHandle *fh = RAMFolder_Open_FileHandle(folder, boffo, 
         FH_CREATE | FH_WRITE_ONLY);
@@ -51,7 +51,7 @@ test_all(TestBatch *batch)
         "File correctly identified by Entry_Is_Dir");
 
     {
-        u32_t refcount = RAMFolder_Get_RefCount(folder);
+        uint32_t refcount = RAMFolder_Get_RefCount(folder);
         RAMDH_Close(dh);
         ASSERT_INT_EQ(batch, RAMFolder_Get_RefCount(folder), refcount - 1,
             "Folder reference released by Close()");

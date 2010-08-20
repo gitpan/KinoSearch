@@ -15,27 +15,27 @@
 
 NumericSortCache*
 NumSortCache_init(NumericSortCache *self, const CharBuf *field,
-                  FieldType *type, i32_t cardinality, i32_t doc_max, 
-                  i32_t null_ord, int32_t ord_width, InStream *ord_in, 
+                  FieldType *type, int32_t cardinality, int32_t doc_max, 
+                  int32_t null_ord, int32_t ord_width, InStream *ord_in, 
                   InStream *dat_in)
 {
-    /* Validate. */
+    // Validate. 
     if (!type || !FType_Sortable(type) || !FType_Is_A(type, NUMERICTYPE)) {
         DECREF(self);
         THROW(ERR, "'%o' isn't a sortable NumericType field", field);
     }
 
-    /* Mmap ords and super-init. */
+    // Mmap ords and super-init. 
     int64_t  ord_len = InStream_Length(ord_in);
     void    *ords    = InStream_Buf(ord_in, (size_t)ord_len);
     SortCache_init((SortCache*)self, field, type, ords, cardinality, doc_max,
         null_ord, ord_width);
 
-    /* Assign. */
+    // Assign. 
     self->ord_in = (InStream*)INCREF(ord_in);
     self->dat_in = (InStream*)INCREF(dat_in);
     
-    /* Validate ord file length. */
+    // Validate ord file length. 
     double BITS_PER_BYTE = 8.0;
     double docs_per_byte = BITS_PER_BYTE / self->ord_width;
     double max_ords      = ord_len * docs_per_byte;
@@ -66,8 +66,8 @@ NumSortCache_destroy(NumericSortCache *self)
 /***************************************************************************/
 
 Float64SortCache*
-F64SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality, 
-                 i32_t doc_max, i32_t null_ord, int32_t ord_width, 
+F64SortCache_new(const CharBuf *field, FieldType *type, int32_t cardinality, 
+                 int32_t doc_max, int32_t null_ord, int32_t ord_width, 
                  InStream *ord_in, InStream *dat_in)
 {
     Float64SortCache *self 
@@ -78,8 +78,8 @@ F64SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality,
 
 Float64SortCache*
 F64SortCache_init(Float64SortCache *self, const CharBuf *field,
-                  FieldType *type, i32_t cardinality, i32_t doc_max, 
-                  i32_t null_ord, int32_t ord_width, InStream *ord_in, 
+                  FieldType *type, int32_t cardinality, int32_t doc_max, 
+                  int32_t null_ord, int32_t ord_width, InStream *ord_in, 
                   InStream *dat_in)
 {
     NumSortCache_init((NumericSortCache*)self, field, type, cardinality,
@@ -88,7 +88,7 @@ F64SortCache_init(Float64SortCache *self, const CharBuf *field,
 }
 
 Obj*
-F64SortCache_value(Float64SortCache *self, i32_t ord, Obj *blank)
+F64SortCache_value(Float64SortCache *self, int32_t ord, Obj *blank)
 {
     if (ord == self->null_ord ) {
         return NULL; 
@@ -104,11 +104,18 @@ F64SortCache_value(Float64SortCache *self, i32_t ord, Obj *blank)
     return blank;
 }
 
+Float64*
+F64SortCache_make_blank(Float64SortCache *self)
+{
+    UNUSED_VAR(self);
+    return Float64_new(0.0);
+}
+
 /***************************************************************************/
 
 Float32SortCache*
-F32SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality, 
-                 i32_t doc_max, i32_t null_ord, int32_t ord_width, 
+F32SortCache_new(const CharBuf *field, FieldType *type, int32_t cardinality, 
+                 int32_t doc_max, int32_t null_ord, int32_t ord_width, 
                  InStream *ord_in, InStream *dat_in)
 {
     Float32SortCache *self 
@@ -119,8 +126,8 @@ F32SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality,
 
 Float32SortCache*
 F32SortCache_init(Float32SortCache *self, const CharBuf *field,
-                  FieldType *type, i32_t cardinality, i32_t doc_max, 
-                  i32_t null_ord, int32_t ord_width, InStream *ord_in, 
+                  FieldType *type, int32_t cardinality, int32_t doc_max, 
+                  int32_t null_ord, int32_t ord_width, InStream *ord_in, 
                   InStream *dat_in)
 {
     NumSortCache_init((NumericSortCache*)self, field, type, cardinality,
@@ -129,7 +136,7 @@ F32SortCache_init(Float32SortCache *self, const CharBuf *field,
 }
 
 Obj*
-F32SortCache_value(Float32SortCache *self, i32_t ord, Obj *blank)
+F32SortCache_value(Float32SortCache *self, int32_t ord, Obj *blank)
 {
     if (ord == self->null_ord ) {
         return NULL; 
@@ -145,11 +152,18 @@ F32SortCache_value(Float32SortCache *self, i32_t ord, Obj *blank)
     return blank;
 }
 
+Float32*
+F32SortCache_make_blank(Float32SortCache *self)
+{
+    UNUSED_VAR(self);
+    return Float32_new(0.0f);
+}
+
 /***************************************************************************/
 
 Int32SortCache*
-I32SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality, 
-                 i32_t doc_max, i32_t null_ord, int32_t ord_width,
+I32SortCache_new(const CharBuf *field, FieldType *type, int32_t cardinality, 
+                 int32_t doc_max, int32_t null_ord, int32_t ord_width,
                  InStream *ord_in, InStream *dat_in)
 {
     Int32SortCache *self 
@@ -160,8 +174,8 @@ I32SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality,
 
 Int32SortCache*
 I32SortCache_init(Int32SortCache *self, const CharBuf *field,
-                  FieldType *type, i32_t cardinality, i32_t doc_max, 
-                  i32_t null_ord, int32_t ord_width, InStream *ord_in, 
+                  FieldType *type, int32_t cardinality, int32_t doc_max, 
+                  int32_t null_ord, int32_t ord_width, InStream *ord_in, 
                   InStream *dat_in)
 {
     NumSortCache_init((NumericSortCache*)self, field, type, cardinality,
@@ -170,7 +184,7 @@ I32SortCache_init(Int32SortCache *self, const CharBuf *field,
 }
 
 Obj*
-I32SortCache_value(Int32SortCache *self, i32_t ord, Obj *blank)
+I32SortCache_value(Int32SortCache *self, int32_t ord, Obj *blank)
 {
     if (ord == self->null_ord ) {
         return NULL; 
@@ -186,11 +200,18 @@ I32SortCache_value(Int32SortCache *self, i32_t ord, Obj *blank)
     return blank;
 }
 
+Integer32*
+I32SortCache_make_blank(Int32SortCache *self)
+{
+    UNUSED_VAR(self);
+    return Int32_new(0);
+}
+
 /***************************************************************************/
 
 Int64SortCache*
-I64SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality, 
-                 i32_t doc_max, i32_t null_ord, int32_t ord_width, 
+I64SortCache_new(const CharBuf *field, FieldType *type, int32_t cardinality, 
+                 int32_t doc_max, int32_t null_ord, int32_t ord_width, 
                  InStream *ord_in, InStream *dat_in)
 {
     Int64SortCache *self 
@@ -201,8 +222,8 @@ I64SortCache_new(const CharBuf *field, FieldType *type, i32_t cardinality,
 
 Int64SortCache*
 I64SortCache_init(Int64SortCache *self, const CharBuf *field,
-                  FieldType *type, i32_t cardinality, i32_t doc_max, 
-                  i32_t null_ord, int32_t ord_width, InStream *ord_in, 
+                  FieldType *type, int32_t cardinality, int32_t doc_max, 
+                  int32_t null_ord, int32_t ord_width, InStream *ord_in, 
                   InStream *dat_in)
 {
     NumSortCache_init((NumericSortCache*)self, field, type, cardinality,
@@ -211,7 +232,7 @@ I64SortCache_init(Int64SortCache *self, const CharBuf *field,
 }
 
 Obj*
-I64SortCache_value(Int64SortCache *self, i32_t ord, Obj *blank)
+I64SortCache_value(Int64SortCache *self, int32_t ord, Obj *blank)
 {
     if (ord == self->null_ord ) {
         return NULL; 
@@ -225,6 +246,13 @@ I64SortCache_value(Int64SortCache *self, i32_t ord, Obj *blank)
         Int64_Set_Value(int_blank, InStream_Read_I64(self->dat_in));
     }
     return blank;
+}
+
+Integer64*
+I64SortCache_make_blank(Int64SortCache *self)
+{
+    UNUSED_VAR(self);
+    return Int64_new(0);
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

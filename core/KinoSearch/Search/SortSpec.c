@@ -21,7 +21,7 @@ SortSpec_new(VArray *rules)
 SortSpec*
 SortSpec_init(SortSpec *self, VArray *rules)
 {
-    i32_t i, max;
+    int32_t i, max;
     self->rules = VA_Shallow_Copy(rules);
     for (i = 0, max = VA_Get_Size(rules); i < max; i++) {
         SortRule *rule = (SortRule*)VA_Fetch(rules, i);
@@ -40,14 +40,14 @@ SortSpec_destroy(SortSpec *self)
 SortSpec*
 SortSpec_deserialize(SortSpec *self, InStream *instream)
 {
-    u32_t num_rules = InStream_Read_C32(instream);
+    uint32_t num_rules = InStream_Read_C32(instream);
     VArray *rules = VA_new(num_rules);
-    u32_t i;
+    uint32_t i;
 
-    /* Create base object. */
+    // Create base object. 
     self = self ? self : (SortSpec*)VTable_Make_Obj(SORTSPEC);
 
-    /* Add rules. */
+    // Add rules. 
     for (i = 0; i < num_rules; i++) {
         VA_Push(rules, (Obj*)SortRule_deserialize(NULL, instream));
     }
@@ -63,8 +63,8 @@ SortSpec_get_rules(SortSpec *self) { return self->rules; }
 void
 SortSpec_serialize(SortSpec *self, OutStream *target)
 {
-    u32_t num_rules = VA_Get_Size(self->rules);
-    u32_t i;
+    uint32_t num_rules = VA_Get_Size(self->rules);
+    uint32_t i;
     OutStream_Write_C32(target, num_rules);
     for (i = 0; i < num_rules; i++) {
         SortRule *rule = (SortRule*)VA_Fetch(self->rules, i);

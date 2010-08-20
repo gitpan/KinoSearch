@@ -8,11 +8,11 @@ class KinoSearch::Search::NoMatchScorer extends KinoSearch::Search::Matcher {
     inert NoMatchScorer*
     init(NoMatchScorer *self);
 
-    public i32_t
+    public int32_t
     Next(NoMatchScorer* self);
 
-    public i32_t
-    Advance(NoMatchScorer* self, i32_t target);
+    public int32_t
+    Advance(NoMatchScorer* self, int32_t target);
 }
 
 /* Copyright 2008-2010 Marvin Humphrey

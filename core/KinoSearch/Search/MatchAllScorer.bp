@@ -2,8 +2,8 @@ parcel KinoSearch cnick Kino;
 
 class KinoSearch::Search::MatchAllScorer extends KinoSearch::Search::Matcher {
 
-    i32_t          doc_id;
-    i32_t          doc_max;
+    int32_t        doc_id;
+    int32_t        doc_max;
     float          score;
 
     /**
@@ -11,21 +11,21 @@ class KinoSearch::Search::MatchAllScorer extends KinoSearch::Search::Matcher {
      * @param reader An IndexReader.
      */
     inert incremented MatchAllScorer*
-    new(float score, i32_t doc_max);
+    new(float score, int32_t doc_max);
 
     inert MatchAllScorer*
-    init(MatchAllScorer *self, float score, i32_t doc_max);
+    init(MatchAllScorer *self, float score, int32_t doc_max);
 
-    public i32_t
+    public int32_t
     Next(MatchAllScorer* self);
 
-    public i32_t
-    Advance(MatchAllScorer* self, i32_t target);
+    public int32_t
+    Advance(MatchAllScorer* self, int32_t target);
 
     public float
     Score(MatchAllScorer* self);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(MatchAllScorer* self);
 }
 

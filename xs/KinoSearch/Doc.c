@@ -9,7 +9,7 @@
 kino_Doc*
 kino_Doc_init(kino_Doc *self, void *fields, int32_t doc_id)
 {
-    /* Assign. */
+    // Assign. 
     if (fields) {
         if (SvTYPE((SV*)fields) != SVt_PVHV) THROW(KINO_ERR, "Not a hash");
         self->fields = SvREFCNT_inc((SV*)fields);
@@ -48,7 +48,7 @@ kino_Doc_store(kino_Doc *self, const kino_CharBuf *field, kino_Obj *value)
                : (SV*)Kino_Obj_To_Host(value);
     SvUTF8_on(key_sv);
     hv_store_ent((HV*)self->fields, key_sv, val_sv, 0);
-    /* TODO: make this a thread-local instead of creating it every time? */
+    // TODO: make this a thread-local instead of creating it every time? 
     SvREFCNT_dec(key_sv);
 }
 
@@ -156,7 +156,7 @@ kino_Doc_equals(kino_Doc *self, kino_Obj *other)
     if (!self->doc_id == evil_twin->doc_id)   { return false; }
     if (!!self->fields ^ !!evil_twin->fields) { return false; }
 
-    /* Verify fields.  Don't allow any deep data structures. */
+    // Verify fields.  Don't allow any deep data structures. 
     my_fields    = (HV*)self->fields;
     other_fields = (HV*)evil_twin->fields;
     if (HvKEYS(my_fields) != HvKEYS(other_fields)) { return false; }

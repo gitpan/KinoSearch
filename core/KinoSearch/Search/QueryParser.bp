@@ -34,7 +34,7 @@ class KinoSearch::Search::QueryParser cnick QParser
     CharBuf  *phrase_label;
     CharBuf  *bool_group_label;
     bool_t    heed_colons;
-    u32_t     label_inc;
+    uint32_t  label_inc;
 
     inert incremented QueryParser*
     new(Schema *schema, Analyzer *analyzer = NULL, 
@@ -215,14 +215,14 @@ class KinoSearch::Search::QueryParser cnick QParser
  */
 class KinoSearch::QueryParser::ParserClause extends KinoSearch::Object::Obj {
 
-    u32_t occur;
+    uint32_t occur;
     Query *query;
 
     inert incremented ParserClause*
-    new(Query *query, u32_t occur);
+    new(Query *query, uint32_t occur);
 
     inert ParserClause*
-    init(ParserClause *self, Query *query, u32_t occur);
+    init(ParserClause *self, Query *query, uint32_t occur);
 
     public void
     Destroy(ParserClause *self);
@@ -232,14 +232,14 @@ class KinoSearch::QueryParser::ParserClause extends KinoSearch::Object::Obj {
  */
 class KinoSearch::QueryParser::ParserToken extends KinoSearch::Object::Obj {
 
-    u32_t    type;
+    uint32_t type;
     CharBuf *text;
 
     inert incremented ParserToken*
-    new(u32_t type, const char *text = NULL, size_t len = 0);
+    new(uint32_t type, const char *text = NULL, size_t len = 0);
 
     inert ParserToken*
-    init(ParserToken *self, u32_t type, const char *text = NULL, 
+    init(ParserToken *self, uint32_t type, const char *text = NULL, 
          size_t len = 0);
 
     public void

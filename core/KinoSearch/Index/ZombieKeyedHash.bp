@@ -15,7 +15,7 @@ class KinoSearch::Index::SortFieldWriter::ZombieKeyedHash cnick ZKHash
     Destroy(ZombieKeyedHash *self);
 
     public incremented Obj*
-    Make_Key(ZombieKeyedHash *self, Obj *key, i32_t hash_code);
+    Make_Key(ZombieKeyedHash *self, Obj *key, int32_t hash_code);
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

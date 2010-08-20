@@ -23,7 +23,7 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     size_t      mem_thresh;  
     bool_t      flush_at_finish;
 
-    inert i32_t current_file_format;
+    inert int32_t current_file_format;
 
     inert incremented SortWriter*
     new(Schema *schema, Snapshot *snapshot, Segment *segment,
@@ -38,7 +38,7 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     set_default_mem_thresh(size_t mem_thresh);
 
     public void
-    Add_Inverted_Doc(SortWriter *self, Inverter *inverter, i32_t doc_id);
+    Add_Inverted_Doc(SortWriter *self, Inverter *inverter, int32_t doc_id);
 
     public void
     Add_Segment(SortWriter *self, SegReader *reader, 
@@ -47,7 +47,7 @@ class KinoSearch::Index::SortWriter extends KinoSearch::Index::DataWriter {
     public incremented Hash*
     Metadata(SortWriter *self);
 
-    public i32_t
+    public int32_t
     Format(SortWriter *self);
 
     public void

@@ -75,9 +75,6 @@ class KinoSearch::Analysis::Tokenizer
     Load(Tokenizer *self, Obj *dump);
 
     public bool_t
-    Dump_Equals(Tokenizer *self, Obj *dump);
-
-    public bool_t
     Equals(Tokenizer *self, Obj *other);
 
     public void

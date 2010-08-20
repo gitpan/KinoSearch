@@ -14,7 +14,7 @@
 
 TestQueryParser*
 TestQP_new(const char *query_string, Query *tree, Query *expanded, 
-           u32_t num_hits)
+           uint32_t num_hits)
 {
     TestQueryParser *self 
         = (TestQueryParser*)VTable_Make_Obj(TESTQUERYPARSER);
@@ -23,7 +23,7 @@ TestQP_new(const char *query_string, Query *tree, Query *expanded,
 
 TestQueryParser*
 TestQP_init(TestQueryParser *self, const char *query_string, Query *tree, 
-            Query *expanded, u32_t num_hits)
+            Query *expanded, uint32_t num_hits)
 {
     self->query_string = query_string ? TestUtils_get_cb(query_string) : NULL;
     self->tree         = tree     ? tree     : NULL;
@@ -47,7 +47,7 @@ Query*
 TestQP_get_tree(TestQueryParser *self)         { return self->tree; }
 Query*
 TestQP_get_expanded(TestQueryParser *self)     { return self->expanded; }
-u32_t
+uint32_t
 TestQP_get_num_hits(TestQueryParser *self)     { return self->num_hits; }
 
 

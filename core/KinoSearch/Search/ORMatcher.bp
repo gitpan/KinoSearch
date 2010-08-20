@@ -7,7 +7,7 @@ __C__
  */
 typedef struct kino_HeapedMatcherDoc {
     kino_Matcher *matcher;
-    chy_i32_t     doc;
+    int32_t   doc;
 } kino_HeapedMatcherDoc;
 
 #ifdef KINO_USE_SHORT_NAMES
@@ -26,8 +26,8 @@ class KinoSearch::Search::ORMatcher extends KinoSearch::Search::PolyMatcher {
     HeapedMatcherDoc **pool;    /* Pool of HMDs to minimize mallocs */
     char              *blob;    /* single allocation for all HMDs */
     HeapedMatcherDoc  *top_hmd; /* cached top elem */
-    u32_t              size;
-    u32_t              max_size;
+    uint32_t           size;
+    uint32_t           max_size;
 
     inert incremented ORMatcher*
     new(VArray *children);
@@ -41,13 +41,13 @@ class KinoSearch::Search::ORMatcher extends KinoSearch::Search::PolyMatcher {
     public void
     Destroy(ORMatcher *self);
 
-    public i32_t
+    public int32_t
     Next(ORMatcher *self);
 
-    public i32_t
-    Advance(ORMatcher *self, i32_t target);
+    public int32_t
+    Advance(ORMatcher *self, int32_t target);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(ORMatcher *self);
 }
 
@@ -60,7 +60,7 @@ class KinoSearch::Search::ORMatcher extends KinoSearch::Search::PolyMatcher {
 class KinoSearch::Search::ORScorer extends KinoSearch::Search::ORMatcher {
 
     float            *scores;
-    i32_t             doc_id;
+    int32_t           doc_id;
 
     inert incremented ORScorer* 
     new(VArray *children, Similarity *similarity);
@@ -71,16 +71,16 @@ class KinoSearch::Search::ORScorer extends KinoSearch::Search::ORMatcher {
     public void
     Destroy(ORScorer *self);
 
-    public i32_t
+    public int32_t
     Next(ORScorer *self);
 
-    public i32_t
-    Advance(ORScorer *self, i32_t target);
+    public int32_t
+    Advance(ORScorer *self, int32_t target);
 
     public float
     Score(ORScorer *self);
 
-    public i32_t 
+    public int32_t 
     Get_Doc_ID(ORScorer *self);
 }
 

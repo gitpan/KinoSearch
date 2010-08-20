@@ -5,15 +5,15 @@
 
 #include "KinoSearch/Store/FileHandle.h"
 
-i32_t FH_object_count = 0;
+int32_t FH_object_count = 0;
 
 FileHandle*
-FH_do_open(FileHandle *self, const CharBuf *path, u32_t flags)
+FH_do_open(FileHandle *self, const CharBuf *path, uint32_t flags)
 {
     self->path    = path ? CB_Clone(path) : CB_new(0);
     self->flags   = flags;
 
-    /* Track number of live FileHandles released into the wild. */
+    // Track number of live FileHandles released into the wild. 
     FH_object_count++;
 
     ABSTRACT_CLASS_CHECK(self, FILEHANDLE);
@@ -27,12 +27,12 @@ FH_destroy(FileHandle *self)
     DECREF(self->path);
     SUPER_DESTROY(self, FILEHANDLE);
 
-    /* Decrement count of FileHandle objects in existence. */
+    // Decrement count of FileHandle objects in existence. 
     FH_object_count--;
 }
 
 bool_t
-FH_grow(FileHandle *self, i64_t length)
+FH_grow(FileHandle *self, int64_t length)
 {
     UNUSED_VAR(self);
     UNUSED_VAR(length);

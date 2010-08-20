@@ -49,10 +49,7 @@ class KinoSearch::Plan::FullTextType
     public bool_t
     Highlightable(FullTextType *self);
 
-    public void
-    Set_Analyzer(FullTextType *self, Analyzer *analyzer);
-
-    public nullable Analyzer*
+    public Analyzer*
     Get_Analyzer(FullTextType *self);
 
     public incremented Similarity*

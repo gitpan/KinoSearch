@@ -7,8 +7,8 @@ class KinoSearch::Search::PolyMatcher extends KinoSearch::Search::Matcher {
 
     VArray       *children;
     Similarity   *sim;
-    u32_t         num_kids;
-    u32_t         matching_kids;
+    uint32_t      num_kids;
+    uint32_t      matching_kids;
     float        *coord_factors;
 
     inert incremented PolyMatcher* 

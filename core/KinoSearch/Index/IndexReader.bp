@@ -28,7 +28,7 @@ class KinoSearch::Index::IndexReader cnick IxReader
     public inert nullable IndexReader*
     init(IndexReader *self, Schema *schema = NULL, Folder *folder, 
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
-         i32_t seg_tick = -1, IndexManager *manager = NULL);
+         int32_t seg_tick = -1, IndexManager *manager = NULL);
 
     public inert incremented nullable IndexReader*
     open(Obj *index, Snapshot *snapshot = NULL, 
@@ -52,19 +52,19 @@ class KinoSearch::Index::IndexReader cnick IxReader
      * have been marked as deleted but not yet purged from the index are
      * included in this count.
      */
-    public abstract i32_t
+    public abstract int32_t
     Doc_Max(IndexReader *self);
 
     /** Return the number of documents available to the reader, subtracting
      * any that are marked as deleted.
      */
-    public abstract i32_t
+    public abstract int32_t
     Doc_Count(IndexReader *self);
 
     /** Return the number of documents which have been marked as deleted but
      * not yet purged from the index.
      */
-    public abstract i32_t
+    public abstract int32_t
     Del_Count(IndexReader *self);
 
     /** Return an array with one entry for each segment, corresponding to

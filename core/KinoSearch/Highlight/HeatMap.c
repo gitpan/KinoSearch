@@ -48,15 +48,15 @@ S_compare_i32(void *context, const void *va, const void *vb)
     return *(int32_t*)va - *(int32_t*)vb;
 }
 
-/* Create all the spans needed by HeatMap_Flatten_Spans, based on the source
- * offsets and lengths... but leave the scores at 0. */
+// Create all the spans needed by HeatMap_Flatten_Spans, based on the source
+// offsets and lengths... but leave the scores at 0.
 static VArray*
 S_flattened_but_empty_spans(VArray *spans)
 {
     const uint32_t num_spans = VA_Get_Size(spans);
     int32_t *bounds = (int32_t*)MALLOCATE((num_spans * 2) * sizeof(int32_t));
 
-    /* Assemble a list of all unique start/end boundaries. */
+    // Assemble a list of all unique start/end boundaries. 
     for (uint32_t i = 0; i < num_spans; i++) {
         Span *span            = (Span*)VA_Fetch(spans, i);
         bounds[i]             = span->offset;
@@ -73,7 +73,7 @@ S_flattened_but_empty_spans(VArray *spans)
         }
     }
 
-    /* Create one Span for each zone between two bounds. */
+    // Create one Span for each zone between two bounds. 
     VArray *flattened = VA_new(num_bounds - 1);
     for (uint32_t i = 0; i < num_bounds - 1; i++) {
         int32_t  start   = bounds[i];
@@ -98,23 +98,23 @@ HeatMap_flatten_spans(HeatMap *self, VArray *spans)
         VArray *flattened = S_flattened_but_empty_spans(spans);
         const uint32_t num_raw_flattened = VA_Get_Size(flattened);
 
-        /* Iterate over each of the source spans, contributing their scores to
-         * any destination span that falls within range. */
+        // Iterate over each of the source spans, contributing their scores to
+        // any destination span that falls within range.
         uint32_t dest_tick = 0;
         for (uint32_t i = 0; i < num_spans; i++) {
             Span *source_span = (Span*)VA_Fetch(spans, i);
             int32_t source_span_end 
                 = source_span->offset + source_span->length;
 
-            /* Get the location of the flattened span that shares the source
-             * span's offset. */
+            // Get the location of the flattened span that shares the source
+            // span's offset.
             for ( ; dest_tick < num_raw_flattened; dest_tick++) {
                 Span *dest_span = (Span*)VA_Fetch(flattened, dest_tick);
                 if (dest_span->offset == source_span->offset)
                     break;
             }
 
-            /* Fill in scores. */
+            // Fill in scores. 
             for (uint32_t j = dest_tick; j < num_raw_flattened; j++) {
                 Span *dest_span = (Span*)VA_Fetch(flattened, j);
                 if (dest_span->offset == source_span_end)
@@ -125,7 +125,7 @@ HeatMap_flatten_spans(HeatMap *self, VArray *spans)
             }
         }
 
-        /* Leave holes instead of spans that don't have any score. */
+        // Leave holes instead of spans that don't have any score. 
         dest_tick = 0;
         for (uint32_t i = 0; i < num_raw_flattened; i++) {
             Span *span = (Span*)VA_Fetch(flattened, i);
@@ -148,7 +148,7 @@ HeatMap_calc_proximity_boost(HeatMap *self, Span *span1, Span *span2)
     int32_t lower_end_offset = lower->offset + lower->length;
     int32_t distance = upper->offset - lower_end_offset;
 
-    /* If spans overlap, set distance to 0. */
+    // If spans overlap, set distance to 0. 
     if (distance < 0) distance = 0;
 
     if (distance > (int32_t)self->window) {
@@ -156,7 +156,7 @@ HeatMap_calc_proximity_boost(HeatMap *self, Span *span1, Span *span2)
     }
     else {
         float factor = (self->window - distance) / (float)self->window;
-        /* Damp boost with greater distance. */
+        // Damp boost with greater distance. 
         factor *= factor; 
         return factor * (lower->weight + upper->weight);
     }

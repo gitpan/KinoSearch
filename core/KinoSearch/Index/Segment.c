@@ -10,38 +10,38 @@
 #include "KinoSearch/Util/IndexFileNames.h"
 
 Segment*
-Seg_new(i64_t number)
+Seg_new(int64_t number)
 {
     Segment *self = (Segment*)VTable_Make_Obj(SEGMENT);
     return Seg_init(self, number);
 }
 
 Segment*
-Seg_init(Segment *self, i64_t number)
+Seg_init(Segment *self, int64_t number)
 {
-    /* Validate. */
+    // Validate. 
     if (number < 0) { THROW(ERR, "Segment number %i64 less than 0", number); }
 
-    /* Init. */
+    // Init. 
     self->metadata  = Hash_new(0);
     self->count     = 0;
     self->by_num    = VA_new(2);
     self->by_name   = Hash_new(0);
 
-    /* Start field numbers at 1, not 0. */
+    // Start field numbers at 1, not 0. 
     VA_Push(self->by_num, INCREF(&EMPTY));
 
-    /* Assign. */
+    // Assign. 
     self->number = number;
 
-    /* Derive. */
+    // Derive. 
     self->name = Seg_num_to_name(number);
 
     return self;
 }
 
 CharBuf*
-Seg_num_to_name(i64_t number)
+Seg_num_to_name(int64_t number)
 {
     char base36[StrHelp_MAX_BASE36_BYTES];
     StrHelp_to_base36(number, &base36);
@@ -81,18 +81,18 @@ Seg_read_file(Segment *self, Folder *folder)
     Hash    *metadata = (Hash*)Json_slurp_json(folder, filename);
     Hash    *my_metadata;
 
-    /* Bail unless the segmeta file was read successfully. */
+    // Bail unless the segmeta file was read successfully. 
     DECREF(filename);
     if (!metadata) { return false; }
     CERTIFY(metadata, HASH);
 
-    /* Grab metadata for the Segment object itself. */
+    // Grab metadata for the Segment object itself. 
     DECREF(self->metadata);
     self->metadata = metadata;
     my_metadata = (Hash*)CERTIFY(
         Hash_Fetch_Str(self->metadata, "segmeta", 7), HASH);
 
-    /* Assign. */
+    // Assign. 
     {
         Obj *count = Hash_Fetch_Str(my_metadata, "count", 5);
         if (!count) { count = Hash_Fetch_Str(my_metadata, "doc_count", 9); }
@@ -100,23 +100,23 @@ Seg_read_file(Segment *self, Folder *folder)
         else { self->count = Obj_To_I64(count); }
     }
 
-    /* Get list of field nums. */
+    // Get list of field nums. 
     {
-        u32_t i;
+        uint32_t i;
         VArray *source_by_num = (VArray*)Hash_Fetch_Str(my_metadata, 
             "field_names", 11);
-        u32_t num_fields = source_by_num ? VA_Get_Size(source_by_num) : 0;
+        uint32_t num_fields = source_by_num ? VA_Get_Size(source_by_num) : 0;
         if (source_by_num == NULL) {
             THROW(ERR, "Failed to extract 'field_names' from metadata");
         }
 
-        /* Init. */
+        // Init. 
         DECREF(self->by_num);
         DECREF(self->by_name);
         self->by_num  = VA_new(num_fields);
         self->by_name = Hash_new(num_fields);
 
-        /* Copy the list of fields from the source. */
+        // Copy the list of fields from the source. 
         for (i = 0; i < num_fields; i++) {
             CharBuf *name = (CharBuf*)VA_Fetch(source_by_num, i);
             Seg_Add_Field(self, name);
@@ -131,7 +131,7 @@ Seg_write_file(Segment *self, Folder *folder)
 {
     Hash *my_metadata = Hash_new(16);
 
-    /* Store metadata specific to this Segment object. */
+    // Store metadata specific to this Segment object. 
     Hash_Store_Str(my_metadata, "count", 5, 
         (Obj*)CB_newf("%i64", self->count) );
     Hash_Store_Str(my_metadata, "name", 4, (Obj*)CB_Clone(self->name));
@@ -148,7 +148,7 @@ Seg_write_file(Segment *self, Folder *folder)
     }
 }
 
-i32_t 
+int32_t 
 Seg_add_field(Segment *self, const CharBuf *field)
 {
     Integer32 *num = (Integer32*)Hash_Fetch(self->by_name, (Obj*)field);
@@ -156,7 +156,7 @@ Seg_add_field(Segment *self, const CharBuf *field)
         return Int32_Get_Value(num);
     }
     else {
-        i32_t field_num = VA_Get_Size(self->by_num);
+        int32_t field_num = VA_Get_Size(self->by_num);
         Hash_Store(self->by_name, (Obj*)field, (Obj*)Int32_new(field_num));
         VA_Push(self->by_num, (Obj*)CB_Clone(field));
         return field_num;
@@ -165,15 +165,15 @@ Seg_add_field(Segment *self, const CharBuf *field)
 
 CharBuf*
 Seg_get_name(Segment *self)               { return self->name; }
-i64_t
+int64_t
 Seg_get_number(Segment *self)             { return self->number; }
 void
-Seg_set_count(Segment *self, i64_t count) { self->count = count; }
-i64_t
+Seg_set_count(Segment *self, int64_t count) { self->count = count; }
+int64_t
 Seg_get_count(Segment *self)              { return self->count; }
 
-i64_t
-Seg_increment_count(Segment *self, i64_t increment) 
+int64_t
+Seg_increment_count(Segment *self, int64_t increment) 
 { 
    self->count += increment;
    return self->count;
@@ -211,7 +211,7 @@ Seg_fetch_metadata_str(Segment *self, const char *key, size_t len)
 Hash*
 Seg_get_metadata(Segment *self) { return self->metadata; }
     
-i32_t
+int32_t
 Seg_compare_to(Segment *self, Obj *other)
 {
     Segment *other_seg = (Segment*)CERTIFY(other, SEGMENT);
@@ -221,14 +221,14 @@ Seg_compare_to(Segment *self, Obj *other)
 }
 
 CharBuf*
-Seg_field_name(Segment *self, i32_t field_num)
+Seg_field_name(Segment *self, int32_t field_num)
 {
      return field_num 
         ? (CharBuf*)VA_Fetch(self->by_num, field_num)
         : NULL;
 }
 
-i32_t
+int32_t
 Seg_field_num(Segment *self, const CharBuf *field)
 {
     if (field == NULL) {

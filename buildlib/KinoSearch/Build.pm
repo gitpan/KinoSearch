@@ -180,6 +180,7 @@ sub ACTION_charmony {
 
     # Clean up after Charmonizer if it doesn't succeed on its own.
     $self->add_to_cleanup("_charm*");
+    $self->add_to_cleanup($charmony_path);
 
     # Prepare arguments to charmonize.
     my $cc        = $self->config('cc'); 
@@ -552,27 +553,6 @@ sub ACTION_code {
     $self->dispatch('compile_custom_xs');
 
     $self->SUPER::ACTION_code;
-}
-
-# Copied from Module::Build::Base.pm, added exclude '#' and follow symlinks.
-sub rscan_dir {
-    my ( $self, $dir, $pattern ) = @_;
-    my @result;
-    local $_;    # find() can overwrite $_, so protect ourselves
-    my $subr
-        = !$pattern ? sub { push @result, $File::Find::name }
-        : !ref($pattern)
-        || ( ref $pattern eq 'Regexp' )
-        ? sub { push @result, $File::Find::name if /$pattern/ }
-        : ref($pattern) eq 'CODE'
-        ? sub { push @result, $File::Find::name if $pattern->() }
-        : die "Unknown pattern type";
-
-    File::Find::find( { wanted => $subr, no_chdir => 1, follow => 1 }, $dir );
-
-    # Skip emacs lock files.
-    my @filtered = grep !/#/, @result;
-    return \@filtered;
 }
 
 sub autogen_header {

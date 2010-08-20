@@ -9,14 +9,14 @@ class KinoSearch::Search::Hits extends KinoSearch::Object::Obj {
     Searcher   *searcher;
     TopDocs    *top_docs;
     VArray     *match_docs;
-    u32_t       offset;
+    uint32_t    offset;
 
     inert incremented Hits*
-    new(Searcher *searcher, TopDocs *top_docs, u32_t offset = 0);
+    new(Searcher *searcher, TopDocs *top_docs, uint32_t offset = 0);
 
     inert Hits*
     init(Hits *self, Searcher *searcher, TopDocs *top_docs,
-         u32_t offset = 0);
+         uint32_t offset = 0);
 
     /** Return the next hit, or NULL when the iterator is exhausted.
      */
@@ -28,7 +28,7 @@ class KinoSearch::Search::Hits extends KinoSearch::Object::Obj {
      * matches, not just the number of matches represented by the Hits
      * iterator.
      */
-    public u32_t
+    public uint32_t
     Total_Hits(Hits *self);
 
     public void

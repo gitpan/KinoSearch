@@ -10,12 +10,12 @@ class KinoSearch::Index::HighlightReader cnick HLReader
     inert HighlightReader*
     init(HighlightReader *self, Schema *schema = NULL, Folder *folder = NULL, 
          Snapshot *snapshot = NULL, VArray *segments = NULL, 
-         i32_t seg_tick = -1);
+         int32_t seg_tick = -1);
 
     /** Return the DocVector object for the given doc id.
      */
     public abstract incremented DocVector*
-    Fetch(HighlightReader *self, i32_t doc_id);
+    Fetch(HighlightReader *self, int32_t doc_id);
 
     public incremented nullable HighlightReader*
     Aggregator(HighlightReader *self, VArray *readers, I32Array *offsets);
@@ -34,7 +34,7 @@ class KinoSearch::Index::PolyHighlightReader cnick PolyHLReader
     init(PolyHighlightReader *self, VArray *readers, I32Array *offsets);
 
     public incremented DocVector*
-    Fetch(PolyHighlightReader *self, i32_t doc_id);
+    Fetch(PolyHighlightReader *self, int32_t doc_id);
 
     public void
     Close(PolyHighlightReader *self);
@@ -49,25 +49,25 @@ class KinoSearch::Index::DefaultHighlightReader cnick DefHLReader
     InStream *ix_in;
     InStream *dat_in;
 
-    /* Constructors.
+    /** Constructors.
      */
     inert incremented DefaultHighlightReader*
     new(Schema *schema, Folder *folder, Snapshot *snapshot, VArray *segments,
-        i32_t seg_tick);
+        int32_t seg_tick);
 
     inert DefaultHighlightReader*
     init(DefaultHighlightReader *self, Schema *schema, Folder *folder, 
-         Snapshot *snapshot, VArray *segments, i32_t seg_tick);
+         Snapshot *snapshot, VArray *segments, int32_t seg_tick);
 
     /** Return the DocVector object for the given doc id.
      */
     public incremented DocVector*
-    Fetch(DefaultHighlightReader *self, i32_t doc_id);
+    Fetch(DefaultHighlightReader *self, int32_t doc_id);
 
-    /* Return the raw bytes of an entry.
+    /** Return the raw bytes of an entry.
      */
     void
-    Read_Record(DefaultHighlightReader *self, i32_t doc_id, 
+    Read_Record(DefaultHighlightReader *self, int32_t doc_id, 
                 ByteBuf *buffer);
 
     public void

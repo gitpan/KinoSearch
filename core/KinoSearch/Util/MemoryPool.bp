@@ -13,9 +13,9 @@ parcel KinoSearch cnick Kino;
 class KinoSearch::Util::MemoryPool cnick MemPool
     extends KinoSearch::Object::Obj {
 
-    u32_t        arena_size;
+    uint32_t     arena_size;
     VArray      *arenas;
-    i32_t        tick;
+    int32_t      tick;
     char        *buf;
     char        *last_buf;
     char        *limit;
@@ -26,7 +26,10 @@ class KinoSearch::Util::MemoryPool cnick MemPool
      * If 0, it will be set to 1 MiB.
      */
     inert incremented MemoryPool*
-    new(u32_t arena_size);
+    new(uint32_t arena_size);
+
+    inert MemoryPool*
+    init(MemoryPool *self, uint32_t arena_size);
 
     /** Run some tests.  (This belongs in a test file, but we don't have those
      * for C as of the creation of this function.)

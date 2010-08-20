@@ -15,7 +15,7 @@ new(...)
 CODE:
 {
     kino_Token *starter_token = NULL;
-    /* parse params, only if there's more than one arg */
+    // parse params, only if there's more than one arg 
     if (items > 1) {
         SV *text_sv = NULL;
         XSBind_allot_params( &(ST(0)), 1, items, 

@@ -58,23 +58,6 @@ Tokenizer_load(Tokenizer *self, Obj *dump)
 }
 
 bool_t
-Tokenizer_dump_equals(Tokenizer *self, Obj *dump)
-{
-    Tokenizer_dump_equals_t super_dump_equals = (Tokenizer_dump_equals_t)
-        SUPER_METHOD(TOKENIZER, Tokenizer, Dump_Equals);
-    if (!super_dump_equals(self, dump)) {
-        return false;
-    }
-    else {
-        Hash *source = (Hash*)CERTIFY(dump, HASH);
-        CharBuf *pattern = (CharBuf*)Hash_Fetch_Str(source, "pattern", 7);
-        if (!pattern) return false;
-        if (!CB_Equals(self->pattern, (Obj*)pattern)) return false;
-    }
-    return true;
-}
-
-bool_t
 Tokenizer_equals(Tokenizer *self, Obj *other)
 {
     Tokenizer *const evil_twin = (Tokenizer*)other;

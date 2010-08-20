@@ -8,12 +8,12 @@ class KinoSearch::Index::TermVector cnick TV
 
     CharBuf *field;
     CharBuf *text;
-    u32_t    num_pos;
+    uint32_t num_pos;
     I32Array  *positions;
     I32Array  *start_offsets;
     I32Array  *end_offsets;
 
-    /* Constructor.  The object will assume ownership of the positions,
+    /** Constructor.  The object will assume ownership of the positions,
      * start_offsets, and end_offsets arrays.
      */
     inert incremented TermVector*

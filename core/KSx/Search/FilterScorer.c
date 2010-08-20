@@ -4,21 +4,21 @@
 #include "KSx/Search/FilterScorer.h"
 
 FilterScorer*
-FilterScorer_new(BitVector *bits, i32_t doc_max)
+FilterScorer_new(BitVector *bits, int32_t doc_max)
 {
     FilterScorer *self = (FilterScorer*)VTable_Make_Obj(FILTERSCORER);
     return FilterScorer_init(self, bits, doc_max);
 }
 
 FilterScorer*
-FilterScorer_init(FilterScorer *self, BitVector *bits, i32_t doc_max)
+FilterScorer_init(FilterScorer *self, BitVector *bits, int32_t doc_max)
 {
     Matcher_init((Matcher*)self);
 
-    /* Init. */
+    // Init. 
     self->doc_id       = 0;
 
-    /* Assign. */
+    // Assign. 
     self->bits         = (BitVector*)INCREF(bits);
     self->doc_max      = doc_max;
 
@@ -32,7 +32,7 @@ FilterScorer_destroy(FilterScorer *self)
     SUPER_DESTROY(self, FILTERSCORER);
 }
 
-i32_t
+int32_t
 FilterScorer_next(FilterScorer* self) 
 {
     do {
@@ -44,8 +44,8 @@ FilterScorer_next(FilterScorer* self)
     return self->doc_id;
 }
 
-i32_t
-FilterScorer_skip_to(FilterScorer* self, i32_t target) 
+int32_t
+FilterScorer_skip_to(FilterScorer* self, int32_t target) 
 {
     self->doc_id = target - 1;
     return FilterScorer_next(self);
@@ -58,7 +58,7 @@ FilterScorer_score(FilterScorer* self)
     return 0.0f;
 }
 
-i32_t 
+int32_t 
 FilterScorer_get_doc_id(FilterScorer* self) 
 {
     return self->doc_id;

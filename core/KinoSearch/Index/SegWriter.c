@@ -73,7 +73,7 @@ SegWriter_prep_seg_dir(SegWriter *self)
     Folder  *folder   = SegWriter_Get_Folder(self);
     CharBuf *seg_name = Seg_Get_Name(self->segment);
 
-    /* Clear stale segment files from crashed indexing sessions. */
+    // Clear stale segment files from crashed indexing sessions. 
     if (Folder_Exists(folder, seg_name)) {
         bool_t result = Folder_Delete_Tree(folder, seg_name);
         if (!result) { 
@@ -82,7 +82,7 @@ SegWriter_prep_seg_dir(SegWriter *self)
     }
 
     {
-        /* Create the segment directory. */
+        // Create the segment directory. 
         bool_t result = Folder_MkDir(folder, seg_name);
         if (!result) { RETHROW(INCREF(Err_get_error())); }
     }
@@ -91,30 +91,30 @@ SegWriter_prep_seg_dir(SegWriter *self)
 void
 SegWriter_add_doc(SegWriter *self, Doc *doc, float boost)
 {
-    i32_t doc_id = (int32_t)Seg_Increment_Count(self->segment, 1);
+    int32_t doc_id = (int32_t)Seg_Increment_Count(self->segment, 1);
     Inverter_Invert_Doc(self->inverter, doc);
     Inverter_Set_Boost(self->inverter, boost);
     SegWriter_Add_Inverted_Doc(self, self->inverter, doc_id);
 }
 
 void
-SegWriter_add_inverted_doc(SegWriter *self, Inverter *inverter, i32_t doc_id)
+SegWriter_add_inverted_doc(SegWriter *self, Inverter *inverter, int32_t doc_id)
 {
-    u32_t i, max;
+    uint32_t i, max;
     for (i = 0, max = VA_Get_Size(self->writers); i < max; i++) {
         DataWriter *writer = (DataWriter*)VA_Fetch(self->writers, i);
         DataWriter_Add_Inverted_Doc(writer, inverter, doc_id);
     }
 }
 
-/* Adjust current doc id. We create our own doc_count rather than rely on
- * SegReader's number because the DeletionsWriter and the SegReader are
- * probably out of sync. */
+// Adjust current doc id. We create our own doc_count rather than rely on
+// SegReader's number because the DeletionsWriter and the SegReader are
+// probably out of sync.
 static void
 S_adjust_doc_id(SegWriter *self, SegReader *reader, I32Array *doc_map)
 {
-    u32_t doc_count = SegReader_Doc_Max(reader);
-    u32_t i, max;
+    uint32_t doc_count = SegReader_Doc_Max(reader);
+    uint32_t i, max;
     for (i = 1, max = I32Arr_Get_Size(doc_map); i < max; i++) {
         if (I32Arr_Get(doc_map, i) == 0) doc_count--;
     }
@@ -124,19 +124,19 @@ S_adjust_doc_id(SegWriter *self, SegReader *reader, I32Array *doc_map)
 void
 SegWriter_add_segment(SegWriter *self, SegReader *reader, I32Array *doc_map)
 {
-    u32_t i, max;
+    uint32_t i, max;
 
-    /* Bulk add the slab of documents to the various writers. */
+    // Bulk add the slab of documents to the various writers. 
     for (i = 0, max = VA_Get_Size(self->writers); i < max; i++) {
         DataWriter *writer = (DataWriter*)VA_Fetch(self->writers, i);
         DataWriter_Add_Segment(writer, reader, doc_map);
     }
 
-    /* Bulk add the segment to the DeletionsWriter, so that it can merge
-     * previous segment files as necessary. */
+    // Bulk add the segment to the DeletionsWriter, so that it can merge
+    // previous segment files as necessary.
     DelWriter_Add_Segment(self->del_writer, reader, doc_map);
 
-    /* Adust the document id. */
+    // Adust the document id. 
     S_adjust_doc_id(self, reader, doc_map);
 }
 
@@ -145,19 +145,19 @@ SegWriter_merge_segment(SegWriter *self, SegReader *reader, I32Array *doc_map)
 {
     Snapshot *snapshot = SegWriter_Get_Snapshot(self);
     CharBuf  *seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    u32_t i, max;
+    uint32_t i, max;
 
-    /* Have all the sub-writers merge the segment. */
+    // Have all the sub-writers merge the segment. 
     for (i = 0, max = VA_Get_Size(self->writers); i < max; i++) {
         DataWriter *writer = (DataWriter*)VA_Fetch(self->writers, i);
         DataWriter_Merge_Segment(writer, reader, doc_map);
     }
     DelWriter_Merge_Segment(self->del_writer, reader, doc_map);
 
-    /* Remove seg directory from snapshot. */
+    // Remove seg directory from snapshot. 
     Snapshot_Delete_Entry(snapshot, seg_name);
 
-    /* Adust the document id. */
+    // Adust the document id. 
     S_adjust_doc_id(self, reader, doc_map);
 }
 
@@ -166,16 +166,16 @@ SegWriter_delete_segment(SegWriter *self, SegReader *reader)
 {
     Snapshot *snapshot = SegWriter_Get_Snapshot(self);
     CharBuf  *seg_name = Seg_Get_Name(SegReader_Get_Segment(reader));
-    u32_t i, max;
+    uint32_t i, max;
 
-    /* Have all the sub-writers delete the segment. */
+    // Have all the sub-writers delete the segment. 
     for (i = 0, max = VA_Get_Size(self->writers); i < max; i++) {
         DataWriter *writer = (DataWriter*)VA_Fetch(self->writers, i);
         DataWriter_Delete_Segment(writer, reader);
     }
     DelWriter_Delete_Segment(self->del_writer, reader);
 
-    /* Remove seg directory from snapshot. */
+    // Remove seg directory from snapshot. 
     Snapshot_Delete_Entry(snapshot, seg_name);
 }
 
@@ -183,9 +183,9 @@ void
 SegWriter_finish(SegWriter *self)
 {
     CharBuf *seg_name = Seg_Get_Name(self->segment);
-    u32_t i, max;
+    uint32_t i, max;
 
-    /* Finish off children. */
+    // Finish off children. 
     for (i = 0, max = VA_Get_Size(self->writers); i < max; i++) {
         DataWriter *writer = (DataWriter*)VA_Fetch(self->writers, i);
         DataWriter_Finish(writer);
@@ -200,7 +200,7 @@ SegWriter_finish(SegWriter *self)
         DECREF(segmeta_filename);
     }
 
-    /* Collapse segment files into compound file. */
+    // Collapse segment files into compound file. 
     Folder_Consolidate(self->folder, seg_name);
 }
 

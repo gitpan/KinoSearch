@@ -10,12 +10,12 @@ class KinoSearch::Search::HitQueue cnick HitQ
     extends KinoSearch::Util::PriorityQueue {
 
     FieldType     **field_types;
-    u8_t           *actions;
-    u32_t           num_actions;
+    uint8_t        *actions;
+    uint32_t        num_actions;
     bool_t          need_values;
 
     inert incremented HitQueue*
-    new(Schema *schema = NULL, SortSpec *sort_spec = NULL, u32_t wanted);
+    new(Schema *schema = NULL, SortSpec *sort_spec = NULL, uint32_t wanted);
 
     /** 
      * @param schema A Schema.  Required if <code>sort_spec</code> supplied.
@@ -25,7 +25,7 @@ class KinoSearch::Search::HitQueue cnick HitQ
      */
     inert HitQueue*
     init(HitQueue *self, Schema *schema = NULL, SortSpec *sort_spec = NULL, 
-         u32_t wanted);
+         uint32_t wanted);
 
     public void
     Destroy(HitQueue *self);

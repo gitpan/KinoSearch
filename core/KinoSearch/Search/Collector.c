@@ -40,7 +40,7 @@ Coll_set_matcher(Collector *self, Matcher *matcher)
 }
 
 void
-Coll_set_base(Collector *self, i32_t base)
+Coll_set_base(Collector *self, int32_t base)
 {
     self->base = base;
 }
@@ -68,9 +68,9 @@ BitColl_destroy(BitCollector *self)
 }
 
 void
-BitColl_collect(BitCollector *self, i32_t doc_id) 
+BitColl_collect(BitCollector *self, int32_t doc_id) 
 {
-    /* Add the doc_id to the BitVector. */
+    // Add the doc_id to the BitVector. 
     BitVec_Set(self->bit_vec, (self->base + doc_id));
 }
 
@@ -82,7 +82,7 @@ BitColl_need_score(BitCollector *self)
 }
 
 OffsetCollector*
-OffsetColl_new(Collector *inner_coll, i32_t offset) 
+OffsetColl_new(Collector *inner_coll, int32_t offset) 
 {
     OffsetCollector *self 
         = (OffsetCollector*)VTable_Make_Obj(OFFSETCOLLECTOR);
@@ -90,7 +90,7 @@ OffsetColl_new(Collector *inner_coll, i32_t offset)
 }
 
 OffsetCollector*
-OffsetColl_init(OffsetCollector *self, Collector *inner_coll, i32_t offset)
+OffsetColl_init(OffsetCollector *self, Collector *inner_coll, int32_t offset)
 {
     Coll_init((Collector*)self);
     self->offset     = offset;
@@ -112,7 +112,7 @@ OffsetColl_set_reader(OffsetCollector *self, SegReader *reader)
 }
 
 void
-OffsetColl_set_base(OffsetCollector *self, i32_t base)
+OffsetColl_set_base(OffsetCollector *self, int32_t base)
 {
     Coll_Set_Base(self->inner_coll, base);
 }
@@ -124,7 +124,7 @@ OffsetColl_set_matcher(OffsetCollector *self, Matcher *matcher)
 }
 
 void
-OffsetColl_collect(OffsetCollector *self, i32_t doc_id) 
+OffsetColl_collect(OffsetCollector *self, int32_t doc_id) 
 {
     Coll_Collect(self->inner_coll, (doc_id + self->offset));
 }

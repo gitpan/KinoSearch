@@ -20,7 +20,7 @@
 #include "KinoSearch/Util/MemoryPool.h"
 #include "KinoSearch/Util/SortUtils.h"
 
-i32_t SortWriter_current_file_format = 3;
+int32_t SortWriter_current_file_format = 3;
 
 static size_t default_mem_thresh = 0x400000; // 4 MB
 
@@ -36,10 +36,10 @@ SortWriter*
 SortWriter_init(SortWriter *self, Schema *schema, Snapshot *snapshot,
                 Segment *segment, PolyReader *polyreader)
 {
-    u32_t field_max = Schema_Num_Fields(schema) + 1;
+    uint32_t field_max = Schema_Num_Fields(schema) + 1;
     DataWriter_init((DataWriter*)self, schema, snapshot, segment, polyreader);
 
-    /* Init. */
+    // Init. 
     self->field_writers   = VA_new(field_max);
     self->counts          = Hash_new(0);
     self->null_ords       = Hash_new(0);
@@ -110,9 +110,9 @@ S_lazy_init_field_writer(SortWriter *self, int32_t field_num)
 
 void
 SortWriter_add_inverted_doc(SortWriter *self, Inverter *inverter, 
-                            i32_t doc_id)
+                            int32_t doc_id)
 {
-    i32_t field_num;
+    int32_t field_num;
 
     Inverter_Iter_Init(inverter);
     while (0 != (field_num = Inverter_Next(inverter))) {
@@ -125,9 +125,8 @@ SortWriter_add_inverted_doc(SortWriter *self, Inverter *inverter,
         }
     }
 
-    /* If our SortFieldWriters have collectively passed the memory threshold,
-     * flush all of them, then release all unique values with a single action.
-     * */
+    // If our SortFieldWriters have collectively passed the memory threshold,
+    // flush all of them, then release all unique values with a single action.
     if (MemPool_Get_Consumed(self->mem_pool) > self->mem_thresh) {
         for (uint32_t i = 0; i < VA_Get_Size(self->field_writers); i++) {
             SortFieldWriter *const field_writer 
@@ -144,7 +143,7 @@ SortWriter_add_segment(SortWriter *self, SegReader *reader, I32Array *doc_map)
 {
     VArray *fields  = Schema_All_Fields(self->schema);
 
-    /* Proceed field-at-a-time, rather than doc-at-a-time. */
+    // Proceed field-at-a-time, rather than doc-at-a-time. 
     for (uint32_t i = 0, max = VA_Get_Size(fields); i < max; i++) {
         CharBuf *field = (CharBuf*)VA_Fetch(fields, i);
         SortReader *sort_reader = (SortReader*)SegReader_Fetch(reader, 
@@ -211,7 +210,7 @@ SortWriter_finish(SortWriter *self)
     }
     VA_Clear(field_writers);
 
-    /* Store metadata. */
+    // Store metadata. 
     Seg_Store_Metadata_Str(self->segment, "sort", 4,
         (Obj*)SortWriter_Metadata(self));
 
@@ -238,7 +237,7 @@ SortWriter_metadata(SortWriter *self)
     return metadata;
 }
 
-i32_t
+int32_t
 SortWriter_format(SortWriter *self)
 {
     UNUSED_VAR(self);

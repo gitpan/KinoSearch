@@ -153,7 +153,7 @@ __C__
     kino_Err_rethrow((kino_Err*)_error, __FILE__, __LINE__, \
         KINO_ERR_FUNC_MACRO)
 
-/* Macro version of kino_Err_throw_at which inserts contextual information
+/** Macro version of kino_Err_throw_at which inserts contextual information
  * automatically, provided that the compiler supports the necessary features.
  */
 #ifdef CHY_HAS_VARIADIC_MACROS

@@ -34,15 +34,19 @@ NumType_dump_for_schema(NumericType *self)
     Hash *dump = Hash_new(0);
     Hash_Store_Str(dump, "type", 4, (Obj*)NumType_Specifier(self));
 
+    // Store attributes that override the defaults. 
     if (self->boost != 1.0) {
         Hash_Store_Str(dump, "boost", 5, (Obj*)CB_newf("%f64", self->boost));
     }
-    Hash_Store_Str(dump, "indexed", 7, 
-        (Obj*)CB_newf("%i32", (int32_t)self->indexed));
-    Hash_Store_Str(dump, "stored", 6, 
-        (Obj*)CB_newf("%i32", (int32_t)self->stored));
-    Hash_Store_Str(dump, "sortable", 8, 
-        (Obj*)CB_newf("%i32", (int32_t)self->sortable));
+    if (!self->indexed) {
+        Hash_Store_Str(dump, "indexed", 7, (Obj*)CB_newf("0"));
+    }
+    if (!self->stored) {
+        Hash_Store_Str(dump, "stored", 6, (Obj*)CB_newf("0"));
+    }
+    if (self->sortable) {
+        Hash_Store_Str(dump, "sortable", 8, (Obj*)CB_newf("1"));
+    }
 
     return dump;
 }
@@ -53,32 +57,56 @@ NumType_dump(NumericType *self)
     Hash *dump = NumType_Dump_For_Schema(self);
     Hash_Store_Str(dump, "_class", 6, 
         (Obj*)CB_Clone(NumType_Get_Class_Name(self)));
+    DECREF(Hash_Delete_Str(dump, "type", 4));
     return dump;
 }
 
 NumericType*
 NumType_load(NumericType *self, Obj *dump)
 {
+    UNUSED_VAR(self);
     Hash *source = (Hash*)CERTIFY(dump, HASH);
+
+    // Get a VTable
     CharBuf *class_name = (CharBuf*)Hash_Fetch_Str(source, "_class", 6);
-    VTable *vtable 
-        = (class_name != NULL && Obj_Is_A((Obj*)class_name, CHARBUF)) 
-        ? VTable_singleton(class_name, NULL)
-        : FLOAT64TYPE;
+    CharBuf *type_spec  = (CharBuf*)Hash_Fetch_Str(source, "type", 4);
+    VTable *vtable = NULL;
+    if (class_name != NULL && Obj_Is_A((Obj*)class_name, CHARBUF)) {
+        vtable = VTable_singleton(class_name, NULL);
+    }
+    else if (type_spec != NULL && Obj_Is_A((Obj*)type_spec, CHARBUF)) {
+        if (CB_Equals_Str(type_spec, "i32_t", 5)) { 
+            vtable = INT32TYPE; 
+        }
+        else if (CB_Equals_Str(type_spec, "i64_t", 5)) { 
+            vtable = INT64TYPE; 
+        }
+        else if (CB_Equals_Str(type_spec, "f32_t", 5)) { 
+            vtable = FLOAT32TYPE; 
+        }
+        else if (CB_Equals_Str(type_spec, "f64_t", 5)) { 
+            vtable = FLOAT64TYPE; 
+        }
+        else {
+            THROW(ERR, "Unrecognized type string: '%o'", type_spec);
+        }
+    }
+    CERTIFY(vtable, VTABLE);
     NumericType *loaded = (NumericType*)VTable_Make_Obj(vtable);
-    Obj *boost_dump   = Hash_Fetch_Str(source, "boost", 5);
+
+    // Extract boost.
+    Obj *boost_dump = Hash_Fetch_Str(source, "boost", 5);
+    float boost = boost_dump ? (float)Obj_To_F64(boost_dump) : 1.0f;
+
+    // Find boolean properties.
     Obj *indexed_dump = Hash_Fetch_Str(source, "indexed", 7);
     Obj *stored_dump  = Hash_Fetch_Str(source, "stored", 6);
     Obj *sort_dump    = Hash_Fetch_Str(source, "sortable", 8);
-    UNUSED_VAR(self);
+    bool_t indexed  = indexed_dump ? (bool_t)Obj_To_I64(indexed_dump) : true;
+    bool_t stored   = stored_dump  ? (bool_t)Obj_To_I64(stored_dump)  : true;
+    bool_t sortable = sort_dump    ? (bool_t)Obj_To_I64(sort_dump)    : false;
 
-    NumType_init(loaded);
-    if (boost_dump)   { loaded->boost    = (float)Obj_To_F64(boost_dump);    }
-    if (indexed_dump) { loaded->indexed  = (bool_t)Obj_To_I64(indexed_dump); }
-    if (stored_dump)  { loaded->stored   = (bool_t)Obj_To_I64(stored_dump);  }
-    if (sort_dump)    { loaded->sortable = (bool_t)Obj_To_I64(sort_dump);    }
-
-    return loaded;
+    return NumType_init2(loaded, boost, indexed, stored, sortable);
 }
 
 /****************************************************************************/
@@ -118,22 +146,15 @@ Float64Type_primitive_id(Float64Type *self)
     return FType_FLOAT64;
 }
 
-Float64*
-Float64Type_make_blank(Float64Type *self)
-{
-    UNUSED_VAR(self);
-    return Float64_new(0.0);
-}
-
 bool_t
 Float64Type_equals(Float64Type *self, Obj *other)
 {
     if (self == (Float64Type*)other) { return true; }
-    else {
-        Float64Type_equals_t super_equals = (Float64Type_equals_t)
-            SUPER_METHOD(FLOAT64TYPE, Float64Type, Equals);
-        return super_equals(self, other);
-    }
+    if (!other) { return false; }
+    if (!Obj_Is_A(other, FLOAT64TYPE)) { return false; }
+    Float64Type_equals_t super_equals = (Float64Type_equals_t)
+        SUPER_METHOD(FLOAT64TYPE, Float64Type, Equals);
+    return super_equals(self, other);
 }
 
 /****************************************************************************/
@@ -173,22 +194,15 @@ Float32Type_primitive_id(Float32Type *self)
     return FType_FLOAT32;
 }
 
-Float32*
-Float32Type_make_blank(Float32Type *self)
-{
-    UNUSED_VAR(self);
-    return Float32_new(0.0f);
-}
-
 bool_t
 Float32Type_equals(Float32Type *self, Obj *other)
 {
     if (self == (Float32Type*)other) { return true; }
-    else {
-        Float32Type_equals_t super_equals = (Float32Type_equals_t)
-            SUPER_METHOD(FLOAT32TYPE, Float32Type, Equals);
-        return super_equals(self, other);
-    }
+    if (!other) { return false; }
+    if (!Obj_Is_A(other, FLOAT32TYPE)) { return false; }
+    Float32Type_equals_t super_equals = (Float32Type_equals_t)
+        SUPER_METHOD(FLOAT32TYPE, Float32Type, Equals);
+    return super_equals(self, other);
 }
 
 /****************************************************************************/
@@ -228,22 +242,15 @@ Int32Type_primitive_id(Int32Type *self)
     return FType_INT32;
 }
 
-Integer32*
-Int32Type_make_blank(Int32Type *self)
-{
-    UNUSED_VAR(self);
-    return Int32_new(0);
-}
-
 bool_t
 Int32Type_equals(Int32Type *self, Obj *other)
 {
     if (self == (Int32Type*)other) { return true; }
-    else {
-        Int32Type_equals_t super_equals = (Int32Type_equals_t)
-            SUPER_METHOD(INT32TYPE, Int32Type, Equals);
-        return super_equals(self, other);
-    }
+    if (!other) { return false; }
+    if (!Obj_Is_A(other, INT32TYPE)) { return false; }
+    Int32Type_equals_t super_equals = (Int32Type_equals_t)
+        SUPER_METHOD(INT32TYPE, Int32Type, Equals);
+    return super_equals(self, other);
 }
 
 /****************************************************************************/
@@ -283,22 +290,15 @@ Int64Type_primitive_id(Int64Type *self)
     return FType_INT64;
 }
 
-Integer64*
-Int64Type_make_blank(Int64Type *self)
-{
-    UNUSED_VAR(self);
-    return Int64_new(0);
-}
-
 bool_t
 Int64Type_equals(Int64Type *self, Obj *other)
 {
     if (self == (Int64Type*)other) { return true; }
-    else {
-        Int64Type_equals_t super_equals = (Int64Type_equals_t)
-            SUPER_METHOD(INT64TYPE, Int64Type, Equals);
-        return super_equals(self, other);
-    }
+    if (!other) { return false; }
+    if (!Obj_Is_A(other, INT64TYPE)) { return false; }
+    Int64Type_equals_t super_equals = (Int64Type_equals_t)
+        SUPER_METHOD(INT64TYPE, Int64Type, Equals);
+    return super_equals(self, other);
 }
 
 /* Copyright 2007-2010 Marvin Humphrey
