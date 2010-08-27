@@ -4,7 +4,8 @@
 chy_bool_t
 kino_StrHelp_utf8_valid(const char *ptr, size_t size)
 {
-    return is_utf8_string((const U8*)ptr, size);
+    const U8 *uptr = (const U8*)ptr;
+    return is_utf8_string(uptr, size);
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

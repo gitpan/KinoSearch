@@ -43,20 +43,30 @@ test_accessors(TestBatch *batch)
     Float64   *f64 = Float64_new(1.0);
     Integer32 *i32 = Int32_new(1);
     Integer64 *i64 = Int64_new(1);
+    float  wanted32 = 1.33f;
+    double wanted64 = 1.33;
+    float  got32;
+    double got64;
 
     Float32_Set_Value(f32, 1.33f);
     ASSERT_FLOAT_EQ(batch, Float32_Get_Value(f32), 1.33f, 
         "F32 Set_Value Get_Value");
 
     Float64_Set_Value(f64, 1.33);
-    ASSERT_TRUE(batch, Float64_Get_Value(f64) == 1.33, 
+    got64 = Float64_Get_Value(f64);
+    ASSERT_TRUE(batch, *(int64_t*)&got64 == *(int64_t*)&wanted64,
         "F64 Set_Value Get_Value");
 
     ASSERT_TRUE(batch, Float32_To_I64(f32) == 1, "Float32_To_I64");
     ASSERT_TRUE(batch, Float64_To_I64(f64) == 1, "Float64_To_I64");
 
-    ASSERT_TRUE(batch, Float32_To_F64(f32) == 1.33f, "Float32_To_F64");
-    ASSERT_TRUE(batch, Float64_To_F64(f64) == 1.33, "Float64_To_F64");
+    got32 = Float32_To_F64(f32);
+    ASSERT_TRUE(batch, *(int32_t*)&got32 == *(int32_t*)&wanted32, 
+        "Float32_To_F64");
+
+    got64 = Float64_To_F64(f64);
+    ASSERT_TRUE(batch, *(int64_t*)&got64 == *(int64_t*)&wanted64, 
+        "Float64_To_F64");
 
     Int32_Set_Value(i32, I32_MIN);
     ASSERT_INT_EQ(batch, Int32_Get_Value(i32), I32_MIN, 

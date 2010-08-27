@@ -36,7 +36,7 @@ S_lc_to_work_buf(kino_CaseFolder *self, uint8_t *source, size_t len,
         }
         memcpy(dest, utf8_buf, buf_utf8_len);
 
-        source += kino_StrHelp_UTF8_SKIP[*source];
+        source += kino_StrHelp_UTF8_COUNT[*source];
         dest += buf_utf8_len;
     }
 

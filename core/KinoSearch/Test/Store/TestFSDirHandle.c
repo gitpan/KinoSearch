@@ -30,7 +30,12 @@ test_all(TestBatch *batch)
     bool_t    boffo_was_dir = false; 
     int       count         = 0;
 
+    // Clean up after previous failed runs.
+    FSFolder_Delete(folder, foo_boffo);
+    FSFolder_Delete(folder, foo);
+    FSFolder_Delete(folder, boffo);
     rmdir("_fsdir_test");
+
     FSFolder_Initialize(folder);
     FSFolder_MkDir(folder, foo);
     OutStream *outstream = FSFolder_Open_Out(folder, boffo);

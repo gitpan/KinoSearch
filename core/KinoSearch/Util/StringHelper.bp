@@ -60,9 +60,9 @@ __C__
 
 /* Pull in PL_utf8_skip from the Perl core.
  */
-extern const uint8_t kino_StrHelp_UTF8_SKIP[];
+extern const uint8_t kino_StrHelp_UTF8_COUNT[];
 #ifdef KINO_USE_SHORT_NAMES
-  #define StrHelp_UTF8_SKIP kino_StrHelp_UTF8_SKIP
+  #define StrHelp_UTF8_COUNT kino_StrHelp_UTF8_COUNT
 #endif
 __END_C__
 

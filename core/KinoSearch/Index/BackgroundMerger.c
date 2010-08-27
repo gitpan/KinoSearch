@@ -511,11 +511,9 @@ S_obtain_write_lock(BackgroundMerger *self)
         self->write_lock = write_lock;
     }
     else {
-        CharBuf *message = MAKE_MESS("index is locked by '%o'", 
-            Lock_Get_Lock_Path(write_lock));
         DECREF(write_lock);
         DECREF(self);
-        Err_throw_mess(LOCKERR, message);
+        RETHROW(INCREF(Err_get_error()));
     }
 }
 
@@ -531,12 +529,9 @@ S_obtain_merge_lock(BackgroundMerger *self)
     else {
         // We can't get the merge lock, so it seems there must be another
         // BackgroundMerger running.
-        CharBuf *message = MAKE_MESS(
-            "Index is locked for merging by '%o'", 
-            Lock_Get_Lock_Path(merge_lock));
         DECREF(merge_lock);
         DECREF(self);
-        Err_throw_mess(LOCKERR, message);
+        RETHROW(INCREF(Err_get_error()));
     }
 }
 

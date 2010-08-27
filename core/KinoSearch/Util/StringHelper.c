@@ -9,7 +9,7 @@
 #include "KinoSearch/Util/Memory.h"
 
 // Derived from Perl 5 core variable PL_utf8skip.
-const uint8_t kino_StrHelp_UTF8_SKIP[] = {
+const uint8_t kino_StrHelp_UTF8_COUNT[] = {
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -121,7 +121,7 @@ StrHelp_decode_utf8_char(const char *ptr)
 {
     const uint8_t *const string = (const uint8_t*)ptr;
     uint32_t retval = *string;
-    int bytes = StrHelp_UTF8_SKIP[retval];
+    int bytes = StrHelp_UTF8_COUNT[retval];
 
     switch (bytes & 0x7) {
         case 1:

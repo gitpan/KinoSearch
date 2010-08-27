@@ -75,7 +75,7 @@ B<interval> - Time in milliseconds between retries.
 Call request() once per C<< interval >> until request() returns
 success or the C<< timeout >> has been reached.
 
-Returns: true on success, false otherwise.
+Returns: true on success, false on failure (sets KinoSearch->error).
 
 
 
@@ -92,7 +92,7 @@ C<< name >> (though it might fail for other reasons).  If it is
 not shared() -- i.e. it's an exclusive (write) lock -- then other locks
 should cause request() to fail.
 
-Returns: true on success, false on failure.
+Returns: true on success, false on failure (sets KinoSearch->error).
 
 =head2 release()
 

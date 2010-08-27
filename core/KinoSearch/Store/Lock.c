@@ -84,6 +84,7 @@ Lock_obtain(Lock *self)
         locked = Lock_Request(self);
     }
 
+    if (!locked) { ERR_ADD_FRAME(Err_get_error()); }
     return locked;
 }
 
@@ -118,15 +119,27 @@ LFLock_request(LockFileLock *self)
     bool_t     success = false;
     bool_t     deletion_failed = false;
     
-    if (Folder_Exists(self->folder, self->lock_path)) { return false; }
+    if (Folder_Exists(self->folder, self->lock_path)) { 
+        Err_set_error((Err*)LockErr_new(CB_newf(
+            "Can't obtain lock: '%o' exists", self->lock_path)));
+        return false; 
+    }
 
     // Create the "locks" subdirectory if necessary. 
     CharBuf *lock_dir_name = (CharBuf*)ZCB_WRAP_STR("locks", 5);
     if (!Folder_Exists(self->folder, lock_dir_name)) {
         if (!Folder_MkDir(self->folder, lock_dir_name)) {
+            Err *mkdir_err = (Err*)CERTIFY(Err_get_error(), ERR);
+            LockErr *err = LockErr_new(CB_newf(
+                    "Can't create 'locks' directory: %o",
+                    Err_Get_Mess(mkdir_err)));
             // Maybe our attempt failed because another process succeeded. 
-            if (!Folder_Find_Folder(self->folder, lock_dir_name)) {
+            if (Folder_Find_Folder(self->folder, lock_dir_name)) {
+                DECREF(err);
+            }
+            else {
                 // Nope, everything failed, so bail out. 
+                Err_set_error((Err*)err);
                 return false;
             }
         }
@@ -146,13 +159,25 @@ LFLock_request(LockFileLock *self)
     if (wrote_json) {
         success = Folder_Hard_Link(self->folder, self->link_path, 
             self->lock_path);
+        if (!success) {
+            Err *hard_link_err = (Err*)CERTIFY(Err_get_error(), ERR);
+            Err_set_error((Err*)LockErr_new(CB_newf(
+                "Failed to obtain lock at '%o': %o", self->lock_path, 
+                Err_Get_Mess(hard_link_err))));
+        }
         deletion_failed = !Folder_Delete(self->folder, self->link_path);
+    }
+    else {
+        Err *spew_json_err = (Err*)CERTIFY(Err_get_error(), ERR);
+        Err_set_error((Err*)LockErr_new(CB_newf(
+            "Failed to obtain lock at '%o': %o", self->lock_path, 
+            Err_Get_Mess(spew_json_err))));
     }
     DECREF(file_data);
 
     // Verify that our temporary file got zapped. 
     if (wrote_json && deletion_failed) {
-        CharBuf *mess = MAKE_MESS("Failed to delete %o", self->link_path);
+        CharBuf *mess = MAKE_MESS("Failed to delete '%o'", self->link_path);
         Err_throw_mess(ERR, mess);
     }
 

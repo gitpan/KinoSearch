@@ -88,11 +88,9 @@ Indexer_init(Indexer *self, Schema *schema, Obj *index,
         self->write_lock = write_lock;
     }
     else {
-        CharBuf *message = MAKE_MESS("index is locked by '%o'", 
-            Lock_Get_Lock_Path(write_lock));
         DECREF(write_lock);
         DECREF(self);
-        Err_throw_mess(LOCKERR, message);
+        RETHROW(INCREF(Err_get_error()));
     }
 
     // Find the latest snapshot or create a new one. 

@@ -42,7 +42,7 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Object::Obj {
     /** Call Request() once per <code>interval</code> until Request() returns
      * success or the <code>timeout</code> has been reached.
      * 
-     * @return true on success, false otherwise.
+     * @return true on success, false on failure (sets Err_error).
      */
     public bool_t
     Obtain(Lock *self);
@@ -56,7 +56,7 @@ abstract class KinoSearch::Store::Lock extends KinoSearch::Object::Obj {
      * not Shared() -- i.e. it's an exclusive (write) lock -- then other locks
      * should cause Request() to fail.
      * 
-     * @return true on success, false on failure.
+     * @return true on success, false on failure (sets Err_error).
      */
     public abstract bool_t
     Request(Lock *self);

@@ -1,5 +1,14 @@
 Revision history for KinoSearch
 
+0.30_111 2010-08-26
+
+  Bugfixes:
+
+    * Improve error messages when locking fails.
+    * Improve reliability for Schema and FieldType compatibility stubs.
+    * Various portability fixes.
+
+
 0.30_11  2010-08-19
 
   New features:

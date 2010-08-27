@@ -127,13 +127,13 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
 
         // Get start and end offsets in Unicode code points. 
         for( ; string_arg < start_ptr; num_code_points++) {
-            string_arg += kino_StrHelp_UTF8_SKIP[(uint8_t)*string_arg];
+            string_arg += kino_StrHelp_UTF8_COUNT[(uint8_t)*string_arg];
             if (string_arg > string_end)
                 THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }
         start = num_code_points;
         for( ; string_arg < end_ptr; num_code_points++) {
-            string_arg += kino_StrHelp_UTF8_SKIP[(uint8_t)*string_arg];
+            string_arg += kino_StrHelp_UTF8_COUNT[(uint8_t)*string_arg];
             if (string_arg > string_end)
                 THROW(KINO_ERR, "scanned past end of '%s'", string_beg);
         }

@@ -61,26 +61,36 @@ Subclasses may be created either at compile time or at run time.
 Methods are differentiated from functions via capitalization:
 Boat_capsize() is a function, Boat_Capsize() is a method.
 
-    /* Base method. */
+    // Base method.
     void
     Boat_capsize(Boat *self)
     {
         self->upside_down = true;
     }
 
-    /* Implementing function, in Boat/Battleship.c */
+    // Implementing function, in Boat/Battleship.c
     void
     Battleship_capsize(Battleship *self) 
     {
-        Boat_capsize((Boat*)self);  /* Superclass method invocation. */
+        // Superclass method invocation.
+        Boat_capsize_t capsize = (Boat_capsize_t)SUPER_METHOD(
+            BATTLESHIP, Battleship, Capsize);
+        capsize((Boat*)self);  
+
+        // Subclass-specific behavior.
         Battleship_Sink(self);
     }
 
-    /* Implementing function, in Boat/RubberDinghy.c */
+    // Implementing function, in Boat/RubberDinghy.c
     void
     RubDing_capsize(RubberDinghy *self) 
     {
-        Boat_capsize((Boat*)self);  /* Superclass method invocation. */
+        // Superclass method invocation.
+        Boat_capsize_t capsize = (Boat_capsize_t)SUPER_METHOD(
+            RUBBERDINGHY, RubDing, Capsize);
+        capsize((Boat*)self);  
+
+        // Subclass-specific behavior.
         RubDing_Drift(self);
     }
 
@@ -130,8 +140,8 @@ inherently part of Clownfish.
 There are two levels of namespacing in Clownfish: parcels and classes.
 
 Clownfish classes intended to be published as a single unit may be grouped
-together using a "parcel" (akin to a "package" in Java).  Parcel directives
-need to go at the top of each class file.
+together using a "parcel".  Parcel directives need to go at the top of each
+class file.
 
     parcel Crustacean cnick Crust;
 
@@ -142,7 +152,7 @@ order to avoid namespace collisions with other projects.
 Within a parcel, the last part of each class name must be unique.
 
     class Crustacean::Lobster::Claw { ... }
-    class Crustacean::Crab::Claw    { ... } /* Illegal, "Claw" already used */
+    class Crustacean::Crab::Claw    { ... } // Illegal, "Claw" already used
 
 "Short names" -- names minus the parcel prefix -- will be auto-generated for
 all class symbols.  When there is no danger of namespace collision, typically
@@ -154,10 +164,10 @@ short names can be used after a USE_SHORT_NAMES directive:
 The USE_SHORT_NAMES directives do not affect class prefixes, only parcel
 prefixes.
 
-    /* No short names. */
+    // No short names.
     crust_LobsterClaw *claw = crust_LobClaw_new();
     
-    /* With short names. */
+    // With short names.
     #define CRUST_USE_SHORT_NAMES
     LobsterClaw *claw = LobClaw_new();
 

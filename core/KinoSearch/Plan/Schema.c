@@ -233,6 +233,25 @@ S_find_in_array(VArray *array, Obj *obj)
     UNREACHABLE_RETURN(uint32_t);
 }
 
+static VTable *old_full_text_type_vtable = NULL;
+static VTable *old_string_type_vtable = NULL;
+static VTable *old_blob_type_vtable = NULL;
+
+// 
+static void
+S_lazy_init_old_type_vtables(void) 
+{
+    if (old_full_text_type_vtable) { return; }
+    CharBuf *klass = CB_new(40);
+    CB_setf(klass, "KinoSearch::FieldType::FullTextType");
+    old_full_text_type_vtable = VTable_singleton(klass, FULLTEXTTYPE);
+    CB_setf(klass, "KinoSearch::FieldType::StringType");
+    old_string_type_vtable = VTable_singleton(klass, STRINGTYPE);
+    CB_setf(klass, "KinoSearch::FieldType::BlobType");
+    old_blob_type_vtable = VTable_singleton(klass, BLOBTYPE);
+    DECREF(klass);
+}
+
 Hash*
 Schema_dump(Schema *self)
 {
@@ -240,6 +259,8 @@ Schema_dump(Schema *self)
     Hash *type_dumps = Hash_new(Hash_Get_Size(self->types));
     CharBuf *field;
     FieldType *type;
+
+    S_lazy_init_old_type_vtables();
 
     // Record class name, store dumps of unique Analyzers.
     Hash_Store_Str(dump, "_class", 6, 
@@ -253,7 +274,9 @@ Schema_dump(Schema *self)
         VTable *type_vtable = FType_Get_VTable(type);
 
         // Dump known types to simplified format.
-        if (type_vtable == FULLTEXTTYPE) {
+        if (   type_vtable == FULLTEXTTYPE
+            || type_vtable == old_full_text_type_vtable
+        ) {
             FullTextType *fttype = (FullTextType*)type;
             Hash *type_dump = FullTextType_Dump_For_Schema(fttype);
             Analyzer *analyzer = FullTextType_Get_Analyzer(fttype);
@@ -267,7 +290,9 @@ Schema_dump(Schema *self)
             Hash_Store(type_dumps, (Obj*)field, (Obj*)type_dump);
         }
         else if (   type_vtable == STRINGTYPE
+                 || type_vtable == old_string_type_vtable
                  || type_vtable == BLOBTYPE
+                 || type_vtable == old_blob_type_vtable
         ) {
             Hash *type_dump = FType_Dump_For_Schema(type);
             Hash_Store(type_dumps, (Obj*)field, (Obj*)type_dump);
@@ -381,16 +406,24 @@ void
 Schema_eat(Schema *self, Schema *other)
 {
     if (!Schema_Is_A(self, Schema_Get_VTable(other))) {
-        THROW(ERR, "%o not a descendent of %o", Schema_Get_Class_Name(self),
-            Schema_Get_Class_Name(other));
-    }
-    else {
-        CharBuf *field;
-        FieldType *type;
-        Hash_Iter_Init(other->types);
-        while (Hash_Iter_Next(other->types, (Obj**)&field, (Obj**)&type)) {
-            Schema_Spec_Field(self, field, type);
+        // Special case because of move of KinoSearch::Schema.
+        if (   Schema_Get_VTable(self) == SCHEMA 
+            && CB_Equals_Str(Schema_Get_Class_Name(other),
+                "KinoSearch::Schema", 18)
+        ) {
+            // allow
         }
+        else {
+            THROW(ERR, "%o not a descendent of %o", 
+                Schema_Get_Class_Name(self), Schema_Get_Class_Name(other));
+        }
+    }
+
+    CharBuf *field;
+    FieldType *type;
+    Hash_Iter_Init(other->types);
+    while (Hash_Iter_Next(other->types, (Obj**)&field, (Obj**)&type)) {
+        Schema_Spec_Field(self, field, type);
     }
 }
 

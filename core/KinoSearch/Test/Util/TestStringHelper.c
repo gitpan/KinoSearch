@@ -43,7 +43,7 @@ S_round_trip_utf8_code_point(TestBatch *batch, uint32_t code_point)
     char *end   = start + len;
     ASSERT_TRUE(batch, StrHelp_utf8_valid(buffer, len), "Valid UTF-8 for %lu", 
         (unsigned long)code_point);
-    ASSERT_INT_EQ(batch, len, StrHelp_UTF8_SKIP[(unsigned char)buffer[0]], 
+    ASSERT_INT_EQ(batch, len, StrHelp_UTF8_COUNT[(unsigned char)buffer[0]], 
         "length returned for %lu", (unsigned long)code_point);
     ASSERT_TRUE(batch, StrHelp_back_utf8_char(end, start) == start, 
         "back_utf8_char for %lu", (unsigned long)code_point);

@@ -20,9 +20,10 @@ typedef struct off64_combo {
     const char *offset64_type;
 } off64_combo;
 static off64_combo off64_combos[] = {
+    { "#include <sys/types.h>\n", "fopen",     "ftello",    "fseeko",    "off_t"   },
+    { "",                         "fopen",     "ftell",     "fseek",     "off_t"    },
     { "#include <sys/types.h>\n", "fopen64",   "ftello64",  "fseeko64",  "off64_t" },
     { "#include <sys/types.h>\n", "fopen",     "ftello64",  "fseeko64",  "off64_t" },
-    { "#include <sys/types.h>\n", "fopen",     "ftello",    "fseeko",    "off_t"   },
     { "",                         "fopen",     "_ftelli64", "_fseeki64", "__int64" },
     { "",                         "fopen",     "ftell",     "fseek",     "long"    },
     { NULL, NULL, NULL, NULL, NULL }

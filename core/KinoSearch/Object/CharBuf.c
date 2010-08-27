@@ -608,7 +608,7 @@ CB_trim_top(CharBuf *self)
     while (ptr < end) {
         uint32_t code_point = StrHelp_decode_utf8_char(ptr);
         if (!StrHelp_is_whitespace(code_point)) break;
-        ptr += StrHelp_UTF8_SKIP[*(uint8_t*)ptr];
+        ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr];
         count++;
     }
 
@@ -644,7 +644,7 @@ CB_nip(CharBuf *self, size_t count)
     size_t       num_nipped = 0;
     char *const  end        = CBEND(self);
     char        *ptr        = self->ptr;
-    for ( ; ptr < end  && count--; ptr += StrHelp_UTF8_SKIP[*(uint8_t*)ptr]) {
+    for ( ; ptr < end  && count--; ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr]) {
         num_nipped++;
     }
     self->size = end - ptr;
@@ -660,8 +660,8 @@ CB_nip_one(CharBuf *self)
     }
     else {
         int32_t retval = (int32_t)StrHelp_decode_utf8_char(self->ptr);
-        size_t consumed = StrHelp_UTF8_SKIP[*(uint8_t*)self->ptr];
-        char *ptr = self->ptr + StrHelp_UTF8_SKIP[*(uint8_t*)self->ptr];
+        size_t consumed = StrHelp_UTF8_COUNT[*(uint8_t*)self->ptr];
+        char *ptr = self->ptr + StrHelp_UTF8_COUNT[*(uint8_t*)self->ptr];
         self->size -= consumed;
         memmove(self->ptr, ptr, self->size);
         return retval;
@@ -688,7 +688,7 @@ CB_length(CharBuf *self)
     char   *ptr  = self->ptr; 
     char   *end  = CBEND(self);
     while (ptr < end) {
-        ptr += StrHelp_UTF8_SKIP[*(uint8_t*)ptr];
+        ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr];
         len++;
     }
     return len;
@@ -711,7 +711,7 @@ CB_code_point_at(CharBuf *self, size_t tick)
     char *ptr = self->ptr;
     char *const end = CBEND(self);
 
-    for ( ; ptr < end; ptr += StrHelp_UTF8_SKIP[*(uint8_t*)ptr]) {
+    for ( ; ptr < end; ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr]) {
         if (count == tick) return StrHelp_decode_utf8_char(ptr);
         count++;
     }
@@ -839,7 +839,7 @@ ViewCB_trim_top(ViewCharBuf *self)
     while (ptr < end) {
         uint32_t code_point = StrHelp_decode_utf8_char(ptr);
         if (!StrHelp_is_whitespace(code_point)) break;
-        ptr += StrHelp_UTF8_SKIP[*(uint8_t*)ptr];
+        ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr];
         count++;
     }
 
@@ -859,7 +859,7 @@ ViewCB_nip(ViewCharBuf *self, size_t count)
     char   *end    = CBEND(self);
     for (num_nipped = 0; 
          ptr < end && count--; 
-         ptr += StrHelp_UTF8_SKIP[*(uint8_t*)ptr]
+         ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr]
     ) {
         num_nipped++;
     }
@@ -876,7 +876,7 @@ ViewCB_nip_one(ViewCharBuf *self)
     }
     else {
         int32_t retval = (int32_t)StrHelp_decode_utf8_char(self->ptr);
-        size_t consumed = StrHelp_UTF8_SKIP[*(uint8_t*)self->ptr];
+        size_t consumed = StrHelp_UTF8_COUNT[*(uint8_t*)self->ptr];
         self->ptr  += consumed;
         self->size -= consumed;
         return retval;

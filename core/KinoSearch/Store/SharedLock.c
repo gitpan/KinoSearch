@@ -46,6 +46,8 @@ ShLock_request(SharedLock *self)
         && Folder_Exists(self->folder, self->lock_path)
     ) {
         // Don't allow double obtain. 
+        Err_set_error((Err*)LockErr_new(CB_newf(
+            "Lock already obtained via '%o'", self->lock_path)));
         return false;
     }
 
@@ -55,7 +57,9 @@ ShLock_request(SharedLock *self)
         CB_setf(self->lock_path, "locks/%o-%u32.lock", self->name, ++i);
     } while ( Folder_Exists(self->folder, self->lock_path) );
 
-    return super_request(self);
+    bool_t success = super_request(self);
+    if (!success) { ERR_ADD_FRAME(Err_get_error()); }
+    return success;
 }
 
 void

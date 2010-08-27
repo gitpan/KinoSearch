@@ -32,7 +32,8 @@ Obj_destroy(Obj *self)
 int32_t
 Obj_hash_code(Obj *self)
 {
-    return (int32_t)self;
+    int64_t hash_code = PTR2I64(self);
+    return (int32_t)hash_code;
 }
 
 bool_t
@@ -85,11 +86,14 @@ Obj_to_string(Obj *self)
 #if (SIZEOF_PTR == 4)
     return CB_newf("%o@0x%x32", Obj_Get_Class_Name(self), self);
 #elif (SIZEOF_PTR == 8)
-    size_t address = self;
+    int64_t   iaddress   = PTR2I64(self);
+    uint64_t  address    = (uint64_t)iaddress;
     uint32_t  address_hi = address >> 32;
     uint32_t  address_lo = address & 0xFFFFFFFF;
     return CB_newf("%o@0x%x32%x32", Obj_Get_Class_Name(self), address_hi,
         address_lo);
+#else
+  #error Unexpected pointer size.
 #endif
 }
 
