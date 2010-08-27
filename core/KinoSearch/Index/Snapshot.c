@@ -2,12 +2,17 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Index/Snapshot.h"
+#include "KinoSearch/Index/Segment.h"
 #include "KinoSearch/Store/Folder.h"
 #include "KinoSearch/Util/StringHelper.h"
 #include "KinoSearch/Util/IndexFileNames.h"
 #include "KinoSearch/Util/Json.h"
 
+static VArray*
+S_clean_segment_contents(VArray *orig);
+
 int32_t Snapshot_current_file_format = 2;
+static int32_t Snapshot_current_file_subformat = 1;
 
 Snapshot*
 Snapshot_new()
@@ -87,18 +92,29 @@ Snapshot_read_file(Snapshot *self, Folder *folder, const CharBuf *path)
     if (self->path) {
         Hash *snap_data = (Hash*)CERTIFY(
             Json_slurp_json(folder, self->path), HASH);
-        Obj *format = CERTIFY(
+        Obj *format_obj = CERTIFY(
             Hash_Fetch_Str(snap_data, "format", 6), OBJ);
+        int32_t format = (int32_t)Obj_To_I64(format_obj);
+        Obj *subformat_obj = Hash_Fetch_Str(snap_data, "subformat", 9);
+        int32_t subformat = subformat_obj 
+                          ? (int32_t)Obj_To_I64(subformat_obj) 
+                          : 0;
 
         // Verify that we can read the index properly. 
-        if (Obj_To_I64(format) > Snapshot_current_file_format) {
-            THROW(ERR, "Snapshot format too recent: %i64, %i32",
-                Obj_To_I64(format), Snapshot_current_file_format);
+        if (format > Snapshot_current_file_format) {
+            THROW(ERR, "Snapshot format too recent: %i32, %i32",
+                format, Snapshot_current_file_format);
         }
 
         // Build up list of entries. 
         VArray *list = (VArray*)CERTIFY(
             Hash_Fetch_Str(snap_data, "entries", 7), VARRAY);
+        INCREF(list);
+        if (format == 1 || (format == 2 && subformat < 1)) {
+            VArray *cleaned = S_clean_segment_contents(list);
+            DECREF(list);
+            list = cleaned;
+        }
         Hash_Clear(self->entries);
         for (uint32_t i = 0, max = VA_Get_Size(list); i < max; i++) {
             CharBuf *entry = (CharBuf*)CERTIFY(
@@ -106,11 +122,32 @@ Snapshot_read_file(Snapshot *self, Folder *folder, const CharBuf *path)
             Hash_Store(self->entries, (Obj*)entry, INCREF(&EMPTY));
         }
 
+        DECREF(list);
         DECREF(snap_data);
     }
 
     return self;
 }
+
+static VArray*
+S_clean_segment_contents(VArray *orig) 
+{
+    // Since Snapshot format 2, no DataReader has depended on individual files
+    // within segment directories being listed.  Filter these files because
+    // they cause a problem with FilePurger.
+    VArray *cleaned = VA_new(VA_Get_Size(orig));
+    for (uint32_t i = 0, max = VA_Get_Size(orig); i < max; i++) {
+        CharBuf *name = (CharBuf*)VA_Fetch(orig, i);
+        if (!Seg_valid_seg_name(name)) {
+            if (CB_Starts_With_Str(name, "seg_", 4)) {
+                continue;  // Skip this file.
+            }
+        }
+        VA_Push(cleaned, INCREF(name));
+    }
+    return cleaned;
+}
+
 
 void
 Snapshot_write_file(Snapshot *self, Folder *folder, const CharBuf *path)
@@ -144,6 +181,8 @@ Snapshot_write_file(Snapshot *self, Folder *folder, const CharBuf *path)
     // Create a JSON-izable data structure. 
     Hash_Store_Str(all_data, "format", 6, 
         (Obj*)CB_newf("%i32", (int32_t)Snapshot_current_file_format) );
+    Hash_Store_Str(all_data, "subformat", 9, 
+        (Obj*)CB_newf("%i32", (int32_t)Snapshot_current_file_subformat) );
 
     // Write out JSON-ized data to the new file. 
     Json_spew_json((Obj*)all_data, folder, self->path);

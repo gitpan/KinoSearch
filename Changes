@@ -1,5 +1,13 @@
 Revision history for KinoSearch
 
+0.30_112 2010-08-27
+
+  Bugfixes:
+
+    * Prevent accumulation of dead files for indexes initialized by versions
+      of KinoSearch prior to 0.30_11.
+
+
 0.30_111 2010-08-26
 
   Bugfixes:
