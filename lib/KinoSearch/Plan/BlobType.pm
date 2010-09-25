@@ -9,13 +9,15 @@ __BINDING__
 
 my $synopsis = <<'END_SYNOPSIS';
     my $string_type = KinoSearch::Plan::StringType->new;
-    my $blob_type   = KinoSearch::Plan::BlobType->new;
+    my $blob_type   = KinoSearch::Plan::BlobType->new( stored => 1 );
     my $schema      = KinoSearch::Plan::Schema->new;
     $schema->spec_field( name => 'id',   type => $string_type );
     $schema->spec_field( name => 'jpeg', type => $blob_type );
 END_SYNOPSIS
 my $constructor = <<'END_CONSTRUCTOR';
-    my $blob_type = KinoSearch::Plan::BlobType->new;
+    my $blob_type = KinoSearch::Plan::BlobType->new(
+        stored => 1,  # default: false
+    );
 END_CONSTRUCTOR
 
 Clownfish::Binding::Perl::Class->register(

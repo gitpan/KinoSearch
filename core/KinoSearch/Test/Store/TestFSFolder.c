@@ -50,11 +50,11 @@ test_Initialize_and_Check(TestBatch *batch)
     rmdir("_fstest");
     CharBuf  *test_dir = (CharBuf*)ZCB_WRAP_STR("_fstest", 7);
     FSFolder *folder   = FSFolder_new(test_dir);
-    ASSERT_FALSE(batch, FSFolder_Check(folder), 
+    TEST_FALSE(batch, FSFolder_Check(folder), 
         "Check() returns false when folder dir doesn't exist");
     FSFolder_Initialize(folder);
     PASS(batch, "Initialize() concludes without incident");
-    ASSERT_TRUE(batch, FSFolder_Check(folder), 
+    TEST_TRUE(batch, FSFolder_Check(folder), 
         "Initialize() created dir, and now Check() succeeds");
     DECREF(folder);
     S_tear_down();
@@ -92,17 +92,17 @@ test_protect_symlinks(TestBatch *batch)
                 saw_bazooka_boffo = true;
             }
         }
-        ASSERT_FALSE(batch, saw_bazooka_boffo, 
+        TEST_FALSE(batch, saw_bazooka_boffo, 
             "List_R() shouldn't follow symlinks");
         DECREF(list);
 
-        ASSERT_TRUE(batch, FSFolder_Delete_Tree(folder, bar), 
+        TEST_TRUE(batch, FSFolder_Delete_Tree(folder, bar), 
             "Delete_Tree() returns true"), 
-        ASSERT_FALSE(batch, FSFolder_Exists(folder, bar), 
+        TEST_FALSE(batch, FSFolder_Exists(folder, bar), 
             "Tree is really gone");
-        ASSERT_TRUE(batch, FSFolder_Exists(folder, foo),
+        TEST_TRUE(batch, FSFolder_Exists(folder, foo),
             "Original folder sill there");
-        ASSERT_TRUE(batch, FSFolder_Exists(folder, foo_boffo),
+        TEST_TRUE(batch, FSFolder_Exists(folder, foo_boffo),
             "Delete_Tree() did not follow directory symlink");
         FSFolder_Delete_Tree(folder, foo);
     }
@@ -131,7 +131,7 @@ test_disallow_updir(TestBatch *batch)
     CharBuf *inner_path = (CharBuf*)ZCB_WRAP_STR("_fstest/foo", 11);
     FSFolder *foo_folder = FSFolder_new(inner_path);
     CharBuf *up_bar = (CharBuf*)ZCB_WRAP_STR("../bar", 6);
-    ASSERT_FALSE(batch, FSFolder_Exists(foo_folder, up_bar), 
+    TEST_FALSE(batch, FSFolder_Exists(foo_folder, up_bar), 
         "up-dirs are inaccessible.");
 
     DECREF(foo_folder);

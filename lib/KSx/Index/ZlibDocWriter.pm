@@ -6,7 +6,7 @@ use Carp;
 use Scalar::Util qw( blessed );
 use Compress::Zlib qw( compress );
 use KinoSearch::Util::StringHelper qw( cat_bytes );
-use KinoSearch::Util::ToolSet qw( to_perl );
+use KinoSearch qw( to_perl );
 use bytes;
 no bytes;
 
@@ -45,7 +45,7 @@ sub add_inverted_doc {
     my $to_compress = "";
     my $count       = 0;
     my $schema      = $self->get_schema;
-    $inverter->iter_init;
+    $inverter->iterate;
     while ( $inverter->next ) {
         next unless $inverter->get_type->stored;
         my $name  = $inverter->get_field_name;

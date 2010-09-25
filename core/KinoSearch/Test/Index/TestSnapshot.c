@@ -15,16 +15,16 @@ test_Add_and_Delete(TestBatch *batch)
     Snapshot_Add_Entry(snapshot, foo);
     Snapshot_Add_Entry(snapshot, foo); // redundant
     VArray *entries = Snapshot_List(snapshot);
-    ASSERT_INT_EQ(batch, Snapshot_Num_Entries(snapshot), 1, 
+    TEST_INT_EQ(batch, Snapshot_Num_Entries(snapshot), 1, 
         "One entry added");
-    ASSERT_TRUE(batch, CB_Equals(foo, VA_Fetch(entries, 0)), "correct entry");
+    TEST_TRUE(batch, CB_Equals(foo, VA_Fetch(entries, 0)), "correct entry");
     DECREF(entries);
 
     Snapshot_Add_Entry(snapshot, bar);
-    ASSERT_INT_EQ(batch, Snapshot_Num_Entries(snapshot), 2, 
+    TEST_INT_EQ(batch, Snapshot_Num_Entries(snapshot), 2, 
         "second entry added");
     Snapshot_Delete_Entry(snapshot, foo);
-    ASSERT_INT_EQ(batch, Snapshot_Num_Entries(snapshot), 1, "Delete_Entry");
+    TEST_INT_EQ(batch, Snapshot_Num_Entries(snapshot), 1, "Delete_Entry");
 
     DECREF(snapshot);
 }
@@ -38,16 +38,16 @@ test_path_handling(TestBatch *batch)
     CharBuf  *crackle  = (CharBuf*)ZCB_WRAP_STR("crackle", 7);
 
     Snapshot_Write_File(snapshot, folder, snap);
-    ASSERT_TRUE(batch, CB_Equals(snap, (Obj*)Snapshot_Get_Path(snapshot)),
+    TEST_TRUE(batch, CB_Equals(snap, (Obj*)Snapshot_Get_Path(snapshot)),
         "Write_File() sets path as a side effect");
 
     Folder_Rename(folder, snap, crackle);
     Snapshot_Read_File(snapshot, folder, crackle);
-    ASSERT_TRUE(batch, CB_Equals(crackle, (Obj*)Snapshot_Get_Path(snapshot)),
+    TEST_TRUE(batch, CB_Equals(crackle, (Obj*)Snapshot_Get_Path(snapshot)),
         "Read_File() sets path as a side effect");
 
     Snapshot_Set_Path(snapshot, snap);
-    ASSERT_TRUE(batch, CB_Equals(snap, (Obj*)Snapshot_Get_Path(snapshot)),
+    TEST_TRUE(batch, CB_Equals(snap, (Obj*)Snapshot_Get_Path(snapshot)),
         "Set_Path()");
 
     DECREF(folder);
@@ -67,11 +67,11 @@ test_Read_File_and_Write_File(TestBatch *batch)
 
     Snapshot *dupe = Snapshot_new();
     Snapshot *read_retval = Snapshot_Read_File(dupe, folder, snap);
-    ASSERT_TRUE(batch, dupe == read_retval, "Read_File() returns the object");
+    TEST_TRUE(batch, dupe == read_retval, "Read_File() returns the object");
 
     VArray *orig_list = Snapshot_List(snapshot);
     VArray *dupe_list = Snapshot_List(dupe);
-    ASSERT_TRUE(batch, VA_Equals(orig_list, (Obj*)dupe_list), 
+    TEST_TRUE(batch, VA_Equals(orig_list, (Obj*)dupe_list), 
         "Round trip through Write_File() and Read_File()");
 
     DECREF(orig_list);

@@ -16,21 +16,21 @@ test_fields(TestBatch *batch)
     int32_t field_num; 
     
     field_num = Seg_Add_Field(segment, (CharBuf*)foo);
-    ASSERT_TRUE(batch, field_num == 1, 
+    TEST_TRUE(batch, field_num == 1, 
         "Add_Field returns field number, and field numbers start at 1");
     field_num = Seg_Add_Field(segment, (CharBuf*)bar);
-    ASSERT_TRUE(batch, field_num == 2, "add a second field");
+    TEST_TRUE(batch, field_num == 2, "add a second field");
     field_num = Seg_Add_Field(segment, (CharBuf*)foo);
-    ASSERT_TRUE(batch, field_num == 1,
+    TEST_TRUE(batch, field_num == 1,
         "Add_Field returns existing field number if field is already known");
 
-    ASSERT_TRUE(batch, ZCB_Equals(bar, (Obj*)Seg_Field_Name(segment, 2)),
+    TEST_TRUE(batch, ZCB_Equals(bar, (Obj*)Seg_Field_Name(segment, 2)),
         "Field_Name");
-    ASSERT_TRUE(batch, Seg_Field_Name(segment, 3) == NULL, 
+    TEST_TRUE(batch, Seg_Field_Name(segment, 3) == NULL, 
         "Field_Name returns NULL for unknown field number");
-    ASSERT_TRUE(batch, Seg_Field_Num(segment, (CharBuf*)bar) == 2,
+    TEST_TRUE(batch, Seg_Field_Num(segment, (CharBuf*)bar) == 2,
         "Field_Num");
-    ASSERT_TRUE(batch, Seg_Field_Num(segment, (CharBuf*)baz) == 0, 
+    TEST_TRUE(batch, Seg_Field_Num(segment, (CharBuf*)baz) == 0, 
         "Field_Num returns 0 for unknown field name");
 
     DECREF(segment);
@@ -44,7 +44,7 @@ test_metadata_storage(TestBatch *batch)
 
     Seg_Store_Metadata_Str(segment, "foo", 3, (Obj*)CB_newf("bar"));
     got = (CharBuf*)Seg_Fetch_Metadata_Str(segment, "foo", 3);
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
                    got 
                 && CB_Is_A(got, CHARBUF) 
                 && CB_Equals_Str(got, "bar", 3), 
@@ -57,10 +57,10 @@ test_seg_name_and_num(TestBatch *batch)
 {
     Segment *segment_z = Seg_new(35);
     CharBuf *seg_z_name = Seg_num_to_name(35);
-    ASSERT_TRUE(batch, Seg_Get_Number(segment_z) == I64_C(35), "Get_Number");
-    ASSERT_TRUE(batch, CB_Equals_Str(Seg_Get_Name(segment_z), "seg_z", 5), 
+    TEST_TRUE(batch, Seg_Get_Number(segment_z) == I64_C(35), "Get_Number");
+    TEST_TRUE(batch, CB_Equals_Str(Seg_Get_Name(segment_z), "seg_z", 5), 
         "Get_Name");
-    ASSERT_TRUE(batch, CB_Equals_Str(seg_z_name, "seg_z", 5), 
+    TEST_TRUE(batch, CB_Equals_Str(seg_z_name, "seg_z", 5), 
         "num_to_name");
     DECREF(seg_z_name);
     DECREF(segment_z);
@@ -71,10 +71,10 @@ test_count(TestBatch *batch)
 {
     Segment *segment = Seg_new(100);
     
-    ASSERT_TRUE(batch, Seg_Get_Count(segment) == 0, "count starts off at 0");
+    TEST_TRUE(batch, Seg_Get_Count(segment) == 0, "count starts off at 0");
     Seg_Set_Count(segment, 120);
-    ASSERT_TRUE(batch, Seg_Get_Count(segment) == 120, "Set_Count");
-    ASSERT_TRUE(batch, Seg_Increment_Count(segment, 10) == 130,
+    TEST_TRUE(batch, Seg_Get_Count(segment) == 120, "Set_Count");
+    TEST_TRUE(batch, Seg_Increment_Count(segment, 10) == 130,
         "Increment_Count");
 
     DECREF(segment);
@@ -87,13 +87,13 @@ test_Compare_To(TestBatch *batch)
     Segment *segment_2      = Seg_new(2);
     Segment *also_segment_2 = Seg_new(2);
 
-    ASSERT_TRUE(batch, Seg_Compare_To(segment_1, (Obj*)segment_2) < 0, 
+    TEST_TRUE(batch, Seg_Compare_To(segment_1, (Obj*)segment_2) < 0, 
         "Compare_To 1 < 2");
-    ASSERT_TRUE(batch, Seg_Compare_To(segment_2, (Obj*)segment_1) > 0, 
+    TEST_TRUE(batch, Seg_Compare_To(segment_2, (Obj*)segment_1) > 0, 
         "Compare_To 1 < 2");
-    ASSERT_TRUE(batch, Seg_Compare_To(segment_1, (Obj*)segment_1) == 0, 
+    TEST_TRUE(batch, Seg_Compare_To(segment_1, (Obj*)segment_1) == 0, 
         "Compare_To identity");
-    ASSERT_TRUE(batch, Seg_Compare_To(segment_2, (Obj*)also_segment_2) == 0, 
+    TEST_TRUE(batch, Seg_Compare_To(segment_2, (Obj*)also_segment_2) == 0, 
         "Compare_To 2 == 2");
 
     DECREF(segment_1);
@@ -120,13 +120,13 @@ test_Write_File_and_Read_File(TestBatch *batch)
     Seg_Write_File(segment, (Folder*)folder);
     Seg_Read_File(got, (Folder*)folder);
 
-    ASSERT_TRUE(batch, Seg_Get_Count(got) == Seg_Get_Count(segment), 
+    TEST_TRUE(batch, Seg_Get_Count(got) == Seg_Get_Count(segment), 
         "Round-trip count through file");
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         Seg_Field_Num(got, jetsam) == Seg_Field_Num(segment, jetsam), 
         "Round trip field names through file");
     meta = (CharBuf*)Seg_Fetch_Metadata_Str(got, "foo", 3);
-    ASSERT_TRUE(batch, meta && CB_Is_A(meta, CHARBUF) 
+    TEST_TRUE(batch, meta && CB_Is_A(meta, CHARBUF) 
         && CB_Equals_Str(meta, "bar", 3), "Round trip metadata through file");
 
     DECREF(got);

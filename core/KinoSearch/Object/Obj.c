@@ -30,10 +30,10 @@ Obj_destroy(Obj *self)
 }
 
 int32_t
-Obj_hash_code(Obj *self)
+Obj_hash_sum(Obj *self)
 {
-    int64_t hash_code = PTR2I64(self);
-    return (int32_t)hash_code;
+    int64_t hash_sum = PTR_TO_I64(self);
+    return (int32_t)hash_sum;
 }
 
 bool_t
@@ -86,7 +86,7 @@ Obj_to_string(Obj *self)
 #if (SIZEOF_PTR == 4)
     return CB_newf("%o@0x%x32", Obj_Get_Class_Name(self), self);
 #elif (SIZEOF_PTR == 8)
-    int64_t   iaddress   = PTR2I64(self);
+    int64_t   iaddress   = PTR_TO_I64(self);
     uint64_t  address    = (uint64_t)iaddress;
     uint32_t  address_hi = address >> 32;
     uint32_t  address_lo = address & 0xFFFFFFFF;

@@ -32,19 +32,19 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Hash_Store_Str((Hash*)another_dump, "analyzer", 8, INCREF(tokenizer));
     FullTextType *another_clone = FullTextType_load(NULL, another_dump);
 
-    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)boost_differs),
+    TEST_FALSE(batch, FullTextType_Equals(type, (Obj*)boost_differs),
         "Equals() false with different boost");
-    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)other),
+    TEST_FALSE(batch, FullTextType_Equals(type, (Obj*)other),
         "Equals() false with different Analyzer");
-    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)not_indexed),
+    TEST_FALSE(batch, FullTextType_Equals(type, (Obj*)not_indexed),
         "Equals() false with indexed => false");
-    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)not_stored),
+    TEST_FALSE(batch, FullTextType_Equals(type, (Obj*)not_stored),
         "Equals() false with stored => false");
-    ASSERT_FALSE(batch, FullTextType_Equals(type, (Obj*)highlightable),
+    TEST_FALSE(batch, FullTextType_Equals(type, (Obj*)highlightable),
         "Equals() false with highlightable => true");
-    ASSERT_TRUE(batch, FullTextType_Equals(type, (Obj*)clone), 
+    TEST_TRUE(batch, FullTextType_Equals(type, (Obj*)clone), 
         "Dump => Load round trip");
-    ASSERT_TRUE(batch, FullTextType_Equals(type, (Obj*)another_clone), 
+    TEST_TRUE(batch, FullTextType_Equals(type, (Obj*)another_clone), 
         "Dump_For_Schema => Load round trip");
 
     DECREF(another_clone);
@@ -69,13 +69,13 @@ test_Compare_Values(TestBatch *batch)
     ZombieCharBuf *a         = ZCB_WRAP_STR("a", 1);
     ZombieCharBuf *b         = ZCB_WRAP_STR("b", 1);
 
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         FullTextType_Compare_Values(type, (Obj*)a, (Obj*)b) < 0,
         "a less than b");
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         FullTextType_Compare_Values(type, (Obj*)b, (Obj*)a) > 0,
         "b greater than a");
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         FullTextType_Compare_Values(type, (Obj*)b, (Obj*)b) == 0,
         "b equals b");
 

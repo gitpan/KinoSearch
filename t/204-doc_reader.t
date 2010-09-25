@@ -16,7 +16,7 @@ sub new_schema {
     my $analyzer = TestAnalyzer->new;
     my $fulltext
         = KinoSearch::Plan::FullTextType->new( analyzer => $analyzer );
-    my $bin        = KinoSearch::Plan::BlobType->new;
+    my $bin = KinoSearch::Plan::BlobType->new( stored => 1 );
     my $not_stored = KinoSearch::Plan::FullTextType->new(
         analyzer => $analyzer,
         stored   => 0,

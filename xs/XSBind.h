@@ -179,7 +179,6 @@ kino_XSBind_allot_params(SV** stack, int32_t start,
  */
 #define THROW            KINO_THROW
 #define WARN             KINO_WARN
-#define OVERRIDDEN       KINO_OVERRIDDEN
 
 #ifdef __cplusplus
 }

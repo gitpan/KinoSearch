@@ -13,9 +13,9 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj        *dump        = (Obj*)CaseFolder_Dump(case_folder);
     CaseFolder *clone       = (CaseFolder*)CaseFolder_Load(other, dump);
 
-    ASSERT_TRUE(batch, CaseFolder_Equals(case_folder, (Obj*)other), "Equals");
-    ASSERT_FALSE(batch, CaseFolder_Equals(case_folder, (Obj*)&EMPTY), "Not Equals");
-    ASSERT_TRUE(batch, CaseFolder_Equals(case_folder, (Obj*)clone), 
+    TEST_TRUE(batch, CaseFolder_Equals(case_folder, (Obj*)other), "Equals");
+    TEST_FALSE(batch, CaseFolder_Equals(case_folder, (Obj*)&EMPTY), "Not Equals");
+    TEST_TRUE(batch, CaseFolder_Equals(case_folder, (Obj*)clone), 
         "Dump => Load round trip");
 
     DECREF(case_folder);

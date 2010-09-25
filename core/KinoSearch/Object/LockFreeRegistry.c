@@ -11,7 +11,7 @@
 typedef struct kino_LFRegEntry {
     Obj *key;
     Obj *value;
-    int32_t hash_code;
+    int32_t hash_sum;
     struct kino_LFRegEntry *volatile next;
 } kino_LFRegEntry;
 #define LFRegEntry kino_LFRegEntry
@@ -36,8 +36,8 @@ bool_t
 LFReg_register(LockFreeRegistry *self, Obj *key, Obj *value)
 {
     LFRegEntry  *new_entry = NULL;
-    int32_t      hash_code = Obj_Hash_Code(key);
-    size_t       bucket    = (uint32_t)hash_code % self->capacity;
+    int32_t      hash_sum  = Obj_Hash_Sum(key);
+    size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
     LFRegEntry  *volatile *entries = (LFRegEntry*volatile*)self->entries;
     LFRegEntry  *volatile *slot    = &(entries[bucket]);
 
@@ -46,7 +46,7 @@ LFReg_register(LockFreeRegistry *self, Obj *key, Obj *value)
     FIND_END_OF_LINKED_LIST:
     while (*slot) {
         LFRegEntry *entry = *slot;
-        if (entry->hash_code == hash_code) {
+        if (entry->hash_sum  == hash_sum) {
             if (Obj_Equals(key, entry->key)) {
                 return false;
             }
@@ -57,7 +57,7 @@ LFReg_register(LockFreeRegistry *self, Obj *key, Obj *value)
     // We've found an empty slot. Create the new entry.  
     if (!new_entry) {
         new_entry = (LFRegEntry*)MALLOCATE(sizeof(LFRegEntry));
-        new_entry->hash_code = hash_code;
+        new_entry->hash_sum  = hash_sum;
         new_entry->key       = INCREF(key);
         new_entry->value     = INCREF(value);
         new_entry->next      = NULL;
@@ -78,13 +78,13 @@ LFReg_register(LockFreeRegistry *self, Obj *key, Obj *value)
 Obj*
 LFReg_fetch(LockFreeRegistry *self, Obj *key)
 {
-    int32_t      hash_code = Obj_Hash_Code(key);
-    size_t       bucket    = (uint32_t)hash_code % self->capacity;
+    int32_t      hash_sum  = Obj_Hash_Sum(key);
+    size_t       bucket    = (uint32_t)hash_sum  % self->capacity;
     LFRegEntry **entries   = (LFRegEntry**)self->entries;
     LFRegEntry  *entry     = entries[bucket];
 
     while (entry) {
-        if (entry->hash_code == hash_code) {
+        if (entry->hash_sum  == hash_sum) {
             if (Obj_Equals(key, entry->key)) {
                 return entry->value;
             }

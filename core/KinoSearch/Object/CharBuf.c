@@ -18,13 +18,6 @@
 #include "KinoSearch/Util/Memory.h"
 #include "KinoSearch/Util/StringHelper.h"
 
-// The end of the string (address of terminating NULL). 
-#define CBEND(self) ((self)->ptr + (self)->size)
-
-// Maximum number of characters in a stringified 64-bit integer, including
-// minus sign if negative.
-#define MAX_I64_CHARS 20
-
 // Helper function for throwing invalid UTF-8 error. Since THROW uses
 // a CharBuf internally, calling THROW with invalid UTF-8 would create an
 // infinite loop -- so we fwrite some of the bogus text to stderr invoke
@@ -123,7 +116,7 @@ CB_destroy(CharBuf *self)
 }
 
 int32_t
-CB_hash_code(CharBuf *self)
+CB_hash_sum(CharBuf *self)
 {
     uint32_t hashvalue = 5381; 
     ZombieCharBuf *iterator = ZCB_WRAP(self);
@@ -292,8 +285,9 @@ CB_vcatf(CharBuf *self, const char *pattern, va_list args)
                 case 'f': {
                     if (pattern[1] == '6' && pattern[2] == '4') {
                         double num  = va_arg(args, double);
-                        size_t size = sprintf(buf, "%g", num);
-                        CB_Cat_Trusted_Str(self, buf, size);
+                        char bigbuf[512];
+                        size_t size = sprintf(bigbuf, "%g", num);
+                        CB_Cat_Trusted_Str(self, bigbuf, size);
                         pattern += 2;
                     }
                     else {
@@ -357,8 +351,10 @@ CB_cat_char(CharBuf *self, uint32_t code_point)
         S_grow(self, Memory_oversize(self->size + MAX_UTF8_BYTES, 
             sizeof(char)));
     }
-    self->size += StrHelp_encode_utf8_char(code_point, (uint8_t*)CBEND(self));
-    *CBEND(self) = '\0';
+    char *end = self->ptr + self->size;
+    size_t count = StrHelp_encode_utf8_char(code_point, (uint8_t*)end);
+    self->size += count;
+    *(end + count) = '\0';
 }
 
 int32_t
@@ -374,7 +370,7 @@ CB_swap_chars(CharBuf *self, uint32_t match, uint32_t replacement)
     }
     else {
         char *ptr = self->ptr;
-        char *const limit = CBEND(self);
+        char *const limit = ptr + self->size;
         for ( ; ptr < limit; ptr++) {
             if (*ptr == (char)match) { 
                 *ptr = (char)replacement; 
@@ -584,7 +580,7 @@ bool_t
 CB_ends_with_str(CharBuf *self, const char *postfix, size_t postfix_len)
 {
     if (postfix_len <= self->size) { 
-        char *start = CBEND(self) - postfix_len;
+        char *start = self->ptr + self->size - postfix_len;
         if (memcmp(start, postfix, postfix_len) == 0)
             return true;
     }
@@ -602,7 +598,7 @@ uint32_t
 CB_trim_top(CharBuf *self)
 {
     char     *ptr   = self->ptr;
-    char     *end   = CBEND(self);
+    char     *end   = ptr + self->size;
     uint32_t  count = 0;
 
     while (ptr < end) {
@@ -614,7 +610,7 @@ CB_trim_top(CharBuf *self)
 
     if (count) {
         // Copy string backwards. 
-        self->size = CBEND(self) - ptr;
+        self->size = end - ptr;
         memmove(self->ptr, ptr, self->size);
     }
 
@@ -625,15 +621,17 @@ uint32_t
 CB_trim_tail(CharBuf *self)
 {
     uint32_t      count    = 0;
-    const char   *ptr      = CBEND(self);
     char *const   top      = self->ptr; 
+    const char   *ptr      = top + self->size;
+    size_t        new_size = self->size;
 
     while (NULL != (ptr = StrHelp_back_utf8_char(ptr, top))) {
         uint32_t code_point = StrHelp_decode_utf8_char(ptr);
         if (!StrHelp_is_whitespace(code_point)) break;
-        self->size -= (CBEND(self) - ptr);
+        new_size = ptr - top;
         count++;
     }
+    self->size = new_size;
 
     return count;
 }
@@ -642,8 +640,8 @@ size_t
 CB_nip(CharBuf *self, size_t count)
 {
     size_t       num_nipped = 0;
-    char *const  end        = CBEND(self);
     char        *ptr        = self->ptr;
+    char *const  end        = ptr + self->size;
     for ( ; ptr < end  && count--; ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr]) {
         num_nipped++;
     }
@@ -672,11 +670,12 @@ size_t
 CB_chop(CharBuf *self, size_t count)
 {
     size_t      num_chopped = 0;
-    const char *ptr         = CBEND(self);
     char       *top         = self->ptr;
+    const char *ptr         = top + self->size;
     for (num_chopped = 0; num_chopped < count; num_chopped++) {
+        const char *end = ptr;
         if (NULL == (ptr = StrHelp_back_utf8_char(ptr, top))) break;
-        self->size -= CBEND(self) - ptr;
+        self->size -= (end - ptr);
     }
     return num_chopped;
 }
@@ -686,7 +685,7 @@ CB_length(CharBuf *self)
 {
     size_t  len  = 0;
     char   *ptr  = self->ptr; 
-    char   *end  = CBEND(self);
+    char   *end  = ptr + self->size;
     while (ptr < end) {
         ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr];
         len++;
@@ -709,7 +708,7 @@ CB_code_point_at(CharBuf *self, size_t tick)
 {
     size_t count = 0;
     char *ptr = self->ptr;
-    char *const end = CBEND(self);
+    char *const end = ptr + self->size;
 
     for ( ; ptr < end; ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr]) {
         if (count == tick) return StrHelp_decode_utf8_char(ptr);
@@ -723,8 +722,8 @@ uint32_t
 CB_code_point_from(CharBuf *self, size_t tick)
 {
     size_t      count = 0;
-    const char *ptr   = CBEND(self);
     char       *top   = self->ptr;
+    const char *ptr   = top + self->size;
 
     for (count = 0; count < tick; count++) {
         if (NULL == (ptr = StrHelp_back_utf8_char(ptr, top))) return 0;
@@ -834,7 +833,7 @@ ViewCB_trim_top(ViewCharBuf *self)
 {
     uint32_t  count = 0;
     char     *ptr   = self->ptr;
-    char     *end   = CBEND(self);
+    char     *end   = ptr + self->size;
 
     while (ptr < end) {
         uint32_t code_point = StrHelp_decode_utf8_char(ptr);
@@ -856,7 +855,7 @@ ViewCB_nip(ViewCharBuf *self, size_t count)
 {
     size_t  num_nipped;
     char   *ptr    = self->ptr; 
-    char   *end    = CBEND(self);
+    char   *end    = ptr + self->size;
     for (num_nipped = 0; 
          ptr < end && count--; 
          ptr += StrHelp_UTF8_COUNT[*(uint8_t*)ptr]

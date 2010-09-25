@@ -42,18 +42,18 @@ test_all(TestBatch *batch)
             boffo_was_dir = RAMDH_Entry_Is_Dir(dh);
         }
     }
-    ASSERT_INT_EQ(batch, 2, count, "correct number of entries");
-    ASSERT_TRUE(batch, saw_foo, "Directory was iterated over");
-    ASSERT_TRUE(batch, foo_was_dir, 
+    TEST_INT_EQ(batch, 2, count, "correct number of entries");
+    TEST_TRUE(batch, saw_foo, "Directory was iterated over");
+    TEST_TRUE(batch, foo_was_dir, 
         "Dir correctly identified by Entry_Is_Dir");
-    ASSERT_TRUE(batch, saw_boffo, "File was iterated over");
-    ASSERT_FALSE(batch, boffo_was_dir, 
+    TEST_TRUE(batch, saw_boffo, "File was iterated over");
+    TEST_FALSE(batch, boffo_was_dir, 
         "File correctly identified by Entry_Is_Dir");
 
     {
         uint32_t refcount = RAMFolder_Get_RefCount(folder);
         RAMDH_Close(dh);
-        ASSERT_INT_EQ(batch, RAMFolder_Get_RefCount(folder), refcount - 1,
+        TEST_INT_EQ(batch, RAMFolder_Get_RefCount(folder), refcount - 1,
             "Folder reference released by Close()");
     }
 

@@ -21,17 +21,17 @@ TestMemPool_run_tests()
     MemPool_Release_All(mem_pool);
 
     ptr_b = (char*)MemPool_Grab(mem_pool, 10);
-    ASSERT_STR_EQ(batch, ptr_b, "foo", "Recycle RAM on Release_All");
+    TEST_STR_EQ(batch, ptr_b, "foo", "Recycle RAM on Release_All");
 
     ptr_a = mem_pool->buf;
     MemPool_Resize(mem_pool, ptr_b, 6);
-    ASSERT_TRUE(batch, mem_pool->buf < ptr_a, "Resize");
+    TEST_TRUE(batch, mem_pool->buf < ptr_a, "Resize");
 
     ptr_a = (char*)MemPool_Grab(other, 20);
     MemPool_Release_All(other);
     MemPool_Eat(other, mem_pool);
-    ASSERT_TRUE(batch, other->buf == mem_pool->buf, "Eat");
-    ASSERT_TRUE(batch, other->buf != NULL, "Eat");
+    TEST_TRUE(batch, other->buf == mem_pool->buf, "Eat");
+    TEST_TRUE(batch, other->buf != NULL, "Eat");
 
     DECREF(mem_pool);
     DECREF(other);

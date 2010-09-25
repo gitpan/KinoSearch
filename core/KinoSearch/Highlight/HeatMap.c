@@ -133,7 +133,7 @@ HeatMap_flatten_spans(HeatMap *self, VArray *spans)
                 VA_Store(flattened, dest_tick++, INCREF(span));
             }
         }
-        VA_Splice(flattened, dest_tick, num_raw_flattened - dest_tick);
+        VA_Excise(flattened, dest_tick, num_raw_flattened - dest_tick);
 
         return flattened;
     }

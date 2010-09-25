@@ -24,9 +24,9 @@ ZKHash_destroy(ZombieKeyedHash *self)
 }
 
 Obj*
-ZKHash_make_key(ZombieKeyedHash *self, Obj *key, int32_t hash_code)
+ZKHash_make_key(ZombieKeyedHash *self, Obj *key, int32_t hash_sum)
 {
-    UNUSED_VAR(hash_code);
+    UNUSED_VAR(hash_sum);
     Obj *retval = NULL;
     switch(self->prim_id & FType_PRIMITIVE_ID_MASK) {
         case FType_TEXT: {

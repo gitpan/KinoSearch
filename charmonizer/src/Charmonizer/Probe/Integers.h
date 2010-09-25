@@ -84,7 +84,7 @@
  * If 64-bit integers are available, this macro will promote pointers to i64_t
  * safely.
  * 
- * PTR2I64(ptr)
+ * PTR_TO_I64(ptr)
  *
  * If 64-bit integers are available, these macros will expand to the printf
  * conversion specification for signed and unsigned versions (most commonly

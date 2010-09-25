@@ -86,14 +86,14 @@ DocWriter_add_inverted_doc(DocWriter *self, Inverter *inverter,
         THROW(ERR, "Expected doc id %i64 but got %i32", expected, doc_id);
 
     // Write the number of stored fields. 
-    Inverter_Iter_Init(inverter);
+    Inverter_Iterate(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
         if (FType_Stored(type)) { num_stored++; }
     }
     OutStream_Write_C32(dat_out, num_stored);
 
-    Inverter_Iter_Init(inverter);
+    Inverter_Iterate(inverter);
     while (Inverter_Next(inverter)) {
         // Only store fields marked as "stored". 
         FieldType *type = Inverter_Get_Type(inverter);

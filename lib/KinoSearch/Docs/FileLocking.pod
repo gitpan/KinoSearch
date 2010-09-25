@@ -55,7 +55,7 @@ no longer needed, a Searcher referencing an earlier snapshot is in fact
 using them.  The more often that an index is either updated or searched,
 the more likely it is that this conflict will arise from time to time.
 
-Ordinarily, the deletion attempts are not a problem.   On a typical Unix
+Ordinarily, the deletion attempts are not a problem.   On a typical unix
 volume, the files will be deleted in name only: any process which holds an
 open filehandle against a given file will continue to have access, and the
 file won't actually get vaporized until the last filehandle is cleared.

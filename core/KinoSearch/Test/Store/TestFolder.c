@@ -36,16 +36,16 @@ test_Exists(TestBatch *batch)
         FH_CREATE | FH_WRITE_ONLY);
     DECREF(fh);
 
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo), "Dir exists");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &boffo), "File exists");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo), "Dir exists");
+    TEST_TRUE(batch, Folder_Exists(folder, &boffo), "File exists");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar), 
         "Nested dir exists");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "Nested file exists");
 
-    ASSERT_FALSE(batch, Folder_Exists(folder, &banana), 
+    TEST_FALSE(batch, Folder_Exists(folder, &banana), 
         "Non-existent entry");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo_foo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &foo_foo), 
         "Non-existent nested entry");
 
     DECREF(folder);
@@ -55,10 +55,10 @@ static void
 test_Set_Path_and_Get_Path(TestBatch *batch)
 {
     Folder *folder = (Folder*)RAMFolder_new(&foo);
-    ASSERT_TRUE(batch, CB_Equals(Folder_Get_Path(folder), (Obj*)&foo),
+    TEST_TRUE(batch, CB_Equals(Folder_Get_Path(folder), (Obj*)&foo),
         "Get_Path");
     Folder_Set_Path(folder, &bar);
-    ASSERT_TRUE(batch, CB_Equals(Folder_Get_Path(folder), (Obj*)&bar),
+    TEST_TRUE(batch, CB_Equals(Folder_Get_Path(folder), (Obj*)&bar),
         "Set_Path");
     DECREF(folder);
 }
@@ -69,42 +69,42 @@ test_MkDir_and_Is_Directory(TestBatch *batch)
     Folder *folder = (Folder*)RAMFolder_new(NULL);
     FileHandle *fh;
 
-    ASSERT_FALSE(batch, Folder_Is_Directory(folder, &foo), 
+    TEST_FALSE(batch, Folder_Is_Directory(folder, &foo), 
         "Is_Directory() false for non-existent entry");
 
-    ASSERT_TRUE(batch, Folder_MkDir(folder, &foo), 
+    TEST_TRUE(batch, Folder_MkDir(folder, &foo), 
         "MkDir returns true on success");
-    ASSERT_TRUE(batch, Folder_Is_Directory(folder, &foo), 
+    TEST_TRUE(batch, Folder_Is_Directory(folder, &foo), 
         "Is_Directory() true for local folder");
 
-    ASSERT_FALSE(batch, Folder_Is_Directory(folder, &foo_bar_baz), 
+    TEST_FALSE(batch, Folder_Is_Directory(folder, &foo_bar_baz), 
         "Is_Directory() false for non-existent deeply nested dir");
     Err_set_error(NULL);
-    ASSERT_FALSE(batch, Folder_MkDir(folder, &foo_bar_baz), 
+    TEST_FALSE(batch, Folder_MkDir(folder, &foo_bar_baz), 
         "MkDir for deeply nested dir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "MkDir for deeply nested dir sets Err_error");
 
-    ASSERT_TRUE(batch, Folder_MkDir(folder, &foo_bar), 
+    TEST_TRUE(batch, Folder_MkDir(folder, &foo_bar), 
         "MkDir for nested dir");
-    ASSERT_TRUE(batch, Folder_Is_Directory(folder, &foo_bar), 
+    TEST_TRUE(batch, Folder_Is_Directory(folder, &foo_bar), 
         "Is_Directory() true for nested dir");
 
     Err_set_error(NULL);
-    ASSERT_FALSE(batch, Folder_MkDir(folder, &foo_bar), 
+    TEST_FALSE(batch, Folder_MkDir(folder, &foo_bar), 
         "Overwrite dir with MkDir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Overwrite dir with MkDir sets Err_error");
 
     fh = Folder_Open_FileHandle(folder, &foo_boffo, 
         FH_CREATE | FH_WRITE_ONLY);
     DECREF(fh);
     Err_set_error(NULL);
-    ASSERT_FALSE(batch, Folder_MkDir(folder, &foo_boffo), 
+    TEST_FALSE(batch, Folder_MkDir(folder, &foo_boffo), 
         "Overwrite file with MkDir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Overwrite file with MkDir sets Err_error");
-    ASSERT_FALSE(batch, Folder_Is_Directory(folder, &foo_boffo), 
+    TEST_FALSE(batch, Folder_Is_Directory(folder, &foo_boffo), 
         "Is_Directory() false for nested file");
 
     DECREF(folder);
@@ -125,21 +125,21 @@ test_Enclosing_Folder_and_Find_Folder(TestBatch *batch)
     {
         Folder *encloser = Folder_Enclosing_Folder(folder, (CharBuf*)&nope);
         Folder *found = Folder_Find_Folder(folder, (CharBuf*)&nope);
-        ASSERT_TRUE(batch, encloser == folder, 
+        TEST_TRUE(batch, encloser == folder, 
             "Enclosing_Folder() - non-existent entry yields parent");
-        ASSERT_TRUE(batch, found == NULL,
+        TEST_TRUE(batch, found == NULL,
             "Find_Folder() - non-existent entry yields NULL");
     }
 
     {
         Folder *encloser = Folder_Enclosing_Folder(folder, &foo_bar);
         Folder *found = Folder_Find_Folder(folder, &foo_bar);
-        ASSERT_TRUE(batch, 
+        TEST_TRUE(batch, 
             encloser 
             && Folder_Is_A(encloser, FOLDER)
             && CB_Ends_With(Folder_Get_Path(encloser), &foo),
             "Enclosing_Folder() - find one directory down");
-        ASSERT_TRUE(batch, 
+        TEST_TRUE(batch, 
             found 
             && Folder_Is_A(found, FOLDER)
             && CB_Ends_With(Folder_Get_Path(found), &bar),
@@ -149,12 +149,12 @@ test_Enclosing_Folder_and_Find_Folder(TestBatch *batch)
     {
         Folder *encloser = Folder_Enclosing_Folder(folder, &foo_bar_baz);
         Folder *found = Folder_Find_Folder(folder, &foo_bar_baz);
-        ASSERT_TRUE(batch, 
+        TEST_TRUE(batch, 
             encloser 
             && Folder_Is_A(encloser, FOLDER)
             && CB_Ends_With(Folder_Get_Path(encloser), &bar), 
             "Find two directories down");
-        ASSERT_TRUE(batch, 
+        TEST_TRUE(batch, 
             found 
             && Folder_Is_A(found, FOLDER)
             && CB_Ends_With(Folder_Get_Path(found), &baz),
@@ -165,12 +165,12 @@ test_Enclosing_Folder_and_Find_Folder(TestBatch *batch)
         Folder *encloser 
             = Folder_Enclosing_Folder(folder, &foo_bar_baz_boffo);
         Folder *found = Folder_Find_Folder(folder, &foo_bar_baz_boffo);
-        ASSERT_TRUE(batch, 
+        TEST_TRUE(batch, 
             encloser 
             && Folder_Is_A(encloser, FOLDER)
             && CB_Ends_With(Folder_Get_Path(encloser), &baz), 
             "Recurse to find a directory containing a real file");
-        ASSERT_TRUE(batch, found == NULL,
+        TEST_TRUE(batch, found == NULL,
             "Find_Folder() - file instead of folder yields NULL");
     }
 
@@ -196,21 +196,21 @@ test_List(TestBatch *batch)
 
     list = Folder_List(folder, NULL);
     VA_Sort(list, NULL, NULL);
-    ASSERT_INT_EQ(batch, VA_Get_Size(list), 3, "List");
+    TEST_INT_EQ(batch, VA_Get_Size(list), 3, "List");
     elem = (CharBuf*)DOWNCAST(VA_Fetch(list, 0), CHARBUF);
-    ASSERT_TRUE(batch, elem && CB_Equals(elem, (Obj*)&banana), 
+    TEST_TRUE(batch, elem && CB_Equals(elem, (Obj*)&banana), 
         "List first file");
     elem = (CharBuf*)DOWNCAST(VA_Fetch(list, 1), CHARBUF);
-    ASSERT_TRUE(batch, elem && CB_Equals(elem, (Obj*)&boffo), 
+    TEST_TRUE(batch, elem && CB_Equals(elem, (Obj*)&boffo), 
         "List second file");
     elem = (CharBuf*)DOWNCAST(VA_Fetch(list, 2), CHARBUF);
-    ASSERT_TRUE(batch, elem && CB_Equals(elem, (Obj*)&foo), "List dir");
+    TEST_TRUE(batch, elem && CB_Equals(elem, (Obj*)&foo), "List dir");
     DECREF(list);
 
     list = Folder_List(folder, &foo_bar);
-    ASSERT_INT_EQ(batch, VA_Get_Size(list), 1, "List subdirectory contents");
+    TEST_INT_EQ(batch, VA_Get_Size(list), 1, "List subdirectory contents");
     elem = (CharBuf*)DOWNCAST(VA_Fetch(list, 0), CHARBUF);
-    ASSERT_TRUE(batch, elem && CB_Equals(elem, (Obj*)&baz), 
+    TEST_TRUE(batch, elem && CB_Equals(elem, (Obj*)&baz), 
         "Just the filename");
     DECREF(list);
 
@@ -227,24 +227,24 @@ test_Open_Dir(TestBatch *batch)
     Folder_MkDir(folder, &foo_bar);
 
     dh = Folder_Open_Dir(folder, &foo);
-    ASSERT_TRUE(batch, dh && DH_Is_A(dh, DIRHANDLE), "Open_Dir");
+    TEST_TRUE(batch, dh && DH_Is_A(dh, DIRHANDLE), "Open_Dir");
     DECREF(dh);
     dh = Folder_Open_Dir(folder, &foo_bar);
-    ASSERT_TRUE(batch, dh && DH_Is_A(dh, DIRHANDLE), "Open_Dir nested dir");
+    TEST_TRUE(batch, dh && DH_Is_A(dh, DIRHANDLE), "Open_Dir nested dir");
     DECREF(dh);
 
     Err_set_error(NULL);
     dh = Folder_Open_Dir(folder, &bar);
-    ASSERT_TRUE(batch, dh == NULL,
+    TEST_TRUE(batch, dh == NULL,
         "Open_Dir on non-existent entry fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_Dir on non-existent entry sets Err_error");
 
     Err_set_error(NULL);
     dh = Folder_Open_Dir(folder, &foo_foo);
-    ASSERT_TRUE(batch, dh == NULL,
+    TEST_TRUE(batch, dh == NULL,
         "Open_Dir on non-existent nested entry fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_Dir on non-existent nested entry sets Err_error");
 
     DECREF(folder);
@@ -259,28 +259,28 @@ test_Open_FileHandle(TestBatch *batch)
     Folder_MkDir(folder, &foo);
 
     fh = Folder_Open_FileHandle(folder, &boffo, FH_CREATE | FH_WRITE_ONLY);
-    ASSERT_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), "Open_FileHandle");
+    TEST_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), "Open_FileHandle");
     DECREF(fh);
 
     fh = Folder_Open_FileHandle(folder, &foo_boffo, 
         FH_CREATE | FH_WRITE_ONLY);
-    ASSERT_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
+    TEST_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
         "Open_FileHandle for nested file");
     DECREF(fh);
 
     Err_set_error(NULL);
     fh = Folder_Open_FileHandle(folder, &foo, FH_CREATE | FH_WRITE_ONLY);
-    ASSERT_TRUE(batch, fh == NULL,
+    TEST_TRUE(batch, fh == NULL,
         "Open_FileHandle on existing dir path fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_FileHandle on existing dir name sets Err_error");
 
     Err_set_error(NULL);
     fh = Folder_Open_FileHandle(folder, &foo_bar_baz_boffo, 
         FH_CREATE | FH_WRITE_ONLY);
-    ASSERT_TRUE(batch, fh == NULL,
+    TEST_TRUE(batch, fh == NULL,
         "Open_FileHandle for entry within non-existent dir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_FileHandle for entry within non-existent dir sets Err_error");
 
     DECREF(folder);
@@ -295,34 +295,34 @@ test_Open_Out(TestBatch *batch)
     Folder_MkDir(folder, &foo);
 
     outstream = Folder_Open_Out(folder, &boffo);
-    ASSERT_TRUE(batch, outstream && OutStream_Is_A(outstream, OUTSTREAM), 
+    TEST_TRUE(batch, outstream && OutStream_Is_A(outstream, OUTSTREAM), 
         "Open_Out");
     DECREF(outstream);
 
     outstream = Folder_Open_Out(folder, &foo_boffo);
-    ASSERT_TRUE(batch, outstream && OutStream_Is_A(outstream, OUTSTREAM), 
+    TEST_TRUE(batch, outstream && OutStream_Is_A(outstream, OUTSTREAM), 
         "Open_Out for nested file");
     DECREF(outstream);
 
     Err_set_error(NULL);
     outstream = Folder_Open_Out(folder, &boffo);
-    ASSERT_TRUE(batch, outstream == NULL,
+    TEST_TRUE(batch, outstream == NULL,
         "Open_OutStream on existing file fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_Out on existing file sets Err_error");
 
     Err_set_error(NULL);
     outstream = Folder_Open_Out(folder, &foo);
-    ASSERT_TRUE(batch, outstream == NULL,
+    TEST_TRUE(batch, outstream == NULL,
         "Open_OutStream on existing dir path fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_Out on existing dir name sets Err_error");
 
     Err_set_error(NULL);
     outstream = Folder_Open_Out(folder, &foo_bar_baz_boffo);
-    ASSERT_TRUE(batch, outstream == NULL,
+    TEST_TRUE(batch, outstream == NULL,
         "Open_Out for entry within non-existent dir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_Out for entry within non-existent dir sets Err_error");
 
     DECREF(folder);
@@ -343,27 +343,27 @@ test_Open_In(TestBatch *batch)
     DECREF(fh);
 
     instream = Folder_Open_In(folder, &boffo);
-    ASSERT_TRUE(batch, instream && InStream_Is_A(instream, INSTREAM), 
+    TEST_TRUE(batch, instream && InStream_Is_A(instream, INSTREAM), 
         "Open_In");
     DECREF(instream);
 
     instream = Folder_Open_In(folder, &foo_boffo);
-    ASSERT_TRUE(batch, instream && InStream_Is_A(instream, INSTREAM), 
+    TEST_TRUE(batch, instream && InStream_Is_A(instream, INSTREAM), 
         "Open_In for nested file");
     DECREF(instream);
 
     Err_set_error(NULL);
     instream = Folder_Open_In(folder, &foo);
-    ASSERT_TRUE(batch, instream == NULL,
+    TEST_TRUE(batch, instream == NULL,
         "Open_InStream on existing dir path fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_In on existing dir name sets Err_error");
 
     Err_set_error(NULL);
     instream = Folder_Open_In(folder, &foo_bar_baz_boffo);
-    ASSERT_TRUE(batch, instream == NULL,
+    TEST_TRUE(batch, instream == NULL,
         "Open_In for entry within non-existent dir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Open_In for entry within non-existent dir sets Err_error");
 
     DECREF(folder);
@@ -386,22 +386,22 @@ test_Delete(TestBatch *batch)
 
     Err_set_error(NULL);
     result = Folder_Delete(folder, &banana);
-    ASSERT_FALSE(batch, result, "Delete on non-existent entry returns false");
+    TEST_FALSE(batch, result, "Delete on non-existent entry returns false");
 
     Err_set_error(NULL);
     result = Folder_Delete(folder, &foo);
-    ASSERT_FALSE(batch, result, "Delete on non-empty dir returns false");
+    TEST_FALSE(batch, result, "Delete on non-empty dir returns false");
 
-    ASSERT_TRUE(batch, Folder_Delete(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Delete(folder, &foo_boffo), 
         "Delete nested file");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &foo_boffo), 
         "File is really gone");
-    ASSERT_TRUE(batch, Folder_Delete(folder, &foo_bar), 
+    TEST_TRUE(batch, Folder_Delete(folder, &foo_bar), 
         "Delete nested dir");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo_bar), 
+    TEST_FALSE(batch, Folder_Exists(folder, &foo_bar), 
         "Dir is really gone");
-    ASSERT_TRUE(batch, Folder_Delete(folder, &foo), "Delete empty dir");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo), "Dir is really gone");
+    TEST_TRUE(batch, Folder_Delete(folder, &foo), "Delete empty dir");
+    TEST_FALSE(batch, Folder_Exists(folder, &foo), "Dir is really gone");
 
     DECREF(folder);
 }
@@ -427,19 +427,19 @@ test_Delete_Tree(TestBatch *batch)
     DECREF(fh);
 
     result = Folder_Delete_Tree(folder, &foo);
-    ASSERT_TRUE(batch, result, "Delete_Tree() succeeded");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo), "Tree really gone");
+    TEST_TRUE(batch, result, "Delete_Tree() succeeded");
+    TEST_FALSE(batch, Folder_Exists(folder, &foo), "Tree really gone");
 
-    ASSERT_TRUE(batch, Folder_Exists(folder, &bar), 
+    TEST_TRUE(batch, Folder_Exists(folder, &bar), 
         "local dir with same name as nested dir left intact");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &baz), 
+    TEST_TRUE(batch, Folder_Exists(folder, &baz), 
         "local file with same name as nested dir left intact");
 
     // Kill off the bystanders. 
     result = Folder_Delete_Tree(folder, &bar);
-    ASSERT_TRUE(batch, result, "Delete_Tree() on empty dir");
+    TEST_TRUE(batch, result, "Delete_Tree() on empty dir");
     result = Folder_Delete_Tree(folder, &baz);
-    ASSERT_TRUE(batch, result, "Delete_Tree() on file");
+    TEST_TRUE(batch, result, "Delete_Tree() on file");
 
     // Create new tree to be deleted. 
     Folder_MkDir(folder, &foo);
@@ -451,10 +451,10 @@ test_Delete_Tree(TestBatch *batch)
 
     // Remove tree in subdir. 
     result = Folder_Delete_Tree(folder, &foo_bar);
-    ASSERT_TRUE(batch, result, "Delete_Tree() of subdir succeeded");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo_bar), 
+    TEST_TRUE(batch, result, "Delete_Tree() of subdir succeeded");
+    TEST_FALSE(batch, Folder_Exists(folder, &foo_bar), 
         "subdir really gone");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo), 
         "enclosing dir left intact");
 
     DECREF(folder);
@@ -472,7 +472,7 @@ test_Slurp_File(TestBatch *batch)
     FH_Close(fh);
     DECREF(fh);
     contents = Folder_Slurp_File(folder, &foo);
-    ASSERT_TRUE(batch, BB_Equals_Bytes(contents, "stuff", 5), "Slurp_File");
+    TEST_TRUE(batch, BB_Equals_Bytes(contents, "stuff", 5), "Slurp_File");
 
     DECREF(contents);
     DECREF(folder);

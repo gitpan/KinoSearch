@@ -133,7 +133,7 @@ IxManager_recycle(IndexManager *self, PolyReader *reader,
                   DeletionsWriter *del_writer, int64_t cutoff, bool_t optimize)
 {
     VArray *seg_readers = PolyReader_Get_Seg_Readers(reader);
-    VArray *candidates  = VA_Grep(seg_readers, S_check_cutoff, &cutoff);
+    VArray *candidates  = VA_Gather(seg_readers, S_check_cutoff, &cutoff);
     VArray *recyclables = VA_new(VA_Get_Size(candidates));
     uint32_t i;
     uint32_t total_docs = 0;

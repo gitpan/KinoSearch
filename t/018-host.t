@@ -3,7 +3,7 @@ use warnings;
 
 use Test::More tests => 8;
 use KinoSearch::Test;
-use KinoSearch::Util::ToolSet qw( to_perl to_kino );
+use KinoSearch qw( to_perl to_kino );
 
 my $object = KinoSearch::Object::Host->new();
 isa_ok( $object, "KinoSearch::Object::Host" );

@@ -84,7 +84,7 @@ Clownfish::Binding::Perl::Class->register(
             Push
             Push_VArray
             Unshift
-            Splice
+            Excise
             Resize
             Get_Size
             )

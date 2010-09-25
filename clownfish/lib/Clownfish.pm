@@ -97,7 +97,7 @@ Boat_capsize() is a function, Boat_Capsize() is a method.
 =head2 Class declaration syntax
 
     [final] [inert] class CLASSNAME [cnick CNICK] 
-        [extends PARENT] [ : ATTRIBUTE ]* {
+        [inherits PARENT] [ : ATTRIBUTE ]* {
     
         [declarations]
     
@@ -105,7 +105,7 @@ Boat_capsize() is a function, Boat_Capsize() is a method.
 
 Example:
 
-    class Boat::RubberDinghy cnick RubDing extends Boat {
+    class Boat::RubberDinghy cnick RubDing inherits Boat {
         
         public inert incremented RubberDinghy*
         new();

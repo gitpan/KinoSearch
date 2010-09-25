@@ -79,8 +79,8 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
         DataReader *component;
         starts[i] = self->doc_max;
         self->doc_max += SegReader_Doc_Max(seg_reader);
-        Hash_Iter_Init(components);
-        while (Hash_Iter_Next(components, (Obj**)&api, (Obj**)&component)) {
+        Hash_Iterate(components);
+        while (Hash_Next(components, (Obj**)&api, (Obj**)&component)) {
             VArray *readers = (VArray*)Hash_Fetch(data_readers, (Obj*)api);
             if (!readers) { 
                 readers = VA_new(num_sub_readers); 
@@ -94,8 +94,8 @@ S_init_sub_readers(PolyReader *self, VArray *sub_readers)
     {
         CharBuf *api;
         VArray  *readers;
-        Hash_Iter_Init(data_readers);
-        while (Hash_Iter_Next(data_readers, (Obj**)&api, (Obj**)&readers)) {
+        Hash_Iterate(data_readers);
+        while (Hash_Next(data_readers, (Obj**)&api, (Obj**)&readers)) {
             DataReader *datareader = (DataReader*)CERTIFY(
                 S_first_non_null(readers), DATAREADER);
             DataReader *aggregator 

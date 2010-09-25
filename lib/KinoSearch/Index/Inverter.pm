@@ -14,7 +14,7 @@ Clownfish::Binding::Perl::Class->register(
     bind_methods      => [
         qw(
             Get_Doc
-            Iter_Init
+            Iterate
             Next
             Clear
             Get_Field_Name

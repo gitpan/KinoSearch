@@ -240,7 +240,7 @@ static INLINE int64_t
 SI_tell(InStream *self)
 {
     FileWindow *const window = self->window;
-    int64_t pos_in_buf = PTR2I64(self->buf) - PTR2I64(window->buf);
+    int64_t pos_in_buf = PTR_TO_I64(self->buf) - PTR_TO_I64(window->buf);
     return pos_in_buf + window->offset - self->offset;
 }
 
@@ -259,7 +259,7 @@ InStream_length(InStream *self)
 char*
 InStream_buf(InStream *self, size_t request)
 {
-    const int64_t bytes_in_buf = PTR2I64(self->limit) - PTR2I64(self->buf);
+    const int64_t bytes_in_buf = PTR_TO_I64(self->limit) - PTR_TO_I64(self->buf);
 
     /* It's common for client code to overestimate how much is needed, because
      * the request has to figure in worst-case for compressed data.  However,
@@ -290,12 +290,12 @@ void
 InStream_advance_buf(InStream *self, char *buf)
 {
     if (buf > self->limit) {
-        int64_t overrun = PTR2I64(buf) - PTR2I64(self->limit);
+        int64_t overrun = PTR_TO_I64(buf) - PTR_TO_I64(self->limit);
         THROW(ERR, "Supplied value is %i64 bytes beyond end of buffer",
             overrun);
     }
     else if (buf < self->buf) {
-        int64_t underrun = PTR2I64(self->buf) - PTR2I64(buf);
+        int64_t underrun = PTR_TO_I64(self->buf) - PTR_TO_I64(buf);
         THROW(ERR, "Can't Advance_Buf backwards: (underrun: %i64))", underrun);
     }
     else {
@@ -312,7 +312,7 @@ InStream_read_bytes(InStream *self, char* buf, size_t len)
 static INLINE void
 SI_read_bytes(InStream *self, char* buf, size_t len) 
 {
-    const int64_t available = PTR2I64(self->limit) - PTR2I64(self->buf);
+    const int64_t available = PTR_TO_I64(self->limit) - PTR_TO_I64(self->buf);
     if (available >= (int64_t)len) {
         // Request is entirely within buffer, so copy. 
         memcpy(buf, self->buf, len);

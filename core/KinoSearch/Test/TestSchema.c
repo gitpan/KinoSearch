@@ -50,15 +50,15 @@ test_Equals(TestBatch *batch)
         content);
     CaseFolder *case_folder = CaseFolder_new();
 
-    ASSERT_TRUE(batch, TestSchema_Equals(schema, (Obj*)schema), "Equals");
+    TEST_TRUE(batch, TestSchema_Equals(schema, (Obj*)schema), "Equals");
 
     FullTextType_Set_Boost(type, 2.0f);
-    ASSERT_FALSE(batch, TestSchema_Equals(schema, (Obj*)spec_differs), 
+    TEST_FALSE(batch, TestSchema_Equals(schema, (Obj*)spec_differs), 
         "Equals spoiled by differing FieldType");
 
     DECREF(arch_differs->arch);
     arch_differs->arch = Arch_new();
-    ASSERT_FALSE(batch, TestSchema_Equals(schema, (Obj*)arch_differs), 
+    TEST_FALSE(batch, TestSchema_Equals(schema, (Obj*)arch_differs), 
         "Equals spoiled by differing Architecture");
 
     DECREF(schema);
@@ -74,7 +74,7 @@ test_Dump_and_Load(TestBatch *batch)
     Obj *dump = (Obj*)TestSchema_Dump(schema);
     TestSchema *loaded = (TestSchema*)Obj_Load(dump, dump);
 
-    ASSERT_FALSE(batch, TestSchema_Equals(schema, (Obj*)loaded), 
+    TEST_FALSE(batch, TestSchema_Equals(schema, (Obj*)loaded), 
         "Dump => Load round trip");
 
     DECREF(schema);

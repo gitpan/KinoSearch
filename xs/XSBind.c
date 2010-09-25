@@ -1,4 +1,5 @@
 #define C_KINO_OBJ
+#define NEED_newRV_noinc
 #include "XSBind.h"
 #include "KinoSearch/Util/StringHelper.h"
 
@@ -218,19 +219,24 @@ S_perl_hash_to_kino_hash(HV *phash)
     kino_Hash *retval   = kino_Hash_new(num_keys);
 
     while (num_keys--) {
-        HE *entry = hv_iternext(phash);
+        char *key;
         STRLEN key_len;
-        // Copied from Perl 5.10.0 HePV macro, because the HePV macro in
-        // earlier versions of Perl triggers a compiler warning.
-        char *key = HeKLEN(entry) == HEf_SVKEY
-                  ? SvPV(HeKEY_sv(entry), key_len) 
-                  : ((key_len = HeKLEN(entry)), HeKEY(entry));
+        HE *entry = hv_iternext(phash);
+        STRLEN he_key_len = HeKLEN(entry);
         SV *value_sv = HeVAL(entry);
-        if (!kino_StrHelp_utf8_valid(key, key_len)) {
-            // Force key to UTF-8. This is kind of a buggy area for Perl, and
-            // may result in round-trip weirdness.
-            SV *key_sv = HeSVKEY_force(entry);
+
+        // Force key to UTF-8 if necessary.
+        if (he_key_len == (STRLEN)HEf_SVKEY) {
+            SV *key_sv = HeKEY_sv(entry);
             key = SvPVutf8(key_sv, key_len);
+        }
+        else {
+            key = HeKEY(entry);
+            key_len = he_key_len;
+            if (!kino_StrHelp_utf8_valid(key, key_len)) {
+                SV *key_sv = HeSVKEY_force(entry);
+                key = SvPVutf8(key_sv, key_len);
+            }
         }
 
         // Recurse for each value. 
@@ -300,8 +306,8 @@ S_kino_hash_to_perl_hash(kino_Hash *hash)
     SvUTF8_on(key_sv);
 
     // Iterate over key-value pairs. 
-    Kino_Hash_Iter_Init(hash);
-    while (Kino_Hash_Iter_Next(hash, (kino_Obj**)&key, &val)) {
+    Kino_Hash_Iterate(hash);
+    while (Kino_Hash_Next(hash, (kino_Obj**)&key, &val)) {
         // Recurse for each value. 
         SV *val_sv = XSBind_kino_to_perl(val);
         if (!Kino_Obj_Is_A((kino_Obj*)key, KINO_CHARBUF)) {
@@ -328,32 +334,6 @@ XSBind_enable_overload(void *pobj)
 {
     SV *perl_obj = (SV*)pobj;
     HV *stash = SvSTASH(SvRV(perl_obj));
-    char *package_name = HvNAME(stash);
-    size_t size = strlen(package_name);
-
-    /* This code is informed by the following snippet from Perl_sv_bless, from
-     * sv.c:
-     *
-     *     if (Gv_AMG(stash))
-     *         SvAMAGIC_on(sv);
-     *     else
-     *         (void)SvAMAGIC_off(sv);
-     *
-     * Gv_AMupdate is undocumented.  It is extracted from the Gv_AMG macro,
-     * also undocumented, defined in sv.h:
-     *
-     *     #define Gv_AMG(stash)  (PL_amagic_generation && Gv_AMupdate(stash))
-     * 
-     * The purpose of the code is to turn on overloading for the class in
-     * question.  It seems that as soon as overloading is on for any class,
-     * anywhere, that PL_amagic_generation goes positive and stays positive,
-     * so that Gv_AMupdate gets called with every bless() invocation.  Since
-     * we need overloading for Doc and all its subclasses, we skip the check
-     * and just update every time.
-     */
-    stash = gv_stashpvn((char*)package_name, size, true);
-    // Gv_AMupdate() changed in Perl 5.11 to take a second argument.
-    // http://www.mail-archive.com/perl5-changes@perl.org/msg23145.html
 #if (PERL_VERSION > 10)
     Gv_AMupdate(stash, false);
 #else

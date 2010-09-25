@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-/* keep track of which headers have succeeded */
+/* Keep track of which headers have succeeded. */
 static int keeper_count = 0;
 #define MAX_KEEPER_COUNT 200
 static const char *keepers[MAX_KEEPER_COUNT + 1] = { NULL };
@@ -110,7 +110,7 @@ Headers_run(void)
         }
     }
 
-    /* test for all c89 headers in one blast */
+    /* Test for all c89 headers in one blast. */
     if (HeadCheck_check_many_headers((const char**)c89_headers)) {
         has_c89 = true;
         ConfWriter_append_conf("#define CHY_HAS_C89\n");
@@ -148,13 +148,13 @@ Headers_run(void)
         S_keep("pthread.h");
     }
 
-    /* append the config with every header detected so far */
+    /* Append the config with every header detected so far. */
     for (i = 0; keepers[i] != NULL; i++) {
         S_encode_affirmation(keepers[i]);
         ConfWriter_append_conf("#define CHY_%s\n", aff_buf);
     }
 
-    /* shorten */
+    /* Shorten. */
     ConfWriter_start_short_names();
     if (has_posix)
         ConfWriter_shorten_macro("HAS_POSIX");
@@ -185,7 +185,7 @@ S_encode_affirmation(const char *header_name) {
     char *buf, *buf_end;
     size_t len = strlen(header_name) + sizeof("HAS_");
     
-    /* grow buffer and start off with "HAS_" */
+    /* Grow buffer and start off with "HAS_". */
     if (aff_buf_size < len + 1) {
         free(aff_buf);
         aff_buf_size = len + 1;
@@ -193,7 +193,7 @@ S_encode_affirmation(const char *header_name) {
     }
     strcpy(aff_buf, "HAS_");
 
-    /* transform one char at a time */
+    /* Transform one char at a time. */
     for(buf = aff_buf + sizeof("HAS_") - 1, buf_end = aff_buf + len; 
         buf < buf_end; 
         header_name++, buf++

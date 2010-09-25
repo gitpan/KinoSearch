@@ -340,8 +340,8 @@ DefDelWriter_merge_segment(DefaultDeletionsWriter *self, SegReader *reader,
         if (files) {
             CharBuf *seg;
             Hash *mini_meta;
-            Hash_Iter_Init(files);
-            while(Hash_Iter_Next(files, (Obj**)&seg, (Obj**)&mini_meta)) {
+            Hash_Iterate(files);
+            while(Hash_Next(files, (Obj**)&seg, (Obj**)&mini_meta)) {
                 uint32_t i, max;
 
                 /* Find the segment the deletions from the SegReader

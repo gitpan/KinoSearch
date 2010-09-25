@@ -162,7 +162,7 @@ B<length> - The number of bits to flip.
 
 =back
 
-=head2 next_set_bit(tick)
+=head2 next_hit(tick)
 
 Returns the next set bit equal to or greater than C<< tick >>,
 or -1 if no such bit exists.

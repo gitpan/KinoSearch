@@ -98,7 +98,7 @@ HLWriter_add_inverted_doc(HighlightWriter *self, Inverter *inverter,
     OutStream_Write_I64(ix_out, filepos);
 
     // Count, then write number of highlightable fields. 
-    Inverter_Iter_Init(inverter);
+    Inverter_Iterate(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
         if (   FType_Is_A(type, FULLTEXTTYPE) 
@@ -109,7 +109,7 @@ HLWriter_add_inverted_doc(HighlightWriter *self, Inverter *inverter,
     }
     OutStream_Write_C32(dat_out, num_highlightable);
 
-    Inverter_Iter_Init(inverter);
+    Inverter_Iterate(inverter);
     while (Inverter_Next(inverter)) {
         FieldType *type = Inverter_Get_Type(inverter);
         if (   FType_Is_A(type, FULLTEXTTYPE) 

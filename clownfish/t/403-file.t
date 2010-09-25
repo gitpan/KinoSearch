@@ -32,9 +32,9 @@ ok( !$file->get_modified, "modified false at start" );
 $file->set_modified(1);
 ok( $file->get_modified, "set_modified, get_modified" );
 
-is( $file->bp_path('/path/to'), "/path/to/Stuff/Thing.bp", "bp_path" );
-is( $file->c_path('/path/to'),  "/path/to/Stuff/Thing.c",  "c_path" );
-is( $file->h_path('/path/to'),  "/path/to/Stuff/Thing.h",  "h_path" );
+is( $file->cfh_path('/path/to'), "/path/to/Stuff/Thing.cfh", "cfh_path" );
+is( $file->c_path('/path/to'),   "/path/to/Stuff/Thing.c",   "c_path" );
+is( $file->h_path('/path/to'),   "/path/to/Stuff/Thing.h",   "h_path" );
 
 my @classes = $file->classes;
 is( scalar @classes, 1, "classes() filters blocks" );

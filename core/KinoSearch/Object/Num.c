@@ -116,7 +116,7 @@ Float32_to_i64(Float32 *self)
 }
 
 int32_t
-Float32_hash_code(Float32 *self)
+Float32_hash_sum(Float32 *self)
 {
     return *(int32_t*)&self->value;
 }
@@ -194,7 +194,7 @@ Float64_mimic(Float64 *self, Obj *other)
 }
 
 int32_t
-Float64_hash_code(Float64 *self)
+Float64_hash_sum(Float64 *self)
 {
     int32_t *ints = (int32_t*)&self->value;
     return ints[0] ^ ints[1];
@@ -260,7 +260,7 @@ Int32_mimic(Integer32 *self, Obj *other)
 }
 
 int32_t
-Int32_hash_code(Integer32 *self)
+Int32_hash_sum(Integer32 *self)
 {
     return self->value;
 }
@@ -325,7 +325,7 @@ Int64_mimic(Integer64 *self, Obj *other)
 }
 
 int32_t
-Int64_hash_code(Integer64 *self)
+Int64_hash_sum(Integer64 *self)
 {
     int32_t *ints = (int32_t*)&self->value;
     return ints[0] ^ ints[1];

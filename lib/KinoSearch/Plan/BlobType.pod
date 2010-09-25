@@ -8,7 +8,7 @@ KinoSearch::Plan::BlobType - Default behaviors for binary fields.
 =head1 SYNOPSIS
 
     my $string_type = KinoSearch::Plan::StringType->new;
-    my $blob_type   = KinoSearch::Plan::BlobType->new;
+    my $blob_type   = KinoSearch::Plan::BlobType->new( stored => 1 );
     my $schema      = KinoSearch::Plan::Schema->new;
     $schema->spec_field( name => 'id',   type => $string_type );
     $schema->spec_field( name => 'jpeg', type => $blob_type );
@@ -22,11 +22,19 @@ containing binary data, which cannot be indexed or searched -- only stored.
 
 =head1 CONSTRUCTORS
 
-=head2 new()
+=head2 new( I<[labeled params]> )
 
-    my $blob_type = KinoSearch::Plan::BlobType->new;
+    my $blob_type = KinoSearch::Plan::BlobType->new(
+        stored => 1,  # default: false
+    );
 
-Constructor.  Takes no arguments.
+=over
+
+=item *
+
+B<stored> - boolean indicating whether the field should be stored.
+
+=back
 
 
 

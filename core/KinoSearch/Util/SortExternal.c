@@ -161,7 +161,7 @@ S_refill_cache(SortExternal *self)
             i++; // Run has some elements, so keep. 
         }
         else {
-            VA_Splice(self->runs, i, 1);
+            VA_Excise(self->runs, i, 1);
         }
     }
 

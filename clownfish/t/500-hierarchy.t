@@ -61,7 +61,7 @@ for my $file (@files) {
         or die "utime failed for '$h_path': $!";
 }
 
-my $path_to_animal_cf = $animal->bp_path( $args{source} );
+my $path_to_animal_cf = $animal->cfh_path( $args{source} );
 utime( undef, undef, $path_to_animal_cf )
     or die "utime for '$path_to_animal_cf' failed";    # touch
 

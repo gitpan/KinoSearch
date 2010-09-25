@@ -147,8 +147,8 @@ S_do_consolidate(CompoundFileWriter *self)
         /*
         CharBuf *merged_file;
         Obj     *ignore;
-        Hash_Iter_Init(sub_files);
-        while (Hash_Iter_Next(sub_files, (Obj**)&merged_file, &ignore)) {
+        Hash_Iterate(sub_files);
+        while (Hash_Next(sub_files, (Obj**)&merged_file, &ignore)) {
             if (!Folder_Delete(folder, merged_file)) {
                 CharBuf *mess = MAKE_MESS("Can't delete '%o'", merged_file);
                 DECREF(sub_files);

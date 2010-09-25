@@ -1,5 +1,19 @@
 Revision history for KinoSearch
 
+0.30_12  2010-09-24
+
+  Backwards-incompatible API changes:
+
+    * KinoSearch::Plan::BlobType
+      o new() -- new param 'stored', which is false by default.  Indexes which
+        have BlobType fields must be regenerated.
+
+  Bugfixes:
+
+    * Improve Solaris compatibility.
+    * Make BackgroundMerger fail gracefully when it can't get a write lock.
+
+
 0.30_112 2010-08-27
 
   Bugfixes:

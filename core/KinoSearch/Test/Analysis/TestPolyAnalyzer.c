@@ -19,11 +19,11 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     PolyAnalyzer *other_clone 
         = (PolyAnalyzer*)PolyAnalyzer_Load(other, other_dump);
 
-    ASSERT_FALSE(batch, PolyAnalyzer_Equals(analyzer,
+    TEST_FALSE(batch, PolyAnalyzer_Equals(analyzer,
         (Obj*)other), "Equals() false with different language");
-    ASSERT_TRUE(batch, PolyAnalyzer_Equals(analyzer,
+    TEST_TRUE(batch, PolyAnalyzer_Equals(analyzer,
         (Obj*)clone), "Dump => Load round trip");
-    ASSERT_TRUE(batch, PolyAnalyzer_Equals(other,
+    TEST_TRUE(batch, PolyAnalyzer_Equals(other,
         (Obj*)other_clone), "Dump => Load round trip");
 
     DECREF(analyzer);

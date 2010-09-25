@@ -5,7 +5,7 @@ use lib 'buildlib';
 use Test::More skip_all => 'Disabled until test ported to C';
 #use Test::More tests => 5;
 use KinoSearch::Test;
-use KinoSearch::Util::ToolSet qw( to_perl );
+use KinoSearch qw( to_perl );
 
 my $letters = KinoSearch::Object::VArray->new( capacity => 26 );
 $letters->push( KinoSearch::Object::ByteBuf->new($_) ) for 'a' .. 'z';

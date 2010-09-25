@@ -21,10 +21,10 @@ Floats_run(void)
     );
 
     ConfWriter_append_conf(
-        "typedef union { chy_i32_t i; float f; } chy_floati32;\n"
-        "static const chy_floati32 chy_f32inf    = {CHY_I32_C(0x7f800000)};\n"
-        "static const chy_floati32 chy_f32neginf = {CHY_I32_C(0xff800000)};\n"
-        "static const chy_floati32 chy_f32nan    = {CHY_I32_C(0x7fc00000)};\n"
+        "typedef union { chy_u32_t i; float f; } chy_floatu32;\n"
+        "static const chy_floatu32 chy_f32inf    = {CHY_U32_C(0x7f800000)};\n"
+        "static const chy_floatu32 chy_f32neginf = {CHY_U32_C(0xff800000)};\n"
+        "static const chy_floatu32 chy_f32nan    = {CHY_U32_C(0x7fc00000)};\n"
         "#define CHY_F32_INF (chy_f32inf.f)\n"
         "#define CHY_F32_NEGINF (chy_f32neginf.f)\n"
         "#define CHY_F32_NAN (chy_f32nan.f)\n"

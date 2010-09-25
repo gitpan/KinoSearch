@@ -114,7 +114,7 @@ SortWriter_add_inverted_doc(SortWriter *self, Inverter *inverter,
 {
     int32_t field_num;
 
-    Inverter_Iter_Init(inverter);
+    Inverter_Iterate(inverter);
     while (0 != (field_num = Inverter_Next(inverter))) {
         FieldType *type = Inverter_Get_Type(inverter);
         if (FType_Sortable(type)) {

@@ -17,9 +17,9 @@ test_all(TestBatch *batch)
 
     memcpy(ints_copy, source_ints, num_ints * sizeof(int32_t));
 
-    ASSERT_TRUE(batch, I32Arr_Get_Size(i32_array) == num_ints,
+    TEST_TRUE(batch, I32Arr_Get_Size(i32_array) == num_ints,
         "Get_Size");
-    ASSERT_TRUE(batch, I32Arr_Get_Size(stolen) == num_ints,
+    TEST_TRUE(batch, I32Arr_Get_Size(stolen) == num_ints,
         "Get_Size for stolen");
 
     for (num_matched = 0; num_matched < num_ints; num_matched++) {
@@ -27,7 +27,7 @@ test_all(TestBatch *batch)
             break; 
         }
     }
-    ASSERT_INT_EQ(batch, num_matched, num_ints, 
+    TEST_INT_EQ(batch, num_matched, num_ints, 
         "Matched all source ints with Get()");
 
     for (num_matched = 0; num_matched < num_ints; num_matched++) {
@@ -35,7 +35,7 @@ test_all(TestBatch *batch)
             break; 
         }
     }
-    ASSERT_INT_EQ(batch, num_matched, num_ints, 
+    TEST_INT_EQ(batch, num_matched, num_ints, 
         "Matched all source ints in stolen I32Array with Get()");
 
     DECREF(i32_array);

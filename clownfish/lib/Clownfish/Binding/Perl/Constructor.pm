@@ -106,16 +106,14 @@ sub xsub_def {
     my $refcount_mods = join( "\n        ", @refcount_mods );
 
     return <<END_STUFF;
-XS($c_name); /* -Wmissing-prototypes */
+XS($c_name);
 XS($c_name)
 {
     dXSARGS;
     CHY_UNUSED_VAR(cv);
     CHY_UNUSED_VAR(ax);
-    if (items < 1)
-        THROW(KINO_ERR, "Usage: %s(class_name, ...)",  GvNAME(CvGV(cv)));
+    if (items < 1) { THROW(KINO_ERR, "Usage: %s(class_name, ...)",  GvNAME(CvGV(cv))); }
     SP -= items;
-
     {
         $var_declarations
         $var_assignments
@@ -131,7 +129,6 @@ XS($c_name)
         sv_2mortal( ST(0) );
         XSRETURN(1);
     }
-
     PUTBACK;
 }
 

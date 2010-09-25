@@ -4,18 +4,18 @@ use warnings;
 package KinoSearch;
 
 use 5.008003;
+use Exporter;
 
-our $VERSION = '0.30_112';
+our $VERSION = '0.30_12';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
-# See the docs for KinoSearch::Util::ToolSet.
-BEGIN { XSLoader::load( 'KinoSearch', '0.30_112' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.30_12' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
-    our @EXPORT_OK = qw( kdump );
+    our @EXPORT_OK = qw( to_kino to_perl kdump );
 }
 
 use KinoSearch::Autobinding;
@@ -53,28 +53,6 @@ sub error {$KinoSearch::Object::Err::error}
             utf8ify
             utf8_valid
             cat_bytes
-        );
-    }
-}
-
-{
-    package KinoSearch::Util::ToolSet;
-    use Carp qw( carp croak cluck confess );
-    use Scalar::Util qw( blessed );
-    use Storable qw( nfreeze thaw );
-
-    BEGIN {
-        push our @ISA, 'Exporter';
-        our @EXPORT_OK = qw(
-            carp
-            croak
-            cluck
-            confess
-            blessed
-            nfreeze
-            thaw
-            to_kino
-            to_perl
         );
     }
 }
@@ -142,7 +120,7 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Analysis::Stopalizer;
-    use KinoSearch::Util::ToolSet qw( to_kino );
+    use KinoSearch qw( to_kino );
 
     sub gen_stoplist {
         my ( undef, $language ) = @_;
@@ -184,7 +162,7 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Document::Doc;
-    use KinoSearch::Util::ToolSet qw( nfreeze thaw );
+    use Storable qw( nfreeze thaw );
     use bytes;
     no bytes;
 
@@ -220,7 +198,7 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Object::Obj;
-    use KinoSearch::Util::ToolSet qw( to_kino to_perl );
+    use KinoSearch qw( to_kino to_perl );
     sub load { return $_[0]->_load( to_kino( $_[1] ) ) }
 }
 
@@ -277,6 +255,7 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Index::IndexReader;
+    use Carp;
 
     sub new {
         confess(
@@ -300,15 +279,12 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Index::PolyReader;
-    use KinoSearch::Util::ToolSet qw( to_kino );
+    use KinoSearch qw( to_kino );
 
     sub try_read_snapshot {
         my ( undef, %args ) = @_;
-        my ( $snapshot, $folder, $path )
-            = @args{qw( snapshot folder path )};
-        eval {
-            $snapshot->read_file( folder => $folder, path => $path );
-        };
+        my ( $snapshot, $folder, $path ) = @args{qw( snapshot folder path )};
+        eval { $snapshot->read_file( folder => $folder, path => $path ); };
         if   ($@) { return KinoSearch::Object::CharBuf->new($@) }
         else      { return undef }
     }
@@ -344,7 +320,7 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Index::Segment;
-    use KinoSearch::Util::ToolSet qw( to_kino );
+    use KinoSearch qw( to_kino );
     sub store_metadata {
         my ( $self, %args ) = @_;
         $self->_store_metadata( %args,
@@ -371,7 +347,8 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Search::Compiler;
-    use KinoSearch::Util::ToolSet qw( confess blessed );
+    use Carp;
+    use Scalar::Util qw( blessed );
 
     sub new {
         my ( $either, %args ) = @_;
@@ -424,10 +401,11 @@ sub error {$KinoSearch::Object::Err::error}
         no warnings 'redefine';
         sub deserialize { shift->_deserialize(@_) }
     }
+}
 
+{
     package KinoSearch::Object::ViewByteBuf;
-    use KinoSearch::Util::ToolSet qw( confess );
-
+    use Carp;
     sub new { confess "ViewByteBuf objects can only be created from C." }
 }
 
@@ -443,25 +421,26 @@ sub error {$KinoSearch::Object::Err::error}
         sub clone       { shift->_clone(@_) }
         sub deserialize { shift->_deserialize(@_) }
     }
+}
 
+{
     package KinoSearch::Object::ViewCharBuf;
-    use KinoSearch::Util::ToolSet qw( confess );
-
+    use Carp;
     sub new { confess "ViewCharBuf has no public constructor." }
+}
 
+{
     package KinoSearch::Object::ZombieCharBuf;
-    use KinoSearch::Util::ToolSet qw( confess );
-
+    use Carp;
     sub new { confess "ZombieCharBuf objects can only be created from C." }
-
     sub DESTROY { }
 }
 
 {
     package KinoSearch::Object::Err;
     sub do_to_string { shift->to_string }
-    use KinoSearch::Util::ToolSet qw( blessed );
-    use Carp qw( longmess );
+    use Scalar::Util qw( blessed );
+    use Carp qw( confess longmess );
     use overload
         '""'     => \&do_to_string,
         fallback => 1;
@@ -580,7 +559,8 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Util::Json;
-    use KinoSearch::Util::ToolSet qw( blessed to_kino );
+    use Scalar::Util qw( blessed );
+    use KinoSearch qw( to_kino );
 
     use JSON::XS qw();
 
@@ -656,7 +636,7 @@ __END__
 
 __BINDING__
 
-my $ks_xs_code = <<'END_XS_CODE';
+my $xs_code = <<'END_XS_CODE';
 MODULE = KinoSearch    PACKAGE = KinoSearch
 
 BOOT:
@@ -668,10 +648,6 @@ CODE:
     RETVAL = 1;
 OUTPUT:
     RETVAL
-END_XS_CODE
-
-my $toolset_xs_code = <<'END_XS_CODE';
-MODULE = KinoSearch    PACKAGE = KinoSearch::Util::ToolSet
 
 SV*
 to_kino(sv)
@@ -703,12 +679,7 @@ END_XS_CODE
 Clownfish::Binding::Perl::Class->register(
     parcel     => "KinoSearch",
     class_name => "KinoSearch",
-    xs_code    => $ks_xs_code,
-);
-Clownfish::Binding::Perl::Class->register(
-    parcel     => "KinoSearch",
-    class_name => "KinoSearch::Util::Toolset",
-    xs_code    => $toolset_xs_code,
+    xs_code    => $xs_code,
 );
 
 __COPYRIGHT__

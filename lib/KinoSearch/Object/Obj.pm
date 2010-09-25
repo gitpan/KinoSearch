@@ -208,7 +208,7 @@ Clownfish::Binding::Perl::Class->register(
             Clone
             Mimic
             Equals
-            Hash_Code
+            Hash_Sum
             Serialize
             Deserialize
             Destroy

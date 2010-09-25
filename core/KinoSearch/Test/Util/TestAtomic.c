@@ -13,23 +13,23 @@ test_cas_ptr(TestBatch *batch)
     int   *bar_pointer = &bar;
     int   *target      = NULL;
 
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         Atomic_cas_ptr((void**)&target, NULL, foo_pointer), 
         "cas_ptr returns true on success");
-    ASSERT_TRUE(batch, target == foo_pointer, "cas_ptr sets target");
+    TEST_TRUE(batch, target == foo_pointer, "cas_ptr sets target");
 
     target = NULL;
-    ASSERT_FALSE(batch, 
+    TEST_FALSE(batch, 
         Atomic_cas_ptr((void**)&target, bar_pointer, foo_pointer), 
         "cas_ptr returns false when it old_value doesn't match");
-    ASSERT_TRUE(batch, target == NULL, 
+    TEST_TRUE(batch, target == NULL, 
         "cas_ptr doesn't do anything to target when old_value doesn't match");
 
     target = foo_pointer;
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         Atomic_cas_ptr((void**)&target, foo_pointer, bar_pointer), 
         "cas_ptr from one value to another");
-    ASSERT_TRUE(batch, target == bar_pointer, "cas_ptr sets target");
+    TEST_TRUE(batch, target == bar_pointer, "cas_ptr sets target");
 }
 
 void

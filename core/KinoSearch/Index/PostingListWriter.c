@@ -134,7 +134,7 @@ PListWriter_add_inverted_doc(PostingListWriter *self, Inverter *inverter,
     // Iterate over fields in document, adding the content of indexed fields
     // to their respective PostingPools.
     float doc_boost = Inverter_Get_Boost(inverter);
-    Inverter_Iter_Init(inverter);
+    Inverter_Iterate(inverter);
     int32_t field_num;
     while (0 != (field_num = Inverter_Next(inverter))) {
         FieldType *type = Inverter_Get_Type(inverter);

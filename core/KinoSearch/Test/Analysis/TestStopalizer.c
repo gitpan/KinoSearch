@@ -36,11 +36,11 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Stopalizer *clone       = (Stopalizer*)Stopalizer_Load(other, dump);
     Stopalizer *other_clone = (Stopalizer*)Stopalizer_Load(other, other_dump);
 
-    ASSERT_FALSE(batch, Stopalizer_Equals(stopalizer,
+    TEST_FALSE(batch, Stopalizer_Equals(stopalizer,
         (Obj*)other), "Equals() false with different stoplist");
-    ASSERT_TRUE(batch, Stopalizer_Equals(stopalizer,
+    TEST_TRUE(batch, Stopalizer_Equals(stopalizer,
         (Obj*)clone), "Dump => Load round trip");
-    ASSERT_TRUE(batch, Stopalizer_Equals(other,
+    TEST_TRUE(batch, Stopalizer_Equals(other,
         (Obj*)other_clone), "Dump => Load round trip");
 
     DECREF(stopalizer);

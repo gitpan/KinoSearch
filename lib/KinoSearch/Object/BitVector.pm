@@ -35,7 +35,7 @@ Clownfish::Binding::Perl::Class->register(
             Xor
             Flip
             Flip_Block
-            Next_Set_Bit
+            Next_Hit
             To_Array
             Grow
             Count
@@ -57,7 +57,7 @@ Clownfish::Binding::Perl::Class->register(
                 xor
                 flip
                 flip_block
-                next_set_bit
+                next_hit
                 to_array
                 grow
                 count

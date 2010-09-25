@@ -108,7 +108,7 @@ sub _store_cached_bits {
     my ( $self, $seg_reader, $bits ) = @_;
     my $pair = { seg_reader => $seg_reader, bits => $bits };
     weaken( $pair->{seg_reader} );
-    $cached_bits{$$self}{ $seg_reader->hash_code } = $pair;
+    $cached_bits{$$self}{ $seg_reader->hash_sum } = $pair;
 }
 
 # Retrieve a cached BitVector associated with a particular SegReader.  As a
@@ -119,15 +119,15 @@ sub _fetch_cached_bits {
     my $cached_bits = $cached_bits{$$self};
 
     # Sweep.
-    while ( my ( $hash_code, $pair ) = each %$cached_bits ) {
+    while ( my ( $hash_sum, $pair ) = each %$cached_bits ) {
         # If weak ref has decomposed into undef, SegReader is gone... so
         # delete.
         next if defined $pair->{seg_reader};
-        delete $cached_bits->{$hash_code};
+        delete $cached_bits->{$hash_sum};
     }
 
     # Fetch.
-    my $pair = $cached_bits->{ $seg_reader->hash_code };
+    my $pair = $cached_bits->{ $seg_reader->hash_sum };
     return $pair->{bits} if defined $pair;
     return;
 }

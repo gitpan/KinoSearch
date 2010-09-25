@@ -109,22 +109,16 @@ BB_equals_bytes(ByteBuf *self, const void *bytes, size_t size)
 }
 
 int32_t
-BB_hash_code(ByteBuf *self)
+BB_hash_sum(ByteBuf *self)
 {
-    size_t size = self->size; 
-    const uint8_t *buf = (const uint8_t*)self->buf; 
-    uint32_t hashvalue = 0; 
+    uint32_t       sum = 5381; 
+    uint8_t *const buf = (uint8_t*)self->buf;
 
-    while (size--) { 
-        hashvalue += *buf++; 
-        hashvalue += (hashvalue << 10); 
-        hashvalue ^= (hashvalue >> 6); 
-    } 
-    hashvalue += (hashvalue << 3); 
-    hashvalue ^= (hashvalue >> 11); 
-    hashvalue += (hashvalue << 15); 
+    for (size_t i = 0, max = self->size; i < max; i++) {
+        sum = ((sum << 5) + sum) ^ buf[i];
+    }
 
-    return (int32_t) hashvalue;
+    return (int32_t)sum;
 }
 
 static INLINE void

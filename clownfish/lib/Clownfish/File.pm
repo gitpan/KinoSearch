@@ -80,9 +80,9 @@ sub guard_close {
     return "#endif /\* $guard_name \*/\n";
 }
 
-sub c_path  { return $_[0]->_some_path( $_[1], '.c' ) }
-sub h_path  { return $_[0]->_some_path( $_[1], '.h' ) }
-sub bp_path { return $_[0]->_some_path( $_[1], '.bp' ) }
+sub c_path   { return $_[0]->_some_path( $_[1], '.c' ) }
+sub h_path   { return $_[0]->_some_path( $_[1], '.h' ) }
+sub cfh_path { return $_[0]->_some_path( $_[1], '.cfh' ) }
 
 sub _some_path {
     my ( $self, $base_dir, $ext ) = @_;
@@ -126,7 +126,7 @@ Clownfish::Class, a Clownfish::Parcel, or a Clownfish::CBlock.
 =item * B<source_class> - The class name associated with the source file,
 regardless of how what classes are defined in the source file. Example: If
 source_class is "Foo::Bar", that implies that the source file could be found
-at 'Foo/Bar.bp' within the source directory and that the output C header file
+at 'Foo/Bar.cfh' within the source directory and that the output C header file
 should be 'Foo/Bar.h' within the target include directory.
 
 =item * B<parcel> - A Clownfish::Parcel or parcel name.
@@ -153,12 +153,12 @@ Accessors for the file's "modified" property, which is initially false.
 
 Accessor.
 
-=head2 c_path h_path bp_path
+=head2 c_path h_path cfh_path
 
     # '/path/to/Source/Class.c', etc.
-    my $c_path  = $file->c_path('/path/to');
-    my $h_path  = $file->h_path('/path/to');
-    my $bp_path = $file->bp_path('/path/to');
+    my $c_path   = $file->c_path('/path/to');
+    my $h_path   = $file->h_path('/path/to');
+    my $cfh_path = $file->cfh_path('/path/to');
 
 Given a base directory, return a path name derived from the File's
 source_class with the specified extension.

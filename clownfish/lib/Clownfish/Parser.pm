@@ -53,13 +53,13 @@ class_declaration:
     docucomment(?)
     exposure_specifier(?) class_modifier(s?) 'class' class_name 
         cnick(?)
-        class_extension(?)
+        class_inheritance(?)
         class_attribute(s?)
     '{'
         declaration_statement[
             class  => $item{class_name}, 
             cnick  => $item{'cnick(?)'}[0],
-            parent => $item{'class_extension(?)'}[0],
+            parent => $item{'class_inheritance(?)'}[0],
         ](s?)
     '}'
     { Clownfish::Parser->new_class( \%item, \%arg ) }
@@ -70,8 +70,8 @@ class_modifier:
     | 'final'
     { $item[1] }
 
-class_extension:
-    'extends' class_name
+class_inheritance:
+    'inherits' class_name
     { $item[2] }
 
 class_attribute:
@@ -486,7 +486,7 @@ sub new_class {
         parcel            => $parcel,
         class_name        => $item->{class_name},
         cnick             => $item->{'cnick(?)'}[0],
-        parent_class_name => $item->{'class_extension(?)'}[0],
+        parent_class_name => $item->{'class_inheritance(?)'}[0],
         member_vars       => \@member_vars,
         functions         => \@functions,
         methods           => \@methods,

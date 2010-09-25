@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* code for verifying ISO func macro */
+/* Code for verifying ISO func macro. */
 static char iso_func_code[] =
     QUOTE(  #include "_charm.h"               )
     QUOTE(  int main() {                      )
@@ -17,7 +17,7 @@ static char iso_func_code[] =
     QUOTE(      return 0;                     )
     QUOTE(  }                                 );
 
-/* code for verifying GNU func macro */
+/* Code for verifying GNU func macro. */
 static char gnuc_func_code[] = 
     QUOTE(  #include "_charm.h"               )
     QUOTE(  int main() {                      )
@@ -26,7 +26,7 @@ static char gnuc_func_code[] =
     QUOTE(      return 0;                     )
     QUOTE(  }                                 );
 
-/* code for verifying inline keyword */
+/* Code for verifying inline keyword. */
 static char inline_code[] =
     QUOTE(  #include "_charm.h"               )
     QUOTE(  static %s int foo() { return 1; } )
@@ -63,7 +63,7 @@ FuncMacro_run(void)
 
     ConfWriter_start_module("FuncMacro");
     
-    /* check for ISO func macro */
+    /* Check for ISO func macro. */
     output = CC_capture_output(iso_func_code, strlen(iso_func_code), 
         &output_len);
     if (output != NULL && strncmp(output, "main", 4) == 0) {
@@ -72,7 +72,7 @@ FuncMacro_run(void)
     }
     free(output);
 
-    /* check for GNUC func macro */
+    /* Check for GNUC func macro. */
     output = CC_capture_output(gnuc_func_code, strlen(gnuc_func_code), 
         &output_len);
     if (output != NULL && strncmp(output, "main", 4) == 0) {
@@ -81,7 +81,7 @@ FuncMacro_run(void)
     }
     free(output);
 
-    /* write out common defines */
+    /* Write out common defines. */
     if (has_funcmac) {
         const char *macro_text = has_iso_funcmac 
             ? "__func__"
@@ -93,7 +93,7 @@ FuncMacro_run(void)
         );
     }
 
-    /* write out specific defines */
+    /* Write out specific defines. */
     if (has_iso_funcmac) {
        ConfWriter_append_conf("#define CHY_HAS_ISO_FUNC_MACRO\n");
     }
@@ -117,7 +117,7 @@ FuncMacro_run(void)
         ConfWriter_append_conf("#define CHY_INLINE\n");
     }
 
-    /* shorten */
+    /* Shorten. */
     ConfWriter_start_short_names();
     if (has_iso_funcmac) 
         ConfWriter_shorten_macro("HAS_ISO_FUNC_MACRO");

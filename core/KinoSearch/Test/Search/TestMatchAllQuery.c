@@ -14,9 +14,9 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj           *dump  = (Obj*)MatchAllQuery_Dump(query);
     MatchAllQuery *clone = (MatchAllQuery*)MatchAllQuery_Load(query, dump);
 
-    ASSERT_TRUE(batch, MatchAllQuery_Equals(query, (Obj*)clone), 
+    TEST_TRUE(batch, MatchAllQuery_Equals(query, (Obj*)clone), 
         "Dump => Load round trip");
-    ASSERT_FALSE(batch, MatchAllQuery_Equals(query, (Obj*)&EMPTY), "Equals");
+    TEST_FALSE(batch, MatchAllQuery_Equals(query, (Obj*)&EMPTY), "Equals");
 
     DECREF(query);
     DECREF(dump);

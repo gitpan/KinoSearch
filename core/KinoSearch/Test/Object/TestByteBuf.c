@@ -11,25 +11,25 @@ test_Equals(TestBatch *batch)
     ByteBuf *wanted  = BB_new_bytes("foo", 4); // Include terminating NULL. 
     ByteBuf *got     = BB_new_bytes("foo", 4); 
 
-    ASSERT_TRUE(batch, BB_Equals(wanted, (Obj*)got), "Equals");
-    ASSERT_INT_EQ(batch, BB_Hash_Code(got), BB_Hash_Code(wanted), "Hash_Code");
+    TEST_TRUE(batch, BB_Equals(wanted, (Obj*)got), "Equals");
+    TEST_INT_EQ(batch, BB_Hash_Sum(got), BB_Hash_Sum(wanted), "Hash_Sum");
 
-    ASSERT_TRUE(batch, BB_Equals_Bytes(got, "foo", 4), "Equals_Bytes");
-    ASSERT_FALSE(batch, BB_Equals_Bytes(got, "foo", 3), 
+    TEST_TRUE(batch, BB_Equals_Bytes(got, "foo", 4), "Equals_Bytes");
+    TEST_FALSE(batch, BB_Equals_Bytes(got, "foo", 3), 
         "Equals_Bytes spoiled by different size");
-    ASSERT_FALSE(batch, BB_Equals_Bytes(got, "bar", 4), 
+    TEST_FALSE(batch, BB_Equals_Bytes(got, "bar", 4), 
         "Equals_Bytes spoiled by different content");
 
     BB_Set_Size(got, 3);
-    ASSERT_FALSE(batch, BB_Equals(wanted, (Obj*)got), 
+    TEST_FALSE(batch, BB_Equals(wanted, (Obj*)got), 
         "Different size spoils Equals");
-    ASSERT_FALSE(batch, BB_Hash_Code(got) == BB_Hash_Code(wanted), 
-        "Different size spoils Hash_Code (probably -- at least this one)");
+    TEST_FALSE(batch, BB_Hash_Sum(got) == BB_Hash_Sum(wanted), 
+        "Different size spoils Hash_Sum (probably -- at least this one)");
 
     BB_Mimic_Bytes(got, "bar", 4);
-    ASSERT_INT_EQ(batch, BB_Get_Size(wanted), BB_Get_Size(got), 
+    TEST_INT_EQ(batch, BB_Get_Size(wanted), BB_Get_Size(got), 
         "same length");
-    ASSERT_FALSE(batch, BB_Equals(wanted, (Obj*)got), 
+    TEST_FALSE(batch, BB_Equals(wanted, (Obj*)got), 
         "Different content spoils Equals");
 
     DECREF(got);
@@ -40,10 +40,10 @@ static void
 test_Grow(TestBatch *batch)
 {
     ByteBuf *bb = BB_new(1);
-    ASSERT_INT_EQ(batch, BB_Get_Capacity(bb), 8,
+    TEST_INT_EQ(batch, BB_Get_Capacity(bb), 8,
         "Allocate in 8-byte increments");
     BB_Grow(bb, 9);
-    ASSERT_INT_EQ(batch, BB_Get_Capacity(bb), 16, 
+    TEST_INT_EQ(batch, BB_Get_Capacity(bb), 16, 
         "Grow in 8-byte increments");
     DECREF(bb);
 }
@@ -53,7 +53,7 @@ test_Clone(TestBatch *batch)
 {
     ByteBuf *bb = BB_new_bytes("foo", 3);
     ByteBuf *evil_twin = BB_Clone(bb);
-    ASSERT_TRUE(batch, BB_Equals(bb, (Obj*)evil_twin), "Clone");
+    TEST_TRUE(batch, BB_Equals(bb, (Obj*)evil_twin), "Clone");
     DECREF(bb);
     DECREF(evil_twin);
 }
@@ -66,15 +66,15 @@ test_compare(TestBatch *batch)
 
     BB_Set_Size(a, 4);
     BB_Set_Size(b, 4);
-    ASSERT_INT_EQ(batch, BB_compare(&a, &b), 0,
+    TEST_INT_EQ(batch, BB_compare(&a, &b), 0,
         "BB_compare returns 0 for equal ByteBufs");
 
     BB_Set_Size(a, 3);
-    ASSERT_TRUE(batch, BB_compare(&a, &b) < 0, "shorter ByteBuf sorts first");
+    TEST_TRUE(batch, BB_compare(&a, &b) < 0, "shorter ByteBuf sorts first");
 
     BB_Set_Size(a, 5);
     BB_Set_Size(b, 5);
-    ASSERT_TRUE(batch, BB_compare(&a, &b) < 0, 
+    TEST_TRUE(batch, BB_compare(&a, &b) < 0, 
         "NULL doesn't interfere with BB_compare");
 
     DECREF(a);
@@ -88,15 +88,15 @@ test_Mimic(TestBatch *batch)
     ByteBuf *b = BB_new(0);
 
     BB_Mimic(b, (Obj*)a);
-    ASSERT_TRUE(batch, BB_Equals(a, (Obj*)b), "Mimic");
+    TEST_TRUE(batch, BB_Equals(a, (Obj*)b), "Mimic");
 
     BB_Mimic_Bytes(a, "bar", 4);
-    ASSERT_TRUE(batch, strcmp(BB_Get_Buf(a), "bar") == 0, 
+    TEST_TRUE(batch, strcmp(BB_Get_Buf(a), "bar") == 0, 
         "Mimic_Bytes content");
-    ASSERT_INT_EQ(batch, BB_Get_Size(a), 4, "Mimic_Bytes size");
+    TEST_INT_EQ(batch, BB_Get_Size(a), 4, "Mimic_Bytes size");
 
     BB_Mimic(b, (Obj*)a);
-    ASSERT_TRUE(batch, BB_Equals(a, (Obj*)b), "Mimic");
+    TEST_TRUE(batch, BB_Equals(a, (Obj*)b), "Mimic");
 
     DECREF(a);
     DECREF(b);
@@ -110,11 +110,11 @@ test_Cat(TestBatch *batch)
     ByteBuf *scratch = BB_new_bytes("bar", 3);
 
     BB_Cat(got, scratch);
-    ASSERT_TRUE(batch, BB_Equals(wanted, (Obj*)got), "Cat");
+    TEST_TRUE(batch, BB_Equals(wanted, (Obj*)got), "Cat");
 
     BB_Mimic_Bytes(wanted,"foobarbaz", 9);
     BB_Cat_Bytes(got, "baz", 3);
-    ASSERT_TRUE(batch, BB_Equals(wanted, (Obj*)got), "Cat_Bytes");
+    TEST_TRUE(batch, BB_Equals(wanted, (Obj*)got), "Cat_Bytes");
 
     DECREF(scratch);
     DECREF(got);
@@ -126,7 +126,7 @@ test_serialization(TestBatch *batch)
 {
     ByteBuf *wanted = BB_new_bytes("foobar", 6);
     ByteBuf *got    = (ByteBuf*)TestUtils_freeze_thaw((Obj*)wanted);
-    ASSERT_TRUE(batch, got && BB_Equals(wanted, (Obj*)got), 
+    TEST_TRUE(batch, got && BB_Equals(wanted, (Obj*)got), 
         "Serialization round trip");
     DECREF(wanted);
     DECREF(got);

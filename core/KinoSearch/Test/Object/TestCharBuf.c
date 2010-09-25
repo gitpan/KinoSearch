@@ -24,22 +24,22 @@ test_Cat(TestBatch *batch)
     CharBuf *got     = S_get_cb("");
     
     CB_Cat(got, wanted);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat");
     DECREF(got);
 
     got = S_get_cb("a");
     CB_Cat_Char(got, 0x263A);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat_Char");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat_Char");
     DECREF(got);
 
     got = S_get_cb("a");
     CB_Cat_Str(got, smiley, smiley_len);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat_Str");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat_Str");
     DECREF(got);
 
     got = S_get_cb("a");
     CB_Cat_Trusted_Str(got, smiley, smiley_len);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat_Trusted_Str");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Cat_Trusted_Str");
     DECREF(got);
 
     DECREF(wanted);
@@ -52,16 +52,16 @@ test_Mimic_and_Clone(TestBatch *batch)
     CharBuf *got    = S_get_cb("bar");
 
     CB_Mimic(got, (Obj*)wanted);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Mimic");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Mimic");
     DECREF(got);
 
     got = S_get_cb("bar");
     CB_Mimic_Str(got, "foo", 3);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Mimic_Str");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Mimic_Str");
     DECREF(got);
 
     got = CB_Clone(wanted);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Clone");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Clone");
     DECREF(got);
 
     DECREF(wanted);
@@ -77,9 +77,9 @@ test_Code_Point_At_and_From(TestBatch *batch)
 
     for (i = 0; i < num_code_points; i++) {
         uint32_t from = num_code_points - i - 1;
-        ASSERT_INT_EQ(batch, CB_Code_Point_At(string, i), code_points[i],
+        TEST_INT_EQ(batch, CB_Code_Point_At(string, i), code_points[i],
             "Code_Point_At %ld", (long)i);
-        ASSERT_INT_EQ(batch, CB_Code_Point_At(string, from), 
+        TEST_INT_EQ(batch, CB_Code_Point_At(string, from), 
             code_points[from], "Code_Point_From %ld", (long)from);
     }
 
@@ -92,7 +92,7 @@ test_SubString(TestBatch *batch)
     CharBuf *string = CB_newf("a%s%sb%sc", smiley, smiley, smiley);
     CharBuf *wanted = CB_newf("%sb%s", smiley, smiley);
     CharBuf *got = CB_SubString(string, 2, 3);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "SubString");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "SubString");
     DECREF(wanted);
     DECREF(got);
     DECREF(string);
@@ -107,14 +107,14 @@ test_Nip_and_Chop(TestBatch *batch)
     wanted = CB_newf("%sb%sc", smiley, smiley);
     got    = CB_newf("a%s%sb%sc", smiley, smiley, smiley);
     CB_Nip(got, 2);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Nip");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Nip");
     DECREF(wanted);
     DECREF(got);
 
     wanted = CB_newf("a%s%s", smiley, smiley);
     got    = CB_newf("a%s%sb%sc", smiley, smiley, smiley);
     CB_Chop(got, 3);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Chop");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Chop");
     DECREF(wanted);
     DECREF(got);
 }
@@ -126,7 +126,7 @@ test_Truncate(TestBatch *batch)
     CharBuf *wanted = CB_newf("a%s", smiley, smiley);
     CharBuf *got    = CB_newf("a%s%sb%sc", smiley, smiley, smiley);
     CB_Truncate(got, 2);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Truncate");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "Truncate");
     DECREF(wanted);
     DECREF(got);
 }
@@ -149,13 +149,13 @@ test_Trim(TestBatch *batch)
     CB_Cat_Char(got, 0x263A);
     for (i = 0; i < num_spaces; i++) { CB_Cat_Char(got, spaces[i]); }
 
-    ASSERT_TRUE(batch, CB_Trim_Top(got), "Trim_Top returns true on success");
-    ASSERT_FALSE(batch, CB_Trim_Top(got), 
+    TEST_TRUE(batch, CB_Trim_Top(got), "Trim_Top returns true on success");
+    TEST_FALSE(batch, CB_Trim_Top(got), 
         "Trim_Top returns false on failure");
-    ASSERT_TRUE(batch, CB_Trim_Tail(got), "Trim_Tail returns true on success");
-    ASSERT_FALSE(batch, CB_Trim_Tail(got), 
+    TEST_TRUE(batch, CB_Trim_Tail(got), "Trim_Tail returns true on success");
+    TEST_FALSE(batch, CB_Trim_Tail(got), 
         "Trim_Tail returns false on failure");
-    ASSERT_TRUE(batch, CB_Equals_Str(got, smiley, smiley_len), 
+    TEST_TRUE(batch, CB_Equals_Str(got, smiley, smiley_len), 
         "Trim_Top and Trim_Tail worked");
 
     // Build the spacey smiley again. 
@@ -164,9 +164,9 @@ test_Trim(TestBatch *batch)
     CB_Cat_Char(got, 0x263A);
     for (i = 0; i < num_spaces; i++) { CB_Cat_Char(got, spaces[i]); }
 
-    ASSERT_TRUE(batch, CB_Trim(got), "Trim returns true on success");
-    ASSERT_FALSE(batch, CB_Trim(got), "Trim returns false on failure");
-    ASSERT_TRUE(batch, CB_Equals_Str(got, smiley, smiley_len), 
+    TEST_TRUE(batch, CB_Trim(got), "Trim returns true on success");
+    TEST_FALSE(batch, CB_Trim(got), "Trim returns false on failure");
+    TEST_TRUE(batch, CB_Equals_Str(got, smiley, smiley_len), 
         "Trim worked");
 
     DECREF(got);
@@ -178,12 +178,12 @@ test_To_F64(TestBatch *batch)
     CharBuf *charbuf = S_get_cb("1.5");
     double difference = 1.5 - CB_To_F64(charbuf);
     if (difference < 0) { difference = 0 - difference; }
-    ASSERT_TRUE(batch, difference < 0.001, "To_F64");
+    TEST_TRUE(batch, difference < 0.001, "To_F64");
 
     CB_setf(charbuf, "-1.5");
     difference = 1.5 + CB_To_F64(charbuf);
     if (difference < 0) { difference = 0 - difference; }
-    ASSERT_TRUE(batch, difference < 0.001, "To_F64 negative");
+    TEST_TRUE(batch, difference < 0.001, "To_F64 negative");
 
     DECREF(charbuf);
 }
@@ -192,9 +192,9 @@ static void
 test_To_I64(TestBatch *batch)
 {
     CharBuf *charbuf = S_get_cb("10");
-    ASSERT_TRUE(batch, CB_To_I64(charbuf) == 10, "To_I64");
+    TEST_TRUE(batch, CB_To_I64(charbuf) == 10, "To_I64");
     CB_setf(charbuf, "-10");
-    ASSERT_TRUE(batch, CB_To_I64(charbuf) == -10, "To_I64 negative");
+    TEST_TRUE(batch, CB_To_I64(charbuf) == -10, "To_I64 negative");
     DECREF(charbuf);
 }
 
@@ -205,7 +205,7 @@ test_vcatf_s(TestBatch *batch)
     CharBuf *wanted = S_get_cb("foo bar bizzle baz");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %s baz", "bizzle");
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%s");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%s");
     DECREF(wanted);
     DECREF(got);
 }
@@ -216,7 +216,7 @@ test_vcatf_null_string(TestBatch *batch)
     CharBuf *wanted = S_get_cb("foo bar [NULL] baz");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %s baz", NULL);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%s NULL");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%s NULL");
     DECREF(wanted);
     DECREF(got);
 }
@@ -228,7 +228,7 @@ test_vcatf_cb(TestBatch *batch)
     CharBuf *catworthy = S_get_cb("ZEKE");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %o baz", catworthy);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%o CharBuf");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%o CharBuf");
     DECREF(catworthy);
     DECREF(wanted);
     DECREF(got);
@@ -241,7 +241,7 @@ test_vcatf_obj(TestBatch *batch)
     Integer32 *i32 = Int32_new(20);
     CharBuf   *got = S_get_cb("ooga");
     CB_catf(got, " %o booga", i32);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%o Obj");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%o Obj");
     DECREF(i32);
     DECREF(wanted);
     DECREF(got);
@@ -253,7 +253,7 @@ test_vcatf_null_obj(TestBatch *batch)
     CharBuf *wanted = S_get_cb("foo bar [NULL] baz");
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %o baz", NULL);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%o NULL");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%o NULL");
     DECREF(wanted);
     DECREF(got);
 }
@@ -265,7 +265,7 @@ test_vcatf_i8(TestBatch *batch)
     int8_t num = -3;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %i8 baz", num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%i8");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%i8");
     DECREF(wanted);
     DECREF(got);
 }
@@ -277,7 +277,7 @@ test_vcatf_i32(TestBatch *batch)
     int32_t num = -100000;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %i32 baz", num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%i32");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%i32");
     DECREF(wanted);
     DECREF(got);
 }
@@ -289,7 +289,7 @@ test_vcatf_i64(TestBatch *batch)
     int64_t num = I64_C(-5000000000);
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %i64 baz", num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%i64");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%i64");
     DECREF(wanted);
     DECREF(got);
 }
@@ -301,7 +301,7 @@ test_vcatf_u8(TestBatch *batch)
     uint8_t num = 3;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %u8 baz", num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%u8");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%u8");
     DECREF(wanted);
     DECREF(got);
 }
@@ -313,7 +313,7 @@ test_vcatf_u32(TestBatch *batch)
     uint32_t num = 100000;
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %u32 baz", num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%u32");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%u32");
     DECREF(wanted);
     DECREF(got);
 }
@@ -325,7 +325,7 @@ test_vcatf_u64(TestBatch *batch)
     uint64_t num = U64_C(5000000000);
     CharBuf *got = S_get_cb("foo ");
     CB_catf(got, "bar %u64 baz", num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%u64");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%u64");
     DECREF(wanted);
     DECREF(got);
 }
@@ -340,7 +340,7 @@ test_vcatf_f64(TestBatch *batch)
     sprintf(buf, "foo bar %g baz", num);
     wanted = CB_new_from_trusted_utf8(buf, strlen(buf));
     CB_catf(got, "bar %f64 baz", num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%f64");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%f64");
     DECREF(wanted);
     DECREF(got);
 }
@@ -359,7 +359,7 @@ test_vcatf_x32(TestBatch *batch)
 #endif
     wanted = CB_new_from_trusted_utf8(buf, strlen(buf));
     CB_catf(got, "bar %x32 baz", (uint32_t)num);
-    ASSERT_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%x32");
+    TEST_TRUE(batch, CB_Equals(wanted, (Obj*)got), "%%x32");
     DECREF(wanted);
     DECREF(got);
 }
@@ -369,7 +369,7 @@ test_serialization(TestBatch *batch)
 {
     CharBuf *wanted = S_get_cb("foo");
     CharBuf *got    = (CharBuf*)TestUtils_freeze_thaw((Obj*)wanted);
-    ASSERT_TRUE(batch, got && CB_Equals(wanted, (Obj*)got), 
+    TEST_TRUE(batch, got && CB_Equals(wanted, (Obj*)got), 
         "Round trip through FREEZE/THAW");
     DECREF(got);
     DECREF(wanted);

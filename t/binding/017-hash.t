@@ -4,7 +4,7 @@ use warnings;
 use Test::More tests => 4;
 use Storable qw( nfreeze thaw );
 use KinoSearch::Test;
-use KinoSearch::Util::ToolSet qw( to_perl to_kino );
+use KinoSearch qw( to_perl to_kino );
 
 my $hash = KinoSearch::Object::Hash->new( capacity => 10 );
 $hash->store( "foo", KinoSearch::Object::CharBuf->new("bar") );

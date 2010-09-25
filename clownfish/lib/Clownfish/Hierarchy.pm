@@ -66,7 +66,7 @@ sub _parse_cf_files {
     my @all_source_paths;
     find(
         {   wanted => sub {
-                if ( $File::Find::name =~ /\.bp$/ ) {
+                if ( $File::Find::name =~ /\.cfh$/ ) {
                     push @all_source_paths, $File::Find::name
                         unless /#/;    # skip emacs .#filename.h lock files
                 }
@@ -82,7 +82,7 @@ sub _parse_cf_files {
     for my $source_path (@all_source_paths) {
         # Derive the name of the class that owns the module file.
         my $source_class = $source_path;
-        $source_class =~ s/\.bp$//;
+        $source_class =~ s/\.cfh$//;
         $source_class =~ s/^\Q$source\E\W*//
             or die "'$source_path' doesn't start with '$source'";
         $source_class =~ s/\W/::/g;
@@ -133,7 +133,7 @@ sub propagate_modified {
 sub _propagate_modified {
     my ( $self, $class, $modified ) = @_;
     my $file        = $self->{files}{ $class->get_source_class };
-    my $source_path = $file->bp_path( $self->{source} );
+    my $source_path = $file->cfh_path( $self->{source} );
     my $h_path      = $file->h_path( $self->{dest} );
 
     if ( !current( $source_path, $h_path ) ) {

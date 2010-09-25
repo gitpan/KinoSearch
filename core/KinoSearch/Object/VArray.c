@@ -269,7 +269,7 @@ VA_delete(VArray *self, uint32_t num)
 }
 
 void
-VA_splice(VArray *self, uint32_t offset, uint32_t length)
+VA_excise(VArray *self, uint32_t offset, uint32_t length)
 {
     uint32_t i;
     uint32_t num_to_move;
@@ -290,14 +290,14 @@ VA_splice(VArray *self, uint32_t offset, uint32_t length)
 void
 VA_clear(VArray *self)
 {
-    VA_splice(self, 0, self->size);
+    VA_excise(self, 0, self->size);
 }
 
 void
 VA_resize(VArray *self, uint32_t size)
 {
     if (size < self->size) {
-        VA_Splice(self, size, self->size - size);
+        VA_Excise(self, size, self->size - size);
     }
     else if (size > self->size) {
         VA_Grow(self, size);
@@ -351,17 +351,17 @@ VA_equals(VArray *self, Obj *other)
 }
 
 VArray*
-VA_grep(VArray *self, VA_grep_test_t test, void *data)
+VA_gather(VArray *self, VA_gather_test_t test, void *data)
 {
     uint32_t i, max;
-    VArray *grepped = VA_new(self->size);
+    VArray *gathered = VA_new(self->size);
     for (i = 0, max = self->size; i < max; i++) {
         if (test(self, i, data)) {
             Obj *elem = self->elems[i]; 
-            VA_Push(grepped, elem ? INCREF(elem) : NULL);
+            VA_Push(gathered, elem ? INCREF(elem) : NULL);
         }
     }
-    return grepped;
+    return gathered;
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

@@ -47,9 +47,9 @@ test_open(TestBatch *batch)
     real_folder = S_folder_with_contents();
     Folder_Delete(real_folder, (CharBuf*)&cfmeta_file);
     cf_reader = CFReader_open(real_folder);
-    ASSERT_TRUE(batch, cf_reader == NULL,
+    TEST_TRUE(batch, cf_reader == NULL,
         "Return NULL when cfmeta file missing");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Set Err_error when cfmeta file missing");
     DECREF(real_folder);
 
@@ -57,9 +57,9 @@ test_open(TestBatch *batch)
     real_folder = S_folder_with_contents();
     Folder_Delete(real_folder, (CharBuf*)&cf_file);
     cf_reader = CFReader_open(real_folder);
-    ASSERT_TRUE(batch, cf_reader == NULL,
+    TEST_TRUE(batch, cf_reader == NULL,
         "Return NULL when cf.dat file missing");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Set Err_error when cf.dat file missing");
     DECREF(real_folder);
 
@@ -70,9 +70,9 @@ test_open(TestBatch *batch)
     Folder_Delete(real_folder, (CharBuf*)&cfmeta_file);
     Json_spew_json((Obj*)metadata, real_folder, (CharBuf*)&cfmeta_file);
     cf_reader = CFReader_open(real_folder);
-    ASSERT_TRUE(batch, cf_reader == NULL,
+    TEST_TRUE(batch, cf_reader == NULL,
         "Return NULL when format is invalid");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Set Err_error when format is invalid");
 
     Err_set_error(NULL);
@@ -80,9 +80,9 @@ test_open(TestBatch *batch)
     Folder_Delete(real_folder, (CharBuf*)&cfmeta_file);
     Json_spew_json((Obj*)metadata, real_folder, (CharBuf*)&cfmeta_file);
     cf_reader = CFReader_open(real_folder);
-    ASSERT_TRUE(batch, cf_reader == NULL,
+    TEST_TRUE(batch, cf_reader == NULL,
         "Return NULL when format is too recent");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Set Err_error when format too recent");
 
     Err_set_error(NULL);
@@ -90,9 +90,9 @@ test_open(TestBatch *batch)
     Folder_Delete(real_folder, (CharBuf*)&cfmeta_file);
     Json_spew_json((Obj*)metadata, real_folder, (CharBuf*)&cfmeta_file);
     cf_reader = CFReader_open(real_folder);
-    ASSERT_TRUE(batch, cf_reader == NULL,
+    TEST_TRUE(batch, cf_reader == NULL,
         "Return NULL when format key is missing");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Set Err_error when format key is missing");
 
     Hash_Store_Str(metadata, "format", 6, (Obj*)CB_newf("%i32",
@@ -101,9 +101,9 @@ test_open(TestBatch *batch)
     Folder_Delete(real_folder, (CharBuf*)&cfmeta_file);
     Json_spew_json((Obj*)metadata, real_folder, (CharBuf*)&cfmeta_file);
     cf_reader = CFReader_open(real_folder);
-    ASSERT_TRUE(batch, cf_reader == NULL,
+    TEST_TRUE(batch, cf_reader == NULL,
         "Return NULL when files key is missing");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Set Err_error when files key is missing");
 
     DECREF(metadata);
@@ -116,39 +116,39 @@ test_Local_MkDir_and_Find_Folder(TestBatch *batch)
     Folder *real_folder = S_folder_with_contents();
     CompoundFileReader *cf_reader = CFReader_open(real_folder);
 
-    ASSERT_FALSE(batch, 
+    TEST_FALSE(batch, 
         CFReader_Local_Is_Directory(cf_reader, (CharBuf*)&stuff),
         "Local_Is_Directory returns false for non-existent entry");
 
-    ASSERT_TRUE(batch, CFReader_MkDir(cf_reader, (CharBuf*)&stuff), 
+    TEST_TRUE(batch, CFReader_MkDir(cf_reader, (CharBuf*)&stuff), 
         "MkDir returns true");
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         Folder_Find_Folder(real_folder, (CharBuf*)&stuff) != NULL,
         "Local_MkDir pass-through");
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         Folder_Find_Folder(real_folder, (CharBuf*)&stuff) == 
         CFReader_Find_Folder(cf_reader, (CharBuf*)&stuff),
         "Local_Find_Folder pass-through");
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         CFReader_Local_Is_Directory(cf_reader, (CharBuf*)&stuff),
         "Local_Is_Directory pass through");
 
     Err_set_error(NULL);
-    ASSERT_FALSE(batch, CFReader_MkDir(cf_reader, (CharBuf*)&stuff), 
+    TEST_FALSE(batch, CFReader_MkDir(cf_reader, (CharBuf*)&stuff), 
         "MkDir returns false when dir already exists");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "MkDir sets Err_error when dir already exists");
 
     Err_set_error(NULL);
-    ASSERT_FALSE(batch, CFReader_MkDir(cf_reader, (CharBuf*)&foo), 
+    TEST_FALSE(batch, CFReader_MkDir(cf_reader, (CharBuf*)&foo), 
         "MkDir returns false when virtual file exists");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "MkDir sets Err_error when virtual file exists");
 
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         CFReader_Find_Folder(cf_reader, (CharBuf*)&foo) == NULL,
         "Virtual file not reported as directory");
-    ASSERT_FALSE(batch, CFReader_Local_Is_Directory(cf_reader, (CharBuf*)&foo),
+    TEST_FALSE(batch, CFReader_Local_Is_Directory(cf_reader, (CharBuf*)&foo),
         "Local_Is_Directory returns false for virtual file");
 
     DECREF(real_folder);
@@ -162,31 +162,31 @@ test_Local_Delete_and_Exists(TestBatch *batch)
     CompoundFileReader *cf_reader = CFReader_open(real_folder);
 
     CFReader_MkDir(cf_reader, (CharBuf*)&stuff);
-    ASSERT_TRUE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&stuff),
+    TEST_TRUE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&stuff),
         "pass through for Local_Exists");
-    ASSERT_TRUE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&foo),
+    TEST_TRUE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&foo),
         "Local_Exists returns true for virtual file");
 
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         CFReader_Local_Exists(cf_reader, (CharBuf*)&cfmeta_file), 
         "cfmeta file exists");
 
-    ASSERT_TRUE(batch, CFReader_Local_Delete(cf_reader, (CharBuf*)&stuff), 
+    TEST_TRUE(batch, CFReader_Local_Delete(cf_reader, (CharBuf*)&stuff), 
         "Local_Delete returns true when zapping real entity");
-    ASSERT_FALSE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&stuff),
+    TEST_FALSE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&stuff),
         "Local_Exists returns false after real entity zapped");
 
-    ASSERT_TRUE(batch, CFReader_Local_Delete(cf_reader, (CharBuf*)&foo), 
+    TEST_TRUE(batch, CFReader_Local_Delete(cf_reader, (CharBuf*)&foo), 
         "Local_Delete returns true when zapping virtual file");
-    ASSERT_FALSE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&foo),
+    TEST_FALSE(batch, CFReader_Local_Exists(cf_reader, (CharBuf*)&foo),
         "Local_Exists returns false after virtual file zapped");
 
-    ASSERT_TRUE(batch, CFReader_Local_Delete(cf_reader, (CharBuf*)&bar), 
+    TEST_TRUE(batch, CFReader_Local_Delete(cf_reader, (CharBuf*)&bar), 
         "Local_Delete returns true when zapping last virtual file");
-    ASSERT_FALSE(batch, 
+    TEST_FALSE(batch, 
         CFReader_Local_Exists(cf_reader, (CharBuf*)&cfmeta_file), 
         "cfmeta file deleted when last virtual file deleted");
-    ASSERT_FALSE(batch, 
+    TEST_FALSE(batch, 
         CFReader_Local_Exists(cf_reader, (CharBuf*)&cf_file), 
         "compound data file deleted when last virtual file deleted");
 
@@ -220,9 +220,9 @@ test_Local_Open_Dir(TestBatch *batch)
         }
     }
     
-    ASSERT_TRUE(batch, saw_foo, "DirHandle iterated over virtual file");
-    ASSERT_TRUE(batch, saw_stuff, "DirHandle iterated over real directory");
-    ASSERT_TRUE(batch, stuff_was_dir, 
+    TEST_TRUE(batch, saw_foo, "DirHandle iterated over virtual file");
+    TEST_TRUE(batch, saw_stuff, "DirHandle iterated over real directory");
+    TEST_TRUE(batch, stuff_was_dir, 
         "DirHandle knew that real entry was dir");
 
     DECREF(dh);
@@ -246,24 +246,24 @@ test_Local_Open_FileHandle(TestBatch *batch)
 
     fh = CFReader_Local_Open_FileHandle(cf_reader, (CharBuf*)&baz,
         FH_READ_ONLY);
-    ASSERT_TRUE(batch, fh != NULL, 
+    TEST_TRUE(batch, fh != NULL, 
         "Local_Open_FileHandle pass-through for real file");
     DECREF(fh);
 
     Err_set_error(NULL);
     fh = CFReader_Local_Open_FileHandle(cf_reader, (CharBuf*)&stuff,
         FH_READ_ONLY);
-    ASSERT_TRUE(batch, fh == NULL,
+    TEST_TRUE(batch, fh == NULL,
         "Local_Open_FileHandle for non-existent file returns NULL");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Local_Open_FileHandle for non-existent file sets Err_error");
 
     Err_set_error(NULL);
     fh = CFReader_Local_Open_FileHandle(cf_reader, (CharBuf*)&foo, 
         FH_READ_ONLY);
-    ASSERT_TRUE(batch, fh == NULL,
+    TEST_TRUE(batch, fh == NULL,
         "Local_Open_FileHandle for virtual file returns NULL");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Local_Open_FileHandle for virtual file sets Err_error");
 
     DECREF(cf_reader);
@@ -278,9 +278,9 @@ test_Local_Open_In(TestBatch *batch)
     InStream *instream;
 
     instream = CFReader_Local_Open_In(cf_reader, (CharBuf*)&foo);
-    ASSERT_TRUE(batch, instream != NULL,
+    TEST_TRUE(batch, instream != NULL,
         "Local_Open_In for virtual file");
-    ASSERT_TRUE(batch, CB_Starts_With(InStream_Get_Filename(instream),
+    TEST_TRUE(batch, CB_Starts_With(InStream_Get_Filename(instream),
         CFReader_Get_Path(cf_reader)), "InStream's path includes directory");
     DECREF(instream);
 
@@ -290,16 +290,16 @@ test_Local_Open_In(TestBatch *batch)
         OutStream_Close(outstream);
         DECREF(outstream);
         instream = CFReader_Local_Open_In(cf_reader, (CharBuf*)&baz);
-        ASSERT_TRUE(batch, instream != NULL, 
+        TEST_TRUE(batch, instream != NULL, 
             "Local_Open_In pass-through for real file");
         DECREF(instream);
     }
 
     Err_set_error(NULL);
     instream = CFReader_Local_Open_In(cf_reader, (CharBuf*)&stuff);
-    ASSERT_TRUE(batch, instream == NULL,
+    TEST_TRUE(batch, instream == NULL,
         "Local_Open_In for non-existent file returns NULL");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Local_Open_In for non-existent file sets Err_error");
 
     DECREF(cf_reader);

@@ -24,11 +24,11 @@
 static Folder*
 S_init_folder(Obj *index);
 
-// Grab the write lock or throw an error. 
+// Grab the write lock and store it in self.
 static void
 S_obtain_write_lock(BackgroundMerger *self);
 
-// Grab the merge lock or throw an error. 
+// Grab the merge lock and store it in self.
 static void
 S_obtain_merge_lock(BackgroundMerger *self);
 
@@ -73,7 +73,15 @@ BGMerger_init(BackgroundMerger *self, Obj *index, IndexManager *manager)
 
     // Obtain write lock (which we'll only hold briefly), then merge lock. 
     S_obtain_write_lock(self);
+    if (!self->write_lock) {
+        DECREF(self);
+        RETHROW(INCREF(Err_get_error()));
+    }
     S_obtain_merge_lock(self);
+    if (!self->merge_lock) {
+        DECREF(self);
+        RETHROW(INCREF(Err_get_error()));
+    }
 
     // Find the latest snapshot.  If there's no index content, bail early. 
     self->snapshot = Snapshot_Read_File(Snapshot_new(), folder, NULL);
@@ -316,8 +324,8 @@ S_merge_updated_deletions(BackgroundMerger *self)
         }
         if (offset == I32_MAX) { THROW(ERR, "Failed sanity check"); }
 
-        Hash_Iter_Init(updated_deletions);
-        while (  Hash_Iter_Next(updated_deletions, 
+        Hash_Iterate(updated_deletions);
+        while (  Hash_Next(updated_deletions, 
                      (Obj**)&seg_name, (Obj**)&deletions)
         ) {
             I32Array *doc_map = (I32Array*)CERTIFY(
@@ -389,6 +397,9 @@ BGMerger_prepare_commit(BackgroundMerger *self)
 
         // Grab the write lock. 
         S_obtain_write_lock(self);
+        if (!self->write_lock) {
+            RETHROW(INCREF(Err_get_error()));
+        }
 
         // Write temporary snapshot file. 
         DECREF(self->snapfile);
@@ -512,8 +523,6 @@ S_obtain_write_lock(BackgroundMerger *self)
     }
     else {
         DECREF(write_lock);
-        DECREF(self);
-        RETHROW(INCREF(Err_get_error()));
     }
 }
 
@@ -530,8 +539,6 @@ S_obtain_merge_lock(BackgroundMerger *self)
         // We can't get the merge lock, so it seems there must be another
         // BackgroundMerger running.
         DECREF(merge_lock);
-        DECREF(self);
-        RETHROW(INCREF(Err_get_error()));
     }
 }
 

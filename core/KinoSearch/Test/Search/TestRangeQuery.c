@@ -23,15 +23,15 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj        *dump  = (Obj*)RangeQuery_Dump(query);
     RangeQuery *clone = (RangeQuery*)RangeQuery_Load(lo_term_differs, dump);
 
-    ASSERT_FALSE(batch, RangeQuery_Equals(query, (Obj*)lo_term_differs),
+    TEST_FALSE(batch, RangeQuery_Equals(query, (Obj*)lo_term_differs),
         "Equals() false with different lower term");
-    ASSERT_FALSE(batch, RangeQuery_Equals(query, (Obj*)hi_term_differs),
+    TEST_FALSE(batch, RangeQuery_Equals(query, (Obj*)hi_term_differs),
         "Equals() false with different upper term");
-    ASSERT_FALSE(batch, RangeQuery_Equals(query, (Obj*)include_lower_differs),
+    TEST_FALSE(batch, RangeQuery_Equals(query, (Obj*)include_lower_differs),
         "Equals() false with different include_lower");
-    ASSERT_FALSE(batch, RangeQuery_Equals(query, (Obj*)include_upper_differs),
+    TEST_FALSE(batch, RangeQuery_Equals(query, (Obj*)include_upper_differs),
         "Equals() false with different include_upper");
-    ASSERT_TRUE(batch, RangeQuery_Equals(query, (Obj*)clone), 
+    TEST_TRUE(batch, RangeQuery_Equals(query, (Obj*)clone), 
         "Dump => Load round trip");
 
     DECREF(query);

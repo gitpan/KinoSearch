@@ -31,7 +31,7 @@ test_i8(TestBatch *batch)
     for (i = -128; i < 128; i++) {
         if (InStream_Read_I8(instream) != i) { break; }
     }
-    ASSERT_INT_EQ(batch, i, 128, "round trip i8 successful for %d out of 256",
+    TEST_INT_EQ(batch, i, 128, "round trip i8 successful for %d out of 256",
         i + 128);
 
     DECREF(instream);
@@ -56,7 +56,7 @@ test_u8(TestBatch *batch)
     for (i = 0; i < 256; i++) {
         if (InStream_Read_U8(instream) != i) { break; }
     }
-    ASSERT_INT_EQ(batch, i, 256,
+    TEST_INT_EQ(batch, i, 256,
         "round trip u8 successful for %d out of 256", i);
 
     DECREF(instream);

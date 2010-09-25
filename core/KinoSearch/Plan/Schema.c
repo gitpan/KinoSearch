@@ -269,8 +269,8 @@ Schema_dump(Schema *self)
 
     // Dump FieldTypes.
     Hash_Store_Str(dump, "fields", 6, (Obj*)type_dumps);
-    Hash_Iter_Init(self->types);
-    while (Hash_Iter_Next(self->types, (Obj**)&field, (Obj**)&type)) {
+    Hash_Iterate(self->types);
+    while (Hash_Next(self->types, (Obj**)&field, (Obj**)&type)) {
         VTable *type_vtable = FType_Get_VTable(type);
 
         // Dump known types to simplified format.
@@ -328,8 +328,8 @@ Schema_load(Schema *self, Obj *dump)
     Schema_init(loaded);
     VA_Grow(loaded->uniq_analyzers, VA_Get_Size(analyzers));
 
-    Hash_Iter_Init(type_dumps);
-    while (Hash_Iter_Next(type_dumps, (Obj**)&field, (Obj**)&type_dump)) {
+    Hash_Iterate(type_dumps);
+    while (Hash_Next(type_dumps, (Obj**)&field, (Obj**)&type_dump)) {
         CharBuf *type_str;
         CERTIFY(type_dump, HASH);
         type_str = (CharBuf*)Hash_Fetch_Str(type_dump, "type", 4);
@@ -421,8 +421,8 @@ Schema_eat(Schema *self, Schema *other)
 
     CharBuf *field;
     FieldType *type;
-    Hash_Iter_Init(other->types);
-    while (Hash_Iter_Next(other->types, (Obj**)&field, (Obj**)&type)) {
+    Hash_Iterate(other->types);
+    while (Hash_Next(other->types, (Obj**)&field, (Obj**)&type)) {
         Schema_Spec_Field(self, field, type);
     }
 }

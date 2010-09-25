@@ -148,7 +148,7 @@ sub _xsub_def_positional_args {
     my $var_assignments = join "\n    ", @var_assignments;
 
     return <<END_STUFF;
-XS($c_name); /* -Wmissing-prototypes */
+XS($c_name);
 XS($c_name)
 {
     dXSARGS;
@@ -156,7 +156,6 @@ XS($c_name)
     CHY_UNUSED_VAR(ax);
     SP -= items;
     $num_args_check;
-
     {
         /* Extract vars from Perl stack. */
         $var_declarations
@@ -165,7 +164,6 @@ XS($c_name)
         /* Execute */
         $body
     }
-
     PUTBACK;
 }
 END_STUFF
@@ -235,7 +233,7 @@ sub _xsub_def_labeled_params {
         $self_assignment, $allot_params, @var_assignments, );
 
     return <<END_STUFF;
-XS($c_name); /* -Wmissing-prototypes */
+XS($c_name);
 XS($c_name)
 {
     dXSARGS;
@@ -243,7 +241,6 @@ XS($c_name)
     CHY_UNUSED_VAR(ax);
     $num_args_check;
     SP -= items;
-
     {
         /* Extract vars from Perl stack. */
         $var_declarations
@@ -252,7 +249,6 @@ XS($c_name)
         /* Execute */
         $body
     }
-
     PUTBACK;
 }
 END_STUFF

@@ -11,41 +11,46 @@
 #include "KinoSearch/Plan/NumericType.h"
 #include "KinoSearch/Plan/Schema.h"
 #include "KinoSearch/Plan/TextType.h"
+#include "KinoSearch/Util/StringHelper.h"
 
 static kino_InverterEntry*
 S_fetch_entry(kino_Inverter *self, HE *hash_entry)
 {
     kino_Schema *const schema = self->schema;
+    char *key;
     STRLEN key_len;
-    // Copied from Perl 5.10.0 HePV macro, because the HePV macro in
-    // earlier versions of Perl triggers a compiler warning.
-    char *key = HeKLEN(hash_entry) == HEf_SVKEY
-              ? SvPV(HeKEY_sv(hash_entry), key_len) 
-              : ((key_len = HeKLEN(hash_entry)), HeKEY(hash_entry));
+    STRLEN he_key_len = HeKLEN(hash_entry);
+
+    // Force field name to UTF-8 if necessary.
+    if (he_key_len == (STRLEN)HEf_SVKEY) {
+        SV *key_sv = HeKEY_sv(hash_entry);
+        key = SvPVutf8(key_sv, key_len);
+    }
+    else {
+        key = HeKEY(hash_entry);
+        key_len = he_key_len;
+        if (!kino_StrHelp_utf8_valid(key, key_len)) {
+            SV *key_sv = HeSVKEY_force(hash_entry);
+            key = SvPVutf8(key_sv, key_len);
+        }
+    }
+
     kino_ZombieCharBuf *field = KINO_ZCB_WRAP_STR(key, key_len);
     int32_t field_num 
         = Kino_Seg_Field_Num(self->segment, (kino_CharBuf*)field);
-
     if (!field_num) {
         // This field seems not to be in the segment yet.  Try to find it in
         // the Schema.
-        if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field)) {
-            /* OK, it could be that the field name contains non-ASCII
-             * characters, but the hash key is encoded as Latin 1.  So, we
-             * force hash key into an SV and ask for a UTF-8 PV.  This is
-             * less efficient, so field names really ought to be ASCII. */
-            SV *key_sv = HeSVKEY_force(hash_entry);
-            key = SvPVutf8(key_sv, key_len);
-            Kino_ZCB_Assign_Str(field, key, key_len);
-            if (!Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field)) {
-                // We've truly failed to find the field.  The user must
-                // not have spec'd it.
-                THROW(KINO_ERR, "Unknown field name: '%s'", key);
-            }
+        if (Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field)) {
+            // The field is in the Schema.  Get a field num from the Segment. 
+            field_num = Kino_Seg_Add_Field(self->segment,
+                (kino_CharBuf*)field);
         }
-
-        // The field is in the Schema.  Get a field num from the Segment. 
-        field_num = Kino_Seg_Add_Field(self->segment, (kino_CharBuf*)field);
+        else {
+            // We've truly failed to find the field.  The user must
+            // not have spec'd it.
+            THROW(KINO_ERR, "Unknown field name: '%s'", key);
+        }
     }
 
     {

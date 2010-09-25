@@ -58,9 +58,9 @@ IxReader_close(IndexReader *self)
     if (self->components) {
         CharBuf *key;
         DataReader *component;
-        Hash_Iter_Init(self->components);
+        Hash_Iterate(self->components);
         while (
-            Hash_Iter_Next(self->components, (Obj**)&key, (Obj**)&component)
+            Hash_Next(self->components, (Obj**)&key, (Obj**)&component)
         ) {
             if (Obj_Is_A((Obj*)component, DATAREADER)) { 
                 DataReader_Close(component); 

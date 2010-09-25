@@ -57,7 +57,7 @@ Inverter_destroy(Inverter *self)
 }
 
 uint32_t
-Inverter_iter_init(Inverter *self)
+Inverter_iterate(Inverter *self)
 {
     self->tick = -1;
     if (!self->sorted) { 

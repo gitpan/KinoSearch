@@ -287,7 +287,7 @@ S_splice_out_token_type(VArray *elems, uint32_t token_type_mask)
     for (uint32_t i = VA_Get_Size(elems); i--; ) {
         ParserToken *token = (ParserToken*)VA_Fetch(elems, i);
         if (Obj_Is_A((Obj*)token, PARSERTOKEN)) {
-            if (token->type & token_type_mask) VA_Splice(elems, i, 1);
+            if (token->type & token_type_mask) VA_Excise(elems, i, 1);
         }
     }
 }
@@ -312,13 +312,13 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
         ) {
             uint32_t num_elems;
             apply_parens = true;
-            VA_Splice(elems, 0, 1);
+            VA_Excise(elems, 0, 1);
             num_elems = VA_Get_Size(elems);
             if (num_elems) {
                 ParserToken *maybe_close_paren 
                     = (ParserToken*)VA_Fetch(elems, num_elems - 1);
                 if (maybe_close_paren->type == TOKEN_CLOSE_PAREN) {
-                    VA_Splice(elems, num_elems - 1, 1);
+                    VA_Excise(elems, num_elems - 1, 1);
                 }
             }
         }
@@ -434,7 +434,7 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
                 if (Obj_Is_A((Obj*)clause, PARSERCLAUSE)) break;
                 else num_to_zap++;
             }
-            if (num_to_zap) VA_Splice(elems, i, num_to_zap);
+            if (num_to_zap) VA_Excise(elems, i, num_to_zap);
         }
     }
 
@@ -473,7 +473,7 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
             preceding->occur = default_occur;
             DECREF(children);
 
-            VA_Splice(elems, i + 1, num_to_zap);
+            VA_Excise(elems, i + 1, num_to_zap);
 
             // Don't double wrap '(a AND b)'. 
             if (VA_Get_Size(elems) == 1) apply_parens = false;
@@ -515,7 +515,7 @@ S_do_tree(QueryParser *self, CharBuf *query_string, CharBuf *default_field,
             preceding->occur = default_occur;
             DECREF(children);
 
-            VA_Splice(elems, i + 1, num_to_zap);
+            VA_Excise(elems, i + 1, num_to_zap);
 
             // Don't double wrap '(a OR b)'. 
             if (VA_Get_Size(elems) == 1) apply_parens = false;

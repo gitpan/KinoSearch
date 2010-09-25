@@ -4,17 +4,17 @@
 #include "KinoSearch/Plan/BlobType.h"
 
 BlobType*
-BlobType_new()
+BlobType_new(bool_t stored)
 {
     BlobType *self = (BlobType*)VTable_Make_Obj(BLOBTYPE);
-    return BlobType_init(self);
+    return BlobType_init(self, stored);
 }
 
 BlobType*
-BlobType_init(BlobType *self)
+BlobType_init(BlobType *self, bool_t stored)
 {
     FType_init((FieldType*)self);
-    self->stored     = true;
+    self->stored = stored;
     return self;
 }
 
@@ -69,8 +69,8 @@ BlobType_dump_for_schema(BlobType *self)
     if (self->indexed) {
         Hash_Store_Str(dump, "indexed", 7, (Obj*)CB_newf("1"));
     }
-    if (!self->stored) {
-        Hash_Store_Str(dump, "stored", 6, (Obj*)CB_newf("0"));
+    if (self->stored) {
+        Hash_Store_Str(dump, "stored", 6, (Obj*)CB_newf("1"));
     }
 
     return dump;
@@ -101,7 +101,7 @@ BlobType_load(BlobType *self, Obj *dump)
     Obj *stored_dump     = Hash_Fetch_Str(source, "stored", 6);
     UNUSED_VAR(self);
 
-    BlobType_init(loaded);
+    BlobType_init(loaded, false);
     if (boost_dump)   { loaded->boost   = (float)Obj_To_F64(boost_dump);    }
     if (indexed_dump) { loaded->indexed = (bool_t)Obj_To_I64(indexed_dump); }
     if (stored_dump)  { loaded->stored  = (bool_t)Obj_To_I64(stored_dump);  }

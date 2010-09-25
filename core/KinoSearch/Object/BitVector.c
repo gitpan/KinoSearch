@@ -158,7 +158,7 @@ S_first_bit_in_nonzero_byte(uint8_t num)
 }
 
 int32_t
-BitVec_next_set_bit(BitVector *self, uint32_t tick) 
+BitVec_next_hit(BitVector *self, uint32_t tick) 
 {
     size_t byte_size = (size_t)ceil(self->cap / 8.0);
     uint8_t *const limit = self->bits + byte_size;

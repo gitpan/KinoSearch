@@ -153,11 +153,11 @@ SortFieldWriter_get_ord_width(SortFieldWriter *self) { return self->ord_width; }
 static Obj*
 S_find_unique_value(Hash *uniq_vals, Obj *val)
 {
-    int32_t  hash_code = Obj_Hash_Code(val);
-    Obj     *uniq_val  = Hash_Find_Key(uniq_vals, val, hash_code);
+    int32_t  hash_sum  = Obj_Hash_Sum(val);
+    Obj     *uniq_val  = Hash_Find_Key(uniq_vals, val, hash_sum);
     if (!uniq_val) { 
         Hash_Store(uniq_vals, val, INCREF(&EMPTY)); 
-        uniq_val = Hash_Find_Key(uniq_vals, val, hash_code);
+        uniq_val = Hash_Find_Key(uniq_vals, val, hash_sum);
     }
     return uniq_val;
 }

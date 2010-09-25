@@ -17,14 +17,14 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj       *dump          = (Obj*)TermQuery_Dump(query);
     TermQuery *clone         = (TermQuery*)TermQuery_Load(term_differs, dump);
 
-    ASSERT_FALSE(batch, TermQuery_Equals(query, (Obj*)field_differs),
+    TEST_FALSE(batch, TermQuery_Equals(query, (Obj*)field_differs),
         "Equals() false with different field");
-    ASSERT_FALSE(batch, TermQuery_Equals(query, (Obj*)term_differs),
+    TEST_FALSE(batch, TermQuery_Equals(query, (Obj*)term_differs),
         "Equals() false with different term");
     TermQuery_Set_Boost(boost_differs, 0.5);
-    ASSERT_FALSE(batch, TermQuery_Equals(query, (Obj*)boost_differs),
+    TEST_FALSE(batch, TermQuery_Equals(query, (Obj*)boost_differs),
         "Equals() false with different boost");
-    ASSERT_TRUE(batch, TermQuery_Equals(query, (Obj*)clone), 
+    TEST_TRUE(batch, TermQuery_Equals(query, (Obj*)clone), 
         "Dump => Load round trip");
 
     DECREF(query);

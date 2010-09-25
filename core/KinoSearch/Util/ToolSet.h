@@ -28,7 +28,6 @@ extern "C" {
 #include "KinoSearch/Object/Hash.h"
 #include "KinoSearch/Object/I32Array.h"
 #include "KinoSearch/Object/Num.h"
-#include "KinoSearch/Object/Undefined.h"
 #include "KinoSearch/Object/VArray.h"
 #include "KinoSearch/Object/VTable.h"
 #include "KinoSearch/Util/NumberUtils.h"

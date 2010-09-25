@@ -51,7 +51,7 @@ sub new {
         analyzer => $tokenizer,
         stored   => 0,
     );
-    my $blob_type = KinoSearch::Plan::BlobType->new;
+    my $blob_type = KinoSearch::Plan::BlobType->new( stored => 1 );
     $self->spec_field( name => 'content',  type => $main_type );
     $self->spec_field( name => 'smiley',   type => $main_type );
     $self->spec_field( name => 'unstored', type => $unstored_type );

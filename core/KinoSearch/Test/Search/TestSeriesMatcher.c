@@ -73,7 +73,7 @@ S_do_test_matrix(TestBatch *batch, int32_t doc_max, int32_t first_doc_id,
         if (got != I32Arr_Get(doc_ids, num_in_agreement)) { break; }
         num_in_agreement++;
     }
-    ASSERT_INT_EQ(batch, num_in_agreement, I32Arr_Get_Size(doc_ids),
+    TEST_INT_EQ(batch, num_in_agreement, I32Arr_Get_Size(doc_ids),
         "doc_max=%d first_doc_id=%d doc_inc=%d offset_inc=%d",
         doc_max, first_doc_id, doc_inc, offset_inc);
 

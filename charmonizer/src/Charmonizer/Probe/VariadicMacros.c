@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 
-/* code for verifying ISO-style variadic macros */
+/* Code for verifying ISO-style variadic macros. */
 static char iso_code[] = 
     QUOTE(  #include "_charm.h"                                   )
     QUOTE(  #define ISO_TEST(fmt, ...) \\                         )
@@ -19,7 +19,7 @@ static char iso_code[] =
     QUOTE(      return 0;                                         )
     QUOTE(  }                                                     );
 
-/* code for verifying GNU-style variadic macros */
+/* Code for verifying GNU-style variadic macros. */
 static char gnuc_code[] = 
     QUOTE(  #include "_charm.h"                                   )
     QUOTE(  #define GNU_TEST(fmt, args...) printf(fmt, ##args)    )
@@ -40,7 +40,7 @@ VariadicMacros_run(void)
 
     ConfWriter_start_module("VariadicMacros");
 
-    /* test for ISO-style variadic macros */
+    /* Test for ISO-style variadic macros. */
     output = CC_capture_output(iso_code, strlen(iso_code), &output_len);
     if (output != NULL) {
         has_varmacros = true;
@@ -49,7 +49,7 @@ VariadicMacros_run(void)
         ConfWriter_append_conf("#define CHY_HAS_ISO_VARIADIC_MACROS\n");
     }
 
-    /* test for GNU-style variadic macros */
+    /* Test for GNU-style variadic macros. */
     output = CC_capture_output(gnuc_code, strlen(gnuc_code), &output_len);
     if (output != NULL) {
         has_gnuc_varmacros = true;
@@ -60,7 +60,7 @@ VariadicMacros_run(void)
         ConfWriter_append_conf("#define CHY_HAS_GNUC_VARIADIC_MACROS\n");
     }
 
-    /* shorten */
+    /* Shorten. */
     ConfWriter_start_short_names();
     if (has_varmacros)
         ConfWriter_shorten_macro("HAS_VARIADIC_MACROS");

@@ -17,11 +17,11 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Stemmer *clone       = (Stemmer*)Stemmer_Load(other, dump);
     Stemmer *other_clone = (Stemmer*)Stemmer_Load(other, other_dump);
 
-    ASSERT_FALSE(batch, Stemmer_Equals(stemmer,
+    TEST_FALSE(batch, Stemmer_Equals(stemmer,
         (Obj*)other), "Equals() false with different language");
-    ASSERT_TRUE(batch, Stemmer_Equals(stemmer,
+    TEST_TRUE(batch, Stemmer_Equals(stemmer,
         (Obj*)clone), "Dump => Load round trip");
-    ASSERT_TRUE(batch, Stemmer_Equals(other,
+    TEST_TRUE(batch, Stemmer_Equals(other,
         (Obj*)other_clone), "Dump => Load round trip");
 
     DECREF(stemmer);

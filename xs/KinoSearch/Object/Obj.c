@@ -14,23 +14,26 @@
 static void
 S_lazy_init_host_obj(kino_Obj *self) 
 {
-    size_t old_refcount = self->ref.count;
+    SV *inner_obj = newSV(0);
+    SvOBJECT_on(inner_obj);
+    PL_sv_objcount++;
+    SvUPGRADE(inner_obj, SVt_PVMG);
+    sv_setiv(inner_obj, PTR2IV(self));
 
-    // Use the inner Perl object, discarding the reference.
+    // Connect class association.
     kino_CharBuf *class_name = Kino_VTable_Get_Name(self->vtable);
-    SV *pobj_ref = newSV(0);
-    sv_setref_pv(pobj_ref, (char*)Kino_CB_Get_Ptr8(class_name), self);
-    SV *inner_obj = SvRV(pobj_ref);
-    SvREFCNT_inc(inner_obj);
-    SvREFCNT_dec(pobj_ref);
+    HV *stash = gv_stashpvn((char*)Kino_CB_Get_Ptr8(class_name),
+        Kino_CB_Get_Size(class_name), TRUE);
+    SvSTASH_set(inner_obj, (HV*)SvREFCNT_inc(stash));
 
     /* Up till now we've been keeping track of the refcount in
      * self->ref.count.  We're replacing ref.count with ref.host_obj, which
      * will assume responsibility for maintaining the refcount.  ref.host_obj
      * starts off with a refcount of 1, so we need to transfer any refcounts
      * in excess of that. */
+    size_t old_refcount = self->ref.count;
     self->ref.host_obj = inner_obj;
-    while(old_refcount > 1) {
+    while (old_refcount > 1) {
         SvREFCNT_inc_simple_void_NN(inner_obj);
         old_refcount--;
     }

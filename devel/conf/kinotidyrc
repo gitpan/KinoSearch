@@ -1,4 +1,3 @@
-# This set is derived from the recommendations in Perl Best Practices.
 --maximum-line-length=78       # 78 cols
 --indent-columns=4             # 4 spaces
 --continuation-indentation=4   # 4 spaces

@@ -20,7 +20,7 @@ test_u1(TestBatch *batch)
         if (ints[i]) { NumUtil_u1set(bits, i); }
     }
     for (size_t i = 0; i < count; i++) {
-        ASSERT_INT_EQ(batch, NumUtil_u1get(bits, i), (long)ints[i], 
+        TEST_INT_EQ(batch, NumUtil_u1get(bits, i), (long)ints[i], 
             "u1 set/get");
     }
 
@@ -28,7 +28,7 @@ test_u1(TestBatch *batch)
         NumUtil_u1flip(bits, i);
     }
     for (size_t i = 0; i < count; i++) {
-        ASSERT_INT_EQ(batch, NumUtil_u1get(bits, i), !ints[i], "u1 flip");
+        TEST_INT_EQ(batch, NumUtil_u1get(bits, i), !ints[i], "u1 flip");
     }
 
     FREEMEM(bits);
@@ -46,7 +46,7 @@ test_u2(TestBatch *batch)
         NumUtil_u2set(bits, i, (uint8_t)ints[i]);
     }
     for (size_t i = 0; i < count; i++) {
-        ASSERT_INT_EQ(batch, NumUtil_u2get(bits, i), (long)ints[i], "u2");
+        TEST_INT_EQ(batch, NumUtil_u2get(bits, i), (long)ints[i], "u2");
     }
 
     FREEMEM(bits);
@@ -64,7 +64,7 @@ test_u4(TestBatch *batch)
         NumUtil_u4set(bits, i, (uint8_t)ints[i]);
     }
     for (size_t i = 0; i < count; i++) {
-        ASSERT_INT_EQ(batch, NumUtil_u4get(bits, i), (long)ints[i], "u4");
+        TEST_INT_EQ(batch, NumUtil_u4get(bits, i), (long)ints[i], "u4");
     }
 
     FREEMEM(bits);
@@ -96,37 +96,37 @@ test_c32(TestBatch *batch)
         target = encoded;
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
-            ASSERT_INT_EQ(batch, NumUtil_decode_c32(&target), (long)ints[i], 
+            TEST_INT_EQ(batch, NumUtil_decode_c32(&target), (long)ints[i], 
                 "c32 %lu", (long)ints[i]);
             NumUtil_skip_cint(&skip);
             if (target > limit) { THROW(ERR, "overrun"); }
         }
-        ASSERT_TRUE(batch, skip == target, "skip %lu == %lu", 
+        TEST_TRUE(batch, skip == target, "skip %lu == %lu", 
             (unsigned long)skip, (unsigned long)target);
 
         target = encoded;
         for (size_t i = 0; i < count; i++) {
             NumUtil_encode_padded_c32((uint32_t)ints[i], &target);
         }
-        ASSERT_TRUE(batch, target == limit, 
+        TEST_TRUE(batch, target == limit, 
             "padded c32 uses 5 bytes (%lu == %lu)", (unsigned long)target, 
             (unsigned long)limit);
         target = encoded;
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
-            ASSERT_INT_EQ(batch, NumUtil_decode_c32(&target), (long)ints[i], 
+            TEST_INT_EQ(batch, NumUtil_decode_c32(&target), (long)ints[i], 
                 "padded c32 %lu", (long)ints[i]);
             NumUtil_skip_cint(&skip);
             if (target > limit) { THROW(ERR, "overrun"); }
         }
-        ASSERT_TRUE(batch, skip == target, "skip padded %lu == %lu", 
+        TEST_TRUE(batch, skip == target, "skip padded %lu == %lu", 
             (unsigned long)skip, (unsigned long)target);
     }
 
     target = encoded;
     NumUtil_encode_c32(U32_MAX, &target);
     target = encoded;
-    ASSERT_INT_EQ(batch, NumUtil_decode_c32(&target), U32_MAX, "c32 U32_MAX");
+    TEST_INT_EQ(batch, NumUtil_decode_c32(&target), U32_MAX, "c32 U32_MAX");
 
     FREEMEM(encoded);
     FREEMEM(ints);
@@ -158,12 +158,12 @@ test_c64(TestBatch *batch)
         skip   = encoded;
         for (size_t i = 0; i < count; i++) {
             uint64_t got = NumUtil_decode_c64(&target);
-            ASSERT_TRUE(batch, got == ints[i], 
+            TEST_TRUE(batch, got == ints[i], 
                 "c64 %" U64P " == %" U64P, got, ints[i]);
             if (target > limit) { THROW(ERR, "overrun"); }
             NumUtil_skip_cint(&skip);
         }
-        ASSERT_TRUE(batch, skip == target, "skip %lu == %lu", 
+        TEST_TRUE(batch, skip == target, "skip %lu == %lu", 
             (unsigned long)skip, (unsigned long)target);
     }
 
@@ -172,7 +172,7 @@ test_c64(TestBatch *batch)
     target = encoded;
     { 
         uint64_t got = NumUtil_decode_c64(&target);
-        ASSERT_TRUE(batch, got == U64_MAX, "c64 U64_MAX");
+        TEST_TRUE(batch, got == U64_MAX, "c64 U64_MAX");
     }
 
     FREEMEM(encoded);
@@ -196,14 +196,14 @@ test_bigend_u16(TestBatch *batch)
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         uint16_t got = NumUtil_decode_bigend_u16(target);
-        ASSERT_INT_EQ(batch, got, (long)ints[i], "bigend u16");
+        TEST_INT_EQ(batch, got, (long)ints[i], "bigend u16");
         target += sizeof(uint16_t);
     }
 
     target = encoded;
     NumUtil_encode_bigend_u16(1, &target);
-    ASSERT_INT_EQ(batch, encoded[0], 0, "Truly big-endian u16");
-    ASSERT_INT_EQ(batch, encoded[1], 1, "Truly big-endian u16");
+    TEST_INT_EQ(batch, encoded[0], 0, "Truly big-endian u16");
+    TEST_INT_EQ(batch, encoded[1], 1, "Truly big-endian u16");
 
     FREEMEM(allocated);
     FREEMEM(ints);
@@ -226,14 +226,14 @@ test_bigend_u32(TestBatch *batch)
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         uint32_t got = NumUtil_decode_bigend_u32(target);
-        ASSERT_INT_EQ(batch, got, (long)ints[i], "bigend u32");
+        TEST_INT_EQ(batch, got, (long)ints[i], "bigend u32");
         target += sizeof(uint32_t);
     }
 
     target = encoded;
     NumUtil_encode_bigend_u32(1, &target);
-    ASSERT_INT_EQ(batch, encoded[0], 0, "Truly big-endian u32");
-    ASSERT_INT_EQ(batch, encoded[3], 1, "Truly big-endian u32");
+    TEST_INT_EQ(batch, encoded[0], 0, "Truly big-endian u32");
+    TEST_INT_EQ(batch, encoded[3], 1, "Truly big-endian u32");
 
     FREEMEM(allocated);
     FREEMEM(ints);
@@ -256,14 +256,14 @@ test_bigend_u64(TestBatch *batch)
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         uint64_t got = NumUtil_decode_bigend_u64(target);
-        ASSERT_TRUE(batch, got == ints[i], "bigend u64");
+        TEST_TRUE(batch, got == ints[i], "bigend u64");
         target += sizeof(uint64_t);
     }
 
     target = encoded;
     NumUtil_encode_bigend_u64(1, &target);
-    ASSERT_INT_EQ(batch, encoded[0], 0, "Truly big-endian");
-    ASSERT_INT_EQ(batch, encoded[7], 1, "Truly big-endian");
+    TEST_INT_EQ(batch, encoded[0], 0, "Truly big-endian");
+    TEST_INT_EQ(batch, encoded[7], 1, "Truly big-endian");
 
     FREEMEM(allocated);
     FREEMEM(ints);
@@ -286,18 +286,18 @@ test_bigend_f32(TestBatch *batch)
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         float got = NumUtil_decode_bigend_f32(target);
-        ASSERT_TRUE(batch, got == source[i], "bigend f32");
+        TEST_TRUE(batch, got == source[i], "bigend f32");
         target += sizeof(float);
     }
 
     target = encoded;
     NumUtil_encode_bigend_f32(-2.0f, &target);
-    ASSERT_INT_EQ(batch, (encoded[0] & 0x80), 0x80, 
+    TEST_INT_EQ(batch, (encoded[0] & 0x80), 0x80, 
         "Truly big-endian (IEEE 754 sign bit set for negative number)");
-    ASSERT_INT_EQ(batch, encoded[0], 0xC0, 
+    TEST_INT_EQ(batch, encoded[0], 0xC0, 
         "IEEE 754 representation of -2.0f, byte 0");
     for (size_t i = 1; i < sizeof(float); i++) {
-        ASSERT_INT_EQ(batch, encoded[i], 0, 
+        TEST_INT_EQ(batch, encoded[i], 0, 
             "IEEE 754 representation of -2.0f, byte %d", (int)i);
     }
 
@@ -321,18 +321,18 @@ test_bigend_f64(TestBatch *batch)
     target = encoded;
     for (size_t i = 0; i < count; i++) {
         double got = NumUtil_decode_bigend_f64(target);
-        ASSERT_TRUE(batch, got == source[i], "bigend f64");
+        TEST_TRUE(batch, got == source[i], "bigend f64");
         target += sizeof(double);
     }
 
     target = encoded;
     NumUtil_encode_bigend_f64(-2.0, &target);
-    ASSERT_INT_EQ(batch, (encoded[0] & 0x80), 0x80, 
+    TEST_INT_EQ(batch, (encoded[0] & 0x80), 0x80, 
         "Truly big-endian (IEEE 754 sign bit set for negative number)");
-    ASSERT_INT_EQ(batch, encoded[0], 0xC0, 
+    TEST_INT_EQ(batch, encoded[0], 0xC0, 
         "IEEE 754 representation of -2.0, byte 0");
     for (size_t i = 1; i < sizeof(double); i++) {
-        ASSERT_INT_EQ(batch, encoded[i], 0, 
+        TEST_INT_EQ(batch, encoded[i], 0, 
             "IEEE 754 representation of -2.0, byte %d", (int)i);
     }
 

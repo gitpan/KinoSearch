@@ -73,7 +73,7 @@ S_TestBatch_run_test(TestBatch *batch)
 }
 
 void
-Test_assert_true(TestBatch *batch, int value, const char *pat, ...)
+Test_test_true(TestBatch *batch, int value, const char *pat, ...)
 {
     va_list args;
 
@@ -94,7 +94,7 @@ Test_assert_true(TestBatch *batch, int value, const char *pat, ...)
 }
 
 void
-Test_assert_false(TestBatch *batch, int value, const char *pat, ...)
+Test_test_false(TestBatch *batch, int value, const char *pat, ...)
 {
     va_list args;
 
@@ -115,8 +115,8 @@ Test_assert_false(TestBatch *batch, int value, const char *pat, ...)
 }
 
 void 
-Test_assert_str_eq(TestBatch *batch, const char *got, 
-                        const char *expected, const char *pat, ...)
+Test_test_str_eq(TestBatch *batch, const char *got, const char *expected, 
+                 const char *pat, ...)
 {
     va_list args;
     
@@ -137,29 +137,6 @@ Test_assert_str_eq(TestBatch *batch, const char *got,
     PRINT_SUPPLIED_MESS(pat, args);
 }
 
-
-void 
-Test_assert_str_neq(TestBatch *batch, const char *got, 
-                         const char *expected, const char *pat, ...)
-{
-    va_list args;
-    
-    /* Increment test number. */
-    batch->test_num++;
-    
-    /* Test condition and pass or fail. */
-    if (strcmp(expected, got) != 0) {
-        printf("ok %u - ", batch->test_num);
-        batch->num_passed++;
-    }
-    else {
-        printf("not ok %u - Expected '%s', got '%s'\n    ", batch->test_num, 
-            expected, got);
-        batch->num_failed++;
-    }
-    
-    PRINT_SUPPLIED_MESS(pat, args);
-}
 
 void 
 Test_pass(TestBatch *batch, const char *pat, ...)
@@ -192,8 +169,8 @@ Test_fail(TestBatch *batch, const char *pat, ...)
 }
 
 void 
-Test_assert_int_eq(TestBatch *batch, long got, long expected, 
-                        const char *pat, ...)
+Test_test_int_eq(TestBatch *batch, long got, long expected, 
+                 const char *pat, ...)
 {
     va_list args;
 
@@ -214,8 +191,8 @@ Test_assert_int_eq(TestBatch *batch, long got, long expected,
 }
 
 void 
-Test_assert_float_eq(TestBatch *batch, double got, 
-                          double expected, const char *pat, ...)
+Test_test_float_eq(TestBatch *batch, double got, double expected, 
+                   const char *pat, ...)
 {
     va_list args;
     double diff = expected/got;

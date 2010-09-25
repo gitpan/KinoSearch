@@ -655,9 +655,9 @@ TestQPLogic_run_tests()
         Query *parsed   = QParser_Parse(or_parser, test_case->query_string);
         Hits  *hits     = IxSearcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
-        ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
+        TEST_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
             "tree() OR   %s", (char*)CB_Get_Ptr8(test_case->query_string));
-        ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
+        TEST_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
             "hits: OR   %s", (char*)CB_Get_Ptr8(test_case->query_string));
         DECREF(hits);
         DECREF(parsed);
@@ -673,9 +673,9 @@ TestQPLogic_run_tests()
         Query *parsed   = QParser_Parse(and_parser, test_case->query_string);
         Hits  *hits     = IxSearcher_Hits(searcher, (Obj*)parsed, 0, 10, NULL);
 
-        ASSERT_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
+        TEST_TRUE(batch, Query_Equals(tree, (Obj*)test_case->tree),
             "tree() AND   %s", (char*)CB_Get_Ptr8(test_case->query_string));
-        ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
+        TEST_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
             "hits: AND   %s", (char*)CB_Get_Ptr8(test_case->query_string));
         DECREF(hits);
         DECREF(parsed);
@@ -696,11 +696,11 @@ TestQPLogic_run_tests()
         Query *expanded;
         Hits  *hits;
 
-        ASSERT_TRUE(batch, Query_Equals(pruned, (Obj*)wanted),
+        TEST_TRUE(batch, Query_Equals(pruned, (Obj*)wanted),
             "prune()   %s", (char*)CB_Get_Ptr8(qstring));
         expanded = QParser_Expand(or_parser, pruned);
         hits = IxSearcher_Hits(searcher, (Obj*)expanded, 0, 10, NULL);
-        ASSERT_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
+        TEST_INT_EQ(batch, Hits_Total_Hits(hits), test_case->num_hits,
             "hits:    %s", (char*)CB_Get_Ptr8(qstring));
 
         DECREF(hits);

@@ -14,9 +14,9 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj          *dump  = (Obj*)NoMatchQuery_Dump(query);
     NoMatchQuery *clone = (NoMatchQuery*)NoMatchQuery_Load(query, dump);
 
-    ASSERT_TRUE(batch, NoMatchQuery_Equals(query, (Obj*)clone), 
+    TEST_TRUE(batch, NoMatchQuery_Equals(query, (Obj*)clone), 
         "Dump => Load round trip");
-    ASSERT_FALSE(batch, NoMatchQuery_Equals(query, (Obj*)&EMPTY), "Equals");
+    TEST_FALSE(batch, NoMatchQuery_Equals(query, (Obj*)&EMPTY), "Equals");
 
     DECREF(query);
     DECREF(dump);

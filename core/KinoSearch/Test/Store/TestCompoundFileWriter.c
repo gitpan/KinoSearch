@@ -52,13 +52,13 @@ test_Consolidate(TestBatch *batch)
         DECREF(cf_writer);
     }
 
-    ASSERT_TRUE(batch, Folder_Exists(folder, &cf_file), 
+    TEST_TRUE(batch, Folder_Exists(folder, &cf_file), 
         "cf.dat file written"); 
-    ASSERT_TRUE(batch, Folder_Exists(folder, &cfmeta_file), 
+    TEST_TRUE(batch, Folder_Exists(folder, &cfmeta_file), 
         "cfmeta.json file written"); 
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &foo), 
         "original file zapped");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &cfmeta_temp), 
+    TEST_FALSE(batch, Folder_Exists(folder, &cfmeta_temp), 
         "detritus from failed consolidation zapped");
 
     DECREF(folder);
@@ -83,16 +83,17 @@ test_offsets(TestBatch *batch)
         Obj     *filestats;
         bool_t   offsets_ok = true;
 
-        ASSERT_TRUE(batch, Hash_Get_Size(files) > 0, "Multiple files");
+        TEST_TRUE(batch, Hash_Get_Size(files) > 0, "Multiple files");
 
-        Hash_Iter_Init(files);
-        while (Hash_Iter_Next(files, (Obj**)&file, &filestats)) {
+        Hash_Iterate(files);
+        while (Hash_Next(files, (Obj**)&file, &filestats)) {
             Hash *stats = (Hash*)CERTIFY(filestats, HASH);
             Obj *offset = CERTIFY(Hash_Fetch_Str(stats, "offset", 6), OBJ);
-            if (Obj_To_I64(offset) % 8 != 0) {
+            int64_t offs = Obj_To_I64(offset);
+            if (offs % 8 != 0) {
                 offsets_ok = false;
-                FAIL(batch, "Offset %o for %o not a multiple of 8: %o",
-                    offset, file);
+                FAIL(batch, "Offset %" I64P " for %s not a multiple of 8",
+                    offset, CB_Get_Ptr8(file));
                 break;
             }
         }

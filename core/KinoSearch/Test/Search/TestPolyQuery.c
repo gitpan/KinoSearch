@@ -25,14 +25,14 @@ test_Dump_Load_and_Equals(TestBatch *batch, uint32_t boolop)
     Obj     *dump  = (Obj*)PolyQuery_Dump(query);
     PolyQuery *clone = (PolyQuery*)Obj_Load(dump, dump);
 
-    ASSERT_FALSE(batch, PolyQuery_Equals(query, (Obj*)kids_differ), 
+    TEST_FALSE(batch, PolyQuery_Equals(query, (Obj*)kids_differ), 
         "Different kids spoil Equals");
-    ASSERT_TRUE(batch, PolyQuery_Equals(query, (Obj*)boost_differs), 
+    TEST_TRUE(batch, PolyQuery_Equals(query, (Obj*)boost_differs), 
         "Equals with identical boosts");
     PolyQuery_Set_Boost(boost_differs, 1.5);
-    ASSERT_FALSE(batch, PolyQuery_Equals(query, (Obj*)boost_differs), 
+    TEST_FALSE(batch, PolyQuery_Equals(query, (Obj*)boost_differs), 
         "Different boost spoils Equals");
-    ASSERT_TRUE(batch, PolyQuery_Equals(query, (Obj*)clone), 
+    TEST_TRUE(batch, PolyQuery_Equals(query, (Obj*)clone), 
         "Dump => Load round trip");
 
     DECREF(a_leaf);

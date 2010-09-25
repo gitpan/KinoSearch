@@ -22,14 +22,14 @@ test_refcounts(TestBatch *batch)
 {
     Obj     *obj      = S_new_testobj();
 
-    ASSERT_INT_EQ(batch, Obj_Get_RefCount(obj), 1, 
+    TEST_INT_EQ(batch, Obj_Get_RefCount(obj), 1, 
         "Correct starting refcount");
 
     Obj_Inc_RefCount(obj);
-    ASSERT_INT_EQ(batch, Obj_Get_RefCount(obj), 2, "Inc_RefCount" );
+    TEST_INT_EQ(batch, Obj_Get_RefCount(obj), 2, "Inc_RefCount" );
 
     Obj_Dec_RefCount(obj);
-    ASSERT_INT_EQ(batch, Obj_Get_RefCount(obj), 1, "Dec_RefCount" );
+    TEST_INT_EQ(batch, Obj_Get_RefCount(obj), 1, "Dec_RefCount" );
 
     DECREF(obj);
 }
@@ -44,7 +44,7 @@ test_To_String(TestBatch *batch)
         if (ZCB_Starts_With_Str(temp, "TestObj", 7)) { break; }
         ZCB_Nip_One(temp);
     }
-    ASSERT_TRUE(batch, ZCB_Starts_With_Str(temp, "TestObj", 7), "To_String");
+    TEST_TRUE(batch, ZCB_Starts_With_Str(temp, "TestObj", 7), "To_String");
     DECREF(string);
     DECREF(testobj);
 }
@@ -55,7 +55,7 @@ test_Dump(TestBatch *batch)
     Obj *testobj = S_new_testobj();
     CharBuf *string = Obj_To_String(testobj);
     Obj *dump = Obj_Dump(testobj);
-    ASSERT_TRUE(batch, Obj_Equals(dump, (Obj*)string), 
+    TEST_TRUE(batch, Obj_Equals(dump, (Obj*)string), 
         "Default Dump returns To_String");
     DECREF(dump);
     DECREF(string);
@@ -68,9 +68,9 @@ test_Equals(TestBatch *batch)
     Obj *testobj = S_new_testobj();
     Obj *other   = S_new_testobj();
 
-    ASSERT_TRUE(batch, Obj_Equals(testobj, testobj), 
+    TEST_TRUE(batch, Obj_Equals(testobj, testobj), 
         "Equals is true for the same object");
-    ASSERT_FALSE(batch, Obj_Equals(testobj, other), 
+    TEST_FALSE(batch, Obj_Equals(testobj, other), 
         "Distinct objects are not equal");
 
     DECREF(testobj);
@@ -78,13 +78,13 @@ test_Equals(TestBatch *batch)
 }
 
 static void
-test_Hash_Code(TestBatch *batch)
+test_Hash_Sum(TestBatch *batch)
 {
     Obj *testobj = S_new_testobj();
-    int64_t address64 = PTR2I64(testobj);
+    int64_t address64 = PTR_TO_I64(testobj);
     int32_t address32 = (int32_t)address64;
-    ASSERT_TRUE(batch, (Obj_Hash_Code(testobj) == address32), 
-        "Hash_Code uses memory address");
+    TEST_TRUE(batch, (Obj_Hash_Sum(testobj) == address32), 
+        "Hash_Sum uses memory address");
     DECREF(testobj);
 }
 
@@ -95,10 +95,10 @@ test_Is_A(TestBatch *batch)
     VTable  *bb_vtable = CB_Get_VTable(charbuf);
     CharBuf *klass     = CB_Get_Class_Name(charbuf);
 
-    ASSERT_TRUE(batch, CB_Is_A(charbuf, CHARBUF), "CharBuf Is_A CharBuf.");
-    ASSERT_TRUE(batch, CB_Is_A(charbuf, OBJ), "CharBuf Is_A Obj.");
-    ASSERT_TRUE(batch, bb_vtable == CHARBUF, "Get_VTable");
-    ASSERT_TRUE(batch, CB_Equals(VTable_Get_Name(CHARBUF), (Obj*)klass),
+    TEST_TRUE(batch, CB_Is_A(charbuf, CHARBUF), "CharBuf Is_A CharBuf.");
+    TEST_TRUE(batch, CB_Is_A(charbuf, OBJ), "CharBuf Is_A Obj.");
+    TEST_TRUE(batch, bb_vtable == CHARBUF, "Get_VTable");
+    TEST_TRUE(batch, CB_Equals(VTable_Get_Name(CHARBUF), (Obj*)klass),
         "Get_Class_Name");
 
     DECREF(charbuf);
@@ -116,7 +116,7 @@ TestObj_run_tests()
     test_To_String(batch);
     test_Dump(batch);
     test_Equals(batch);
-    test_Hash_Code(batch);
+    test_Hash_Sum(batch);
     test_Is_A(batch);
 
     DECREF(batch);

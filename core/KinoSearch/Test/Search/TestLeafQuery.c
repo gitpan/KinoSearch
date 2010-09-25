@@ -18,16 +18,16 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     Obj       *dump          = (Obj*)LeafQuery_Dump(query);
     LeafQuery *clone         = (LeafQuery*)LeafQuery_Load(term_differs, dump);
 
-    ASSERT_FALSE(batch, LeafQuery_Equals(query, (Obj*)field_differs),
+    TEST_FALSE(batch, LeafQuery_Equals(query, (Obj*)field_differs),
         "Equals() false with different field");
-    ASSERT_FALSE(batch, LeafQuery_Equals(query, (Obj*)null_field),
+    TEST_FALSE(batch, LeafQuery_Equals(query, (Obj*)null_field),
         "Equals() false with null field");
-    ASSERT_FALSE(batch, LeafQuery_Equals(query, (Obj*)term_differs),
+    TEST_FALSE(batch, LeafQuery_Equals(query, (Obj*)term_differs),
         "Equals() false with different term");
     LeafQuery_Set_Boost(boost_differs, 0.5);
-    ASSERT_FALSE(batch, LeafQuery_Equals(query, (Obj*)boost_differs),
+    TEST_FALSE(batch, LeafQuery_Equals(query, (Obj*)boost_differs),
         "Equals() false with different boost");
-    ASSERT_TRUE(batch, LeafQuery_Equals(query, (Obj*)clone), 
+    TEST_TRUE(batch, LeafQuery_Equals(query, (Obj*)clone), 
         "Dump => Load round trip");
 
     DECREF(query);

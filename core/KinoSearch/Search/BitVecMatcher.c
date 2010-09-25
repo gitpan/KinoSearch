@@ -29,14 +29,14 @@ BitVecMatcher_destroy(BitVecMatcher *self)
 int32_t
 BitVecMatcher_next(BitVecMatcher *self)
 {
-    self->doc_id = BitVec_Next_Set_Bit(self->bit_vec, self->doc_id + 1);
+    self->doc_id = BitVec_Next_Hit(self->bit_vec, self->doc_id + 1);
     return self->doc_id == -1 ? 0 : self->doc_id;
 }
 
 int32_t
 BitVecMatcher_advance(BitVecMatcher *self, int32_t target) 
 {
-    self->doc_id = BitVec_Next_Set_Bit(self->bit_vec, target);
+    self->doc_id = BitVec_Next_Hit(self->bit_vec, target);
     return self->doc_id == -1 ? 0 : self->doc_id;
 }
 

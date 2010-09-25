@@ -11,7 +11,6 @@
 #include "KinoSearch/Object/Err.h"
 #include "KinoSearch/Object/Hash.h"
 #include "KinoSearch/Object/LockFreeRegistry.h"
-#include "KinoSearch/Object/Undefined.h"
 #include "KinoSearch/Object/VArray.h"
 #include "KinoSearch/Util/Atomic.h"
 #include "KinoSearch/Util/Memory.h"
@@ -145,7 +144,7 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
             for (i = 0; i < num_novel; i++) {
                 CharBuf *meth = (CharBuf*)VA_fetch(novel_host_methods, i);
                 S_scrunch_charbuf(meth, scrunched);
-                Hash_Store(meths, (Obj*)scrunched, INCREF(UNDEF));
+                Hash_Store(meths, (Obj*)scrunched, INCREF(&EMPTY));
             }
             for (i = 0; singleton->callbacks[i] != NULL; i++) {
                 kino_Callback *const callback = singleton->callbacks[i];

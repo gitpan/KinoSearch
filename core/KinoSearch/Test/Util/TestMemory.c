@@ -35,9 +35,9 @@ test_oversize__growth_rate(TestBatch *batch)
         }
         size = next_size;
     }
-    ASSERT_TRUE(batch, growth_count > 0, "Grew %f times", growth_count);
+    TEST_TRUE(batch, growth_count > 0, "Grew %f times", growth_count);
     if (success) {
-        ASSERT_TRUE(batch, average_growth_rate > 1.1, 
+        TEST_TRUE(batch, average_growth_rate > 1.1, 
             "Growth rate of oversize() averages above 1.1: %.3f",
             average_growth_rate);
     }
@@ -45,7 +45,7 @@ test_oversize__growth_rate(TestBatch *batch)
     for (int minimum = 1; minimum < 8; minimum++) {
         uint64_t next_size = Memory_oversize(minimum, sizeof(void*));
         double growth_rate = (double)next_size / (double)minimum;
-        ASSERT_TRUE(batch, growth_rate > 1.2, 
+        TEST_TRUE(batch, growth_rate > 1.2, 
             "Growth rate is higher for smaller arrays (%d, %.3f)", minimum,
             growth_rate);
     }
@@ -56,10 +56,10 @@ test_oversize__ceiling(TestBatch *batch)
 {
     for (int width = 0; width < 10; width++) {
         size_t size = Memory_oversize(SIZE_MAX, width);
-        ASSERT_TRUE(batch, size == SIZE_MAX, 
+        TEST_TRUE(batch, size == SIZE_MAX, 
             "Memory_oversize hits ceiling at SIZE_MAX (width %d)", width);
         size = Memory_oversize(SIZE_MAX - 1, width);
-        ASSERT_TRUE(batch, size == SIZE_MAX, 
+        TEST_TRUE(batch, size == SIZE_MAX, 
             "Memory_oversize hits ceiling at SIZE_MAX (width %d)", width);
     }
 }

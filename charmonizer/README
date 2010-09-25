@@ -62,7 +62,7 @@ TESTING
     int main() {
         int all_tests_pass = 0;
 
-        /* set up */
+        /* Set up. */
         chaz_Test_init();
         chaz_Integers_init_test();
         chaz_LargeFiles_init_test();
@@ -71,7 +71,7 @@ TESTING
         /* Run all the tests */
         all_tests_pass = chaz_Test_run_all_tests();
 
-        /* tear down */
+        /* Tear down. */
         chaz_Test_clean_up();
 
         return all_tests_pass;

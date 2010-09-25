@@ -67,9 +67,7 @@ S_init_arena(MemoryPool *self, size_t amount)
         size_t buf_size = (amount + 1) > self->arena_size 
             ? (amount + 1)
             : self->arena_size;
-        char *ptr       = (char*)MALLOCATE(buf_size);
-        if (ptr == NULL)
-            THROW(ERR, "Failed to allocate memory");
+        char *ptr = (char*)MALLOCATE(buf_size);
         bb = BB_new_steal_bytes(ptr, buf_size - 1, buf_size);
         VA_Push(self->arenas, (Obj*)bb);
     }

@@ -21,14 +21,14 @@ Charmonizer is a configuration prober which writes a single header file,
 cross-platform development.  It's similar to Autoconf or Metaconfig, but
 written in pure C.
 
-The ".cfh" (or historically, ".bp") files within the KinoSearch core are
-Clownfish header files.  Clownfish is a purpose-built, declaration-only
-language which superimposes a single-inheritance object model on top of C
-which is specifically designed to co-exist happily with variety of "host"
-languages and to allow limited run-time dynamic subclassing.  For more
-information see the Clownfish docs, but if there's one thing you should
-know about Clownfish OO before you start hacking, it's that method calls
-are differentiated from functions by capitalization:
+The ".cfh" files within the KinoSearch core are Clownfish header files.
+Clownfish is a purpose-built, declaration-only language which superimposes
+a single-inheritance object model on top of C which is specifically
+designed to co-exist happily with variety of "host" languages and to allow
+limited run-time dynamic subclassing.  For more information see the
+Clownfish docs, but if there's one thing you should know about Clownfish OO
+before you start hacking, it's that method calls are differentiated from
+functions by capitalization:
 
     Indexer_Add_Doc   <-- Method, typically uses dynamic dispatch.
     Indexer_add_doc   <-- Function, always a direct invocation.

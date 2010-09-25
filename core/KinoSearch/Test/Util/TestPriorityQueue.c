@@ -51,21 +51,21 @@ test_Peek_and_Pop_All(TestBatch *batch)
     S_insert_num(pq, 20);
     S_insert_num(pq, 10);
     val = (Float64*)CERTIFY(NumPriQ_Peek(pq), FLOAT64);
-    ASSERT_INT_EQ(batch, (long)Float64_Get_Value(val), 1, 
+    TEST_INT_EQ(batch, (long)Float64_Get_Value(val), 1, 
         "peek at the least item in the queue" );
     {
         VArray  *got = NumPriQ_Pop_All(pq);
 
         val = (Float64*)CERTIFY(VA_Fetch(got, 0), FLOAT64);
-        ASSERT_INT_EQ(batch, (long)Float64_Get_Value(val), 20, "pop_all");
+        TEST_INT_EQ(batch, (long)Float64_Get_Value(val), 20, "pop_all");
         val = (Float64*)CERTIFY(VA_Fetch(got, 1), FLOAT64);
-        ASSERT_INT_EQ(batch, (long)Float64_Get_Value(val), 10, "pop_all");
+        TEST_INT_EQ(batch, (long)Float64_Get_Value(val), 10, "pop_all");
         val = (Float64*)CERTIFY(VA_Fetch(got, 2), FLOAT64);
-        ASSERT_INT_EQ(batch, (long)Float64_Get_Value(val),  3, "pop_all");
+        TEST_INT_EQ(batch, (long)Float64_Get_Value(val),  3, "pop_all");
         val = (Float64*)CERTIFY(VA_Fetch(got, 3), FLOAT64);
-        ASSERT_INT_EQ(batch, (long)Float64_Get_Value(val),  2, "pop_all");
+        TEST_INT_EQ(batch, (long)Float64_Get_Value(val),  2, "pop_all");
         val = (Float64*)CERTIFY(VA_Fetch(got, 4), FLOAT64);
-        ASSERT_INT_EQ(batch, (long)Float64_Get_Value(val),  1, "pop_all");
+        TEST_INT_EQ(batch, (long)Float64_Get_Value(val),  1, "pop_all");
 
         DECREF(got);
     }
@@ -84,13 +84,13 @@ test_Insert_and_Pop(TestBatch *batch)
     S_insert_num(pq, 20);
     S_insert_num(pq, 10);
 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 1, "Pop"); 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 2, "Pop"); 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 3, "Pop"); 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 10, "Pop"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 1, "Pop"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 2, "Pop"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 3, "Pop"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 10, "Pop"); 
 
     S_insert_num(pq, 7);
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 7, 
+    TEST_INT_EQ(batch, S_pop_num(pq), 7, 
         "Insert after Pop still sorts correctly"); 
 
     DECREF(pq);
@@ -107,11 +107,11 @@ test_discard(TestBatch *batch)
     for (i = 1590; i <= 1600; i++) { S_insert_num(pq, i); }
     S_insert_num(pq, 5);
 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 1596, "discard waste"); 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 1597, "discard waste"); 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 1598, "discard waste"); 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 1599, "discard waste"); 
-    ASSERT_INT_EQ(batch, S_pop_num(pq), 1600, "discard waste"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 1596, "discard waste"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 1597, "discard waste"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 1598, "discard waste"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 1599, "discard waste"); 
+    TEST_INT_EQ(batch, S_pop_num(pq), 1600, "discard waste"); 
 
     DECREF(pq);
 }
@@ -134,7 +134,7 @@ test_random_insertion(TestBatch *batch)
     for (i = 0; i < 64; i++) { 
         if (S_pop_num(pq) != i) { break; }
     }
-    ASSERT_INT_EQ(batch, i, 64, "random insertion");
+    TEST_INT_EQ(batch, i, 64, "random insertion");
 
     DECREF(pq);
 }

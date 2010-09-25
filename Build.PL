@@ -46,8 +46,8 @@ my $builder = KinoSearch::Build->new(
     build_requires => {
         'ExtUtils::CBuilder' => 0.18,
         'ExtUtils::ParseXS'  => 2.16,
+        'Devel::PPPort'      => 3.13,
     },
-    create_makefile_pl => 'passthrough',
     meta_merge         => { keywords => [qw( search lucene )], },
     meta_add           => {
         resources => {

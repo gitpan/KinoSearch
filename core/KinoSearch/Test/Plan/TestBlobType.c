@@ -10,15 +10,15 @@
 static void
 test_Dump_Load_and_Equals(TestBatch *batch)
 {
-    BlobType *type            = BlobType_new();
+    BlobType *type            = BlobType_new(true);
     Obj      *dump            = (Obj*)BlobType_Dump(type);
     Obj      *clone           = Obj_Load(dump, dump);
     Obj      *another_dump    = (Obj*)BlobType_Dump_For_Schema(type);
     BlobType *another_clone   = BlobType_load(NULL, another_dump);
 
-    ASSERT_TRUE(batch, BlobType_Equals(type, (Obj*)clone), 
+    TEST_TRUE(batch, BlobType_Equals(type, (Obj*)clone), 
         "Dump => Load round trip");
-    ASSERT_TRUE(batch, BlobType_Equals(type, (Obj*)another_clone), 
+    TEST_TRUE(batch, BlobType_Equals(type, (Obj*)another_clone), 
         "Dump_For_Schema => Load round trip");
 
     DECREF(type);

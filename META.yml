@@ -3,6 +3,7 @@ abstract: 'Search engine library.'
 author:
   - 'Marvin Humphrey <marvin at rectangular dot com>'
 build_requires:
+  Devel::PPPort: 3.13
   ExtUtils::CBuilder: 0.18
   ExtUtils::ParseXS: 2.16
 configure_requires:
@@ -137,457 +138,455 @@ no_index:
     - clownfish/t/403-file.t
     - clownfish/t/500-hierarchy.t
     - clownfish/t/600-parser.t
-    - clownfish/t/cfsource/Animal.bp
-    - clownfish/t/cfsource/Animal/Dog.bp
-    - clownfish/t/cfsource/Animal/Util.bp
-    - core/KSx/Search/FilterScorer.bp
+    - clownfish/t/cfsource/Animal.cfh
+    - clownfish/t/cfsource/Animal/Dog.cfh
+    - clownfish/t/cfsource/Animal/Util.cfh
     - core/KSx/Search/FilterScorer.c
-    - core/KSx/Search/MockMatcher.bp
+    - core/KSx/Search/FilterScorer.cfh
     - core/KSx/Search/MockMatcher.c
-    - core/KSx/Search/ProximityQuery.bp
+    - core/KSx/Search/MockMatcher.cfh
     - core/KSx/Search/ProximityQuery.c
-    - core/KSx/Search/ProximityScorer.bp
+    - core/KSx/Search/ProximityQuery.cfh
     - core/KSx/Search/ProximityScorer.c
-    - core/KinoSearch/Analysis/Analyzer.bp
+    - core/KSx/Search/ProximityScorer.cfh
     - core/KinoSearch/Analysis/Analyzer.c
-    - core/KinoSearch/Analysis/CaseFolder.bp
+    - core/KinoSearch/Analysis/Analyzer.cfh
     - core/KinoSearch/Analysis/CaseFolder.c
-    - core/KinoSearch/Analysis/Inversion.bp
+    - core/KinoSearch/Analysis/CaseFolder.cfh
     - core/KinoSearch/Analysis/Inversion.c
-    - core/KinoSearch/Analysis/PolyAnalyzer.bp
+    - core/KinoSearch/Analysis/Inversion.cfh
     - core/KinoSearch/Analysis/PolyAnalyzer.c
-    - core/KinoSearch/Analysis/Stemmer.bp
+    - core/KinoSearch/Analysis/PolyAnalyzer.cfh
     - core/KinoSearch/Analysis/Stemmer.c
-    - core/KinoSearch/Analysis/Stopalizer.bp
+    - core/KinoSearch/Analysis/Stemmer.cfh
     - core/KinoSearch/Analysis/Stopalizer.c
-    - core/KinoSearch/Analysis/Token.bp
+    - core/KinoSearch/Analysis/Stopalizer.cfh
     - core/KinoSearch/Analysis/Token.c
-    - core/KinoSearch/Analysis/Tokenizer.bp
+    - core/KinoSearch/Analysis/Token.cfh
     - core/KinoSearch/Analysis/Tokenizer.c
-    - core/KinoSearch/Docs/DevGuide.bp
-    - core/KinoSearch/Docs/FileLocking.bp
-    - core/KinoSearch/Document/Doc.bp
+    - core/KinoSearch/Analysis/Tokenizer.cfh
+    - core/KinoSearch/Docs/DevGuide.cfh
+    - core/KinoSearch/Docs/FileLocking.cfh
     - core/KinoSearch/Document/Doc.c
-    - core/KinoSearch/Document/HitDoc.bp
+    - core/KinoSearch/Document/Doc.cfh
     - core/KinoSearch/Document/HitDoc.c
-    - core/KinoSearch/Highlight/HeatMap.bp
+    - core/KinoSearch/Document/HitDoc.cfh
     - core/KinoSearch/Highlight/HeatMap.c
-    - core/KinoSearch/Highlight/Highlighter.bp
+    - core/KinoSearch/Highlight/HeatMap.cfh
     - core/KinoSearch/Highlight/Highlighter.c
-    - core/KinoSearch/Index/BackgroundMerger.bp
+    - core/KinoSearch/Highlight/Highlighter.cfh
     - core/KinoSearch/Index/BackgroundMerger.c
-    - core/KinoSearch/Index/BitVecDelDocs.bp
+    - core/KinoSearch/Index/BackgroundMerger.cfh
     - core/KinoSearch/Index/BitVecDelDocs.c
-    - core/KinoSearch/Index/DataReader.bp
+    - core/KinoSearch/Index/BitVecDelDocs.cfh
     - core/KinoSearch/Index/DataReader.c
-    - core/KinoSearch/Index/DataWriter.bp
+    - core/KinoSearch/Index/DataReader.cfh
     - core/KinoSearch/Index/DataWriter.c
-    - core/KinoSearch/Index/DeletionsReader.bp
+    - core/KinoSearch/Index/DataWriter.cfh
     - core/KinoSearch/Index/DeletionsReader.c
-    - core/KinoSearch/Index/DeletionsWriter.bp
+    - core/KinoSearch/Index/DeletionsReader.cfh
     - core/KinoSearch/Index/DeletionsWriter.c
-    - core/KinoSearch/Index/DocReader.bp
+    - core/KinoSearch/Index/DeletionsWriter.cfh
     - core/KinoSearch/Index/DocReader.c
-    - core/KinoSearch/Index/DocVector.bp
+    - core/KinoSearch/Index/DocReader.cfh
     - core/KinoSearch/Index/DocVector.c
-    - core/KinoSearch/Index/DocWriter.bp
+    - core/KinoSearch/Index/DocVector.cfh
     - core/KinoSearch/Index/DocWriter.c
-    - core/KinoSearch/Index/FilePurger.bp
+    - core/KinoSearch/Index/DocWriter.cfh
     - core/KinoSearch/Index/FilePurger.c
-    - core/KinoSearch/Index/HighlightReader.bp
+    - core/KinoSearch/Index/FilePurger.cfh
     - core/KinoSearch/Index/HighlightReader.c
-    - core/KinoSearch/Index/HighlightWriter.bp
+    - core/KinoSearch/Index/HighlightReader.cfh
     - core/KinoSearch/Index/HighlightWriter.c
-    - core/KinoSearch/Index/IndexManager.bp
+    - core/KinoSearch/Index/HighlightWriter.cfh
     - core/KinoSearch/Index/IndexManager.c
-    - core/KinoSearch/Index/IndexReader.bp
+    - core/KinoSearch/Index/IndexManager.cfh
     - core/KinoSearch/Index/IndexReader.c
-    - core/KinoSearch/Index/Indexer.bp
+    - core/KinoSearch/Index/IndexReader.cfh
     - core/KinoSearch/Index/Indexer.c
-    - core/KinoSearch/Index/Inverter.bp
+    - core/KinoSearch/Index/Indexer.cfh
     - core/KinoSearch/Index/Inverter.c
-    - core/KinoSearch/Index/LexIndex.bp
+    - core/KinoSearch/Index/Inverter.cfh
     - core/KinoSearch/Index/LexIndex.c
-    - core/KinoSearch/Index/Lexicon.bp
+    - core/KinoSearch/Index/LexIndex.cfh
     - core/KinoSearch/Index/Lexicon.c
-    - core/KinoSearch/Index/LexiconReader.bp
+    - core/KinoSearch/Index/Lexicon.cfh
     - core/KinoSearch/Index/LexiconReader.c
-    - core/KinoSearch/Index/LexiconWriter.bp
+    - core/KinoSearch/Index/LexiconReader.cfh
     - core/KinoSearch/Index/LexiconWriter.c
-    - core/KinoSearch/Index/PolyLexicon.bp
+    - core/KinoSearch/Index/LexiconWriter.cfh
     - core/KinoSearch/Index/PolyLexicon.c
-    - core/KinoSearch/Index/PolyReader.bp
+    - core/KinoSearch/Index/PolyLexicon.cfh
     - core/KinoSearch/Index/PolyReader.c
-    - core/KinoSearch/Index/Posting.bp
+    - core/KinoSearch/Index/PolyReader.cfh
     - core/KinoSearch/Index/Posting.c
-    - core/KinoSearch/Index/Posting/MatchPosting.bp
+    - core/KinoSearch/Index/Posting.cfh
     - core/KinoSearch/Index/Posting/MatchPosting.c
-    - core/KinoSearch/Index/Posting/RawPosting.bp
+    - core/KinoSearch/Index/Posting/MatchPosting.cfh
     - core/KinoSearch/Index/Posting/RawPosting.c
-    - core/KinoSearch/Index/Posting/RichPosting.bp
+    - core/KinoSearch/Index/Posting/RawPosting.cfh
     - core/KinoSearch/Index/Posting/RichPosting.c
-    - core/KinoSearch/Index/Posting/ScorePosting.bp
+    - core/KinoSearch/Index/Posting/RichPosting.cfh
     - core/KinoSearch/Index/Posting/ScorePosting.c
-    - core/KinoSearch/Index/PostingList.bp
+    - core/KinoSearch/Index/Posting/ScorePosting.cfh
     - core/KinoSearch/Index/PostingList.c
-    - core/KinoSearch/Index/PostingListReader.bp
+    - core/KinoSearch/Index/PostingList.cfh
     - core/KinoSearch/Index/PostingListReader.c
-    - core/KinoSearch/Index/PostingListWriter.bp
+    - core/KinoSearch/Index/PostingListReader.cfh
     - core/KinoSearch/Index/PostingListWriter.c
-    - core/KinoSearch/Index/PostingPool.bp
+    - core/KinoSearch/Index/PostingListWriter.cfh
     - core/KinoSearch/Index/PostingPool.c
-    - core/KinoSearch/Index/RawLexicon.bp
+    - core/KinoSearch/Index/PostingPool.cfh
     - core/KinoSearch/Index/RawLexicon.c
-    - core/KinoSearch/Index/RawPostingList.bp
+    - core/KinoSearch/Index/RawLexicon.cfh
     - core/KinoSearch/Index/RawPostingList.c
-    - core/KinoSearch/Index/SegLexicon.bp
+    - core/KinoSearch/Index/RawPostingList.cfh
     - core/KinoSearch/Index/SegLexicon.c
-    - core/KinoSearch/Index/SegPostingList.bp
+    - core/KinoSearch/Index/SegLexicon.cfh
     - core/KinoSearch/Index/SegPostingList.c
-    - core/KinoSearch/Index/SegReader.bp
+    - core/KinoSearch/Index/SegPostingList.cfh
     - core/KinoSearch/Index/SegReader.c
-    - core/KinoSearch/Index/SegWriter.bp
+    - core/KinoSearch/Index/SegReader.cfh
     - core/KinoSearch/Index/SegWriter.c
-    - core/KinoSearch/Index/Segment.bp
+    - core/KinoSearch/Index/SegWriter.cfh
     - core/KinoSearch/Index/Segment.c
-    - core/KinoSearch/Index/Similarity.bp
+    - core/KinoSearch/Index/Segment.cfh
     - core/KinoSearch/Index/Similarity.c
-    - core/KinoSearch/Index/SkipStepper.bp
+    - core/KinoSearch/Index/Similarity.cfh
     - core/KinoSearch/Index/SkipStepper.c
-    - core/KinoSearch/Index/Snapshot.bp
+    - core/KinoSearch/Index/SkipStepper.cfh
     - core/KinoSearch/Index/Snapshot.c
-    - core/KinoSearch/Index/SortCache.bp
+    - core/KinoSearch/Index/Snapshot.cfh
     - core/KinoSearch/Index/SortCache.c
-    - core/KinoSearch/Index/SortCache/NumericSortCache.bp
+    - core/KinoSearch/Index/SortCache.cfh
     - core/KinoSearch/Index/SortCache/NumericSortCache.c
-    - core/KinoSearch/Index/SortCache/TextSortCache.bp
+    - core/KinoSearch/Index/SortCache/NumericSortCache.cfh
     - core/KinoSearch/Index/SortCache/TextSortCache.c
-    - core/KinoSearch/Index/SortFieldWriter.bp
+    - core/KinoSearch/Index/SortCache/TextSortCache.cfh
     - core/KinoSearch/Index/SortFieldWriter.c
-    - core/KinoSearch/Index/SortReader.bp
+    - core/KinoSearch/Index/SortFieldWriter.cfh
     - core/KinoSearch/Index/SortReader.c
-    - core/KinoSearch/Index/SortWriter.bp
+    - core/KinoSearch/Index/SortReader.cfh
     - core/KinoSearch/Index/SortWriter.c
-    - core/KinoSearch/Index/TermInfo.bp
+    - core/KinoSearch/Index/SortWriter.cfh
     - core/KinoSearch/Index/TermInfo.c
-    - core/KinoSearch/Index/TermStepper.bp
+    - core/KinoSearch/Index/TermInfo.cfh
     - core/KinoSearch/Index/TermStepper.c
-    - core/KinoSearch/Index/TermVector.bp
+    - core/KinoSearch/Index/TermStepper.cfh
     - core/KinoSearch/Index/TermVector.c
-    - core/KinoSearch/Index/ZombieKeyedHash.bp
+    - core/KinoSearch/Index/TermVector.cfh
     - core/KinoSearch/Index/ZombieKeyedHash.c
-    - core/KinoSearch/Object/BitVector.bp
+    - core/KinoSearch/Index/ZombieKeyedHash.cfh
     - core/KinoSearch/Object/BitVector.c
-    - core/KinoSearch/Object/ByteBuf.bp
+    - core/KinoSearch/Object/BitVector.cfh
     - core/KinoSearch/Object/ByteBuf.c
-    - core/KinoSearch/Object/CharBuf.bp
+    - core/KinoSearch/Object/ByteBuf.cfh
     - core/KinoSearch/Object/CharBuf.c
-    - core/KinoSearch/Object/Err.bp
+    - core/KinoSearch/Object/CharBuf.cfh
     - core/KinoSearch/Object/Err.c
-    - core/KinoSearch/Object/Hash.bp
+    - core/KinoSearch/Object/Err.cfh
     - core/KinoSearch/Object/Hash.c
-    - core/KinoSearch/Object/Host.bp
-    - core/KinoSearch/Object/I32Array.bp
+    - core/KinoSearch/Object/Hash.cfh
+    - core/KinoSearch/Object/Host.cfh
     - core/KinoSearch/Object/I32Array.c
-    - core/KinoSearch/Object/LockFreeRegistry.bp
+    - core/KinoSearch/Object/I32Array.cfh
     - core/KinoSearch/Object/LockFreeRegistry.c
-    - core/KinoSearch/Object/Num.bp
+    - core/KinoSearch/Object/LockFreeRegistry.cfh
     - core/KinoSearch/Object/Num.c
-    - core/KinoSearch/Object/Obj.bp
+    - core/KinoSearch/Object/Num.cfh
     - core/KinoSearch/Object/Obj.c
-    - core/KinoSearch/Object/Undefined.bp
-    - core/KinoSearch/Object/Undefined.c
-    - core/KinoSearch/Object/VArray.bp
+    - core/KinoSearch/Object/Obj.cfh
     - core/KinoSearch/Object/VArray.c
-    - core/KinoSearch/Object/VTable.bp
+    - core/KinoSearch/Object/VArray.cfh
     - core/KinoSearch/Object/VTable.c
-    - core/KinoSearch/Plan/Architecture.bp
+    - core/KinoSearch/Object/VTable.cfh
     - core/KinoSearch/Plan/Architecture.c
-    - core/KinoSearch/Plan/BlobType.bp
+    - core/KinoSearch/Plan/Architecture.cfh
     - core/KinoSearch/Plan/BlobType.c
-    - core/KinoSearch/Plan/FieldType.bp
+    - core/KinoSearch/Plan/BlobType.cfh
     - core/KinoSearch/Plan/FieldType.c
-    - core/KinoSearch/Plan/FullTextType.bp
+    - core/KinoSearch/Plan/FieldType.cfh
     - core/KinoSearch/Plan/FullTextType.c
-    - core/KinoSearch/Plan/NumericType.bp
+    - core/KinoSearch/Plan/FullTextType.cfh
     - core/KinoSearch/Plan/NumericType.c
-    - core/KinoSearch/Plan/Schema.bp
+    - core/KinoSearch/Plan/NumericType.cfh
     - core/KinoSearch/Plan/Schema.c
-    - core/KinoSearch/Plan/StringType.bp
+    - core/KinoSearch/Plan/Schema.cfh
     - core/KinoSearch/Plan/StringType.c
-    - core/KinoSearch/Plan/TextType.bp
+    - core/KinoSearch/Plan/StringType.cfh
     - core/KinoSearch/Plan/TextType.c
-    - core/KinoSearch/Search/ANDQuery.bp
+    - core/KinoSearch/Plan/TextType.cfh
     - core/KinoSearch/Search/ANDQuery.c
-    - core/KinoSearch/Search/ANDScorer.bp
+    - core/KinoSearch/Search/ANDQuery.cfh
     - core/KinoSearch/Search/ANDScorer.c
-    - core/KinoSearch/Search/BitVecMatcher.bp
+    - core/KinoSearch/Search/ANDScorer.cfh
     - core/KinoSearch/Search/BitVecMatcher.c
-    - core/KinoSearch/Search/Collector.bp
+    - core/KinoSearch/Search/BitVecMatcher.cfh
     - core/KinoSearch/Search/Collector.c
-    - core/KinoSearch/Search/Collector/SortCollector.bp
+    - core/KinoSearch/Search/Collector.cfh
     - core/KinoSearch/Search/Collector/SortCollector.c
-    - core/KinoSearch/Search/Compiler.bp
+    - core/KinoSearch/Search/Collector/SortCollector.cfh
     - core/KinoSearch/Search/Compiler.c
-    - core/KinoSearch/Search/HitQueue.bp
+    - core/KinoSearch/Search/Compiler.cfh
     - core/KinoSearch/Search/HitQueue.c
-    - core/KinoSearch/Search/Hits.bp
+    - core/KinoSearch/Search/HitQueue.cfh
     - core/KinoSearch/Search/Hits.c
-    - core/KinoSearch/Search/IndexSearcher.bp
+    - core/KinoSearch/Search/Hits.cfh
     - core/KinoSearch/Search/IndexSearcher.c
-    - core/KinoSearch/Search/LeafQuery.bp
+    - core/KinoSearch/Search/IndexSearcher.cfh
     - core/KinoSearch/Search/LeafQuery.c
-    - core/KinoSearch/Search/MatchAllQuery.bp
+    - core/KinoSearch/Search/LeafQuery.cfh
     - core/KinoSearch/Search/MatchAllQuery.c
-    - core/KinoSearch/Search/MatchAllScorer.bp
+    - core/KinoSearch/Search/MatchAllQuery.cfh
     - core/KinoSearch/Search/MatchAllScorer.c
-    - core/KinoSearch/Search/MatchDoc.bp
+    - core/KinoSearch/Search/MatchAllScorer.cfh
     - core/KinoSearch/Search/MatchDoc.c
-    - core/KinoSearch/Search/Matcher.bp
+    - core/KinoSearch/Search/MatchDoc.cfh
     - core/KinoSearch/Search/Matcher.c
-    - core/KinoSearch/Search/NOTQuery.bp
+    - core/KinoSearch/Search/Matcher.cfh
     - core/KinoSearch/Search/NOTQuery.c
-    - core/KinoSearch/Search/NOTScorer.bp
+    - core/KinoSearch/Search/NOTQuery.cfh
     - core/KinoSearch/Search/NOTScorer.c
-    - core/KinoSearch/Search/NoMatchQuery.bp
+    - core/KinoSearch/Search/NOTScorer.cfh
     - core/KinoSearch/Search/NoMatchQuery.c
-    - core/KinoSearch/Search/NoMatchScorer.bp
+    - core/KinoSearch/Search/NoMatchQuery.cfh
     - core/KinoSearch/Search/NoMatchScorer.c
-    - core/KinoSearch/Search/ORMatcher.bp
+    - core/KinoSearch/Search/NoMatchScorer.cfh
     - core/KinoSearch/Search/ORMatcher.c
-    - core/KinoSearch/Search/ORQuery.bp
+    - core/KinoSearch/Search/ORMatcher.cfh
     - core/KinoSearch/Search/ORQuery.c
-    - core/KinoSearch/Search/PhraseQuery.bp
+    - core/KinoSearch/Search/ORQuery.cfh
     - core/KinoSearch/Search/PhraseQuery.c
-    - core/KinoSearch/Search/PhraseScorer.bp
+    - core/KinoSearch/Search/PhraseQuery.cfh
     - core/KinoSearch/Search/PhraseScorer.c
-    - core/KinoSearch/Search/PolyMatcher.bp
+    - core/KinoSearch/Search/PhraseScorer.cfh
     - core/KinoSearch/Search/PolyMatcher.c
-    - core/KinoSearch/Search/PolyQuery.bp
+    - core/KinoSearch/Search/PolyMatcher.cfh
     - core/KinoSearch/Search/PolyQuery.c
-    - core/KinoSearch/Search/PolySearcher.bp
+    - core/KinoSearch/Search/PolyQuery.cfh
     - core/KinoSearch/Search/PolySearcher.c
-    - core/KinoSearch/Search/Query.bp
+    - core/KinoSearch/Search/PolySearcher.cfh
     - core/KinoSearch/Search/Query.c
-    - core/KinoSearch/Search/QueryParser.bp
+    - core/KinoSearch/Search/Query.cfh
     - core/KinoSearch/Search/QueryParser.c
-    - core/KinoSearch/Search/RangeQuery.bp
+    - core/KinoSearch/Search/QueryParser.cfh
     - core/KinoSearch/Search/RangeQuery.c
-    - core/KinoSearch/Search/RangeScorer.bp
+    - core/KinoSearch/Search/RangeQuery.cfh
     - core/KinoSearch/Search/RangeScorer.c
-    - core/KinoSearch/Search/RequiredOptionalQuery.bp
+    - core/KinoSearch/Search/RangeScorer.cfh
     - core/KinoSearch/Search/RequiredOptionalQuery.c
-    - core/KinoSearch/Search/RequiredOptionalScorer.bp
+    - core/KinoSearch/Search/RequiredOptionalQuery.cfh
     - core/KinoSearch/Search/RequiredOptionalScorer.c
-    - core/KinoSearch/Search/Searcher.bp
+    - core/KinoSearch/Search/RequiredOptionalScorer.cfh
     - core/KinoSearch/Search/Searcher.c
-    - core/KinoSearch/Search/SeriesMatcher.bp
+    - core/KinoSearch/Search/Searcher.cfh
     - core/KinoSearch/Search/SeriesMatcher.c
-    - core/KinoSearch/Search/SortRule.bp
+    - core/KinoSearch/Search/SeriesMatcher.cfh
     - core/KinoSearch/Search/SortRule.c
-    - core/KinoSearch/Search/SortSpec.bp
+    - core/KinoSearch/Search/SortRule.cfh
     - core/KinoSearch/Search/SortSpec.c
-    - core/KinoSearch/Search/Span.bp
+    - core/KinoSearch/Search/SortSpec.cfh
     - core/KinoSearch/Search/Span.c
-    - core/KinoSearch/Search/TermQuery.bp
+    - core/KinoSearch/Search/Span.cfh
     - core/KinoSearch/Search/TermQuery.c
-    - core/KinoSearch/Search/TermScorer.bp
+    - core/KinoSearch/Search/TermQuery.cfh
     - core/KinoSearch/Search/TermScorer.c
-    - core/KinoSearch/Search/TopDocs.bp
+    - core/KinoSearch/Search/TermScorer.cfh
     - core/KinoSearch/Search/TopDocs.c
-    - core/KinoSearch/Store/CompoundFileReader.bp
+    - core/KinoSearch/Search/TopDocs.cfh
     - core/KinoSearch/Store/CompoundFileReader.c
-    - core/KinoSearch/Store/CompoundFileWriter.bp
+    - core/KinoSearch/Store/CompoundFileReader.cfh
     - core/KinoSearch/Store/CompoundFileWriter.c
-    - core/KinoSearch/Store/DirHandle.bp
+    - core/KinoSearch/Store/CompoundFileWriter.cfh
     - core/KinoSearch/Store/DirHandle.c
-    - core/KinoSearch/Store/FSDirHandle.bp
+    - core/KinoSearch/Store/DirHandle.cfh
     - core/KinoSearch/Store/FSDirHandle.c
-    - core/KinoSearch/Store/FSFileHandle.bp
+    - core/KinoSearch/Store/FSDirHandle.cfh
     - core/KinoSearch/Store/FSFileHandle.c
-    - core/KinoSearch/Store/FSFolder.bp
+    - core/KinoSearch/Store/FSFileHandle.cfh
     - core/KinoSearch/Store/FSFolder.c
-    - core/KinoSearch/Store/FileHandle.bp
+    - core/KinoSearch/Store/FSFolder.cfh
     - core/KinoSearch/Store/FileHandle.c
-    - core/KinoSearch/Store/FileWindow.bp
+    - core/KinoSearch/Store/FileHandle.cfh
     - core/KinoSearch/Store/FileWindow.c
-    - core/KinoSearch/Store/Folder.bp
+    - core/KinoSearch/Store/FileWindow.cfh
     - core/KinoSearch/Store/Folder.c
-    - core/KinoSearch/Store/InStream.bp
+    - core/KinoSearch/Store/Folder.cfh
     - core/KinoSearch/Store/InStream.c
-    - core/KinoSearch/Store/Lock.bp
+    - core/KinoSearch/Store/InStream.cfh
     - core/KinoSearch/Store/Lock.c
-    - core/KinoSearch/Store/LockFactory.bp
+    - core/KinoSearch/Store/Lock.cfh
     - core/KinoSearch/Store/LockFactory.c
-    - core/KinoSearch/Store/OutStream.bp
+    - core/KinoSearch/Store/LockFactory.cfh
     - core/KinoSearch/Store/OutStream.c
-    - core/KinoSearch/Store/RAMDirHandle.bp
+    - core/KinoSearch/Store/OutStream.cfh
     - core/KinoSearch/Store/RAMDirHandle.c
-    - core/KinoSearch/Store/RAMFile.bp
+    - core/KinoSearch/Store/RAMDirHandle.cfh
     - core/KinoSearch/Store/RAMFile.c
-    - core/KinoSearch/Store/RAMFileHandle.bp
+    - core/KinoSearch/Store/RAMFile.cfh
     - core/KinoSearch/Store/RAMFileHandle.c
-    - core/KinoSearch/Store/RAMFolder.bp
+    - core/KinoSearch/Store/RAMFileHandle.cfh
     - core/KinoSearch/Store/RAMFolder.c
-    - core/KinoSearch/Store/SharedLock.bp
+    - core/KinoSearch/Store/RAMFolder.cfh
     - core/KinoSearch/Store/SharedLock.c
-    - core/KinoSearch/Test.bp
+    - core/KinoSearch/Store/SharedLock.cfh
     - core/KinoSearch/Test.c
-    - core/KinoSearch/Test/Analysis/TestCaseFolder.bp
+    - core/KinoSearch/Test.cfh
     - core/KinoSearch/Test/Analysis/TestCaseFolder.c
-    - core/KinoSearch/Test/Analysis/TestPolyAnalyzer.bp
+    - core/KinoSearch/Test/Analysis/TestCaseFolder.cfh
     - core/KinoSearch/Test/Analysis/TestPolyAnalyzer.c
-    - core/KinoSearch/Test/Analysis/TestStemmer.bp
+    - core/KinoSearch/Test/Analysis/TestPolyAnalyzer.cfh
     - core/KinoSearch/Test/Analysis/TestStemmer.c
-    - core/KinoSearch/Test/Analysis/TestStopalizer.bp
+    - core/KinoSearch/Test/Analysis/TestStemmer.cfh
     - core/KinoSearch/Test/Analysis/TestStopalizer.c
-    - core/KinoSearch/Test/Analysis/TestTokenizer.bp
+    - core/KinoSearch/Test/Analysis/TestStopalizer.cfh
     - core/KinoSearch/Test/Analysis/TestTokenizer.c
-    - core/KinoSearch/Test/Index/TestDocWriter.bp
+    - core/KinoSearch/Test/Analysis/TestTokenizer.cfh
     - core/KinoSearch/Test/Index/TestDocWriter.c
-    - core/KinoSearch/Test/Index/TestHighlightWriter.bp
+    - core/KinoSearch/Test/Index/TestDocWriter.cfh
     - core/KinoSearch/Test/Index/TestHighlightWriter.c
-    - core/KinoSearch/Test/Index/TestPostingListWriter.bp
+    - core/KinoSearch/Test/Index/TestHighlightWriter.cfh
     - core/KinoSearch/Test/Index/TestPostingListWriter.c
-    - core/KinoSearch/Test/Index/TestSegWriter.bp
+    - core/KinoSearch/Test/Index/TestPostingListWriter.cfh
     - core/KinoSearch/Test/Index/TestSegWriter.c
-    - core/KinoSearch/Test/Index/TestSegment.bp
+    - core/KinoSearch/Test/Index/TestSegWriter.cfh
     - core/KinoSearch/Test/Index/TestSegment.c
-    - core/KinoSearch/Test/Index/TestSnapshot.bp
+    - core/KinoSearch/Test/Index/TestSegment.cfh
     - core/KinoSearch/Test/Index/TestSnapshot.c
-    - core/KinoSearch/Test/Object/TestBitVector.bp
+    - core/KinoSearch/Test/Index/TestSnapshot.cfh
     - core/KinoSearch/Test/Object/TestBitVector.c
-    - core/KinoSearch/Test/Object/TestByteBuf.bp
+    - core/KinoSearch/Test/Object/TestBitVector.cfh
     - core/KinoSearch/Test/Object/TestByteBuf.c
-    - core/KinoSearch/Test/Object/TestCharBuf.bp
+    - core/KinoSearch/Test/Object/TestByteBuf.cfh
     - core/KinoSearch/Test/Object/TestCharBuf.c
-    - core/KinoSearch/Test/Object/TestHash.bp
+    - core/KinoSearch/Test/Object/TestCharBuf.cfh
     - core/KinoSearch/Test/Object/TestHash.c
-    - core/KinoSearch/Test/Object/TestI32Array.bp
+    - core/KinoSearch/Test/Object/TestHash.cfh
     - core/KinoSearch/Test/Object/TestI32Array.c
-    - core/KinoSearch/Test/Object/TestLockFreeRegistry.bp
+    - core/KinoSearch/Test/Object/TestI32Array.cfh
     - core/KinoSearch/Test/Object/TestLockFreeRegistry.c
-    - core/KinoSearch/Test/Object/TestNum.bp
+    - core/KinoSearch/Test/Object/TestLockFreeRegistry.cfh
     - core/KinoSearch/Test/Object/TestNum.c
-    - core/KinoSearch/Test/Object/TestObj.bp
+    - core/KinoSearch/Test/Object/TestNum.cfh
     - core/KinoSearch/Test/Object/TestObj.c
-    - core/KinoSearch/Test/Object/TestVArray.bp
+    - core/KinoSearch/Test/Object/TestObj.cfh
     - core/KinoSearch/Test/Object/TestVArray.c
-    - core/KinoSearch/Test/Plan/TestArchitecture.bp
+    - core/KinoSearch/Test/Object/TestVArray.cfh
     - core/KinoSearch/Test/Plan/TestArchitecture.c
-    - core/KinoSearch/Test/Plan/TestBlobType.bp
+    - core/KinoSearch/Test/Plan/TestArchitecture.cfh
     - core/KinoSearch/Test/Plan/TestBlobType.c
-    - core/KinoSearch/Test/Plan/TestFullTextType.bp
+    - core/KinoSearch/Test/Plan/TestBlobType.cfh
     - core/KinoSearch/Test/Plan/TestFullTextType.c
-    - core/KinoSearch/Test/Plan/TestNumericType.bp
+    - core/KinoSearch/Test/Plan/TestFullTextType.cfh
     - core/KinoSearch/Test/Plan/TestNumericType.c
-    - core/KinoSearch/Test/Search/TestLeafQuery.bp
+    - core/KinoSearch/Test/Plan/TestNumericType.cfh
     - core/KinoSearch/Test/Search/TestLeafQuery.c
-    - core/KinoSearch/Test/Search/TestMatchAllQuery.bp
+    - core/KinoSearch/Test/Search/TestLeafQuery.cfh
     - core/KinoSearch/Test/Search/TestMatchAllQuery.c
-    - core/KinoSearch/Test/Search/TestNOTQuery.bp
+    - core/KinoSearch/Test/Search/TestMatchAllQuery.cfh
     - core/KinoSearch/Test/Search/TestNOTQuery.c
-    - core/KinoSearch/Test/Search/TestNoMatchQuery.bp
+    - core/KinoSearch/Test/Search/TestNOTQuery.cfh
     - core/KinoSearch/Test/Search/TestNoMatchQuery.c
-    - core/KinoSearch/Test/Search/TestPhraseQuery.bp
+    - core/KinoSearch/Test/Search/TestNoMatchQuery.cfh
     - core/KinoSearch/Test/Search/TestPhraseQuery.c
-    - core/KinoSearch/Test/Search/TestPolyQuery.bp
+    - core/KinoSearch/Test/Search/TestPhraseQuery.cfh
     - core/KinoSearch/Test/Search/TestPolyQuery.c
-    - core/KinoSearch/Test/Search/TestRangeQuery.bp
+    - core/KinoSearch/Test/Search/TestPolyQuery.cfh
     - core/KinoSearch/Test/Search/TestRangeQuery.c
-    - core/KinoSearch/Test/Search/TestReqOptQuery.bp
+    - core/KinoSearch/Test/Search/TestRangeQuery.cfh
     - core/KinoSearch/Test/Search/TestReqOptQuery.c
-    - core/KinoSearch/Test/Search/TestSeriesMatcher.bp
+    - core/KinoSearch/Test/Search/TestReqOptQuery.cfh
     - core/KinoSearch/Test/Search/TestSeriesMatcher.c
-    - core/KinoSearch/Test/Search/TestTermQuery.bp
+    - core/KinoSearch/Test/Search/TestSeriesMatcher.cfh
     - core/KinoSearch/Test/Search/TestTermQuery.c
-    - core/KinoSearch/Test/Store/MockFileHandle.bp
+    - core/KinoSearch/Test/Search/TestTermQuery.cfh
     - core/KinoSearch/Test/Store/MockFileHandle.c
-    - core/KinoSearch/Test/Store/TestCompoundFileReader.bp
+    - core/KinoSearch/Test/Store/MockFileHandle.cfh
     - core/KinoSearch/Test/Store/TestCompoundFileReader.c
-    - core/KinoSearch/Test/Store/TestCompoundFileWriter.bp
+    - core/KinoSearch/Test/Store/TestCompoundFileReader.cfh
     - core/KinoSearch/Test/Store/TestCompoundFileWriter.c
-    - core/KinoSearch/Test/Store/TestFSDirHandle.bp
+    - core/KinoSearch/Test/Store/TestCompoundFileWriter.cfh
     - core/KinoSearch/Test/Store/TestFSDirHandle.c
-    - core/KinoSearch/Test/Store/TestFSFileHandle.bp
+    - core/KinoSearch/Test/Store/TestFSDirHandle.cfh
     - core/KinoSearch/Test/Store/TestFSFileHandle.c
-    - core/KinoSearch/Test/Store/TestFSFolder.bp
+    - core/KinoSearch/Test/Store/TestFSFileHandle.cfh
     - core/KinoSearch/Test/Store/TestFSFolder.c
-    - core/KinoSearch/Test/Store/TestFileHandle.bp
+    - core/KinoSearch/Test/Store/TestFSFolder.cfh
     - core/KinoSearch/Test/Store/TestFileHandle.c
-    - core/KinoSearch/Test/Store/TestFolder.bp
+    - core/KinoSearch/Test/Store/TestFileHandle.cfh
     - core/KinoSearch/Test/Store/TestFolder.c
-    - core/KinoSearch/Test/Store/TestFolderCommon.bp
+    - core/KinoSearch/Test/Store/TestFolder.cfh
     - core/KinoSearch/Test/Store/TestFolderCommon.c
-    - core/KinoSearch/Test/Store/TestIOChunks.bp
+    - core/KinoSearch/Test/Store/TestFolderCommon.cfh
     - core/KinoSearch/Test/Store/TestIOChunks.c
-    - core/KinoSearch/Test/Store/TestIOPrimitives.bp
+    - core/KinoSearch/Test/Store/TestIOChunks.cfh
     - core/KinoSearch/Test/Store/TestIOPrimitives.c
-    - core/KinoSearch/Test/Store/TestInStream.bp
+    - core/KinoSearch/Test/Store/TestIOPrimitives.cfh
     - core/KinoSearch/Test/Store/TestInStream.c
-    - core/KinoSearch/Test/Store/TestRAMDirHandle.bp
+    - core/KinoSearch/Test/Store/TestInStream.cfh
     - core/KinoSearch/Test/Store/TestRAMDirHandle.c
-    - core/KinoSearch/Test/Store/TestRAMFileHandle.bp
+    - core/KinoSearch/Test/Store/TestRAMDirHandle.cfh
     - core/KinoSearch/Test/Store/TestRAMFileHandle.c
-    - core/KinoSearch/Test/Store/TestRAMFolder.bp
+    - core/KinoSearch/Test/Store/TestRAMFileHandle.cfh
     - core/KinoSearch/Test/Store/TestRAMFolder.c
-    - core/KinoSearch/Test/TestQueryParser.bp
+    - core/KinoSearch/Test/Store/TestRAMFolder.cfh
     - core/KinoSearch/Test/TestQueryParser.c
-    - core/KinoSearch/Test/TestQueryParserLogic.bp
+    - core/KinoSearch/Test/TestQueryParser.cfh
     - core/KinoSearch/Test/TestQueryParserLogic.c
-    - core/KinoSearch/Test/TestQueryParserSyntax.bp
+    - core/KinoSearch/Test/TestQueryParserLogic.cfh
     - core/KinoSearch/Test/TestQueryParserSyntax.c
-    - core/KinoSearch/Test/TestSchema.bp
+    - core/KinoSearch/Test/TestQueryParserSyntax.cfh
     - core/KinoSearch/Test/TestSchema.c
-    - core/KinoSearch/Test/TestUtils.bp
+    - core/KinoSearch/Test/TestSchema.cfh
     - core/KinoSearch/Test/TestUtils.c
-    - core/KinoSearch/Test/Util/BBSortEx.bp
+    - core/KinoSearch/Test/TestUtils.cfh
     - core/KinoSearch/Test/Util/BBSortEx.c
-    - core/KinoSearch/Test/Util/TestAtomic.bp
+    - core/KinoSearch/Test/Util/BBSortEx.cfh
     - core/KinoSearch/Test/Util/TestAtomic.c
-    - core/KinoSearch/Test/Util/TestIndexFileNames.bp
+    - core/KinoSearch/Test/Util/TestAtomic.cfh
     - core/KinoSearch/Test/Util/TestIndexFileNames.c
-    - core/KinoSearch/Test/Util/TestJson.bp
+    - core/KinoSearch/Test/Util/TestIndexFileNames.cfh
     - core/KinoSearch/Test/Util/TestJson.c
-    - core/KinoSearch/Test/Util/TestMemory.bp
+    - core/KinoSearch/Test/Util/TestJson.cfh
     - core/KinoSearch/Test/Util/TestMemory.c
-    - core/KinoSearch/Test/Util/TestMemoryPool.bp
+    - core/KinoSearch/Test/Util/TestMemory.cfh
     - core/KinoSearch/Test/Util/TestMemoryPool.c
-    - core/KinoSearch/Test/Util/TestNumberUtils.bp
+    - core/KinoSearch/Test/Util/TestMemoryPool.cfh
     - core/KinoSearch/Test/Util/TestNumberUtils.c
-    - core/KinoSearch/Test/Util/TestPriorityQueue.bp
+    - core/KinoSearch/Test/Util/TestNumberUtils.cfh
     - core/KinoSearch/Test/Util/TestPriorityQueue.c
-    - core/KinoSearch/Test/Util/TestStringHelper.bp
+    - core/KinoSearch/Test/Util/TestPriorityQueue.cfh
     - core/KinoSearch/Test/Util/TestStringHelper.c
-    - core/KinoSearch/Util/Atomic.bp
+    - core/KinoSearch/Test/Util/TestStringHelper.cfh
     - core/KinoSearch/Util/Atomic.c
-    - core/KinoSearch/Util/Debug.bp
+    - core/KinoSearch/Util/Atomic.cfh
     - core/KinoSearch/Util/Debug.c
-    - core/KinoSearch/Util/Freezer.bp
+    - core/KinoSearch/Util/Debug.cfh
     - core/KinoSearch/Util/Freezer.c
-    - core/KinoSearch/Util/IndexFileNames.bp
+    - core/KinoSearch/Util/Freezer.cfh
     - core/KinoSearch/Util/IndexFileNames.c
-    - core/KinoSearch/Util/Json.bp
-    - core/KinoSearch/Util/Memory.bp
+    - core/KinoSearch/Util/IndexFileNames.cfh
+    - core/KinoSearch/Util/Json.cfh
     - core/KinoSearch/Util/Memory.c
-    - core/KinoSearch/Util/MemoryPool.bp
+    - core/KinoSearch/Util/Memory.cfh
     - core/KinoSearch/Util/MemoryPool.c
-    - core/KinoSearch/Util/NumberUtils.bp
+    - core/KinoSearch/Util/MemoryPool.cfh
     - core/KinoSearch/Util/NumberUtils.c
-    - core/KinoSearch/Util/PriorityQueue.bp
+    - core/KinoSearch/Util/NumberUtils.cfh
     - core/KinoSearch/Util/PriorityQueue.c
-    - core/KinoSearch/Util/ProcessID.bp
+    - core/KinoSearch/Util/PriorityQueue.cfh
     - core/KinoSearch/Util/ProcessID.c
-    - core/KinoSearch/Util/Sleep.bp
+    - core/KinoSearch/Util/ProcessID.cfh
     - core/KinoSearch/Util/Sleep.c
-    - core/KinoSearch/Util/SortExternal.bp
+    - core/KinoSearch/Util/Sleep.cfh
     - core/KinoSearch/Util/SortExternal.c
-    - core/KinoSearch/Util/SortUtils.bp
+    - core/KinoSearch/Util/SortExternal.cfh
     - core/KinoSearch/Util/SortUtils.c
-    - core/KinoSearch/Util/Stepper.bp
+    - core/KinoSearch/Util/SortUtils.cfh
     - core/KinoSearch/Util/Stepper.c
-    - core/KinoSearch/Util/StringHelper.bp
+    - core/KinoSearch/Util/Stepper.cfh
     - core/KinoSearch/Util/StringHelper.c
+    - core/KinoSearch/Util/StringHelper.cfh
     - core/KinoSearch/Util/ToolSet.h
     - devel/benchmarks/README.txt
     - devel/benchmarks/extract_reuters.plx
@@ -595,16 +594,10 @@ no_index:
     - devel/benchmarks/indexers/LuceneIndexer.java
     - devel/benchmarks/indexers/kinosearch_indexer.plx
     - devel/benchmarks/indexers/plucene_indexer.plx
-    - devel/bin/dump_index
-    - devel/bin/find_random_failure.pl
-    - devel/bin/hexdebug
     - devel/bin/kinotidy
-    - devel/bin/predit
     - devel/bin/smoke.pl
-    - devel/bin/syncl
     - devel/bin/tidyall
     - devel/bin/valgrind_triggers.pl
-    - devel/conf/boil.vim
     - devel/conf/kinoperl.supp
     - devel/conf/kinotidyrc
     - lib/KSx/Search/LongFieldSim.pm
@@ -776,8 +769,6 @@ no_index:
     - lib/KinoSearch/Util/SortExternal.pm
     - lib/KinoSearch/Util/Stepper.pm
     - lib/KinoSearch/Util/StringHelper.pm
-    - lib/KinoSearch/Util/ToolSet.pm
-    - ppport.h
     - sample/FlatQueryParser.pm
     - sample/PrefixQuery.pm
     - sample/README.txt
@@ -927,7 +918,6 @@ no_index:
     - t/613-proximityquery.t
     - t/701-uscon.t
     - t/999-remove_indexes.t
-    - t/binding/000-load.t
     - t/binding/016-varray.t
     - t/binding/017-hash.t
     - t/binding/019-obj.t
@@ -939,6 +929,7 @@ no_index:
     - t/binding/206-snapshot.t
     - t/binding/506-collector.t
     - t/binding/800-stack.t
+    - t/binding/801-pod_checker.t
     - t/charmonizer/001-integers.t
     - t/charmonizer/002-func_macro.t
     - t/charmonizer/003-headers.t
@@ -1002,13 +993,11 @@ no_index:
     - t/core/529-no_match_query.t
     - t/core/530-series_matcher.t
     - t/core/531-or_query.t
-    - t/pod-coverage.t
-    - t/pod.t
     - xs/KinoSearch/Analysis/CaseFolder.c
     - xs/KinoSearch/Analysis/Stemmer.c
     - xs/KinoSearch/Analysis/Stopalizer.c
     - xs/KinoSearch/Analysis/Tokenizer.c
-    - xs/KinoSearch/Doc.c
+    - xs/KinoSearch/Document/Doc.c
     - xs/KinoSearch/Index/DocReader.c
     - xs/KinoSearch/Index/Inverter.c
     - xs/KinoSearch/Index/PolyReader.c
@@ -1054,7 +1043,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_112
+    version: 0.30_12
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1361,8 +1350,6 @@ provides:
     file: lib/KinoSearch/Util/Stepper.pm
   KinoSearch::Util::StringHelper:
     file: lib/KinoSearch/Util/StringHelper.pm
-  KinoSearch::Util::ToolSet:
-    file: lib/KinoSearch/Util/ToolSet.pm
 requires:
   JSON::XS: 1.53
   Lingua::Stem::Snowball: 0.952
@@ -1370,4 +1357,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.30_112
+version: 0.30_12

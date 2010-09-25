@@ -14,7 +14,7 @@ StupidHashCharBuf_new(char *text)
 }
 
 int32_t
-StupidHashCharBuf_hash_code(StupidHashCharBuf *self)
+StupidHashCharBuf_hash_sum(StupidHashCharBuf *self)
 {
     UNUSED_VAR(self);
     return 1;
@@ -29,20 +29,20 @@ test_all(TestBatch *batch)
     StupidHashCharBuf *baz = StupidHashCharBuf_new("baz");
     StupidHashCharBuf *foo_dupe = StupidHashCharBuf_new("foo");
 
-    ASSERT_TRUE(batch, LFReg_Register(registry, (Obj*)foo, (Obj*)foo), 
+    TEST_TRUE(batch, LFReg_Register(registry, (Obj*)foo, (Obj*)foo), 
         "Register() returns true on success");
-    ASSERT_FALSE(batch, 
+    TEST_FALSE(batch, 
         LFReg_Register(registry, (Obj*)foo_dupe, (Obj*)foo_dupe), 
         "Can't Register() keys that test equal");
 
-    ASSERT_TRUE(batch, LFReg_Register(registry, (Obj*)bar, (Obj*)bar), 
-        "Register() key with the same Hash_Code but that isn't Equal");
+    TEST_TRUE(batch, LFReg_Register(registry, (Obj*)bar, (Obj*)bar), 
+        "Register() key with the same Hash_Sum but that isn't Equal");
 
-    ASSERT_TRUE(batch, LFReg_Fetch(registry, (Obj*)foo_dupe) == (Obj*)foo, 
+    TEST_TRUE(batch, LFReg_Fetch(registry, (Obj*)foo_dupe) == (Obj*)foo, 
         "Fetch()");
-    ASSERT_TRUE(batch, LFReg_Fetch(registry, (Obj*)bar) == (Obj*)bar, 
+    TEST_TRUE(batch, LFReg_Fetch(registry, (Obj*)bar) == (Obj*)bar, 
         "Fetch() again");
-    ASSERT_TRUE(batch, LFReg_Fetch(registry, (Obj*)baz) == NULL,
+    TEST_TRUE(batch, LFReg_Fetch(registry, (Obj*)baz) == NULL,
         "Fetch() non-existent key returns NULL");
 
     DECREF(foo_dupe);

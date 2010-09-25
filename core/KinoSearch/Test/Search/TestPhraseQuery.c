@@ -14,7 +14,7 @@ test_Dump_And_Load(TestBatch *batch)
         = TestUtils_make_phrase_query("content", "a", "b", "c", NULL);
     Obj         *dump  = (Obj*)PhraseQuery_Dump(query);
     PhraseQuery *evil_twin = (PhraseQuery*)Obj_Load(dump, dump);
-    ASSERT_TRUE(batch, PhraseQuery_Equals(query, (Obj*)evil_twin), 
+    TEST_TRUE(batch, PhraseQuery_Equals(query, (Obj*)evil_twin), 
         "Dump => Load round trip");
     DECREF(query);
     DECREF(dump);

@@ -35,13 +35,13 @@ test_Local_Exists(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     outstream = Folder_Open_Out(folder, &foo_boffo);
     DECREF(outstream);
 
-    ASSERT_TRUE(batch, Folder_Local_Exists(folder, &boffo), 
+    TEST_TRUE(batch, Folder_Local_Exists(folder, &boffo), 
         "Local_Exists() returns true for file");
-    ASSERT_TRUE(batch, Folder_Local_Exists(folder, &foo), 
+    TEST_TRUE(batch, Folder_Local_Exists(folder, &foo), 
         "Local_Exists() returns true for dir");
-    ASSERT_FALSE(batch, Folder_Local_Exists(folder, &foo_boffo), 
+    TEST_FALSE(batch, Folder_Local_Exists(folder, &foo_boffo), 
         "Local_Exists() returns false for nested entry");
-    ASSERT_FALSE(batch, Folder_Local_Exists(folder, &bar), 
+    TEST_FALSE(batch, Folder_Local_Exists(folder, &bar), 
         "Local_Exists() returns false for non-existent entry");
 
     Folder_Delete(folder, &foo_boffo);
@@ -60,11 +60,11 @@ test_Local_Is_Directory(TestBatch *batch, set_up_t set_up,
     DECREF(outstream);
     Folder_Local_MkDir(folder, &foo);
 
-    ASSERT_FALSE(batch, Folder_Local_Is_Directory(folder, &boffo), 
+    TEST_FALSE(batch, Folder_Local_Is_Directory(folder, &boffo), 
         "Local_Is_Directory() returns false for file");
-    ASSERT_TRUE(batch, Folder_Local_Is_Directory(folder, &foo), 
+    TEST_TRUE(batch, Folder_Local_Is_Directory(folder, &foo), 
         "Local_Is_Directory() returns true for dir");
-    ASSERT_FALSE(batch, Folder_Local_Is_Directory(folder, &bar), 
+    TEST_FALSE(batch, Folder_Local_Is_Directory(folder, &bar), 
         "Local_Is_Directory() returns false for non-existent entry");
 
     Folder_Delete(folder, &boffo);
@@ -89,25 +89,25 @@ test_Local_Find_Folder(TestBatch *batch, set_up_t set_up,
     DECREF(outstream);
 
     local = Folder_Local_Find_Folder(folder, &nope);
-    ASSERT_TRUE(batch, local == NULL, "Non-existent entry yields NULL");
+    TEST_TRUE(batch, local == NULL, "Non-existent entry yields NULL");
 
     local = Folder_Local_Find_Folder(folder, (CharBuf*)&EMPTY);
-    ASSERT_TRUE(batch, local == NULL, "Empty string yields NULL");
+    TEST_TRUE(batch, local == NULL, "Empty string yields NULL");
 
     local = Folder_Local_Find_Folder(folder, &foo_bar);
-    ASSERT_TRUE(batch, local == NULL, "nested folder yields NULL");
+    TEST_TRUE(batch, local == NULL, "nested folder yields NULL");
 
     local = Folder_Local_Find_Folder(folder, &foo_boffo);
-    ASSERT_TRUE(batch, local == NULL, "nested file yields NULL");
+    TEST_TRUE(batch, local == NULL, "nested file yields NULL");
 
     local = Folder_Local_Find_Folder(folder, &boffo);
-    ASSERT_TRUE(batch, local == NULL, "local file yields NULL");
+    TEST_TRUE(batch, local == NULL, "local file yields NULL");
     
     local = Folder_Local_Find_Folder(folder, &bar);
-    ASSERT_TRUE(batch, local == NULL, "name of nested folder yields NULL");
+    TEST_TRUE(batch, local == NULL, "name of nested folder yields NULL");
 
     local = Folder_Local_Find_Folder(folder, &foo);
-    ASSERT_TRUE(batch, 
+    TEST_TRUE(batch, 
         local 
         && Folder_Is_A(local, FOLDER)
         && CB_Ends_With(Folder_Get_Path(local), &foo), 
@@ -128,15 +128,15 @@ test_Local_MkDir(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     bool_t result;
 
     result = Folder_Local_MkDir(folder, &foo);
-    ASSERT_TRUE(batch, result, "Local_MkDir succeeds and returns true");
+    TEST_TRUE(batch, result, "Local_MkDir succeeds and returns true");
 
     Err_set_error(NULL);
     result = Folder_Local_MkDir(folder, &foo);
-    ASSERT_FALSE(batch, result, 
+    TEST_FALSE(batch, result, 
         "Local_MkDir returns false when a dir already exists");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Local_MkDir sets Err_error when a dir already exists");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo), 
         "Existing dir untouched after failed Local_MkDir");
 
     {
@@ -144,11 +144,11 @@ test_Local_MkDir(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
         DECREF(outstream);
         Err_set_error(NULL);
         result = Folder_Local_MkDir(folder, &foo);
-        ASSERT_FALSE(batch, result, 
+        TEST_FALSE(batch, result, 
             "Local_MkDir returns false when a file already exists");
-        ASSERT_TRUE(batch, Err_get_error() != NULL, 
+        TEST_TRUE(batch, Err_get_error() != NULL, 
             "Local_MkDir sets Err_error when a file already exists");
-        ASSERT_TRUE(batch, Folder_Exists(folder, &boffo) &&
+        TEST_TRUE(batch, Folder_Exists(folder, &boffo) &&
             !Folder_Local_Is_Directory(folder, &boffo), 
             "Existing file untouched after failed Local_MkDir");
     }
@@ -164,7 +164,7 @@ test_Local_Open_Dir(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
 {
     Folder *folder = set_up();
     DirHandle *dh = Folder_Local_Open_Dir(folder);
-    ASSERT_TRUE(batch, dh && DH_Is_A(dh, DIRHANDLE), 
+    TEST_TRUE(batch, dh && DH_Is_A(dh, DIRHANDLE), 
         "Local_Open_Dir returns an DirHandle");
     DECREF(dh);
     DECREF(folder);
@@ -180,33 +180,33 @@ test_Local_Open_FileHandle(TestBatch *batch, set_up_t set_up,
 
     fh = Folder_Local_Open_FileHandle(folder, &boffo, 
         FH_CREATE | FH_WRITE_ONLY | FH_EXCLUSIVE);
-    ASSERT_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
+    TEST_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
         "opened FileHandle");
     DECREF(fh);
 
     fh = Folder_Local_Open_FileHandle(folder, &boffo, 
         FH_CREATE | FH_WRITE_ONLY);
-    ASSERT_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
+    TEST_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
         "opened FileHandle for append");
     DECREF(fh);
 
     Err_set_error(NULL);
     fh = Folder_Local_Open_FileHandle(folder, &boffo, 
         FH_CREATE | FH_WRITE_ONLY | FH_EXCLUSIVE);
-    ASSERT_TRUE(batch, fh == NULL, "FH_EXLUSIVE flag prevents clobber");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, fh == NULL, "FH_EXLUSIVE flag prevents clobber");
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "failure due to FH_EXLUSIVE flag sets Err_error");
 
     fh = Folder_Local_Open_FileHandle(folder, &boffo, FH_READ_ONLY);
-    ASSERT_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
+    TEST_TRUE(batch, fh && FH_Is_A(fh, FILEHANDLE), 
         "opened FileHandle for reading");
     DECREF(fh);
 
     Err_set_error(NULL);
     fh = Folder_Local_Open_FileHandle(folder, &nope, FH_READ_ONLY);
-    ASSERT_TRUE(batch, fh == NULL, 
+    TEST_TRUE(batch, fh == NULL, 
         "Can't open non-existent file for reading");
-    ASSERT_TRUE(batch, Err_get_error() != NULL,
+    TEST_TRUE(batch, Err_get_error() != NULL,
         "Opening non-existent file for reading sets Err_error");
 
     Folder_Delete(folder, &boffo);
@@ -222,9 +222,9 @@ test_Local_Delete(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     
     outstream = Folder_Open_Out(folder, &boffo);
     DECREF(outstream);
-    ASSERT_TRUE(batch, Folder_Local_Delete(folder, &boffo), 
+    TEST_TRUE(batch, Folder_Local_Delete(folder, &boffo), 
         "Local_Delete on file succeeds");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &boffo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &boffo), 
         "File is really gone");
 
     Folder_Local_MkDir(folder, &foo);
@@ -232,13 +232,13 @@ test_Local_Delete(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     DECREF(outstream);
 
     Err_set_error(NULL);
-    ASSERT_FALSE(batch, Folder_Local_Delete(folder, &foo), 
+    TEST_FALSE(batch, Folder_Local_Delete(folder, &foo), 
         "Local_Delete on non-empty dir fails");
 
     Folder_Delete(folder, &foo_boffo);
-    ASSERT_TRUE(batch, Folder_Local_Delete(folder, &foo), 
+    TEST_TRUE(batch, Folder_Local_Delete(folder, &foo), 
         "Local_Delete on empty dir succeeds");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &foo), 
         "Dir is really gone");
 
     DECREF(folder);
@@ -261,24 +261,24 @@ test_Rename(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     // Move files. 
 
     result = Folder_Rename(folder, &boffo, &banana); 
-    ASSERT_TRUE(batch, result, "Rename succeeds and returns true");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &banana), 
+    TEST_TRUE(batch, result, "Rename succeeds and returns true");
+    TEST_TRUE(batch, Folder_Exists(folder, &banana), 
         "File exists at new path");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &boffo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &boffo), 
         "File no longer exists at old path");
 
     result = Folder_Rename(folder, &banana, &foo_bar_boffo); 
-    ASSERT_TRUE(batch, result, "Rename to file in nested dir");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar_boffo), 
+    TEST_TRUE(batch, result, "Rename to file in nested dir");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar_boffo), 
         "File exists at new path");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &banana), 
+    TEST_FALSE(batch, Folder_Exists(folder, &banana), 
         "File no longer exists at old path");
 
     result = Folder_Rename(folder, &foo_bar_boffo, &boffo); 
-    ASSERT_TRUE(batch, result, "Rename from file in nested dir");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &boffo), 
+    TEST_TRUE(batch, result, "Rename from file in nested dir");
+    TEST_TRUE(batch, Folder_Exists(folder, &boffo), 
         "File exists at new path");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo_bar_boffo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &foo_bar_boffo), 
         "File no longer exists at old path");
 
     outstream = Folder_Open_Out(folder, &foo_boffo);
@@ -287,16 +287,16 @@ test_Rename(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     result = Folder_Rename(folder, &boffo, &foo_boffo); 
     if (result) {
         PASS(batch, "Rename clobbers on this system");
-        ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+        TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
             "File exists at new path");
-        ASSERT_FALSE(batch, Folder_Exists(folder, &boffo), 
+        TEST_FALSE(batch, Folder_Exists(folder, &boffo), 
             "File no longer exists at old path");
     }
     else {
         PASS(batch, "Rename does not clobber on this system");
-        ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+        TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
             "File exists at new path");
-        ASSERT_TRUE(batch, Folder_Exists(folder, &boffo), 
+        TEST_TRUE(batch, Folder_Exists(folder, &boffo), 
             "File still exists at old path");
         Folder_Delete(folder, &boffo);
     }
@@ -305,74 +305,74 @@ test_Rename(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
 
     Folder_MkDir(folder, &baz);
     result = Folder_Rename(folder, &baz, &boffo); 
-    ASSERT_TRUE(batch, result, "Rename dir");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &boffo), 
+    TEST_TRUE(batch, result, "Rename dir");
+    TEST_TRUE(batch, Folder_Exists(folder, &boffo), 
         "Folder exists at new path");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &baz), 
+    TEST_FALSE(batch, Folder_Exists(folder, &baz), 
         "Folder no longer exists at old path");
 
     result = Folder_Rename(folder, &boffo, &foo_foo); 
-    ASSERT_TRUE(batch, result, "Rename dir into nested subdir");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_foo), 
+    TEST_TRUE(batch, result, "Rename dir into nested subdir");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_foo), 
         "Folder exists at new path");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &boffo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &boffo), 
         "Folder no longer exists at old path");
 
     result = Folder_Rename(folder, &foo_foo, &foo_bar_baz); 
-    ASSERT_TRUE(batch, result, "Rename dir from nested subdir");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar_baz), 
+    TEST_TRUE(batch, result, "Rename dir from nested subdir");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar_baz), 
         "Folder exists at new path");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &foo_foo), 
+    TEST_FALSE(batch, Folder_Exists(folder, &foo_foo), 
         "Folder no longer exists at old path");
     
     // Test failed clobbers. 
 
     Err_set_error(NULL);
     result = Folder_Rename(folder, &foo_boffo, &foo_bar); 
-    ASSERT_FALSE(batch, result, "Rename file clobbering dir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_FALSE(batch, result, "Rename file clobbering dir fails");
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Failed rename sets Err_error");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "File still exists at old path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar), 
         "Dir still exists after failed clobber");
 
     Err_set_error(NULL);
     result = Folder_Rename(folder, &foo_bar, &foo_boffo); 
-    ASSERT_FALSE(batch, result, "Rename dir clobbering file fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_FALSE(batch, result, "Rename dir clobbering file fails");
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Failed rename sets Err_error");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar), 
         "Dir still exists at old path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "File still exists after failed clobber");
 
     // Test that "renaming" succeeds where to and from are the same. 
 
     result = Folder_Rename(folder, &foo_boffo, &foo_boffo); 
-    ASSERT_TRUE(batch, result, "Renaming file to itself succeeds");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, result, "Renaming file to itself succeeds");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "File still exists");
 
     result = Folder_Rename(folder, &foo_bar, &foo_bar); 
-    ASSERT_TRUE(batch, result, "Renaming dir to itself succeeds");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar), 
+    TEST_TRUE(batch, result, "Renaming dir to itself succeeds");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar), 
         "Dir still exists");
 
     // Invalid filepaths. 
 
     Err_set_error(NULL);
     result = Folder_Rename(folder, &foo_boffo, &nope_nyet); 
-    ASSERT_FALSE(batch, result, "Rename into non-existent subdir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_FALSE(batch, result, "Rename into non-existent subdir fails");
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Renaming into non-existent subdir sets Err_error");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "Entry still exists at old path");
 
     Err_set_error(NULL);
     result = Folder_Rename(folder, &nope_nyet, &boffo); 
-    ASSERT_FALSE(batch, result, "Rename non-existent file fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_FALSE(batch, result, "Rename non-existent file fails");
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Renaming non-existent source file sets Err_error");
 
     Folder_Delete(folder, &foo_bar_baz);
@@ -398,26 +398,26 @@ test_Hard_Link(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     // Link files. 
 
     result = Folder_Hard_Link(folder, &boffo, &banana); 
-    ASSERT_TRUE(batch, result, "Hard_Link succeeds and returns true");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &banana), 
+    TEST_TRUE(batch, result, "Hard_Link succeeds and returns true");
+    TEST_TRUE(batch, Folder_Exists(folder, &banana), 
         "File exists at new path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &boffo), 
         "File still exists at old path");
     Folder_Delete(folder, &boffo);
 
     result = Folder_Hard_Link(folder, &banana, &foo_bar_boffo); 
-    ASSERT_TRUE(batch, result, "Hard_Link to target within nested dir");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar_boffo), 
+    TEST_TRUE(batch, result, "Hard_Link to target within nested dir");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar_boffo), 
         "File exists at new path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &banana), 
+    TEST_TRUE(batch, Folder_Exists(folder, &banana), 
         "File still exists at old path");
     Folder_Delete(folder, &banana);
 
     result = Folder_Hard_Link(folder, &foo_bar_boffo, &foo_boffo); 
-    ASSERT_TRUE(batch, result, "Hard_Link from file in nested dir");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, result, "Hard_Link from file in nested dir");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "File exists at new path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_bar_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_bar_boffo), 
         "File still exists at old path");
     Folder_Delete(folder, &foo_bar_boffo);
 
@@ -426,19 +426,19 @@ test_Hard_Link(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
     outstream = Folder_Open_Out(folder, &boffo);
     DECREF(outstream);
     result = Folder_Hard_Link(folder, &foo_boffo, &boffo); 
-    ASSERT_FALSE(batch, result, "Clobber of file fails");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &boffo), 
+    TEST_FALSE(batch, result, "Clobber of file fails");
+    TEST_TRUE(batch, Folder_Exists(folder, &boffo), 
         "File still exists at new path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "File still exists at old path");
     Folder_Delete(folder, &boffo);
 
     Folder_MkDir(folder, &baz);
     result = Folder_Hard_Link(folder, &foo_boffo, &baz); 
-    ASSERT_FALSE(batch, result, "Clobber of dir fails");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &baz), 
+    TEST_FALSE(batch, result, "Clobber of dir fails");
+    TEST_TRUE(batch, Folder_Exists(folder, &baz), 
         "Dir still exists at new path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "File still exists at old path");
     Folder_Delete(folder, &baz);
 
@@ -446,34 +446,34 @@ test_Hard_Link(TestBatch *batch, set_up_t set_up, tear_down_t tear_down)
 
     Folder_MkDir(folder, &baz);
     result = Folder_Hard_Link(folder, &baz, &banana); 
-    ASSERT_FALSE(batch, result, "Hard_Link dir fails");
-    ASSERT_FALSE(batch, Folder_Exists(folder, &banana), 
+    TEST_FALSE(batch, result, "Hard_Link dir fails");
+    TEST_FALSE(batch, Folder_Exists(folder, &banana), 
         "Nothing at new path");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &baz), 
+    TEST_TRUE(batch, Folder_Exists(folder, &baz), 
         "Folder still exists at old path");
     Folder_Delete(folder, &baz);
 
     // Test that linking to yourself fails. 
 
     result = Folder_Hard_Link(folder, &foo_boffo, &foo_boffo); 
-    ASSERT_FALSE(batch, result, "Hard_Link file to itself fails");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_FALSE(batch, result, "Hard_Link file to itself fails");
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "File still exists");
 
     // Invalid filepaths. 
 
     Err_set_error(NULL);
     result = Folder_Rename(folder, &foo_boffo, &nope_nyet); 
-    ASSERT_FALSE(batch, result, "Hard_Link into non-existent subdir fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_FALSE(batch, result, "Hard_Link into non-existent subdir fails");
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Hard_Link into non-existent subdir sets Err_error");
-    ASSERT_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
+    TEST_TRUE(batch, Folder_Exists(folder, &foo_boffo), 
         "Entry still exists at old path");
 
     Err_set_error(NULL);
     result = Folder_Rename(folder, &nope_nyet, &boffo); 
-    ASSERT_FALSE(batch, result, "Hard_Link non-existent source file fails");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_FALSE(batch, result, "Hard_Link non-existent source file fails");
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Hard_Link non-existent source file sets Err_error");
 
     Folder_Delete(folder, &foo_bar);

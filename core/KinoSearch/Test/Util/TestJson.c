@@ -23,7 +23,7 @@ test_to_and_from(TestBatch *batch)
     Obj *dump = S_make_dump();
     CharBuf *json = Json_to_json(dump);
     Obj *got = Json_from_json(json);
-    ASSERT_TRUE(batch, got != NULL && Obj_Equals(dump, got), 
+    TEST_TRUE(batch, got != NULL && Obj_Equals(dump, got), 
         "Round trip through to_json and from_json");
     DECREF(dump);
     DECREF(json);
@@ -38,27 +38,27 @@ test_spew_and_slurp(TestBatch *batch)
 
     CharBuf *foo = (CharBuf*)ZCB_WRAP_STR("foo", 3);
     bool_t result = Json_spew_json(dump, folder, foo);
-    ASSERT_TRUE(batch, result, "spew_json returns true on success");
-    ASSERT_TRUE(batch, Folder_Exists(folder, foo), 
+    TEST_TRUE(batch, result, "spew_json returns true on success");
+    TEST_TRUE(batch, Folder_Exists(folder, foo), 
         "spew_json wrote file");
 
     Obj *got = Json_slurp_json(folder, foo);
-    ASSERT_TRUE(batch, got && Obj_Equals(dump, got), 
+    TEST_TRUE(batch, got && Obj_Equals(dump, got), 
         "Round trip through spew_json and slurp_json");
     DECREF(got);
 
     Err_set_error(NULL);
     result = Json_spew_json(dump, folder, foo);
-    ASSERT_FALSE(batch, result, "Can't spew_json when file exists");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_FALSE(batch, result, "Can't spew_json when file exists");
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Failed spew_json sets Err_error");
     
     Err_set_error(NULL);
     CharBuf *bar = (CharBuf*)ZCB_WRAP_STR("bar", 3);
     got = Json_slurp_json(folder, bar);
-    ASSERT_TRUE(batch, got == NULL, 
+    TEST_TRUE(batch, got == NULL, 
         "slurp_json returns NULL when file doesn't exist");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Failed slurp_json sets Err_error");
 
     CharBuf *boffo = (CharBuf*)ZCB_WRAP_STR("boffo", 5);
@@ -70,9 +70,9 @@ test_spew_and_slurp(TestBatch *batch)
     }
     Err_set_error(NULL);
     got = Json_slurp_json(folder, boffo);
-    ASSERT_TRUE(batch, got == NULL, 
+    TEST_TRUE(batch, got == NULL, 
         "slurp_json returns NULL when file doesn't contain valid JSON");
-    ASSERT_TRUE(batch, Err_get_error() != NULL, 
+    TEST_TRUE(batch, Err_get_error() != NULL, 
         "Failed slurp_json sets Err_error");
     DECREF(got);
 

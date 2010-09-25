@@ -1,4 +1,5 @@
 #define C_KINO_HASH
+#define C_KINO_HASHTOMBSTONE
 #define KINO_USE_SHORT_NAMES
 #define CHY_USE_SHORT_NAMES
 
@@ -10,37 +11,36 @@
 #include "KinoSearch/Object/Hash.h"
 #include "KinoSearch/Object/CharBuf.h"
 #include "KinoSearch/Object/Err.h"
-#include "KinoSearch/Object/Undefined.h"
 #include "KinoSearch/Object/VArray.h"
 #include "KinoSearch/Store/InStream.h"
 #include "KinoSearch/Store/OutStream.h"
 #include "KinoSearch/Util/Freezer.h"
 #include "KinoSearch/Util/Memory.h"
 
+static HashTombStone TOMBSTONE = {
+    HASHTOMBSTONE,
+    {1}
+};
+
 #define HashEntry kino_HashEntry
 
 typedef struct kino_HashEntry {
     Obj     *key;
     Obj     *value;
-    int32_t  hash_code;
+    int32_t  hash_sum;
 } kino_HashEntry;
 
-// Reset the iterator.  Hash_iter_init must be called to restart iteration.
+// Reset the iterator.  Hash_Iterate must be called to restart iteration.
 static INLINE void
 SI_kill_iter(Hash *self);
 
 // Return the entry associated with the key, if any.
 static INLINE HashEntry*
-SI_fetch_entry(Hash *self, const Obj *key, int32_t hash_code);
+SI_fetch_entry(Hash *self, const Obj *key, int32_t hash_sum);
 
-/* Double the number of buckets and redistribute all entries. 
- *
- * This should be a static inline function, but right now we need to suppress
- * memory leaks from it because the VTable_registry never gets completely
- * cleaned up.
- */
-HashEntry*
-kino_Hash_rebuild_hash(Hash *self);
+// Double the number of buckets and redistribute all entries. 
+static INLINE HashEntry*
+SI_rebuild_hash(Hash *self);
 
 Hash*
 Hash_new(uint32_t capacity)
@@ -92,8 +92,8 @@ Hash_dump(Hash *self)
     Obj *key;
     Obj *value;
 
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &value)) {
+    Hash_Iterate(self);
+    while (Hash_Next(self, &key, &value)) {
         // Since JSON only supports text hash keys, Dump() can only support
         // text hash keys.
         CERTIFY(key, CHARBUF);
@@ -148,8 +148,8 @@ Hash_load(Hash *self, Obj *dump)
         Obj *key;
         Obj *value;
 
-        Hash_Iter_Init(source);
-        while (Hash_Iter_Next(source, &key, &value)) {
+        Hash_Iterate(source);
+        while (Hash_Next(source, &key, &value)) {
             Hash_Store(loaded, key, Obj_Load(value, value));
         }
 
@@ -168,13 +168,13 @@ Hash_serialize(Hash *self, OutStream *outstream)
     // Write CharBuf keys first.  CharBuf keys are the common case; grouping
     // them together is a form of run-length-encoding and saves space, since
     // we omit the per-key class name.
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &val)) {
+    Hash_Iterate(self);
+    while (Hash_Next(self, &key, &val)) {
         if (Obj_Is_A(key, CHARBUF)) { charbuf_count++; }
     }
     OutStream_Write_C32(outstream, charbuf_count);
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &val)) {
+    Hash_Iterate(self);
+    while (Hash_Next(self, &key, &val)) {
         if (Obj_Is_A(key, CHARBUF)) { 
             Obj_Serialize(key, outstream);
             FREEZE(val, outstream);
@@ -182,8 +182,8 @@ Hash_serialize(Hash *self, OutStream *outstream)
     }
 
     // Punt on the classes of the remaining keys. 
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &val)) {
+    Hash_Iterate(self);
+    while (Hash_Next(self, &key, &val)) {
         if (!Obj_Is_A(key, CHARBUF)) { 
             FREEZE(key, outstream);
             FREEZE(val, outstream);
@@ -236,7 +236,7 @@ Hash_clear(Hash *self)
         DECREF(entry->value);
         entry->key       = NULL;
         entry->value     = NULL;
-        entry->hash_code = 0;
+        entry->hash_sum  = 0;
     }
 
     self->size = 0;
@@ -244,31 +244,31 @@ Hash_clear(Hash *self)
 
 void
 kino_Hash_do_store(Hash *self, Obj *key, Obj *value, 
-                   int32_t hash_code, bool_t use_this_key)
+                   int32_t hash_sum, bool_t use_this_key)
 {
     HashEntry *entries = self->size >= self->threshold
-                       ? kino_Hash_rebuild_hash(self)
+                       ? SI_rebuild_hash(self)
                        : (HashEntry*)self->entries;
-    uint32_t       tick = hash_code;
+    uint32_t       tick = hash_sum;
     const uint32_t mask = self->capacity - 1;
 
     while (1) {
         tick &= mask;
         HashEntry *entry = entries + tick;
-        if (entry->key == (Obj*)UNDEF || !entry->key) {
-            if (entry->key == (Obj*)UNDEF) { 
+        if (entry->key == (Obj*)&TOMBSTONE || !entry->key) {
+            if (entry->key == (Obj*)&TOMBSTONE) { 
                 // Take note of diminished tombstone clutter. 
                 self->threshold++; 
             }
             entry->key       = use_this_key 
                              ? key 
-                             : Hash_Make_Key(self, key, hash_code);
+                             : Hash_Make_Key(self, key, hash_sum);
             entry->value     = value;
-            entry->hash_code = hash_code;
+            entry->hash_sum  = hash_sum;
             self->size++;
             break;
         }
-        else if (   entry->hash_code == hash_code
+        else if (   entry->hash_sum  == hash_sum
                  && Obj_Equals(key, entry->key)
         ) {
             DECREF(entry->value);
@@ -282,7 +282,7 @@ kino_Hash_do_store(Hash *self, Obj *key, Obj *value,
 void
 Hash_store(Hash *self, Obj *key, Obj *value) 
 {
-    kino_Hash_do_store(self, key, value, Obj_Hash_Code(key), false);
+    kino_Hash_do_store(self, key, value, Obj_Hash_Sum(key), false);
 }
 
 void
@@ -290,14 +290,14 @@ Hash_store_str(Hash *self, const char *key, size_t key_len, Obj *value)
 {
     ZombieCharBuf *key_buf = ZCB_WRAP_STR((char*)key, key_len);
     kino_Hash_do_store(self, (Obj*)key_buf, value, 
-        ZCB_Hash_Code(key_buf), false);
+        ZCB_Hash_Sum(key_buf), false);
 }
 
 Obj*
-Hash_make_key(Hash *self, Obj *key, int32_t hash_code)
+Hash_make_key(Hash *self, Obj *key, int32_t hash_sum)
 {
     UNUSED_VAR(self);
-    UNUSED_VAR(hash_code);
+    UNUSED_VAR(hash_sum);
     return Obj_Clone(key);
 }
 
@@ -309,9 +309,9 @@ Hash_fetch_str(Hash *self, const char *key, size_t key_len)
 }
 
 static INLINE HashEntry*
-SI_fetch_entry(Hash *self, const Obj *key, int32_t hash_code) 
+SI_fetch_entry(Hash *self, const Obj *key, int32_t hash_sum) 
 {
-    uint32_t tick = hash_code;
+    uint32_t tick = hash_sum;
     HashEntry *const entries = (HashEntry*)self->entries;
     HashEntry *entry;
 
@@ -322,7 +322,7 @@ SI_fetch_entry(Hash *self, const Obj *key, int32_t hash_code)
             // Failed to find the key, so return NULL. 
             return NULL; 
         }
-        else if (   entry->hash_code == hash_code
+        else if (   entry->hash_sum  == hash_sum
                  && Obj_Equals(key, entry->key)
         ) {
             return entry;
@@ -334,20 +334,20 @@ SI_fetch_entry(Hash *self, const Obj *key, int32_t hash_code)
 Obj*
 Hash_fetch(Hash *self, const Obj *key) 
 {
-    HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Code(key));
+    HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Sum(key));
     return entry ? entry->value : NULL;
 }
 
 Obj*
 Hash_delete(Hash *self, const Obj *key) 
 {
-    HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Code(key));
+    HashEntry *entry = SI_fetch_entry(self, key, Obj_Hash_Sum(key));
     if (entry) {
         Obj *value = entry->value;
         DECREF(entry->key);
-        entry->key       = (Obj*)UNDEF;
+        entry->key       = (Obj*)&TOMBSTONE;
         entry->value     = NULL;
-        entry->hash_code = 0;
+        entry->hash_sum  = 0;
         self->size--;
         self->threshold--; // limit number of tombstones 
         return value;
@@ -365,7 +365,7 @@ Hash_delete_str(Hash *self, const char *key, size_t key_len)
 }
 
 uint32_t
-Hash_iter_init(Hash *self) 
+Hash_iterate(Hash *self) 
 {
     SI_kill_iter(self);
     return self->size;
@@ -378,7 +378,7 @@ SI_kill_iter(Hash *self)
 }
 
 bool_t
-Hash_iter_next(Hash *self, Obj **key, Obj **value) 
+Hash_next(Hash *self, Obj **key, Obj **value) 
 {
     while (1) {
         if (++self->iter_tick >= (int32_t)self->capacity) {
@@ -391,7 +391,7 @@ Hash_iter_next(Hash *self, Obj **key, Obj **value)
         else {
             HashEntry *const entry 
                 = (HashEntry*)self->entries + self->iter_tick;
-            if (entry->key && entry->key != (Obj*)UNDEF) {
+            if (entry->key && entry->key != (Obj*)&TOMBSTONE) {
                 // Success! 
                 *key   = entry->key;
                 *value = entry->value;
@@ -402,9 +402,9 @@ Hash_iter_next(Hash *self, Obj **key, Obj **value)
 }
 
 Obj*
-Hash_find_key(Hash *self, const Obj *key, int32_t hash_code)
+Hash_find_key(Hash *self, const Obj *key, int32_t hash_sum)
 {
-    HashEntry *entry = SI_fetch_entry(self, key, hash_code);
+    HashEntry *entry = SI_fetch_entry(self, key, hash_sum);
     return entry ? entry->key : NULL;
 }
 
@@ -414,8 +414,8 @@ Hash_keys(Hash *self)
     Obj *key;
     Obj *val;
     VArray *keys = VA_new(self->size);
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &val)) {
+    Hash_Iterate(self);
+    while (Hash_Next(self, &key, &val)) {
         VA_push(keys, INCREF(key));
     }
     return keys;
@@ -427,8 +427,8 @@ Hash_values(Hash *self)
     Obj *key;
     Obj *val;
     VArray *values = VA_new(self->size);
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &val)) VA_push(values, INCREF(val));
+    Hash_Iterate(self);
+    while (Hash_Next(self, &key, &val)) VA_push(values, INCREF(val));
     return values;
 }
 
@@ -443,8 +443,8 @@ Hash_equals(Hash *self, Obj *other)
     if (!Obj_Is_A(other, HASH)) return false;
     if (self->size != evil_twin->size) return false;
 
-    Hash_Iter_Init(self);
-    while (Hash_Iter_Next(self, &key, &val)) {
+    Hash_Iterate(self);
+    while (Hash_Next(self, &key, &val)) {
         Obj *other_val = Hash_Fetch(evil_twin, key);
         if (!other_val || !Obj_Equals(other_val, val)) return false;
     }
@@ -457,8 +457,8 @@ Hash_get_capacity(Hash *self) { return self->capacity; }
 uint32_t
 Hash_get_size(Hash *self)     { return self->size; }
 
-HashEntry*
-kino_Hash_rebuild_hash(Hash *self)
+static INLINE HashEntry*
+SI_rebuild_hash(Hash *self)
 {
     HashEntry *old_entries   = (HashEntry*)self->entries;
     HashEntry *entry         = old_entries;
@@ -471,16 +471,38 @@ kino_Hash_rebuild_hash(Hash *self)
     self->size      = 0;
 
     for ( ; entry < limit; entry++) {
-        if (!entry->key || entry->key == (Obj*)UNDEF) {
+        if (!entry->key || entry->key == (Obj*)&TOMBSTONE) {
             continue; 
         }
         kino_Hash_do_store(self, entry->key, entry->value, 
-            entry->hash_code, true);
+            entry->hash_sum, true);
     }
 
     FREEMEM(old_entries);
 
     return (HashEntry*)self->entries;
+}
+
+/***************************************************************************/
+
+uint32_t
+HashTombStone_get_refcount(HashTombStone* self)
+{
+    CHY_UNUSED_VAR(self);
+    return 1;
+}
+
+HashTombStone*
+HashTombStone_inc_refcount(HashTombStone* self)
+{
+    return self;
+}
+
+uint32_t
+HashTombStone_dec_refcount(HashTombStone* self)
+{
+    UNUSED_VAR(self);
+    return 1;
 }
 
 /* Copyright 2006-2010 Marvin Humphrey

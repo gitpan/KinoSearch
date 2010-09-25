@@ -243,7 +243,7 @@ If a class declares that it has the attribute "dumpable", but does not declare
 either Dump or Load(), Clownfish::Dumpable will attempt to auto-generate
 those methods if methods inherited from the parent class do not suffice.
 
-    class Foo::Bar extends Foo : dumpable {
+    class Foo::Bar inherits Foo : dumpable {
         Thing *thing;
 
         public inert incremented Bar*

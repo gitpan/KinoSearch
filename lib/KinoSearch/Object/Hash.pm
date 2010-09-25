@@ -39,14 +39,14 @@ PPCODE:
 }
 
 void
-iter_next(self)
+next(self)
     kino_Hash *self;
 PPCODE:
 {
     kino_Obj *key;
     kino_Obj *val;
 
-    if (Kino_Hash_Iter_Next(self, &key, &val)) {
+    if (Kino_Hash_Next(self, &key, &val)) {
         SV *key_sv = (SV*)Kino_Obj_To_Host(key);
         SV *val_sv = (SV*)Kino_Obj_To_Host(val);
 
@@ -72,7 +72,7 @@ Clownfish::Binding::Perl::Class->register(
             Values
             Find_Key
             Clear
-            Iter_Init
+            Iterate
             Get_Size
             )
     ],
