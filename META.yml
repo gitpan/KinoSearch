@@ -21,9 +21,7 @@ no_index:
   file:
     - ApacheLicense2.0.txt
     - Build.PL
-    - Changes
     - 'MANIFEST			This list of files'
-    - Makefile.PL
     - buildlib/KinoSearch/Build.pm
     - buildlib/KinoSearch/Redacted.pm
     - buildlib/KinoSearch/Test/TestUtils.pm
@@ -1043,7 +1041,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_12
+    version: 0.30_121
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1357,4 +1355,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.30_12
+version: 0.30_121

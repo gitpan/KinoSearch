@@ -37,6 +37,20 @@ Json_from_json(CharBuf *json)
         ARG_STR("json", json));
 }
 
+CharBuf*
+Json_encode_string(CharBuf *string)
+{
+    return Host_callback_str(JSON, "encode_string", 1,
+        ARG_STR("string", string));
+}
+
+CharBuf*
+Json_decode_string(CharBuf *json)
+{
+    return (CharBuf*)Host_callback_obj(JSON, "decode_string", 1, 
+        ARG_STR("json", json));
+}
+
 /* Copyright 2005-2010 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify

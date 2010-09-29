@@ -6,12 +6,12 @@ package KinoSearch;
 use 5.008003;
 use Exporter;
 
-our $VERSION = '0.30_12';
+our $VERSION = '0.30_121';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
-BEGIN { XSLoader::load( 'KinoSearch', '0.30_12' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.30_121' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -618,6 +618,17 @@ sub error {$KinoSearch::Object::Err::error}
 
     sub from_json {
         return to_kino( $json_encoder->decode( $_[1] ) );
+    }
+
+    my $loose_encoder = JSON::XS->new->pretty(1)->canonical(1)->allow_nonref(1);
+
+    sub encode_string {
+        my ( undef, $string ) = @_;
+        return $loose_encoder->encode($string);
+    }
+
+    sub decode_string {
+        return to_kino( $loose_encoder->decode( $_[1] ) );
     }
 }
 
