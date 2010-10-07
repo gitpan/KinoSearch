@@ -415,6 +415,8 @@ core/KinoSearch/Test/Index/TestDocWriter.c
 core/KinoSearch/Test/Index/TestDocWriter.cfh
 core/KinoSearch/Test/Index/TestHighlightWriter.c
 core/KinoSearch/Test/Index/TestHighlightWriter.cfh
+core/KinoSearch/Test/Index/TestIndexManager.c
+core/KinoSearch/Test/Index/TestIndexManager.cfh
 core/KinoSearch/Test/Index/TestPostingListWriter.c
 core/KinoSearch/Test/Index/TestPostingListWriter.cfh
 core/KinoSearch/Test/Index/TestSegment.c
@@ -1034,6 +1036,7 @@ t/core/062-fs_dir_handle.t
 t/core/103-fs_folder.t
 t/core/104-ram_folder.t
 t/core/105-folder.t
+t/core/111-index_manager.t
 t/core/112-cf_writer.t
 t/core/113-cf_reader.t
 t/core/150-polyanalyzer.t

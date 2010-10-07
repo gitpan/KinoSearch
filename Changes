@@ -1,5 +1,13 @@
 Revision history for KinoSearch
 
+0.30_122 2010-10-06
+
+  Bugfixes:
+
+    * Tune merge algorithm to avoid another situation where too much content
+      would be recycled.
+
+
 0.30_121 2010-09-29
 
   Bugfixes:
