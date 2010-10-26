@@ -44,9 +44,9 @@ KSx::Search::MockScorer - Matcher with arbitrary docs and scores.
 
 =head1 DESCRIPTION 
 
-Used for testing combining scorers such as ANDScorer, MockScorer allows
-arbitrary match criteria to be supplied, obviating the need for clever index
-construction to cover corner cases.
+Used for testing combining L<Matchers|KinoSearch::Search::Matcher> such as
+ANDScorer, MockScorer allows arbitrary match criteria to be supplied,
+obviating the need for clever index construction to cover corner cases.
 
 MockScorer is a testing and demonstration class; it is unsupported.
 
@@ -66,12 +66,11 @@ B<scores> - An array of scores, one for each doc_id.
 
 =back
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2007-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

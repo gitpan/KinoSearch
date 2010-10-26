@@ -52,6 +52,10 @@ my $synopsis = <<'END_SYNOPSIS';
     }
 END_SYNOPSIS
 
+my $constructor = <<'END_CONSTRUCTOR';
+    my $arch = KinoSearch::Plan::Architecture->new;
+END_CONSTRUCTOR
+
 Clownfish::Binding::Perl::Class->register(
     parcel       => "KinoSearch",
     class_name   => "KinoSearch::Plan::Architecture",
@@ -83,6 +87,7 @@ Clownfish::Binding::Perl::Class->register(
                 register_doc_reader
                 )
         ],
+        constructors => [ { sample => $constructor } ],
     }
 );
 

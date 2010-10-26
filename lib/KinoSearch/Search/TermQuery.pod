@@ -45,6 +45,16 @@ B<term> - Term text.
 
 
 
+=head1 METHODS
+
+=head2 get_field()
+
+Accessor for object's C<< field >> member.
+
+=head2 get_term()
+
+Accessor for object's C<< term >> member.
+
 
 
 =head1 INHERITANCE

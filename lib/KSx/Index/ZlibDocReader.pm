@@ -45,11 +45,8 @@ sub new {
     return $self;
 }
 
-sub fetch {
-    my ( $self, %args ) = @_;
-    my $doc_id     = delete $args{doc_id};
-    my $offset     = delete $args{offset} || 0;
-    my $score      = delete $args{score} || 0;
+sub fetch_doc {
+    my ( $self, $doc_id ) = @_;
     my $dat_in     = $dat_in{$$self};
     my $ix_in      = $ix_in{$$self};
     my $bin_fields = $binary_fields{$$self};
@@ -82,8 +79,7 @@ sub fetch {
 
     return KinoSearch::Document::HitDoc->new(
         fields => \%fields,
-        doc_id => $doc_id + $offset,
-        score  => $score,
+        doc_id => $doc_id,
     );
 }
 
@@ -132,12 +128,11 @@ KSx::Index::ZlibDocReader - Compressed doc storage.
 This is a proof-of-concept class to demonstrate alternate implementations for
 fetching documents.  It is unsupported.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2009-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

@@ -44,9 +44,8 @@ class KinoSearch::Search::IndexSearcher cnick IxSearcher
     Top_Docs(IndexSearcher *self, Query *query, uint32_t num_wanted,
              SortSpec *sort_spec = NULL);
 
-    public incremented Obj*
-    Fetch_Doc(IndexSearcher *self, int32_t doc_id, float score = 0.0, 
-              int32_t offset = 0);
+    public incremented HitDoc*
+    Fetch_Doc(IndexSearcher *self, int32_t doc_id);
 
     incremented DocVector*
     Fetch_Doc_Vec(IndexSearcher *self, int32_t doc_id);

@@ -11,8 +11,13 @@ use Config;
 my %cc;
 
 sub new {
-    my ($class, %args) = @_;
+    my ( $class, %args ) = @_;
     require ExtUtils::CBuilder;
+    if ( $ENV{KINO_VALGRIND} ) {
+        $args{config} ||= {};
+        $args{config}{optimize} ||= $Config{optimize};
+        $args{config}{optimize} =~ s/\-O\d+/-O1/g;
+    }
     my $self = $class->SUPER::new(%args);
     $cc{"$self"} = $args{'config'}->{'cc'};
     return $self;
@@ -73,7 +78,8 @@ sub extra_ccflags {
     if ( defined $ENV{KINO_DEBUG} ) {
         if ( defined $gcc_version ) {
             $extra_ccflags .= "-DKINO_DEBUG ";
-            $extra_ccflags .= "-DPERL_GCC_PEDANTIC -std=gnu99 -pedantic -Wall ";
+            $extra_ccflags
+                .= "-DPERL_GCC_PEDANTIC -std=gnu99 -pedantic -Wall ";
             $extra_ccflags .= "-Wextra " if $gcc_version >= 3.4;    # correct
             $extra_ccflags .= "-Wno-variadic-macros "
                 if $gcc_version > 3.4;    # at least not on gcc 3.4
@@ -140,9 +146,8 @@ sub ACTION_charmonizer {
 
     print "Building $CHARMONIZE_EXE_PATH...\n\n";
 
-    my $cbuilder = KinoSearch::Build::CBuilder->new( 
-        config => { cc => $self->config('cc') },
-    );
+    my $cbuilder = KinoSearch::Build::CBuilder->new(
+        config => { cc => $self->config('cc') }, );
 
     my @o_files;
     for (@all_source) {
@@ -183,7 +188,7 @@ sub ACTION_charmony {
     $self->add_to_cleanup($charmony_path);
 
     # Prepare arguments to charmonize.
-    my $cc        = $self->config('cc'); 
+    my $cc        = $self->config('cc');
     my $flags     = $self->config('ccflags') . ' ' . $self->extra_ccflags;
     my $verbosity = $ENV{DEBUG_CHARM} ? 2 : 1;
     $flags =~ s/"/\\"/g;
@@ -369,8 +374,8 @@ sub ACTION_suppressions {
     my $suppressions = `$command`;
     $suppressions =~ s/^==.*?\n//mg;
     my $rule_number = 1;
-    while ( $suppressions =~ /<insert a.*?>/ ) {
-        $suppressions =~ s/^\s*<insert a.*?>/{\n  <core_perl_$rule_number>/m;
+    while ( $suppressions =~ /<insert.a.*?>/ ) {
+        $suppressions =~ s/^\s*<insert.a.*?>/{\n  <core_perl_$rule_number>/m;
         $rule_number++;
     }
 
@@ -458,8 +463,7 @@ sub ACTION_compile_custom_xs {
     require ExtUtils::ParseXS;
 
     my $cbuilder = KinoSearch::Build::CBuilder->new(
-        config => { cc => $self->config('cc') },
-    );
+        config => { cc => $self->config('cc') }, );
     my $archdir = catdir( $self->blib, 'arch', 'auto', 'KinoSearch', );
     mkpath( $archdir, 0, 0777 ) unless -d $archdir;
     my @include_dirs = (
@@ -657,4 +661,3 @@ Copyright 2005-2010 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.
-

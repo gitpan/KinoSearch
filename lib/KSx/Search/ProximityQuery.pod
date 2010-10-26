@@ -39,6 +39,8 @@ B<terms> - The ordered array of terms that must match.
 
 
 
+
+
 =head1 METHODS
 
 =head2 get_field()
@@ -52,8 +54,6 @@ Accessor for object's array of terms.
 =head2 get_within()
 
 Accessor for object's within attribute.
-
-
 
 
 

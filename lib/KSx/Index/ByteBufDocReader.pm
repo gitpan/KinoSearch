@@ -3,20 +3,24 @@ use warnings;
 
 package KSx::Index::ByteBufDocReader;
 use base qw( KinoSearch::Index::DocReader );
-use KinoSearch::Object::ByteBuf;
+use KinoSearch::Document::HitDoc;
 use Carp;
 
 # Inside-out member vars.
 our %width;
+our %field;
 our %instream;
 
 sub new {
     my ( $either, %args ) = @_;
     my $width = delete $args{width};
+    my $field = delete $args{field};
     my $self  = $either->SUPER::new(%args);
     confess("Missing required param 'width'") unless defined $width;
+    confess("Missing required param 'field'") unless $field;
     if ( $width < 1 ) { confess("'width' must be at least 1") }
     $width{$$self} = $width;
+    $field{$$self} = $field;
 
     my $segment  = $self->get_segment;
     my $metadata = $self->get_segment->fetch_metadata("bytebufdocs");
@@ -32,17 +36,15 @@ sub new {
     return $self;
 }
 
-sub fetch {
-    my ( $self, %args ) = @_;
-    my $doc_id = delete $args{doc_id};
-    my $buf;
-    $self->read_record( $doc_id, \$buf );
-    if ($buf) {
-        return KinoSearch::Object::ByteBuf->new($buf);
-    }
-    else {
-        return undef;
-    }
+sub fetch_doc {
+    my ( $self, $doc_id ) = @_;
+    my $field = $field{$$self};
+    my %fields = ( $field => '' );
+    $self->read_record( $doc_id, \$fields{$field} );
+    return KinoSearch::Document::HitDoc->new(
+        doc_id => $doc_id,
+        fields => \%fields,
+    );
 }
 
 sub read_record {
@@ -64,6 +66,7 @@ sub close {
 sub DESTROY {
     my $self = shift;
     delete $width{$$self};
+    delete $field{$$self};
     delete $instream{$$self};
     $self->SUPER::DESTROY;
 }
@@ -87,13 +90,12 @@ KSx::Index::ByteBufDocReader - Read a Doc as a fixed-width byte array.
 This is a proof-of-concept class to demonstrate alternate implementations for
 fetching documents.  It is unsupported.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2009-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
 

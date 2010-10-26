@@ -7,7 +7,7 @@ use Clownfish::Util qw( verify_args );
 use Clownfish::Binding::Perl::TypeMap qw( from_perl to_perl );
 use Carp;
 
-our %new_PARAMS = ( 
+our %new_PARAMS = (
     method => undef,
     alias  => undef,
 );
@@ -46,13 +46,13 @@ sub xsub_def {
 
 # Build XSUB function body.
 sub _xsub_body {
-    my $self           = shift;
-    my $method         = $self->{method};
-    my $full_func_sym  = $method->full_func_sym;
-    my $param_list     = $method->get_param_list;
-    my $arg_vars       = $param_list->get_variables;
-    my $name_list      = $param_list->name_list;
-    my $body           = "";
+    my $self          = shift;
+    my $method        = $self->{method};
+    my $full_func_sym = $method->full_func_sym;
+    my $param_list    = $method->get_param_list;
+    my $arg_vars      = $param_list->get_variables;
+    my $name_list     = $param_list->name_list;
+    my $body          = "";
 
     # Compensate for functions which eat refcounts.
     for my $arg_var (@$arg_vars) {
@@ -122,10 +122,10 @@ sub _xsub_def_positional_args {
     my $var_declarations = $self->var_declarations;
     my @var_assignments;
     for ( my $i = 0; $i < @$arg_vars; $i++ ) {
-        my $var        = $arg_vars->[$i];
-        my $val        = $arg_inits->[$i];
-        my $var_name   = $var->micro_sym;
-        my $var_type   = $var->get_type;
+        my $var      = $arg_vars->[$i];
+        my $val      = $arg_inits->[$i];
+        my $var_name = $var->micro_sym;
+        my $var_type = $var->get_type;
         my $statement;
         if ( $i == 0 ) {    # $self
             $statement
@@ -198,12 +198,12 @@ sub _xsub_def_labeled_params {
 
     # Iterate over args in param list.
     for ( my $i = 1; $i <= $#$arg_vars; $i++ ) {
-        my $var        = $arg_vars->[$i];
-        my $val        = $arg_inits->[$i];
-        my $name       = $var->micro_sym;
-        my $sv_name    = $name . "_sv";
-        my $type       = $var->get_type;
-        my $len        = length $name;
+        my $var     = $arg_vars->[$i];
+        my $val     = $arg_inits->[$i];
+        my $name    = $var->micro_sym;
+        my $sv_name = $name . "_sv";
+        my $type    = $var->get_type;
+        my $len     = length $name;
 
         # Code for extracting sv from stack, if supplied.
         $allot_params .= qq|            &$sv_name, "$name", $len,\n|;
@@ -315,4 +315,3 @@ This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 =cut
-

@@ -17,9 +17,9 @@ KinoSearch::Search::ANDQuery - Intersect multiple result sets.
 
 =head1 DESCRIPTION
 
-ANDQuery matches only when all of its children match, so its result set is
-the intersection of their result sets.  Those lucky documents which match
-receive a summed score.
+ANDQuery is a composite L<Query|KinoSearch::Search::Query> which matches
+only when all of its children match, so its result set is the intersection
+of their result sets.  Documents which match receive a summed score.
 
 =head1 CONSTRUCTORS
 
@@ -39,13 +39,13 @@ B<children> - An array of child Queries.
 
 
 
+
+
 =head1 METHODS
 
 =head2 add_child(query)
 
 Add a child Query node.
-
-
 
 
 

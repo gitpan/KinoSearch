@@ -14,6 +14,13 @@ see L<KinoSearch::Docs::Tutorial>.
 
 =item *
 
+L<KinoSearch::Docs::Cookbook::FastUpdates> - While index updates are fast on
+average, worst-case update performance may be significantly slower. To make
+index updates consistently quick, we must manually intervene to control the
+process of index segment consolidation.
+
+=item *
+
 L<KinoSearch::Docs::Cookbook::CustomQuery> - Explore KinoSearch's support for
 custom query types by creating a "PrefixQuery" class to handle trailing
 wildcards.
@@ -36,11 +43,11 @@ found in the C<sample> directory at the root of the KinoSearch distribution:
     sample/search.cgi        # search app
     sample/us_constitution   # html documents
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2005-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
-See L<KinoSearch> version 0.30.
 

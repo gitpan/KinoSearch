@@ -19,7 +19,7 @@ KinoSearch::Store::RAMFolder - In-memory Folder implementation.
 =head1 DESCRIPTION
 
 RAMFolder is an entirely in-memory implementation of
-KinoSearch::Store::Folder, primarily used for testing and development.
+L<KinoSearch::Store::Folder>, primarily used for testing and development.
 
 =head1 CONSTRUCTORS
 

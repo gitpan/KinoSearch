@@ -56,12 +56,12 @@ sub xsub_def {
 
     # Iterate over args in param list.
     for ( my $i = 1; $i <= $#$arg_vars; $i++ ) {
-        my $var        = $arg_vars->[$i];
-        my $val        = $arg_inits->[$i];
-        my $name       = $var->micro_sym;
-        my $sv_name    = $name . "_sv";
-        my $type       = $var->get_type;
-        my $len        = length $name;
+        my $var     = $arg_vars->[$i];
+        my $val     = $arg_inits->[$i];
+        my $name    = $var->micro_sym;
+        my $sv_name = $name . "_sv";
+        my $type    = $var->get_type;
+        my $len     = length $name;
 
         # Create snippet for extracting sv from stack, if supplied.
         $allot_params .= qq|            &$sv_name, "$name", $len,\n|;
@@ -186,4 +186,3 @@ This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 =cut
-

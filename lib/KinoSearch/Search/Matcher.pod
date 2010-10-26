@@ -7,14 +7,13 @@ KinoSearch::Search::Matcher - Match a set of document ids.
 
 =head1 SYNOPSIS
 
-    # Matcher is an abstract base class -- see MockScorer for an example
-    # implementation.
+    # abstract base class
 
 
 
 =head1 DESCRIPTION
 
-A Matcher iterates over an ascending set of document ids.  Some Matchers
+A Matcher iterates over a set of ascending document ids.  Some Matchers
 implement score() and can assign relevance scores to the docs that they
 match.  Other implementations may be match-only.
 
@@ -25,6 +24,27 @@ match.  Other implementations may be match-only.
     my $matcher = MyMatcher->SUPER::new;
 
 Abstract constructor.
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 next()
+
+Proceed to the next doc id.
+
+Returns: A positive doc id, or 0 once the iterator is exhausted.
+
+=head2 get_doc_id()
+
+Return the current doc id.  Valid only after a successful call to
+next() or advance() and must not be called otherwise.
+
+=head2 score()
+
+Return the score of the current document.
+
+Only Matchers which are used for scored search need implement score().
 
 
 
@@ -47,27 +67,6 @@ doc id once the iterator has been initialized.
 =back
 
 Returns: A positive doc id, or 0 once the iterator is exhausted.
-
-
-
-=head1 ABSTRACT METHODS
-
-=head2 next()
-
-Proceed to the next doc id.
-
-Returns: A positive doc id, or 0 once the iterator is exhausted.
-
-=head2 get_doc_id()
-
-Return the current doc id.  Valid only after a successful call to
-next() or advance() and must not be called otherwise.
-
-=head2 score()
-
-Return the score of the current document.
-
-Only Matchers which are used for scored search need implement score().
 
 
 

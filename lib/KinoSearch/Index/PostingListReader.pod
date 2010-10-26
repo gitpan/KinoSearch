@@ -23,8 +23,6 @@ objects which convey document matching information.
 
 
 
-
-
 =head1 ABSTRACT METHODS
 
 =head2 posting_list( I<[labeled params]> )
@@ -44,6 +42,8 @@ B<term> - If supplied, the PostingList will be pre-located to this
 term using seek().
 
 =back
+
+
 
 
 

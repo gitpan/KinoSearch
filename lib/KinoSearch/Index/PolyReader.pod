@@ -12,7 +12,7 @@ KinoSearch::Index::PolyReader - Multi-segment implementation of IndexReader.
     );
     my $doc_reader = $polyreader->obtain("KinoSearch::Index::DocReader");
     for my $doc_id ( 1 .. $polyreader->doc_max ) {
-        my $doc = $doc_reader->fetch($doc_id);
+        my $doc = $doc_reader->fetch_doc($doc_id);
         print " $doc_id: $doc->{title}\n";
     }
 
@@ -24,8 +24,9 @@ PolyReader conflates index data from multiple segments.  For instance, if
 an index contains three segments with 10 documents each, PolyReader's
 doc_max() method will return 30.
 
-Some of PolyReader's DataReader components may be less efficient or
-complete than the single-segment implementations accessed via SegReader.
+Some of PolyReader's L<DataReader|KinoSearch::Index::DataReader> components
+may be less efficient or complete than the single-segment implementations
+accessed via L<SegReader|KinoSearch::Index::SegReader>.
 
 
 

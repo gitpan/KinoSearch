@@ -3,7 +3,7 @@
 
 =head1 NAME
 
-KinoSearch::Search::PolySearcher - Aggregate results from multiple searchers.
+KinoSearch::Search::PolySearcher - Aggregate results from multiple Searchers.
 
 =head1 SYNOPSIS
 
@@ -26,9 +26,10 @@ KinoSearch::Search::PolySearcher - Aggregate results from multiple searchers.
 =head1 DESCRIPTION
 
 The primary use for PolySearcher is to aggregate results from several
-remote searchers via L<KSx::Remote::SearchClient>, diffusing the cost of
-searching a large corpus over multiple machines.  It is also possible to
-aggregate results from multiple Searchers on a single machine.
+remote L<Searchers|KinoSearch::Search::Searcher> via
+L<KSx::Remote::SearchClient>, diffusing the cost of searching a large
+corpus over multiple machines.  It is also possible to aggregate results
+from multiple Searchers on a single machine.
 
 =head1 CONSTRUCTORS
 
@@ -54,6 +55,77 @@ B<searchers> - An array of Searchers.
 
 
 
+
+=head1 METHODS
+
+=head2 hits( I<[labeled params]> )
+
+Return a Hits object containing the top results.
+
+=over
+
+=item *
+
+B<query> - Either a Query object or a query string.
+
+=item *
+
+B<offset> - The number of most-relevant hits to discard, typically
+used when "paging" through hits N at a time.  Setting
+C<< offset >> to 20 and C<< num_wanted >> to 10 retrieves
+hits 21-30, assuming that 30 hits can be found.
+
+=item *
+
+B<num_wanted> - The number of hits you would like to see after
+C<< offset >> is taken into account.
+
+=item *
+
+B<sort_spec> - A L<KinoSearch::Search::SortSpec>, which will affect
+how results are ranked and returned.
+
+=back
+
+=head2 doc_max()
+
+Return the maximum number of docs in the collection represented by the
+Searcher, which is also the highest possible internal doc id.
+Documents which have been marked as deleted but not yet purged are
+included in this count.
+
+=head2 doc_freq( I<[labeled params]> )
+
+Return the number of documents which contain the term in the given
+field.
+
+=over
+
+=item *
+
+B<field> - Field name.
+
+=item *
+
+B<term> - The term to look up.
+
+=back
+
+=head2 fetch_doc(doc_id)
+
+Retrieve a document.  Throws an error if the doc id is out of range.
+
+=over
+
+=item *
+
+B<doc_id> - A document id.
+
+=back
+
+=head2 get_schema()
+
+Accessor for the object's C<< schema >> member.
 
 
 

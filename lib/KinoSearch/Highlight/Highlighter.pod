@@ -64,6 +64,8 @@ B<excerpt_length> - Maximum length of the excerpt, in characters.
 
 
 
+
+
 =head1 METHODS
 
 =head2 create_excerpt(hit_doc)
@@ -120,8 +122,6 @@ Accessor.
 =head2 get_field()
 
 Accessor.
-
-
 
 
 

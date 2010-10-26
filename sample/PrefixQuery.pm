@@ -174,12 +174,11 @@ wildcards.
 
 Seek L<KinoSearch::Docs::Cookbook::CustomQuery>.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

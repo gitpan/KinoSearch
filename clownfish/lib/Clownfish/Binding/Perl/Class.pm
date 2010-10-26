@@ -56,7 +56,7 @@ sub get_client            { shift->{client} }
 sub get_xs_code           { shift->{xs_code} }
 
 sub constructor_bindings {
-    my $self = shift;
+    my $self  = shift;
     my @bound = map {
         my $xsub = Clownfish::Binding::Perl::Constructor->new(
             class => $self->{client},
@@ -67,8 +67,8 @@ sub constructor_bindings {
 }
 
 sub method_bindings {
-    my $self = shift;
-    my $client = $self->{client};
+    my $self      = shift;
+    my $client    = $self->{client};
     my $meth_list = $self->{bind_methods};
     my @bound;
 
@@ -85,7 +85,7 @@ sub method_bindings {
     # Iterate over all this class's methods, stopping to bind each one that
     # was spec'd.
     for my $method ( $client->methods ) {
-        my $meth_name  = $method->get_macro_sym;
+        my $meth_name = $method->get_macro_sym;
         my $bind_args = delete $meth_to_bind{$meth_name};
         next unless $bind_args;
 
@@ -198,9 +198,9 @@ sub create_pod {
     my $class_name = $class->get_class_name;
     my $docucom    = $class->get_docucomment;
     confess("No DocuComment for '$class_name'") unless $docucom;
-    my $brief       = $docucom->get_brief;
-    my $description = _perlify_doc_text( $pod_args->{description}
-            || $docucom->get_long );
+    my $brief = $docucom->get_brief;
+    my $description
+        = _perlify_doc_text( $pod_args->{description} || $docucom->get_long );
 
     # Create SYNOPSIS.
     my $synopsis_pod = '';
@@ -311,9 +311,9 @@ $description
 
 $constructor_pod
 
-$methods_pod
-
 $abstract_methods_pod
+
+$methods_pod
 
 $inheritance_pod
 
@@ -458,4 +458,3 @@ This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 =cut
-

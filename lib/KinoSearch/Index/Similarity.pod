@@ -44,6 +44,8 @@ Constructor. Takes no arguments.
 
 
 
+
+
 =head1 METHODS
 
 =head2 length_norm(num_tokens)
@@ -63,8 +65,6 @@ using an inverted square root.
 However, the inverted square root has a tendency to reward very short
 fields highly, which isn't always appropriate for fields you expect to
 have a lot of tokens on average.
-
-
 
 
 

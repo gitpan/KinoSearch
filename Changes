@@ -1,5 +1,47 @@
 Revision history for KinoSearch
 
+0.30_13 2010-10-25
+
+  API changes:
+
+    * KinoSearch::Search::Searcher and its subclasses (IndexSearcher,
+        PolySearcher, SearchClient)
+      o Modified:
+        * fetch_doc() - Args changed.
+          o Now takes one argument, a doc id, instead of three labeled params.
+
+    * KinoSearch::Search::DocReader
+      o Replaced:
+        * fetch() -> fetch_doc()
+
+    * KinoSearch::Plan::Architecture:
+      o Added:
+        * new()
+
+    * KinoSearch::Search::TermQuery:
+      o Added:
+        * get_term()
+        * get_field()
+
+    * KinoSearch::Document::Doc
+      o Added:
+        * set_doc_id()
+        * get_doc_id()
+
+  Redacted:
+
+    * KinoSearch::Highlight::HeatMap.
+
+  Bugfixes:
+
+    * Spurious failure on Indexer commit() when some docs contain field values
+      of empty string eliminated.
+
+  Improvements:
+
+    * Documentation brought up to date and corrected in a few places.
+
+
 0.30_122 2010-10-06
 
   Bugfixes:

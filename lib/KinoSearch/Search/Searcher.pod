@@ -41,49 +41,6 @@ B<schema> - A Schema.
 
 
 
-=head1 METHODS
-
-=head2 hits( I<[labeled params]> )
-
-Return a Hits object containing the top results.
-
-=over
-
-=item *
-
-B<query> - Either a Query object or a query string.
-
-=item *
-
-B<offset> - The number of most-relevant hits to discard, typically
-used when "paging" through hits N at a time.  Setting
-C<< offset >> to 20 and C<< num_wanted >> to 10 retrieves
-hits 21-30, assuming that 30 hits can be found.
-
-=item *
-
-B<num_wanted> - The number of hits you would like to see after
-C<< offset >> is taken into account.
-
-=item *
-
-B<sort_spec> - A L<KinoSearch::Search::SortSpec>, which will affect
-how results are ranked and returned.
-
-=back
-
-=head2 glean_query(query)
-
-If the supplied object is a Query, return it; if it's a query string,
-create a QueryParser and parse it to produce a query against all
-indexed fields.
-
-=head2 get_schema()
-
-Accessor for the object's C<< schema >> member.
-
-
-
 =head1 ABSTRACT METHODS
 
 =head2 collect( I<[labeled params]> )
@@ -127,7 +84,7 @@ B<term> - The term to look up.
 
 =back
 
-=head2 fetch_doc( I<[labeled params]> )
+=head2 fetch_doc(doc_id)
 
 Retrieve a document.  Throws an error if the doc id is out of range.
 
@@ -137,16 +94,50 @@ Retrieve a document.  Throws an error if the doc id is out of range.
 
 B<doc_id> - A document id.
 
+=back
+
+
+
+=head1 METHODS
+
+=head2 hits( I<[labeled params]> )
+
+Return a Hits object containing the top results.
+
+=over
+
 =item *
 
-B<score> - A floating point score.
+B<query> - Either a Query object or a query string.
 
 =item *
 
-B<offset> - Amount to be added to the doc_id if this Searcher is a
-subcomponent of another.
+B<offset> - The number of most-relevant hits to discard, typically
+used when "paging" through hits N at a time.  Setting
+C<< offset >> to 20 and C<< num_wanted >> to 10 retrieves
+hits 21-30, assuming that 30 hits can be found.
+
+=item *
+
+B<num_wanted> - The number of hits you would like to see after
+C<< offset >> is taken into account.
+
+=item *
+
+B<sort_spec> - A L<KinoSearch::Search::SortSpec>, which will affect
+how results are ranked and returned.
 
 =back
+
+=head2 glean_query(query)
+
+If the supplied object is a Query, return it; if it's a query string,
+create a QueryParser and parse it to produce a query against all
+indexed fields.
+
+=head2 get_schema()
+
+Accessor for the object's C<< schema >> member.
 
 
 

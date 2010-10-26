@@ -23,8 +23,12 @@ my $synopsis = <<'END_SYNOPSIS';
     my $doc = KinoSearch::Document::Doc->new(
         fields => { foo => 'foo foo', bar => 'bar bar' },
     );
-    $doc->{foo} = 'new value for field "foo"';
     $indexer->add_doc($doc);
+
+Doc objects allow access to field values via hashref overloading:
+
+    $doc->{foo} = 'new value for field "foo"';
+    print "foo: $doc->{foo}\n";
 END_SYNOPSIS
 
 my $constructor = <<'END_CONSTRUCTOR';
@@ -40,7 +44,7 @@ Clownfish::Binding::Perl::Class->register(
     bind_constructors => ['new'],
     bind_methods      => [qw( Set_Doc_ID Get_Doc_ID Set_Fields )],
     make_pod          => {
-        methods     => [qw( get_fields )],
+        methods     => [qw( set_doc_id get_doc_id get_fields )],
         synopsis    => $synopsis,
         constructor => { sample => $constructor },
     }

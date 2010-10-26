@@ -373,8 +373,8 @@ sub simple_or_composite_type {
     if ( !@$postfixes ) {
         if ($nullable) {
             my $type_class = ref($simple_type);
-            confess "$type_class can't be 'nullable'" unless
-                $simple_type->isa("Clownfish::Type::Object");
+            confess "$type_class can't be 'nullable'"
+                unless $simple_type->isa("Clownfish::Type::Object");
             $simple_type->set_nullable($nullable);
         }
         return $simple_type;
@@ -563,4 +563,3 @@ This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 =cut
-

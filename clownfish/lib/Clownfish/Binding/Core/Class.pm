@@ -120,8 +120,8 @@ END_VTABLE
 }
 
 sub struct_definition {
-    my $self                = shift;
-    my $prefix              = $self->get_prefix;
+    my $self   = shift;
+    my $prefix = $self->get_prefix;
 
     # Add a line for each member var.
     my $member_declarations = join( "\n    ",
@@ -135,7 +135,7 @@ END_STRUCT
 }
 
 sub to_c_header {
-    my $self = shift;
+    my $self          = shift;
     my $client        = $self->{client};
     my $cnick         = $self->{cnick};
     my @functions     = $client->functions;
@@ -173,8 +173,7 @@ sub to_c_header {
     my $method_typedefs = '';
     for my $method (@novel_methods) {
         $method_typedefs
-            .= Clownfish::Binding::Core::Method->typedef_dec($method)
-            . "\n";
+            .= Clownfish::Binding::Core::Method->typedef_dec($method) . "\n";
     }
 
     # Define method invocation syntax.
@@ -309,10 +308,10 @@ sub to_c {
     my $abstract_funcs = '';
     my $callback_funcs = '';
     my $callbacks      = '';
-    my $prefix   = $self->get_prefix;
-    my $PREFIX   = $self->get_PREFIX;
-    my $vt_type  = $PREFIX . $self->vtable_type;
-    my $meth_num = 0;
+    my $prefix         = $self->get_prefix;
+    my $PREFIX         = $self->get_PREFIX;
+    my $vt_type        = $PREFIX . $self->vtable_type;
+    my $meth_num       = 0;
     my @class_callbacks;
 
     # Prepare to identify novel methods.
@@ -330,8 +329,10 @@ sub to_c {
         # Create a default implementation for abstract methods.
         if ( $method->abstract ) {
             if ( $novel{ $method->micro_sym } ) {
-                $callback_funcs .= Clownfish::Binding::Core::Method
-                    ->abstract_method_def($method) . "\n";
+                $callback_funcs
+                    .= Clownfish::Binding::Core::Method->abstract_method_def(
+                    $method)
+                    . "\n";
             }
         }
 
@@ -341,8 +342,7 @@ sub to_c {
             my $callback_sym = $method->full_callback_sym;
             if ( $novel{ $method->micro_sym } ) {
                 $callback_funcs
-                    .= Clownfish::Binding::Core::Method->callback_def(
-                    $method)
+                    .= Clownfish::Binding::Core::Method->callback_def($method)
                     . "\n";
                 $callbacks
                     .= Clownfish::Binding::Core::Method->callback_obj_def(
@@ -475,4 +475,3 @@ This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 =cut
-

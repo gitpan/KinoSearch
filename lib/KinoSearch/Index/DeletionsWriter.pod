@@ -32,11 +32,9 @@ merged into new ones.
 
 
 
-
-
 =head1 ABSTRACT METHODS
 
-=head2 Delete_By_Term( I<[labeled params]> )
+=head2 delete_by_term( I<[labeled params]> )
 
 Delete all documents in the index that index the supplied term.
 
@@ -55,7 +53,7 @@ will be processed automatically (so don't pre-process it yourself).
 
 =back
 
-=head2 Delete_By_Query(query)
+=head2 delete_by_query(query)
 
 Delete all documents in the index that match C<< query >>.
 
@@ -71,7 +69,7 @@ B<query> - A L<Query|KinoSearch::Search::Query>.
 
 Returns true if there are updates that need to be written.
 
-=head2 Seg_Del_Count(seg_name)
+=head2 seg_del_count(seg_name)
 
 Return the number of deletions for a given segment.
 
@@ -82,6 +80,8 @@ Return the number of deletions for a given segment.
 B<seg_name> - The name of the segment.
 
 =back
+
+
 
 
 

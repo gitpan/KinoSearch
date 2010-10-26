@@ -630,7 +630,6 @@ lib/KinoSearch/FieldType/Int32Type.pm
 lib/KinoSearch/FieldType/Int64Type.pm
 lib/KinoSearch/FieldType/StringType.pm
 lib/KinoSearch/Highlight/HeatMap.pm
-lib/KinoSearch/Highlight/HeatMap.pod
 lib/KinoSearch/Highlight/Highlighter.pm
 lib/KinoSearch/Highlight/Highlighter.pod
 lib/KinoSearch/Index/BackgroundMerger.pm

@@ -82,6 +82,8 @@ set this to 'AND'.
 
 
 
+
+
 =head1 METHODS
 
 =head2 parse(query_string)
@@ -287,8 +289,6 @@ B<optional_query> - Query which should match.
 =back
 
 Returns: A Query.
-
-
 
 
 

@@ -55,6 +55,8 @@ storing metadata themselves.
 
 
 
+
+
 =head1 METHODS
 
 =head2 add_field(field)
@@ -127,8 +129,6 @@ Setter for the object's document count.
 =head2 get_count()
 
 Getter for the object's document count.
-
-
 
 
 

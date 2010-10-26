@@ -68,17 +68,6 @@ B<interval> - Time in milliseconds between retries.
 
 
 
-=head1 METHODS
-
-=head2 obtain()
-
-Call request() once per C<< interval >> until request() returns
-success or the C<< timeout >> has been reached.
-
-Returns: true on success, false on failure (sets KinoSearch->error).
-
-
-
 =head1 ABSTRACT METHODS
 
 =head2 request()
@@ -110,6 +99,17 @@ Returns: true if the resource is locked, false otherwise.
 Release all locks that meet the following three conditions: the lock
 name matches, the host id matches, and the process id that the lock
 was created under no longer identifies an active process.
+
+
+
+=head1 METHODS
+
+=head2 obtain()
+
+Call request() once per C<< interval >> until request() returns
+success or the C<< timeout >> has been reached.
+
+Returns: true on success, false on failure (sets KinoSearch->error).
 
 
 

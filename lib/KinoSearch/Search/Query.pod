@@ -28,15 +28,16 @@ Query objects are simple containers which contain the minimum information
 necessary to define a search query.  
 
 The most common way to generate Query objects is to feed a search string
-such as 'foo AND bar' to a QueryParser's parse() method, which outputs an
-abstract syntax tree built up from various Query subclasses such as
-ANDQuery and TermQuery.  However, it is also possible to use custom Query
-objects to build a search specification which cannot be easily represented
-using a search string.
+such as 'foo AND bar' to a L<QueryParser's|KinoSearch::Search::QueryParser>
+parse() method, which outputs an abstract syntax tree built up from various
+Query subclasses such as L<ANDQuery|KinoSearch::Search::ANDQuery> and
+L<TermQuery|KinoSearch::Search::TermQuery>.  However, it is also possible
+to use custom Query objects to build a search specification which cannot be
+easily represented using a search string.
 
 Subclasses of Query must implement make_compiler(), which is the first step
-in compiling a Query down to a Matcher which can actually match and score
-documents.
+in compiling a Query down to a L<Matcher|KinoSearch::Search::Matcher> which
+can actually match and score documents.
 
 =head1 CONSTRUCTORS
 
@@ -61,18 +62,6 @@ and MatchAllQuery default to 0.0 instead.
 
 
 
-=head1 METHODS
-
-=head2 set_boost(boost)
-
-Set the Query's boost.
-
-=head2 get_boost()
-
-Get the Query's boost.
-
-
-
 =head1 ABSTRACT METHODS
 
 =head2 make_compiler( I<[labeled params]> )
@@ -90,6 +79,18 @@ B<searcher> - A Searcher.
 B<boost> - A scoring multiplier. Defaults to the Query's own boost.
 
 =back
+
+
+
+=head1 METHODS
+
+=head2 set_boost(boost)
+
+Set the Query's boost.
+
+=head2 get_boost()
+
+Get the Query's boost.
 
 
 

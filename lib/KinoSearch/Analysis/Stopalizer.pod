@@ -14,7 +14,7 @@ KinoSearch::Analysis::Stopalizer - Suppress a "stoplist" of common words.
         analyzers => [ $case_folder, $tokenizer, $stopalizer, $stemmer ],
     );
 
-This class uses Lingua::StopWords for its default stoplists, so it supports
+This class uses L<Lingua::StopWords> for its default stoplists, so it supports
 the same set of languages.
 
 
@@ -29,10 +29,10 @@ both performance and relevance to block them.
 Before filtering stopwords:
 
     ( "i", "am", "the", "walrus" ) 
-    
+
 After filtering stopwords:
 
-    ( "walrus" );
+    ( "walrus" )
 
 Stopalizer provides default stoplists for several languages, courtesy of
 the Snowball project (<http://snowball.tartarus.org>), or you may supply

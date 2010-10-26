@@ -116,7 +116,6 @@ operate simultaneously:
     }
 
     # Background merge process.
-    use Scalar::Util qw( blessed );
     my $manager = KinoSearch::Index::IndexManager->new;
     $index_manager->set_write_lock_timeout(60_000);
     my $bg_merger = KinoSearch::Index::BackgroundMerger->new(
@@ -135,13 +134,12 @@ resolve conflicts, but if it's not acceptable to miss an insert, you probably
 want to catch LockErr exceptions thrown by Indexer.  In contrast, a LockErr
 from BackgroundMerger probably just needs to be logged.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2009-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
 

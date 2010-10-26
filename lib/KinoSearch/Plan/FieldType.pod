@@ -51,6 +51,8 @@ C<< indexed >>.
 
 
 
+
+
 =head1 METHODS
 
 =head2 get_boost()
@@ -72,8 +74,6 @@ Accessor for C<< sortable >>.
 =head2 binary()
 
 Indicate whether the field contains binary data.
-
-
 
 
 

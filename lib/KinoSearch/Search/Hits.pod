@@ -24,6 +24,8 @@ Hits objects are iterators used to access the results of a search.
 
 
 
+
+
 =head1 METHODS
 
 =head2 next()
@@ -36,8 +38,6 @@ Return the total number of documents which matched the Query used to
 produce the Hits object.  Note that this is the total number of
 matches, not just the number of matches represented by the Hits
 iterator.
-
-
 
 
 

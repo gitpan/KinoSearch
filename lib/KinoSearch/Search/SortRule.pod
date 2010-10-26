@@ -18,9 +18,10 @@ KinoSearch::Search::SortRule - Element of a SortSpec.
 
 =head1 DESCRIPTION
 
-SortRules are the building blocks used to assemble SortSpecs; each SortRule
-defines a single level of sorting.  For example, sorting first by
-"category" then by score requires a SortSpec with two SortRule elements.
+SortRules are the building blocks used to assemble
+L<SortSpecs|KinoSearch::Search::SortSpec>; each SortRule defines a single
+level of sorting.  For example, sorting first by "category" then by score
+requires a SortSpec with two SortRule elements.
 
 =head1 CONSTRUCTORS
 
@@ -53,6 +54,8 @@ B<reverse> - If true, reverse the order of the sort for this rule.
 
 
 
+
+
 =head1 METHODS
 
 =head2 get_field()
@@ -62,8 +65,6 @@ Accessor for "field" member.
 =head2 get_reverse()
 
 Accessor for "reverse" member.
-
-
 
 
 

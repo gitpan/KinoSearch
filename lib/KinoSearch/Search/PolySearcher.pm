@@ -37,6 +37,14 @@ Clownfish::Binding::Perl::Class->register(
     make_pod          => {
         synopsis    => $synopsis,
         constructor => { sample => $constructor },
+        methods     => [
+            qw( hits
+                doc_max
+                doc_freq
+                fetch_doc
+                get_schema
+                )
+        ],
     }
 );
 

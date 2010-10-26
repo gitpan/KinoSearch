@@ -8,15 +8,25 @@ KinoSearch::Index::DocReader - Retrieve stored documents.
 =head1 SYNOPSIS
 
     my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
-    my $doc        = $doc_reader->fetch( doc_id => $doc_id );
+    my $doc        = $doc_reader->fetch_doc($doc_id);
 
 
 
 =head1 DESCRIPTION
 
 DocReader defines the interface by which documents (with all stored fields)
-are retrieved from the index.  The default implementation returns HitDoc
-objects.
+are retrieved from the index.  The default implementation returns
+L<HitDoc|KinoSearch::Document::HitDoc> objects.
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 fetch_doc(doc_id)
+
+Retrieve the document identified by C<< doc_id >>.
+
+Returns: a HitDoc.
 
 
 
@@ -38,14 +48,6 @@ B<readers> - An array of DocReaders.
 B<offsets> - Doc id start offsets for each reader.
 
 =back
-
-
-
-=head1 ABSTRACT METHODS
-
-=head2 fetch( I<[labeled params]> )
-
-Returns the document identified by C<< doc_id >>.
 
 
 

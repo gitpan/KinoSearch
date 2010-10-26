@@ -21,7 +21,8 @@ KinoSearch::Search::Compiler - Query-to-Matcher compiler.
 =head1 DESCRIPTION
 
 The purpose of the Compiler class is to take a specification in the form of
-a Query object and compile a Matcher object that can do real work.  
+a L<Query|KinoSearch::Search::Query> object and compile a
+L<Matcher|KinoSearch::Search::Matcher> object that can do real work.  
 
 The simplest Compiler subclasses -- such as those associated with
 constant-scoring Query types -- might simply implement a make_matcher()
@@ -37,25 +38,26 @@ apply_norm_factor().
 Compiling a Matcher is a two stage process. 
 
 The first stage takes place during the Compiler's constructor, which is
-where the Query object meets a Searcher object for the first time.
-Searchers operate on a specific document collection and they can tell you
-certain statistical information about the collection -- such as how many
-total documents are in the collection, or how many documents in the
-collection a particular term is present in.  KinoSearch's core Compiler
-classes plug this information into the classic TF/IDF weighting algorithm
-to adjust the Compiler's weight; custom subclasses might do something
-similar.
+where the Query object meets a L<Searcher|KinoSearch::Search::Searcher>
+object for the first time.  Searchers operate on a specific document
+collection and they can tell you certain statistical information about the
+collection -- such as how many total documents are in the collection, or
+how many documents in the collection a particular term is present in.
+KinoSearch's core Compiler classes plug this information into the classic
+TF/IDF weighting algorithm to adjust the Compiler's weight; custom
+subclasses might do something similar.
 
 The second stage of compilation is make_matcher(), method, which is where
-the Compiler meets a SegReader object.  SegReaders are associated with a
-single segment within a single index on a single machine, and are thus
-lower-level than Searchers, which may represent a document collection
-spread out over a search cluster (comprising several indexes and many
-segments).  The Compiler object can use new information supplied by the
-SegReader -- such as whether a term is missing from the local index even
-though it is present within the larger collection represented by the
-Searcher -- when figuring out what to feed to the Matchers's constructor,
-or whether make_matcher() should return a Matcher at all.
+the Compiler meets a L<SegReader|KinoSearch::Index::SegReader> object.
+SegReaders are associated with a single segment within a single index on a
+single machine, and are thus lower-level than Searchers, which may
+represent a document collection spread out over a search cluster
+(comprising several indexes and many segments).  The Compiler object can
+use new information supplied by the SegReader -- such as whether a term is
+missing from the local index even though it is present within the larger
+collection represented by the Searcher -- when figuring out what to feed to
+the Matchers's constructor, or whether make_matcher() should return a
+Matcher at all.
 
 =head1 CONSTRUCTORS
 
@@ -91,6 +93,29 @@ B<boost> - An arbitrary scoring multiplier.  Defaults to the boost of
 the parent Query.
 
 =back
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 make_matcher( I<[labeled params]> )
+
+Factory method returning a Matcher.
+
+=over
+
+=item *
+
+B<reader> - A SegReader.
+
+=item *
+
+B<need_score> - Indicate whether the Matcher must implement score().
+
+=back
+
+Returns: a Matcher, or undef if the Matcher would have matched no
+documents.
 
 
 
@@ -169,29 +194,6 @@ B<doc_vec> - A DocVector.
 B<field> - The name of the field.
 
 =back
-
-
-
-=head1 ABSTRACT METHODS
-
-=head2 make_matcher( I<[labeled params]> )
-
-Factory method returning a Matcher.
-
-=over
-
-=item *
-
-B<reader> - A SegReader.
-
-=item *
-
-B<need_score> - Indicate whether the Matcher must implement score().
-
-=back
-
-Returns: a Matcher, or undef if the Matcher would have matched no
-documents.
 
 
 

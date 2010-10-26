@@ -58,7 +58,18 @@ By default, a KinoSearch index consists of several main parts: lexicon,
 postings, stored documents, deletions, and highlight data.  The readers and
 writers for that data are spawned by Architecture.  Each component operates
 at the segment level; Architecture's factory methods are used to build up
-SegWriter and SegReader.
+L<SegWriter|KinoSearch::Index::SegWriter> and
+L<SegReader|KinoSearch::Index::SegReader>.
+
+=head1 CONSTRUCTORS
+
+=head2 new()
+
+    my $arch = KinoSearch::Plan::Architecture->new;
+
+Constructor.  Takes no arguments.
+
+
 
 
 
@@ -88,8 +99,6 @@ Spawn a DocReader and register() it with the supplied SegReader.
 B<reader> - A SegReader.
 
 =back
-
-
 
 
 

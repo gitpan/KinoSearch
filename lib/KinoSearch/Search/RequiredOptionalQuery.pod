@@ -45,6 +45,8 @@ B<optional_query> - Query which should match.
 
 
 
+
+
 =head1 METHODS
 
 =head2 get_required_query()
@@ -62,8 +64,6 @@ Getter for the optional Query.
 =head2 set_optional_query(optional_query)
 
 Setter for the optional Query.
-
-
 
 
 

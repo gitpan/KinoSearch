@@ -2,9 +2,8 @@ parcel KinoSearch cnick Kino;
 
 /** User-created specification for an inverted index.
  *
- * A Schema is a blueprint specifying how other entities should interpret the
- * raw data in an inverted index and interact with it.  It's akin to an SQL
- * table definition.
+ * A Schema is a specification which indicates how other entities should
+ * interpret the raw data in an inverted index and interact with it.
  *
  * Once an actual index has been created using a particular Schema, existing
  * field definitions may not be changed.  However, it is possible to add new
@@ -27,7 +26,7 @@ class KinoSearch::Plan::Schema inherits KinoSearch::Object::Obj {
     public inert Schema*
     init(Schema *self);
 
-    /** Factory method which returns the Architecture for this index. 
+    /** Factory method which creates an Architecture object for this index. 
      */
     public incremented Architecture*
     Architecture(Schema *self);
@@ -36,7 +35,7 @@ class KinoSearch::Plan::Schema inherits KinoSearch::Object::Obj {
      *
      * If this method has already been called for the supplied
      * <code>field</code>, it will merely test to verify that the supplied
-     * FieldType Equals() the existing one, then return.
+     * FieldType Equals() the existing one.
      *
      * @param name The name of the field.
      * @param type A FieldType.
@@ -66,7 +65,7 @@ class KinoSearch::Plan::Schema inherits KinoSearch::Object::Obj {
     public uint32_t
     Num_Fields(Schema *self);
 
-    /** Return all the Schema's field names.
+    /** Return all the Schema's field names as an array.
      */
     public incremented VArray*
     All_Fields(Schema *self);

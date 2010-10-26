@@ -15,10 +15,11 @@ KinoSearch::Index::DataWriter - Write data to an index.
 
 DataWriter is an abstract base class for writing index data, generally in
 segment-sized chunks. Each component of an index -- e.g. stored fields,
-lexicon, postings, deletions -- is represented by a DataWriter/DataReader
-pair.
+lexicon, postings, deletions -- is represented by a
+DataWriter/L<DataReader|KinoSearch::Index::DataReader> pair.
 
-Components may be specified per index by subclassing Architecture.
+Components may be specified per index by subclassing
+L<Architecture|KinoSearch::Plan::Architecture>.
 
 =head1 CONSTRUCTORS
 
@@ -48,6 +49,56 @@ index.  (If the index is brand new, the PolyReader will have no
 sub-readers).
 
 =back
+
+
+
+=head1 ABSTRACT METHODS
+
+=head2 add_inverted_doc( I<[labeled params]> )
+
+Process a document, previously inverted by C<< inverter >>.
+
+=over
+
+=item *
+
+B<inverter> - An Inverter wrapping an inverted document.
+
+=item *
+
+B<doc_id> - Internal number assigned to this document within the
+segment.
+
+=back
+
+=head2 add_segment( I<[labeled params]> )
+
+Add content from an existing segment into the one currently being
+written.
+
+=over
+
+=item *
+
+B<reader> - The SegReader containing content to add.
+
+=item *
+
+B<doc_map> - An array of integers mapping old document ids to
+new.  Deleted documents are mapped to 0, indicating that they should be
+skipped.
+
+=back
+
+=head2 finish()
+
+Complete the segment: close all streams, store metadata, etc.
+
+=head2 format()
+
+Every writer must specify a file format revision number, which should
+increment each time the format changes. Responsibility for revision
+checking is left to the companion DataReader.
 
 
 
@@ -117,56 +168,6 @@ Accessor for "schema" member var.
 =head2 get_folder()
 
 Accessor for "folder" member var.
-
-
-
-=head1 ABSTRACT METHODS
-
-=head2 add_inverted_doc( I<[labeled params]> )
-
-Process a document, previously inverted by C<< inverter >>.
-
-=over
-
-=item *
-
-B<inverter> - An Inverter wrapping an inverted document.
-
-=item *
-
-B<doc_id> - Internal number assigned to this document within the
-segment.
-
-=back
-
-=head2 add_segment( I<[labeled params]> )
-
-Add content from an existing segment into the one currently being
-written.
-
-=over
-
-=item *
-
-B<reader> - The SegReader containing content to add.
-
-=item *
-
-B<doc_map> - An array of integers mapping old document ids to
-new.  Deleted documents are mapped to 0, indicating that they should be
-skipped.
-
-=back
-
-=head2 finish()
-
-Complete the segment: close all streams, store metadata, etc.
-
-=head2 format()
-
-Every writer must specify a file format revision number, which should
-increment each time the format changes. Responsibility for revision
-checking is left to the companion DataReader.
 
 
 

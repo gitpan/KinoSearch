@@ -110,8 +110,8 @@ KSx::Index::ByteBufDocWriter - Write a Doc as a fixed-width byte array.
 
 =head1 SYNOPSIS
 
-Create an Architecture subclass which overrides register_doc_writer() and
-register_doc_reader():
+Create an L<Architecture|KinoSearch::Plan::Architecture> subclass which
+overrides register_doc_writer() and register_doc_reader():
 
     package MyArchitecture;
     use base qw( KinoSearch::Plan::Architecture );
@@ -122,7 +122,7 @@ register_doc_reader():
         my ( $self, $seg_writer ) = @_; 
         my $doc_writer = KSx::Index::ByteBufDocWriter->new(
             width      => 16,
-            field      => 'id',
+            field      => 'value',
             snapshot   => $seg_writer->get_snapshot,
             segment    => $seg_writer->get_segment,
             polyreader => $seg_writer->get_polyreader,
@@ -138,6 +138,7 @@ register_doc_reader():
         my ( $self, $seg_reader ) = @_; 
         my $doc_reader = KSx::Index::ByteBufDocReader->new(
             width    => 16,
+            field    => 'value',
             schema   => $seg_reader->get_schema,
             folder   => $seg_reader->get_folder,
             segments => $seg_reader->get_segments,
@@ -171,8 +172,7 @@ Then, in your search app:
     );
     my $hits = $searcher->hits( query => $query );
     while ( my $id = $hits->next ) {
-        # $id is a plain old 16-byte Perl scalar instead of a Hit object
-        my $real_doc = $external_document_source->fetch($id);
+        my $real_doc = $external_document_source->fetch( $doc->{value} );
         ...
     }
 
@@ -181,12 +181,11 @@ Then, in your search app:
 This is a proof-of-concept class to demonstrate alternate implementations for
 fetching documents.  It is unsupported.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2009-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
-
-See L<KinoSearch> version 0.30.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut

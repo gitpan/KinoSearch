@@ -10,9 +10,9 @@ KinoSearch::Search::NOTQuery - Invert the result set of another Query.
     my $not_bar_query = KinoSearch::Search::NOTQuery->new( 
         negated_query => $bar_query,
     );
-    my $foo_and_not_bar_query = KinoSearch::Search::ANDQuery->new;
-    $foo_and_not_bar_query->add_child($foo_query);
-    $foo_and_not_bar_query->add_child($not_bar_query);
+    my $foo_and_not_bar_query = KinoSearch::Search::ANDQuery->new(
+        children => [ $foo_query, $not_bar_query ].
+    );
     my $hits = $searcher->hits( query => $foo_and_not_bar_query );
     ...
 
@@ -20,11 +20,13 @@ KinoSearch::Search::NOTQuery - Invert the result set of another Query.
 
 =head1 DESCRIPTION
 
-A NOTQuery wraps another Query and matches against its inverse document
-set.  All matching docs recieve a score of 0.0.
+A NOTQuery wraps another L<Query|KinoSearch::Search::Query> and matches
+against its inverse document set.  All matching docs recieve a score of
+0.0.
 
-NOTQuery is often used in conjunction with ANDQuery to provide 
-"a AND NOT b" semantics.
+NOTQuery is often used in conjunction with
+L<ANDQuery|KinoSearch::Search::ANDQuery> to provide "a AND NOT b"
+semantics.
 
 =head1 CONSTRUCTORS
 
@@ -44,6 +46,8 @@ B<negated_query> - The Query whose result set should be inverted.
 
 
 
+
+
 =head1 METHODS
 
 =head2 get_negated_query()
@@ -53,8 +57,6 @@ Accessor for the object's negated query.
 =head2 set_negated_query(negated_query)
 
 Setter for the object's negated query.
-
-
 
 
 

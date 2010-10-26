@@ -29,28 +29,6 @@ list".
 
 
 
-=head1 METHODS
-
-=head2 advance(target)
-
-Advance the iterator to the first doc id greater than or equal to
-C<< target >>. The default implementation simply calls next()
-over and over, but subclasses have the option of doing something more
-efficient.
-
-=over
-
-=item *
-
-B<target> - A positive doc id, which must be greater than the current
-doc id once the iterator has been initialized.
-
-=back
-
-Returns: A positive doc id, or 0 once the iterator is exhausted.
-
-
-
 =head1 ABSTRACT METHODS
 
 =head2 next()
@@ -82,6 +60,28 @@ that match C<< target >>.
 B<target> - The term to match.  If undef, the iterator will be empty.
 
 =back
+
+
+
+=head1 METHODS
+
+=head2 advance(target)
+
+Advance the iterator to the first doc id greater than or equal to
+C<< target >>. The default implementation simply calls next()
+over and over, but subclasses have the option of doing something more
+efficient.
+
+=over
+
+=item *
+
+B<target> - A positive doc id, which must be greater than the current
+doc id once the iterator has been initialized.
+
+=back
+
+Returns: A positive doc id, or 0 once the iterator is exhausted.
 
 
 

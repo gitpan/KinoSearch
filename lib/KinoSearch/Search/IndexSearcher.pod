@@ -46,6 +46,8 @@ B<index> - Either a string filepath, a Folder, or an IndexReader.
 
 
 
+
+
 =head1 METHODS
 
 =head2 hits( I<[labeled params]> )
@@ -118,7 +120,7 @@ B<term> - The term to look up.
 
 =back
 
-=head2 fetch_doc( I<[labeled params]> )
+=head2 fetch_doc(doc_id)
 
 Retrieve a document.  Throws an error if the doc id is out of range.
 
@@ -127,15 +129,6 @@ Retrieve a document.  Throws an error if the doc id is out of range.
 =item *
 
 B<doc_id> - A document id.
-
-=item *
-
-B<score> - A floating point score.
-
-=item *
-
-B<offset> - Amount to be added to the doc_id if this Searcher is a
-subcomponent of another.
 
 =back
 
@@ -146,8 +139,6 @@ Accessor for the object's C<< schema >> member.
 =head2 get_reader()
 
 Accessor for the object's C<< reader >> member.
-
-
 
 
 

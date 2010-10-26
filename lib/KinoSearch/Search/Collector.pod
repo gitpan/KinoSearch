@@ -13,12 +13,13 @@ KinoSearch::Search::Collector - Process hits.
 
 =head1 DESCRIPTION
 
-A Collector decides what to do with the hits that a Matcher iterates
-through, based on how the abstract collect() method is implemented.
+A Collector decides what to do with the hits that a
+L<Matcher|KinoSearch::Search::Matcher> iterates through, based on how the
+abstract collect() method is implemented.
 
 Collectors operate on individual segments, but must operate within the
 context of a larger collection.  Each time the collector moves to a new
-segment, set_reader(), set_base() and set_matcher() must be called, and the
+segment, set_reader(), set_base() and set_matcher() will be called, and the
 collector must take the updated information into account.
 
 =head1 CONSTRUCTORS
@@ -39,8 +40,6 @@ Abstract constructor.  Takes no arguments.
 
 
 
-
-
 =head1 ABSTRACT METHODS
 
 =head2 collect(doc_id)
@@ -55,6 +54,8 @@ with the ten highest scores.)
 B<doc_id> - A segment document id.
 
 =back
+
+
 
 
 

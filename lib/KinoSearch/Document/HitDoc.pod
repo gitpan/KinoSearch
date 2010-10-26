@@ -22,6 +22,8 @@ augmented by a numeric score attribute that Doc doesn't have.
 
 
 
+
+
 =head1 METHODS
 
 =head2 set_score(score)
@@ -31,8 +33,6 @@ Set score attribute.
 =head2 get_score()
 
 Get score attribute.
-
-
 
 
 

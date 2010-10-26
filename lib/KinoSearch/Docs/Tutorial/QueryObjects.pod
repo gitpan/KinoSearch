@@ -134,17 +134,17 @@ You've made it to the end of the tutorial.
 =head1 SEE ALSO
 
 For additional thematic documentation, see the KinoSearch
-L<Cookbook|KinoSearch::Docs::CookBook>.
+L<Cookbook|KinoSearch::Docs::Cookbook>.
 
 ANDQuery has a companion class, L<ORQuery|KinoSearch::Search::ORQuery>, and a
 close relative,
-L<RequiredOptionalQuery|KinoSearch::Searh::RequiredOptionalQuery>.
+L<RequiredOptionalQuery|KinoSearch::Search::RequiredOptionalQuery>.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
-See L<KinoSearch> version 0.30.
 

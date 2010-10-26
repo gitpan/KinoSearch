@@ -45,9 +45,9 @@ sub local_c {
 }
 
 sub global_c {
-    my $self = shift;
-    my $type = $self->{type};
-    my $name = $self->full_sym;
+    my $self    = shift;
+    my $type    = $self->{type};
+    my $name    = $self->full_sym;
     my $postfix = '';
     if ( $type->is_composite ) {
         $postfix = $type->get_array || '';
@@ -136,4 +136,3 @@ This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 =cut
-

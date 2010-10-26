@@ -10,8 +10,12 @@ KinoSearch::Document::Doc - A document.
     my $doc = KinoSearch::Document::Doc->new(
         fields => { foo => 'foo foo', bar => 'bar bar' },
     );
-    $doc->{foo} = 'new value for field "foo"';
     $indexer->add_doc($doc);
+
+Doc objects allow access to field values via hashref overloading:
+
+    $doc->{foo} = 'new value for field "foo"';
+    print "foo: $doc->{foo}\n";
 
 
 
@@ -36,19 +40,28 @@ B<fields> - Field-value pairs.
 
 =item *
 
-B<doc_id> - Internal KinoSearch document id.  Default of 0.
+B<doc_id> - Internal KinoSearch document id.  Default of 0 (an
+invalid doc id).
 
 =back
 
 
 
+
+
 =head1 METHODS
+
+=head2 set_doc_id(doc_id)
+
+Set internal KinoSearch document id.
+
+=head2 get_doc_id()
+
+Retrieve internal KinoSearch document id.
 
 =head2 get_fields()
 
 Return the Doc's backing fields hash.
-
-
 
 
 

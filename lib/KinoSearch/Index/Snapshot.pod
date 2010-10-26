@@ -20,7 +20,8 @@ A Snapshot is list of index files and folders.  Because index files, once
 written, are never modified, a Snapshot defines a point-in-time view of the
 data in an index.
 
-IndexReader objects interpret the data associated with a single Snapshot.
+L<IndexReader|KinoSearch::Index::IndexReader> objects interpret the data
+associated with a single Snapshot.
 
 =head1 CONSTRUCTORS
 
@@ -32,11 +33,13 @@ Constructor.  Takes no arguments.
 
 
 
+
+
 =head1 METHODS
 
 =head2 list()
 
-Return a list of all entries.
+Return an array of all entries.
 
 =head2 num_entries()
 
@@ -76,8 +79,8 @@ Returns: the object, allowing an assignment idiom.
 =head2 write_file( I<[labeled params]> )
 
 Write a snapshot file.  The caller must lock the index while this
-operation takes place, and the operation will fail if the file already
-exists.
+operation takes place, and the operation will fail if the snapshot file
+already exists.
 
 =over
 
@@ -102,8 +105,6 @@ for.
 
 Get the path to the snapshot file.  Initially undef; updated by
 read_file(), write_file(), and set_path().
-
-
 
 
 

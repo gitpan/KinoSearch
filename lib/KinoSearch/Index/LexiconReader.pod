@@ -18,8 +18,6 @@ LexiconReader reads term dictionary information.
 
 
 
-
-
 =head1 ABSTRACT METHODS
 
 =head2 lexicon( I<[labeled params]> )
@@ -43,6 +41,8 @@ B<term> - Pre-locate the Lexicon to this term.
 =head2 doc_freq( I<[labeled params]> )
 
 Return the number of documents where the specified term is present.
+
+
 
 
 

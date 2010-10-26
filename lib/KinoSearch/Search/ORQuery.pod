@@ -17,9 +17,10 @@ KinoSearch::Search::ORQuery - Union multiple result sets.
 
 =head1 DESCRIPTION
 
-ORQuery matches when any of its children match, so its result set is
-the union of their result sets.  Matching documents recieve a summed
-score from all matching child Queries.
+ORQuery is a composite L<Query|KinoSearch::Search::Query> which matches
+when any of its children match, so its result set is the union of their
+result sets.  Matching documents recieve a summed score from all matching
+child Queries.
 
 =head1 CONSTRUCTORS
 
@@ -39,13 +40,13 @@ B<children> - An array of child Queries.
 
 
 
+
+
 =head1 METHODS
 
 =head2 add_child(query)
 
 Add a child Query node.
-
-
 
 
 

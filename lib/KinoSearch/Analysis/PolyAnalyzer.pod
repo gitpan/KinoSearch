@@ -82,13 +82,13 @@ stopalize, stem.
 
 
 
+
+
 =head1 METHODS
 
 =head2 get_analyzers()
 
 Getter for "analyzers" member.
-
-
 
 
 

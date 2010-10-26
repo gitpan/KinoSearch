@@ -25,9 +25,8 @@ KinoSearch::Plan::Schema - User-created specification for an inverted index.
 
 =head1 DESCRIPTION
 
-A Schema is a blueprint specifying how other entities should interpret the
-raw data in an inverted index and interact with it.  It's akin to an SQL
-table definition.
+A Schema is a specification which indicates how other entities should
+interpret the raw data in an inverted index and interact with it.
 
 Once an actual index has been created using a particular Schema, existing
 field definitions may not be changed.  However, it is possible to add new
@@ -37,9 +36,11 @@ fields during subsequent indexing sessions.
 
 =head2 new()
 
-    my $schema = MySchema->new;
+    my $schema = KinoSearch::Plan::Schema->new;
 
 Constructor.  Takes no arguments.
+
+
 
 
 
@@ -51,7 +52,7 @@ Define the behavior of a field by associating it with a FieldType.
 
 If this method has already been called for the supplied
 C<< field >>, it will merely test to verify that the supplied
-FieldType equals() the existing one, then return.
+FieldType equals() the existing one.
 
 =over
 
@@ -71,7 +72,7 @@ Return the number of fields currently defined.
 
 =head2 all_fields()
 
-Return all the Schema's field names.
+Return all the Schema's field names as an array.
 
 =head2 fetch_type(field)
 
@@ -85,7 +86,7 @@ field can't be found or it isn't associated with a Similarity.
 
 =head2 architecture()
 
-Factory method which returns the Architecture for this index.
+Factory method which creates an Architecture object for this index.
 
 =head2 get_architecture()
 
@@ -94,8 +95,6 @@ Return the Schema instance's internal Architecture object.
 =head2 get_similarity()
 
 Return the Schema instance's internal Similarity object.
-
-
 
 
 

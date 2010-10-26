@@ -7,9 +7,9 @@ use Clownfish::Util qw( verify_args );
 use Scalar::Util qw( blessed );
 use Carp;
 
-our %new_PARAMS = ( 
+our %new_PARAMS = (
     const     => undef,
-    specifier => 'void', 
+    specifier => 'void',
 );
 
 sub new {
@@ -73,4 +73,3 @@ This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 =cut
-

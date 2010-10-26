@@ -10,14 +10,18 @@ KinoSearch::Index::SegWriter - Write one segment of an index.
 =head1 DESCRIPTION
 
 SegWriter is a conduit through which information fed to Indexer passes.  It
-manages Segment and Inverter, invokes the Analyzer chain, and feeds low
-level DataWriters such as PostingListWriter and DocWriter.  
+manages L<Segment|KinoSearch::Index::Segment> and Inverter, invokes the
+L<Analyzer|KinoSearch::Analysis::Analyzer> chain, and feeds low
+level L<DataWriters|KinoSearch::Index::DataWriter> such as
+PostingListWriter and DocWriter.
 
 The sub-components of a SegWriter are determined by
 L<Architecture|KinoSearch::Plan::Architecture>.  DataWriter components
 which are added to the stack of writers via add_writer() have
 add_inverted_doc() invoked for each document supplied to SegWriter's
 add_doc().
+
+
 
 
 
@@ -64,8 +68,6 @@ B<api> - The name of the DataWriter api which the component
 implements.
 
 =back
-
-
 
 
 

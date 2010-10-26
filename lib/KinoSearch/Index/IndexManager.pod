@@ -30,13 +30,13 @@ KinoSearch::Index::IndexManager - Policies governing index updating, locking, an
 
 =head1 DESCRIPTION
 
-IndexManager is an advanced-usage class for controlling index locking,
+IndexManager is an advanced-use class for controlling index locking,
 updating, merging, and deletion behaviors.
 
-IndexManager and Architecture are complementary classes: Architecture is
-used to define traits and behaviors which cannot change for the life of an
-index; IndexManager is used for defining rules which may change from
-process to process.
+IndexManager and L<Architecture|KinoSearch::Plan::Architecture> are
+complementary classes: Architecture is used to define traits and behaviors
+which cannot change for the life of an index; IndexManager is used for
+defining rules which may change from process to process.
 
 =head1 CONSTRUCTORS
 
@@ -57,6 +57,8 @@ B<host> - An identifier which should be unique per-machine.
 B<lock_factory> - A LockFactory.
 
 =back
+
+
 
 
 
@@ -99,9 +101,8 @@ optimizing the index for search-time performance.
 
 =head2 set_folder(folder)
 
-Setter for C<< folder >> member, needed by several methods.
-Typical clients (Indexer, IndexReader) will use this method to install
-their own Folder instance.
+Setter for C<< folder >> member.  Typical clients (Indexer,
+IndexReader) will use this method to install their own Folder instance.
 
 =head2 get_folder()
 
@@ -126,8 +127,6 @@ Setter for write lock retry interval.  Default: 100 milliseconds.
 =head2 get_write_lock_interval()
 
 Getter for write lock retry interval.
-
-
 
 
 

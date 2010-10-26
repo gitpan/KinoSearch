@@ -39,6 +39,8 @@ able to hold.
 
 
 
+
+
 =head1 METHODS
 
 =head2 get(tick)
@@ -187,8 +189,6 @@ B<capacity> - Least number of bits the BitVector should accomodate.
 =head2 count()
 
 Return a count of the number of set bits.
-
-
 
 
 

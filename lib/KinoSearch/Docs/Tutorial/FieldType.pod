@@ -56,11 +56,11 @@ Analyzers play a crucial role in the behavior of FullTextType fields.  In our
 next tutorial chapter, L<KinoSearch::Docs::Tutorial::Analysis>, we'll see how
 changing up the Analyzer changes search results.
 
-=head1 COPYRIGHT
+=head1 COPYRIGHT AND LICENSE
 
 Copyright 2008-2010 Marvin Humphrey
 
-=head1 LICENSE, DISCLAIMER, BUGS, etc.
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
-See L<KinoSearch> version 0.30.
 

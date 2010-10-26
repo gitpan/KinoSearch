@@ -8,7 +8,7 @@ build_requires:
   ExtUtils::ParseXS: 2.16
 configure_requires:
   Module::Build: 0.36
-generated_by: 'Module::Build version 0.3603'
+generated_by: 'Module::Build version 0.3607'
 keywords:
   - search
   - lucene
@@ -1044,7 +1044,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.30_122
+    version: 0.30_13
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1358,4 +1358,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.30_122
+version: 0.30_13

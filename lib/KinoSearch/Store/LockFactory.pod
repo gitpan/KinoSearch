@@ -54,6 +54,8 @@ B<host> - An identifier which should be unique per-machine.
 
 
 
+
+
 =head1 METHODS
 
 =head2 make_lock( I<[labeled params]> )
@@ -102,8 +104,6 @@ the attempt to obtain() a lock.
 B<interval> - Time in milliseconds between retries.
 
 =back
-
-
 
 
 

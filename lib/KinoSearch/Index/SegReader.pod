@@ -17,7 +17,7 @@ KinoSearch::Index::SegReader - Single-segment IndexReader.
         print "Segment $seg_name ($num_docs documents):\n";
         my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
         for my $doc_id ( 1 .. $num_docs ) {
-            my $doc = $doc_reader->fetch( doc_id => $doc_id );
+            my $doc = $doc_reader->fetch_doc($doc_id);
             print "  $doc_id: $doc->{title}\n";
         }
     }
@@ -32,7 +32,10 @@ Generally speaking, only advanced users writing subclasses which manipulate
 data at the segment level need to deal with the SegReader API directly.  
 
 Nearly all of SegReader's functionality is implemented by pluggable
-components spawned by Architecture's factory methods.
+components spawned by L<Architecture|KinoSearch::Plan::Architecture>'s
+factory methods.
+
+
 
 
 
@@ -45,8 +48,6 @@ Return the name of the segment.
 =head2 get_seg_num()
 
 Return the number of the segment.
-
-
 
 
 

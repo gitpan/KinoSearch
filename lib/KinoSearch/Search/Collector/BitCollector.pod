@@ -23,8 +23,8 @@ KinoSearch::Search::Collector::BitCollector - Collector which records doc nums i
 =head1 DESCRIPTION
 
 BitCollector is a Collector which saves matching document ids in a
-BitVector while ignoring scores.  It is useful for recording the entire set
-of documents which matches a query.
+L<BitVector|KinoSearch::Object::BitVector>.  It is useful for recording the
+entire set of documents which matches a query.
 
 =head1 CONSTRUCTORS
 
@@ -44,13 +44,13 @@ B<bit_vector> - A KinoSearch::Object::BitVector.
 
 
 
+
+
 =head1 METHODS
 
 =head2 collect(doc_id)
 
 Set bit in the object's BitVector for the supplied doc id.
-
-
 
 
 

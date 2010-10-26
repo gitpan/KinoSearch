@@ -17,7 +17,7 @@ KinoSearch::Index::IndexReader - Read from an inverted index.
         print "Segment $seg_name ($num_docs documents):\n";
         my $doc_reader = $seg_reader->obtain("KinoSearch::Index::DocReader");
         for my $doc_id ( 1 .. $num_docs ) {
-            my $doc = $doc_reader->fetch($doc_id);
+            my $doc = $doc_reader->fetch_doc($doc_id);
             print "  $doc_id: $doc->{title}\n";
         }
     }
@@ -26,8 +26,9 @@ KinoSearch::Index::IndexReader - Read from an inverted index.
 
 =head1 DESCRIPTION
 
-IndexReader is the interface through which Searchers access the content of
-an index.
+IndexReader is the interface through which
+L<IndexSearcher|KinoSearch::Search::IndexSearcher> objects access the
+content of an index.
 
 IndexReader objects always represent a point-in-time view of an index as it
 existed at the moment the reader was created.  If you want search results
@@ -73,36 +74,6 @@ Read-locking is off by default; supplying this argument turns it on.
 
 
 
-=head1 METHODS
-
-=head2 fetch(api)
-
-Fetch a component, or return undef if the component can't be found.
-
-=over
-
-=item *
-
-B<api> - The name of the DataReader subclass that the desired
-component must implement.
-
-=back
-
-=head2 obtain(api)
-
-Fetch a component, or throw an error if the component can't be found.
-
-=over
-
-=item *
-
-B<api> - The name of the DataReader subclass that the desired
-component must implement.
-
-=back
-
-
-
 =head1 ABSTRACT METHODS
 
 =head2 doc_max()
@@ -131,6 +102,36 @@ IndexReader.
 
 Return an array with one entry for each segment, corresponding to
 segment doc_id start offset.
+
+
+
+=head1 METHODS
+
+=head2 fetch(api)
+
+Fetch a component, or return undef if the component can't be found.
+
+=over
+
+=item *
+
+B<api> - The name of the DataReader subclass that the desired
+component must implement.
+
+=back
+
+=head2 obtain(api)
+
+Fetch a component, or throw an error if the component can't be found.
+
+=over
+
+=item *
+
+B<api> - The name of the DataReader subclass that the desired
+component must implement.
+
+=back
 
 
 
