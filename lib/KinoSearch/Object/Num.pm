@@ -18,7 +18,7 @@ CODE:
 {
     kino_Float32 *self = (kino_Float32*)XSBind_new_blank_obj(either_sv);
     kino_Float32_init(self, value);
-    RETVAL = KINO_OBJ_TO_SV_NOINC(self);
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
 OUTPUT: RETVAL
 END_XS_CODE
@@ -34,7 +34,7 @@ CODE:
 {
     kino_Float64 *self = (kino_Float64*)XSBind_new_blank_obj(either_sv);
     kino_Float64_init(self, value);
-    RETVAL = KINO_OBJ_TO_SV_NOINC(self);
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(self);
 }
 OUTPUT: RETVAL
 END_XS_CODE

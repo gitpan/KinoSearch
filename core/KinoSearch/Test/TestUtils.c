@@ -4,6 +4,10 @@
 #include <string.h>
 
 #include "KinoSearch/Test/TestUtils.h"
+#include "KinoSearch/Test.h"
+#include "KinoSearch/Analysis/Analyzer.h"
+#include "KinoSearch/Analysis/Inversion.h"
+#include "KinoSearch/Analysis/Token.h"
 #include "KinoSearch/Search/TermQuery.h"
 #include "KinoSearch/Search/PhraseQuery.h"
 #include "KinoSearch/Search/LeafQuery.h"
@@ -184,6 +188,45 @@ TestUtils_freeze_thaw(Obj *object)
     else {
         return NULL;
     }
+}
+
+void
+TestUtils_test_analyzer(TestBatch *batch, Analyzer *analyzer, CharBuf *source,
+                        VArray *expected, char *message)
+{
+    Token *seed = Token_new((char*)CB_Get_Ptr8(source),
+        CB_Get_Size(source), 0, 0, 1.0f, 1);
+    Inversion *starter = Inversion_new(seed);
+    Inversion *transformed = Analyzer_Transform(analyzer, starter);
+    VArray *got = VA_new(1);
+    Token *token;
+    while (NULL != (token = Inversion_Next(transformed))) {
+        CharBuf *token_text 
+            = CB_new_from_utf8(Token_Get_Text(token), Token_Get_Len(token));
+        VA_Push(got, (Obj*)token_text);
+    }
+    TEST_TRUE(batch, VA_Equals(expected, (Obj*)got), 
+        "Transform(): %s", message);
+    DECREF(transformed);
+
+    transformed = Analyzer_Transform_Text(analyzer, source);
+    VA_Clear(got);
+    while (NULL != (token = Inversion_Next(transformed))) {
+        CharBuf *token_text 
+            = CB_new_from_utf8(Token_Get_Text(token), Token_Get_Len(token));
+        VA_Push(got, (Obj*)token_text);
+    }
+    TEST_TRUE(batch, VA_Equals(expected, (Obj*)got), 
+        "Transform_Text(): %s", message);
+    DECREF(transformed);
+
+    DECREF(got);
+    got = Analyzer_Split(analyzer, source);
+    TEST_TRUE(batch, VA_Equals(expected, (Obj*)got), "Split(): %s", message);
+
+    DECREF(got);
+    DECREF(starter);
+    DECREF(seed);
 }
 
 /* Copyright 2005-2010 Marvin Humphrey

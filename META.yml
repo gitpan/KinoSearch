@@ -76,41 +76,7 @@ no_index:
     - charmonizer/src/Charmonizer/Test/TestLargeFiles.c
     - charmonizer/src/Charmonizer/Test/TestUnusedVars.c
     - charmonizer/src/Charmonizer/Test/TestVariadicMacros.c
-    - clownfish/lib/Clownfish.pm
-    - clownfish/lib/Clownfish/Binding/Core.pm
-    - clownfish/lib/Clownfish/Binding/Core/Class.pm
-    - clownfish/lib/Clownfish/Binding/Core/File.pm
-    - clownfish/lib/Clownfish/Binding/Core/Function.pm
-    - clownfish/lib/Clownfish/Binding/Core/Method.pm
-    - clownfish/lib/Clownfish/Binding/Perl.pm
-    - clownfish/lib/Clownfish/Binding/Perl/Class.pm
-    - clownfish/lib/Clownfish/Binding/Perl/Constructor.pm
-    - clownfish/lib/Clownfish/Binding/Perl/Method.pm
-    - clownfish/lib/Clownfish/Binding/Perl/Subroutine.pm
-    - clownfish/lib/Clownfish/Binding/Perl/TypeMap.pm
-    - clownfish/lib/Clownfish/CBlock.pm
-    - clownfish/lib/Clownfish/Class.pm
-    - clownfish/lib/Clownfish/DocuComment.pm
-    - clownfish/lib/Clownfish/Dumpable.pm
-    - clownfish/lib/Clownfish/File.pm
-    - clownfish/lib/Clownfish/Function.pm
-    - clownfish/lib/Clownfish/Hierarchy.pm
-    - clownfish/lib/Clownfish/Method.pm
-    - clownfish/lib/Clownfish/ParamList.pm
-    - clownfish/lib/Clownfish/Parcel.pm
-    - clownfish/lib/Clownfish/Parser.pm
-    - clownfish/lib/Clownfish/Symbol.pm
-    - clownfish/lib/Clownfish/Type.pm
-    - clownfish/lib/Clownfish/Type/Arbitrary.pm
-    - clownfish/lib/Clownfish/Type/Composite.pm
-    - clownfish/lib/Clownfish/Type/Float.pm
-    - clownfish/lib/Clownfish/Type/Integer.pm
-    - clownfish/lib/Clownfish/Type/Object.pm
-    - clownfish/lib/Clownfish/Type/Primitive.pm
-    - clownfish/lib/Clownfish/Type/VAList.pm
-    - clownfish/lib/Clownfish/Type/Void.pm
-    - clownfish/lib/Clownfish/Util.pm
-    - clownfish/lib/Clownfish/Variable.pm
+    - clownfish/lib/Clownfish/Binding/Core/Aliases.pm
     - clownfish/t/000-load.t
     - clownfish/t/001-util.t
     - clownfish/t/050-docucomment.t
@@ -430,6 +396,8 @@ no_index:
     - core/KinoSearch/Store/SharedLock.cfh
     - core/KinoSearch/Test.c
     - core/KinoSearch/Test.cfh
+    - core/KinoSearch/Test/Analysis/TestAnalyzer.c
+    - core/KinoSearch/Test/Analysis/TestAnalyzer.cfh
     - core/KinoSearch/Test/Analysis/TestCaseFolder.c
     - core/KinoSearch/Test/Analysis/TestCaseFolder.cfh
     - core/KinoSearch/Test/Analysis/TestPolyAnalyzer.c
@@ -587,6 +555,8 @@ no_index:
     - core/KinoSearch/Util/Stepper.cfh
     - core/KinoSearch/Util/StringHelper.c
     - core/KinoSearch/Util/StringHelper.cfh
+    - core/KinoSearch/Util/StringHelper2.c
+    - core/KinoSearch/Util/StringHelper3.c
     - core/KinoSearch/Util/ToolSet.h
     - devel/benchmarks/README.txt
     - devel/benchmarks/extract_reuters.plx
@@ -774,59 +744,59 @@ no_index:
     - sample/README.txt
     - sample/indexer.pl
     - sample/search.cgi
-    - sample/us_constitution/amend1.html
-    - sample/us_constitution/amend10.html
-    - sample/us_constitution/amend11.html
-    - sample/us_constitution/amend12.html
-    - sample/us_constitution/amend13.html
-    - sample/us_constitution/amend14.html
-    - sample/us_constitution/amend15.html
-    - sample/us_constitution/amend16.html
-    - sample/us_constitution/amend17.html
-    - sample/us_constitution/amend18.html
-    - sample/us_constitution/amend19.html
-    - sample/us_constitution/amend2.html
-    - sample/us_constitution/amend20.html
-    - sample/us_constitution/amend21.html
-    - sample/us_constitution/amend22.html
-    - sample/us_constitution/amend23.html
-    - sample/us_constitution/amend24.html
-    - sample/us_constitution/amend25.html
-    - sample/us_constitution/amend26.html
-    - sample/us_constitution/amend27.html
-    - sample/us_constitution/amend3.html
-    - sample/us_constitution/amend4.html
-    - sample/us_constitution/amend5.html
-    - sample/us_constitution/amend6.html
-    - sample/us_constitution/amend7.html
-    - sample/us_constitution/amend8.html
-    - sample/us_constitution/amend9.html
-    - sample/us_constitution/art1sec1.html
-    - sample/us_constitution/art1sec10.html
-    - sample/us_constitution/art1sec2.html
-    - sample/us_constitution/art1sec3.html
-    - sample/us_constitution/art1sec4.html
-    - sample/us_constitution/art1sec5.html
-    - sample/us_constitution/art1sec6.html
-    - sample/us_constitution/art1sec7.html
-    - sample/us_constitution/art1sec8.html
-    - sample/us_constitution/art1sec9.html
-    - sample/us_constitution/art2sec1.html
-    - sample/us_constitution/art2sec2.html
-    - sample/us_constitution/art2sec3.html
-    - sample/us_constitution/art2sec4.html
-    - sample/us_constitution/art3sec1.html
-    - sample/us_constitution/art3sec2.html
-    - sample/us_constitution/art3sec3.html
-    - sample/us_constitution/art4sec1.html
-    - sample/us_constitution/art4sec2.html
-    - sample/us_constitution/art4sec3.html
-    - sample/us_constitution/art4sec4.html
-    - sample/us_constitution/art5.html
-    - sample/us_constitution/art6.html
-    - sample/us_constitution/art7.html
+    - sample/us_constitution/amend1.txt
+    - sample/us_constitution/amend10.txt
+    - sample/us_constitution/amend11.txt
+    - sample/us_constitution/amend12.txt
+    - sample/us_constitution/amend13.txt
+    - sample/us_constitution/amend14.txt
+    - sample/us_constitution/amend15.txt
+    - sample/us_constitution/amend16.txt
+    - sample/us_constitution/amend17.txt
+    - sample/us_constitution/amend18.txt
+    - sample/us_constitution/amend19.txt
+    - sample/us_constitution/amend2.txt
+    - sample/us_constitution/amend20.txt
+    - sample/us_constitution/amend21.txt
+    - sample/us_constitution/amend22.txt
+    - sample/us_constitution/amend23.txt
+    - sample/us_constitution/amend24.txt
+    - sample/us_constitution/amend25.txt
+    - sample/us_constitution/amend26.txt
+    - sample/us_constitution/amend27.txt
+    - sample/us_constitution/amend3.txt
+    - sample/us_constitution/amend4.txt
+    - sample/us_constitution/amend5.txt
+    - sample/us_constitution/amend6.txt
+    - sample/us_constitution/amend7.txt
+    - sample/us_constitution/amend8.txt
+    - sample/us_constitution/amend9.txt
+    - sample/us_constitution/art1sec1.txt
+    - sample/us_constitution/art1sec10.txt
+    - sample/us_constitution/art1sec2.txt
+    - sample/us_constitution/art1sec3.txt
+    - sample/us_constitution/art1sec4.txt
+    - sample/us_constitution/art1sec5.txt
+    - sample/us_constitution/art1sec6.txt
+    - sample/us_constitution/art1sec7.txt
+    - sample/us_constitution/art1sec8.txt
+    - sample/us_constitution/art1sec9.txt
+    - sample/us_constitution/art2sec1.txt
+    - sample/us_constitution/art2sec2.txt
+    - sample/us_constitution/art2sec3.txt
+    - sample/us_constitution/art2sec4.txt
+    - sample/us_constitution/art3sec1.txt
+    - sample/us_constitution/art3sec2.txt
+    - sample/us_constitution/art3sec3.txt
+    - sample/us_constitution/art4sec1.txt
+    - sample/us_constitution/art4sec2.txt
+    - sample/us_constitution/art4sec3.txt
+    - sample/us_constitution/art4sec4.txt
+    - sample/us_constitution/art5.txt
+    - sample/us_constitution/art6.txt
+    - sample/us_constitution/art7.txt
     - sample/us_constitution/index.html
-    - sample/us_constitution/preamble.html
+    - sample/us_constitution/preamble.txt
     - sample/us_constitution/uscon.css
     - t/001-build_indexes.t
     - t/002-kinosearch.t
@@ -880,6 +850,7 @@ no_index:
     - t/308-simple.t
     - t/309-span.t
     - t/310-heat_map.t
+    - t/311-hl_selection.t
     - t/400-match_posting.t
     - t/501-termquery.t
     - t/502-phrasequery.t
@@ -928,6 +899,7 @@ no_index:
     - t/binding/101-simple_io.t
     - t/binding/206-snapshot.t
     - t/binding/506-collector.t
+    - t/binding/702-sample.t
     - t/binding/800-stack.t
     - t/binding/801-pod_checker.t
     - t/charmonizer/001-integers.t
@@ -968,6 +940,7 @@ no_index:
     - t/core/111-index_manager.t
     - t/core/112-cf_writer.t
     - t/core/113-cf_reader.t
+    - t/core/150-analyzer.t
     - t/core/150-polyanalyzer.t
     - t/core/153-case_folder.t
     - t/core/154-tokenizer.t
@@ -1044,7 +1017,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.31
+    version: 0.311
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1358,4 +1331,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.31
+version: 0.311

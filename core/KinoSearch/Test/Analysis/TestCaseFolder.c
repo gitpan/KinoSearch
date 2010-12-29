@@ -2,6 +2,7 @@
 #include "KinoSearch/Util/ToolSet.h"
 
 #include "KinoSearch/Test.h"
+#include "KinoSearch/Test/TestUtils.h"
 #include "KinoSearch/Test/Analysis/TestCaseFolder.h"
 #include "KinoSearch/Analysis/CaseFolder.h"
 
@@ -24,14 +25,29 @@ test_Dump_Load_and_Equals(TestBatch *batch)
     DECREF(clone);
 }
 
+static void
+test_analysis(TestBatch *batch)
+{
+    CaseFolder *case_folder = CaseFolder_new();
+    CharBuf *source = CB_newf("caPiTal ofFensE");
+    VArray *wanted = VA_new(1);
+    VA_Push(wanted, (Obj*)CB_newf("capital offense"));
+    TestUtils_test_analyzer(batch, (Analyzer*)case_folder, source, wanted, 
+        "lowercase plain text");
+    DECREF(wanted);
+    DECREF(source);
+    DECREF(case_folder);
+}
+
 void
 TestCaseFolder_run_tests()
 {
-    TestBatch *batch = TestBatch_new(3);
+    TestBatch *batch = TestBatch_new(6);
 
     TestBatch_Plan(batch);
 
     test_Dump_Load_and_Equals(batch);
+    test_analysis(batch);
 
     DECREF(batch);
 }

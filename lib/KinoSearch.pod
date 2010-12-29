@@ -4,7 +4,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.31
+0.311
 
 =head1 SYNOPSIS
 
@@ -152,10 +152,6 @@ L<KinoSearch::Analysis::PolyAnalyzer> - A one-size-fits-all parser/tokenizer.
 =back
 
 =head2 Supported Languages and Encodings
-
-As of version 0.2x, KinoSearch supports Unicode in addition to Latin-1.
-All output strings use Perl's internal Unicode encoding.  For use of
-KinoSearch with non-Latin-1 material, see L<Encode>.
 
 KinoSearch provides "native support" for 15 languages, meaning that
 PolyAnalyzer supports them.

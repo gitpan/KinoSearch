@@ -17,7 +17,7 @@ MODULE = KinoSearch   PACKAGE = KinoSearch::Test::TestUtils
 SV*
 doc_set()
 CODE:
-    RETVAL = KINO_OBJ_TO_SV_NOINC(kino_TestUtils_doc_set());
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(kino_TestUtils_doc_set());
 OUTPUT: RETVAL
 
 MODULE = KinoSearch   PACKAGE = KinoSearch::Test
@@ -28,7 +28,10 @@ run_tests(package)
 PPCODE:
 {
     // KinoSearch::Analysis 
-    if (strEQ(package, "TestCaseFolder")) {
+    if (strEQ(package, "TestAnalyzer")) {
+        kino_TestAnalyzer_run_tests();
+    }
+    else if (strEQ(package, "TestCaseFolder")) {
         kino_TestCaseFolder_run_tests();
     }
     else if (strEQ(package, "TestPolyAnalyzer")) {

@@ -29,7 +29,7 @@ CODE:
         }
     }
         
-    RETVAL = KINO_OBJ_TO_SV_NOINC(kino_Inversion_new(starter_token));
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(kino_Inversion_new(starter_token));
     KINO_DECREF(starter_token);
 }
 OUTPUT: RETVAL

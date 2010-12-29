@@ -1,4 +1,4 @@
-#include "xs/XSBind.h"
+#include "XSBind.h"
 
 #include "KinoSearch/Analysis/Stemmer.h"
 #include "KinoSearch/Object/Host.h"

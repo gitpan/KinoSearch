@@ -40,10 +40,10 @@ _callback(obj)
     kino_Obj *obj;
 PPCODE:
 {
-    kino_ZombieCharBuf *blank = KINO_ZCB_BLANK(); 
+    kino_ZombieCharBuf *blank = CFISH_ZCB_BLANK(); 
     kino_Host_callback(obj, "_test", 2, 
-        KINO_ARG_OBJ("nothing", (kino_CharBuf*)blank),
-        KINO_ARG_I32("foo", 3));
+        CFISH_ARG_OBJ("nothing", (kino_CharBuf*)blank),
+        CFISH_ARG_I32("foo", 3));
 }
 
 int64_t
@@ -51,10 +51,10 @@ _callback_i64(obj)
     kino_Obj *obj;
 CODE:
 {
-    kino_ZombieCharBuf *blank = KINO_ZCB_BLANK();
+    kino_ZombieCharBuf *blank = CFISH_ZCB_BLANK();
     RETVAL = kino_Host_callback_i64(obj, "_test", 2, 
-        KINO_ARG_OBJ("nothing", (kino_CharBuf*)blank), 
-        KINO_ARG_I32("foo", 3));
+        CFISH_ARG_OBJ("nothing", (kino_CharBuf*)blank), 
+        CFISH_ARG_I32("foo", 3));
 }
 OUTPUT: RETVAL
 
@@ -63,10 +63,10 @@ _callback_f64(obj)
     kino_Obj *obj;
 CODE:
 {
-    kino_ZombieCharBuf *blank = KINO_ZCB_BLANK();
+    kino_ZombieCharBuf *blank = CFISH_ZCB_BLANK();
     RETVAL = kino_Host_callback_f64(obj, "_test", 2, 
-        KINO_ARG_OBJ("nothing", (kino_CharBuf*)blank), 
-        KINO_ARG_I32("foo", 3));
+        CFISH_ARG_OBJ("nothing", (kino_CharBuf*)blank), 
+        CFISH_ARG_I32("foo", 3));
 }
 OUTPUT: RETVAL
 

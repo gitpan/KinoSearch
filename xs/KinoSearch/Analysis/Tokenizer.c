@@ -1,6 +1,6 @@
 #define C_KINO_TOKENIZER
 #define C_KINO_TOKEN
-#include "xs/XSBind.h"
+#include "XSBind.h"
 
 #include "KinoSearch/Analysis/Tokenizer.h"
 #include "KinoSearch/Analysis/Token.h"
@@ -22,14 +22,23 @@ kino_Tokenizer_init(kino_Tokenizer *self, const kino_CharBuf *pattern)
 
     kino_Analyzer_init((kino_Analyzer*)self);
     #define DEFAULT_PATTERN "\\w+(?:['\\x{2019}]\\w+)*"
-    self->pattern = pattern 
-                  ? Kino_CB_Clone(pattern)
-                  : kino_CB_new_from_trusted_utf8(DEFAULT_PATTERN,
-                      sizeof(DEFAULT_PATTERN) - 1);
+    if (pattern) {
+        if (   Kino_CB_Find_Str(pattern, "\\p", 2) != -1
+            || Kino_CB_Find_Str(pattern, "\\P", 2) != -1
+        ) {
+            KINO_DECREF(self);
+            THROW(KINO_ERR, "\\p and \\P constructs forbidden");
+        }
+        self->pattern = Kino_CB_Clone(pattern);
+    }
+    else {
+        self->pattern = kino_CB_new_from_trusted_utf8(DEFAULT_PATTERN,
+            sizeof(DEFAULT_PATTERN) - 1);
+    }
 
     // Acquire a compiled regex engine for matching one token. 
     token_re_sv = (SV*)kino_Host_callback_host(KINO_TOKENIZER,
-        "compile_token_re", 1, KINO_ARG_STR("pattern", self->pattern));
+        "compile_token_re", 1, CFISH_ARG_STR("pattern", self->pattern));
     S_set_token_re_but_not_pattern(self, SvRV(token_re_sv));
 
     return self;

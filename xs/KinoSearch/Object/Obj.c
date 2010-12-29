@@ -52,7 +52,7 @@ kino_Obj_inc_refcount(kino_Obj *self)
 {
     switch (self->ref.count) {
         case 0:
-            KINO_THROW(KINO_ERR, "Illegal refcount of 0");
+            CFISH_THROW(KINO_ERR, "Illegal refcount of 0");
             break; // useless 
         case 1:
         case 2:
@@ -73,7 +73,7 @@ kino_Obj_dec_refcount(kino_Obj *self)
     uint32_t modified_refcount = I32_MAX;
     switch (self->ref.count) {
         case 0:
-            KINO_THROW(KINO_ERR, "Illegal refcount of 0");
+            CFISH_THROW(KINO_ERR, "Illegal refcount of 0");
             break; // useless 
         case 1:
             modified_refcount = 0;

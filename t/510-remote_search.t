@@ -8,7 +8,7 @@ use IO::Socket::INET;
 my $PORT_NUM = 7890;
 BEGIN {
     if ( $^O =~ /mswin/i ) {
-        plan( 'skip_all', "fork on Windows not supported by KS" );
+        plan( 'skip_all', "fork on Windows not supported by KinoSearch" );
     }
     elsif ( $ENV{KINO_VALGRIND} ) {
         plan( 'skip_all', "time outs cause probs under valgrind" );

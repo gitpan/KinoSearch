@@ -73,16 +73,16 @@ sub _sv_to_cf_obj {
         # Share buffers rather than copy between Perl scalars and Clownfish
         # string types.  Assume that the appropriate ZombieCharBuf has been
         # declared on the stack.
-        return "$cf_var = ($struct_sym*)XSBind_sv_to_kino_obj($xs_var, "
-            . "$vtable, alloca(kino_ZCB_size()));";
+        return "$cf_var = ($struct_sym*)XSBind_sv_to_cfish_obj($xs_var, "
+            . "$vtable, alloca(cfish_ZCB_size()));";
     }
     else {
-        return "$cf_var = ($struct_sym*)XSBind_sv_to_kino_obj($xs_var, "
+        return "$cf_var = ($struct_sym*)XSBind_sv_to_cfish_obj($xs_var, "
             . "$vtable, NULL);";
     }
 }
 
-sub _void_star_to_kino {
+sub _void_star_to_clownfish {
     my ( $type, $cf_var, $xs_var ) = @_;
     # Assume that void* is a reference SV -- either a hashref or an arrayref.
     return qq|if (SvROK($xs_var)) {
@@ -90,7 +90,7 @@ sub _void_star_to_kino {
         }
         else {
             $cf_var = NULL; /* avoid uninitialized compiler warning */
-            KINO_THROW(KINO_ERR, "$cf_var is not a reference");
+            CFISH_THROW(CFISH_ERR, "$cf_var is not a reference");
         }\n|;
 }
 
@@ -109,7 +109,7 @@ sub from_perl {
     }
     elsif ( $type->is_composite ) {
         if ( $type->to_c eq 'void*' ) {
-            return _void_star_to_kino( $type, $cf_var, $xs_var );
+            return _void_star_to_clownfish( $type, $cf_var, $xs_var );
         }
     }
 
@@ -124,7 +124,7 @@ sub to_perl {
 
     if ( $type->is_object ) {
         return "$xs_var = $cf_var == NULL ? newSV(0) : "
-            . "XSBind_kino_to_perl((kino_Obj*)$cf_var);";
+            . "XSBind_cfish_to_perl((cfish_Obj*)$cf_var);";
     }
     elsif ( $type->is_primitive ) {
         if ( my $sub = $primitives_to_perl{$type_str} ) {
@@ -157,13 +157,13 @@ sub write_xs_typemap {
         $typemap_start .= "$full_struct_sym*\t$label\n";
         $typemap_input .= <<END_INPUT;
 $label
-    \$var = ($full_struct_sym*)XSBind_sv_to_kino_obj(\$arg, $vtable, NULL);
+    \$var = ($full_struct_sym*)XSBind_sv_to_cfish_obj(\$arg, $vtable, NULL);
 
 END_INPUT
 
         $typemap_output .= <<END_OUTPUT;
 $label
-    \$arg = (SV*)Kino_Obj_To_Host((kino_Obj*)\$var);
+    \$arg = (SV*)Cfish_Obj_To_Host((cfish_Obj*)\$var);
     KINO_DECREF(\$var);
 
 END_OUTPUT
@@ -227,7 +227,7 @@ CHY_BIG_UNSIGNED_INT
     $big_unsigned_convert
 
 CONST_CHARBUF
-    \$var = (const kino_CharBuf*)KINO_ZCB_WRAP_STR(SvPVutf8_nolen(\$arg), SvCUR(\$arg));
+    \$var = (const cfish_CharBuf*)CFISH_ZCB_WRAP_STR(SvPVutf8_nolen(\$arg), SvCUR(\$arg));
 
 END_STUFF
 }

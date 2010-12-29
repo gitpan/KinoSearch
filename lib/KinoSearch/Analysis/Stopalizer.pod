@@ -14,9 +14,6 @@ KinoSearch::Analysis::Stopalizer - Suppress a "stoplist" of common words.
         analyzers => [ $case_folder, $tokenizer, $stopalizer, $stemmer ],
     );
 
-This class uses L<Lingua::StopWords> for its default stoplists, so it supports
-the same set of languages.
-
 
 
 =head1 DESCRIPTION

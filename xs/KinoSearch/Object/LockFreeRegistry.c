@@ -1,6 +1,6 @@
 #define C_KINO_OBJ
 #define C_KINO_LOCKFREEREGISTRY
-#include "xs/XSBind.h"
+#include "XSBind.h"
 
 #include "KinoSearch/Object/LockFreeRegistry.h"
 #include "KinoSearch/Object/Host.h"

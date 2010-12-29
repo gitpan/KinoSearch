@@ -108,13 +108,13 @@ sub _xsub_def_positional_args {
     if ( $min_required < $num_args ) {
         $num_args_check
             = qq|if (items < $min_required) { |
-            . qq|THROW(KINO_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)),|
+            . qq|CFISH_THROW(CFISH_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)),|
             . qq| "$xs_name_list"); }|;
     }
     else {
         $num_args_check
             = qq|if (items != $num_args) { |
-            . qq| THROW(KINO_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)), |
+            . qq| CFISH_THROW(CFISH_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)), |
             . qq|"$xs_name_list"); }|;
     }
 
@@ -182,7 +182,7 @@ sub _xsub_def_labeled_params {
     my $name_list = $arg_vars->[0]->micro_sym . ", ...";
     my $num_args_check
         = qq|if (items < 1) { |
-        . qq|THROW(KINO_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)), |
+        . qq|CFISH_THROW(CFISH_ERR, "Usage: %s(%s)",  GvNAME(CvGV(cv)), |
         . qq|"$name_list"); }|;
 
     # Create code for allocating labeled parameters.
@@ -223,7 +223,7 @@ sub _xsub_def_labeled_params {
         else {
             my $assignment
                 = qq#if ( !$sv_name || !XSBind_sv_defined($sv_name) ) { #
-                . qq#THROW(KINO_ERR, "Missing required param '$name'"); }\n#
+                . qq#CFISH_THROW(CFISH_ERR, "Missing required param '$name'"); }\n#
                 . qq#         $statement;#;
             push @var_assignments, $assignment;
         }
@@ -265,8 +265,8 @@ sub _self_assign_statement {
     # a class method.
     my $binding_func
         = $method_name eq 'deserialize'
-        ? 'XSBind_maybe_sv_to_kino_obj'
-        : 'XSBind_sv_to_kino_obj';
+        ? 'XSBind_maybe_sv_to_cfish_obj'
+        : 'XSBind_sv_to_cfish_obj';
     return "self = ($type_c)$binding_func(ST(0), $vtable, NULL);";
 }
 

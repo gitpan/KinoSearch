@@ -48,8 +48,8 @@ my $builder = KinoSearch::Build->new(
         'ExtUtils::ParseXS'  => 2.16,
         'Devel::PPPort'      => 3.13,
     },
-    meta_merge         => { keywords => [qw( search lucene )], },
-    meta_add           => {
+    meta_merge => { keywords => [qw( search lucene )], },
+    meta_add   => {
         resources => {
             homepage   => 'http://www.rectangular.com/kinosearch',
             repository => 'http://www.rectangular.com/svn/kinosearch/trunk',

@@ -1,7 +1,7 @@
 #define C_KINO_DOCREADER
 #define C_KINO_DEFAULTDOCREADER
 #define C_KINO_ZOMBIECHARBUF
-#include "xs/XSBind.h"
+#include "XSBind.h"
 
 #include "KinoSearch/Index/DocReader.h"
 #include "KinoSearch/Document/HitDoc.h"
@@ -48,7 +48,7 @@ kino_DefDocReader_fetch_doc(kino_DefaultDocReader *self, int32_t doc_id)
 
         // Find the Field's FieldType. 
         kino_ZombieCharBuf *field_name_zcb 
-            = KINO_ZCB_WRAP_STR(field_name_ptr, field_name_len);
+            = CFISH_ZCB_WRAP_STR(field_name_ptr, field_name_len);
         Kino_ZCB_Assign_Str(field_name_zcb, field_name_ptr, field_name_len);
         type = Kino_Schema_Fetch_Type(schema, (kino_CharBuf*)field_name_zcb);
 
@@ -94,7 +94,7 @@ kino_DefDocReader_fetch_doc(kino_DefaultDocReader *self, int32_t doc_id)
                 break;
             default:
                 value_sv = NULL; 
-                KINO_THROW(KINO_ERR, "Unrecognized type: %o", type);
+                CFISH_THROW(KINO_ERR, "Unrecognized type: %o", type);
         }
 
         // Store the value. 

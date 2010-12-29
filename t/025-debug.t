@@ -38,7 +38,7 @@ ASSERT(1);
 pass("ASSERT(true) didn't die");
 
 SKIP: {
-    skip( "Windows fork not supported by KS", 3 ) if $^O =~ /mswin/i;
+    skip( "Windows fork not supported by KinoSearch", 3 ) if $^O =~ /mswin/i;
 
     my $stderr_out = capture_debug( 'KinoSearch.xs', 'Borax' );
     like( $stderr_out, qr/Borax/, "DEBUG - file name" );
@@ -47,7 +47,7 @@ SKIP: {
         = capture_debug( 'XS_KinoSearch__Util__Debug_DEBUG', "Strychnine" );
     like( $stderr_out, qr/Strychnine/, "DEBUG - function name" );
 
-    $stderr_out = capture_debug( 'KinoS*', 'Raid' );
+    $stderr_out = capture_debug( 'KinoSearch*', 'Raid' );
     like( $stderr_out, qr/Raid/, "DEBUG - wildcard" );
 
     my $pid = fork();

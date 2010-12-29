@@ -45,13 +45,13 @@ SI_push_args(void *vobj, va_list args, uint32_t num_args)
         if (num_args > 1) {
             PUSHs( sv_2mortal( newSVpvn(label, strlen(label)) ) );
         }
-        switch (arg_type & KINO_HOST_ARGTYPE_MASK) {
-        case KINO_HOST_ARGTYPE_I32: {
+        switch (arg_type & CFISH_HOST_ARGTYPE_MASK) {
+        case CFISH_HOST_ARGTYPE_I32: {
                 int32_t value = va_arg(args, int32_t);
                 PUSHs( sv_2mortal( newSViv(value) ) );
             }
             break;
-        case KINO_HOST_ARGTYPE_I64: {
+        case CFISH_HOST_ARGTYPE_I64: {
                 int64_t value = va_arg(args, int64_t);
                 if (sizeof(IV) == 8) {
                     PUSHs( sv_2mortal( newSViv((IV)value) ) );
@@ -62,28 +62,28 @@ SI_push_args(void *vobj, va_list args, uint32_t num_args)
                 }
             }
             break;
-        case KINO_HOST_ARGTYPE_F32:
-        case KINO_HOST_ARGTYPE_F64: {
+        case CFISH_HOST_ARGTYPE_F32:
+        case CFISH_HOST_ARGTYPE_F64: {
                 // Floats are promoted to doubles by variadic calling. 
                 double value = va_arg(args, double);
                 PUSHs( sv_2mortal( newSVnv(value) ) );
             }
             break;
-        case KINO_HOST_ARGTYPE_STR: {
+        case CFISH_HOST_ARGTYPE_STR: {
                 kino_CharBuf *string = va_arg(args, kino_CharBuf*);
                 PUSHs( sv_2mortal( XSBind_cb_to_sv(string) ) );
             }
             break;
-        case KINO_HOST_ARGTYPE_OBJ: {
+        case CFISH_HOST_ARGTYPE_OBJ: {
                 kino_Obj* anObj = va_arg(args, kino_Obj*);
                 SV *arg_sv = anObj == NULL
                     ? newSV(0)
-                    : XSBind_kino_to_perl(anObj);
+                    : XSBind_cfish_to_perl(anObj);
                 PUSHs( sv_2mortal(arg_sv) );
             }
             break;
         default:
-            KINO_THROW(KINO_ERR, "Unrecognized arg type: %u32", arg_type);
+            CFISH_THROW(KINO_ERR, "Unrecognized arg type: %u32", arg_type);
         }
     }
 
@@ -102,7 +102,7 @@ kino_Host_callback(void *vobj, char *method, uint32_t num_args, ...)
     {
         int count = call_method(method, G_VOID|G_DISCARD);
         if (count != 0) {
-            KINO_THROW(KINO_ERR, "callback '%s' returned too many values: %i32", 
+            CFISH_THROW(KINO_ERR, "callback '%s' returned too many values: %i32", 
                 method, (int32_t)count);
         }
         FREETMPS;
@@ -171,7 +171,7 @@ kino_Host_callback_obj(void *vobj, char *method,
     temp_retval = S_do_callback_sv(vobj, method, num_args, args);
     va_end(args);
 
-    retval = XSBind_perl_to_kino(temp_retval);
+    retval = XSBind_perl_to_cfish(temp_retval);
 
     FREETMPS;
     LEAVE;
@@ -229,7 +229,7 @@ S_do_callback_sv(void *vobj, char *method, uint32_t num_args, va_list args)
         int num_returned = call_method(method, G_SCALAR);
         dSP;
         if (num_returned != 1) {
-            KINO_THROW(KINO_ERR, "Bad number of return vals from %s: %i32", method,
+            CFISH_THROW(KINO_ERR, "Bad number of return vals from %s: %i32", method,
                 (int32_t)num_returned);
         }
         return_val = POPs;

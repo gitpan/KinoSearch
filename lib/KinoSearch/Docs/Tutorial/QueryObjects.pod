@@ -38,7 +38,7 @@ indexed, but since we won't display its value, it doesn't need to be stored.
     $schema->spec_field( name => 'category', type => $cat_type );
 
 There will be three possible values: "article", "amendment", and "preamble",
-which we'll hack out of the HTML source file's name during our C<parse_file>
+which we'll hack out of the source file's name during our C<parse_file>
 subroutine:
 
     my $category
@@ -47,8 +47,8 @@ subroutine:
         : $filename =~ /preamble/ ? 'preamble'
         :                           die "Can't derive category for $filename";
     return {
-        title    => $title_node->as_trimmed_text,
-        content  => $bodytext_node->as_trimmed_text,
+        title    => $title,
+        content  => $bodytext,
         url      => "/us_constitution/$filename",
         category => $category,
     };
@@ -82,7 +82,7 @@ parameter.
     
     ... 
     
-    my $category = $cgi->param('category') || '';
+    my $category = decode( "UTF-8", $cgi->param('category') || '' );
 
 QueryParser's constructor requires a "schema" argument.  We can get that from
 our IndexSearcher:
@@ -121,7 +121,7 @@ Now when we execute the query...
     my $hits = $searcher->hits(
         query      => $query,
         offset     => $offset,
-        num_wanted => $hits_per_page,
+        num_wanted => $page_size,
     );
 
 ... we'll get a result set which is the intersection of the parsed query and

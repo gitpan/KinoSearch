@@ -172,7 +172,7 @@ wildcards.
 
 =head1 DESCRIPTION
 
-Seek L<KinoSearch::Docs::Cookbook::CustomQuery>.
+See L<KinoSearch::Docs::Cookbook::CustomQuery>.
 
 =head1 COPYRIGHT AND LICENSE
 

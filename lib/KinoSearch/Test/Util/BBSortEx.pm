@@ -17,7 +17,7 @@ CODE:
 {
     void *address = Kino_BBSortEx_Fetch(self);
     if (address) {
-        RETVAL = XSBind_kino_to_perl(*(kino_Obj**)address);
+        RETVAL = XSBind_cfish_to_perl(*(kino_Obj**)address);
         KINO_DECREF(*(kino_Obj**)address);
     }
     else {
@@ -33,7 +33,7 @@ CODE:
 {
     void *address = Kino_BBSortEx_Peek(self);
     if (address) {
-        RETVAL = XSBind_kino_to_perl(*(kino_Obj**)address);
+        RETVAL = XSBind_cfish_to_perl(*(kino_Obj**)address);
     }
     else {
         RETVAL = newSV(0);

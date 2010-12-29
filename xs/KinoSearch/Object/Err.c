@@ -1,4 +1,4 @@
-#include "xs/XSBind.h"
+#include "XSBind.h"
 #include "KinoSearch/Object/Host.h"
 
 kino_Err*
@@ -14,7 +14,7 @@ void
 kino_Err_set_error(kino_Err *error)
 {
     kino_Host_callback(KINO_ERR, "set_error", 1, 
-        KINO_ARG_OBJ("error", error));
+        CFISH_ARG_OBJ("error", error));
     KINO_DECREF(error);
 }
 
@@ -48,8 +48,8 @@ void
 kino_Err_throw_mess(kino_VTable *vtable, kino_CharBuf *message) 
 {
     kino_Err_make_t make = (kino_Err_make_t)KINO_METHOD(
-        KINO_CERTIFY(vtable, KINO_VTABLE), Err, Make);
-    kino_Err *err = (kino_Err*)KINO_CERTIFY(make(NULL), KINO_ERR);
+        CFISH_CERTIFY(vtable, KINO_VTABLE), Err, Make);
+    kino_Err *err = (kino_Err*)CFISH_CERTIFY(make(NULL), KINO_ERR);
     Kino_Err_Cat_Mess(err, message);
     KINO_DECREF(message);
     kino_Err_do_throw(err);

@@ -23,7 +23,7 @@
 // infinite loop -- so we fwrite some of the bogus text to stderr and 
 // invoke THROW with a generic message.
 #define DIE_INVALID_UTF8(text, size) \
-    S_die_invalid_utf8(text, size, __FILE__, __LINE__, KINO_ERR_FUNC_MACRO)
+    S_die_invalid_utf8(text, size, __FILE__, __LINE__, CFISH_ERR_FUNC_MACRO)
 static void
 S_die_invalid_utf8(const char *text, size_t size, const char *file, int line,
                    const char *func);
@@ -427,10 +427,26 @@ CB_basex_to_i64(CharBuf *self, uint32_t base)
     return retval;
 }
 
+static double
+S_safe_to_f64(CharBuf *self)
+{
+    size_t amount = self->size < 511 ? self->size : 511;
+    char buf[512];
+    memcpy(buf, self->ptr, amount);
+    buf[amount] = 0; // NULL-terminate.
+    return strtod(buf, NULL);
+}
+
 double
 CB_to_f64(CharBuf *self)
 {
-    return strtod(self->ptr, NULL);
+    char   *end;
+    double  value    = strtod(self->ptr, &end);
+    size_t  consumed = end - self->ptr;
+    if (consumed > self->size) { // strtod overran
+        value = S_safe_to_f64(self);
+    }
+    return value;
 }
 
 CharBuf*
@@ -590,6 +606,29 @@ CB_ends_with_str(CharBuf *self, const char *postfix, size_t postfix_len)
     }
 
     return false;
+}
+
+int64_t 
+CB_find(CharBuf *self, const CharBuf *substring)
+{  
+    return CB_Find_Str(self, substring->ptr, substring->size);
+}
+
+int64_t 
+CB_find_str(CharBuf *self, const char *ptr, size_t size)
+{
+    ZombieCharBuf *iterator = ZCB_WRAP(self);
+    int64_t location = 0;
+
+    while (iterator->size) {
+        if (ZCB_Starts_With_Str(iterator, ptr, size)) {
+            return location;
+        }
+        ZCB_Nip(iterator, 1);
+        location++;
+    }
+    
+    return -1;
 }
 
 uint32_t
@@ -828,6 +867,13 @@ ViewCB_assign_str(ViewCharBuf *self, const char *utf8, size_t size)
 {
     if (!StrHelp_utf8_valid(utf8, size))
         DIE_INVALID_UTF8(utf8, size);
+    self->ptr  = (char*)utf8;
+    self->size = size;
+}
+
+void
+ViewCB_assign_trusted_str(ViewCharBuf *self, const char *utf8, size_t size)
+{
     self->ptr  = (char*)utf8;
     self->size = size;
 }

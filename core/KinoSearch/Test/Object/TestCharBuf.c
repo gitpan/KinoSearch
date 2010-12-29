@@ -68,6 +68,26 @@ test_Mimic_and_Clone(TestBatch *batch)
 }
 
 static void
+test_Find(TestBatch *batch)
+{
+    CharBuf *string = CB_new(10);
+    CharBuf *substring = S_get_cb("foo");
+
+    TEST_TRUE(batch, CB_Find(string, substring) == -1, "Not in empty string");
+    CB_setf(string, "foo");
+    TEST_TRUE(batch, CB_Find(string, substring) == 0, "Find complete string");
+    CB_setf(string, "afoo");
+    TEST_TRUE(batch, CB_Find(string, substring) == 1, "Find after first");
+    CB_Set_Size(string, 3);
+    TEST_TRUE(batch, CB_Find(string, substring) == -1, "Don't overrun");
+    CB_setf(string, "afood");
+    TEST_TRUE(batch, CB_Find(string, substring) == 1, "Find in middle");
+
+    DECREF(substring);
+    DECREF(string);
+}
+
+static void
 test_Code_Point_At_and_From(TestBatch *batch)
 {
     uint32_t code_points[] = { 'a', 0x263A, 0x263A, 'b', 0x263A, 'c' }; 
@@ -184,6 +204,13 @@ test_To_F64(TestBatch *batch)
     difference = 1.5 + CB_To_F64(charbuf);
     if (difference < 0) { difference = 0 - difference; }
     TEST_TRUE(batch, difference < 0.001, "To_F64 negative");
+
+    CB_setf(charbuf, "1.59");
+    double value_full = CB_To_F64(charbuf);
+    CB_Set_Size(charbuf, 3);
+    double value_short = CB_To_F64(charbuf);
+    TEST_TRUE(batch, value_short < value_full, 
+        "TO_F64 doesn't run past end of string");
 
     DECREF(charbuf);
 }
@@ -378,7 +405,7 @@ test_serialization(TestBatch *batch)
 void
 TestCB_run_tests()
 {
-    TestBatch *batch = TestBatch_new(49);
+    TestBatch *batch = TestBatch_new(55);
     TestBatch_Plan(batch);
 
     test_vcatf_s(batch);
@@ -397,6 +424,7 @@ TestCB_run_tests()
     test_Cat(batch);
     test_Mimic_and_Clone(batch);
     test_Code_Point_At_and_From(batch);
+    test_Find(batch);
     test_SubString(batch);
     test_Nip_and_Chop(batch);
     test_Truncate(batch);

@@ -159,7 +159,7 @@ sub write_bindings {
 sub _xs_file_contents {
     my ( $self, $generated_xs, $xs_init, $hand_rolled_xs ) = @_;
     return <<END_STUFF;
-#include "xs/XSBind.h"
+#include "XSBind.h"
 #include "boil.h"
 #include "$self->{boot_h_file}"
 
@@ -291,16 +291,13 @@ sub _write_boot_c {
         my $include_h = $class->include_h;
         $pound_includes .= qq|#include "$include_h"\n|;
         next if $class->inert;
-        my $prefix  = $class->get_prefix;
-        my $PREFIX  = $class->get_PREFIX;
-        my $vt_type = $PREFIX . $class->vtable_type;
 
         # Ignore return value from VTable_add_to_registry, since it's OK if
         # multiple threads contend for adding these permanent VTables and some
         # fail.
         $registrations
-            .= qq|    ${prefix}VTable_add_to_registry($PREFIX|
-            . $class->vtable_var
+            .= qq|    cfish_VTable_add_to_registry(|
+            . $class->full_vtable_var
             . qq|);\n|;
 
         my $parent = $class->get_parent;

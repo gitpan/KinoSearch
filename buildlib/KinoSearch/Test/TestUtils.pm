@@ -92,24 +92,20 @@ sub get_uscon_docs {
     my $uscon_dir = catdir( 'sample', 'us_constitution' );
     opendir( my $uscon_dh, $uscon_dir )
         or die "couldn't opendir '$uscon_dir': $!";
-    my @filenames = grep {/\.html$/} sort readdir $uscon_dh;
+    my @filenames = grep {/\.txt$/} sort readdir $uscon_dh;
     closedir $uscon_dh or die "couldn't closedir '$uscon_dir': $!";
 
     my %docs;
 
     for my $filename (@filenames) {
-        next if $filename eq 'index.html';
         my $filepath = catfile( $uscon_dir, $filename );
         open( my $fh, '<', $filepath )
             or die "couldn't open file '$filepath': $!";
         my $content = do { local $/; <$fh> };
-        $content =~ m#<title>(.*?)</title>#s
-            or die "couldn't isolate title in '$filepath'";
-        my $title = $1;
-        $content =~ m#<div id="bodytext">(.*?)</div><!--bodytext-->#s
-            or die "couldn't isolate bodytext in '$filepath'";
-        my $bodytext = $1;
-        $bodytext =~ s/<.*?>//sg;
+        $content =~ /(.*?)\n\n(.*)/s
+            or die "Can't extract title/bodytext from '$filepath'";
+        my $title    = $1; 
+        my $bodytext = $2; 
         $bodytext =~ s/\s+/ /sg;
         my $category
             = $filename =~ /art/      ? 'article'

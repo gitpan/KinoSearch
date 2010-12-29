@@ -41,7 +41,7 @@ found in the C<sample> directory at the root of the KinoSearch distribution:
 
     sample/indexer.pl        # indexing app
     sample/search.cgi        # search app
-    sample/us_constitution   # html documents
+    sample/us_constitution   # corpus
 
 =head1 COPYRIGHT AND LICENSE
 

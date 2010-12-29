@@ -1,5 +1,5 @@
 #define C_KINO_DOC
-#include "xs/XSBind.h"
+#include "XSBind.h"
 #include "KinoSearch/Document/Doc.h"
 #include "KinoSearch/Object/Host.h"
 #include "KinoSearch/Store/InStream.h"
@@ -57,7 +57,7 @@ kino_Doc_serialize(kino_Doc *self, kino_OutStream *outstream)
 {
     Kino_OutStream_Write_C32(outstream, self->doc_id);
     kino_Host_callback(self, "serialize_fields", 1, 
-        KINO_ARG_OBJ("outstream", outstream));
+        CFISH_ARG_OBJ("outstream", outstream));
 }
 
 kino_Doc*
@@ -68,7 +68,7 @@ kino_Doc_deserialize(kino_Doc *self, kino_InStream *instream)
     self = self ? self : (kino_Doc*)Kino_VTable_Make_Obj(KINO_DOC);
     kino_Doc_init(self, NULL, doc_id);
     kino_Host_callback(self, "deserialize_fields", 1, 
-        KINO_ARG_OBJ("instream", instream));
+        CFISH_ARG_OBJ("instream", instream));
     
     return self;
 }
@@ -117,23 +117,23 @@ kino_Doc_dump(kino_Doc *self)
     Kino_Hash_Store_Str(dump, "doc_id", 7, 
         (kino_Obj*)kino_CB_newf("%i32", self->doc_id));
     Kino_Hash_Store_Str(dump, "fields", 6, 
-        XSBind_perl_to_kino((SV*)self->fields));
+        XSBind_perl_to_cfish((SV*)self->fields));
     return dump;
 }
 
 kino_Doc*
 kino_Doc_load(kino_Doc *self, kino_Obj *dump)
 {
-    kino_Hash *source = (kino_Hash*)KINO_CERTIFY(dump, KINO_HASH);
-    kino_CharBuf *class_name = (kino_CharBuf*)KINO_CERTIFY(
+    kino_Hash *source = (kino_Hash*)CFISH_CERTIFY(dump, KINO_HASH);
+    kino_CharBuf *class_name = (kino_CharBuf*)CFISH_CERTIFY(
         Kino_Hash_Fetch_Str(source, "_class", 6), KINO_CHARBUF);
     kino_VTable *vtable = kino_VTable_singleton(class_name, NULL);
     kino_Doc *loaded = (kino_Doc*)Kino_VTable_Make_Obj(vtable);
-    kino_Obj *doc_id = KINO_CERTIFY(
+    kino_Obj *doc_id = CFISH_CERTIFY(
         Kino_Hash_Fetch_Str(source, "doc_id", 7), KINO_OBJ);
-    kino_Hash *fields = (kino_Hash*)KINO_CERTIFY(
+    kino_Hash *fields = (kino_Hash*)CFISH_CERTIFY(
         Kino_Hash_Fetch_Str(source, "fields", 6), KINO_HASH);
-    SV *fields_sv = XSBind_kino_to_perl((kino_Obj*)fields);
+    SV *fields_sv = XSBind_cfish_to_perl((kino_Obj*)fields);
     CHY_UNUSED_VAR(self);
 
     loaded->doc_id = (int32_t)Kino_Obj_To_I64(doc_id);

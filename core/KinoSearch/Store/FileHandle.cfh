@@ -22,6 +22,13 @@ abstract class KinoSearch::Store::FileHandle cnick FH
     CharBuf *path;
     uint32_t flags;
 
+    /* Integer which is incremented each time a FileHandle is created and
+     * decremented when a FileHandle is destroyed.  Since so many classes use
+     * FileHandle objects, they're the canary in the coal mine for detecting
+     * object-destruction memory leaks.
+     */
+    inert int32_t object_count; 
+
     /** Abstract constructor.
      *
      * @param path The path to the file.
@@ -115,18 +122,10 @@ __C__
 #define KINO_FH_CREATE     0x4
 #define KINO_FH_EXCLUSIVE  0x8
 
-/* Integer which is incremented each time a FileHandle is created and decremented
- * when a FileHandle is destroyed.  Since so many classes use FileHandle objects,
- * they're the canary in the coal mine for detecting object-destruction memory
- * leaks.
- */
-extern int32_t kino_FH_object_count; 
-
 // Default size for the memory buffer used by both InStream and OutStream.
 #define KINO_IO_STREAM_BUF_SIZE 1024
 
 #ifdef KINO_USE_SHORT_NAMES
-  #define FH_object_count             kino_FH_object_count
   #define IO_STREAM_BUF_SIZE          KINO_IO_STREAM_BUF_SIZE
   #define FH_READ_ONLY                KINO_FH_READ_ONLY
   #define FH_WRITE_ONLY               KINO_FH_WRITE_ONLY

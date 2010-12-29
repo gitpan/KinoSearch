@@ -2,7 +2,7 @@ parcel KinoSearch cnick Kino;
 
 /** Virtual method dispatch table.
  *
- * VTables, which are the first element in any KS object, are actually
+ * VTables, which are the first element in any Clownfish object, are actually
  * objects themselves.  (Their first element is a VTable which describes the
  * behavior of VTables.)
  */
@@ -15,10 +15,11 @@ class KinoSearch::Object::VTable inherits KinoSearch::Object::Obj {
     void              *x;            /* Reserved for future expansion */
     size_t             obj_alloc_size;
     size_t             vt_alloc_size;
-    Callback         **callbacks;
+    void              *callbacks;
     kino_method_t[1]   methods; /* flexible array */
 
     inert LockFreeRegistry *registry;
+    inert size_t offset_of_parent;
 
     /** Return a singleton.  If a VTable can be found in the registry based on
      * the subclass name, it will be returned.  Otherwise, a new VTable will

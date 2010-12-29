@@ -1,7 +1,7 @@
 #define C_KINO_CASEFOLDER
 #define C_KINO_BYTEBUF
 #define C_KINO_TOKEN
-#include "xs/XSBind.h"
+#include "XSBind.h"
 
 #include "KinoSearch/Analysis/CaseFolder.h"
 #include "KinoSearch/Analysis/Token.h"

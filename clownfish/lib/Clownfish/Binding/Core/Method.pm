@@ -29,7 +29,6 @@ sub _virtual_method_def {
     my $full_method_sym = $method->full_method_sym($cnick);
     my $full_offset_sym = $method->full_offset_sym($cnick);
     my $typedef         = $method->full_typedef;
-    my $prefix          = $method->get_prefix;
     my $arg_names       = $param_list->name_list;
     $arg_names =~ s/\s*\w+/self/;
 
@@ -73,7 +72,6 @@ END_STUFF
 
 sub typedef_dec {
     my ( undef, $method ) = @_;
-    my $prefix      = $method->get_prefix;
     my $params      = $method->get_param_list->to_c;
     my $return_type = $method->get_return_type->to_c;
     my $typedef     = $method->full_typedef;
@@ -86,7 +84,7 @@ END_STUFF
 sub callback_dec {
     my ( undef, $method ) = @_;
     my $callback_sym = $method->full_callback_sym;
-    return qq|extern kino_Callback $callback_sym;\n|;
+    return qq|extern cfish_Callback $callback_sym;\n|;
 }
 
 sub callback_obj_def {
@@ -97,8 +95,8 @@ sub callback_obj_def {
     my $len          = length($macro_sym);
     my $func_sym     = $method->full_override_sym;
     my $callback_sym = $method->full_callback_sym;
-    return qq|kino_Callback $callback_sym = |
-        . qq|{"$macro_sym", $len, (kino_method_t)$func_sym, $offset};\n|;
+    return qq|cfish_Callback $callback_sym = |
+        . qq|{"$macro_sym", $len, (cfish_method_t)$func_sym, $offset};\n|;
 }
 
 sub callback_def {
@@ -126,8 +124,8 @@ sub callback_def {
 # to Host's callback interface.  For instance, (int32_t foo, Obj *bar)
 # produces the following:
 #
-#   KINO_ARG_I32("foo", foo),
-#   KINO_ARG_OBJ("bar", bar)
+#   CFISH_ARG_I32("foo", foo),
+#   CFISH_ARG_OBJ("bar", bar)
 #
 sub _callback_params {
     my $method     = shift;
@@ -135,7 +133,6 @@ sub _callback_params {
     my $param_list = $method->get_param_list;
     my $num_params = $param_list->num_vars - 1;
     my $arg_vars   = $param_list->get_variables;
-    my $PREFIX     = $method->get_PREFIX;
     my @params;
 
     # Iterate over arguments, mapping them to various arg wrappers which
@@ -145,19 +142,19 @@ sub _callback_params {
         my $type = $var->get_type;
         my $param;
         if ( $type->is_string_type ) {
-            $param = qq|${PREFIX}ARG_STR("$name", $name)|;
+            $param = qq|CFISH_ARG_STR("$name", $name)|;
         }
         elsif ( $type->is_object ) {
-            $param = qq|${PREFIX}ARG_OBJ("$name", $name)|;
+            $param = qq|CFISH_ARG_OBJ("$name", $name)|;
         }
         elsif ( $type->is_integer ) {
             $param
                 = $type->sizeof > 4
-                ? qq|${PREFIX}ARG_I64("$name", $name)|
-                : qq|${PREFIX}ARG_I32("$name", $name)|;
+                ? qq|CFISH_ARG_I64("$name", $name)|
+                : qq|CFISH_ARG_I32("$name", $name)|;
         }
         elsif ( $type->is_floating ) {
-            $param = qq|${PREFIX}ARG_F64("$name", $name)|;
+            $param = qq|CFISH_ARG_F64("$name", $name)|;
         }
         else {
             # Can't map variable type.  Signal to caller.
@@ -177,7 +174,6 @@ sub _invalid_callback_def {
         = $method->full_method_sym( $method->get_class_cnick );
     my $override_sym = $method->full_override_sym;
     my $params       = $method->get_param_list->to_c;
-    my $prefix       = $method->get_prefix;
     my $unused       = '';
     for my $var ( @{ $method->get_param_list->get_variables } ) {
         my $var_name = $var->micro_sym;
@@ -188,7 +184,7 @@ void
 $override_sym($params)
 {
     $unused;
-    KINO_THROW(KINO_ERR, "Can't override $full_method_sym via binding");
+    CFISH_THROW(CFISH_ERR, "Can't override $full_method_sym via binding");
 }
 END_CALLBACK_DEF
 }
@@ -198,12 +194,11 @@ sub _void_callback_def {
     my ( $method, $callback_params ) = @_;
     my $override_sym = $method->full_override_sym;
     my $params       = $method->get_param_list->to_c;
-    my $prefix       = $method->get_prefix;
     return <<END_CALLBACK_DEF;
 void
 $override_sym($params)
 {
-    ${prefix}Host_callback($callback_params);
+    cfish_Host_callback($callback_params);
 }
 END_CALLBACK_DEF
 }
@@ -215,11 +210,10 @@ sub _primitive_callback_def {
     my $params          = $method->get_param_list->to_c;
     my $return_type     = $method->get_return_type;
     my $return_type_str = $return_type->to_c;
-    my $prefix          = $method->get_prefix;
     my $nat_func
-        = $return_type->is_floating ? "${prefix}Host_callback_f64"
-        : $return_type->is_integer  ? "${prefix}Host_callback_i64"
-        : $return_type_str eq 'void*' ? "${prefix}Host_callback_host"
+        = $return_type->is_floating ? "cfish_Host_callback_f64"
+        : $return_type->is_integer  ? "cfish_Host_callback_i64"
+        : $return_type_str eq 'void*' ? "cfish_Host_callback_host"
         :   confess("unrecognized type: $return_type_str");
     return <<END_CALLBACK_DEF;
 $return_type_str
@@ -238,20 +232,18 @@ sub _obj_callback_def {
     my $params          = $method->get_param_list->to_c;
     my $return_type     = $method->get_return_type;
     my $return_type_str = $return_type->to_c;
-    my $prefix          = $method->get_prefix;
-    my $PREFIX          = $method->get_PREFIX;
     my $cb_func_name
         = $return_type->is_string_type
-        ? "${prefix}Host_callback_str"
-        : "${prefix}Host_callback_obj";
+        ? "cfish_Host_callback_str"
+        : "cfish_Host_callback_obj";
 
     my $nullable_check = "";
     if ( !$return_type->nullable ) {
         my $macro_sym = $method->get_macro_sym;
         $nullable_check
-            = qq|if (!retval) { KINO_THROW(KINO_ERR, |
+            = qq|if (!retval) { CFISH_THROW(CFISH_ERR, |
             . qq|"$macro_sym() for class '%o' cannot return NULL", |
-            . qq|Kino_Obj_Get_Class_Name((kino_Obj*)self)); }\n    |;
+            . qq|Cfish_Obj_Get_Class_Name((cfish_Obj*)self)); }\n    |;
     }
 
     my $decrement = "";
@@ -279,8 +271,6 @@ sub abstract_method_def {
     my $vtable          = uc( $method->self_type->get_specifier );
     my $return_type     = $method->get_return_type;
     my $return_type_str = $return_type->to_c;
-    my $prefix          = $method->get_prefix;
-    my $Prefix          = $method->get_Prefix;
     my $macro_sym       = $method->get_macro_sym;
 
     # Build list of unused params and create an unreachable return statement
@@ -300,8 +290,8 @@ sub abstract_method_def {
 $return_type_str
 $full_func_sym($params)
 {
-    kino_CharBuf *klass = self ? Kino_Obj_Get_Class_Name((kino_Obj*)self) : $vtable->name;$unused
-    KINO_THROW(KINO_ERR, "Abstract method '$macro_sym' not defined by %o", klass);$ret_statement
+    cfish_CharBuf *klass = self ? Cfish_Obj_Get_Class_Name((cfish_Obj*)self) : $vtable->name;$unused
+    CFISH_THROW(CFISH_ERR, "Abstract method '$macro_sym' not defined by %o", klass);$ret_statement
 }
 END_ABSTRACT_DEF
 }

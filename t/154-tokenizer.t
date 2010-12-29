@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 15;
 use KinoSearch::Test;
 
 my $tokenizer   = KinoSearch::Analysis::Tokenizer->new;
@@ -61,3 +61,27 @@ is_deeply(
 $tokenizer = KinoSearch::Analysis::Tokenizer->new( token_re => qr/../ );
 is_deeply( $tokenizer->split('aabbcc'),
     [qw( aa bb cc )], "back compat with token_re argument" );
+
+eval {
+    my $toke
+        = KinoSearch::Analysis::Tokenizer->new(
+        pattern => '\\p{Carp::confess}' );
+};
+like( $@, qr/\\p/, "\\p forbidden in pattern" );
+
+eval {
+    my $toke
+        = KinoSearch::Analysis::Tokenizer->new(
+        pattern => '\\P{Carp::confess}' );
+};
+like( $@, qr/\\P/, "\\P forbidden in pattern" );
+
+$tokenizer = KinoSearch::Analysis::Tokenizer->new( pattern => '\\w+' );
+my $dump = $tokenizer->dump;
+$dump->{pattern} = "\\p{Carp::confess}";
+eval { $tokenizer->load($dump) };
+like( $@, qr/\\p/, "\\p forbidden during load" );
+
+$dump->{pattern} = "\\P{Carp::confess}";
+eval { $tokenizer->load($dump) };
+like( $@, qr/\\P/, "\\P forbidden during load" );

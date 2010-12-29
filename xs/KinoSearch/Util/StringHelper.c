@@ -1,4 +1,4 @@
-#include "xs/XSBind.h"
+#include "XSBind.h"
 #include "KinoSearch/Util/StringHelper.h"
 
 // TODO: replace with code from ICU in common/ucnv_u8.c.

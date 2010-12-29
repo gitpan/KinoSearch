@@ -6,16 +6,16 @@ package KinoSearch;
 use 5.008003;
 use Exporter;
 
-our $VERSION = '0.31';
+our $VERSION = '0.311';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
-BEGIN { XSLoader::load( 'KinoSearch', '0.31' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.311' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
-    our @EXPORT_OK = qw( to_kino to_perl kdump );
+    our @EXPORT_OK = qw( to_clownfish to_perl kdump );
 }
 
 use KinoSearch::Autobinding;
@@ -120,7 +120,7 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Analysis::Stopalizer;
-    use KinoSearch qw( to_kino );
+    use KinoSearch qw( to_clownfish );
 
     sub gen_stoplist {
         my ( undef, $language ) = @_;
@@ -129,7 +129,7 @@ sub error {$KinoSearch::Object::Err::error}
         if ( $language =~ /^(?:da|de|en|es|fi|fr|hu|it|nl|no|pt|ru|sv)$/ ) {
             my $stoplist
                 = Lingua::StopWords::getStopWords( $language, 'UTF-8' );
-            return to_kino($stoplist);
+            return to_clownfish($stoplist);
         }
         return undef;
     }
@@ -198,8 +198,8 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Object::Obj;
-    use KinoSearch qw( to_kino to_perl );
-    sub load { return $_[0]->_load( to_kino( $_[1] ) ) }
+    use KinoSearch qw( to_clownfish to_perl );
+    sub load { return $_[0]->_load( to_clownfish( $_[1] ) ) }
 }
 
 {
@@ -279,7 +279,7 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Index::PolyReader;
-    use KinoSearch qw( to_kino );
+    use KinoSearch qw( to_clownfish );
 
     sub try_read_snapshot {
         my ( undef, %args ) = @_;
@@ -296,7 +296,7 @@ sub error {$KinoSearch::Object::Err::error}
         my $snapshot    = $self->get_snapshot;
         my $seg_readers = KinoSearch::Object::VArray->new(
             capacity => scalar @$segments );
-        my $segs = to_kino($segments);    # FIXME: Don't convert twice.
+        my $segs = to_clownfish($segments);    # FIXME: Don't convert twice.
         eval {
             # Create a SegReader for each segment in the index.
             my $num_segs = scalar @$segments;
@@ -320,11 +320,11 @@ sub error {$KinoSearch::Object::Err::error}
 
 {
     package KinoSearch::Index::Segment;
-    use KinoSearch qw( to_kino );
+    use KinoSearch qw( to_clownfish );
     sub store_metadata {
         my ( $self, %args ) = @_;
         $self->_store_metadata( %args,
-            metadata => to_kino( $args{metadata} ) );
+            metadata => to_clownfish( $args{metadata} ) );
     }
 }
 
@@ -560,20 +560,27 @@ sub error {$KinoSearch::Object::Err::error}
 {
     package KinoSearch::Util::Json;
     use Scalar::Util qw( blessed );
-    use KinoSearch qw( to_kino );
-
+    use KinoSearch qw( to_clownfish );
+    use KinoSearch::Util::StringHelper qw( utf8_valid utf8_flag_on );
     use JSON::XS qw();
 
     my $json_encoder = JSON::XS->new->pretty(1)->canonical(1);
 
     sub slurp_json {
         my ( undef, %args ) = @_;
+        my $result;
         my $instream = $args{folder}->open_in( $args{path} )
             or return;
         my $len = $instream->length;
         my $json;
         $instream->read( $json, $len );
-        my $result = eval { to_kino( $json_encoder->decode($json) ) };
+        if ( utf8_valid($json) ) {
+            utf8_flag_on($json);
+            $result = eval { to_clownfish( $json_encoder->decode($json) ) };
+        }
+        else {
+            $@ = "Invalid UTF-8";
+        }
         if ( $@ or !$result ) {
             KinoSearch::Object::Err->set_error(
                 KinoSearch::Object::Err->new( $@ || "Failed to decode JSON" )
@@ -617,7 +624,7 @@ sub error {$KinoSearch::Object::Err::error}
     }
 
     sub from_json {
-        return to_kino( $json_encoder->decode( $_[1] ) );
+        return to_clownfish( $json_encoder->decode( $_[1] ) );
     }
 
     sub set_tolerant { $json_encoder->allow_nonref( $_[1] ) }
@@ -652,12 +659,12 @@ OUTPUT:
     RETVAL
 
 SV*
-to_kino(sv)
+to_clownfish(sv)
     SV *sv;
 CODE:
 {
-    kino_Obj *obj = XSBind_perl_to_kino(sv);
-    RETVAL = KINO_OBJ_TO_SV_NOINC(obj);
+    kino_Obj *obj = XSBind_perl_to_cfish(sv);
+    RETVAL = CFISH_OBJ_TO_SV_NOINC(obj);
 }
 OUTPUT: RETVAL
 
@@ -669,7 +676,7 @@ CODE:
     if (sv_isobject(sv) && sv_derived_from(sv, "KinoSearch::Object::Obj")) {
         IV tmp = SvIV(SvRV(sv));
         kino_Obj* obj = INT2PTR(kino_Obj*, tmp);
-        RETVAL = XSBind_kino_to_perl(obj);
+        RETVAL = XSBind_cfish_to_perl(obj);
     }
     else {
         RETVAL = newSVsv(sv);

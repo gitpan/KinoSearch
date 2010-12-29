@@ -71,7 +71,7 @@ THROW(VTable *vtable, char *pattern, ...)
     Err_do_throw(err);
 }
 void
-KINO_WARN(char *pattern, ...)
+CFISH_WARN(char *pattern, ...)
 {
     va_list args;
     CharBuf *const message = CB_new(strlen(pattern) + 10);
@@ -83,7 +83,7 @@ KINO_WARN(char *pattern, ...)
     Err_warn_mess(message);
 }
 CharBuf*
-KINO_MAKE_MESS(char *pattern, ...)
+CFISH_MAKE_MESS(char *pattern, ...)
 {
     va_list args;
     CharBuf *const message = CB_new(strlen(pattern) + 10);
@@ -163,8 +163,8 @@ Err_rethrow(Err *self, const char *file, int line, const char *func)
 }
 
 void
-kino_Err_throw_at(VTable *vtable, const char *file, int line,
-                  const char *func, const char *pattern, ...)
+Err_throw_at(VTable *vtable, const char *file, int line,
+             const char *func, const char *pattern, ...)
 {
     va_list args;
     Err_make_t make 
@@ -195,8 +195,8 @@ SI_obj_is_a(Obj *obj, VTable *target_vtable)
 }
 
 Obj*
-kino_Err_downcast(Obj *obj, VTable *vtable, const char *file, int line, 
-                 const char *func)
+Err_downcast(Obj *obj, VTable *vtable, const char *file, int line, 
+             const char *func)
 {
     if (obj && !SI_obj_is_a(obj, vtable)) {
         Err_throw_at(ERR, file, line, func, "Can't downcast from %o to %o", 
@@ -206,8 +206,8 @@ kino_Err_downcast(Obj *obj, VTable *vtable, const char *file, int line,
 }
 
 Obj*
-kino_Err_certify(Obj *obj, VTable *vtable, const char *file, int line, 
-                      const char *func)
+Err_certify(Obj *obj, VTable *vtable, const char *file, int line, 
+            const char *func)
 {
     if (!obj) {
         Err_throw_at(ERR, file, line, func, "Object isn't a %o, it's NULL",

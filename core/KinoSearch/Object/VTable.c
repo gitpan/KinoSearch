@@ -15,7 +15,7 @@
 #include "KinoSearch/Util/Atomic.h"
 #include "KinoSearch/Util/Memory.h"
 
-size_t kino_VTable_offset_of_parent = offsetof(kino_VTable, parent);
+size_t VTable_offset_of_parent = offsetof(VTable, parent);
 
 // Remove spaces and underscores, convert to lower case. 
 static void
@@ -62,13 +62,13 @@ VTable_get_refcount(VTable *self)
     /* VTable_Get_RefCount() lies to other KinoSearch code about the refcount
      * because we don't want to have to synchronize access to the cached host
      * object to which we have delegated responsibility for keeping refcounts.
-     * It always returns 1 because 1 is a positive number, and thus other KinoSearch
+     * It always returns 1 because 1 is a positive number, and thus other KinoSearch 
      * code will be fooled into believing it never needs to take action such
      * as initiating a destructor.
      * 
      * It's possible that the host has in fact increased the refcount of the
      * cached host object if there are multiple refs to it on the other side
-     * of the KinoSearch/host border, but returning 1 is good enough to fool KinoSearch
+     * of the KinoSearch/host border, but returning 1 is good enough to fool KinoSearch 
      * code.
      */
     return 1;
@@ -146,8 +146,10 @@ VTable_singleton(const CharBuf *subclass_name, VTable *parent)
                 S_scrunch_charbuf(meth, scrunched);
                 Hash_Store(meths, (Obj*)scrunched, INCREF(&EMPTY));
             }
-            for (i = 0; singleton->callbacks[i] != NULL; i++) {
-                kino_Callback *const callback = singleton->callbacks[i];
+            cfish_Callback **callbacks
+                = (cfish_Callback**)singleton->callbacks;
+            for (i = 0; callbacks[i] != NULL; i++) {
+                cfish_Callback *const callback = callbacks[i];
                 ZCB_Assign_Str(callback_name, callback->name,
                     callback->name_len);
                 S_scrunch_charbuf((CharBuf*)callback_name, scrunched);

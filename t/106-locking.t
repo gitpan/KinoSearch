@@ -9,7 +9,7 @@ use KinoSearch::Test::TestUtils qw( init_test_index_loc );
 
 BEGIN {
     if ( $^O =~ /mswin/i ) {
-        plan( 'skip_all', "fork on Windows not supported by KS" );
+        plan( 'skip_all', "fork on Windows not supported by KinoSearch" );
     }
     else {
         plan( tests => 3 );
