@@ -53,7 +53,7 @@ Clownfish::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2008-2010 Marvin Humphrey
+Copyright 2008-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

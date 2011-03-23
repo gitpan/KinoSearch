@@ -25,6 +25,9 @@ S_down_heap(PriorityQueue *self);
 PriorityQueue*
 PriQ_init(PriorityQueue *self, uint32_t max_size)
 {
+    if (max_size == U32_MAX) {
+        THROW(ERR, "max_size too large: %u32", max_size);
+    }
     uint32_t heap_size = max_size + 1;
 
     // Init. 
@@ -218,7 +221,7 @@ S_down_heap(PriorityQueue *self)
     self->heap[i] = node;
 }
 
-/* Copyright 2006-2010 Marvin Humphrey
+/* Copyright 2006-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

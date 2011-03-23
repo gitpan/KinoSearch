@@ -319,7 +319,7 @@ $inheritance_pod
 
 ==head1 COPYRIGHT AND LICENSE
 
-Copyright 2005-2010 Marvin Humphrey
+Copyright 2005-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -452,7 +452,7 @@ Auto-generate POD according to the make_pod spec, if such a spec was supplied.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2008-2010 Marvin Humphrey
+Copyright 2008-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

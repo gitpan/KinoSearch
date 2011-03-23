@@ -571,7 +571,7 @@ S_fresh_flip(PostingPool *self, InStream *lex_temp_in,
     DECREF(post_temp_in_dupe);
 }
 
-/* Copyright 2007-2010 Marvin Humphrey
+/* Copyright 2007-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

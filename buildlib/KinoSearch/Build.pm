@@ -575,7 +575,7 @@ END_AUTOGEN
 
 sub copyfoot {
     return <<END_COPYFOOT;
-/* Copyright 2005-2010 Marvin Humphrey
+/* Copyright 2005-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
@@ -627,7 +627,7 @@ sub _gen_pause_exclusion_list {
         next if $entry =~ m#^(README|Changes)#;
 
         # Allow public modules.
-        if ( $entry =~ m#\blib\b.+\.(pm|pod)$# ) {
+        if ( $entry =~ m#^(perl/)?lib\b.+\.(pm|pod)$# ) {
             open( my $fh, '<', $entry ) or die "Can't open '$entry': $!";
             my $content = do { local $/; <$fh> };
             next if $content =~ /=head1\s*NAME/;
@@ -669,7 +669,7 @@ __END__
 
 __COPYRIGHT__
 
-Copyright 2005-2010 Marvin Humphrey
+Copyright 2005-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

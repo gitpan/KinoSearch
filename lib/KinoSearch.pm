@@ -6,12 +6,12 @@ package KinoSearch;
 use 5.008003;
 use Exporter;
 
-our $VERSION = '0.311';
+our $VERSION = '0.312';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
-BEGIN { XSLoader::load( 'KinoSearch', '0.311' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.312' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -693,7 +693,7 @@ Clownfish::Binding::Perl::Class->register(
 
 __COPYRIGHT__
 
-Copyright 2005-2010 Marvin Humphrey
+Copyright 2005-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify
 under the same terms as Perl itself.

@@ -72,7 +72,7 @@ Accessor.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright 2009-2010 Marvin Humphrey
+Copyright 2009-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

@@ -76,7 +76,42 @@ no_index:
     - charmonizer/src/Charmonizer/Test/TestLargeFiles.c
     - charmonizer/src/Charmonizer/Test/TestUnusedVars.c
     - charmonizer/src/Charmonizer/Test/TestVariadicMacros.c
+    - clownfish/lib/Clownfish.pm
+    - clownfish/lib/Clownfish/Binding/Core.pm
     - clownfish/lib/Clownfish/Binding/Core/Aliases.pm
+    - clownfish/lib/Clownfish/Binding/Core/Class.pm
+    - clownfish/lib/Clownfish/Binding/Core/File.pm
+    - clownfish/lib/Clownfish/Binding/Core/Function.pm
+    - clownfish/lib/Clownfish/Binding/Core/Method.pm
+    - clownfish/lib/Clownfish/Binding/Perl.pm
+    - clownfish/lib/Clownfish/Binding/Perl/Class.pm
+    - clownfish/lib/Clownfish/Binding/Perl/Constructor.pm
+    - clownfish/lib/Clownfish/Binding/Perl/Method.pm
+    - clownfish/lib/Clownfish/Binding/Perl/Subroutine.pm
+    - clownfish/lib/Clownfish/Binding/Perl/TypeMap.pm
+    - clownfish/lib/Clownfish/CBlock.pm
+    - clownfish/lib/Clownfish/Class.pm
+    - clownfish/lib/Clownfish/DocuComment.pm
+    - clownfish/lib/Clownfish/Dumpable.pm
+    - clownfish/lib/Clownfish/File.pm
+    - clownfish/lib/Clownfish/Function.pm
+    - clownfish/lib/Clownfish/Hierarchy.pm
+    - clownfish/lib/Clownfish/Method.pm
+    - clownfish/lib/Clownfish/ParamList.pm
+    - clownfish/lib/Clownfish/Parcel.pm
+    - clownfish/lib/Clownfish/Parser.pm
+    - clownfish/lib/Clownfish/Symbol.pm
+    - clownfish/lib/Clownfish/Type.pm
+    - clownfish/lib/Clownfish/Type/Arbitrary.pm
+    - clownfish/lib/Clownfish/Type/Composite.pm
+    - clownfish/lib/Clownfish/Type/Float.pm
+    - clownfish/lib/Clownfish/Type/Integer.pm
+    - clownfish/lib/Clownfish/Type/Object.pm
+    - clownfish/lib/Clownfish/Type/Primitive.pm
+    - clownfish/lib/Clownfish/Type/VAList.pm
+    - clownfish/lib/Clownfish/Type/Void.pm
+    - clownfish/lib/Clownfish/Util.pm
+    - clownfish/lib/Clownfish/Variable.pm
     - clownfish/t/000-load.t
     - clownfish/t/001-util.t
     - clownfish/t/050-docucomment.t
@@ -1017,7 +1052,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.311
+    version: 0.312
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1331,4 +1366,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.311
+version: 0.312

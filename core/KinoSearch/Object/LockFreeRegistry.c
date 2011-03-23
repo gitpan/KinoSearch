@@ -116,7 +116,7 @@ LFReg_destroy(LockFreeRegistry *self)
     SUPER_DESTROY(self, LOCKFREEREGISTRY);
 }
 
-/* Copyright 2005-2010 Marvin Humphrey
+/* Copyright 2005-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

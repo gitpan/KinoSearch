@@ -71,7 +71,7 @@ chaz_CC_clean_up();
 
 #endif /* H_CHAZ_COMPILER */
 
-/* Copyright 2006-2010 Marvin Humphrey
+/* Copyright 2006-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

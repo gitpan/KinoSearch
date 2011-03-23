@@ -259,7 +259,7 @@ IxManager_write_merge_data(IndexManager *self, int64_t cutoff)
     success = Json_spew_json((Obj*)data, self->folder, (CharBuf*)merge_json);
     DECREF(data);
     if (!success) {
-        THROW(ERR, "Failed to write to %o", &merge_json);
+        THROW(ERR, "Failed to write to %o", merge_json);
     }
 }
 
@@ -360,7 +360,7 @@ void
 IxManager_set_deletion_lock_interval(IndexManager *self, uint32_t interval)
     { self->deletion_lock_interval = interval; }
 
-/* Copyright 2007-2010 Marvin Humphrey
+/* Copyright 2007-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

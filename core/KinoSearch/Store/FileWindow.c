@@ -36,7 +36,7 @@ FileWindow_set_window(FileWindow *self, char *buf, int64_t offset, int64_t len)
     self->len    = len;
 }
 
-/* Copyright 2008-2010 Marvin Humphrey
+/* Copyright 2008-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

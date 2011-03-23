@@ -40,6 +40,7 @@ kino_Tokenizer_init(kino_Tokenizer *self, const kino_CharBuf *pattern)
     token_re_sv = (SV*)kino_Host_callback_host(KINO_TOKENIZER,
         "compile_token_re", 1, CFISH_ARG_STR("pattern", self->pattern));
     S_set_token_re_but_not_pattern(self, SvRV(token_re_sv));
+    SvREFCNT_dec(token_re_sv);
 
     return self;
 }
@@ -162,7 +163,7 @@ kino_Tokenizer_tokenize_str(kino_Tokenizer *self, const char *string,
     }
 }
 
-/* Copyright 2005-2010 Marvin Humphrey
+/* Copyright 2005-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

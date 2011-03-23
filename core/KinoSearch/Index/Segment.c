@@ -239,7 +239,7 @@ Seg_field_num(Segment *self, const CharBuf *field)
     }
 }
 
-/* Copyright 2006-2010 Marvin Humphrey
+/* Copyright 2006-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

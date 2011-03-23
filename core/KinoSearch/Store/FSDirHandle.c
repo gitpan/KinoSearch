@@ -309,7 +309,7 @@ FSDH_next(FSDirHandle *self)
 
 #endif // CHY_HAS_DIRENT_H vs. CHY_HAS_WINDOWS_H 
 
-/* Copyright 2009-2010 Marvin Humphrey
+/* Copyright 2009-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

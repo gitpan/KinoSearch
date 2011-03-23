@@ -70,7 +70,7 @@ S_write_charm_h()
     Util_write_file("_charm.h", charm_h_code);
 }
 
-/* Copyright 2006-2010 Marvin Humphrey
+/* Copyright 2006-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

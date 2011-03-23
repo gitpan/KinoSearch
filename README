@@ -22,7 +22,7 @@ files -- KinoSearch.xs gets written on the fly during the build.
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2005-2010 Marvin Humphrey
+Copyright (C) 2005-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

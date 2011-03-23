@@ -66,7 +66,7 @@ const uint8_t kino_StrHelp_UTF8_COUNT[] = {
     7, 7        /* illegal bytes 0xfe and 0xff */
 };
 
-/* Copyright 2006-2010 Marvin Humphrey
+/* Copyright 2006-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

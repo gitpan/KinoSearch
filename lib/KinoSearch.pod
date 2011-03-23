@@ -4,7 +4,7 @@ KinoSearch - Search engine library.
 
 =head1 VERSION
 
-0.311
+0.312
 
 =head1 SYNOPSIS
 
@@ -281,8 +281,10 @@ KinoSearch is named for Kino, the main character in John Steinbeck's novella,
 
 =head1 SUPPORT
 
-Please direct support questions to the kinosearch mailing list: subscription
-information at L<http://www.rectangular.com/kinosearch>.
+The Apache Lucy project has assimilated the KinoSearch code base and the
+project is moving.  Support is now provided through Apache Lucy forums, in
+particular the lucy-dev and lucy-users mailing lists.  See
+L<http://incubator.apache.org/lucy> for information.
 
 =head1 BUGS
 
@@ -290,13 +292,9 @@ Not thread-safe.
 
 Some exceptions leak memory.
 
-Please report any other bugs or feature requests to
-C<bug-kinosearch@rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=KinoSearch>.
-
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2005-2010 Marvin Humphrey
+Copyright 2005-2011 Marvin Humphrey
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

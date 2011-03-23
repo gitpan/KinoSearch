@@ -46,7 +46,7 @@ chaz_Floats_run(void);
 #endif /* H_CHAZ_FLOATS */
 
 
-/* Copyright 2006-2010 Marvin Humphrey
+/* Copyright 2006-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.

@@ -478,7 +478,7 @@ InStream_read_raw_c64(InStream *self, char *buf)
     return dest - (uint8_t*)buf;
 }
 
-/* Copyright 2006-2010 Marvin Humphrey
+/* Copyright 2006-2011 Marvin Humphrey
  *
  * This program is free software; you can redistribute it and/or modify
  * under the same terms as Perl itself.
