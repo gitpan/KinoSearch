@@ -420,6 +420,8 @@ core/KinoSearch/Test/Index/TestHighlightWriter.c
 core/KinoSearch/Test/Index/TestHighlightWriter.cfh
 core/KinoSearch/Test/Index/TestIndexManager.c
 core/KinoSearch/Test/Index/TestIndexManager.cfh
+core/KinoSearch/Test/Index/TestPolyReader.c
+core/KinoSearch/Test/Index/TestPolyReader.cfh
 core/KinoSearch/Test/Index/TestPostingListWriter.c
 core/KinoSearch/Test/Index/TestPostingListWriter.cfh
 core/KinoSearch/Test/Index/TestSegment.c
@@ -450,6 +452,8 @@ core/KinoSearch/Test/Plan/TestArchitecture.c
 core/KinoSearch/Test/Plan/TestArchitecture.cfh
 core/KinoSearch/Test/Plan/TestBlobType.c
 core/KinoSearch/Test/Plan/TestBlobType.cfh
+core/KinoSearch/Test/Plan/TestFieldType.c
+core/KinoSearch/Test/Plan/TestFieldType.cfh
 core/KinoSearch/Test/Plan/TestFullTextType.c
 core/KinoSearch/Test/Plan/TestFullTextType.cfh
 core/KinoSearch/Test/Plan/TestNumericType.c
@@ -1057,9 +1061,11 @@ t/core/220-doc_writer.t
 t/core/221-highlight_writer.t
 t/core/222-posting_list_writer.t
 t/core/223-seg_writer.t
+t/core/225-polyreader.t
 t/core/230-full_text_type.t
 t/core/231-blob_type.t
 t/core/232-numeric_type.t
+t/core/234-field_type.t
 t/core/301-segment.t
 t/core/501-termquery.t
 t/core/502-phrasequery.t

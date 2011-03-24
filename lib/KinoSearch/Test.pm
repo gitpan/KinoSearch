@@ -63,6 +63,9 @@ PPCODE:
     else if (strEQ(package, "TestBlobType")) {
         kino_TestBlobType_run_tests();
     }
+    else if (strEQ(package, "TestFieldType")) {
+        kino_TestFType_run_tests();
+    }
     else if (strEQ(package, "TestFullTextType")) {
         kino_TestFullTextType_run_tests();
     }
@@ -81,6 +84,9 @@ PPCODE:
     }
     else if (strEQ(package, "TestIndexManager")) {
         kino_TestIxManager_run_tests();
+    }
+    else if (strEQ(package, "TestPolyReader")) {
+        kino_TestPolyReader_run_tests();
     }
     else if (strEQ(package, "TestPostingListWriter")) {
         kino_TestPListWriter_run_tests();

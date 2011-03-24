@@ -1,13 +1,19 @@
 Revision history for KinoSearch
 
+0.313 2011-03-24
+
+    * Make FieldType checking more stringent.
+    * Fix a latent bug which might theoretically result in incorrect search
+      results on highly customized systems.
+    * Fix a test which was failing on automated testing systems.
+
 0.312 2011-03-23
 
     * Fix several bugs related to locking: insufficient retries, stale locks
       left behind or not cleaned up, etc.
     * Guard against excessive search size requests.
     * Skip a test which was prone to failure on automated testing systems.
-    * Tweak META.yml for the so that the Clownfish build files get excluded
-      properly.
+    * Tweak META.yml so that the Clownfish build files get excluded properly.
 
 0.311 2010-12-28
 
