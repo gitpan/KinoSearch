@@ -7,7 +7,7 @@ BEGIN {
     if ( $ENV{KINO_VALGRIND} ) {
         plan( skip_all => 'Known leaks' );
     }
-    elsif ( $Config{usethreads} ) {
+    elsif ( $Config{usethreads} and $^O !~ /mswin/i ) {
         plan( tests => 1 );
     }
     else {

@@ -3,6 +3,12 @@
 KinoSearch::Docs::Tutorial::FieldType - Specify per-field properties and
 behaviors.
 
+=head1 DEPRECATED
+
+The KinoSearch code base has been assimilated by the Apache L<Lucy> project.
+The "KinoSearch" namespace has been deprecated, but development continues
+under our new name at our new home: L<http://lucy.apache.org/>
+
 =head1 DESCRIPTION
 
 The Schema we used in the last chapter specifies three fields: 

@@ -5,6 +5,12 @@
 
 KinoSearch::Search::RequiredOptionalQuery - Join results for two Queries, one required, one optional.
 
+=head1 DEPRECATED
+
+The KinoSearch code base has been assimilated by the Apache L<Lucy> project.
+The "KinoSearch" namespace has been deprecated, but development continues
+under our new name at our new home: L<http://lucy.apache.org/>
+
 =head1 SYNOPSIS
 
     my $foo_and_maybe_bar = KinoSearch::Search::RequiredOptionalQuery->new(

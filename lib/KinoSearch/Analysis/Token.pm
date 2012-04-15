@@ -93,6 +93,12 @@ __POD__
 
 KinoSearch::Analysis::Token - Redacted.
 
+=head1 DEPRECATED
+
+The KinoSearch code base has been assimilated by the Apache L<Lucy> project.
+The "KinoSearch" namespace has been deprecated, but development continues
+under our new name at our new home: L<http://lucy.apache.org/>
+
 =head1 REDACTED
 
 Token's public API has been redacted.

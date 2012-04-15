@@ -1,5 +1,12 @@
 Revision history for KinoSearch
 
+0.314 2012-04-15
+
+    * Publicize KinoSearch deprecation and direct users towards Apache Lucy.
+    * Make various fixes to deal with changes to object destruction in Perl
+      5.15+.
+    * Omit flaky POD checker test from CPAN distro.
+
 0.313 2011-03-24
 
     * Make FieldType checking more stringent.

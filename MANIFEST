@@ -1010,7 +1010,6 @@ t/binding/206-snapshot.t
 t/binding/506-collector.t
 t/binding/702-sample.t
 t/binding/800-stack.t
-t/binding/801-pod_checker.t
 t/charmonizer/001-integers.t
 t/charmonizer/002-func_macro.t
 t/charmonizer/003-headers.t

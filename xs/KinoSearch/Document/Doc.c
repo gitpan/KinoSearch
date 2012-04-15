@@ -47,7 +47,7 @@ kino_Doc_store(kino_Doc *self, const kino_CharBuf *field, kino_Obj *value)
                ? XSBind_cb_to_sv((kino_CharBuf*)value)
                : (SV*)Kino_Obj_To_Host(value);
     SvUTF8_on(key_sv);
-    hv_store_ent((HV*)self->fields, key_sv, val_sv, 0);
+    (void)hv_store_ent((HV*)self->fields, key_sv, val_sv, 0);
     // TODO: make this a thread-local instead of creating it every time? 
     SvREFCNT_dec(key_sv);
 }

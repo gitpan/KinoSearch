@@ -93,6 +93,10 @@ $self->{header}
 #ifndef BOIL_H
 #define BOIL_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include "charmony.h"
 
@@ -159,6 +163,10 @@ typedef struct cfish_Callback {
     cfish_method_t func;
     size_t         offset;
 } cfish_Callback;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BOIL_H */
 

@@ -303,6 +303,12 @@ sub create_pod {
 
 $class_name - $brief
 
+==head1 DEPRECATED
+
+The KinoSearch code base has been assimilated by the Apache L<Lucy> project.
+The "KinoSearch" namespace has been deprecated, but development continues
+under our new name at our new home: L<http://lucy.apache.org/>
+
 $synopsis_pod
 
 ==head1 DESCRIPTION

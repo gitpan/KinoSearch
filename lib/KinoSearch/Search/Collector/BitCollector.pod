@@ -5,6 +5,12 @@
 
 KinoSearch::Search::Collector::BitCollector - Collector which records doc nums in a BitVector.
 
+=head1 DEPRECATED
+
+The KinoSearch code base has been assimilated by the Apache L<Lucy> project.
+The "KinoSearch" namespace has been deprecated, but development continues
+under our new name at our new home: L<http://lucy.apache.org/>
+
 =head1 SYNOPSIS
 
     my $bit_vec = KinoSearch::Object::BitVector->new(

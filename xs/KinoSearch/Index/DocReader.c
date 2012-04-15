@@ -98,7 +98,7 @@ kino_DefDocReader_fetch_doc(kino_DefaultDocReader *self, int32_t doc_id)
         }
 
         // Store the value. 
-        hv_store_ent(fields, field_name_sv, value_sv, 0);
+        (void)hv_store_ent(fields, field_name_sv, value_sv, 0);
     }
     SvREFCNT_dec(field_name_sv);
 

@@ -2,6 +2,12 @@
 
 KinoSearch::Docs::Cookbook::FastUpdates - Near real-time index updates.
 
+=head1 DEPRECATED
+
+The KinoSearch code base has been assimilated by the Apache L<Lucy> project.
+The "KinoSearch" namespace has been deprecated, but development continues
+under our new name at our new home: L<http://lucy.apache.org/>
+
 =head1 ABSTRACT
 
 While index updates are fast on average, worst-case update performance may be

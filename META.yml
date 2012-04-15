@@ -940,7 +940,6 @@ no_index:
     - t/binding/506-collector.t
     - t/binding/702-sample.t
     - t/binding/800-stack.t
-    - t/binding/801-pod_checker.t
     - t/charmonizer/001-integers.t
     - t/charmonizer/002-func_macro.t
     - t/charmonizer/003-headers.t
@@ -1058,7 +1057,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.313
+    version: 0.314
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1372,4 +1371,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.313
+version: 0.314

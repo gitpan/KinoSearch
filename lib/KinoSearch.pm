@@ -6,12 +6,12 @@ package KinoSearch;
 use 5.008003;
 use Exporter;
 
-our $VERSION = '0.313';
+our $VERSION = '0.314';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
-BEGIN { XSLoader::load( 'KinoSearch', '0.313' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.314' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
@@ -237,6 +237,9 @@ sub error {$KinoSearch::Object::Err::error}
             push @{"$singleton_class\::ISA"}, $parent_class;
         }
     }
+
+    no warnings 'redefine';
+    sub DESTROY { }    # leak all
 }
 
 {

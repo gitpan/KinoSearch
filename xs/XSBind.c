@@ -334,7 +334,7 @@ S_cfish_hash_to_perl_hash(cfish_Hash *hash)
             memcpy(key_sv_ptr, Cfish_CB_Get_Ptr8(key), key_size);
             SvCUR_set(key_sv, key_size);
             *SvEND(key_sv) = '\0';
-            hv_store_ent(perl_hash, key_sv, val_sv, 0);
+            (void)hv_store_ent(perl_hash, key_sv, val_sv, 0);
         }
     }
     SvREFCNT_dec(key_sv);

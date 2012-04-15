@@ -12,6 +12,12 @@ __POD__
 
 KinoSearch::InvIndex - Removed.
 
+=head1 DEPRECATED
+
+The KinoSearch code base has been assimilated by the Apache L<Lucy> project.
+The "KinoSearch" namespace has been deprecated, but development continues
+under our new name at our new home: L<http://lucy.apache.org/>
+
 =head1 DESCRIPTION 
 
 KinoSearch::InvIndex been removed as of version 0.30.
