@@ -934,7 +934,6 @@ no_index:
     - t/binding/022-bytebuf.t
     - t/binding/029-charbuf.t
     - t/binding/034-err.t
-    - t/binding/038-lock_free_registry.t
     - t/binding/101-simple_io.t
     - t/binding/206-snapshot.t
     - t/binding/506-collector.t
@@ -1057,7 +1056,7 @@ provides:
     file: lib/KSx/Simple.pm
   KinoSearch:
     file: lib/KinoSearch.pm
-    version: 0.314
+    version: 0.315
   KinoSearch::Analysis::Analyzer:
     file: lib/KinoSearch/Analysis/Analyzer.pm
   KinoSearch::Analysis::CaseFolder:
@@ -1371,4 +1370,4 @@ requires:
   Parse::RecDescent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.314
+version: 0.315

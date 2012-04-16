@@ -1,5 +1,9 @@
 Revision history for KinoSearch
 
+0.315 2012-04-16
+
+    * Omit LockFreeRegistry test from CPAN distro.
+
 0.314 2012-04-15
 
     * Publicize KinoSearch deprecation and direct users towards Apache Lucy.

@@ -1004,7 +1004,6 @@ t/binding/019-obj.t
 t/binding/022-bytebuf.t
 t/binding/029-charbuf.t
 t/binding/034-err.t
-t/binding/038-lock_free_registry.t
 t/binding/101-simple_io.t
 t/binding/206-snapshot.t
 t/binding/506-collector.t

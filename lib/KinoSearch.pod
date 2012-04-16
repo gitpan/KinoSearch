@@ -10,7 +10,7 @@ under our new name at our new home: L<http://lucy.apache.org/>
 
 =head1 VERSION
 
-0.314
+0.315
 
 =head1 SYNOPSIS
 

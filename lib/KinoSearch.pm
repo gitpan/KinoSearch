@@ -6,12 +6,12 @@ package KinoSearch;
 use 5.008003;
 use Exporter;
 
-our $VERSION = '0.314';
+our $VERSION = '0.315';
 $VERSION = eval $VERSION;
 
 use XSLoader;
 # This loads a large number of disparate subs.
-BEGIN { XSLoader::load( 'KinoSearch', '0.314' ) }
+BEGIN { XSLoader::load( 'KinoSearch', '0.315' ) }
 
 BEGIN {
     push our @ISA, 'Exporter';
